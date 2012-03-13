@@ -2,6 +2,7 @@
 <resources>
 
     <string name="hello">Hello World, PsiphonAndroidActivity!</string>
-    <string name="app_name">PsiphonAndroid</string>
+    <string name="app_name">Psiphon 3</string>
+    <string name="about">About Psiphon 3</string>
 
 </resources>
