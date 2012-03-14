@@ -5,49 +5,69 @@
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
-    <LinearLayout
-        android:id="@+id/linearLayout1"
+    <ImageView
+        android:id="@+id/banner"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:src="@drawable/banner" />
 
-        <ImageView
-            android:id="@+id/banner"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:src="@drawable/banner" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/linearLayout3"
+    <ImageView
+        android:id="@+id/startImageView"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1.0"
-        android:orientation="horizontal" >
-
-        <ImageView
-            android:id="@+id/imageView1"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:interpolator="@android:anim/linear_interpolator"
-            android:src="@drawable/banner" />
+        android:interpolator="@android:anim/linear_interpolator"
+        android:src="@drawable/banner" />
 
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/LinearLayout1"
+    <TableLayout
+        android:id="@+id/messagesTableLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.3"
+        android:stretchColumns="1" >
+
+        <TableRow>
+            
+            <TextView
+                android:text="Indifferent thing" />
+            
+            <ImageView
+                android:src="@android:drawable/presence_invisible"
+                android:layout_gravity="right"/>
+            
+        </TableRow>
+
+        <TableRow>
+            
+            <TextView
+                android:text="Good thing" />
+            
+            <ImageView
+                android:src="@android:drawable/presence_online"
+                android:layout_gravity="right"/>
+            
+        </TableRow>
+        
+        <TableRow>
+            
+            <TextView
+                android:text="Bad thing" />
+            
+            <ImageView
+                android:src="@android:drawable/presence_busy"
+                android:layout_gravity="right"/>
+            
+        </TableRow>
+        
+    </TableLayout>
+
+    <TextView
+        android:id="@+id/aboutTextView"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:gravity="center"
-        android:orientation="vertical" >
-
-        <TextView
-            android:id="@+id/textView1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/about"
-            android:textAppearance="?android:attr/textAppearanceSmall" />
-
-    </LinearLayout>
+        android:gravity="center|center_horizontal"
+        android:text="@string/about"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
 
 </LinearLayout>
