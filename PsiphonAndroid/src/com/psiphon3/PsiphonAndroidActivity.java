@@ -23,6 +23,8 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TableLayout;
@@ -35,6 +37,8 @@ public class PsiphonAndroidActivity extends Activity
 {
     private TableLayout messagesTableLayout;
     private ScrollView messagesScrollView;
+    private Animation animRotate;
+    private ImageView startImageView;
     private Thread tunnelThread;
     
     /** Called when the activity is first created. */
@@ -46,6 +50,8 @@ public class PsiphonAndroidActivity extends Activity
         
         this.messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
         this.messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
+        this.startImageView = (ImageView)findViewById(R.id.startImageView);
+        this.animRotate = AnimationUtils.loadAnimation(this, R.anim.rotate);
 
         /*
         tunnelThread = new Thread(new Runnable()
@@ -60,6 +66,13 @@ public class PsiphonAndroidActivity extends Activity
         */
         
         AddMessage("onCreate finished", MessageClass.DEBUG);
+
+        this.startImageView.post(new Runnable() {
+            @Override
+            public void run() {
+                spinImage();
+            }
+        });
     }
     
     public enum MessageClass { GOOD, BAD, NEUTRAL, DEBUG };
@@ -101,6 +114,11 @@ public class PsiphonAndroidActivity extends Activity
                 messagesScrollView.fullScroll(View.FOCUS_DOWN);
             }
         });
+    }
+    
+    private void spinImage()
+    {
+        startImageView.startAnimation(animRotate);
     }
 
     public void testTunnel()
