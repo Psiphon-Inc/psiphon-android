@@ -1,22 +1,59 @@
+/*
+ * Copyright (c) 2012, Psiphon Inc.
+ * All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package com.psiphon3;
 
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
+import android.widget.ScrollView;
+import android.widget.TableLayout;
+import android.widget.TableRow;
+import android.widget.TextView;
 import ch.ethz.ssh2.*;
 import java.io.IOException;
 
 public class PsiphonAndroidActivity extends Activity 
 {
+    private TableLayout messagesTableLayout;
+    private ScrollView messagesScrollView;
+    private Animation animRotate;
+    private ImageView startImageView;
     private Thread tunnelThread;
-
+    
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        
+        this.messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
+        this.messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
+        this.startImageView = (ImageView)findViewById(R.id.startImageView);
+        this.animRotate = AnimationUtils.loadAnimation(this, R.anim.rotate);
 
+        /*
         tunnelThread = new Thread(new Runnable()
         {
             public void run()
@@ -25,7 +62,63 @@ public class PsiphonAndroidActivity extends Activity
             }
         });
 
-        tunnelThread.start();    
+        tunnelThread.start();
+        */
+        
+        AddMessage("onCreate finished", MessageClass.DEBUG);
+
+        this.startImageView.post(new Runnable() {
+            @Override
+            public void run() {
+                spinImage();
+            }
+        });
+    }
+    
+    public enum MessageClass { GOOD, BAD, NEUTRAL, DEBUG };
+    
+    public void AddMessage(String message, MessageClass messageClass)
+    {
+        TableRow row = new TableRow(this);
+        TextView messageTextView = new TextView(this);
+        ImageView messageClassImageView = new ImageView(this);
+        
+        messageTextView.setText(message);
+        
+        int messageClassImageRes = 0;
+        switch (messageClass)
+        {
+        case GOOD:
+            messageClassImageRes = android.R.drawable.presence_online;
+            break;
+        case BAD:
+            messageClassImageRes = android.R.drawable.presence_busy;
+            break;
+        case DEBUG:
+            messageClassImageRes = android.R.drawable.presence_away;
+            break;
+        default:
+            messageClassImageRes = android.R.drawable.presence_invisible;
+            break;
+        }
+        messageClassImageView.setImageResource(messageClassImageRes);
+        
+        row.addView(messageTextView);
+        row.addView(messageClassImageView);
+        
+        this.messagesTableLayout.addView(row);
+        
+        this.messagesScrollView.post(new Runnable() {
+            @Override
+            public void run() {
+                messagesScrollView.fullScroll(View.FOCUS_DOWN);
+            }
+        });
+    }
+    
+    private void spinImage()
+    {
+        startImageView.startAnimation(animRotate);
     }
 
     public void testTunnel()
