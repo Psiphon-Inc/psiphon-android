@@ -31,12 +31,14 @@ public class PsiphonAndroidActivity extends Activity
     public void testTunnel()
     {
         String hostname = "...";
+        int port = 22;
         String username = "...";
         String password = "...";
+        String obfuscationKeyword = "...";
 
         try
         {
-            Connection conn = new Connection(hostname);
+            Connection conn = new Connection(hostname, obfuscationKeyword, port);
             conn.connect();
             Log.d("Psiphon", "SSH connected");
 

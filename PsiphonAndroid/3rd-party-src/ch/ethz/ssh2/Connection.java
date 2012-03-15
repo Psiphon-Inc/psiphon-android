@@ -92,6 +92,8 @@ public class Connection
 
 	private final String hostname;
 
+	private final String obfuscationKeyword;
+	
 	private final int port;
 
 	private TransportManager tm;
@@ -110,9 +112,9 @@ public class Connection
 	 * 
 	 * @param hostname the hostname of the SSH-2 server.
 	 */
-	public Connection(String hostname)
+	public Connection(String hostname, String obfuscationKeyword)
 	{
-		this(hostname, 22);
+		this(hostname, obfuscationKeyword, 22);
 	}
 
 	/**
@@ -124,10 +126,11 @@ public class Connection
 	 * @param port
 	 *            port on the server, normally 22.
 	 */
-	public Connection(String hostname, int port)
+	public Connection(String hostname, String obfuscationKeyword, int port)
 	{
 		this.hostname = hostname;
 		this.port = port;
+		this.obfuscationKeyword = obfuscationKeyword;
 	}
 
 	/**
@@ -694,7 +697,7 @@ public class Connection
 
 			try
 			{
-				tm.initialize(cryptoWishList, verifier, dhgexpara, connectTimeout, getOrCreateSecureRND(), proxyData);
+				tm.initialize(this.obfuscationKeyword, cryptoWishList, verifier, dhgexpara, connectTimeout, getOrCreateSecureRND(), proxyData);
 			}
 			catch (SocketTimeoutException se)
 			{

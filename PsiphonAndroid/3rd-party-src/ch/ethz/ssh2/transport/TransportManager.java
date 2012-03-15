@@ -20,6 +20,7 @@ import ch.ethz.ssh2.ProxyData;
 import ch.ethz.ssh2.ServerHostKeyVerifier;
 import ch.ethz.ssh2.crypto.Base64;
 import ch.ethz.ssh2.crypto.CryptoWishList;
+import ch.ethz.ssh2.crypto.ObfuscatedSSH;
 import ch.ethz.ssh2.crypto.cipher.BlockCipher;
 import ch.ethz.ssh2.crypto.digest.MAC;
 import ch.ethz.ssh2.log.Logger;
@@ -131,6 +132,10 @@ public class TransportManager
 	boolean connectionClosed = false;
 
 	Throwable reasonClosedCause = null;
+
+	ObfuscatedSSH ossh;
+	ObfuscatedSSH.ObfuscatedInputStream obfuscatedInputStream;
+	ObfuscatedSSH.ObfuscatedOutputStream obfuscatedOutputStream;
 
 	TransportConnection tc;
 	KexManager km;
@@ -440,21 +445,31 @@ public class TransportManager
 		throw new IOException("Unsupported ProxyData");
 	}
 
-	public void initialize(CryptoWishList cwl, ServerHostKeyVerifier verifier, DHGexParameters dhgex,
+	public void initialize(String obfuscatedKeyword, CryptoWishList cwl, ServerHostKeyVerifier verifier, DHGexParameters dhgex,
 			int connectTimeout, SecureRandom rnd, ProxyData proxyData) throws IOException
 	{
 		/* First, establish the TCP connection to the SSH-2 server */
 
 		establishConnection(proxyData, connectTimeout);
 
+		/* Send obfuscated SSH seed message */
+
+		this.ossh = new ObfuscatedSSH(obfuscatedKeyword);
+		byte[] seedMessage = this.ossh.getSeedMessage();
+		sock.getOutputStream().write(seedMessage);
+		sock.getOutputStream().flush();
+
+	    this.obfuscatedInputStream = this.ossh.MakeObfuscatedInputStream(sock.getInputStream());
+	    this.obfuscatedOutputStream = this.ossh.MakeObfuscatedOutputStream(sock.getOutputStream());
+
 		/* Parse the server line and say hello - important: this information is later needed for the
 		 * key exchange (to stop man-in-the-middle attacks) - that is why we wrap it into an object
 		 * for later use.
 		 */
 
-		ClientServerHello csh = new ClientServerHello(sock.getInputStream(), sock.getOutputStream());
+		ClientServerHello csh = new ClientServerHello(this.obfuscatedInputStream, this.obfuscatedOutputStream);
 
-		tc = new TransportConnection(sock.getInputStream(), sock.getOutputStream(), rnd);
+		tc = new TransportConnection(this.obfuscatedInputStream, this.obfuscatedOutputStream, rnd);
 
 		km = new KexManager(this, csh, cwl, hostname, port, verifier, rnd);
 		km.initiateKEX(cwl, dhgex);
@@ -567,6 +582,8 @@ public class TransportManager
 		{
 			flagKexOngoing = false;
 			connectionSemaphore.notifyAll();
+			this.obfuscatedInputStream.disableObfuscation();
+			this.obfuscatedOutputStream.disableObfuscation();
 		}
 	}
 
