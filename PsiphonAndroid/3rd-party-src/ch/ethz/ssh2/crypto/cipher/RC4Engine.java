@@ -28,6 +28,12 @@ public class RC4Engine implements StreamCipher
         boolean             forEncryption, 
         byte[]              key)
     {
+        /* 
+         * RC4 encryption and decryption is completely
+         * symmetrical, so the 'forEncryption' is 
+         * irrelevant.
+         */
+
         workingKey = key;
         setKey(workingKey);
     }
