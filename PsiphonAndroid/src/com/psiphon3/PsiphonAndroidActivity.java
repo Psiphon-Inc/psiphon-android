@@ -110,6 +110,11 @@ public class PsiphonAndroidActivity extends Activity
         messageClassImageView.setImageResource(messageClassImageRes);
         messageClassImageView.setContentDescription(getResources().getText(messageClassImageDesc));
         
+        // Make sure the class image is aligned to the right.
+        TableRow.LayoutParams layoutParams = new TableRow.LayoutParams();
+        layoutParams.gravity = android.view.Gravity.RIGHT; 
+        messageClassImageView.setLayoutParams(layoutParams);
+        
         row.addView(messageTextView);
         row.addView(messageClassImageView);
         
