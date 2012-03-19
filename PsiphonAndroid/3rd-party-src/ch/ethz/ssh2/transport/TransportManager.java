@@ -453,7 +453,7 @@ public class TransportManager
 		establishConnection(proxyData, connectTimeout);
 
 		/* Send obfuscated SSH seed message */
-
+		
 		this.ossh = new ObfuscatedSSH(obfuscatedKeyword);
 		byte[] seedMessage = this.ossh.getSeedMessage();
 		sock.getOutputStream().write(seedMessage);
