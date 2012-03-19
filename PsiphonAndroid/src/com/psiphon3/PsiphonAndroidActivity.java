@@ -32,7 +32,11 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import ch.ethz.ssh2.*;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 public class PsiphonAndroidActivity extends Activity implements OnClickListener
 {
@@ -54,7 +58,6 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
         m_startImageView = (ImageView)findViewById(R.id.startImageView);
         m_animRotate = AnimationUtils.loadAnimation(this, R.anim.rotate);
 
-        /*
         tunnelThread = new Thread(new Runnable()
         {
             public void run()
@@ -64,7 +67,6 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
         });
 
         tunnelThread.start();
-        */
         
         m_startImageView.setOnClickListener(this);
         
@@ -170,6 +172,23 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
             }
             Log.d(PsiphonConstants.TAG, "SSH authenticated");
 
+            // Test exec (sample code from ssh2 project)
+            Session sess = conn.openSession();
+            sess.execCommand("uname -a && date && uptime && who");
+            Log.d("Psiphon", "Here is some information about the remote host:");
+            InputStream stdout = new StreamGobbler(sess.getStdout());
+            BufferedReader br = new BufferedReader(new InputStreamReader(stdout));
+            while (true)
+            {
+                String line = br.readLine();
+                if (line == null)
+                    break;
+                Log.d("Psiphon", line);
+            }
+            Log.d("Psiphon", "ExitCode: " + sess.getExitStatus());
+            sess.close();
+            
+            
             DynamicPortForwarder socks = conn.createDynamicPortForwarder(1080);
             Log.d(PsiphonConstants.TAG, "SOCKS running");
 

@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 
@@ -52,7 +53,7 @@ public class ObfuscatedSSH
     {
         this.obfuscateKeyword = keyword;        
     }
-    
+
 	public byte[] getSeedMessage() throws IOException
 	{
         SecureRandom random = new SecureRandom();
@@ -60,7 +61,7 @@ public class ObfuscatedSSH
         
         byte[] seed = new byte[OBFUSCATE_SEED_LENGTH];
         random.nextBytes(seed);
-
+        
         buffer.write(ByteBuffer.allocate(4).putInt(OBFUSCATE_MAGIC_VALUE).array());
         
         int paddingLength = random.nextInt(OBFUSCATE_MAX_PADDING);
@@ -72,6 +73,7 @@ public class ObfuscatedSSH
         initializeKeys(seed);
 
         byte[] obfuscatedMessage = buffer.toByteArray();
+
         obfuscateOutput(obfuscatedMessage);
 
         buffer.reset();
@@ -103,8 +105,8 @@ public class ObfuscatedSSH
 
     private void initializeKeys(byte[] seed) throws IOException
     {
-        this.rc4input.init(true, generateKey(seed, CLIENT_TO_SERVER_IV));
-        this.rc4output.init(true, generateKey(seed, SERVER_TO_CLIENT_IV));
+        this.rc4input.init(true, generateKey(seed, SERVER_TO_CLIENT_IV));
+        this.rc4output.init(true, generateKey(seed, CLIENT_TO_SERVER_IV));
     }
 
     private byte[] generateKey(byte[] seed, byte[] iv) throws IOException
@@ -133,6 +135,12 @@ public class ObfuscatedSSH
         return key;
     }
 
+    public static String toHex(byte[] bytes)
+    {
+        BigInteger bi = new BigInteger(1, bytes);
+        return String.format("%0" + (bytes.length << 1) + "X", bi);
+    }
+    
     public class ObfuscatedInputStream extends InputStream
     {
         private boolean obfuscate = true;
@@ -151,7 +159,7 @@ public class ObfuscatedSSH
             if (obfuscate)
             {
                 byte b = ossh.obfuscateInput((byte) is.read());
-                Log.d("Obfuscated SSH", "read: " + new String(new byte[] {b}));
+                //Log.d("Obfuscated SSH", "read: " + toHex(new byte[] {b}));
                 return b;
             }
             else
@@ -167,7 +175,7 @@ public class ObfuscatedSSH
             if (obfuscate)
             {
                 ossh.obfuscateInput(b);
-                Log.d("Obfuscated SSH", "read: " + new String(b));
+                //Log.d("Obfuscated SSH", "read: " + toHex(b));
             }
             return count;
         }
@@ -201,7 +209,7 @@ public class ObfuscatedSSH
         {
             if (obfuscate)
             {
-                Log.d("Obfuscated SSH", "write: " + new String(new byte[] {(byte) b}));
+                //Log.d("Obfuscated SSH", "write: " + toHex(new byte[] {(byte) b}));
                 os.write(ossh.obfuscateOutput((byte) b));
             }
             else
@@ -215,9 +223,9 @@ public class ObfuscatedSSH
         {
             if (obfuscate)
             {
-                Log.d("Obfuscated SSH", "write: " + new String(b));
+                //Log.d("Obfuscated SSH", "write: " + toHex(b));
                 byte[] copy = b.clone();
-                ossh.obfuscateInput(copy);
+                ossh.obfuscateOutput(copy);
                 os.write(copy);
             }
             else
