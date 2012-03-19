@@ -86,22 +86,28 @@ public class PsiphonAndroidActivity extends Activity
         messageTextView.setText(message);
         
         int messageClassImageRes = 0;
+        int messageClassImageDesc = 0;
         switch (messageClass)
         {
         case GOOD:
             messageClassImageRes = android.R.drawable.presence_online;
+            messageClassImageDesc = R.string.message_image_good_desc;
             break;
         case BAD:
             messageClassImageRes = android.R.drawable.presence_busy;
+            messageClassImageDesc = R.string.message_image_bad_desc;
             break;
         case DEBUG:
             messageClassImageRes = android.R.drawable.presence_away;
+            messageClassImageDesc = R.string.message_image_debug_desc;
             break;
         default:
             messageClassImageRes = android.R.drawable.presence_invisible;
+            messageClassImageDesc = R.string.message_image_neutral_desc;
             break;
         }
         messageClassImageView.setImageResource(messageClassImageRes);
+        messageClassImageView.setContentDescription(getResources().getText(messageClassImageDesc));
         
         row.addView(messageTextView);
         row.addView(messageClassImageView);

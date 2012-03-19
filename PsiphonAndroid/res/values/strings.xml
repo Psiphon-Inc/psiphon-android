@@ -4,5 +4,8 @@
     <string name="hello">Hello World, PsiphonAndroidActivity!</string>
     <string name="app_name">Psiphon 3</string>
     <string name="about">About Psiphon 3</string>
+    <string name="banner_desc">sponsor banner; click to visit sponsor home page</string>
+    <string name="start_desc">connect to Psiphon; click to connect</string>
+    <string name="message_image_good_desc">icon indicating a good message</string><string name="message_image_bad_desc">icon indicating a bad message</string><string name="message_image_debug_desc">icon indicating a debug message</string><string name="message_image_neutral_desc">icon indicating a neutral message</string>
 
 </resources>

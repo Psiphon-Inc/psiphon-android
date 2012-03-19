@@ -3,7 +3,9 @@
     android:id="@+id/viewMain"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical" android:scrollbarAlwaysDrawVerticalTrack="false" android:weightSum="1.0">
+    android:orientation="vertical" 
+    android:scrollbarAlwaysDrawVerticalTrack="false" 
+    android:weightSum="1.0">
 
     <LinearLayout
         android:id="@+id/linearLayout4"
@@ -14,7 +16,8 @@
             android:id="@+id/banner"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:src="@drawable/banner" />
+            android:src="@drawable/banner"
+            android:contentDescription="@string/banner_desc" />
 
     </LinearLayout>
 
@@ -29,7 +32,9 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:interpolator="@android:anim/linear_interpolator"
-            android:src="@drawable/button_icon_bluesky" />
+            android:src="@drawable/button_icon_bluesky"
+            android:contentDescription="@string/start_desc" />
+        
     </LinearLayout>
 
     <LinearLayout
@@ -52,20 +57,12 @@
 
                 <TableRow>
 
-                    <TextView android:text="Indifferent thing" />
-
-                    <ImageView
-                        android:layout_gravity="right"
-                        android:src="@android:drawable/presence_invisible" />
-                </TableRow>
-
-                <TableRow>
-
                     <TextView android:text="Good thing" />
 
                     <ImageView
                         android:layout_gravity="right"
                         android:src="@android:drawable/presence_online" />
+                    
                 </TableRow>
 
                 <TableRow>
@@ -75,6 +72,7 @@
                     <ImageView
                         android:layout_gravity="right"
                         android:src="@android:drawable/presence_busy" />
+                    
                 </TableRow>
 
                 <TableRow>
@@ -85,78 +83,7 @@
                     <ImageView
                         android:layout_gravity="right"
                         android:src="@android:drawable/presence_invisible" />
-                </TableRow>
-
-                <TableRow>
-
-                    <TextView android:text="Good thing" />
-
-                    <ImageView
-                        android:layout_gravity="right"
-                        android:src="@android:drawable/presence_online" />
-                </TableRow>
-
-                <TableRow>
-
-                    <TextView android:text="Bad thing" />
-
-                    <ImageView
-                        android:layout_gravity="right"
-                        android:src="@android:drawable/presence_busy" />
-                </TableRow>
-                
-                <TableRow>
-
-                    <TextView android:text="Indifferent thing" />
-
-                    <ImageView
-                        android:layout_gravity="right"
-                        android:src="@android:drawable/presence_invisible" />
-                </TableRow>
-
-                <TableRow>
-
-                    <TextView android:text="Good thing" />
-
-                    <ImageView
-                        android:layout_gravity="right"
-                        android:src="@android:drawable/presence_online" />
-                </TableRow>
-
-                <TableRow>
-
-                    <TextView android:text="Bad thing" />
-
-                    <ImageView
-                        android:layout_gravity="right"
-                        android:src="@android:drawable/presence_busy" />
-                </TableRow>
-
-                <TableRow>
-
-                    <TextView android:text="Indifferent thing" />
-
-                    <ImageView
-                        android:layout_gravity="right"
-                        android:src="@android:drawable/presence_invisible" />
-                </TableRow>
-
-                <TableRow>
-
-                    <TextView android:text="Good thing" />
-
-                    <ImageView
-                        android:layout_gravity="right"
-                        android:src="@android:drawable/presence_online" />
-                </TableRow>
-
-                <TableRow>
-
-                    <TextView android:text="Bad thing" />
-
-                    <ImageView
-                        android:layout_gravity="right"
-                        android:src="@android:drawable/presence_busy" />
+                    
                 </TableRow>
                 
             </TableLayout>
