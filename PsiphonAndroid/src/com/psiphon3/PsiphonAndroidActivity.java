@@ -87,23 +87,28 @@ public class PsiphonAndroidActivity extends Activity
         
         int messageClassImageRes = 0;
         int messageClassImageDesc = 0;
+        int logPriority = 0;
         switch (messageClass)
         {
         case GOOD:
             messageClassImageRes = android.R.drawable.presence_online;
             messageClassImageDesc = R.string.message_image_good_desc;
+            logPriority = Log.INFO;
             break;
         case BAD:
             messageClassImageRes = android.R.drawable.presence_busy;
             messageClassImageDesc = R.string.message_image_bad_desc;
+            logPriority = Log.WARN;
             break;
         case DEBUG:
             messageClassImageRes = android.R.drawable.presence_away;
             messageClassImageDesc = R.string.message_image_debug_desc;
+            logPriority = Log.DEBUG;
             break;
         default:
             messageClassImageRes = android.R.drawable.presence_invisible;
             messageClassImageDesc = R.string.message_image_neutral_desc;
+            logPriority = Log.INFO;
             break;
         }
         messageClassImageView.setImageResource(messageClassImageRes);
@@ -114,6 +119,11 @@ public class PsiphonAndroidActivity extends Activity
         
         this.messagesTableLayout.addView(row);
         
+        // Also log to LogCat
+        Log.println(logPriority, PsiphonConstants.TAG, message);
+        
+        // Wait until the messages list is updated before attempting to scroll 
+        // to the bottom.
         this.messagesScrollView.post(new Runnable() {
             @Override
             public void run() {
@@ -139,18 +149,18 @@ public class PsiphonAndroidActivity extends Activity
         {
             Connection conn = new Connection(hostname, obfuscationKeyword, port);
             conn.connect();
-            Log.d("Psiphon", "SSH connected");
+            Log.d(PsiphonConstants.TAG, "SSH connected");
 
             boolean isAuthenticated = conn.authenticateWithPassword(username, password);
             if (isAuthenticated == false)
             {
-                Log.e("Psiphon", "can't authenticate");
+                Log.e(PsiphonConstants.TAG, "can't authenticate");
                 return;
             }
-            Log.d("Psiphon", "SSH authenticated");
+            Log.d(PsiphonConstants.TAG, "SSH authenticated");
 
             DynamicPortForwarder socks = conn.createDynamicPortForwarder(1080);
-            Log.d("Psiphon", "SOCKS running");
+            Log.d(PsiphonConstants.TAG, "SOCKS running");
 
             try
             {
@@ -162,11 +172,11 @@ public class PsiphonAndroidActivity extends Activity
 
             socks.close();
             conn.close();
-            Log.d("Psiphon", "SSH/SOCKS closed");
+            Log.d(PsiphonConstants.TAG, "SSH/SOCKS closed");
         }
         catch (IOException e)
         {
-            Log.e("Psiphon", "IOException", e);
+            Log.e(PsiphonConstants.TAG, "IOException", e);
             return;
         }
     }
