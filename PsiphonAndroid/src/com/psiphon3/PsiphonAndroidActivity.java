@@ -34,7 +34,7 @@ import android.widget.TextView;
 import ch.ethz.ssh2.*;
 import java.io.IOException;
 
-public class PsiphonAndroidActivity extends Activity 
+public class PsiphonAndroidActivity extends Activity implements OnClickListener
 {
     private TableLayout m_messagesTableLayout;
     private ScrollView m_messagesScrollView;
@@ -66,7 +66,7 @@ public class PsiphonAndroidActivity extends Activity
         tunnelThread.start();
         */
         
-        m_startImageView.setOnClickListener(m_StartListener);
+        m_startImageView.setOnClickListener(this);
         
         AddMessage("onCreate finished", MessageClass.DEBUG);
     }
@@ -138,12 +138,15 @@ public class PsiphonAndroidActivity extends Activity
         m_startImageView.startAnimation(m_animRotate);
     }
     
-    private OnClickListener m_StartListener = new OnClickListener() {
-        public void onClick(View v) {
+    // OnClickListener implementation
+    public void onClick(View view) 
+    {
+        if (view == m_startImageView)
+        {
             AddMessage("start clicked", MessageClass.DEBUG);
             spinImage();
         }
-    };
+    }
 
     public void testTunnel()
     {
