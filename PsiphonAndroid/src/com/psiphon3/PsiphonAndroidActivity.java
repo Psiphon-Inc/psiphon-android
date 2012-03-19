@@ -23,6 +23,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
@@ -35,10 +36,10 @@ import java.io.IOException;
 
 public class PsiphonAndroidActivity extends Activity 
 {
-    private TableLayout messagesTableLayout;
-    private ScrollView messagesScrollView;
-    private Animation animRotate;
-    private ImageView startImageView;
+    private TableLayout m_messagesTableLayout;
+    private ScrollView m_messagesScrollView;
+    private Animation m_animRotate;
+    private ImageView m_startImageView;
     private Thread tunnelThread;
     
     /** Called when the activity is first created. */
@@ -48,10 +49,10 @@ public class PsiphonAndroidActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
-        this.messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
-        this.messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
-        this.startImageView = (ImageView)findViewById(R.id.startImageView);
-        this.animRotate = AnimationUtils.loadAnimation(this, R.anim.rotate);
+        m_messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
+        m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
+        m_startImageView = (ImageView)findViewById(R.id.startImageView);
+        m_animRotate = AnimationUtils.loadAnimation(this, R.anim.rotate);
 
         /*
         tunnelThread = new Thread(new Runnable()
@@ -65,14 +66,9 @@ public class PsiphonAndroidActivity extends Activity
         tunnelThread.start();
         */
         
+        m_startImageView.setOnClickListener(m_StartListener);
+        
         AddMessage("onCreate finished", MessageClass.DEBUG);
-
-        this.startImageView.post(new Runnable() {
-            @Override
-            public void run() {
-                spinImage();
-            }
-        });
     }
     
     public enum MessageClass { GOOD, BAD, NEUTRAL, DEBUG };
@@ -117,25 +113,32 @@ public class PsiphonAndroidActivity extends Activity
         row.addView(messageTextView);
         row.addView(messageClassImageView);
         
-        this.messagesTableLayout.addView(row);
+        m_messagesTableLayout.addView(row);
         
         // Also log to LogCat
         Log.println(logPriority, PsiphonConstants.TAG, message);
         
         // Wait until the messages list is updated before attempting to scroll 
         // to the bottom.
-        this.messagesScrollView.post(new Runnable() {
+        m_messagesScrollView.post(new Runnable() {
             @Override
             public void run() {
-                messagesScrollView.fullScroll(View.FOCUS_DOWN);
+                m_messagesScrollView.fullScroll(View.FOCUS_DOWN);
             }
         });
     }
     
     private void spinImage()
     {
-        startImageView.startAnimation(animRotate);
+        m_startImageView.startAnimation(m_animRotate);
     }
+    
+    private OnClickListener m_StartListener = new OnClickListener() {
+        public void onClick(View v) {
+            AddMessage("start clicked", MessageClass.DEBUG);
+            spinImage();
+        }
+    };
 
     public void testTunnel()
     {
