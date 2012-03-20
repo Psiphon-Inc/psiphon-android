@@ -32,11 +32,13 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import ch.ethz.ssh2.*;
-
+import java.io.Serializable;
+import com.psiphon3.Utils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+
 
 public class PsiphonAndroidActivity extends Activity implements OnClickListener
 {
@@ -44,7 +46,12 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
     private ScrollView m_messagesScrollView;
     private Animation m_animRotate;
     private ImageView m_startImageView;
+
+    private final String MESSAGES_STATE_KEY = "MessagesState";
+    private MessagesSerializable m_messages = new MessagesSerializable();
+    
     private Thread tunnelThread;
+
     
     /** Called when the activity is first created. */
     @Override
@@ -71,6 +78,39 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
         m_startImageView.setOnClickListener(this);
         
         AddMessage("onCreate finished", MessageClass.DEBUG);
+    }
+    
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) 
+    {
+        AddMessage("onSaveInstanceState called", MessageClass.DEBUG);
+
+        // Save the currently showing messages.
+        savedInstanceState.putSerializable(MESSAGES_STATE_KEY, m_messages);
+        
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) 
+    {
+        AddMessage("onRestoreInstanceState called", MessageClass.DEBUG);
+        
+        super.onRestoreInstanceState(savedInstanceState);
+
+        if (savedInstanceState != null && savedInstanceState.containsKey(MESSAGES_STATE_KEY))
+        {
+            m_messages.clear();
+            MessagesSerializable messages = (MessagesSerializable)savedInstanceState.getSerializable(MESSAGES_STATE_KEY);
+            
+            MessagesSerializable.MessageSerializable message = null;
+            while ((message = messages.pop()) != null)
+            {
+                AddMessage(message.m_message, message.m_class);
+            }
+            
+            AddMessage("onRestoreInstanceState: messages state restored", MessageClass.DEBUG);
+        }
     }
     
     public enum MessageClass { GOOD, BAD, NEUTRAL, DEBUG };
@@ -125,6 +165,9 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
         // Also log to LogCat
         Log.println(logPriority, PsiphonConstants.TAG, message);
         
+        // And save to the messages object for restoring after an activity switch.
+        m_messages.add(message, messageClass);
+        
         // Wait until the messages list is updated before attempting to scroll 
         // to the bottom.
         m_messagesScrollView.post(new Runnable() {
@@ -141,6 +184,7 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
     }
     
     // OnClickListener implementation
+    @Override
     public void onClick(View view) 
     {
         if (view == m_startImageView)
@@ -209,5 +253,49 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
             Log.e(PsiphonConstants.TAG, "IOException", e);
             return;
         }
+    }
+}
+
+
+/** Used to serialize the messages being shown so that they can be restored when 
+ * the activity instance state is restored.  
+ */
+class MessagesSerializable implements Serializable
+{
+    private static final long serialVersionUID = 1L;
+    
+    public class MessageSerializable implements Serializable
+    {
+        private static final long serialVersionUID = 1L;
+        
+        public String m_message;
+        public PsiphonAndroidActivity.MessageClass m_class;
+
+        MessageSerializable(String message, PsiphonAndroidActivity.MessageClass messageClass) 
+        {
+            m_message = message;
+            m_class = messageClass;
+        }
+    }
+
+    // Use a circular buffer.
+    private static final int BUFFER_SIZE = 100;
+    public Utils.CircularArrayList<MessageSerializable> m_messages = new Utils.CircularArrayList<MessageSerializable>(BUFFER_SIZE);
+    
+    public void add(String message, PsiphonAndroidActivity.MessageClass messageClass)
+    {
+        m_messages.insert(new MessageSerializable(message, messageClass));
+    }
+    
+    /** Get and remove the head message. Returns null if no more messages. */ 
+    public MessageSerializable pop()
+    {
+        if (m_messages.size() <= 0) return null;
+        return m_messages.removeOldest();
+    }
+    
+    public void clear()
+    {
+        m_messages.clear();
     }
 }
