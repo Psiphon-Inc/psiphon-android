@@ -582,9 +582,9 @@ public class TransportManager
 		{
 			flagKexOngoing = false;
 			connectionSemaphore.notifyAll();
-			this.obfuscatedInputStream.disableObfuscation();
-			this.obfuscatedOutputStream.disableObfuscation();
 		}
+        this.obfuscatedInputStream.disableObfuscation();
+        this.obfuscatedOutputStream.disableObfuscation();
 	}
 
 	public void forceKeyExchange(CryptoWishList cwl, DHGexParameters dhgex) throws IOException

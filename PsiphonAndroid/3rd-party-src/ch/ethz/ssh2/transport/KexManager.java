@@ -285,7 +285,7 @@ public class KexManager
 			sessionId = kxs.H;
 
 		establishKeyMaterial();
-
+		
 		/* Tell the other side that we start using the new material */
 
 		PacketNewKeys ign = new PacketNewKeys();

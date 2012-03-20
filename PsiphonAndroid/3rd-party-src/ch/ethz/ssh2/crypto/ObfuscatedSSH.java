@@ -5,11 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
-
-import android.util.Log;
 
 import ch.ethz.ssh2.crypto.cipher.RC4Engine;
 import ch.ethz.ssh2.crypto.digest.SHA1;
@@ -93,6 +90,11 @@ public class ObfuscatedSSH
         this.rc4input.processBytes(bytes, 0, bytes.length, bytes, 0);
     }
 
+    public void obfuscateInput(byte[] bytes, int off, int len)
+    {
+        this.rc4input.processBytes(bytes, off, len, bytes, off);
+    }
+
     public byte obfuscateOutput(byte b)
     {
         return this.rc4output.returnByte(b);
@@ -135,12 +137,6 @@ public class ObfuscatedSSH
         return key;
     }
 
-    public static String toHex(byte[] bytes)
-    {
-        BigInteger bi = new BigInteger(1, bytes);
-        return String.format("%0" + (bytes.length << 1) + "X", bi);
-    }
-    
     public class ObfuscatedInputStream extends InputStream
     {
         private boolean obfuscate = true;
@@ -154,13 +150,29 @@ public class ObfuscatedSSH
         }
         
         @Override
+        public int available() throws IOException
+        {
+            return is.available();
+        }
+
+        @Override
+        public boolean markSupported()
+        {
+            return false;
+        }        
+        
+        @Override
+        public void close() throws IOException
+        {
+            is.close();
+        }
+
+        @Override
         public int read() throws IOException
         {
             if (obfuscate)
             {
-                byte b = ossh.obfuscateInput((byte) is.read());
-                //Log.d("Obfuscated SSH", "read: " + toHex(new byte[] {b}));
-                return b;
+                return ossh.obfuscateInput((byte) is.read());
             }
             else
             {
@@ -175,11 +187,27 @@ public class ObfuscatedSSH
             if (obfuscate)
             {
                 ossh.obfuscateInput(b);
-                //Log.d("Obfuscated SSH", "read: " + toHex(b));
             }
             return count;
         }
         
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException
+        {
+            int count = is.read(b, off, len);
+            if (obfuscate)
+            {
+                ossh.obfuscateInput(b, off, count);
+            }
+            return count;            
+        }
+        
+        @Override
+        public long skip(long n) throws IOException
+        {
+            return is.skip(n);
+        }
+
         public void disableObfuscation()
         {
             obfuscate = false;
@@ -203,19 +231,17 @@ public class ObfuscatedSSH
             ossh = obfuscatedSSH;
             os = outputStream;
         }
-        
+                
         @Override
-        public void write(int b) throws IOException
+        public void close() throws IOException
         {
-            if (obfuscate)
-            {
-                //Log.d("Obfuscated SSH", "write: " + toHex(new byte[] {(byte) b}));
-                os.write(ossh.obfuscateOutput((byte) b));
-            }
-            else
-            {
-                os.write((byte) b);
-            }
+            os.close();
+        }
+
+        @Override
+        public void flush() throws IOException
+        {
+            os.flush();
         }
 
         @Override
@@ -223,7 +249,6 @@ public class ObfuscatedSSH
         {
             if (obfuscate)
             {
-                //Log.d("Obfuscated SSH", "write: " + toHex(b));
                 byte[] copy = b.clone();
                 ossh.obfuscateOutput(copy);
                 os.write(copy);
@@ -234,6 +259,35 @@ public class ObfuscatedSSH
             }
         }
         
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException
+        {
+            if (obfuscate)
+            {
+                byte[] copy = new byte[len]; 
+                System.arraycopy(b, off, copy, 0, len);
+                ossh.obfuscateOutput(copy);
+                os.write(copy);
+            }
+            else
+            {
+                os.write(b, off, len);
+            }
+        }
+        
+        @Override
+        public void write(int b) throws IOException
+        {
+            if (obfuscate)
+            {
+                os.write(ossh.obfuscateOutput((byte) b));
+            }
+            else
+            {
+                os.write((byte) b);
+            }
+        }
+
         public void disableObfuscation()
         {
             obfuscate = false;
