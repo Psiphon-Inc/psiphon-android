@@ -40,7 +40,11 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import com.psiphon3.Utils;
+import com.psiphon3.PsiphonAndroidService.Message;
 
 
 public class PsiphonAndroidActivity extends Activity implements OnClickListener
@@ -53,8 +57,6 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
     private ScrollView m_messagesScrollView;
     private Animation m_animRotate;
     private ImageView m_startImageView;
-    private final String MESSAGES_STATE_KEY = "MessagesState";
-    private MessagesSerializable m_messages = new MessagesSerializable();
     private LocalBroadcastManager m_localBroadcastManager;
     private PsiphonAndroidService m_service;
 
@@ -66,6 +68,7 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
         public void onServiceConnected(ComponentName className, IBinder service)
         {
             m_service = ((PsiphonAndroidService.LocalBinder)service).getService();
+            PsiphonAndroidActivity.this.hookUpMessages();
         }
 
         public void onServiceDisconnected(ComponentName className)
@@ -78,6 +81,7 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.main);
         
         m_messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
@@ -85,14 +89,6 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
         m_startImageView = (ImageView)findViewById(R.id.startImageView);
         m_animRotate = AnimationUtils.loadAnimation(this, R.anim.rotate);
         m_startImageView.setOnClickListener(this);
-        
-        // Using both "started" service and "bound" service interfaces:
-        // - "started" to ensure tunnel service lives beyond this activity
-        // - "bound" to interact with service (check connection status, start/stop, etc.)
-        
-        startService(new Intent(this, PsiphonAndroidService.class));
-        
-        bindService(new Intent(this, PsiphonAndroidService.class), m_connection, Context.BIND_AUTO_CREATE);
     }
 
     public class AddMessageReceiver extends BroadcastReceiver
@@ -107,56 +103,47 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
     }
     
     @Override
-    protected void onResume()
+    protected void onStart()
     {
-        super.onResume();
+        super.onStart();
 
+        // Using both "started" service and "bound" service interfaces:
+        // - "started" to ensure tunnel service lives beyond this activity
+        // - "bound" to interact with service (check connection status, start/stop, etc.)
+        
+        startService(new Intent(this, PsiphonAndroidService.class));
+        bindService(new Intent(this, PsiphonAndroidService.class), m_connection, Context.BIND_AUTO_CREATE);
+
+        // The next step is to restore messages and hook up the message receiver.
+        // Since bind is asynchronous, hookUpMessages is called by onServiceConnected...
+    }
+
+    protected void hookUpMessages()
+    {
+        // Restore messages previously posted by the service
+        
+        ArrayList<PsiphonAndroidService.Message> messages = m_service.getMessages();
+        Iterator<PsiphonAndroidService.Message> iter = messages.iterator();
+        while (iter.hasNext())
+        {
+            Message msg = iter.next();
+            AddMessage(msg.m_message, msg.m_messageClass);
+        }
+        
+        // Listen for new messages
         // Using local broad cast (http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html)
         
         IntentFilter filter = new IntentFilter(ADD_MESSAGE);
         m_localBroadcastManager = LocalBroadcastManager.getInstance(this);
-        m_localBroadcastManager.registerReceiver(new AddMessageReceiver(), filter);
+        m_localBroadcastManager.registerReceiver(new AddMessageReceiver(), filter);        
     }
     
     @Override
-    protected void onDestroy()
+    protected void onStop()
     {
-        super.onDestroy();
+        super.onStop();
         
         unbindService(m_connection);
-    }
-    
-    @Override
-    public void onSaveInstanceState(Bundle savedInstanceState) 
-    {
-        AddMessage("onSaveInstanceState called", MessageClass.DEBUG);
-
-        // Save the currently showing messages.
-        savedInstanceState.putSerializable(MESSAGES_STATE_KEY, m_messages);
-        
-        super.onSaveInstanceState(savedInstanceState);
-    }
-
-    @Override
-    public void onRestoreInstanceState(Bundle savedInstanceState) 
-    {
-        AddMessage("onRestoreInstanceState called", MessageClass.DEBUG);
-        
-        super.onRestoreInstanceState(savedInstanceState);
-
-        if (savedInstanceState != null && savedInstanceState.containsKey(MESSAGES_STATE_KEY))
-        {
-            m_messages.clear();
-            MessagesSerializable messages = (MessagesSerializable)savedInstanceState.getSerializable(MESSAGES_STATE_KEY);
-            
-            MessagesSerializable.MessageSerializable message = null;
-            while ((message = messages.pop()) != null)
-            {
-                AddMessage(message.m_message, message.m_class);
-            }
-            
-            AddMessage("onRestoreInstanceState: messages state restored", MessageClass.DEBUG);
-        }
     }
     
     public enum MessageClass { GOOD, BAD, NEUTRAL, DEBUG };
@@ -211,9 +198,6 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
         // Also log to LogCat
         Log.println(logPriority, PsiphonConstants.TAG, message);
         
-        // And save to the messages object for restoring after an activity switch.
-        m_messages.add(message, messageClass);
-        
         // Wait until the messages list is updated before attempting to scroll 
         // to the bottom.
         m_messagesScrollView.post(
@@ -241,48 +225,5 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
             AddMessage("start clicked", MessageClass.DEBUG);
             spinImage();
         }
-    }
-}
-
-/** Used to serialize the messages being shown so that they can be restored when 
- * the activity instance state is restored.  
- */
-class MessagesSerializable implements Serializable
-{
-    private static final long serialVersionUID = 1L;
-    
-    public class MessageSerializable implements Serializable
-    {
-        private static final long serialVersionUID = 1L;
-        
-        public String m_message;
-        public PsiphonAndroidActivity.MessageClass m_class;
-
-        MessageSerializable(String message, PsiphonAndroidActivity.MessageClass messageClass) 
-        {
-            m_message = message;
-            m_class = messageClass;
-        }
-    }
-
-    // Use a circular buffer.
-    private static final int BUFFER_SIZE = 100;
-    public Utils.CircularArrayList<MessageSerializable> m_messages = new Utils.CircularArrayList<MessageSerializable>(BUFFER_SIZE);
-    
-    public void add(String message, PsiphonAndroidActivity.MessageClass messageClass)
-    {
-        m_messages.insert(new MessageSerializable(message, messageClass));
-    }
-    
-    /** Get and remove the head message. Returns null if no more messages. */ 
-    public MessageSerializable pop()
-    {
-        if (m_messages.size() <= 0) return null;
-        return m_messages.removeOldest();
-    }
-    
-    public void clear()
-    {
-        m_messages.clear();
     }
 }

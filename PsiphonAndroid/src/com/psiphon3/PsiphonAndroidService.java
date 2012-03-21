@@ -20,6 +20,8 @@
 package com.psiphon3;
 
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
 import android.app.Notification;
@@ -37,8 +39,9 @@ import com.psiphon3.PsiphonAndroidActivity;
 
 public class PsiphonAndroidService extends Service
 {
-    private int NOTIFICATION = R.string.psiphon_service_notification_id;
     private boolean firstStart = true;
+    // TODO: use this? private Utils.CircularArrayList<Message> m_messages = new Utils.CircularArrayList<Message>(1000);
+    private ArrayList<Message> m_messages = new ArrayList<Message>();
     private LocalBroadcastManager m_localBroadcastManager;
     private CountDownLatch m_stopSignal;
     private Thread m_tunnelThread;
@@ -51,12 +54,10 @@ public class PsiphonAndroidService extends Service
         }
     }
     
-    private final IBinder m_Binder = new LocalBinder();
-    
     @Override
     public IBinder onBind(Intent intent)
     {
-        return m_Binder;
+        return new LocalBinder();
     }
 
     @Override
@@ -65,6 +66,8 @@ public class PsiphonAndroidService extends Service
         Log.d(PsiphonConstants.TAG, "PsiphonAndroidService.onStartCommand called, firstStart = " + (firstStart ? "true" : "false"));
         if (firstStart)
         {
+            // TODO: put this stuff in onCreate instead?
+            
             m_localBroadcastManager = LocalBroadcastManager.getInstance(this);
             doForeground();
             startTunnel();
@@ -73,14 +76,36 @@ public class PsiphonAndroidService extends Service
         return android.app.Service.START_STICKY;
     }
 
+    public class Message
+    {
+        public String m_message;
+        public PsiphonAndroidActivity.MessageClass m_messageClass;
+
+        Message(String message, PsiphonAndroidActivity.MessageClass messageClass) 
+        {
+            m_message = message;
+            m_messageClass = messageClass;
+        }
+    }
+
     private synchronized void sendMessage(
             String message,
             PsiphonAndroidActivity.MessageClass messageClass)
     {
+        // Record messages for playback in activity
+        m_messages.add(new Message(message, messageClass));
+
         Intent intent = new Intent(PsiphonAndroidActivity.ADD_MESSAGE);
         intent.putExtra(PsiphonAndroidActivity.ADD_MESSAGE_TEXT, message);
         intent.putExtra(PsiphonAndroidActivity.ADD_MESSAGE_CLASS, messageClass);
         m_localBroadcastManager.sendBroadcast(intent);
+    }
+    
+    public ArrayList<Message> getMessages()
+    {
+        ArrayList<Message> messages = new ArrayList<Message>();
+        messages.addAll(m_messages);
+        return messages;
     }
     
     @Override
@@ -117,11 +142,16 @@ public class PsiphonAndroidService extends Service
             getText(R.string.app_name),
             invokeActivityIntent);
 
-        startForeground(NOTIFICATION, notification);
+        startForeground(R.string.psiphon_service_notification_id, notification);
     }    
     
     private void runTunnel()
     {
+        String hostname = "...";
+        int port = 22;
+        String username = "...";
+        String password = "...";
+        String obfuscationKeyword = "...";
 
         try
         {
