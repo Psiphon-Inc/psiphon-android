@@ -20,7 +20,15 @@
 package com.psiphon3;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -31,29 +39,41 @@ import android.widget.ScrollView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
-import ch.ethz.ssh2.*;
 import java.io.Serializable;
 import com.psiphon3.Utils;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 
 
 public class PsiphonAndroidActivity extends Activity implements OnClickListener
 {
+    public static final String ADD_MESSAGE = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE";
+    public static final String ADD_MESSAGE_TEXT = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TEXT";
+    public static final String ADD_MESSAGE_CLASS = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_CLASS";
+    
     private TableLayout m_messagesTableLayout;
     private ScrollView m_messagesScrollView;
     private Animation m_animRotate;
     private ImageView m_startImageView;
-
     private final String MESSAGES_STATE_KEY = "MessagesState";
     private MessagesSerializable m_messages = new MessagesSerializable();
-    
-    private Thread tunnelThread;
+    private LocalBroadcastManager m_localBroadcastManager;
+    private PsiphonAndroidService m_service;
 
+
+    // local service binding, as in http://developer.android.com/reference/android/app/Service.html
     
-    /** Called when the activity is first created. */
+    private ServiceConnection m_connection = new ServiceConnection()
+    {
+        public void onServiceConnected(ComponentName className, IBinder service)
+        {
+            m_service = ((PsiphonAndroidService.LocalBinder)service).getService();
+        }
+
+        public void onServiceDisconnected(ComponentName className)
+        {
+            m_service = null;
+        }
+    };
+ 
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
@@ -64,20 +84,46 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
         m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
         m_startImageView = (ImageView)findViewById(R.id.startImageView);
         m_animRotate = AnimationUtils.loadAnimation(this, R.anim.rotate);
-
-        tunnelThread = new Thread(new Runnable()
-        {
-            public void run()
-            {
-                testTunnel();
-            }
-        });
-
-        tunnelThread.start();
-        
         m_startImageView.setOnClickListener(this);
         
-        AddMessage("onCreate finished", MessageClass.DEBUG);
+        // Using both "started" service and "bound" service interfaces:
+        // - "started" to ensure tunnel service lives beyond this activity
+        // - "bound" to interact with service (check connection status, start/stop, etc.)
+        
+        startService(new Intent(this, PsiphonAndroidService.class));
+        
+        bindService(new Intent(this, PsiphonAndroidService.class), m_connection, Context.BIND_AUTO_CREATE);
+    }
+
+    public class AddMessageReceiver extends BroadcastReceiver
+    {
+        @Override
+        public void onReceive(Context context, Intent intent)
+        {
+            String message = intent.getStringExtra(ADD_MESSAGE_TEXT);
+            MessageClass messageClass = MessageClass.values()[intent.getIntExtra(ADD_MESSAGE_CLASS, 0)];
+            AddMessage(message, messageClass);
+        }
+    }
+    
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+
+        // Using local broad cast (http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html)
+        
+        IntentFilter filter = new IntentFilter(ADD_MESSAGE);
+        m_localBroadcastManager = LocalBroadcastManager.getInstance(this);
+        m_localBroadcastManager.registerReceiver(new AddMessageReceiver(), filter);
+    }
+    
+    @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+        
+        unbindService(m_connection);
     }
     
     @Override
@@ -170,12 +216,15 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
         
         // Wait until the messages list is updated before attempting to scroll 
         // to the bottom.
-        m_messagesScrollView.post(new Runnable() {
-            @Override
-            public void run() {
-                m_messagesScrollView.fullScroll(View.FOCUS_DOWN);
-            }
-        });
+        m_messagesScrollView.post(
+            new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    m_messagesScrollView.fullScroll(View.FOCUS_DOWN);
+                }
+            });
     }
     
     private void spinImage()
@@ -193,69 +242,7 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
             spinImage();
         }
     }
-
-    public void testTunnel()
-    {
-        String hostname = "...";
-        int port = 22;
-        String username = "...";
-        String password = "...";
-        String obfuscationKeyword = "...";
-
-        try
-        {
-            Connection conn = new Connection(hostname, obfuscationKeyword, port);
-            conn.connect();
-            Log.d(PsiphonConstants.TAG, "SSH connected");
-
-            boolean isAuthenticated = conn.authenticateWithPassword(username, password);
-            if (isAuthenticated == false)
-            {
-                Log.e(PsiphonConstants.TAG, "can't authenticate");
-                return;
-            }
-            Log.d(PsiphonConstants.TAG, "SSH authenticated");
-
-            // Test exec (sample code from ssh2 project)
-            Session sess = conn.openSession();
-            sess.execCommand("uname -a && date && uptime && who");
-            Log.d("Psiphon", "Here is some information about the remote host:");
-            InputStream stdout = new StreamGobbler(sess.getStdout());
-            BufferedReader br = new BufferedReader(new InputStreamReader(stdout));
-            while (true)
-            {
-                String line = br.readLine();
-                if (line == null)
-                    break;
-                Log.d("Psiphon", line);
-            }
-            Log.d("Psiphon", "ExitCode: " + sess.getExitStatus());
-            sess.close();
-            
-            
-            DynamicPortForwarder socks = conn.createDynamicPortForwarder(1080);
-            Log.d(PsiphonConstants.TAG, "SOCKS running");
-
-            try
-            {
-                Thread.sleep(60000);
-            }
-            catch (InterruptedException e)
-            {
-            }            
-
-            socks.close();
-            conn.close();
-            Log.d(PsiphonConstants.TAG, "SSH/SOCKS closed");
-        }
-        catch (IOException e)
-        {
-            Log.e(PsiphonConstants.TAG, "IOException", e);
-            return;
-        }
-    }
 }
-
 
 /** Used to serialize the messages being shown so that they can be restored when 
  * the activity instance state is restored.  
