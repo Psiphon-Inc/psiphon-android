@@ -122,11 +122,8 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
     {
         // Restore messages previously posted by the service
         
-        ArrayList<PsiphonAndroidService.Message> messages = m_service.getMessages();
-        Iterator<PsiphonAndroidService.Message> iter = messages.iterator();
-        while (iter.hasNext())
+        for (Message msg : m_service.getMessages())
         {
-            Message msg = iter.next();
             AddMessage(msg.m_message, msg.m_messageClass);
         }
         

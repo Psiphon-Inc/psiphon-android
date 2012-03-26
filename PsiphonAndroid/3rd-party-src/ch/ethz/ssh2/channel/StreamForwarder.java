@@ -6,6 +6,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 
+import com.psiphon3.PsiphonAndroidStats;
+
 /**
  * A StreamForwarder forwards data between two given streams. 
  * If two StreamForwarder threads are used (one for each direction)
@@ -24,17 +26,25 @@ public class StreamForwarder extends Thread
 	StreamForwarder sibling;
 	Socket s;
 	String mode;
+	String destHost;
 
-	StreamForwarder(Channel c, StreamForwarder sibling, Socket s, InputStream is, OutputStream os, String mode)
-			throws IOException
-	{
-		this.is = is;
-		this.os = os;
-		this.mode = mode;
-		this.c = c;
-		this.sibling = sibling;
-		this.s = s;
-	}
+    StreamForwarder(Channel c, StreamForwarder sibling, Socket s, InputStream is, OutputStream os, String mode)
+            throws IOException
+    {
+        this.is = is;
+        this.os = os;
+        this.mode = mode;
+        this.c = c;
+        this.sibling = sibling;
+        this.s = s;
+    }
+
+    StreamForwarder(Channel c, StreamForwarder sibling, Socket s, InputStream is, OutputStream os, String mode, String destHost)
+            throws IOException
+    {
+        this(c, sibling, s, is, os, mode);
+        this.destHost = destHost;
+    }
 
 	public void run()
 	{
@@ -47,6 +57,18 @@ public class StreamForwarder extends Thread
 					break;
 				os.write(buffer, 0, len);
 				os.flush();
+
+				// Psiphon Stats
+				if (mode == "RemoteToLocal")
+				{
+				    PsiphonAndroidStats stats = PsiphonAndroidStats.getStats();
+				    stats.addBytesReceived(this.destHost, len);
+				}
+				else if (mode == "LocalToRemote")
+				{
+                    PsiphonAndroidStats stats = PsiphonAndroidStats.getStats();
+                    stats.addBytesSent(this.destHost, len);				    
+				}
 			}
 		}
 		catch (IOException ignore)

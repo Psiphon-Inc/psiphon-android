@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -36,6 +37,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import ch.ethz.ssh2.*;
 
 import com.psiphon3.PsiphonAndroidActivity;
+import com.psiphon3.PsiphonAndroidStats;
 
 public class PsiphonAndroidService extends Service
 {
@@ -175,7 +177,12 @@ public class PsiphonAndroidService extends Service
 
             try
             {
-                m_stopSignal.await();
+                while (true)
+                {
+                    boolean stop = m_stopSignal.await(10, TimeUnit.SECONDS);
+                    PsiphonAndroidStats.getStats().dumpReport();
+                    if (stop) break;
+                }
             }
             catch (InterruptedException e)
             {
