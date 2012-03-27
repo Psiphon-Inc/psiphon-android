@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.http.Header;
+import org.apache.http.ParseException;
 import org.apache.http.RequestLine;
 import org.apache.http.StatusLine;
 import org.apache.http.message.BasicLineParser;
@@ -181,13 +182,16 @@ public class StreamForwarder extends Thread
             {
                 if (this.skipLength >= bytes_read)
                 {
-                    Log.d("test", "case 1: " + Integer.toString(this.skipLength) + " " + Integer.toString(bytes_read));
+                    Log.d("test", Thread.currentThread().toString() + " case 1: " + Integer.toString(this.skipLength) + " " + Integer.toString(bytes_read));
+                    Log.d("test", Thread.currentThread().toString() + " buffer:" + new String(buffer));
                     length = 0;
                     this.skipLength -= bytes_read;
+                    ///TODO:return here?
                 }
                 else
                 {
-                    Log.d("test", "case 2: " + Integer.toString(this.skipLength) + " " + Integer.toString(bytes_read));
+                    Log.d("test", Thread.currentThread().toString() + " case 2: " + Integer.toString(this.skipLength) + " " + Integer.toString(bytes_read));
+                    Log.d("test", Thread.currentThread().toString() + " buffer:" + new String(buffer));
                     offset = this.skipLength;
                     length = bytes_read - this.skipLength;
                     this.skipLength = 0;
@@ -237,8 +241,17 @@ public class StreamForwarder extends Thread
                     else
                     {
                         // Get status line
-                        StatusLine statusLine = BasicLineParser.parseStatusLine(lines[0], parser); // TODO: catch org.apache.http.ParseException
-                        // TODO: handle status codes
+                        try
+                        {
+                            StatusLine statusLine = BasicLineParser.parseStatusLine(lines[0], parser); // TODO: catch org.apache.http.ParseException
+                            // TODO: handle status codes
+                        }
+                        catch(ParseException e)
+                        {
+                            Log.d("test", Thread.currentThread().toString()  + " " +  e.getMessage());
+                            Log.d("test", Thread.currentThread().toString() + " buffer:" + new String(buffer));
+                            
+                        }
                         
                         // More response case below...
                     }
@@ -262,7 +275,23 @@ public class StreamForwarder extends Thread
                                 contentLength = Integer.parseInt(value); // TODO: catch NumberFormatException
                             }
                         }
+                        else if (header.getName().compareToIgnoreCase("Transfer-Encoding") == 0)
+                        {
+                            String value = header.getValue();
+                            if(value.compareToIgnoreCase("chunked") == 0)
+                            {
+                                //TODO: Implement chunking support
+                                //skip perocessing for now
+                                this.httpProtocolBuffer = null;
+                                this.isHTTP = false;
+                                break;
+                            }
+                        }
                     }
+                    //TODO: Implement chunking support
+                    //bail out for now
+                    if(this.isHTTP == false)
+                        break;
 
                     if (!this.isHttpRequester)
                     {
@@ -278,7 +307,7 @@ public class StreamForwarder extends Thread
                         }
                         catch (IndexOutOfBoundsException e)
                         {
-                            Log.d("test", "stack underflow");
+                            Log.d("test", Thread.currentThread().toString() + " stack underflow");
                         }
                     }
 
@@ -291,13 +320,13 @@ public class StreamForwarder extends Thread
                         // See above for skip case before data is in the buffer
                         if (this.httpProtocolBuffer.length() >= this.skipLength)
                         {
-                            Log.d("test", "case 3: " + Integer.toString(this.httpProtocolBuffer.length()) + " " + Integer.toString(this.skipLength));
+                            Log.d("test", Thread.currentThread().toString() + " case 3: " + Integer.toString(this.httpProtocolBuffer.length()) + " " + Integer.toString(this.skipLength));
                             this.httpProtocolBuffer.delete(0, this.skipLength);
                             this.skipLength = 0;
                         }
                         else
                         {
-                            Log.d("test", "case 4: " + Integer.toString(this.httpProtocolBuffer.length()) + " " + Integer.toString(this.skipLength));
+                            Log.d("test", Thread.currentThread().toString() + " case 4: " + Integer.toString(this.httpProtocolBuffer.length()) + " " + Integer.toString(this.skipLength));
                             this.skipLength -= this.httpProtocolBuffer.length();                                        
                             this.httpProtocolBuffer.delete(0, this.httpProtocolBuffer.length());
                         }
