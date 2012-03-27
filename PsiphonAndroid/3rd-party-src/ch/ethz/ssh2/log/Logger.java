@@ -14,7 +14,7 @@ import android.util.Log;
 
 public class Logger
 {
-	private static final boolean enabled = true;
+	private static final boolean enabled = false;
 	private static final int logLevel = 99;
 
 	private String className;
