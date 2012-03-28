@@ -45,7 +45,8 @@ public class StreamForwarder extends Thread
     private boolean isHttp = true;
     private boolean isHttpRequester = true;
     private long skipLength = 0;
-    private boolean expectingChunkHeader = false;
+    private boolean expectingChunkSize = false;
+    private boolean expectingChunkEnd = false;
     private List<String> pendingRequestStack = Collections.synchronizedList(new ArrayList<String>());
 
     StreamForwarder(Channel c, StreamForwarder sibling, Socket s, InputStream is, OutputStream os, String mode)
@@ -183,7 +184,7 @@ public class StreamForwarder extends Thread
 
         public void deleteFromStart(int length) throws Exception
         {
-            Log.d("test", Thread.currentThread().toString() + "deleteFromStart: " + Integer.toString(this.buffer.length) + " " + Integer.toString(this.position) + " " + Integer.toString(length));
+            //Log.d("test", Thread.currentThread().toString() + "deleteFromStart: " + Integer.toString(this.buffer.length) + " " + Integer.toString(this.position) + " " + Integer.toString(length));
             if (length > this.position)
             {
                 throw new Exception("deleteFromStart length too long");
@@ -194,7 +195,7 @@ public class StreamForwarder extends Thread
         
         public String getStringAtStart(int length) throws Exception
         {
-            Log.d("test", Thread.currentThread().toString() + "getStringAtStart: " + Integer.toString(this.buffer.length) + " " + Integer.toString(this.position) + " " + Integer.toString(length));
+            //Log.d("test", Thread.currentThread().toString() + "getStringAtStart: " + Integer.toString(this.buffer.length) + " " + Integer.toString(this.position) + " " + Integer.toString(length));
             if (length > this.position)
             {
                 throw new Exception("deleteFromStart length too long");
@@ -267,7 +268,7 @@ public class StreamForwarder extends Thread
         {
             try
             {
-                Log.d("test", Thread.currentThread().toString() + "skip: " + Long.toString(this.skipLength) + "buffer:" + Integer.toString(bytes_read) + " " + new String(buffer));
+                Log.d("test", Thread.currentThread().toString() + "skip: " + Long.toString(this.skipLength) + " buffer:" + Integer.toString(bytes_read) + " " + new String(buffer));
 
                 long offset = 0;
                 long length = bytes_read;
@@ -293,61 +294,93 @@ public class StreamForwarder extends Thread
                 this.httpProtocolBuffer.append(buffer, (int) offset, (int) length);
                 Log.d("test", Thread.currentThread().toString() + "actual: " + Long.toString(length) + " appended: " + Integer.toString(this.httpProtocolBuffer.length()));
 
+                // Don't try to parse if skipping, as the content body could look like headers
                 if (this.skipLength == 0)
                 {
                     // Handle multiple HTTP messages within one socket read and across socket reads
                     while (true)
                     {
                         // Handle multiple chunks within one socket read and across socket reads
-                        while (this.expectingChunkHeader)
+                        while (this.expectingChunkSize)
                         {
-                            // TODO: handle trailer
-                            
-                            final String lastChunkHeader = "0\r\n\r\n";
-                            if (this.httpProtocolBuffer.length() >= lastChunkHeader.length() 
-                                && this.httpProtocolBuffer.getStringAtStart(lastChunkHeader.length()) == lastChunkHeader)
+                            // The previous chunk content should already be skipped, so we're either
+                            // at the next chunk header or we need more bytes
+                            final String chunkDelimiter = "\r\n";
+                            int chunkHeaderEnd = this.httpProtocolBuffer.indexOf(chunkDelimiter);
+                            if (chunkHeaderEnd == -1)
                             {
-                                // The final chunk has a trailing CRLF. Stop processing chunks now.
-                                this.httpProtocolBuffer.deleteFromStart("0\r\n\r\n".length());
-                                this.expectingChunkHeader = false;
+                                // Go to next socket read with expectingChunkSize
                                 break;
                             }
                             else
                             {
-                                // The previous chunk content should already be skipped, so we're either
-                                // at the next chunk header or we need more bytes
-                                final String chunkHeaderTerminator = "\r\n";
-                                int chunkHeaderEnd = this.httpProtocolBuffer.indexOf(chunkHeaderTerminator);
-                                if (chunkHeaderEnd != -1)
+                                String chunkLengthStr = this.httpProtocolBuffer.getStringAtStart(chunkHeaderEnd);
+                                this.httpProtocolBuffer.deleteFromStart(chunkHeaderEnd);
+                                Log.d("test", Thread.currentThread().toString() + "chunkLengthStr: " + chunkLengthStr);
+                                // Ignore chunk extensions
+                                int chunkExtension = chunkLengthStr.indexOf(";");
+                                if (chunkExtension != -1)
                                 {
-                                    long chunkLength = Long.parseLong(
-                                        this.httpProtocolBuffer.getStringAtStart(chunkHeaderEnd), 16);
-                                    this.httpProtocolBuffer.deleteFromStart(chunkHeaderEnd);
-                                    this.httpProtocolBuffer.deleteFromStart(chunkHeaderTerminator.length());
+                                    chunkLengthStr = chunkLengthStr.substring(0, chunkExtension);
+                                }
+                                long chunkLength = Long.parseLong(chunkLengthStr, 16);
+                                Log.d("test", Thread.currentThread().toString() + "parseLong: " + Long.toString(chunkLength));
+
+                                if (chunkLength == 0)
+                                {
+                                    // On last chunk, skip until double CRLF, possibly after trailers
+                                    this.expectingChunkSize = false;
+                                    this.expectingChunkEnd = true;
+                                    break;
+                                }
+                                else
+                                {
+                                    // Add to chunkLength to skip CRLF after data
+                                    chunkLength += chunkDelimiter.length();
+                                    
+                                    // Consume CRLF after size and skip chunkLength bytes
+                                    this.httpProtocolBuffer.deleteFromStart(chunkDelimiter.length());
                                     if (chunkLength >= this.httpProtocolBuffer.length())
                                     {
                                         this.skipLength = chunkLength - this.httpProtocolBuffer.length();
                                         this.httpProtocolBuffer.deleteFromStart(this.httpProtocolBuffer.length());
                                         // Go to next socket read to process skipLength first and
-                                        // then next expectingChunkHeader 
+                                        // then next expectingChunkSize 
                                         break;
                                     }
                                     else
                                     {
+                                        Log.d("test", Thread.currentThread().toString() + "chunk deleteFromStart A: " + this.httpProtocolBuffer.getStringAtStart(this.httpProtocolBuffer.length()));
+                                        Log.d("test", Thread.currentThread().toString() + "chunk deleteFromStart B: " + Long.toString(chunkLength));
                                         this.httpProtocolBuffer.deleteFromStart((int) chunkLength);
-                                        // Go to next expectingChunkHeader
+                                        Log.d("test", Thread.currentThread().toString() + "chunk deleteFromStart C: " + this.httpProtocolBuffer.getStringAtStart(this.httpProtocolBuffer.length()));
+                                        // Go to next expectingChunkSize
+                                        continue;
                                     }
-                                }
-                                else
-                                {
-                                    // Go to next socket read with expectingChunkHeader
-                                    break;
                                 }
                             }
                         }
                         
-                        // If we're still expecting the final chunk, we need to read more data
-                        if (this.expectingChunkHeader)
+                        while (this.expectingChunkEnd)
+                        {
+                            final String chunkTerminator = "\r\n\r\n";
+                            int chunkHeaderEnd = this.httpProtocolBuffer.indexOf(chunkTerminator);
+                            if (chunkHeaderEnd == -1)
+                            {
+                                // Go to next socket read with expectingChunkEnd
+                                break;
+                            }
+                            else
+                            {
+                                // Done processing chunks
+                                this.httpProtocolBuffer.deleteFromStart(chunkHeaderEnd);
+                                this.httpProtocolBuffer.deleteFromStart(chunkTerminator.length());
+                                this.expectingChunkEnd = false;
+                            }
+                        }
+
+                        // If we're still expecting chunk bytes, we need to read more data
+                        if (this.expectingChunkSize || this.expectingChunkEnd)
                         {
                             break;
                         }
@@ -421,8 +454,8 @@ public class StreamForwarder extends Thread
                                     String value = header.getValue();
                                     if (value.compareToIgnoreCase("chunked") == 0)
                                     {
-                                        this.expectingChunkHeader = true;
-                                        throw new Exception("can't handle chunking");  // TEMP!
+                                        this.expectingChunkSize = true;
+                                        this.expectingChunkEnd = false;
                                     }
                                 }
                             }
@@ -441,7 +474,7 @@ public class StreamForwarder extends Thread
     
                             // Chunk encoding takes precedence over content length
                             // (http://tools.ietf.org/html/rfc2616#section-4.4)
-                            if (this.expectingChunkHeader)
+                            if (this.expectingChunkSize)
                             {
                                 contentLength = 0;
                             }
