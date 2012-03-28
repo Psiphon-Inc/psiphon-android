@@ -81,9 +81,9 @@ public class PsiphonAndroidService extends Service
     public class Message
     {
         public String m_message;
-        public PsiphonAndroidActivity.MessageClass m_messageClass;
+        public int m_messageClass;
 
-        Message(String message, PsiphonAndroidActivity.MessageClass messageClass) 
+        Message(String message, int messageClass) 
         {
             m_message = message;
             m_messageClass = messageClass;
@@ -92,7 +92,7 @@ public class PsiphonAndroidService extends Service
 
     private synchronized void sendMessage(
             String message,
-            PsiphonAndroidActivity.MessageClass messageClass)
+            int messageClass)
     {
         // Record messages for playback in activity
         m_messages.add(new Message(message, messageClass));
@@ -157,23 +157,23 @@ public class PsiphonAndroidService extends Service
 
         try
         {
-            sendMessage("SSH connecting...", PsiphonAndroidActivity.MessageClass.GOOD);
+            sendMessage("SSH connecting...", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
             Connection conn = new Connection(hostname, obfuscationKeyword, port);
             conn.connect();
-            sendMessage("SSH connected", PsiphonAndroidActivity.MessageClass.GOOD);
+            sendMessage("SSH connected", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
 
-            sendMessage("SSH authenticating...", PsiphonAndroidActivity.MessageClass.GOOD);
+            sendMessage("SSH authenticating...", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
             boolean isAuthenticated = conn.authenticateWithPassword(username, password);
             if (isAuthenticated == false)
             {
-                sendMessage("SSH authentication failed", PsiphonAndroidActivity.MessageClass.BAD);
+                sendMessage("SSH authentication failed", PsiphonAndroidActivity.MESSAGE_CLASS_ERROR);
                 return;
             }
-            sendMessage("SSH authenticated", PsiphonAndroidActivity.MessageClass.GOOD);
+            sendMessage("SSH authenticated", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
 
-            sendMessage("SOCKS starting...", PsiphonAndroidActivity.MessageClass.GOOD);
+            sendMessage("SOCKS starting...", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
             DynamicPortForwarder socks = conn.createDynamicPortForwarder(1080);
-            sendMessage("SOCKS running", PsiphonAndroidActivity.MessageClass.GOOD);
+            sendMessage("SOCKS running", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
 
             try
             {
@@ -189,13 +189,13 @@ public class PsiphonAndroidService extends Service
             }            
 
             socks.close();
-            sendMessage("SOCKS stopped", PsiphonAndroidActivity.MessageClass.GOOD);
+            sendMessage("SOCKS stopped", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
             conn.close();
-            sendMessage("SSH stopped", PsiphonAndroidActivity.MessageClass.GOOD);
+            sendMessage("SSH stopped", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
         }
         catch (IOException e)
         {
-            sendMessage("IOException: " + e, PsiphonAndroidActivity.MessageClass.BAD);
+            sendMessage("IOException: " + e, PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
             return;
         }
     }

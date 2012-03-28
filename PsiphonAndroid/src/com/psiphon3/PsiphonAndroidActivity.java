@@ -47,7 +47,7 @@ import com.psiphon3.Utils;
 import com.psiphon3.PsiphonAndroidService.Message;
 
 
-public class PsiphonAndroidActivity extends Activity implements OnClickListener
+public class PsiphonAndroidActivity extends Activity
 {
     public static final String ADD_MESSAGE = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE";
     public static final String ADD_MESSAGE_TEXT = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TEXT";
@@ -55,8 +55,6 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
     
     private TableLayout m_messagesTableLayout;
     private ScrollView m_messagesScrollView;
-    private Animation m_animRotate;
-    private ImageView m_startImageView;
     private LocalBroadcastManager m_localBroadcastManager;
     private PsiphonAndroidService m_service;
 
@@ -86,9 +84,6 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
         
         m_messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
         m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
-        m_startImageView = (ImageView)findViewById(R.id.startImageView);
-        m_animRotate = AnimationUtils.loadAnimation(this, R.anim.rotate);
-        m_startImageView.setOnClickListener(this);
     }
 
     public class AddMessageReceiver extends BroadcastReceiver
@@ -97,7 +92,7 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
         public void onReceive(Context context, Intent intent)
         {
             String message = intent.getStringExtra(ADD_MESSAGE_TEXT);
-            MessageClass messageClass = MessageClass.values()[intent.getIntExtra(ADD_MESSAGE_CLASS, 0)];
+            int messageClass =intent.getIntExtra(ADD_MESSAGE_CLASS, MESSAGE_CLASS_INFO);
             AddMessage(message, messageClass);
         }
     }
@@ -143,9 +138,10 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
         unbindService(m_connection);
     }
     
-    public enum MessageClass { GOOD, BAD, NEUTRAL, DEBUG };
+    public static final int MESSAGE_CLASS_INFO = 0;
+    public static final int MESSAGE_CLASS_ERROR = 1;
     
-    public void AddMessage(String message, MessageClass messageClass)
+    public void AddMessage(String message, int messageClass)
     {
         TableRow row = new TableRow(this);
         TextView messageTextView = new TextView(this);
@@ -158,25 +154,15 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
         int logPriority = 0;
         switch (messageClass)
         {
-        case GOOD:
+        case MESSAGE_CLASS_INFO:
             messageClassImageRes = android.R.drawable.presence_online;
             messageClassImageDesc = R.string.message_image_good_desc;
             logPriority = Log.INFO;
             break;
-        case BAD:
+        case MESSAGE_CLASS_ERROR:
             messageClassImageRes = android.R.drawable.presence_busy;
             messageClassImageDesc = R.string.message_image_bad_desc;
-            logPriority = Log.WARN;
-            break;
-        case DEBUG:
-            messageClassImageRes = android.R.drawable.presence_away;
-            messageClassImageDesc = R.string.message_image_debug_desc;
-            logPriority = Log.DEBUG;
-            break;
-        default:
-            messageClassImageRes = android.R.drawable.presence_invisible;
-            messageClassImageDesc = R.string.message_image_neutral_desc;
-            logPriority = Log.INFO;
+            logPriority = Log.ERROR;
             break;
         }
         messageClassImageView.setImageResource(messageClassImageRes);
@@ -206,21 +192,5 @@ public class PsiphonAndroidActivity extends Activity implements OnClickListener
                     m_messagesScrollView.fullScroll(View.FOCUS_DOWN);
                 }
             });
-    }
-    
-    private void spinImage()
-    {
-        m_startImageView.startAnimation(m_animRotate);
-    }
-    
-    // OnClickListener implementation
-    @Override
-    public void onClick(View view) 
-    {
-        if (view == m_startImageView)
-        {
-            AddMessage("start clicked", MessageClass.DEBUG);
-            spinImage();
-        }
     }
 }
