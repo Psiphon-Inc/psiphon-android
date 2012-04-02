@@ -28,13 +28,31 @@ import com.psiphon3.PsiphonConstants;
  * @author Christian Plattner
  * @version 2.50, 03/15/10
  */
-public class StreamForwarder extends Thread
+/*
+ * Copyright (c) 2012, Psiphon Inc.
+ * All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+public class PsiphonStreamForwarder extends Thread
 {
     OutputStream os;
     InputStream is;
     byte[] buffer = new byte[Channel.CHANNEL_BUFFER_SIZE];
     Channel c;
-    StreamForwarder sibling;
+    PsiphonStreamForwarder sibling;
     Socket s;
     String mode;
     
@@ -49,8 +67,15 @@ public class StreamForwarder extends Thread
     private boolean expectingChunkEnd = false;
     private List<String> pendingRequestStack = Collections.synchronizedList(new ArrayList<String>());
 
-    StreamForwarder(Channel c, StreamForwarder sibling, Socket s, InputStream is, OutputStream os, String mode)
-            throws IOException
+    PsiphonStreamForwarder(
+            Channel c,
+            PsiphonStreamForwarder sibling,
+            Socket s,
+            InputStream is,
+            OutputStream os,
+            String mode,
+            String destHost)
+        throws IOException
     {
         this.is = is;
         this.os = os;
@@ -58,12 +83,6 @@ public class StreamForwarder extends Thread
         this.c = c;
         this.sibling = sibling;
         this.s = s;
-    }
-
-    StreamForwarder(Channel c, StreamForwarder sibling, Socket s, InputStream is, OutputStream os, String mode, String destHost)
-            throws IOException
-    {
-        this(c, sibling, s, is, os, mode);
         this.destHost = destHost;
         this.isHttpRequester = (mode == "LocalToRemote");
     }
@@ -152,8 +171,6 @@ public class StreamForwarder extends Thread
         }
     }
     
-    // TODO: remove Log.d("test", ...)
-    
     // NOTE: lots of opportunity for optimization
     class ByteBuffer
     {
@@ -163,15 +180,12 @@ public class StreamForwarder extends Thread
         
         public void append(byte[] buffer, int offset, int length)
         {
-            Log.d("test", Thread.currentThread().toString() + "append: " + Integer.toString(this.buffer.length) + " " + Integer.toString(this.position) + " " + Integer.toString(length));
             if (this.position + length > this.buffer.length)
             {
                 int newSize = ALLOCATE_SIZE*((this.position + length)/ALLOCATE_SIZE + 1);
-                Log.d("test", Thread.currentThread().toString() + "newSize: " + Integer.toString(newSize));
                 byte[] temp = new byte[newSize];
                 System.arraycopy(this.buffer, 0, temp, 0, this.buffer.length);
                 this.buffer = temp;
-                Log.d("test", Thread.currentThread().toString() + "actual new size: " + Integer.toString(this.buffer.length));
             }
             System.arraycopy(buffer, offset, this.buffer, this.position, length);
             this.position += length;
@@ -184,7 +198,6 @@ public class StreamForwarder extends Thread
 
         public void deleteFromStart(int length) throws Exception
         {
-            //Log.d("test", Thread.currentThread().toString() + "deleteFromStart: " + Integer.toString(this.buffer.length) + " " + Integer.toString(this.position) + " " + Integer.toString(length));
             if (length > this.position)
             {
                 throw new Exception("deleteFromStart length too long");
@@ -195,7 +208,6 @@ public class StreamForwarder extends Thread
         
         public String getStringAtStart(int length) throws Exception
         {
-            //Log.d("test", Thread.currentThread().toString() + "getStringAtStart: " + Integer.toString(this.buffer.length) + " " + Integer.toString(this.position) + " " + Integer.toString(length));
             if (length > this.position)
             {
                 throw new Exception("deleteFromStart length too long");
@@ -221,12 +233,9 @@ public class StreamForwarder extends Thread
                 }
                 if (match)
                 {
-                    Log.d("test", Thread.currentThread().toString() + "found indexOf: " + Integer.toString(this.buffer.length) + " " + Integer.toString(this.position) + " " + Integer.toString(string.length()) + " " + Integer.toString(i));
                     return i;
                 }
-            }
-            
-            Log.d("test", Thread.currentThread().toString() + "not found indexOf: " + Integer.toString(this.buffer.length) + " " + Integer.toString(this.position) + " " + Integer.toString(string.length()));
+            }            
             return -1;
         }
     }
@@ -268,8 +277,6 @@ public class StreamForwarder extends Thread
         {
             try
             {
-                Log.d("test", Thread.currentThread().toString() + "skip: " + Long.toString(this.skipLength) + " buffer:" + Integer.toString(bytes_read) + " " + new String(buffer));
-
                 long offset = 0;
                 long length = bytes_read;
 
@@ -292,7 +299,6 @@ public class StreamForwarder extends Thread
                 }
 
                 this.httpProtocolBuffer.append(buffer, (int) offset, (int) length);
-                Log.d("test", Thread.currentThread().toString() + "actual: " + Long.toString(length) + " appended: " + Integer.toString(this.httpProtocolBuffer.length()));
 
                 // Don't try to parse if skipping, as the content body could look like headers
                 if (this.skipLength == 0)
@@ -316,7 +322,6 @@ public class StreamForwarder extends Thread
                             {
                                 String chunkLengthStr = this.httpProtocolBuffer.getStringAtStart(chunkHeaderEnd);
                                 this.httpProtocolBuffer.deleteFromStart(chunkHeaderEnd);
-                                Log.d("test", Thread.currentThread().toString() + "chunkLengthStr: " + chunkLengthStr);
                                 // Ignore chunk extensions
                                 int chunkExtension = chunkLengthStr.indexOf(";");
                                 if (chunkExtension != -1)
@@ -324,7 +329,6 @@ public class StreamForwarder extends Thread
                                     chunkLengthStr = chunkLengthStr.substring(0, chunkExtension);
                                 }
                                 long chunkLength = Long.parseLong(chunkLengthStr, 16);
-                                Log.d("test", Thread.currentThread().toString() + "parseLong: " + Long.toString(chunkLength));
 
                                 if (chunkLength == 0)
                                 {
@@ -350,10 +354,7 @@ public class StreamForwarder extends Thread
                                     }
                                     else
                                     {
-                                        Log.d("test", Thread.currentThread().toString() + "chunk deleteFromStart A: " + this.httpProtocolBuffer.getStringAtStart(this.httpProtocolBuffer.length()));
-                                        Log.d("test", Thread.currentThread().toString() + "chunk deleteFromStart B: " + Long.toString(chunkLength));
                                         this.httpProtocolBuffer.deleteFromStart((int) chunkLength);
-                                        Log.d("test", Thread.currentThread().toString() + "chunk deleteFromStart C: " + this.httpProtocolBuffer.getStringAtStart(this.httpProtocolBuffer.length()));
                                         // Go to next expectingChunkSize
                                         continue;
                                     }
@@ -419,7 +420,7 @@ public class StreamForwarder extends Thread
                                 // Push URI on stack to be consumed by peer on response
                                 // (Assumes HTTP responses return in request order)
                                 String uri = requestLine.getUri();
-                                Log.d("test", Thread.currentThread().toString() + "push HTTP request: " + this.destHost + " " + uri);
+                                Log.d("test", Thread.currentThread().toString() + "HTTP request: " + this.destHost + " " + uri);
                                 this.pendingRequestStack.add(0, uri);
                             }
                             else
@@ -466,9 +467,8 @@ public class StreamForwarder extends Thread
                                 
                                 // Pop request URI from peer's stack
                                 // (Assumes HTTP responses return in response order)
-                                Log.d("test", Thread.currentThread().toString() + "HTTP pop response for " + this.sibling.toString());
                                 String requestURI = this.sibling.pendingRequestStack.remove(0);
-                                Log.d("test", Thread.currentThread().toString() + "HTTP pop response: " + this.destHost + " " + requestURI + " " + contentType);
+                                Log.d("test", Thread.currentThread().toString() + "HTTP response: " + this.destHost + " " + requestURI + " " + contentType);
                                 // TODO: increment stats (based on responseStatusCode, contentType, regex etc.)
                             }
     

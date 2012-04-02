@@ -164,8 +164,8 @@ public class DynamicAcceptThread extends Thread implements IChannelWorkerThread 
 		private void onConnect(ProxyMessage msg) throws IOException {
 			ProxyMessage response = null;
 			Channel cn = null;
-			StreamForwarder r2l = null;
-			StreamForwarder l2r = null;
+			PsiphonStreamForwarder r2l = null;
+			PsiphonStreamForwarder l2r = null;
 
 			if (msg instanceof Socks5Message) {
 				response = new Socks5Message(Proxy.SOCKS_SUCCESS, (InetAddress)null, 0);
@@ -202,8 +202,8 @@ public class DynamicAcceptThread extends Thread implements IChannelWorkerThread 
 			}
 
 			try {
-				l2r = new StreamForwarder(cn, null, sock, in, cn.stdinStream, "LocalToRemote", destHost);
-                r2l = new StreamForwarder(cn, l2r, sock, cn.stdoutStream, out, "RemoteToLocal", destHost);
+				l2r = new PsiphonStreamForwarder(cn, null, sock, in, cn.stdinStream, "LocalToRemote", destHost);
+                r2l = new PsiphonStreamForwarder(cn, l2r, sock, cn.stdoutStream, out, "RemoteToLocal", destHost);
                 // TODO: set l2r sibling?
 			} catch (IOException e) {
 				try {
@@ -212,7 +212,7 @@ public class DynamicAcceptThread extends Thread implements IChannelWorkerThread 
 					 * discard the channel immediatelly
 					 */
 					cn.cm.closeChannel(cn,
-							"Weird error during creation of StreamForwarder ("
+							"Weird error during creation of PsiphonStreamForwarder ("
 									+ e.getMessage() + ")", true);
 				} catch (IOException ignore) {
 				}
