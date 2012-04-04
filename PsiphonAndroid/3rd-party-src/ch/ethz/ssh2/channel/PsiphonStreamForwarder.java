@@ -420,7 +420,8 @@ public class PsiphonStreamForwarder extends Thread
                                 // Push URI on stack to be consumed by peer on response
                                 // (Assumes HTTP responses return in request order)
                                 String uri = requestLine.getUri();
-                                Log.d("test", Thread.currentThread().toString() + "HTTP request: " + this.destHost + " " + uri);
+                                Log.d("test", Thread.currentThread().toString() + "HTTP request: " +
+                                        this.destHost + " " + uri);
                                 this.pendingRequestStack.add(0, uri);
                             }
                             else
@@ -468,7 +469,9 @@ public class PsiphonStreamForwarder extends Thread
                                 // Pop request URI from peer's stack
                                 // (Assumes HTTP responses return in response order)
                                 String requestURI = this.sibling.pendingRequestStack.remove(0);
-                                Log.d("test", Thread.currentThread().toString() + "HTTP response: " + this.destHost + " " + requestURI + " " + contentType);
+                                Log.d("test", Thread.currentThread().toString() + "HTTP response: " +
+                                        Integer.toString(responseStatusCode) + " " + this.destHost + " " +
+                                        requestURI + " " + contentType);
                                 // TODO: increment stats (based on responseStatusCode, contentType, regex etc.)
                             }
     

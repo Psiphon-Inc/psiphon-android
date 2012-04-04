@@ -31,19 +31,12 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Iterator;
 
-import com.psiphon3.Utils;
 import com.psiphon3.PsiphonAndroidService.Message;
 
 
