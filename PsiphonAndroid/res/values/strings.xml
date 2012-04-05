@@ -9,5 +9,15 @@
     <string name="message_image_good_desc">icon indicating a good message</string><string name="message_image_bad_desc">icon indicating a bad message</string><string name="message_image_debug_desc">icon indicating a debug message</string><string name="message_image_neutral_desc">icon indicating a neutral message</string>
     <string name="psiphon_service_notification_id">Psiphon Service Notification</string>
     <string name="psiphon_service_notification_message">Psiphon 3 is running...</string>
+    <string name="ssh_connecting">SSH connecting...</string>
+    <string name="ssh_connected">SSH connected</string>
+    <string name="ssh_authenticating">SSH authenticating...</string>
+    <string name="ssh_authentication_failed">SSH authentication failed</string>
+    <string name="ssh_authenticated">SSH authenticated</string>
+    <string name="socks_starting">SOCKS starting...</string>
+    <string name="socks_running">SOCKS running</string>
+    <string name="socks_stopped">SOCKS stopped</string>
+    <string name="ssh_stopped">SSH stopped</string>
+    <string name="error_message">Error: %s</string>
 
 </resources>

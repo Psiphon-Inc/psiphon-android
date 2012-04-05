@@ -46,6 +46,7 @@ public class PsiphonAndroidService extends Service
     private LocalBroadcastManager m_localBroadcastManager;
     private CountDownLatch m_stopSignal;
     private Thread m_tunnelThread;
+    private PsiphonServerInterface m_interface = new PsiphonServerInterface();
 
     public class LocalBinder extends Binder
     {
@@ -89,6 +90,11 @@ public class PsiphonAndroidService extends Service
         }
     }
 
+    private synchronized void sendMessage(String message)
+    {
+        sendMessage(message, PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
+    }
+    
     private synchronized void sendMessage(
             String message,
             int messageClass)
@@ -148,32 +154,32 @@ public class PsiphonAndroidService extends Service
     
     private void runTunnel()
     {
-        String hostname = "...";
-        int port = 22;
-        String username = "...";
-        String password = "...";
-        String obfuscationKeyword = "...";
+        PsiphonServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
 
         try
         {
-            sendMessage("SSH connecting...", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
-            Connection conn = new Connection(hostname, obfuscationKeyword, port);
+            sendMessage(getText(R.string.ssh_connecting).toString());
+            Connection conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
             conn.connect();
-            sendMessage("SSH connected", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
+            sendMessage(getText(R.string.ssh_connected).toString());
 
-            sendMessage("SSH authenticating...", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
-            boolean isAuthenticated = conn.authenticateWithPassword(username, password);
+            sendMessage(getText(R.string.ssh_authenticating).toString());
+            boolean isAuthenticated = conn.authenticateWithPassword(entry.sshUsername, entry.sshPassword);
             if (isAuthenticated == false)
             {
-                sendMessage("SSH authentication failed", PsiphonAndroidActivity.MESSAGE_CLASS_ERROR);
+                sendMessage(
+                    getText(R.string.ssh_authentication_failed).toString(),
+                    PsiphonAndroidActivity.MESSAGE_CLASS_ERROR);
                 return;
             }
-            sendMessage("SSH authenticated", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
+            sendMessage(getText(R.string.ssh_authenticated).toString());
 
-            sendMessage("SOCKS starting...", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
+            sendMessage(getText(R.string.socks_starting).toString());
             DynamicPortForwarder socks = conn.createDynamicPortForwarder(1080);
-            sendMessage("SOCKS running", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
+            sendMessage(getText(R.string.socks_running).toString());
 
+            boolean b = m_interface.doHandshake();
+            
             try
             {
                 while (true)
@@ -188,13 +194,15 @@ public class PsiphonAndroidService extends Service
             }            
 
             socks.close();
-            sendMessage("SOCKS stopped", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
+            sendMessage(getText(R.string.socks_stopped).toString());
             conn.close();
-            sendMessage("SSH stopped", PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
+            sendMessage(getText(R.string.ssh_stopped).toString());
         }
         catch (IOException e)
         {
-            sendMessage("IOException: " + e, PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
+            sendMessage(
+                    String.format(getText(R.string.error_message).toString(), e.toString()),
+                    PsiphonAndroidActivity.MESSAGE_CLASS_ERROR);
             return;
         }
     }

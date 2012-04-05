@@ -33,6 +33,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -42,6 +43,7 @@ import javax.net.ssl.X509TrustManager;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -77,7 +79,12 @@ public class PsiphonServerInterface
         }
     }
     
-    private ArrayList<ServerEntry> serverEntries;
+    private ArrayList<ServerEntry> serverEntries = new ArrayList<ServerEntry>();
+    private ArrayList<String> homePages = new ArrayList<String>();
+    private String upgradeClientVersion;
+    private ArrayList<Pattern> pageViewRegexes = new ArrayList<Pattern>();
+    private ArrayList<Pattern> httpsRequestRegexes = new ArrayList<Pattern>();
+    private String speedTestURL;
     
     PsiphonServerInterface()
     {
@@ -110,19 +117,46 @@ public class PsiphonServerInterface
     {
         try
         {
-            ServerEntry entry = getCurrentServerEntry();   
-            String url = getCommonRequestURL("handshake", entry);            
+            ServerEntry entry = getCurrentServerEntry();
+            String url = getCommonRequestURL("handshake", entry);
             byte[] response = makeRequest(url, null, entry.webServerCertificate);
+
             final String JSON_CONFIG_PREFIX = "Config: ";
             for (String line : new String(response).split("\n"))
             {
                 if (line.indexOf(JSON_CONFIG_PREFIX) == 0)
                 {
                     JSONObject obj = new JSONObject(line.substring(JSON_CONFIG_PREFIX.length()));
-                    // TODO: ...
+
+                    JSONArray homepages = obj.getJSONArray("homepages");
+                    for (int i = 0; i < homepages.length(); i++)
+                    {
+                        this.homePages.add(homepages.getString(i));
+                    }
+
+                    this.upgradeClientVersion = obj.getString("upgrade_client_version");
+
+                    JSONArray page_view_regexes = obj.getJSONArray("page_view_regexes");
+                    for (int i = 0; i < page_view_regexes.length(); i++)
+                    {
+                        this.pageViewRegexes.add(
+                            Pattern.compile(
+                                page_view_regexes.getString(i),
+                                java.util.regex.Pattern.CASE_INSENSITIVE));
+                    }
+
+                    JSONArray https_request_regexes = obj.getJSONArray("https_request_regexes");
+                    for (int i = 0; i < https_request_regexes.length(); i++)
+                    {
+                        this.httpsRequestRegexes.add(
+                                Pattern.compile(
+                                        https_request_regexes.getString(i),
+                                        java.util.regex.Pattern.CASE_INSENSITIVE));
+                    }
+
+                    this.speedTestURL = obj.getString("speed_test_url");
                 }
             }
-            
             
             return true;
         }
@@ -161,9 +195,9 @@ public class PsiphonServerInterface
         CustomTrustManager(String serverCertificate) throws CertificateException
         {
             CertificateFactory factory = CertificateFactory.getInstance("X.509");
-            Base64.decodeBase64(serverCertificate);
+            byte[] decodedServerCertificate = Base64.decodeBase64(serverCertificate);
             this.expectedServerCertificate = (X509Certificate)factory.generateCertificate(
-                    new ByteArrayInputStream(Base64.decodeBase64(serverCertificate)));
+                    new ByteArrayInputStream(Base64.decodeBase64(decodedServerCertificate)));
         }
 
         @Override
@@ -210,7 +244,8 @@ public class PsiphonServerInterface
                    KeyManagementException,
                    CertificateException,
                    MalformedURLException,
-                   IOException
+                   IOException,
+                   Exception
     {
         SSLContext context = SSLContext.getInstance("TLS");
         context.init(
@@ -251,7 +286,7 @@ public class PsiphonServerInterface
         int len = -1;
         while ((len = conn.getInputStream().read(buffer)) != -1)
         {
-            responseBody.write(buffer);
+            responseBody.write(buffer, 0, len);
         }
         
         return responseBody.toByteArray();
@@ -263,7 +298,16 @@ public class PsiphonServerInterface
     {
         try
         {
-            JSONObject obj = new JSONObject(new String(Hex.decodeHex(encodedServerEntry.toCharArray())));
+            String serverEntry = new String(Hex.decodeHex(encodedServerEntry.toCharArray()));
+
+            // Skip past legacy format (4 space delimited fields) and just parse the JSON config
+            int jsonIndex = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                jsonIndex = serverEntry.indexOf(' ', jsonIndex) + 1;
+            }
+
+            JSONObject obj = new JSONObject(serverEntry.substring(jsonIndex));
             ServerEntry newEntry = new ServerEntry();
             newEntry.ipAddress = obj.getString("ipAddress");
             newEntry.webServerPort = obj.getInt("webServerPort");
