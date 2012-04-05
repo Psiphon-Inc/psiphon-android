@@ -1,135 +1,156 @@
 package com.psiphon3;
 
-import java.io.Serializable;
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.RandomAccess;
 
+public class Utils {
 
-public class Utils
-{
-    /** This class is from http://stackoverflow.com/questions/7266042/java-ring-buffer
-     * With the addition of the Serializable support. 
+    // from:
+    // http://stackoverflow.com/questions/140131/convert-a-string-representation-of-a-hex-dump-to-a-byte-array-using-java
+    public static byte[] hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character
+                    .digit(s.charAt(i + 1), 16));
+        }
+        return data;
+    }
+
+    /***************************************************************
+     * Copyright (c) 1998, 1999 Nate Sammons <nate@protomatter.com> This library
+     * is free software; you can redistribute it and/or modify it under the
+     * terms of the GNU Library General Public License as published by the Free
+     * Software Foundation; either version 2 of the License, or (at your option)
+     * any later version.
+     * 
+     * This library is distributed in the hope that it will be useful, but
+     * WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Library
+     * General Public License for more details.
+     * 
+     * You should have received a copy of the GNU Library General Public License
+     * along with this library; if not, write to the Free Software Foundation,
+     * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+     * 
+     * Contact support@protomatter.com with your questions, comments, gripes,
+     * praise, etc...
+     ***************************************************************/
+
+    /***************************************************************
+     * - moved to the net.matuschek.util tree by Daniel Matuschek - replaced
+     * deprecated getBytes() method in method decode - added String
+     * encode(String) method to encode a String to base64
+     ***************************************************************/
+
+    /**
+     * Base64 encoder/decoder. Does not stream, so be careful with using large
+     * amounts of data
+     * 
+     * @author Nate Sammons
+     * @author Daniel Matuschek
+     * @version $Id: Base64.java,v 1.4 2001/04/17 10:09:27 matuschd Exp $
      */
-    public static class CircularArrayList<E> extends AbstractList<E> implements RandomAccess, Serializable {
+    public static class Base64 {
 
-        private final int n; // buffer length
-        private final List<E> buf; // a List implementing RandomAccess
-        private int leader = 0;
-        private int size = 0;
-        
-        private static final long serialVersionUID = 1L;
-        
-        public CircularArrayList(int capacity) {
-            n = capacity + 1;
-            buf = new ArrayList<E>(Collections.nCopies(n, (E) null));
+        private Base64() {
+            super();
         }
-        
-        public int capacity() {
-            return n - 1;
-        }
-        
-        private int wrapIndex(int i) {
-            int m = i % n;
-            if (m < 0) { // modulus can be negative
-                m += n;
+
+        /**
+         * Encode some data and return a String.
+         */
+        public final static String encode(byte[] d) {
+            if (d == null)
+                return null;
+            byte data[] = new byte[d.length + 2];
+            System.arraycopy(d, 0, data, 0, d.length);
+            byte dest[] = new byte[(data.length / 3) * 4];
+
+            // 3-byte to 4-byte conversion
+            for (int sidx = 0, didx = 0; sidx < d.length; sidx += 3, didx += 4) {
+                dest[didx] = (byte) ((data[sidx] >>> 2) & 077);
+                dest[didx + 1] = (byte) ((data[sidx + 1] >>> 4) & 017 | (data[sidx] << 4) & 077);
+                dest[didx + 2] = (byte) ((data[sidx + 2] >>> 6) & 003 | (data[sidx + 1] << 2) & 077);
+                dest[didx + 3] = (byte) (data[sidx + 2] & 077);
             }
-            return m;
-        }
-        
-        @Override
-        public int size() {
-            return this.size;
-        }
-        
-        @Override
-        public E get(int i) {
-            if (i < 0 || i >= n-1) throw new IndexOutOfBoundsException();
-        
-            if(i > size()) throw new NullPointerException("Index is greater than size.");
-        
-            return buf.get(wrapIndex(leader + i));
-        }
-        
-        @Override
-        public E set(int i, E e) {
-            if (i < 0 || i >= n-1) {
-                throw new IndexOutOfBoundsException();
+
+            // 0-63 to ascii printable conversion
+            for (int idx = 0; idx < dest.length; idx++) {
+                if (dest[idx] < 26)
+                    dest[idx] = (byte) (dest[idx] + 'A');
+                else if (dest[idx] < 52)
+                    dest[idx] = (byte) (dest[idx] + 'a' - 26);
+                else if (dest[idx] < 62)
+                    dest[idx] = (byte) (dest[idx] + '0' - 52);
+                else if (dest[idx] < 63)
+                    dest[idx] = (byte) '+';
+                else
+                    dest[idx] = (byte) '/';
             }
-            if(i == size()) // assume leader's position as invalid (should use insert(e))
-                throw new IndexOutOfBoundsException("The size of the list is " + size() + " while the index was " + i
-                        +". Please use insert(e) method to fill the list.");
-            return buf.set(wrapIndex(leader - size + i), e);
-        }
-        
-        public void insert(E e)
-        {
-            int s = size();     
-            buf.set(wrapIndex(leader), e);
-            leader = wrapIndex(++leader);
-            buf.set(leader, null);
-            if(s == n-1)
-                return; // we have replaced the eldest element.
-            this.size++;
-        
-        }
-        
-        @Override
-        public void clear()
-        {
-            int cnt = wrapIndex(leader-size());
-            for(; cnt != leader; cnt = wrapIndex(++cnt))
-                this.buf.set(cnt, null);
-            this.size = 0;      
-        }
-        
-        public E removeOldest() {
-            int i = wrapIndex(leader+1);
-        
-            for(;;i = wrapIndex(++i)) {
-                if(buf.get(i) != null) break;
-                if(i == leader)
-                    throw new IllegalStateException("Cannot remove element."
-                            + " CircularArrayList is empty.");
+
+            // add padding
+            for (int idx = dest.length - 1; idx > (d.length * 4) / 3; idx--) {
+                dest[idx] = (byte) '=';
             }
-        
-            this.size--;
-            return buf.set(i, null);
+            return new String(dest);
         }
-        
-        @Override
-        public String toString()
-        {
-            int i = wrapIndex(leader - size());
-            StringBuilder str = new StringBuilder(size());
-        
-            for(; i != leader; i = wrapIndex(++i)){
-                str.append(buf.get(i));
+
+        /**
+         * Encode a String using Base64 using the default platform encoding
+         **/
+        public final static String encode(String s) {
+            return encode(s.getBytes());
+        }
+
+        /**
+         * Decode data and return bytes.
+         */
+        public final static byte[] decode(String str) {
+            if (str == null)
+                return null;
+            byte data[] = str.getBytes();
+            return decode(data);
+        }
+
+        /**
+         * Decode data and return bytes. Assumes that the data passed in is
+         * ASCII text.
+         */
+        public final static byte[] decode(byte[] data) {
+            int tail = data.length;
+            while (data[tail - 1] == '=')
+                tail--;
+            byte dest[] = new byte[tail - data.length / 4];
+
+            // ascii printable to 0-63 conversion
+            for (int idx = 0; idx < data.length; idx++) {
+                if (data[idx] == '=')
+                    data[idx] = 0;
+                else if (data[idx] == '/')
+                    data[idx] = 63;
+                else if (data[idx] == '+')
+                    data[idx] = 62;
+                else if (data[idx] >= '0' && data[idx] <= '9')
+                    data[idx] = (byte) (data[idx] - ('0' - 52));
+                else if (data[idx] >= 'a' && data[idx] <= 'z')
+                    data[idx] = (byte) (data[idx] - ('a' - 26));
+                else if (data[idx] >= 'A' && data[idx] <= 'Z')
+                    data[idx] = (byte) (data[idx] - 'A');
             }
-            return str.toString();
-        }
-        
-        public E getOldest(){
-            int i = wrapIndex(leader+1);
-        
-            for(;;i = wrapIndex(++i)) {
-                if(buf.get(i) != null) break;
-                if(i == leader)
-                    throw new IllegalStateException("Cannot remove element."
-                            + " CircularArrayList is empty.");
+
+            // 4-byte to 3-byte conversion
+            int sidx, didx;
+            for (sidx = 0, didx = 0; didx < dest.length - 2; sidx += 4, didx += 3) {
+                dest[didx] = (byte) (((data[sidx] << 2) & 255) | ((data[sidx + 1] >>> 4) & 3));
+                dest[didx + 1] = (byte) (((data[sidx + 1] << 4) & 255) | ((data[sidx + 2] >>> 2) & 017));
+                dest[didx + 2] = (byte) (((data[sidx + 2] << 6) & 255) | (data[sidx + 3] & 077));
             }
-        
-            return buf.get(i);
-        }
-        
-        public E getNewest(){
-            int i = wrapIndex(leader-1);
-            if(buf.get(i) == null)
-                throw new IndexOutOfBoundsException("Error while retrieving the newest element. The Circular Array list is empty.");
-            return buf.get(i);
+            if (didx < dest.length) {
+                dest[didx] = (byte) (((data[sidx] << 2) & 255) | ((data[sidx + 1] >>> 4) & 3));
+            }
+            if (++didx < dest.length) {
+                dest[didx] = (byte) (((data[sidx + 1] << 4) & 255) | ((data[sidx + 2] >>> 2) & 017));
+            }
+            return dest;
         }
     }
 }
-

@@ -178,8 +178,15 @@ public class PsiphonAndroidService extends Service
             DynamicPortForwarder socks = conn.createDynamicPortForwarder(1080);
             sendMessage(getText(R.string.socks_running).toString());
 
-            boolean b = m_interface.doHandshake();
-            
+            if (m_interface.doHandshake())
+            {
+                sendMessage("TEMP: Handshake success");
+            }
+            else
+            {
+                sendMessage("TEMP: Handshake failed", PsiphonAndroidActivity.MESSAGE_CLASS_ERROR);
+            }
+
             try
             {
                 while (true)

@@ -39,10 +39,8 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.binary.Hex;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -155,6 +153,12 @@ public class PsiphonServerInterface
                     }
 
                     this.speedTestURL = obj.getString("speed_test_url");
+
+                    JSONArray encoded_server_list = obj.getJSONArray("encoded_server_list");
+                    for (int i = 0; i < encoded_server_list.length(); i++)
+                    {
+                        addServerEntry(encoded_server_list.getString(i), false);
+                    }
                 }
             }
             
@@ -195,9 +199,9 @@ public class PsiphonServerInterface
         CustomTrustManager(String serverCertificate) throws CertificateException
         {
             CertificateFactory factory = CertificateFactory.getInstance("X.509");
-            byte[] decodedServerCertificate = Base64.decodeBase64(serverCertificate);
+            byte[] decodedServerCertificate = Utils.Base64.decode(serverCertificate);
             this.expectedServerCertificate = (X509Certificate)factory.generateCertificate(
-                    new ByteArrayInputStream(Base64.decodeBase64(decodedServerCertificate)));
+                    new ByteArrayInputStream(decodedServerCertificate));
         }
 
         @Override
@@ -253,6 +257,7 @@ public class PsiphonServerInterface
                 new TrustManager[] { new CustomTrustManager(serverCertificate) },
                 new SecureRandom());
         HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
+        HttpsURLConnection.setDefaultHostnameVerifier(new AllowAllHostnameVerifier());
         HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
         conn.setDoOutput(true);
         conn.setDoInput(true);
@@ -298,7 +303,7 @@ public class PsiphonServerInterface
     {
         try
         {
-            String serverEntry = new String(Hex.decodeHex(encodedServerEntry.toCharArray()));
+            String serverEntry = new String(Utils.hexStringToByteArray(encodedServerEntry));
 
             // Skip past legacy format (4 space delimited fields) and just parse the JSON config
             int jsonIndex = 0;
@@ -351,10 +356,6 @@ public class PsiphonServerInterface
         catch (JSONException e)
         {
             // Ignore this server entry on parse error
-            return;
-        }
-        catch (DecoderException e)
-        {
             return;
         }
     }
