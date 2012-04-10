@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+   Zirco Browser for Android
+  
+   Copyright (C) 2010 J. Devauchelle and contributors.
+ 
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License
+   version 3 as published by the Free Software Foundation.
+ 
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+ -->
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      package="org.zirco"
+      android:installLocation="auto"
+      android:versionName="0.4.4" android:versionCode="18">
+    <application
+    	android:icon="@drawable/icon"
+    	android:label="@string/ApplicationName"    	
+    	android:debuggable="false">
+    
+        <activity android:name=".ui.activities.MainActivity"
+                  android:label="@string/ApplicationName"
+                  android:launchMode="singleTask"
+                  android:configChanges="keyboardHidden|orientation">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>            
+            <intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<category android:name="android.intent.category.BROWSABLE" />
+				<data android:scheme="http" />
+				<data android:scheme="https" />
+			</intent-filter>
+        </activity>
+    
+		<activity android:name=".ui.activities.AboutActivity" android:theme="@android:style/Theme.Dialog" android:label="@string/AboutActivity.Title"></activity>
+		<activity android:name=".ui.activities.EditBookmarkActivity" android:theme="@android:style/Theme.Dialog" android:label="@string/EditBookmarkActivity.Title"></activity>		
+		<activity android:name=".ui.activities.BookmarksListActivity"></activity>
+		<activity android:name=".ui.activities.HistoryListActivity"></activity>
+		<activity android:name=".ui.activities.DownloadsListActivity"></activity>
+		<activity android:name=".ui.activities.AdBlockerWhiteListActivity"></activity>
+		<activity android:name=".ui.activities.BookmarksHistoryActivity" android:configChanges="keyboardHidden|orientation"></activity>
+		<activity android:name=".ui.activities.ChangelogActivity" android:theme="@android:style/Theme.Dialog" android:label="@string/ChangelogActivity.Title"></activity>
+		<activity android:name=".ui.activities.preferences.PreferencesActivity"></activity>
+		<activity android:name=".ui.activities.preferences.HomepagePreferenceActivity" android:theme="@android:style/Theme.Dialog" android:label="@string/HomepagePreferenceActivity.Title"></activity>
+		<activity android:name=".ui.activities.preferences.SearchUrlPreferenceActivity" android:theme="@android:style/Theme.Dialog" android:label="@string/SearchUrlPreferenceActivity.Title"></activity>
+		<activity android:name=".ui.activities.preferences.UserAgentPreferenceActivity" android:theme="@android:style/Theme.Dialog" android:label="@string/UserAgentPreferenceActivity.Title"></activity>
+		<activity android:name=".ui.activities.MobileViewListActivity"></activity>
+		<activity android:name=".ui.activities.WeaveBookmarksListActivity"></activity>
+		<activity android:name=".ui.activities.preferences.WeavePreferencesActivity"></activity>
+		<activity android:name=".ui.activities.preferences.WeaveServerPreferenceActivity" android:theme="@android:style/Theme.Dialog" android:label="@string/WeaveServerPreferenceActivity.Title"></activity>
+		
+		<provider android:name=".providers.ZircoBookmarksContentProvider" android:authorities="org.zirco.providers.zircobookmarkscontentprovider"></provider>
+		<provider android:name=".providers.WeaveContentProvider" android:authorities="org.zirco.providers.weavecontentprovider"></provider>
+		
+		    
+        <receiver
+            android:name="org.zirco.utils.ProxyChangeReceiver">
+            <intent-filter>
+                <action
+                    android:name="android.intent.action.PROXY_CHANGE" />
+            </intent-filter>
+        </receiver>
+	</application>
+
+	<uses-sdk android:minSdkVersion="7" android:targetSdkVersion="8" />
+	<uses-permission android:name="android.permission.INTERNET"></uses-permission>	
+	<uses-permission android:name="com.android.browser.permission.READ_HISTORY_BOOKMARKS"></uses-permission>	
+	<uses-permission android:name="com.android.browser.permission.WRITE_HISTORY_BOOKMARKS"></uses-permission>
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"></uses-permission>
+
+	<uses-feature android:name="android.hardware.touchscreen" android:required="true" />
+
+	<supports-screens
+		android:largeScreens="true"
+		android:normalScreens="true"
+		android:smallScreens="true"
+		android:anyDensity="true" />
+
+</manifest> 
