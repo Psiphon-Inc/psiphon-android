@@ -19,10 +19,15 @@
 
 package com.psiphon3;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.KeyManagementException;
@@ -45,6 +50,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.Context;
 import android.util.Log;
 
 
@@ -52,6 +58,7 @@ public class PsiphonServerInterface
 {
     public class ServerEntry implements Cloneable
     {
+        public String encodedEntry;
         public String ipAddress;
         public int webServerPort;
         public String webServerSecret;
@@ -77,6 +84,7 @@ public class PsiphonServerInterface
         }
     }
     
+    private Context ownerContext;
     private ArrayList<ServerEntry> serverEntries = new ArrayList<ServerEntry>();
     private ArrayList<String> homePages = new ArrayList<String>();
     private String upgradeClientVersion;
@@ -84,8 +92,44 @@ public class PsiphonServerInterface
     private ArrayList<Pattern> httpsRequestRegexes = new ArrayList<Pattern>();
     private String speedTestURL;
     
-    PsiphonServerInterface()
+    PsiphonServerInterface(Context context)
     {
+        this.ownerContext = context;
+
+        // Load persistent server entries, then add embedded entries
+
+        try
+        {
+            FileInputStream file = context.openFileInput(
+                    PsiphonConstants.SERVER_ENTRY_FILENAME);
+            BufferedReader reader =
+                new BufferedReader(
+                    new InputStreamReader(file));
+            StringBuilder json = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null)
+            {
+                json.append(line);
+            }
+            file.close();
+            JSONObject obj = new JSONObject(json.toString());
+            JSONArray serverEntries = obj.getJSONArray("serverEntries");
+    
+            for (int i = 0; i < serverEntries.length(); i++)
+            {
+                addServerEntry(serverEntries.getString(i), false);
+            }
+        }
+        catch (FileNotFoundException e)
+        {
+            // pass
+        }
+        catch (Exception e)
+        {
+            Log.e(PsiphonConstants.TAG, e.toString());
+            // skip loading persistent server entries
+        }
+        
         for (String encodedEntry : PsiphonAndroidEmbeddedValues.EMBEDDED_SERVER_LIST.split("\n"))
         {
             addServerEntry(encodedEntry, true);
@@ -108,6 +152,9 @@ public class PsiphonServerInterface
         {
             // Move to end of list for last chance retry
             this.serverEntries.add(this.serverEntries.remove(0));
+            
+            // Save the new server order
+            saveServerEntries();
         }
     }
     
@@ -175,7 +222,7 @@ public class PsiphonServerInterface
     {
     }
 
-    synchronized public void doUpgrade()
+    synchronized public void doDownload()
     {
     }
 
@@ -314,6 +361,7 @@ public class PsiphonServerInterface
 
             JSONObject obj = new JSONObject(serverEntry.substring(jsonIndex));
             ServerEntry newEntry = new ServerEntry();
+            newEntry.encodedEntry = encodedServerEntry;
             newEntry.ipAddress = obj.getString("ipAddress");
             newEntry.webServerPort = obj.getInt("webServerPort");
             newEntry.webServerSecret = obj.getString("webServerSecret");
@@ -352,6 +400,9 @@ public class PsiphonServerInterface
                 int index = this.serverEntries.size() > 0 ? 1 : 0;
                 this.serverEntries.add(index, newEntry);
             }
+
+            // Save the updated server entries
+            saveServerEntries();
         }
         catch (JSONException e)
         {
@@ -359,4 +410,28 @@ public class PsiphonServerInterface
             return;
         }
     }
+    
+    private void saveServerEntries()
+    {
+        try
+        {
+            FileOutputStream file;
+            file = this.ownerContext.openFileOutput(PsiphonConstants.SERVER_ENTRY_FILENAME, Context.MODE_PRIVATE);
+            JSONObject obj = new JSONObject();
+            JSONArray array = new JSONArray();
+            for (ServerEntry serverEntry : this.serverEntries)
+            {
+                array.put(serverEntry.encodedEntry);
+                
+            }
+            obj.put("serverEntries", array);
+            file.write(obj.toString().getBytes());
+            file.close();
+        }
+        catch (Exception e)
+        {
+            Log.e(PsiphonConstants.TAG, e.toString());
+            // Proceed, even if file saving fails
+        }
+    } 
 }

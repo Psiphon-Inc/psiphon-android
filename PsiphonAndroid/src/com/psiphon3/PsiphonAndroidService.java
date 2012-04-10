@@ -46,7 +46,7 @@ public class PsiphonAndroidService extends Service
     private LocalBroadcastManager m_localBroadcastManager;
     private CountDownLatch m_stopSignal;
     private Thread m_tunnelThread;
-    private PsiphonServerInterface m_interface = new PsiphonServerInterface();
+    private PsiphonServerInterface m_interface;
 
     public class LocalBinder extends Binder
     {
@@ -64,12 +64,13 @@ public class PsiphonAndroidService extends Service
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
-    {
+    {        
         Log.d(PsiphonConstants.TAG, "PsiphonAndroidService.onStartCommand called, firstStart = " + (firstStart ? "true" : "false"));
         if (firstStart)
         {
             // TODO: put this stuff in onCreate instead?
-            
+
+            m_interface = new PsiphonServerInterface(this);
             m_localBroadcastManager = LocalBroadcastManager.getInstance(this);
             doForeground();
             startTunnel();
