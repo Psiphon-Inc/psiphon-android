@@ -22,4 +22,6 @@ package com.psiphon3;
 public interface PsiphonConstants
 {
     public final static String TAG = "Psiphon";
+    
+    public final static String SERVER_ENTRY_FILENAME = "psiphon_server_entries.json";
 }
