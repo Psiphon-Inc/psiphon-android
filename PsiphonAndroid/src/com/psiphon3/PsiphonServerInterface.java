@@ -38,6 +38,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -91,7 +93,8 @@ public class PsiphonServerInterface
     private ArrayList<Pattern> pageViewRegexes = new ArrayList<Pattern>();
     private ArrayList<Pattern> httpsRequestRegexes = new ArrayList<Pattern>();
     private String speedTestURL;
-    
+    private String sessionID; // access via getCurrentSessionID -- even internally
+
     PsiphonServerInterface(Context context)
     {
         this.ownerContext = context;
@@ -158,12 +161,29 @@ public class PsiphonServerInterface
         }
     }
     
+    synchronized private void generateNewCurrentSessionID()
+    {
+        byte[] sessionIdBytes = Utils.generateInsecureRandomBytes(PsiphonConstants.CLIENT_SESSION_ID_SIZE_IN_BYTES);
+        this.sessionID = Utils.byteArrayToHexString(sessionIdBytes);
+        Log.d(PsiphonConstants.TAG, "generated new current session ID");
+    }
+    
+    synchronized private String getCurrentSessionID()
+    {
+        if (this.sessionID == null)
+        {
+            generateNewCurrentSessionID();
+        }
+        
+        return this.sessionID;
+    }
+    
     synchronized public boolean doHandshake()
     {
         try
         {
             ServerEntry entry = getCurrentServerEntry();
-            String url = getCommonRequestURL("handshake", entry);
+            String url = getHandshakeRequestURL(entry);
             byte[] response = makeRequest(url, null, entry.webServerCertificate);
 
             final String JSON_CONFIG_PREFIX = "Config: ";
@@ -277,17 +297,56 @@ public class PsiphonServerInterface
         }
     }
 
-    private String getCommonRequestURL(String path, ServerEntry serverEntry)
+    private String getHandshakeRequestURL(ServerEntry serverEntry)
     {
-        return String.format(
-                "https://%s:%d/%s?server_secret=%s&propagation_channel_id=%s&sponsor_id=%s&client_version=%s",
-                serverEntry.ipAddress,
-                serverEntry.webServerPort,
-                path,
-                serverEntry.webServerSecret,
-                PsiphonAndroidEmbeddedValues.PROPAGATION_CHANNEL_ID,
-                PsiphonAndroidEmbeddedValues.SPONSOR_ID,
-                PsiphonAndroidEmbeddedValues.CLIENT_VERSION);
+        // TODO: known_server
+        Map<String, Object> extraParams = new HashMap<String, Object>();
+        
+        return getCommonRequestURL("handshake", serverEntry, getCurrentSessionID(), extraParams);
+    }
+    
+    /**
+     * Helper function for constructing request URLs. The request parameters it
+     * supplies are: client_session_id, propagation_channel_id, sponsor_id, 
+     * client_version, server_secret.
+     * Any additional parameters must be provided in extraParams.
+     * @param path  The path for the request; this is typically the name of the 
+     *              request command; e.g. "connected". Do not use a leading slash.
+     * @param serverEntry  The ServerEntry of the target server.
+     * @param clientSessionId  The client session ID to provide to the server.
+     * @param extraParams  Additional parameters that should be included in the 
+     *                     request. Can be null. The parameters values *must not*
+     *                     be already URL-encoded.
+     * @return  The full URL for the request.
+     */
+    private String getCommonRequestURL(
+                    String path, 
+                    ServerEntry serverEntry,
+                    String clientSessionId,
+                    Map<String, Object> extraParams)
+    {
+        StringBuilder url = new StringBuilder();
+        
+        url.append("https://").append(serverEntry.ipAddress)
+           .append(":").append(serverEntry.webServerPort)
+           .append("/").append(path)
+           .append("?client_session_id=").append(Utils.urlEncode(clientSessionId))
+           .append("&server_secret=").append(Utils.urlEncode(serverEntry.webServerSecret))
+           .append("&propagation_channel_id=").append(Utils.urlEncode(PsiphonAndroidEmbeddedValues.PROPAGATION_CHANNEL_ID))
+           .append("&sponsor_id=").append(Utils.urlEncode(PsiphonAndroidEmbeddedValues.SPONSOR_ID))
+           .append("&client_version=").append(Utils.urlEncode(PsiphonAndroidEmbeddedValues.CLIENT_VERSION));
+        
+        if (extraParams != null)
+        {
+            for (Map.Entry<String, Object> entry : extraParams.entrySet()) 
+            {
+                String paramKey = entry.getKey();
+                Object paramValue = entry.getValue();
+                url.append("&").append(paramKey).append("=").append(Utils.urlEncode(paramValue.toString()));
+            }
+        }
+
+        return url.toString();
     }
 
     private byte[] makeRequest(String url, byte[] body, String serverCertificate)

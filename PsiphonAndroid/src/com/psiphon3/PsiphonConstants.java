@@ -24,4 +24,6 @@ public interface PsiphonConstants
     public final static String TAG = "Psiphon";
     
     public final static String SERVER_ENTRY_FILENAME = "psiphon_server_entries.json";
+
+    public final static int CLIENT_SESSION_ID_SIZE_IN_BYTES = 16;
 }

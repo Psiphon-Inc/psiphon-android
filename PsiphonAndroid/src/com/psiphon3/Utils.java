@@ -1,7 +1,30 @@
 package com.psiphon3;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.security.SecureRandom;
+import java.util.Random;
+
+import android.util.Log;
+
 
 public class Utils {
+
+    private static SecureRandom s_secureRandom = new SecureRandom();
+    static byte[] generateSecureRandomBytes(int byteCount)
+    {
+        byte bytes[] = new byte[byteCount];
+        s_secureRandom.nextBytes(bytes);
+        return bytes;
+    }
+
+    private static Random s_insecureRandom = new Random();
+    static byte[] generateInsecureRandomBytes(int byteCount)
+    {
+        byte bytes[] = new byte[byteCount];
+        s_insecureRandom.nextBytes(bytes);
+        return bytes;
+    }
 
     // from:
     // http://stackoverflow.com/questions/140131/convert-a-string-representation-of-a-hex-dump-to-a-byte-array-using-java
@@ -13,6 +36,22 @@ public class Utils {
                     .digit(s.charAt(i + 1), 16));
         }
         return data;
+    }
+
+    // from:
+    // http://stackoverflow.com/questions/332079/in-java-how-do-i-convert-a-byte-array-to-a-string-of-hex-digits-while-keeping-l
+    public static String byteArrayToHexString(byte[] bytes) 
+    {
+        char[] hexArray = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+        char[] hexChars = new char[bytes.length * 2];
+        int v;
+        for ( int j = 0; j < bytes.length; j++ ) 
+        {
+            v = bytes[j] & 0xFF;
+            hexChars[j*2] = hexArray[v/16];
+            hexChars[j*2 + 1] = hexArray[v%16];
+        }
+        return new String(hexChars);
     }
 
     /***************************************************************
@@ -152,5 +191,27 @@ public class Utils {
             }
             return dest;
         }
+    }
+    
+    /**
+     * URL-encodes a string. This is largely redundant with URLEncoder.encode,
+     * but it tries to avoid using the deprecated URLEncoder.encode(String) while not
+     * throwing the exception of URLEncoder.encode(String, String).
+     * @param s  The string to URL encode.
+     * @return The URL encoded version of s. 
+     */
+    static public String urlEncode(String s)
+    {
+        try
+        {
+            return URLEncoder.encode(s, "UTF-8");
+        } 
+        catch (UnsupportedEncodingException e)
+        {
+            Log.e(PsiphonConstants.TAG, e.getMessage());
+
+            // Call the deprecated form of the function, which doesn't throw.
+            return URLEncoder.encode(s);
+        }                    
     }
 }
