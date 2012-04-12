@@ -30,6 +30,8 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ScrollView;
@@ -50,6 +52,10 @@ public class PsiphonAndroidActivity extends Activity
     private ScrollView m_messagesScrollView;
     private LocalBroadcastManager m_localBroadcastManager;
     private PsiphonAndroidService m_service;
+    
+    private static final int MENU_BROWSER = Menu.FIRST;
+    private static final int MENU_EXIT = Menu.FIRST + 1;
+
 
 
     // local service binding, as in http://developer.android.com/reference/android/app/Service.html
@@ -78,6 +84,42 @@ public class PsiphonAndroidActivity extends Activity
         m_messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
         m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
     }
+    
+    private void openZircoMainActivity() {
+        Intent zircoMainActivity = new Intent(this, org.zirco.ui.activities.MainActivity.class);
+        startActivity(zircoMainActivity);
+        
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        
+        MenuItem item;
+        
+        item = menu.add(0, MENU_BROWSER, 0, "Open Browser");
+//        item.setIcon(R.drawable.blah);
+
+        
+        item = menu.add(0, MENU_EXIT, 0, "Exit Psiphon");
+//      item.setIcon(R.drawable.blah);
+        
+        return true;
+    }
+    
+    @Override
+    public boolean onMenuItemSelected(int featureId, MenuItem item) {
+        switch(item.getItemId()) {
+        case MENU_BROWSER:         
+            openZircoMainActivity();
+            return true;
+        case MENU_EXIT:
+            this.finish();
+            return true;
+        default: return super.onMenuItemSelected(featureId, item);
+        }
+    }
+
 
     public class AddMessageReceiver extends BroadcastReceiver
     {
