@@ -157,10 +157,16 @@ public class PsiphonAndroidService extends Service
     {
         PsiphonServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
 
+        Connection conn = null;
+        DynamicPortForwarder socks = null;
+        PsiphonNativeWrapper polipo = null;
+
         try
         {
             sendMessage(getText(R.string.ssh_connecting).toString());
-            Connection conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
+            conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
+            // TODO: verifier
+            // TODO: timeouts
             conn.connect();
             sendMessage(getText(R.string.ssh_connected).toString());
 
@@ -176,9 +182,16 @@ public class PsiphonAndroidService extends Service
             sendMessage(getText(R.string.ssh_authenticated).toString());
 
             sendMessage(getText(R.string.socks_starting).toString());
-            DynamicPortForwarder socks = conn.createDynamicPortForwarder(1080);
+            socks = conn.createDynamicPortForwarder(PsiphonConstants.SOCKS_PORT);
             sendMessage(getText(R.string.socks_running).toString());
 
+            sendMessage(getText(R.string.http_proxy_starting).toString());
+            polipo = new PsiphonNativeWrapper(
+                            this,
+                            PsiphonConstants.POLIPO_EXECUTABLE,
+                            PsiphonConstants.POLIPO_ARGUMENTS);
+            sendMessage(getText(R.string.http_proxy_running).toString());
+            
             if (m_interface.doHandshake())
             {
                 sendMessage("TEMP: Handshake success");
@@ -200,11 +213,6 @@ public class PsiphonAndroidService extends Service
             catch (InterruptedException e)
             {
             }            
-
-            socks.close();
-            sendMessage(getText(R.string.socks_stopped).toString());
-            conn.close();
-            sendMessage(getText(R.string.ssh_stopped).toString());
         }
         catch (IOException e)
         {
@@ -213,6 +221,32 @@ public class PsiphonAndroidService extends Service
                     PsiphonAndroidActivity.MESSAGE_CLASS_ERROR);
             return;
         }
+        finally
+        {
+            if (polipo != null)
+            {
+                polipo.stop();
+                sendMessage(getText(R.string.http_proxy_stopped).toString());
+            }
+            if (socks != null)
+            {
+                try
+                {
+                    socks.close();
+                }
+                catch (IOException e)
+                {
+                    // Ignore
+                }
+                sendMessage(getText(R.string.socks_stopped).toString());
+            }
+            if (conn != null)
+            {
+                conn.close();
+                sendMessage(getText(R.string.ssh_stopped).toString());
+            }
+        }
+
     }
     
     public boolean isTunnelStarted()
