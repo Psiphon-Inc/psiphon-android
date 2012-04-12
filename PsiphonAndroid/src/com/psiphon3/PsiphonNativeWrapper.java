@@ -19,12 +19,15 @@
 
 package com.psiphon3;
 
+import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.util.Log;
 
 public class PsiphonNativeWrapper
 {
@@ -43,19 +46,44 @@ public class PsiphonNativeWrapper
 
         String fileName = "/data/data/com.psiphon3/" + executableName;
 
-        // Delete existing file
-        
-        String rmCommand = "rm " + fileName;
-        Process rm = Runtime.getRuntime().exec(rmCommand);
+        // Find and kill dangling process
+        // The issue is, a force quit of the main app won't kill
+        // native child processes, and a dangling process may be
+        // holding a resource we require.
+
+        // TODO: this is a temporary solution (hopefully); see
+        // also the comment about a security concern with dangling
+        // processes in PsiphonAndroidService.java.
+        // Alternate solution: ensure the child process dies
+        // when the parent dies by modifying the child to read
+        // from stdin:
+        // http://stackoverflow.com/questions/2954520/android-how-to-receive-process-signals-in-an-activity-to-kill-child-process
+
+        String psCommand = "ps";
+        Process ps = Runtime.getRuntime().exec(psCommand);
         try
         {
-            rm.waitFor();
+            BufferedReader reader =
+                new BufferedReader(new InputStreamReader(ps.getInputStream()));
+            String line;
+            for (int i = 0; ((line = reader.readLine()) != null); i++)
+            {
+                if (i > 0)
+                {
+                    String[] fields = line.split("[ ]+");
+                    if (0 == fileName.compareTo(fields[8]))
+                    {
+                        android.os.Process.killProcess(Integer.parseInt(fields[1]));
+                    }
+                }
+            }
+            ps.waitFor();
         }
         catch (InterruptedException e)
         {
             // Allow following call to fail if interrupted
         }
-
+        
         // Extract binary from asset
         
         AssetManager assetManager = context.getAssets();
@@ -80,7 +108,6 @@ public class PsiphonNativeWrapper
         }
         catch (InterruptedException e)
         {
-            // Allow following call to fail if interrupted
         }
         
         // Start the process

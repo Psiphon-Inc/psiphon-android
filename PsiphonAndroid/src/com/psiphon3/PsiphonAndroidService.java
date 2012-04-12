@@ -202,6 +202,18 @@ public class PsiphonAndroidService extends Service
             socks = conn.createDynamicPortForwarder(PsiphonConstants.SOCKS_PORT);
             sendMessage(getText(R.string.socks_running).toString());
 
+            // The HTTP proxy implementation is provided by Polipo,
+            // a native app that we spawn as a separate process. This
+            // proxy is chained to our SOCKS proxy.
+
+            // TODO: is this native process subject to shutdown, similar
+            // to regular Services (which we prevent with startForeground)?
+
+            // TODO: there's a security concern here - if the HTTP proxy
+            // remains running after the main process dies, a malicious
+            // app could plug in its own SOCKS proxy and capture all
+            // Psiphon browser activity.
+            
             sendMessage(getText(R.string.http_proxy_starting).toString());
             polipo = new PsiphonNativeWrapper(
                             this,
