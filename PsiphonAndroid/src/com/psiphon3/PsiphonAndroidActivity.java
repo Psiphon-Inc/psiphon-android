@@ -115,6 +115,7 @@ public class PsiphonAndroidActivity extends Activity
             return true;
         case MENU_EXIT:
             this.finish();
+            stopService(new Intent(this, PsiphonAndroidService.class));
             return true;
         default: return super.onMenuItemSelected(featureId, item);
         }
