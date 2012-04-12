@@ -38,8 +38,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -93,7 +92,7 @@ public class PsiphonServerInterface
     private ArrayList<Pattern> pageViewRegexes = new ArrayList<Pattern>();
     private ArrayList<Pattern> httpsRequestRegexes = new ArrayList<Pattern>();
     private String speedTestURL;
-    private String sessionID; // access via getCurrentSessionID -- even internally
+    private String clientSessionID; // access via getCurrentClientSessionID -- even internally
 
     PsiphonServerInterface(Context context)
     {
@@ -161,21 +160,21 @@ public class PsiphonServerInterface
         }
     }
     
-    synchronized private void generateNewCurrentSessionID()
+    synchronized private void generateNewCurrentClientSessionID()
     {
-        byte[] sessionIdBytes = Utils.generateInsecureRandomBytes(PsiphonConstants.CLIENT_SESSION_ID_SIZE_IN_BYTES);
-        this.sessionID = Utils.byteArrayToHexString(sessionIdBytes);
-        Log.d(PsiphonConstants.TAG, "generated new current session ID");
+        byte[] clientSessionIdBytes = Utils.generateInsecureRandomBytes(PsiphonConstants.CLIENT_SESSION_ID_SIZE_IN_BYTES);
+        this.clientSessionID = Utils.byteArrayToHexString(clientSessionIdBytes);
+        Log.d(PsiphonConstants.TAG, "generated new current client session ID");
     }
     
-    synchronized private String getCurrentSessionID()
+    synchronized private String getCurrentClientSessionID()
     {
-        if (this.sessionID == null)
+        if (this.clientSessionID == null)
         {
-            generateNewCurrentSessionID();
+            generateNewCurrentClientSessionID();
         }
         
-        return this.sessionID;
+        return this.clientSessionID;
     }
     
     synchronized public boolean doHandshake()
@@ -299,10 +298,14 @@ public class PsiphonServerInterface
 
     private String getHandshakeRequestURL(ServerEntry serverEntry)
     {
-        // TODO: known_server
-        Map<String, Object> extraParams = new HashMap<String, Object>();
+         List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
         
-        return getCommonRequestURL("handshake", serverEntry, getCurrentSessionID(), extraParams);
+        for (ServerEntry entry : this.serverEntries)
+        {
+            extraParams.add(Utils.Pair.of("known_server", entry.ipAddress));
+        }
+        
+        return getCommonRequestURL("handshake", serverEntry, getCurrentClientSessionID(), extraParams);
     }
     
     /**
@@ -313,7 +316,7 @@ public class PsiphonServerInterface
      * @param path  The path for the request; this is typically the name of the 
      *              request command; e.g. "connected". Do not use a leading slash.
      * @param serverEntry  The ServerEntry of the target server.
-     * @param clientSessionId  The client session ID to provide to the server.
+     * @param clientSessionID  The client session ID to provide to the server.
      * @param extraParams  Additional parameters that should be included in the 
      *                     request. Can be null. The parameters values *must not*
      *                     be already URL-encoded.
@@ -322,15 +325,15 @@ public class PsiphonServerInterface
     private String getCommonRequestURL(
                     String path, 
                     ServerEntry serverEntry,
-                    String clientSessionId,
-                    Map<String, Object> extraParams)
+                    String clientSessionID,
+                    List<Utils.Pair<String,String>> extraParams)
     {
         StringBuilder url = new StringBuilder();
         
         url.append("https://").append(serverEntry.ipAddress)
            .append(":").append(serverEntry.webServerPort)
            .append("/").append(path)
-           .append("?client_session_id=").append(Utils.urlEncode(clientSessionId))
+           .append("?client_session_id=").append(Utils.urlEncode(clientSessionID))
            .append("&server_secret=").append(Utils.urlEncode(serverEntry.webServerSecret))
            .append("&propagation_channel_id=").append(Utils.urlEncode(PsiphonAndroidEmbeddedValues.PROPAGATION_CHANNEL_ID))
            .append("&sponsor_id=").append(Utils.urlEncode(PsiphonAndroidEmbeddedValues.SPONSOR_ID))
@@ -338,11 +341,11 @@ public class PsiphonServerInterface
         
         if (extraParams != null)
         {
-            for (Map.Entry<String, Object> entry : extraParams.entrySet()) 
+            for (Utils.Pair<String,String> param : extraParams) 
             {
-                String paramKey = entry.getKey();
-                Object paramValue = entry.getValue();
-                url.append("&").append(paramKey).append("=").append(Utils.urlEncode(paramValue.toString()));
+                String paramKey = param.left;
+                String paramValue = param.right;
+                url.append("&").append(paramKey).append("=").append(Utils.urlEncode(paramValue));
             }
         }
 
