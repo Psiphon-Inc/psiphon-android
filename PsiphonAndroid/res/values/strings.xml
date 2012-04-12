@@ -19,5 +19,9 @@
     <string name="socks_stopped">SOCKS stopped</string>
     <string name="ssh_stopped">SSH stopped</string>
     <string name="error_message">Error: %s</string>
+    <string name="http_proxy_starting">HTTP proxy starting...</string>
+    <string name="http_proxy_running">HTTP proxy running...</string>
+    <string name="http_proxy_stopped">HTTP proxy stopped</string>
+    <string name="http_proxy_stopped_unexpectedly">HTTP proxy stopped unexpectedly</string>
 
 </resources>

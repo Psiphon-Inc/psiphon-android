@@ -153,15 +153,38 @@ public class PsiphonAndroidService extends Service
         startForeground(R.string.psiphon_service_notification_id, notification);
     }    
     
+    class PsiphonServerHostKeyVerifier implements ServerHostKeyVerifier
+    {
+        private String expectedHostKey;
+        
+        PsiphonServerHostKeyVerifier(String expectedHostKey)
+        {
+            this.expectedHostKey = expectedHostKey;
+        }
+
+        public boolean verifyServerHostKey(String hostname, int port, String serverHostKeyAlgorithm, byte[] serverHostKey)
+        {
+            return 0 == this.expectedHostKey.compareTo(Utils.Base64.encode(serverHostKey));
+        }
+    }
+    
     private void runTunnel()
     {
         PsiphonServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
 
+        Connection conn = null;
+        DynamicPortForwarder socks = null;
+        PsiphonNativeWrapper polipo = null;
+
         try
         {
+            
             sendMessage(getText(R.string.ssh_connecting).toString());
-            Connection conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
-            conn.connect();
+            conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
+            conn.connect(
+                    new PsiphonServerHostKeyVerifier(entry.sshHostKey),
+                    PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS,
+                    PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS);
             sendMessage(getText(R.string.ssh_connected).toString());
 
             sendMessage(getText(R.string.ssh_authenticating).toString());
@@ -176,9 +199,17 @@ public class PsiphonAndroidService extends Service
             sendMessage(getText(R.string.ssh_authenticated).toString());
 
             sendMessage(getText(R.string.socks_starting).toString());
-            DynamicPortForwarder socks = conn.createDynamicPortForwarder(1080);
+            socks = conn.createDynamicPortForwarder(PsiphonConstants.SOCKS_PORT);
             sendMessage(getText(R.string.socks_running).toString());
 
+            sendMessage(getText(R.string.http_proxy_starting).toString());
+            polipo = new PsiphonNativeWrapper(
+                            this,
+                            PsiphonConstants.POLIPO_EXECUTABLE,
+                            PsiphonConstants.POLIPO_ARGUMENTS);
+            sendMessage(getText(R.string.http_proxy_running).toString());
+            
+            // TODO: HTTPS request timeout
             if (m_interface.doHandshake())
             {
                 sendMessage("TEMP: Handshake success");
@@ -193,18 +224,26 @@ public class PsiphonAndroidService extends Service
                 while (true)
                 {
                     boolean stop = m_stopSignal.await(10, TimeUnit.SECONDS);
+
                     PsiphonAndroidStats.getStats().dumpReport();
-                    if (stop) break;
+
+                    if (!polipo.isRunning())
+                    {
+                        sendMessage(
+                            getText(R.string.http_proxy_stopped_unexpectedly).toString(),
+                            PsiphonAndroidActivity.MESSAGE_CLASS_ERROR);
+                        break;
+                    }
+
+                    if (stop)
+                    {
+                        break;
+                    }
                 }
             }
             catch (InterruptedException e)
             {
             }            
-
-            socks.close();
-            sendMessage(getText(R.string.socks_stopped).toString());
-            conn.close();
-            sendMessage(getText(R.string.ssh_stopped).toString());
         }
         catch (IOException e)
         {
@@ -213,6 +252,32 @@ public class PsiphonAndroidService extends Service
                     PsiphonAndroidActivity.MESSAGE_CLASS_ERROR);
             return;
         }
+        finally
+        {
+            if (polipo != null)
+            {
+                polipo.stop();
+                sendMessage(getText(R.string.http_proxy_stopped).toString());
+            }
+            if (socks != null)
+            {
+                try
+                {
+                    socks.close();
+                }
+                catch (IOException e)
+                {
+                    // Ignore
+                }
+                sendMessage(getText(R.string.socks_stopped).toString());
+            }
+            if (conn != null)
+            {
+                conn.close();
+                sendMessage(getText(R.string.ssh_stopped).toString());
+            }
+        }
+
     }
     
     public boolean isTunnelStarted()
