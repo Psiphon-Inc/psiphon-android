@@ -41,9 +41,25 @@ public class PsiphonNativeWrapper
             stop();
         }
 
+        String fileName = "/data/data/com.psiphon3/" + executableName;
+
+        // Delete existing file
+        
+        String rmCommand = "rm " + fileName;
+        Process rm = Runtime.getRuntime().exec(rmCommand);
+        try
+        {
+            rm.waitFor();
+        }
+        catch (InterruptedException e)
+        {
+            // Allow following call to fail if interrupted
+        }
+
+        // Extract binary from asset
+        
         AssetManager assetManager = context.getAssets();
         InputStream asset = assetManager.open(executableName);
-        String fileName = "/data/data/com.psiphon3/" + executableName;
         FileOutputStream file = new FileOutputStream(fileName);
         byte[] buffer = new byte[8192];
         int length;
@@ -54,6 +70,8 @@ public class PsiphonNativeWrapper
         file.close();
         asset.close();
 
+        // Make executable
+        
         String chmodCommand = "chmod 700 " + fileName;
         Process chmod = Runtime.getRuntime().exec(chmodCommand);
         try
@@ -64,6 +82,8 @@ public class PsiphonNativeWrapper
         {
             // Allow following call to fail if interrupted
         }
+        
+        // Start the process
         
         String nativeCommand = fileName + " " + arguments;
         this.process = Runtime.getRuntime().exec(nativeCommand);
@@ -78,5 +98,23 @@ public class PsiphonNativeWrapper
         // TODO: graceful shutdown?
         this.process.destroy();
         this.process = null;
+    }
+
+    public boolean isRunning()
+    {
+        if (this.process != null)
+        {
+            try
+            {
+                this.process.exitValue();
+            }
+            catch (IllegalThreadStateException e)
+            {
+                // exitValue() throws this exception if the process has not terminated
+                return true;
+            }
+        }
+        
+        return false;
     }
 }

@@ -153,6 +153,21 @@ public class PsiphonAndroidService extends Service
         startForeground(R.string.psiphon_service_notification_id, notification);
     }    
     
+    class PsiphonServerHostKeyVerifier implements ServerHostKeyVerifier
+    {
+        private String expectedHostKey;
+        
+        PsiphonServerHostKeyVerifier(String expectedHostKey)
+        {
+            this.expectedHostKey = expectedHostKey;
+        }
+
+        public boolean verifyServerHostKey(String hostname, int port, String serverHostKeyAlgorithm, byte[] serverHostKey)
+        {
+            return 0 == this.expectedHostKey.compareTo(Utils.Base64.encode(serverHostKey));
+        }
+    }
+    
     private void runTunnel()
     {
         PsiphonServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
@@ -163,11 +178,13 @@ public class PsiphonAndroidService extends Service
 
         try
         {
+            
             sendMessage(getText(R.string.ssh_connecting).toString());
             conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
-            // TODO: verifier
-            // TODO: timeouts
-            conn.connect();
+            conn.connect(
+                    new PsiphonServerHostKeyVerifier(entry.sshHostKey),
+                    PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS,
+                    PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS);
             sendMessage(getText(R.string.ssh_connected).toString());
 
             sendMessage(getText(R.string.ssh_authenticating).toString());
@@ -192,6 +209,7 @@ public class PsiphonAndroidService extends Service
                             PsiphonConstants.POLIPO_ARGUMENTS);
             sendMessage(getText(R.string.http_proxy_running).toString());
             
+            // TODO: HTTPS request timeout
             if (m_interface.doHandshake())
             {
                 sendMessage("TEMP: Handshake success");
@@ -206,8 +224,21 @@ public class PsiphonAndroidService extends Service
                 while (true)
                 {
                     boolean stop = m_stopSignal.await(10, TimeUnit.SECONDS);
+
                     PsiphonAndroidStats.getStats().dumpReport();
-                    if (stop) break;
+
+                    if (!polipo.isRunning())
+                    {
+                        sendMessage(
+                            getText(R.string.http_proxy_stopped_unexpectedly).toString(),
+                            PsiphonAndroidActivity.MESSAGE_CLASS_ERROR);
+                        break;
+                    }
+
+                    if (stop)
+                    {
+                        break;
+                    }
                 }
             }
             catch (InterruptedException e)
