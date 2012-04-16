@@ -26,6 +26,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -83,12 +84,14 @@ public class PsiphonAndroidActivity extends Activity
         
         m_messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
         m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
+        
+        PsiphonProxyHelper.setWebkitProxy(this, "localhost", PsiphonConstants.HTTP_PROXY_PORT);
+
     }
     
     private void openZircoMainActivity() {
         Intent zircoMainActivity = new Intent(this, org.zirco.ui.activities.MainActivity.class);
         startActivity(zircoMainActivity);
-        
     }
 
     @Override
@@ -114,13 +117,12 @@ public class PsiphonAndroidActivity extends Activity
             openZircoMainActivity();
             return true;
         case MENU_EXIT:
-            this.finish();
             stopService(new Intent(this, PsiphonAndroidService.class));
+            this.finish();
             return true;
         default: return super.onMenuItemSelected(featureId, item);
         }
     }
-
 
     public class AddMessageReceiver extends BroadcastReceiver
     {

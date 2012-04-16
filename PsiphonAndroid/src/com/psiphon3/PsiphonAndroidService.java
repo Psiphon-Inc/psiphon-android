@@ -28,6 +28,7 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
@@ -37,6 +38,8 @@ import ch.ethz.ssh2.*;
 
 import com.psiphon3.PsiphonAndroidActivity;
 import com.psiphon3.PsiphonAndroidStats;
+
+import com.psiphon3.PsiphonProxyHelper;
 
 public class PsiphonAndroidService extends Service
 {
@@ -225,6 +228,12 @@ public class PsiphonAndroidService extends Service
             if (m_interface.doHandshake())
             {
                 sendMessage("TEMP: Handshake success");
+                Intent i = new Intent(this, org.zirco.ui.activities.MainActivity.class);
+                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                
+                //TODO: get real homepage URL
+                i.setData(Uri.parse("http://vl7.net/ip"));
+                startActivity(i);
             }
             else
             {
