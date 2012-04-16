@@ -328,7 +328,7 @@ public class PsiphonStreamForwarder extends Thread
                                 {
                                     chunkLengthStr = chunkLengthStr.substring(0, chunkExtension);
                                 }
-                                long chunkLength = Long.parseLong(chunkLengthStr, 16);
+                                long chunkLength = Long.parseLong(chunkLengthStr.trim(), 16);
 
                                 if (chunkLength == 0)
                                 {
@@ -420,7 +420,9 @@ public class PsiphonStreamForwarder extends Thread
                                 // Push URI on stack to be consumed by peer on response
                                 // (Assumes HTTP responses return in request order)
                                 String uri = requestLine.getUri();
-                                Log.d("test", Thread.currentThread().toString() + "HTTP request: " +
+
+                                // TODO: must remove before release - leaking info
+                                Log.d("TEMP", Thread.currentThread().toString() + "HTTP request: " +
                                         this.destHost + " " + uri);
                                 this.pendingRequestStack.add(0, uri);
                             }
@@ -469,7 +471,9 @@ public class PsiphonStreamForwarder extends Thread
                                 // Pop request URI from peer's stack
                                 // (Assumes HTTP responses return in response order)
                                 String requestURI = this.sibling.pendingRequestStack.remove(0);
-                                Log.d("test", Thread.currentThread().toString() + "HTTP response: " +
+
+                                // TODO: must remove before release - leaking info
+                                Log.d("TEMP", Thread.currentThread().toString() + "HTTP response: " +
                                         Integer.toString(responseStatusCode) + " " + this.destHost + " " +
                                         requestURI + " " + contentType);
                                 // TODO: increment stats (based on responseStatusCode, contentType, regex etc.)
@@ -505,7 +509,7 @@ public class PsiphonStreamForwarder extends Thread
             }
             catch (Exception e)
             {
-                Log.e(PsiphonConstants.TAG, Thread.currentThread().toString() + "Page view stats error: " + e);
+                Log.e(PsiphonConstants.TAG, "Page view stats error: " + e);
                 // Assume this isn't HTTP, so stop buffering forever
                 this.httpProtocolBuffer = null;
                 this.isHttp = false;
