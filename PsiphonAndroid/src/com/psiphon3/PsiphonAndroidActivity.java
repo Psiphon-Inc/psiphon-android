@@ -85,7 +85,7 @@ public class PsiphonAndroidActivity extends Activity
         public void onReceive(Context context, Intent intent)
         {
             String message = intent.getStringExtra(ADD_MESSAGE_TEXT);
-            int messageClass =intent.getIntExtra(ADD_MESSAGE_CLASS, MESSAGE_CLASS_INFO);
+            int messageClass = intent.getIntExtra(ADD_MESSAGE_CLASS, MESSAGE_CLASS_INFO);
             AddMessage(message, messageClass);
         }
     }

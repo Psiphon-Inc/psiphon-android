@@ -10,8 +10,9 @@
     <LinearLayout
         android:id="@+id/linearLayout4"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" >
-
+        android:layout_height="wrap_content"
+        android:background="#FFFFFFFF" >
+        
         <ImageView
             android:id="@+id/banner"
             android:layout_width="fill_parent"
