@@ -30,6 +30,8 @@ public interface PsiphonConstants
     public final static int SOCKS_PORT = 1080;
     
     public final static String POLIPO_EXECUTABLE = "polipo";
+    
+    public final static int HTTP_PROXY_PORT = 8080;
 
     public final static String POLIPO_ARGUMENTS = "proxyPort=8080 diskCacheRoot=\"\" disableLocalInterface=true socksParentProxy=127.0.0.1:1080 logLevel=1";
 

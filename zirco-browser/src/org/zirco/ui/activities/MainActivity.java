@@ -230,7 +230,7 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 
         setProgressBarVisibility(true);
         
-        setContentView(R.layout.main);                        
+        setContentView(R.layout.zirco_main);                        
         
         mCircularProgress = getResources().getDrawable(R.drawable.spinner);
         
