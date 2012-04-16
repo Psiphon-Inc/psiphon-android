@@ -12,13 +12,7 @@ import java.lang.reflect.Method;
 
 public class PsiphonProxyHelper {
     public static boolean setWebkitProxy(Context ctx, String host, int port) {
-        boolean ret = false;
-        
-//        Build.VERSION.S
-        
         try {
-            if(Build.VERSION.SDK_INT > 14)
-            {
                 Class webViewCoreClass = Class.forName("android.webkit.WebViewCore");
                 Class proxyPropertiesClass = Class.forName("android.net.ProxyProperties");
                 if (webViewCoreClass != null && proxyPropertiesClass != null) {
@@ -29,14 +23,9 @@ public class PsiphonProxyHelper {
                     Object properties = c.newInstance(host, port, null);
                     
                     // android.webkit.WebViewCore.EventHub.PROXY_CHANGED = 193;
-                    
                     m.invoke(null, 193, properties);
-                    
-                    ret = true;
+                    return true;
                 }
-            }
-            else
-            {
                 Object requestQueueObject = getRequestQueue(ctx);
                 if (requestQueueObject != null) {
                     //Create Proxy config object and set it into request Q
@@ -44,13 +33,12 @@ public class PsiphonProxyHelper {
                    // HttpHost httpsHost = new HttpHost(host, port, "https");
     
                     setDeclaredField(requestQueueObject, "mProxyHost", httpHost);
-                    ret = true;
+                    return true;
                 }
-            }
         } catch (Exception e) {
             Log.e(PsiphonConstants.TAG, "error setting up webkit proxying", e);
         }
-        return ret;
+        return false;
     }
     public static void resetProxy(Context ctx) throws Exception {
         Object requestQueueObject = getRequestQueue(ctx);
