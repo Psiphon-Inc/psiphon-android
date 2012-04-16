@@ -95,6 +95,10 @@ public class PsiphonAndroidActivity extends Activity
     {
         super.onStart();
 
+        // Remove previous messages as we'll re-populate with all messages
+        // as part of binding to the service.
+        m_messagesTableLayout.removeAllViews();
+        
         // Using both "started" service and "bound" service interfaces:
         // - "started" to ensure tunnel service lives beyond this activity
         // - "bound" to interact with service (check connection status, start/stop, etc.)
