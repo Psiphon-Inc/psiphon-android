@@ -38,8 +38,7 @@ import ch.ethz.ssh2.*;
 
 import com.psiphon3.PsiphonAndroidActivity;
 import com.psiphon3.PsiphonAndroidStats;
-
-import com.psiphon3.PsiphonProxyHelper;
+import com.psiphon3.PsiphonServerInterface.PsiphonServerInterfaceException;
 
 public class PsiphonAndroidService extends Service
 {
@@ -181,7 +180,6 @@ public class PsiphonAndroidService extends Service
 
         try
         {
-            
             sendMessage(getText(R.string.ssh_connecting).toString());
             conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
             conn.connect(
@@ -224,22 +222,29 @@ public class PsiphonAndroidService extends Service
                             PsiphonConstants.POLIPO_ARGUMENTS);
             sendMessage(getText(R.string.http_proxy_running).toString());
             
-            // TODO: HTTPS request timeout
-            if (m_interface.doHandshake())
+            try
             {
+                // TODO: HTTPS request timeout
+                m_interface.doHandshake();
                 sendMessage("TEMP: Handshake success");
-                Intent i = new Intent(this, org.zirco.ui.activities.MainActivity.class);
-                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                
-                //TODO: get real homepage URL
-                i.setData(Uri.parse("http://vl7.net/ip"));
-                startActivity(i);
-            }
-            else
+
+                // TODO: HTTPS request timeout
+                m_interface.doConnectedRequest();
+                sendMessage("TEMP: Connected request success");
+            } 
+            catch (PsiphonServerInterfaceException requestException)
             {
-                sendMessage("TEMP: Handshake failed", PsiphonAndroidActivity.MESSAGE_CLASS_ERROR);
+                Log.e(PsiphonConstants.TAG, "Handshake or connected request failed: " + requestException.toString());
+                // Allow the user to continue. Their session might still function correctly.
             }
 
+            Intent i = new Intent(this, org.zirco.ui.activities.MainActivity.class);
+            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            
+            //TODO: get real homepage URL
+            i.setData(Uri.parse("http://vl7.net/ip"));
+            startActivity(i);
+            
             try
             {
                 while (true)
@@ -298,7 +303,6 @@ public class PsiphonAndroidService extends Service
                 sendMessage(getText(R.string.ssh_stopped).toString());
             }
         }
-
     }
     
     public boolean isTunnelStarted()

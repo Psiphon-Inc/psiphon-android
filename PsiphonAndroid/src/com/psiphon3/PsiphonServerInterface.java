@@ -28,9 +28,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.KeyManagementException;
+import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
@@ -57,6 +56,34 @@ import android.util.Log;
 
 public class PsiphonServerInterface
 {
+    /**
+     * Exception type thrown by many members of the PsiphonServerInterface class.
+     */
+    public static class PsiphonServerInterfaceException extends Exception
+    {
+        private static final long serialVersionUID = 1L;
+        
+        public PsiphonServerInterfaceException()
+        {
+            super();
+        }
+        
+        public PsiphonServerInterfaceException(String message)
+        {
+            super(message);
+        }
+
+        public PsiphonServerInterfaceException(String message, Throwable cause)
+        {
+            super(message, cause);
+        }
+
+        public PsiphonServerInterfaceException(Throwable cause)
+        {
+            super(cause);
+        }
+    }
+    
     public class ServerEntry implements Cloneable
     {
         public String encodedEntry;
@@ -93,6 +120,7 @@ public class PsiphonServerInterface
     private ArrayList<Pattern> httpsRequestRegexes = new ArrayList<Pattern>();
     private String speedTestURL;
     private String clientSessionID; // access via getCurrentClientSessionID -- even internally
+    private String serverSessionID;
 
     PsiphonServerInterface(Context context)
     {
@@ -126,7 +154,12 @@ public class PsiphonServerInterface
         {
             // pass
         }
-        catch (Exception e)
+        catch (IOException e)
+        {
+            Log.e(PsiphonConstants.TAG, e.toString());
+            // skip loading persistent server entries
+        } 
+        catch (JSONException e)
         {
             Log.e(PsiphonConstants.TAG, e.toString());
             // skip loading persistent server entries
@@ -177,7 +210,14 @@ public class PsiphonServerInterface
         return this.clientSessionID;
     }
     
-    synchronized public boolean doHandshake()
+    /**
+     * Makes the handshake request to the server. The client thereby obtains
+     * session info from the server such as what homepages should be shown and
+     * whether there is an upgrade available. 
+     * @throws PsiphonServerInterfaceException
+     */
+    synchronized public void doHandshake() 
+        throws PsiphonServerInterfaceException
     {
         try
         {
@@ -225,20 +265,29 @@ public class PsiphonServerInterface
                     {
                         addServerEntry(encoded_server_list.getString(i), false);
                     }
+                    
+                    // We only support SSH, so this is our server session ID.
+                    this.serverSessionID = obj.getString("ssh_session_id");
                 }
             }
-            
-            return true;
         }
-        catch (Exception e)
+        catch (JSONException e)
         {
             Log.e(PsiphonConstants.TAG, e.toString());
-            return false;
+            throw new PsiphonServerInterfaceException(e);
         }
     }
     
-    synchronized public void doConnected()
+    /**
+     * Make the 'connected' request to the server. 
+     * @throws PsiphonServerInterfaceException
+     */
+    synchronized public void doConnectedRequest() 
+        throws PsiphonServerInterfaceException
     {
+        ServerEntry entry = getCurrentServerEntry();
+        String url = getConnectedRequestURL(entry);
+        makeRequest(url, null, entry.webServerCertificate);
     }
 
     synchronized public void doDownload()
@@ -298,7 +347,7 @@ public class PsiphonServerInterface
 
     private String getHandshakeRequestURL(ServerEntry serverEntry)
     {
-         List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
+        List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
         
         for (ServerEntry entry : this.serverEntries)
         {
@@ -306,6 +355,15 @@ public class PsiphonServerInterface
         }
         
         return getCommonRequestURL("handshake", serverEntry, getCurrentClientSessionID(), extraParams);
+    }
+    
+    private String getConnectedRequestURL(ServerEntry serverEntry)
+    {
+        List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
+        extraParams.add(Utils.Pair.of("relay_protocol", PsiphonConstants.RELAY_PROTOCOL));
+        extraParams.add(Utils.Pair.of("session_id", this.serverSessionID));
+        
+        return getCommonRequestURL("connected", serverEntry, getCurrentClientSessionID(), extraParams);    
     }
     
     /**
@@ -352,58 +410,69 @@ public class PsiphonServerInterface
         return url.toString();
     }
 
-    private byte[] makeRequest(String url, byte[] body, String serverCertificate)
-            throws NoSuchAlgorithmException,
-                   KeyManagementException,
-                   CertificateException,
-                   MalformedURLException,
-                   IOException,
-                   Exception
+    private byte[] makeRequest(String url, byte[] body, String serverCertificate) 
+        throws PsiphonServerInterfaceException
     {
-        SSLContext context = SSLContext.getInstance("TLS");
-        context.init(
-                null,
-                new TrustManager[] { new CustomTrustManager(serverCertificate) },
-                new SecureRandom());
-        HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
-        HttpsURLConnection.setDefaultHostnameVerifier(new AllowAllHostnameVerifier());
-        HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
-        conn.setDoOutput(true);
-        conn.setDoInput(true);
-        conn.setUseCaches(false);
-        // TODO: timeout?
-
-        if (body == null)
+        SSLContext context;
+        try
         {
-            conn.setRequestMethod("GET");                
-        }
-        else
+            context = SSLContext.getInstance("TLS");
+            context.init(
+                    null,
+                    new TrustManager[] { new CustomTrustManager(serverCertificate) },
+                    new SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
+            HttpsURLConnection.setDefaultHostnameVerifier(new AllowAllHostnameVerifier());
+            HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
+            conn.setDoOutput(true);
+            conn.setDoInput(true);
+            conn.setUseCaches(false);
+            // TODO: timeout?
+    
+            if (body == null)
+            {
+                conn.setRequestMethod("GET");                
+            }
+            else
+            {
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty(
+                        "Content-Length", 
+                        Integer.toString(body.length));
+                DataOutputStream writer = new DataOutputStream(conn.getOutputStream());
+                writer.write(body);
+                writer.flush ();
+                writer.close ();           
+            }
+            
+            if (conn.getResponseCode() != HttpsURLConnection.HTTP_OK)
+            {
+                throw new PsiphonServerInterfaceException("HTTPS request failed");
+            }
+    
+            ByteArrayOutputStream responseBody = new ByteArrayOutputStream();
+            
+            byte[] buffer = new byte[4096];
+            int len = -1;
+            while ((len = conn.getInputStream().read(buffer)) != -1)
+            {
+                responseBody.write(buffer, 0, len);
+            }
+            
+            return responseBody.toByteArray();
+        } 
+        catch (NoSuchAlgorithmException e)
         {
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty(
-                    "Content-Length", 
-                    Integer.toString(body.length));
-            DataOutputStream writer = new DataOutputStream(conn.getOutputStream());
-            writer.write(body);
-            writer.flush ();
-            writer.close ();           
-        }
-        
-        if (conn.getResponseCode() != HttpsURLConnection.HTTP_OK)
+            throw new PsiphonServerInterfaceException(e);
+        } 
+        catch (GeneralSecurityException e)
         {
-            throw new Exception("HTTPS request failed");
-        }
-
-        ByteArrayOutputStream responseBody = new ByteArrayOutputStream();
-        
-        byte[] buffer = new byte[4096];
-        int len = -1;
-        while ((len = conn.getInputStream().read(buffer)) != -1)
+            throw new PsiphonServerInterfaceException(e);
+        } 
+        catch (IOException e)
         {
-            responseBody.write(buffer, 0, len);
-        }
-        
-        return responseBody.toByteArray();
+            throw new PsiphonServerInterfaceException(e);
+        }        
     }
     
     private void addServerEntry(
@@ -490,7 +559,12 @@ public class PsiphonServerInterface
             file.write(obj.toString().getBytes());
             file.close();
         }
-        catch (Exception e)
+        catch (JSONException e)
+        {
+            Log.e(PsiphonConstants.TAG, e.toString());
+            // Proceed, even if file saving fails
+        } 
+        catch (IOException e)
         {
             Log.e(PsiphonConstants.TAG, e.toString());
             // Proceed, even if file saving fails
