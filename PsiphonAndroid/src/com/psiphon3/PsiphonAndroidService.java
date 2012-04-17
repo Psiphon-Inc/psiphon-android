@@ -224,11 +224,9 @@ public class PsiphonAndroidService extends Service
             
             try
             {
-                // TODO: HTTPS request timeout
-                m_interface.doHandshake();
+                m_interface.doHandshakeRequest();
                 sendMessage("TEMP: Handshake success");
 
-                // TODO: HTTPS request timeout
                 m_interface.doConnectedRequest();
                 sendMessage("TEMP: Connected request success");
             } 

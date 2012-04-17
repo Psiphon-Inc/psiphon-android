@@ -19,6 +19,8 @@
 
 package com.psiphon3;
 
+import android.os.Build;
+
 public interface PsiphonConstants
 {
     public final static String TAG = "Psiphon";
@@ -37,5 +39,9 @@ public interface PsiphonConstants
 
     public final int SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS = 20000;
     
-    public final static String RELAY_PROTOCOL = "OSSH"; 
+    public final static String RELAY_PROTOCOL = "OSSH";
+    
+    public final static String PLATFORM = "Android_" + Build.VERSION.RELEASE.replaceAll(" ", "-");
+    
+    public final static int HTTPS_REQUEST_TIMEOUT = 20000;
 }

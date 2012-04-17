@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -50,7 +51,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.psiphon3.Utils.MyLog;
+
 import android.content.Context;
+import android.os.Build;
 import android.util.Log;
 
 
@@ -197,7 +201,7 @@ public class PsiphonServerInterface
     {
         byte[] clientSessionIdBytes = Utils.generateInsecureRandomBytes(PsiphonConstants.CLIENT_SESSION_ID_SIZE_IN_BYTES);
         this.clientSessionID = Utils.byteArrayToHexString(clientSessionIdBytes);
-        Log.d(PsiphonConstants.TAG, "generated new current client session ID");
+        MyLog.d("generated new current client session ID");
     }
     
     synchronized private String getCurrentClientSessionID()
@@ -216,14 +220,20 @@ public class PsiphonServerInterface
      * whether there is an upgrade available. 
      * @throws PsiphonServerInterfaceException
      */
-    synchronized public void doHandshake() 
+    synchronized public void doHandshakeRequest() 
         throws PsiphonServerInterfaceException
     {
         try
         {
-            ServerEntry entry = getCurrentServerEntry();
-            String url = getHandshakeRequestURL(entry);
-            byte[] response = makeRequest(url, null, entry.webServerCertificate);
+            List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
+            for (ServerEntry entry : this.serverEntries)
+            {
+                extraParams.add(Utils.Pair.of("known_server", entry.ipAddress));
+            }
+            
+            String url = getCommonRequestURL("handshake", extraParams);
+            
+            byte[] response = makeRequest(url, null);
 
             final String JSON_CONFIG_PREFIX = "Config: ";
             for (String line : new String(response).split("\n"))
@@ -285,24 +295,82 @@ public class PsiphonServerInterface
     synchronized public void doConnectedRequest() 
         throws PsiphonServerInterfaceException
     {
-        ServerEntry entry = getCurrentServerEntry();
-        String url = getConnectedRequestURL(entry);
-        makeRequest(url, null, entry.webServerCertificate);
+        List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
+        extraParams.add(Utils.Pair.of("session_id", this.serverSessionID));
+        
+        String url = getCommonRequestURL("connected", extraParams);
+        
+        makeRequest(url, null);
     }
 
     synchronized public void doDownload()
     {
     }
 
-    synchronized public void doStatus()
+    /**
+     * Make a 'status' request to the server.
+     * @throws PsiphonServerInterfaceException
+     */
+    synchronized public void doStatusRequest(
+            boolean connected, 
+            Map<String, Integer> pageViewEntries, 
+            Map<String, Integer> httpsRequestEntries,
+            Number bytesTransferred) 
+        throws PsiphonServerInterfaceException
     {
+        byte[] requestBody = null;
+        
+        try
+        {
+            JSONObject stats = new JSONObject();
+            
+            stats.put("bytes_transferred", bytesTransferred);
+            MyLog.d("BYTES: " + bytesTransferred);
+            
+            JSONArray pageViews = new JSONArray();
+            for (Map.Entry<String, Integer> pageViewEntry : pageViewEntries.entrySet())
+            {
+                JSONObject entry = new JSONObject();
+                entry.put("page", pageViewEntry.getKey());
+                entry.put("count", pageViewEntry.getValue());
+    
+                pageViews.put(entry);
+
+                MyLog.d("PAGEVIEW: " + entry.toString());
+            }
+            stats.put("page_views", pageViews);
+
+            JSONArray httpsRequests = new JSONArray();
+            for (Map.Entry<String, Integer> httpsRequestEntry : httpsRequestEntries.entrySet())
+            {
+                JSONObject entry = new JSONObject();
+                entry.put("domain", httpsRequestEntry.getKey());
+                entry.put("count", httpsRequestEntry.getValue());
+    
+                httpsRequests.put(entry);
+
+                MyLog.d("HTTPSREQUEST: " + entry.toString());
+            }
+            stats.put("https_requests", httpsRequests);
+            
+            requestBody = stats.toString().getBytes();
+        } 
+        catch (JSONException e)
+        {
+            // We will log and allow the request (and application) to continue.
+            MyLog.d("Stats JSON failed", e);
+        }        
+        
+        List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
+        extraParams.add(Utils.Pair.of("session_id", this.serverSessionID));
+        extraParams.add(Utils.Pair.of("connected", connected ? "1" : "0"));
+
+        String url = getCommonRequestURL("status", extraParams);
+        
+        makeRequest(url, requestBody);
     }
 
     synchronized public void doSpeed()
-    {
-    }
-
-    synchronized public void doDisconnected()
     {
     }
 
@@ -345,27 +413,6 @@ public class PsiphonServerInterface
         }
     }
 
-    private String getHandshakeRequestURL(ServerEntry serverEntry)
-    {
-        List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
-        
-        for (ServerEntry entry : this.serverEntries)
-        {
-            extraParams.add(Utils.Pair.of("known_server", entry.ipAddress));
-        }
-        
-        return getCommonRequestURL("handshake", serverEntry, getCurrentClientSessionID(), extraParams);
-    }
-    
-    private String getConnectedRequestURL(ServerEntry serverEntry)
-    {
-        List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
-        extraParams.add(Utils.Pair.of("relay_protocol", PsiphonConstants.RELAY_PROTOCOL));
-        extraParams.add(Utils.Pair.of("session_id", this.serverSessionID));
-        
-        return getCommonRequestURL("connected", serverEntry, getCurrentClientSessionID(), extraParams);    
-    }
-    
     /**
      * Helper function for constructing request URLs. The request parameters it
      * supplies are: client_session_id, propagation_channel_id, sponsor_id, 
@@ -373,19 +420,20 @@ public class PsiphonServerInterface
      * Any additional parameters must be provided in extraParams.
      * @param path  The path for the request; this is typically the name of the 
      *              request command; e.g. "connected". Do not use a leading slash.
-     * @param serverEntry  The ServerEntry of the target server.
-     * @param clientSessionID  The client session ID to provide to the server.
      * @param extraParams  Additional parameters that should be included in the 
      *                     request. Can be null. The parameters values *must not*
-     *                     be already URL-encoded.
+     *                     be already URL-encoded. Note that this is a List of 
+     *                     Pairs rather than a Map because there may be entries
+     *                     with duplicate "keys".
      * @return  The full URL for the request.
      */
     private String getCommonRequestURL(
                     String path, 
-                    ServerEntry serverEntry,
-                    String clientSessionID,
                     List<Utils.Pair<String,String>> extraParams)
     {
+        ServerEntry serverEntry = getCurrentServerEntry();
+        String clientSessionID = getCurrentClientSessionID();
+        
         StringBuilder url = new StringBuilder();
         
         url.append("https://").append(serverEntry.ipAddress)
@@ -395,7 +443,10 @@ public class PsiphonServerInterface
            .append("&server_secret=").append(Utils.urlEncode(serverEntry.webServerSecret))
            .append("&propagation_channel_id=").append(Utils.urlEncode(PsiphonAndroidEmbeddedValues.PROPAGATION_CHANNEL_ID))
            .append("&sponsor_id=").append(Utils.urlEncode(PsiphonAndroidEmbeddedValues.SPONSOR_ID))
-           .append("&client_version=").append(Utils.urlEncode(PsiphonAndroidEmbeddedValues.CLIENT_VERSION));
+           .append("&client_version=").append(Utils.urlEncode(PsiphonAndroidEmbeddedValues.CLIENT_VERSION))
+           .append("&relay_protocol=").append(Utils.urlEncode(PsiphonConstants.RELAY_PROTOCOL))
+           // TODO: The server code is currently rejecting too much, so this is causing a 404. Re-enable when fixed. 
+           ;//.append("&client_platform=").append(Utils.urlEncode(PsiphonConstants.PLATFORM));
         
         if (extraParams != null)
         {
@@ -410,9 +461,11 @@ public class PsiphonServerInterface
         return url.toString();
     }
 
-    private byte[] makeRequest(String url, byte[] body, String serverCertificate) 
+    private byte[] makeRequest(String url, byte[] body) 
         throws PsiphonServerInterfaceException
     {
+        String serverCertificate = getCurrentServerEntry().webServerCertificate;
+        
         SSLContext context;
         try
         {
@@ -424,10 +477,10 @@ public class PsiphonServerInterface
             HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
             HttpsURLConnection.setDefaultHostnameVerifier(new AllowAllHostnameVerifier());
             HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
+            conn.setConnectTimeout(PsiphonConstants.HTTPS_REQUEST_TIMEOUT);
             conn.setDoOutput(true);
             conn.setDoInput(true);
             conn.setUseCaches(false);
-            // TODO: timeout?
     
             if (body == null)
             {
@@ -445,6 +498,7 @@ public class PsiphonServerInterface
                 writer.close ();           
             }
             
+            int code = conn.getResponseCode();
             if (conn.getResponseCode() != HttpsURLConnection.HTTP_OK)
             {
                 throw new PsiphonServerInterfaceException("HTTPS request failed");

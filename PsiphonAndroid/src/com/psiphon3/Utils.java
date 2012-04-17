@@ -231,5 +231,33 @@ public class Utils {
         public static <LEFT, RIGHT> Pair<LEFT, RIGHT> of(LEFT left, RIGHT right) {
             return new Pair<LEFT, RIGHT>(left, right);
         }
-    }    
+    }
+    
+    /**
+     * Wrapper around Android's Log functionality. This should be used so that
+     * LogCat messages will be turned off in production builds. For the reason
+     * why we want this, see the link below.
+     * @see <a href="http://blog.parse.com/2012/04/10/discovering-a-major-security-hole-in-facebooks-android-sdk/">Discovering a Major Security Hole in Facebook's Android SDK</a>
+     */
+    static public class MyLog
+    {
+        /**
+         * Log a debug message.
+         * @param msg Message to log
+         */
+        static void d(String msg)
+        {
+            Log.d(PsiphonConstants.TAG, msg);
+        }
+
+        /**
+         * Log a debug message.
+         * @param msg Message to log
+         * @param e Exception that will also be logged
+         */
+        static void d(String msg, Throwable e)
+        {
+            Log.d(PsiphonConstants.TAG, msg, e);
+        }
+    }
 }
