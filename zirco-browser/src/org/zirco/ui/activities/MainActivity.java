@@ -218,7 +218,16 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         
         Constants.initializeConstantsFromResources(this);
         
-        Controller.getInstance().setPreferences(PreferenceManager.getDefaultSharedPreferences(this));       
+        /*
+         * Put Psiphon local http proxy port received with the Intent
+         * in the default shared preferences
+         */
+        int localProxyPort = getIntent().getIntExtra("localProxyPort", 0);
+        Editor e = PreferenceManager.getDefaultSharedPreferences(this).edit();
+        e.putInt("localProxyPort", localProxyPort);
+        e.commit();
+
+        Controller.getInstance().setPreferences(PreferenceManager.getDefaultSharedPreferences(this));    
         
         if (Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_SHOW_FULL_SCREEN, false)) {        	
         	getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
