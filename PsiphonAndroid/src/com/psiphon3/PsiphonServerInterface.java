@@ -303,10 +303,6 @@ public class PsiphonServerInterface
         makeRequest(url, null);
     }
 
-    synchronized public void doDownload()
-    {
-    }
-
     /**
      * Make a 'status' request to the server.
      * @throws PsiphonServerInterfaceException
@@ -370,7 +366,22 @@ public class PsiphonServerInterface
         makeRequest(url, requestBody);
     }
 
-    synchronized public void doSpeed()
+    synchronized public void doSpeedRequest(String operation, String info, Integer milliseconds, Integer size) 
+        throws PsiphonServerInterfaceException
+    {
+        List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
+        extraParams.add(Utils.Pair.of("session_id", this.serverSessionID));
+        extraParams.add(Utils.Pair.of("operation", operation));
+        extraParams.add(Utils.Pair.of("info", info));
+        extraParams.add(Utils.Pair.of("milliseconds", milliseconds.toString()));
+        extraParams.add(Utils.Pair.of("size", size.toString()));
+        
+        String url = getCommonRequestURL("speed", extraParams);
+        
+        makeRequest(url, null);
+    }
+
+    synchronized public void doDownload()
     {
     }
 
