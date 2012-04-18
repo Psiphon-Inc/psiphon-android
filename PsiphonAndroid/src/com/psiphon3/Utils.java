@@ -3,6 +3,7 @@ package com.psiphon3;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
+import java.util.IllegalFormatException;
 import java.util.Random;
 
 import android.util.Log;
@@ -252,6 +253,25 @@ public class Utils {
         
         static public ILogger logger;
         
+        /**
+         * Safely wraps the string resource extraction function. If an error 
+         * occurs with the format specifiers, the raw string will be returned.
+         * @param stringResID The string resource ID.
+         * @param formatArgs The format arguments. May be empty (non-existent).
+         * @return The requested string, possibly formatted.
+         */
+        static private String myGetResString(int stringResID, Object... formatArgs)
+        {
+            try
+            {
+                return logger.getResString(stringResID, formatArgs);
+            }
+            catch (IllegalFormatException e)
+            {
+                return logger.getResString(stringResID);
+            }
+        }
+        
         static void d(String msg)
         {
             MyLog.println(msg, null, Log.DEBUG);
@@ -264,32 +284,32 @@ public class Utils {
 
         static void e(int stringResID, Object... formatArgs)
         {
-            MyLog.println(logger.getResString(stringResID, formatArgs), null, Log.ERROR);
+            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.ERROR);
         }
 
         static void e(int stringResID, Throwable throwable)
         {
-            MyLog.println(logger.getResString(stringResID), throwable, Log.ERROR);
+            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.ERROR);
         }
         
         static void i(int stringResID, Object... formatArgs)
         {
-            MyLog.println(logger.getResString(stringResID, formatArgs), null, Log.INFO);
+            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.INFO);
         }
 
         static void i(int stringResID, Throwable throwable)
         {
-            MyLog.println(logger.getResString(stringResID), throwable, Log.INFO);
+            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.INFO);
         }
         
         static void w(int stringResID, Object... formatArgs)
         {
-            MyLog.println(logger.getResString(stringResID, formatArgs), null, Log.WARN);
+            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.WARN);
         }
 
         static void w(int stringResID, Throwable throwable)
         {
-            MyLog.println(logger.getResString(stringResID), throwable, Log.WARN);
+            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.WARN);
         }
         
         private static void println(String msg, Throwable throwable, int priority)
