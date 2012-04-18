@@ -39,8 +39,9 @@ import ch.ethz.ssh2.*;
 import com.psiphon3.PsiphonAndroidActivity;
 import com.psiphon3.PsiphonAndroidStats;
 import com.psiphon3.PsiphonServerInterface.PsiphonServerInterfaceException;
+import com.psiphon3.Utils.MyLog;
 
-public class PsiphonAndroidService extends Service
+public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogger
 {
     private boolean firstStart = true;
     // TODO: use this? private Utils.CircularArrayList<Message> m_messages = new Utils.CircularArrayList<Message>(1000);
@@ -67,13 +68,16 @@ public class PsiphonAndroidService extends Service
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {        
-        Log.d(PsiphonConstants.TAG, "PsiphonAndroidService.onStartCommand called, firstStart = " + (firstStart ? "true" : "false"));
+        MyLog.d("PsiphonAndroidService.onStartCommand called, firstStart = " + (firstStart ? "true" : "false"));
         if (firstStart)
         {
             // TODO: put this stuff in onCreate instead?
 
-            m_interface = new PsiphonServerInterface(this);
+            // NOTE: There must be no attempts to access the UI activity before this call.
             m_localBroadcastManager = LocalBroadcastManager.getInstance(this);
+
+            MyLog.logger = this;
+            m_interface = new PsiphonServerInterface(this);
             doForeground();
             startTunnel();
             firstStart = false;
@@ -93,6 +97,43 @@ public class PsiphonAndroidService extends Service
         }
     }
 
+    /**
+     * Utils.MyLog.ILogger implementation
+     * For Android priority values, see <a href="http://developer.android.com/reference/android/util/Log.html">http://developer.android.com/reference/android/util/Log.html</a>
+     */
+    @Override
+    public int getAndroidLogPriorityEquivalent(int priority)
+    {
+        switch (priority)
+        {
+        case Log.ERROR:
+            return PsiphonAndroidActivity.MESSAGE_CLASS_ERROR;
+        case Log.INFO:
+            return PsiphonAndroidActivity.MESSAGE_CLASS_INFO;
+        case Log.DEBUG:
+            return PsiphonAndroidActivity.MESSAGE_CLASS_DEBUG;
+        default:
+            return PsiphonAndroidActivity.MESSAGE_CLASS_WARNING;
+        }
+    }
+
+    @Override
+    public String getResString(int stringResID, Object... formatArgs)
+    {
+        if (formatArgs == null || formatArgs.length == 0)
+        {
+            return getString(stringResID);
+        }
+        
+        return getString(stringResID, formatArgs);
+    }
+    
+    @Override
+    public void log(int priority, String message)
+    {
+        sendMessage(message, priority);
+    }
+    
     private synchronized void sendMessage(String message)
     {
         sendMessage(message, PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
@@ -104,6 +145,8 @@ public class PsiphonAndroidService extends Service
     {
         // Record messages for playback in activity
         m_messages.add(new Message(message, messageClass));
+        
+        if (m_localBroadcastManager == null) return;
 
         Intent intent = new Intent(PsiphonAndroidActivity.ADD_MESSAGE);
         intent.putExtra(PsiphonAndroidActivity.ADD_MESSAGE_TEXT, message);
@@ -180,28 +223,26 @@ public class PsiphonAndroidService extends Service
 
         try
         {
-            sendMessage(getText(R.string.ssh_connecting).toString());
+            MyLog.i(R.string.ssh_connecting);
             conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
             conn.connect(
                     new PsiphonServerHostKeyVerifier(entry.sshHostKey),
                     PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS,
                     PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS);
-            sendMessage(getText(R.string.ssh_connected).toString());
+            MyLog.i(R.string.ssh_connected);
 
-            sendMessage(getText(R.string.ssh_authenticating).toString());
+            MyLog.i(R.string.ssh_authenticating);
             boolean isAuthenticated = conn.authenticateWithPassword(entry.sshUsername, entry.sshPassword);
             if (isAuthenticated == false)
             {
-                sendMessage(
-                    getText(R.string.ssh_authentication_failed).toString(),
-                    PsiphonAndroidActivity.MESSAGE_CLASS_ERROR);
+                MyLog.e(R.string.ssh_authentication_failed);
                 return;
             }
-            sendMessage(getText(R.string.ssh_authenticated).toString());
+            MyLog.i(R.string.ssh_authenticated);
 
-            sendMessage(getText(R.string.socks_starting).toString());
+            MyLog.i(R.string.socks_starting);
             socks = conn.createDynamicPortForwarder(PsiphonConstants.SOCKS_PORT);
-            sendMessage(getText(R.string.socks_running).toString());
+            MyLog.i(R.string.socks_running);
 
             // The HTTP proxy implementation is provided by Polipo,
             // a native app that we spawn as a separate process. This
@@ -215,24 +256,32 @@ public class PsiphonAndroidService extends Service
             // app could plug in its own SOCKS proxy and capture all
             // Psiphon browser activity.
             
-            sendMessage(getText(R.string.http_proxy_starting).toString());
+            MyLog.i(R.string.http_proxy_starting);
             polipo = new PsiphonNativeWrapper(
                             this,
                             PsiphonConstants.POLIPO_EXECUTABLE,
                             PsiphonConstants.POLIPO_ARGUMENTS);
-            sendMessage(getText(R.string.http_proxy_running).toString());
+            MyLog.i(R.string.http_proxy_running);
             
             try
             {
                 m_interface.doHandshakeRequest();
-                sendMessage("TEMP: Handshake success");
-
-                m_interface.doConnectedRequest();
-                sendMessage("TEMP: Connected request success");
+                MyLog.d("TEMP: Handshake success");
             } 
             catch (PsiphonServerInterfaceException requestException)
             {
-                Log.e(PsiphonConstants.TAG, "Handshake or connected request failed: " + requestException.toString());
+                MyLog.w(R.string.PsiphonAndroidService_HandshakeRequestFailed, requestException);
+                // Allow the user to continue. Their session might still function correctly.
+            }
+
+            try
+            {
+                m_interface.doConnectedRequest();
+                MyLog.d("TEMP: Connected request success");
+            } 
+            catch (PsiphonServerInterfaceException requestException)
+            {
+                MyLog.w(R.string.PsiphonAndroidService_ConnectedRequestFailed, requestException);
                 // Allow the user to continue. Their session might still function correctly.
             }
 
@@ -253,9 +302,7 @@ public class PsiphonAndroidService extends Service
 
                     if (!polipo.isRunning())
                     {
-                        sendMessage(
-                            getText(R.string.http_proxy_stopped_unexpectedly).toString(),
-                            PsiphonAndroidActivity.MESSAGE_CLASS_ERROR);
+                        MyLog.e(R.string.http_proxy_stopped_unexpectedly);
                         break;
                     }
 
@@ -271,9 +318,7 @@ public class PsiphonAndroidService extends Service
         }
         catch (IOException e)
         {
-            sendMessage(
-                    String.format(getText(R.string.error_message).toString(), e.toString()),
-                    PsiphonAndroidActivity.MESSAGE_CLASS_ERROR);
+            MyLog.e(R.string.error_message, e);
             return;
         }
         finally
@@ -281,7 +326,7 @@ public class PsiphonAndroidService extends Service
             if (polipo != null)
             {
                 polipo.stop();
-                sendMessage(getText(R.string.http_proxy_stopped).toString());
+                MyLog.i(R.string.http_proxy_stopped);
             }
             if (socks != null)
             {
@@ -293,12 +338,12 @@ public class PsiphonAndroidService extends Service
                 {
                     // Ignore
                 }
-                sendMessage(getText(R.string.socks_stopped).toString());
+                MyLog.i(R.string.socks_stopped);
             }
             if (conn != null)
             {
                 conn.close();
-                sendMessage(getText(R.string.ssh_stopped).toString());
+                MyLog.i(R.string.ssh_stopped);
             }
         }
     }

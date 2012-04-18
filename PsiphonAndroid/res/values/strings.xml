@@ -6,7 +6,7 @@
     <string name="about">About Psiphon 3</string>
     <string name="banner_desc">sponsor banner; click to visit sponsor home page</string>
     <string name="start_desc">connect to Psiphon; click to connect</string>
-    <string name="message_image_good_desc">icon indicating a good message</string><string name="message_image_bad_desc">icon indicating a bad message</string><string name="message_image_debug_desc">icon indicating a debug message</string><string name="message_image_neutral_desc">icon indicating a neutral message</string>
+    <string name="message_image_success_desc">icon indicating a success message</string><string name="message_image_error_desc">icon indicating an error message</string><string name="message_image_debug_desc">icon indicating a debug message</string><string name="message_image_warning_desc">icon indicating a warning message</string>
     <string name="psiphon_service_notification_id">Psiphon Service Notification</string>
     <string name="psiphon_service_notification_message">Psiphon 3 is running...</string>
     <string name="ssh_connecting">SSH connecting...</string>
@@ -18,10 +18,17 @@
     <string name="socks_running">SOCKS running</string>
     <string name="socks_stopped">SOCKS stopped</string>
     <string name="ssh_stopped">SSH stopped</string>
-    <string name="error_message">Error: %s</string>
+    <string name="error_message">Error: </string>
     <string name="http_proxy_starting">HTTP proxy starting...</string>
     <string name="http_proxy_running">HTTP proxy running...</string>
     <string name="http_proxy_stopped">HTTP proxy stopped</string>
     <string name="http_proxy_stopped_unexpectedly">HTTP proxy stopped unexpectedly</string>
+    <string name="PsiphonServerInterface.FailedToCreateServerEntries">Failed to create server entries to store.</string>
+    <string name="PsiphonServerInterface.FailedToStoreServerEntries">Failed to store server entries.</string>
+    <string name="PsiphonServerInterface.FailedToReadStoredServerEntries">Failed to read stored server entries.</string>
+    <string name="PsiphonServerInterface.FailedToParseStoredServerEntries">Failed to parse stored server entries.</string>
+    <string name="PsiphonServerInterface.FailedToParseHandshake">Failed to parse handshake.</string>
+    <string name="PsiphonAndroidService.HandshakeRequestFailed">Handshake request failed.</string>
+    <string name="PsiphonAndroidService.ConnectedRequestFailed">Connected request failed.</string>
 
 </resources>

@@ -237,27 +237,81 @@ public class Utils {
      * Wrapper around Android's Log functionality. This should be used so that
      * LogCat messages will be turned off in production builds. For the reason
      * why we want this, see the link below.
+     * If the logger member variable is set, messages will also be logged to 
+     * that facility (except debug messages).
      * @see <a href="http://blog.parse.com/2012/04/10/discovering-a-major-security-hole-in-facebooks-android-sdk/">Discovering a Major Security Hole in Facebook's Android SDK</a>
      */
     static public class MyLog
     {
-        /**
-         * Log a debug message.
-         * @param msg Message to log
-         */
+        static public interface ILogger
+        {
+            public void log(int priority, String message);
+            public String getResString(int stringResID, Object... formatArgs);
+            public int getAndroidLogPriorityEquivalent(int priority);
+        }
+        
+        static public ILogger logger;
+        
         static void d(String msg)
         {
-            Log.d(PsiphonConstants.TAG, msg);
+            MyLog.println(msg, null, Log.DEBUG);
         }
 
-        /**
-         * Log a debug message.
-         * @param msg Message to log
-         * @param e Exception that will also be logged
-         */
-        static void d(String msg, Throwable e)
+        static void d(String msg, Throwable throwable)
         {
-            Log.d(PsiphonConstants.TAG, msg, e);
+            MyLog.println(msg, throwable, Log.DEBUG);
+        }
+
+        static void e(int stringResID, Object... formatArgs)
+        {
+            MyLog.println(logger.getResString(stringResID, formatArgs), null, Log.ERROR);
+        }
+
+        static void e(int stringResID, Throwable throwable)
+        {
+            MyLog.println(logger.getResString(stringResID), throwable, Log.ERROR);
+        }
+        
+        static void i(int stringResID, Object... formatArgs)
+        {
+            MyLog.println(logger.getResString(stringResID, formatArgs), null, Log.INFO);
+        }
+
+        static void i(int stringResID, Throwable throwable)
+        {
+            MyLog.println(logger.getResString(stringResID), throwable, Log.INFO);
+        }
+        
+        static void w(int stringResID, Object... formatArgs)
+        {
+            MyLog.println(logger.getResString(stringResID, formatArgs), null, Log.WARN);
+        }
+
+        static void w(int stringResID, Throwable throwable)
+        {
+            MyLog.println(logger.getResString(stringResID), throwable, Log.WARN);
+        }
+        
+        private static void println(String msg, Throwable throwable, int priority)
+        {
+            if (logger != null)
+            {
+                String loggerMsg = msg;
+                
+                if (throwable != null)
+                {
+                    loggerMsg = loggerMsg + ' ' + Log.getStackTraceString(throwable); 
+                }
+                
+                logger.log(logger.getAndroidLogPriorityEquivalent(priority), loggerMsg);
+            }
+            
+            // Note that this is basically identical to how Log.e, etc., are implemented.
+            if (throwable != null)
+            {
+                msg = msg + '\n' + Log.getStackTraceString(throwable);
+            }
+            Log.println(priority, PsiphonConstants.TAG, msg);
         }
     }
 }

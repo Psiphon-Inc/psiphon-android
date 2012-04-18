@@ -26,11 +26,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -131,7 +129,7 @@ public class PsiphonAndroidActivity extends Activity
         {
             String message = intent.getStringExtra(ADD_MESSAGE_TEXT);
             int messageClass = intent.getIntExtra(ADD_MESSAGE_CLASS, MESSAGE_CLASS_INFO);
-            AddMessage(message, messageClass);
+            addMessage(message, messageClass);
         }
     }
     
@@ -161,7 +159,7 @@ public class PsiphonAndroidActivity extends Activity
         
         for (Message msg : m_service.getMessages())
         {
-            AddMessage(msg.m_message, msg.m_messageClass);
+            addMessage(msg.m_message, msg.m_messageClass);
         }
         
         // Listen for new messages
@@ -182,8 +180,10 @@ public class PsiphonAndroidActivity extends Activity
     
     public static final int MESSAGE_CLASS_INFO = 0;
     public static final int MESSAGE_CLASS_ERROR = 1;
+    public static final int MESSAGE_CLASS_DEBUG = 2;
+    public static final int MESSAGE_CLASS_WARNING = 3;
     
-    public void AddMessage(String message, int messageClass)
+    public void addMessage(String message, int messageClass)
     {
         TableRow row = new TableRow(this);
         TextView messageTextView = new TextView(this);
@@ -193,18 +193,23 @@ public class PsiphonAndroidActivity extends Activity
         
         int messageClassImageRes = 0;
         int messageClassImageDesc = 0;
-        int logPriority = 0;
         switch (messageClass)
         {
         case MESSAGE_CLASS_INFO:
             messageClassImageRes = android.R.drawable.presence_online;
-            messageClassImageDesc = R.string.message_image_good_desc;
-            logPriority = Log.INFO;
+            messageClassImageDesc = R.string.message_image_success_desc;
             break;
         case MESSAGE_CLASS_ERROR:
             messageClassImageRes = android.R.drawable.presence_busy;
-            messageClassImageDesc = R.string.message_image_bad_desc;
-            logPriority = Log.ERROR;
+            messageClassImageDesc = R.string.message_image_error_desc;
+            break;
+        case MESSAGE_CLASS_DEBUG:
+            messageClassImageRes = android.R.drawable.presence_offline;
+            messageClassImageDesc = R.string.message_image_debug_desc;
+            break;
+        case MESSAGE_CLASS_WARNING:
+            messageClassImageRes = android.R.drawable.presence_invisible;
+            messageClassImageDesc = R.string.message_image_warning_desc;
             break;
         }
         messageClassImageView.setImageResource(messageClassImageRes);
@@ -219,9 +224,6 @@ public class PsiphonAndroidActivity extends Activity
         row.addView(messageClassImageView);
         
         m_messagesTableLayout.addView(row);
-        
-        // Also log to LogCat
-        Log.println(logPriority, PsiphonConstants.TAG, message);
         
         // Wait until the messages list is updated before attempting to scroll 
         // to the bottom.
