@@ -379,8 +379,15 @@ public class PsiphonServerInterface
         makeRequest(url, null);
     }
 
-    synchronized public void doDownload()
+    synchronized public void doFailedRequest(String error) 
+        throws PsiphonServerInterfaceException
     {
+        List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
+        extraParams.add(Utils.Pair.of("error_code", error));
+        
+        String url = getCommonRequestURL("failed", extraParams);
+        
+        makeRequest(url, null);
     }
 
     private class CustomTrustManager implements X509TrustManager

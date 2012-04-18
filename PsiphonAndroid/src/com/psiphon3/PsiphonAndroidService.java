@@ -153,8 +153,6 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
         m_localBroadcastManager.sendBroadcast(intent);
     }
     
-    
-    
     public ArrayList<Message> getMessages()
     {
         ArrayList<Message> messages = new ArrayList<Message>();

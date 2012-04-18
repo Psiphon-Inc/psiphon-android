@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <string name="hello">Hello World, PsiphonAndroidActivity!</string>
     <string name="app_name">Psiphon 3</string>
     <string name="about">About Psiphon 3</string>
     <string name="banner_desc">sponsor banner; click to visit sponsor home page</string>
@@ -18,7 +16,7 @@
     <string name="socks_running">SOCKS running</string>
     <string name="socks_stopped">SOCKS stopped</string>
     <string name="ssh_stopped">SSH stopped</string>
-    <string name="error_message">Error: </string>
+    <string name="error_message">An error occurred</string>
     <string name="http_proxy_starting">HTTP proxy starting...</string>
     <string name="http_proxy_running">HTTP proxy running...</string>
     <string name="http_proxy_stopped">HTTP proxy stopped</string>
