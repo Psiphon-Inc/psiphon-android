@@ -506,7 +506,8 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
     	
     	mUrlEditText = (AutoCompleteTextView) findViewById(R.id.UrlText);
     	mUrlEditText.setThreshold(1);
-    	mUrlEditText.setAdapter(adapter);    	
+    	mUrlEditText.setAdapter(adapter);    
+    	mUrlEditText.setSelectAllOnFocus(true);
     	
     	mUrlEditText.setOnKeyListener(new View.OnKeyListener() {
 
