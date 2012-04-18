@@ -28,7 +28,6 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
@@ -154,6 +153,8 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
         m_localBroadcastManager.sendBroadcast(intent);
     }
     
+    
+    
     public ArrayList<Message> getMessages()
     {
         ArrayList<Message> messages = new ArrayList<Message>();
@@ -267,6 +268,9 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
             {
                 m_interface.doHandshakeRequest();
                 MyLog.d("TEMP: Handshake success");
+
+                // Notify Activity of handshake success
+                m_localBroadcastManager.sendBroadcast(new Intent(PsiphonAndroidActivity.HANDSHAKE_SUCCESS));
             } 
             catch (PsiphonServerInterfaceException requestException)
             {
@@ -284,13 +288,6 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
                 MyLog.w(R.string.PsiphonAndroidService_ConnectedRequestFailed, requestException);
                 // Allow the user to continue. Their session might still function correctly.
             }
-
-            Intent i = new Intent(this, org.zirco.ui.activities.MainActivity.class);
-            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            
-            //TODO: get real homepage URL
-            i.setData(Uri.parse("http://vl7.net/ip"));
-            startActivity(i);
             
             try
             {

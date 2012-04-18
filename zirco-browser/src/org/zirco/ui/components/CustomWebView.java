@@ -108,11 +108,19 @@ public class CustomWebView extends WebView {
 		
 		settings.setSupportZoom(true);
 		
+		/*
 		if (Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_PROXY_SETTINGS, false)) {
 		    ProxySettings.setSystemProxy(mContext);
 		} else {
 			ProxySettings.resetSystemProxy(mContext);
 		}
+		*/
+		
+	   int port = Controller.getInstance().getPreferences().getInt("localProxyPort", 0);   
+	   if(port > 0)
+	   {
+	       ProxySettings.setLocalProxy(mContext, port );
+	   }
 				
 		// Technical settings
 		settings.setSupportMultipleWindows(true);						

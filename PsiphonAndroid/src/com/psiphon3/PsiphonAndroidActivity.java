@@ -26,6 +26,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -46,6 +47,7 @@ public class PsiphonAndroidActivity extends Activity
     public static final String ADD_MESSAGE = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE";
     public static final String ADD_MESSAGE_TEXT = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TEXT";
     public static final String ADD_MESSAGE_CLASS = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_CLASS";
+    public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
     
     private TableLayout m_messagesTableLayout;
     private ScrollView m_messagesScrollView;
@@ -65,6 +67,7 @@ public class PsiphonAndroidActivity extends Activity
         {
             m_service = ((PsiphonAndroidService.LocalBinder)service).getService();
             PsiphonAndroidActivity.this.hookUpMessages();
+            PsiphonAndroidActivity.this.hookUpHandshakeSuccess();
         }
 
         public void onServiceDisconnected(ComponentName className)
@@ -83,13 +86,15 @@ public class PsiphonAndroidActivity extends Activity
         m_messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
         m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
         
-        PsiphonProxyHelper.setWebkitProxy(this, "localhost", PsiphonConstants.HTTP_PROXY_PORT);
-
     }
     
     private void openZircoMainActivity() {
-        Intent zircoMainActivity = new Intent(this, org.zirco.ui.activities.MainActivity.class);
-        startActivity(zircoMainActivity);
+        Intent i = new Intent(this, org.zirco.ui.activities.MainActivity.class);
+        
+        //TODO: get real homepage URL
+        i.setData(Uri.parse("http://vl7.net/ip"));
+        i.putExtra("localProxyPort", PsiphonConstants.HTTP_PROXY_PORT);
+        startActivity(i);
     }
 
     @Override
@@ -133,6 +138,16 @@ public class PsiphonAndroidActivity extends Activity
         }
     }
     
+    public class HandshakeSuccessReceiver extends BroadcastReceiver
+    {
+        @Override
+        public void onReceive(Context context, Intent intent)
+        {
+            String message = intent.getStringExtra(HANDSHAKE_SUCCESS);
+            openZircoMainActivity();
+        }
+    }
+
     @Override
     protected void onStart()
     {
@@ -170,6 +185,11 @@ public class PsiphonAndroidActivity extends Activity
         m_localBroadcastManager.registerReceiver(new AddMessageReceiver(), filter);        
     }
     
+    protected void hookUpHandshakeSuccess()
+    {
+        IntentFilter filter = new IntentFilter(HANDSHAKE_SUCCESS);
+        LocalBroadcastManager.getInstance(this).registerReceiver(new HandshakeSuccessReceiver(), filter);        
+    }
     @Override
     protected void onStop()
     {

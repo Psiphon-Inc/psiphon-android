@@ -269,11 +269,12 @@
 			android:defaultValue="STOCK"
 			android:entries="@array/BookmarksDatabaseEntries"
 			android:entryValues="@array/BookmarksDatabaseValues" />
-        <CheckBoxPreference
+<!--         <CheckBoxPreference
             android:title="@string/PreferencesActivity.EnableProxySettings"
             android:defaultValue="false"
             android:key="BrowserEnableProxySettings"
             android:summary="@string/PreferencesActivity.EnableProxySettingsSummary" />
+-->
     </PreferenceCategory>
 	<PreferenceCategory android:title="@string/PreferencesActivity.AboutCategoryTitle">
 		<Preference
