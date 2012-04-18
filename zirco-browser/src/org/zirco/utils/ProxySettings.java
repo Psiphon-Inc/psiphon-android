@@ -202,14 +202,13 @@ public class ProxySettings
 
     private static boolean setProxy(Context ctx, String host, int port) 
     {
-        boolean ret = false;
+
         try 
         {
-            if(Build.VERSION.SDK_INT > 14)
-            {
                 Class webViewCoreClass = Class.forName("android.webkit.WebViewCore");
                 Class proxyPropertiesClass = Class.forName("android.net.ProxyProperties");
-                if (webViewCoreClass != null && proxyPropertiesClass != null) {
+                if (webViewCoreClass != null && proxyPropertiesClass != null) 
+                {
                     Method m = webViewCoreClass.getDeclaredMethod("sendStaticMessage", Integer.TYPE, Object.class);
                     Constructor c = proxyPropertiesClass.getConstructor(String.class, Integer.TYPE, String.class);
                     m.setAccessible(true);
@@ -218,29 +217,30 @@ public class ProxySettings
                     
                     // android.webkit.WebViewCore.EventHub.PROXY_CHANGED = 193;
                     m.invoke(null, 193, properties);
-                    ret = true;
+                    return true;
                 }
-            }
-            else
-            {
-                Object requestQueueObject = getRequestQueue(ctx);
-                if (requestQueueObject != null) 
-                {
-                    //Create Proxy config object and set it into request Q
-                    HttpHost httpHost = new HttpHost(host, port, "http");
-                    setDeclaredField(requestQueueObject, "mProxyHost", httpHost);
-                    //Log.d("Webkit Setted Proxy to: " + host + ":" + port);
-                    ret = true;
-                }
-                
-            }
- 
-        } 
+        }
         catch (Exception e) 
         {
-        	Log.e("ProxySettings","Exception setting WebKit proxy settings: " + e.toString());
+            Log.e("ProxySettings","Exception setting WebKit proxy through android.net.ProxyProperties: " + e.toString());
         }
-        return ret;
+        try
+        {
+            Object requestQueueObject = getRequestQueue(ctx);
+            if (requestQueueObject != null) 
+            {
+                //Create Proxy config object and set it into request Q
+                HttpHost httpHost = new HttpHost(host, port, "http");
+                setDeclaredField(requestQueueObject, "mProxyHost", httpHost);
+                //Log.d("Webkit Setted Proxy to: " + host + ":" + port);
+                return true;
+             }
+         }
+        catch (Exception e) 
+        {
+            Log.e("ProxySettings","Exception setting WebKit proxy through android.webkit.Network: " + e.toString());
+        }
+        return false;
     }
 
     private static void resetProxy(Context ctx) throws Exception 
