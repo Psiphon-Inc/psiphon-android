@@ -41,7 +41,8 @@ public interface PsiphonConstants
     
     public final static String RELAY_PROTOCOL = "OSSH";
     
-    public final static String PLATFORM = "Android_" + Build.VERSION.RELEASE.replaceAll(" ", "-");
+    // The character restrictions are dictated by the server.
+    public final static String PLATFORM = ("Android_" + Build.VERSION.RELEASE).replaceAll("[^\\w\\-\\.]", "_");
     
     public final static int HTTPS_REQUEST_TIMEOUT = 20000;
 }
