@@ -6,6 +6,11 @@ import java.security.SecureRandom;
 import java.util.IllegalFormatException;
 import java.util.Random;
 
+import android.app.Activity;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.util.Log;
 
 
@@ -314,7 +319,17 @@ public class Utils {
         
         private static void println(String msg, Throwable throwable, int priority)
         {
-            if (logger != null)
+            // If we're not running in debug mode, don't log debug messages at all.
+            // (This may be redundant with the logic below, but it'll save us if
+            // the log below changes.)
+            if (!PsiphonConstants.DEBUG && priority == Log.DEBUG)
+            {
+                return;
+            }
+            
+            // If the external logger has been set, use it.
+            // But don't put debug messages to the external logger.
+            if (logger != null && priority != Log.DEBUG)
             {
                 String loggerMsg = msg;
                 
@@ -326,6 +341,14 @@ public class Utils {
                 logger.log(logger.getAndroidLogPriorityEquivalent(priority), loggerMsg);
             }
             
+            // Do not log to LogCat at all if we're not running in debug mode.
+
+            if (!PsiphonConstants.DEBUG)
+            {
+                return;
+            }
+                        
+            // Log to LogCat
             // Note that this is basically identical to how Log.e, etc., are implemented.
             if (throwable != null)
             {
@@ -333,5 +356,51 @@ public class Utils {
             }
             Log.println(priority, PsiphonConstants.TAG, msg);
         }
+    }
+
+    // From:
+    // http://abhinavasblog.blogspot.ca/2011/06/check-for-debuggable-flag-in-android.html
+    /*
+    Copyright [2011] [Abhinava Srivastava]
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+    */
+    public static boolean isDebugMode(Activity context)
+    {
+        boolean debug = false;
+        PackageInfo packageInfo = null;
+        try
+        {
+            packageInfo = context.getPackageManager().getPackageInfo(
+                    context.getApplication().getPackageName(),
+                    PackageManager.GET_CONFIGURATIONS);
+        } 
+        catch (NameNotFoundException e)
+        {
+            e.printStackTrace();
+        }
+        if (packageInfo != null)
+        {
+            int flags = packageInfo.applicationInfo.flags;
+            if ((flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0)
+            {
+                debug = true;
+            } 
+            else
+            {
+                debug = false;
+            }
+        }
+        return debug;
     }
 }

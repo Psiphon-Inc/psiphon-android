@@ -57,8 +57,6 @@ public class PsiphonAndroidActivity extends Activity
     private static final int MENU_BROWSER = Menu.FIRST;
     private static final int MENU_EXIT = Menu.FIRST + 1;
 
-
-
     // local service binding, as in http://developer.android.com/reference/android/app/Service.html
     
     private ServiceConnection m_connection = new ServiceConnection()
@@ -85,7 +83,10 @@ public class PsiphonAndroidActivity extends Activity
         
         m_messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
         m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
-        
+
+        // Note that this must come before the above lines, or else the activity
+        // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
+        PsiphonConstants.DEBUG = Utils.isDebugMode(this);
     }
     
     private void openZircoMainActivity() {

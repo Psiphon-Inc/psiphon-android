@@ -21,8 +21,10 @@ package com.psiphon3;
 
 import android.os.Build;
 
-public interface PsiphonConstants
+public class PsiphonConstants
 {
+    public static Boolean DEBUG = false; // may be changed by activity 
+    
     public final static String TAG = "Psiphon";
     
     public final static String SERVER_ENTRY_FILENAME = "psiphon_server_entries.json";
@@ -37,7 +39,7 @@ public interface PsiphonConstants
 
     public final static String POLIPO_ARGUMENTS = "proxyPort=8080 diskCacheRoot=\"\" disableLocalInterface=true socksParentProxy=127.0.0.1:1080 logLevel=1";
 
-    public final int SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS = 20000;
+    public final static int SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS = 20000;
     
     public final static String RELAY_PROTOCOL = "OSSH";
     
