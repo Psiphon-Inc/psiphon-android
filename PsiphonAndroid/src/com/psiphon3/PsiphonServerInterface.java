@@ -461,8 +461,7 @@ public class PsiphonServerInterface
            .append("&sponsor_id=").append(Utils.urlEncode(PsiphonAndroidEmbeddedValues.SPONSOR_ID))
            .append("&client_version=").append(Utils.urlEncode(PsiphonAndroidEmbeddedValues.CLIENT_VERSION))
            .append("&relay_protocol=").append(Utils.urlEncode(PsiphonConstants.RELAY_PROTOCOL))
-           // TODO: The server code is currently rejecting too much, so this is causing a 404. Re-enable when fixed. 
-           ;//.append("&client_platform=").append(Utils.urlEncode(PsiphonConstants.PLATFORM));
+           .append("&client_platform=").append(Utils.urlEncode(PsiphonConstants.PLATFORM));
         
         if (extraParams != null)
         {
