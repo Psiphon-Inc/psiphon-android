@@ -422,8 +422,8 @@ public class PsiphonStreamForwarder extends Thread
                                 String uri = requestLine.getUri();
 
                                 // TODO: must remove before release - leaking info
-                                Log.d("TEMP", Thread.currentThread().toString() + "HTTP request: " +
-                                        this.destHost + " " + uri);
+                                //Log.d("TEMP", Thread.currentThread().toString() + "HTTP request: " +
+                                //        this.destHost + " " + uri);
                                 this.pendingRequestStack.add(0, uri);
                             }
                             else
@@ -473,9 +473,9 @@ public class PsiphonStreamForwarder extends Thread
                                 String requestURI = this.sibling.pendingRequestStack.remove(0);
 
                                 // TODO: must remove before release - leaking info
-                                Log.d("TEMP", Thread.currentThread().toString() + "HTTP response: " +
-                                        Integer.toString(responseStatusCode) + " " + this.destHost + " " +
-                                        requestURI + " " + contentType);
+                                //Log.d("TEMP", Thread.currentThread().toString() + "HTTP response: " +
+                                //        Integer.toString(responseStatusCode) + " " + this.destHost + " " +
+                                //        requestURI + " " + contentType);
                                 // TODO: increment stats (based on responseStatusCode, contentType, regex etc.)
                             }
     
