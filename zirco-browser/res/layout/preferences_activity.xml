@@ -36,7 +36,7 @@
 				android:key="GeneralFullScreen" />
 			<CheckBoxPreference
 				android:title="@string/PreferencesActivity.HideTitleBarPreferenceTitle"
-				android:defaultValue="true"
+				android:defaultValue="false"
 				android:summary="@string/PreferencesActivity.HideTitleBarPreferenceSummary"
 				android:key="GeneralHideTitleBars" />
 			<CheckBoxPreference

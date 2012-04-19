@@ -77,14 +77,5 @@ public class PsiphonAndroidStats
     
     public synchronized void dumpReport()
     {
-        for (Map.Entry<String, Integer> entry : m_bytesSentByDomain.entrySet())
-        {
-            Log.d("PsiphonAndroidStats", "Bytes sent to " + entry.getKey() + ": " + entry.getValue());
-        }
-        
-        for (Map.Entry<String, Integer> entry : m_bytesReceivedByDomain.entrySet())
-        {
-            Log.d("PsiphonAndroidStats", "Bytes received from " + entry.getKey() + ": " + entry.getValue());
-        }        
     }
 }
