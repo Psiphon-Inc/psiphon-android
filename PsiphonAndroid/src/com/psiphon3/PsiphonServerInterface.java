@@ -229,7 +229,7 @@ public class PsiphonServerInterface
                 extraParams.add(Utils.Pair.of("known_server", entry.ipAddress));
             }
             
-            String url = getCommonRequestURL("handshake", extraParams);
+            String url = getRequestURL("handshake", extraParams);
             
             byte[] response = makeRequest(url, null);
 
@@ -296,7 +296,7 @@ public class PsiphonServerInterface
         List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
         extraParams.add(Utils.Pair.of("session_id", this.serverSessionID));
         
-        String url = getCommonRequestURL("connected", extraParams);
+        String url = getRequestURL("connected", extraParams);
         
         makeRequest(url, null);
     }
@@ -359,7 +359,7 @@ public class PsiphonServerInterface
         extraParams.add(Utils.Pair.of("session_id", this.serverSessionID));
         extraParams.add(Utils.Pair.of("connected", connected ? "1" : "0"));
 
-        String url = getCommonRequestURL("status", extraParams);
+        String url = getRequestURL("status", extraParams);
         
         makeRequest(url, requestBody);
     }
@@ -374,7 +374,7 @@ public class PsiphonServerInterface
         extraParams.add(Utils.Pair.of("milliseconds", milliseconds.toString()));
         extraParams.add(Utils.Pair.of("size", size.toString()));
         
-        String url = getCommonRequestURL("speed", extraParams);
+        String url = getRequestURL("speed", extraParams);
         
         makeRequest(url, null);
     }
@@ -385,7 +385,7 @@ public class PsiphonServerInterface
         List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
         extraParams.add(Utils.Pair.of("error_code", error));
         
-        String url = getCommonRequestURL("failed", extraParams);
+        String url = getRequestURL("failed", extraParams);
         
         makeRequest(url, null);
     }
@@ -443,7 +443,7 @@ public class PsiphonServerInterface
      *                     with duplicate "keys".
      * @return  The full URL for the request.
      */
-    private String getCommonRequestURL(
+    private String getRequestURL(
                     String path, 
                     List<Utils.Pair<String,String>> extraParams)
     {
