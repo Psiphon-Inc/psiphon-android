@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.psiphon3.Utils.MyLog;
+
 public class PsiphonAndroidStats
 {
     // Singleton
@@ -110,6 +112,8 @@ public class PsiphonAndroidStats
         Integer prevCount = this.m_pageViewEntries.get(storeEntry);
         if (prevCount == null) prevCount = 0;
         this.m_pageViewEntries.put(storeEntry, prevCount+1);
+        
+        MyLog.d("upsertPageView: ("+(prevCount+1)+") "+storeEntry);
     }
     
     public synchronized void upsertHttpsRequest(String entry)
