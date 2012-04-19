@@ -25,13 +25,46 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import com.psiphon3.Utils.MyLog;
+
 import android.content.Context;
 import android.content.res.AssetManager;
-import android.util.Log;
 
 public class PsiphonNativeWrapper
 {
-    private Process process;
+    // from: "When Runtime.exec() won't"
+    // http://www.javaworld.com/javaworld/jw-12-2000/jw-1229-traps.html?page=4
+    class StreamGobbler extends Thread
+    {
+        String name;
+        InputStream stream;
+        
+        StreamGobbler(String name, InputStream stream)
+        {
+            this.name = name;
+            this.stream = stream;
+        }
+        
+        public void run()
+        {
+            try
+            {
+                BufferedReader reader =
+                    new BufferedReader(
+                        new InputStreamReader(stream));
+                String line;
+                while ((line = reader.readLine()) != null)
+                {
+                    MyLog.d(name + "> " + line);
+                }
+            }
+            catch (IOException e) {}
+        }
+    }
+    
+    private java.lang.Process process;
+    private StreamGobbler errorGobbler;
+    private StreamGobbler outputGobbler;
     
     public PsiphonNativeWrapper(
             Context context,
@@ -111,9 +144,19 @@ public class PsiphonNativeWrapper
         }
         
         // Start the process
-        
+
         String nativeCommand = fileName + " " + arguments;
         this.process = Runtime.getRuntime().exec(nativeCommand);
+
+        this.errorGobbler = new StreamGobbler(
+            fileName + " ERROR",
+            this.process.getErrorStream());
+        this.errorGobbler.start();
+
+        this.outputGobbler = new StreamGobbler(
+            fileName + "OUTPUT",
+            this.process.getInputStream());
+        this.outputGobbler.start();
     }
     
     public void stop()
@@ -122,7 +165,26 @@ public class PsiphonNativeWrapper
         {
             return;
         }
+
         // TODO: graceful shutdown?
+
+        // As recommended in "Five Common java.lang.Process Pitfalls"
+        // http://kylecartmell.com/?p=9
+        try
+        {
+            this.process.getErrorStream().close();
+        }
+        catch (IOException e) {}
+        try
+        {
+            this.process.getInputStream().close();
+        }
+        catch (IOException e) {}
+        try
+        {
+            this.process.getOutputStream().close();
+        }
+        catch (IOException e) {}
         this.process.destroy();
         this.process = null;
     }
