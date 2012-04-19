@@ -92,7 +92,7 @@ public class PsiphonAndroidActivity extends Activity
         Intent i = new Intent(this, org.zirco.ui.activities.MainActivity.class);
         
         //TODO: get real homepage URL
-        i.setData(Uri.parse("http://vl7.net/ip"));
+        i.setData(Uri.parse("http://www.psiphon3.com"));
         i.putExtra("localProxyPort", PsiphonConstants.HTTP_PROXY_PORT);
         startActivity(i);
     }

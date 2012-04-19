@@ -16,13 +16,13 @@
  -->
 
 <resources>        
-    <string name="ApplicationName">Zirco Browser</string>
-    <string name="ApplicationNameUrl">Zirco - %s</string>
-    <string name="ApplicationDescription">Zirco is an open-source browser for Android.</string>
+    <string name="ApplicationName">Psiphon Browser</string>
+    <string name="ApplicationNameUrl">Psiphon - %s</string>
+    <string name="ApplicationDescription">Psiphon Browser is an open-source browser for Android based on Zirco.</string>
     
     <string name="AboutActivity.Title">About</string>
 	<string name="AboutActivity.VersionText">Version:</string>
-	<string name="AboutActivity.UrlTextValue">http://code.google.com/p/zirco-browser/</string>
+	<string name="AboutActivity.UrlTextValue">https://bitbucket.org/psiphon/psiphon-circumvention-system/overview</string>
 	<string name="AboutActivity.LicenseText">License:</string>
 	<string name="AboutActivity.LicenseTextValue">GPL v3</string>
 
@@ -42,7 +42,7 @@
     <string name="Main.VndErrorTitle">Unable to open url</string>
     <string name="Main.VndErrorMessage">You may not have an application able to open this url: %s.</string>
     
-    <string name="BookmarksListActivity.Title">Zirco Browser - Bookmarks</string>
+    <string name="BookmarksListActivity.Title">Psiphon Browser - Bookmarks</string>
     <string name="BookmarksListActivity.MenuSortMode">Sort by</string>
     <string name="BookmarksListActivity.MenuAddBookmark">Add bookmark</string>
     <string name="BookmarksListActivity.Empty">No bookmarks</string>
@@ -57,16 +57,16 @@
     <string name="EditBookmarkActivity.TitleLabel">Name:</string>
     <string name="EditBookmarkActivity.UrlLabel">Location:</string>
     
-    <string name="HistoryListActivity.Title">Zirco Browser - History</string>
+    <string name="HistoryListActivity.Title">Psiphon Browser - History</string>
     <string name="HistoryListActivity.MenuOpenInTab">Open in new tab</string>
     <string name="HistoryListActivity.MenuDelete">Delete</string>
     
-    <string name="DownloadListActivity.Title">Zirco Browser - Downloads</string>
+    <string name="DownloadListActivity.Title">Psiphon Browser - Downloads</string>
     <string name="DownloadListActivity.Empty">No downloads</string>
     <string name="DownloadListActivity.Aborted">%s (Canceled)</string>
     <string name="DownloadListActivity.Finished">%s (Finished)</string>
     
-    <string name="AdBlockerWhiteListActivity.Title">Zirco Browser - Ad blocker white list</string>
+    <string name="AdBlockerWhiteListActivity.Title">Psiphon Browser - Ad blocker white list</string>
     <string name="AdBlockerWhiteListActivity.Empty">White list is empty.</string>
     <string name="AdBlockerWhiteListActivity.AddMessage">Add to white list</string>
     <string name="AdBlockerWhiteListActivity.ClearMessage">Clear white list</string>    
@@ -323,7 +323,7 @@
 	<string name="Commons.SslExpired">This certificate has expired.</string>
 	<string name="Commons.SslNotYetValid">This certificate is not valid yet.</string>
 	
-	<string name="MobileViewListActivity.Title">Zirco Browser - Websites list for mobile view</string>
+	<string name="MobileViewListActivity.Title">Psiphon Browser - Websites list for mobile view</string>
 	<string name="MobileViewListActivity.ListEmpty">List is empty.</string>	
     <string name="MobileViewListActivity.AddMessage">Add a website</string>
     <string name="MobileViewListActivity.ClearMessage">Clear all sites</string>
