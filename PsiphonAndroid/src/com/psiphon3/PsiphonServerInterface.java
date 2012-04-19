@@ -118,8 +118,6 @@ public class PsiphonServerInterface
     private ArrayList<ServerEntry> serverEntries = new ArrayList<ServerEntry>();
     private ArrayList<String> homePages = new ArrayList<String>();
     private String upgradeClientVersion;
-    private ArrayList<Pattern> pageViewRegexes = new ArrayList<Pattern>();
-    private ArrayList<Pattern> httpsRequestRegexes = new ArrayList<Pattern>();
     private String speedTestURL;
     private String clientSessionID; // access via getCurrentClientSessionID -- even internally
     private String serverSessionID;
@@ -248,23 +246,31 @@ public class PsiphonServerInterface
 
                     this.upgradeClientVersion = obj.getString("upgrade_client_version");
 
-                    JSONArray page_view_regexes = obj.getJSONArray("page_view_regexes");
-                    for (int i = 0; i < page_view_regexes.length(); i++)
+                    List<Utils.Pair<Pattern, String>> pageViewRegexes = new ArrayList<Utils.Pair<Pattern, String>>();
+                    JSONArray jsonPageViewRegexes = obj.getJSONArray("page_view_regexes");
+                    for (int i = 0; i < jsonPageViewRegexes.length(); i++)
                     {
-                        this.pageViewRegexes.add(
-                            Pattern.compile(
-                                page_view_regexes.getString(i),
-                                java.util.regex.Pattern.CASE_INSENSITIVE));
+                        JSONObject regexReplace = jsonPageViewRegexes.getJSONObject(i);
+                        
+                        pageViewRegexes.add(Utils.Pair.of(
+                                Pattern.compile(regexReplace.getString("regex"), Pattern.CASE_INSENSITIVE), 
+                                regexReplace.getString("replace")));
                     }
 
-                    JSONArray https_request_regexes = obj.getJSONArray("https_request_regexes");
-                    for (int i = 0; i < https_request_regexes.length(); i++)
+                    List<Utils.Pair<Pattern, String>> httpsRequestRegexes = new ArrayList<Utils.Pair<Pattern, String>>();
+                    JSONArray jsonHttpsRequestRegexes = obj.getJSONArray("https_request_regexes");
+                    for (int i = 0; i < jsonHttpsRequestRegexes.length(); i++)
                     {
-                        this.httpsRequestRegexes.add(
-                                Pattern.compile(
-                                        https_request_regexes.getString(i),
-                                        java.util.regex.Pattern.CASE_INSENSITIVE));
+                        JSONObject regexReplace = jsonHttpsRequestRegexes.getJSONObject(i);
+                        
+                        httpsRequestRegexes.add(Utils.Pair.of(
+                                Pattern.compile(regexReplace.getString("regex"), Pattern.CASE_INSENSITIVE), 
+                                regexReplace.getString("replace")));
                     }
+                    
+                    // Set the regexes directly in the stats object rather than 
+                    // storing them in this class.
+                    PsiphonAndroidStats.getStats().setRegexes(pageViewRegexes, httpsRequestRegexes);
 
                     this.speedTestURL = obj.getString("speed_test_url");
 
