@@ -28,5 +28,6 @@
     <string name="PsiphonServerInterface.FailedToParseHandshake">Failed to parse handshake.</string>
     <string name="PsiphonAndroidService.HandshakeRequestFailed">Handshake request failed.</string>
     <string name="PsiphonAndroidService.ConnectedRequestFailed">Connected request failed.</string>
+    <string name="ssh_disconnected_unexpectedly">SSH disconnected unexpectedly</string>
 
 </resources>

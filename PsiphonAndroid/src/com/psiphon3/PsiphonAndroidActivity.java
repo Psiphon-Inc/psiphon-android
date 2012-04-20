@@ -48,6 +48,7 @@ public class PsiphonAndroidActivity extends Activity
     public static final String ADD_MESSAGE_TEXT = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TEXT";
     public static final String ADD_MESSAGE_CLASS = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_CLASS";
     public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
+    public static final String DISCONNECTED = "com.psiphon3.PsiphonAndroidActivity.DISCONNECTED";
     
     private TableLayout m_messagesTableLayout;
     private ScrollView m_messagesScrollView;
@@ -64,8 +65,7 @@ public class PsiphonAndroidActivity extends Activity
         public void onServiceConnected(ComponentName className, IBinder service)
         {
             m_service = ((PsiphonAndroidService.LocalBinder)service).getService();
-            PsiphonAndroidActivity.this.hookUpMessages();
-            PsiphonAndroidActivity.this.hookUpHandshakeSuccess();
+            PsiphonAndroidActivity.this.hookup();
         }
 
         public void onServiceDisconnected(ComponentName className)
@@ -89,34 +89,38 @@ public class PsiphonAndroidActivity extends Activity
         PsiphonConstants.DEBUG = Utils.isDebugMode(this);
     }
     
-    private void openZircoMainActivity() {
-        Intent i = new Intent(this, org.zirco.ui.activities.MainActivity.class);
+    private void openZircoMainActivity()
+    {
+        Intent intent = new Intent(this, org.zirco.ui.activities.MainActivity.class);
         
         //TODO: get real homepage URL
-        i.setData(Uri.parse("http://www.psiphon3.com"));
-        i.putExtra("localProxyPort", PsiphonConstants.HTTP_PROXY_PORT);
-        startActivity(i);
+        intent.setData(Uri.parse("http://www.psiphon3.com"));
+        intent.putExtra("localProxyPort", PsiphonConstants.HTTP_PROXY_PORT);
+        startActivity(intent);
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
         super.onCreateOptionsMenu(menu);
         
         MenuItem item;
         
         item = menu.add(0, MENU_BROWSER, 0, "Open Browser");
-//        item.setIcon(R.drawable.blah);
+        //item.setIcon(R.drawable.blah);
 
         
         item = menu.add(0, MENU_EXIT, 0, "Exit Psiphon");
-//      item.setIcon(R.drawable.blah);
+        //item.setIcon(R.drawable.blah);
         
         return true;
     }
     
     @Override
-    public boolean onMenuItemSelected(int featureId, MenuItem item) {
-        switch(item.getItemId()) {
+    public boolean onMenuItemSelected(int featureId, MenuItem item)
+    {
+        switch(item.getItemId())
+        {
         case MENU_BROWSER:         
             openZircoMainActivity();
             return true;
@@ -124,7 +128,8 @@ public class PsiphonAndroidActivity extends Activity
             stopService(new Intent(this, PsiphonAndroidService.class));
             this.finish();
             return true;
-        default: return super.onMenuItemSelected(featureId, item);
+        default:
+            return super.onMenuItemSelected(featureId, item);
         }
     }
 
@@ -169,7 +174,7 @@ public class PsiphonAndroidActivity extends Activity
         // Since bind is asynchronous, hookUpMessages is called by onServiceConnected...
     }
 
-    protected void hookUpMessages()
+    protected void hookup()
     {
         // Restore messages previously posted by the service
         
@@ -181,16 +186,19 @@ public class PsiphonAndroidActivity extends Activity
         // Listen for new messages
         // Using local broad cast (http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html)
         
-        IntentFilter filter = new IntentFilter(ADD_MESSAGE);
         m_localBroadcastManager = LocalBroadcastManager.getInstance(this);
-        m_localBroadcastManager.registerReceiver(new AddMessageReceiver(), filter);        
+
+        m_localBroadcastManager.registerReceiver(
+                new AddMessageReceiver(),
+                new IntentFilter(ADD_MESSAGE));        
+
+        // Additional receivers
+        
+        m_localBroadcastManager.registerReceiver(
+                new HandshakeSuccessReceiver(),
+                new IntentFilter(HANDSHAKE_SUCCESS));        
     }
-    
-    protected void hookUpHandshakeSuccess()
-    {
-        IntentFilter filter = new IntentFilter(HANDSHAKE_SUCCESS);
-        LocalBroadcastManager.getInstance(this).registerReceiver(new HandshakeSuccessReceiver(), filter);        
-    }
+
     @Override
     protected void onStop()
     {

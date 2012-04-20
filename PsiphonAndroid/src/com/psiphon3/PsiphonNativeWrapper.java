@@ -168,6 +168,8 @@ public class PsiphonNativeWrapper
 
         // TODO: graceful shutdown?
 
+        this.process.destroy();
+
         // As recommended in "Five Common java.lang.Process Pitfalls"
         // http://kylecartmell.com/?p=9
         try
@@ -185,7 +187,7 @@ public class PsiphonNativeWrapper
             this.process.getOutputStream().close();
         }
         catch (IOException e) {}
-        this.process.destroy();
+
         this.process = null;
     }
 
