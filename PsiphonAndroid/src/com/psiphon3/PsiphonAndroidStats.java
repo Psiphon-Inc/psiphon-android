@@ -20,29 +20,38 @@
 package com.psiphon3;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import android.util.Log;
+import com.psiphon3.Utils.MyLog;
 
 public class PsiphonAndroidStats
 {
     // Singleton
     
     private static PsiphonAndroidStats m_stats;
-    private HashMap<String, Integer> m_bytesSentByDomain;
-    private HashMap<String, Integer> m_bytesReceivedByDomain;
+    private Map<String, Integer> m_bytesSentByDomain;
+    private Map<String, Integer> m_bytesReceivedByDomain;
+    private Map<String, Integer> m_pageViewEntries;
+    private Map<String, Integer> m_httpsRequestEntries;
+    private List<Utils.Pair<Pattern, String>> m_pageViewRegexes;
+    private List<Utils.Pair<Pattern, String>> m_httpsRequestRegexes;
         
     private PsiphonAndroidStats()
     {
         m_bytesSentByDomain = new HashMap<String, Integer>();
         m_bytesReceivedByDomain = new HashMap<String, Integer>();
+        m_pageViewEntries = new HashMap<String, Integer>();
+        m_httpsRequestEntries = new HashMap<String, Integer>();
     }
 
     public Object clone() throws CloneNotSupportedException
     {
         throw new CloneNotSupportedException();
     }
-
+    
     public static synchronized PsiphonAndroidStats getStats()
     {
         if (m_stats == null)
@@ -51,6 +60,14 @@ public class PsiphonAndroidStats
         }
         
         return m_stats;
+    }
+
+    public synchronized void setRegexes(
+            List<Utils.Pair<Pattern, String>> pageViewRegexes,
+            List<Utils.Pair<Pattern, String>> httpsRequestRegexes)
+    {
+        m_stats.m_pageViewRegexes = pageViewRegexes;
+        m_stats.m_httpsRequestRegexes = httpsRequestRegexes;
     }
 
     public synchronized void addBytesSent(String domain, int byteCount)
@@ -73,6 +90,56 @@ public class PsiphonAndroidStats
         }
         total += byteCount;
         m_bytesReceivedByDomain.put(domain, total);
+    }
+    
+    public synchronized void upsertPageView(String entry)
+    {
+        String storeEntry = "(OTHER)";
+        
+        for (Utils.Pair<Pattern, String> regexReplace : this.m_pageViewRegexes)
+        {
+            Matcher matcher = regexReplace.left.matcher(entry);
+            if (matcher.find())
+            {
+                storeEntry = matcher.replaceFirst(regexReplace.right);
+                break;
+            }
+        }
+        
+        if (storeEntry.length() == 0) return;
+        
+        // Add/increment the entry.
+        Integer prevCount = this.m_pageViewEntries.get(storeEntry);
+        if (prevCount == null) prevCount = 0;
+        this.m_pageViewEntries.put(storeEntry, prevCount+1);
+        
+        MyLog.d("upsertPageView: ("+(prevCount+1)+") "+storeEntry);
+    }
+    
+    public synchronized void upsertHttpsRequest(String entry)
+    {
+        // TODO: This is identical code to the function above, because we don't
+        // yet know what a HTTPS "entry" looks like, because we haven't implemented
+        // HTTPS response parsing yet.
+        
+        String storeEntry = "(OTHER)";
+        
+        for (Utils.Pair<Pattern, String> regexReplace : this.m_httpsRequestRegexes)
+        {
+            Matcher matcher = regexReplace.left.matcher(entry);
+            if (matcher.find())
+            {
+                storeEntry = matcher.replaceFirst(regexReplace.right);
+                break;
+            }
+        }
+        
+        if (storeEntry.length() == 0) return;
+        
+        // Add/increment the entry.
+        Integer prevCount = this.m_httpsRequestEntries.get(storeEntry);
+        if (prevCount == null) prevCount = 0;
+        this.m_httpsRequestEntries.put(storeEntry, prevCount+1);
     }
     
     public synchronized void dumpReport()

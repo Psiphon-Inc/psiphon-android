@@ -421,9 +421,6 @@ public class PsiphonStreamForwarder extends Thread
                                 // (Assumes HTTP responses return in request order)
                                 String uri = requestLine.getUri();
 
-                                // TODO: must remove before release - leaking info
-                                //Log.d("TEMP", Thread.currentThread().toString() + "HTTP request: " +
-                                //        this.destHost + " " + uri);
                                 this.pendingRequestStack.add(0, uri);
                             }
                             else
@@ -472,11 +469,16 @@ public class PsiphonStreamForwarder extends Thread
                                 // (Assumes HTTP responses return in response order)
                                 String requestURI = this.sibling.pendingRequestStack.remove(0);
 
-                                // TODO: must remove before release - leaking info
-                                //Log.d("TEMP", Thread.currentThread().toString() + "HTTP response: " +
-                                //        Integer.toString(responseStatusCode) + " " + this.destHost + " " +
-                                //        requestURI + " " + contentType);
-                                // TODO: increment stats (based on responseStatusCode, contentType, regex etc.)
+                                // We update the stats if the response code is 200 
+                                // and the content type is some kind of HTML page.
+                                if (this.destHost.length() > 0
+                                    && requestURI.length() > 0
+                                    && responseStatusCode == 200
+                                    && (contentType.contains("text/html")
+                                        || contentType.contains("application/xhtml+xml")))
+                                {
+                                    PsiphonAndroidStats.getStats().upsertPageView(this.destHost+requestURI);
+                                }
                             }
     
                             // Chunk encoding takes precedence over content length
