@@ -249,12 +249,12 @@ public class PsiphonStreamForwarder extends Thread
         if (this.isHttpRequester)
         {
             PsiphonAndroidStats stats = PsiphonAndroidStats.getStats();
-            stats.addBytesSent(this.destHost, bytes_read);
+            stats.addBytesSent(bytes_read);
         }
         else
         {
             PsiphonAndroidStats stats = PsiphonAndroidStats.getStats();
-            stats.addBytesReceived(this.destHost, bytes_read);
+            stats.addBytesReceived(bytes_read);
         }
 
         // Page views stats
@@ -511,7 +511,7 @@ public class PsiphonStreamForwarder extends Thread
             }
             catch (Exception e)
             {
-                Log.e(PsiphonConstants.TAG, "Page view stats error: " + e);
+                Log.e(PsiphonConstants.TAG, "Page view stats error", e);
                 // Assume this isn't HTTP, so stop buffering forever
                 this.httpProtocolBuffer = null;
                 this.isHttp = false;

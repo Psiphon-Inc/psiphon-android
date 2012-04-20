@@ -221,24 +221,6 @@ public class Utils {
         }                    
     }
 
-    // From:
-    // http://stackoverflow.com/questions/156275/what-is-the-equivalent-of-the-c-pairl-r-in-java
-    // Use the factory like so: Pair.of("string", 22)
-    static public class Pair<LEFT, RIGHT>
-    {
-        public final LEFT left;
-        public final RIGHT right;
-        
-        private Pair(LEFT left, RIGHT right) {
-            this.left = left;
-            this.right = right;
-        }
-
-        public static <LEFT, RIGHT> Pair<LEFT, RIGHT> of(LEFT left, RIGHT right) {
-            return new Pair<LEFT, RIGHT>(left, right);
-        }
-    }
-    
     /**
      * Wrapper around Android's Log functionality. This should be used so that
      * LogCat messages will be turned off in production builds. For the reason

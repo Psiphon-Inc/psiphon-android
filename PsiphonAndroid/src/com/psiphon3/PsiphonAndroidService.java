@@ -36,7 +36,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import ch.ethz.ssh2.*;
 
 import com.psiphon3.PsiphonAndroidActivity;
-import com.psiphon3.PsiphonAndroidStats;
 import com.psiphon3.PsiphonServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.Utils.MyLog;
 
@@ -293,7 +292,7 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
                 {
                     boolean stop = m_stopSignal.await(10, TimeUnit.SECONDS);
 
-                    PsiphonAndroidStats.getStats().dumpReport();
+                    m_interface.doPeriodicWork(stop);
 
                     if (!polipo.isRunning())
                     {

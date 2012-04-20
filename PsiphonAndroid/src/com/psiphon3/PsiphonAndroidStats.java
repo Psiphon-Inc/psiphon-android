@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import android.util.Pair;
+
 import com.psiphon3.Utils.MyLog;
 
 public class PsiphonAndroidStats
@@ -32,17 +34,14 @@ public class PsiphonAndroidStats
     // Singleton
     
     private static PsiphonAndroidStats m_stats;
-    private Map<String, Integer> m_bytesSentByDomain;
-    private Map<String, Integer> m_bytesReceivedByDomain;
+    private Integer m_bytesTransferred = 0;
     private Map<String, Integer> m_pageViewEntries;
     private Map<String, Integer> m_httpsRequestEntries;
-    private List<Utils.Pair<Pattern, String>> m_pageViewRegexes;
-    private List<Utils.Pair<Pattern, String>> m_httpsRequestRegexes;
+    private List<Pair<Pattern, String>> m_pageViewRegexes;
+    private List<Pair<Pattern, String>> m_httpsRequestRegexes;
         
     private PsiphonAndroidStats()
     {
-        m_bytesSentByDomain = new HashMap<String, Integer>();
-        m_bytesReceivedByDomain = new HashMap<String, Integer>();
         m_pageViewEntries = new HashMap<String, Integer>();
         m_httpsRequestEntries = new HashMap<String, Integer>();
     }
@@ -63,49 +62,40 @@ public class PsiphonAndroidStats
     }
 
     public synchronized void setRegexes(
-            List<Utils.Pair<Pattern, String>> pageViewRegexes,
-            List<Utils.Pair<Pattern, String>> httpsRequestRegexes)
+            List<Pair<Pattern, String>> pageViewRegexes,
+            List<Pair<Pattern, String>> httpsRequestRegexes)
     {
         m_stats.m_pageViewRegexes = pageViewRegexes;
         m_stats.m_httpsRequestRegexes = httpsRequestRegexes;
     }
 
-    public synchronized void addBytesSent(String domain, int byteCount)
+    public synchronized void addBytesSent(int byteCount)
     {
-        Integer total = m_bytesSentByDomain.get(domain);
-        if (total == null)
-        {
-            total = 0;
-        }
-        total += byteCount;
-        m_bytesSentByDomain.put(domain, total);
+        this.m_bytesTransferred += byteCount;
     }
 
-    public synchronized void addBytesReceived(String domain, int byteCount)
+    public synchronized void addBytesReceived(int byteCount)
     {
-        Integer total = m_bytesReceivedByDomain.get(domain);
-        if (total == null)
-        {
-            total = 0;
-        }
-        total += byteCount;
-        m_bytesReceivedByDomain.put(domain, total);
+        this.m_bytesTransferred += byteCount;
     }
     
     public synchronized void upsertPageView(String entry)
     {
         String storeEntry = "(OTHER)";
         
-        for (Utils.Pair<Pattern, String> regexReplace : this.m_pageViewRegexes)
+        if (this.m_pageViewRegexes != null)
         {
-            Matcher matcher = regexReplace.left.matcher(entry);
-            if (matcher.find())
+            for (Pair<Pattern, String> regexReplace : this.m_pageViewRegexes)
             {
-                storeEntry = matcher.replaceFirst(regexReplace.right);
-                break;
+                Matcher matcher = regexReplace.first.matcher(entry);
+                if (matcher.find())
+                {
+                    storeEntry = matcher.replaceFirst(regexReplace.second);
+                    break;
+                }
             }
         }
-        
+            
         if (storeEntry.length() == 0) return;
         
         // Add/increment the entry.
@@ -124,13 +114,16 @@ public class PsiphonAndroidStats
         
         String storeEntry = "(OTHER)";
         
-        for (Utils.Pair<Pattern, String> regexReplace : this.m_httpsRequestRegexes)
+        if (this.m_httpsRequestRegexes != null)
         {
-            Matcher matcher = regexReplace.left.matcher(entry);
-            if (matcher.find())
+            for (Pair<Pattern, String> regexReplace : this.m_httpsRequestRegexes)
             {
-                storeEntry = matcher.replaceFirst(regexReplace.right);
-                break;
+                Matcher matcher = regexReplace.first.matcher(entry);
+                if (matcher.find())
+                {
+                    storeEntry = matcher.replaceFirst(regexReplace.second);
+                    break;
+                }
             }
         }
         
@@ -142,7 +135,30 @@ public class PsiphonAndroidStats
         this.m_httpsRequestEntries.put(storeEntry, prevCount+1);
     }
     
-    public synchronized void dumpReport()
+    public synchronized int getCount()
     {
+        return this.m_pageViewEntries.size() + this.m_httpsRequestEntries.size();
+    }
+
+    public synchronized Map<String, Integer> getPageViewEntries()
+    {
+        return this.m_pageViewEntries;
+    }
+
+    public synchronized Map<String, Integer> getHttpsRequestEntries()
+    {
+        return this.m_httpsRequestEntries;
+    }
+
+    public Integer getBytesTransferred()
+    {
+        return this.m_bytesTransferred;
+    }
+
+    public synchronized void clear()
+    {
+        this.m_bytesTransferred = 0;
+        this.m_pageViewEntries.clear();
+        this.m_httpsRequestEntries.clear();
     }
 }

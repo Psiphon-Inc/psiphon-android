@@ -54,6 +54,8 @@ import org.json.JSONObject;
 import com.psiphon3.Utils.MyLog;
 
 import android.content.Context;
+import android.os.SystemClock;
+import android.util.Pair;
 
 
 public class PsiphonServerInterface
@@ -221,15 +223,15 @@ public class PsiphonServerInterface
     {
         try
         {
-            List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
+            List<Pair<String,String>> extraParams = new ArrayList<Pair<String,String>>();
             for (ServerEntry entry : this.serverEntries)
             {
-                extraParams.add(Utils.Pair.of("known_server", entry.ipAddress));
+                extraParams.add(Pair.create("known_server", entry.ipAddress));
             }
             
             String url = getRequestURL("handshake", extraParams);
             
-            byte[] response = makeRequest(url, null);
+            byte[] response = makeRequest(url);
 
             final String JSON_CONFIG_PREFIX = "Config: ";
             for (String line : new String(response).split("\n"))
@@ -246,24 +248,24 @@ public class PsiphonServerInterface
 
                     this.upgradeClientVersion = obj.getString("upgrade_client_version");
 
-                    List<Utils.Pair<Pattern, String>> pageViewRegexes = new ArrayList<Utils.Pair<Pattern, String>>();
+                    List<Pair<Pattern, String>> pageViewRegexes = new ArrayList<Pair<Pattern, String>>();
                     JSONArray jsonPageViewRegexes = obj.getJSONArray("page_view_regexes");
                     for (int i = 0; i < jsonPageViewRegexes.length(); i++)
                     {
                         JSONObject regexReplace = jsonPageViewRegexes.getJSONObject(i);
                         
-                        pageViewRegexes.add(Utils.Pair.of(
+                        pageViewRegexes.add(Pair.create(
                                 Pattern.compile(regexReplace.getString("regex"), Pattern.CASE_INSENSITIVE), 
                                 regexReplace.getString("replace")));
                     }
 
-                    List<Utils.Pair<Pattern, String>> httpsRequestRegexes = new ArrayList<Utils.Pair<Pattern, String>>();
+                    List<Pair<Pattern, String>> httpsRequestRegexes = new ArrayList<Pair<Pattern, String>>();
                     JSONArray jsonHttpsRequestRegexes = obj.getJSONArray("https_request_regexes");
                     for (int i = 0; i < jsonHttpsRequestRegexes.length(); i++)
                     {
                         JSONObject regexReplace = jsonHttpsRequestRegexes.getJSONObject(i);
                         
-                        httpsRequestRegexes.add(Utils.Pair.of(
+                        httpsRequestRegexes.add(Pair.create(
                                 Pattern.compile(regexReplace.getString("regex"), Pattern.CASE_INSENSITIVE), 
                                 regexReplace.getString("replace")));
                     }
@@ -299,12 +301,12 @@ public class PsiphonServerInterface
     synchronized public void doConnectedRequest() 
         throws PsiphonServerInterfaceException
     {
-        List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
-        extraParams.add(Utils.Pair.of("session_id", this.serverSessionID));
+        List<Pair<String,String>> extraParams = new ArrayList<Pair<String,String>>();
+        extraParams.add(Pair.create("session_id", this.serverSessionID));
         
         String url = getRequestURL("connected", extraParams);
         
-        makeRequest(url, null);
+        makeRequest(url);
     }
 
     /**
@@ -352,7 +354,7 @@ public class PsiphonServerInterface
                 MyLog.d("HTTPSREQUEST: " + entry.toString());
             }
             stats.put("https_requests", httpsRequests);
-            
+
             requestBody = stats.toString().getBytes();
         } 
         catch (JSONException e)
@@ -361,39 +363,42 @@ public class PsiphonServerInterface
             MyLog.d("Stats JSON failed", e);
         }        
         
-        List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
-        extraParams.add(Utils.Pair.of("session_id", this.serverSessionID));
-        extraParams.add(Utils.Pair.of("connected", connected ? "1" : "0"));
+        List<Pair<String,String>> extraParams = new ArrayList<Pair<String,String>>();
+        extraParams.add(Pair.create("session_id", this.serverSessionID));
+        extraParams.add(Pair.create("connected", connected ? "1" : "0"));
 
         String url = getRequestURL("status", extraParams);
         
-        makeRequest(url, requestBody);
+        List<Pair<String,String>> additionalHeaders = new ArrayList<Pair<String,String>>();
+        additionalHeaders.add(Pair.create("Content-Type", "application/json"));
+        
+        makeRequest(url, additionalHeaders, requestBody);
     }
 
     synchronized public void doSpeedRequest(String operation, String info, Integer milliseconds, Integer size) 
         throws PsiphonServerInterfaceException
     {
-        List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
-        extraParams.add(Utils.Pair.of("session_id", this.serverSessionID));
-        extraParams.add(Utils.Pair.of("operation", operation));
-        extraParams.add(Utils.Pair.of("info", info));
-        extraParams.add(Utils.Pair.of("milliseconds", milliseconds.toString()));
-        extraParams.add(Utils.Pair.of("size", size.toString()));
+        List<Pair<String,String>> extraParams = new ArrayList<Pair<String,String>>();
+        extraParams.add(Pair.create("session_id", this.serverSessionID));
+        extraParams.add(Pair.create("operation", operation));
+        extraParams.add(Pair.create("info", info));
+        extraParams.add(Pair.create("milliseconds", milliseconds.toString()));
+        extraParams.add(Pair.create("size", size.toString()));
         
         String url = getRequestURL("speed", extraParams);
         
-        makeRequest(url, null);
+        makeRequest(url);
     }
 
     synchronized public void doFailedRequest(String error) 
         throws PsiphonServerInterfaceException
     {
-        List<Utils.Pair<String,String>> extraParams = new ArrayList<Utils.Pair<String,String>>();
-        extraParams.add(Utils.Pair.of("error_code", error));
+        List<Pair<String,String>> extraParams = new ArrayList<Pair<String,String>>();
+        extraParams.add(Pair.create("error_code", error));
         
         String url = getRequestURL("failed", extraParams);
         
-        makeRequest(url, null);
+        makeRequest(url);
     }
 
     private class CustomTrustManager implements X509TrustManager
@@ -451,7 +456,7 @@ public class PsiphonServerInterface
      */
     private String getRequestURL(
                     String path, 
-                    List<Utils.Pair<String,String>> extraParams)
+                    List<Pair<String,String>> extraParams)
     {
         ServerEntry serverEntry = getCurrentServerEntry();
         String clientSessionID = getCurrentClientSessionID();
@@ -471,10 +476,10 @@ public class PsiphonServerInterface
         
         if (extraParams != null)
         {
-            for (Utils.Pair<String,String> param : extraParams) 
+            for (Pair<String,String> param : extraParams) 
             {
-                String paramKey = param.left;
-                String paramValue = param.right;
+                String paramKey = param.first;
+                String paramValue = param.second;
                 url.append("&").append(paramKey).append("=").append(Utils.urlEncode(paramValue));
             }
         }
@@ -482,7 +487,13 @@ public class PsiphonServerInterface
         return url.toString();
     }
 
-    private byte[] makeRequest(String url, byte[] body) 
+    private byte[] makeRequest(String url) 
+            throws PsiphonServerInterfaceException
+    {
+        return makeRequest(url, null, null);
+    }
+    
+    private byte[] makeRequest(String url, List<Pair<String,String>> additionalHeaders, byte[] body) 
         throws PsiphonServerInterfaceException
     {
         String serverCertificate = getCurrentServerEntry().webServerCertificate;
@@ -502,6 +513,14 @@ public class PsiphonServerInterface
             conn.setDoOutput(true);
             conn.setDoInput(true);
             conn.setUseCaches(false);
+            
+            if (additionalHeaders != null)
+            {
+                for (Pair<String,String> header : additionalHeaders)
+                {
+                    conn.addRequestProperty(header.first, header.second);
+                }
+            }
     
             if (body == null)
             {
@@ -510,13 +529,13 @@ public class PsiphonServerInterface
             else
             {
                 conn.setRequestMethod("POST");
-                conn.setRequestProperty(
+                conn.addRequestProperty(
                         "Content-Length", 
                         Integer.toString(body.length));
                 DataOutputStream writer = new DataOutputStream(conn.getOutputStream());
                 writer.write(body);
-                writer.flush ();
-                writer.close ();           
+                writer.flush();
+                writer.close();           
             }
             
             if (conn.getResponseCode() != HttpsURLConnection.HTTP_OK)
@@ -642,6 +661,62 @@ public class PsiphonServerInterface
         {
             MyLog.w(R.string.PsiphonServerInterface_FailedToStoreServerEntries, e);
             // Proceed, even if file saving fails
+        }
+    }
+
+    private final long DEFAULT_STATS_SEND_INTERVAL_MS = 30*60*1000; // 30 mins
+    private long statsSendInterval = DEFAULT_STATS_SEND_INTERVAL_MS;
+    private long lastStatusSendTimeMS = 0;
+    private final int DEFAULT_SEND_MAX_ENTRIES = 1000;
+    private int sendMaxEntries = DEFAULT_SEND_MAX_ENTRIES;
+    
+    /**
+     * Call to let the interface to any periodic work or checks that it needs to.
+     * The primary example of this "work" is to send stats to the server when
+     * a time or size threshold is reached.
+     * @param finalCall Should be true if this is the last call -- i.e., if a
+     *                  disconnect is about to occur.
+     */
+    public synchronized void doPeriodicWork(boolean finalCall)
+    {
+        // SystemClock.uptimeMillis() "may get reset occasionally (before it 
+        // would otherwise wrap around)".
+        long now = SystemClock.uptimeMillis();
+        if (now < this.lastStatusSendTimeMS) this.lastStatusSendTimeMS = 0;
+        
+        // If the time or size thresholds have been exceeded, or if we're being 
+        // forced to, send the stats.
+        if (finalCall
+            || (this.lastStatusSendTimeMS + this.statsSendInterval) < now
+            || PsiphonAndroidStats.getStats().getCount() >= this.sendMaxEntries)
+        {
+            MyLog.d("Sending stats"+(finalCall?" (final)":""));
+            
+            try
+            {
+                doStatusRequest(
+                        !finalCall, 
+                        PsiphonAndroidStats.getStats().getPageViewEntries(), 
+                        PsiphonAndroidStats.getStats().getHttpsRequestEntries(), 
+                        PsiphonAndroidStats.getStats().getBytesTransferred());
+                
+                // Reset thresholds
+                this.lastStatusSendTimeMS = now;
+                this.statsSendInterval = DEFAULT_STATS_SEND_INTERVAL_MS;
+                this.sendMaxEntries = DEFAULT_SEND_MAX_ENTRIES;
+                
+                // Reset stats
+                PsiphonAndroidStats.getStats().clear();
+            } 
+            catch (PsiphonServerInterfaceException e)
+            {
+                // Status request failed. This is fairly common. 
+                // We'll back off the thresholds and try again later.
+                this.statsSendInterval += DEFAULT_STATS_SEND_INTERVAL_MS;
+                this.sendMaxEntries += DEFAULT_SEND_MAX_ENTRIES;
+                
+                MyLog.d("Sending stats FAILED"+(finalCall?" (final)":""));
+            }
         }
     } 
 }
