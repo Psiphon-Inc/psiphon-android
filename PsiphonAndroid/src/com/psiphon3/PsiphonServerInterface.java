@@ -664,7 +664,7 @@ public class PsiphonServerInterface
         }
     }
 
-    private final long DEFAULT_STATS_SEND_INTERVAL_MS = 30*60*1000; // 30 mins
+    private final long DEFAULT_STATS_SEND_INTERVAL_MS = 3*60*1000; // 30 mins
     private long statsSendInterval = DEFAULT_STATS_SEND_INTERVAL_MS;
     private long lastStatusSendTimeMS = 0;
     private final int DEFAULT_SEND_MAX_ENTRIES = 1000;
@@ -679,9 +679,14 @@ public class PsiphonServerInterface
      */
     public synchronized void doPeriodicWork(boolean finalCall)
     {
+        long now = SystemClock.uptimeMillis();
+        
+        // On the very first call, this.lastStatusSendTimeMS will be 0, but we
+        // don't want to send immediately. So...
+        if (this.lastStatusSendTimeMS == 0) this.lastStatusSendTimeMS = now; 
+        
         // SystemClock.uptimeMillis() "may get reset occasionally (before it 
         // would otherwise wrap around)".
-        long now = SystemClock.uptimeMillis();
         if (now < this.lastStatusSendTimeMS) this.lastStatusSendTimeMS = 0;
         
         // If the time or size thresholds have been exceeded, or if we're being 

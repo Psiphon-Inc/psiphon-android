@@ -41,8 +41,14 @@ import com.psiphon3.Utils.MyLog;
 
 public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogger
 {
-    private boolean firstStart = true;
-    // TODO: use this? private Utils.CircularArrayList<Message> m_messages = new Utils.CircularArrayList<Message>(1000);
+    enum State
+    {
+        DISCONNECTED,
+        CONNECTING,
+        CONNECTED
+    }
+    private State m_state = State.DISCONNECTED;
+    private boolean m_firstStart = true;
     private ArrayList<Message> m_messages = new ArrayList<Message>();
     private LocalBroadcastManager m_localBroadcastManager;
     private CountDownLatch m_stopSignal;
@@ -66,8 +72,7 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {        
-        MyLog.d("PsiphonAndroidService.onStartCommand called, firstStart = " + (firstStart ? "true" : "false"));
-        if (firstStart)
+        if (m_firstStart)
         {
             // TODO: put this stuff in onCreate instead?
 
@@ -78,7 +83,7 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
             m_interface = new PsiphonServerInterface(this);
             doForeground();
             startTunnel();
-            firstStart = false;
+            m_firstStart = false;
         }
         return android.app.Service.START_STICKY;
     }
@@ -211,18 +216,41 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
         }
     }
     
+    public synchronized State getState()
+    {
+        return m_state;
+    }
+    
+    private synchronized void setState(State newState)
+    {
+        m_state = newState;
+    }
+    
+    class Monitor implements ConnectionMonitor
+    {
+        public void connectionLost(Throwable reason)
+        {
+            m_stopSignal.countDown();
+            MyLog.e(R.string.ssh_disconnected_unexpectedly);
+        }
+    }
+    
     private void runTunnel()
     {
         PsiphonServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
 
         Connection conn = null;
+        Monitor  monitor = new Monitor();
         DynamicPortForwarder socks = null;
         PsiphonNativeWrapper polipo = null;
+        
+        // TODO: retry-next-server loop
 
         try
         {
             MyLog.i(R.string.ssh_connecting);
             conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
+            conn.addConnectionMonitor(monitor);
             conn.connect(
                     new PsiphonServerHostKeyVerifier(entry.sshHostKey),
                     PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS,
@@ -260,6 +288,8 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
                             PsiphonConstants.POLIPO_EXECUTABLE,
                             PsiphonConstants.POLIPO_ARGUMENTS);
             MyLog.i(R.string.http_proxy_running);
+            
+            setState(State.CONNECTED);
             
             try
             {
@@ -320,7 +350,7 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
             if (polipo != null)
             {
                 polipo.stop();
-                MyLog.i(R.string.http_proxy_stopped);
+                MyLog.e(R.string.http_proxy_stopped);
             }
             if (socks != null)
             {
@@ -332,25 +362,26 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
                 {
                     // Ignore
                 }
-                MyLog.i(R.string.socks_stopped);
+                MyLog.e(R.string.socks_stopped);
             }
             if (conn != null)
             {
                 conn.close();
-                MyLog.i(R.string.ssh_stopped);
+                MyLog.e(R.string.ssh_stopped);
             }
+
+            setState(State.DISCONNECTED);
+            
+            // Notify Activity of disconnected status
+            MyLog.d("SENDING DISCONNECTED BROADCAST");
+            m_localBroadcastManager.sendBroadcast(new Intent(PsiphonAndroidActivity.DISCONNECTED));
         }
-    }
-    
-    public boolean isTunnelStarted()
-    {
-        // TODO: states -- STARTING, CONNECTED, DISCONNECTED
-        
-        return m_tunnelThread != null;
     }
     
     public void startTunnel()
     {
+        stopTunnel();
+        setState(State.CONNECTING);
         m_stopSignal = new CountDownLatch(1);
         m_tunnelThread = new Thread(
             new Runnable()
@@ -366,16 +397,19 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
     
     public void stopTunnel()
     {
-        m_stopSignal.countDown();
+        if (m_tunnelThread != null)
+        {
+            m_stopSignal.countDown();
+    
+            try
+            {
+                m_tunnelThread.join();
+            }
+            catch (InterruptedException e)
+            {
+            }
+        }
 
-        try
-        {
-            m_tunnelThread.join();
-        }
-        catch (InterruptedException e)
-        {
-        }
-        
         m_stopSignal = null;
         m_tunnelThread = null;
     }
