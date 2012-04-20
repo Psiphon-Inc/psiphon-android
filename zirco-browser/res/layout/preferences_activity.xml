@@ -262,14 +262,14 @@
                 android:summary="@string/PreferencesActivity.SummaryCannotBeUndone"
                 android:key="ClearHistoryBookmarks" />
         </PreferenceScreen>
-        <ListPreference
+<!--        <ListPreference
 			android:title="@string/PreferencesActivity.BookmarksDatabaseTitle"
 			android:summary="@string/PreferencesActivity.BookmarksDatabaseSummary"
 			android:key="PREFERENCE_BOOKMARKS_DATABASE"
-			android:defaultValue="STOCK"
+			android:defaultValue="INTERNAL"
 			android:entries="@array/BookmarksDatabaseEntries"
 			android:entryValues="@array/BookmarksDatabaseValues" />
-<!--         <CheckBoxPreference
+         <CheckBoxPreference
             android:title="@string/PreferencesActivity.EnableProxySettings"
             android:defaultValue="false"
             android:key="BrowserEnableProxySettings"

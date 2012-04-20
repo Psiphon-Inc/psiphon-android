@@ -254,9 +254,12 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         mViewFlipper.removeAllViews();   
         
         updateSwitchTabsMethod();
+        /*
+         * PSIPHON always use internal bookmarks
         updateBookmarksDatabaseSource();
         
         registerPreferenceChangeListener();
+        */
         
         Intent i = getIntent();
         if (i.getData() != null) {
@@ -666,6 +669,8 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 
     }
     	
+	/*
+	 * PSIPHON always use internal DB for bookmarks
 	private void registerPreferenceChangeListener() {
     	mPreferenceChangeListener = new OnSharedPreferenceChangeListener() {			
 			@Override
@@ -678,6 +683,7 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 		
 		PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(mPreferenceChangeListener);
     }
+    */
 	
     /**
      * Apply preferences to the current UI objects.
@@ -707,8 +713,9 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
     	}
     }
     
+    /*
     private void updateBookmarksDatabaseSource() {
-    	String source = PreferenceManager.getDefaultSharedPreferences(this).getString(Constants.PREFERENCE_BOOKMARKS_DATABASE, "STOCK");
+    	String source = PreferenceManager.getDefaultSharedPreferences(this).getString(Constants.PREFERENCE_BOOKMARKS_DATABASE, "INTERNAL");
     	
     	if (source.equals("STOCK")) {
     		BookmarksProviderWrapper.setBookmarksSource(BookmarksSource.STOCK);
@@ -716,6 +723,7 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
     		BookmarksProviderWrapper.setBookmarksSource(BookmarksSource.INTERNAL);
     	}
     }
+    */
     
     private void setStatusBarVisibility(boolean visible) {
         int flag = visible ? 0 : WindowManager.LayoutParams.FLAG_FULLSCREEN;

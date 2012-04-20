@@ -50,9 +50,9 @@ public class BookmarksProviderWrapper {
 	}
 	
 	private static final Uri INTERNAL_BOOKMARKS_URI = Uri.parse("content://" + ZircoBookmarksContentProvider.AUTHORITY + "/" + ZircoBookmarksContentProvider.BOOKMARKS_TABLE);
-	private static final Uri STOCK_BOOKMARKS_URI = Browser.BOOKMARKS_URI;
+	//private static final Uri STOCK_BOOKMARKS_URI = Browser.BOOKMARKS_URI;
 	
-	private static Uri BOOKMARKS_URI = STOCK_BOOKMARKS_URI;
+	private static Uri BOOKMARKS_URI = INTERNAL_BOOKMARKS_URI;
 	
 	private static String[] sHistoryBookmarksProjection = new String[] { Browser.BookmarkColumns._ID,
         Browser.BookmarkColumns.TITLE,
@@ -63,6 +63,8 @@ public class BookmarksProviderWrapper {
         Browser.BookmarkColumns.BOOKMARK,
         Browser.BookmarkColumns.FAVICON };		
 
+	/*
+	 * PSIPHON: use internal bookmarks only
 	public static void setBookmarksSource(BookmarksSource source) {
 		switch (source) {
 		case STOCK:
@@ -77,6 +79,7 @@ public class BookmarksProviderWrapper {
 			break;
 		}
 	}
+	*/
 	
 	/**
 	 * Stock History/Bookmarks management.
