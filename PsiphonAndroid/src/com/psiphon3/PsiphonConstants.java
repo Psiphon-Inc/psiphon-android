@@ -26,6 +26,8 @@ public class PsiphonConstants
     public static Boolean DEBUG = false; // may be changed by activity 
     
     public final static String TAG = "Psiphon";
+
+    public final static String INFO_LINK_URL = "https://sites.google.com/a/psiphon3.com/psiphon3/";
     
     public final static String SERVER_ENTRY_FILENAME = "psiphon_server_entries.json";
 

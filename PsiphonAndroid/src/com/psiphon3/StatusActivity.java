@@ -32,6 +32,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TableLayout;
@@ -52,9 +53,6 @@ public class StatusActivity extends Activity
     private LocalBroadcastManager m_localBroadcastManager;
     private TunnelService m_service;
     
-    private static final int MENU_BROWSER = Menu.FIRST;
-    private static final int MENU_EXIT = Menu.FIRST + 1;
-
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
@@ -65,45 +63,11 @@ public class StatusActivity extends Activity
         m_messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
         m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
 
-        // Note that this must come before the above lines, or else the activity
+        // Note that this must come after the above lines, or else the activity
         // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
         PsiphonConstants.DEBUG = Utils.isDebugMode(this);
     }
     
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu)
-    {
-        super.onCreateOptionsMenu(menu);
-        
-        MenuItem item;
-        
-        item = menu.add(0, MENU_BROWSER, 0, "Open Browser");
-        //item.setIcon(R.drawable.blah);
-
-        
-        item = menu.add(0, MENU_EXIT, 0, "Exit Psiphon");
-        //item.setIcon(R.drawable.blah);
-        
-        return true;
-    }
-    
-    @Override
-    public boolean onMenuItemSelected(int featureId, MenuItem item)
-    {
-        switch(item.getItemId())
-        {
-        case MENU_BROWSER:         
-            Events.openBrowser(this, "");
-            return true;
-        case MENU_EXIT:
-            stopService(new Intent(this, TunnelService.class));
-            this.finish();
-            return true;
-        default:
-            return super.onMenuItemSelected(featureId, item);
-        }
-    }
-
     // local service binding, as in http://developer.android.com/reference/android/app/Service.html
     
     private ServiceConnection m_connection = new ServiceConnection()
@@ -161,6 +125,23 @@ public class StatusActivity extends Activity
         super.onStop();
         
         unbindService(m_connection);
+    }
+    
+    public void onOpenBrowserClick(View v)
+    {
+        Events.openBrowser(this, "");       
+    }
+    
+    public void onAboutClick(View v)
+    {
+        // TODO: if not connected, open in default browser?
+        Events.openBrowser(this, PsiphonConstants.INFO_LINK_URL);
+    }
+    
+    public void onExitClick(View v)
+    {
+        stopService(new Intent(this, TunnelService.class));
+        this.finish();       
     }
     
     public class AddMessageReceiver extends BroadcastReceiver

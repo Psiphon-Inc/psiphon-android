@@ -283,7 +283,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
 
                 // Open home pages
                 //TODO: get real homepage URL
-                Events.openBrowser(this, "http://www.psiphon3.com");
+                Events.openBrowser(this, "http://www.psiphon.ca");
             } 
             catch (PsiphonServerInterfaceException requestException)
             {
