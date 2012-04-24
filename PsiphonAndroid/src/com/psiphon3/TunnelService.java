@@ -219,9 +219,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             MyLog.e(R.string.ssh_disconnected_unexpectedly);
         }
     }
-    
-    private void runTunnel()
+
+    private boolean runTunnelOnce()
     {
+        boolean stopped = false;
+
         ServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
 
         Connection conn = null;
@@ -229,8 +231,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         DynamicPortForwarder socks = null;
         NativeWrapper polipo = null;
         
-        // TODO: retry-next-server loop
-
         try
         {
             MyLog.i(R.string.ssh_connecting);
@@ -247,7 +247,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             if (isAuthenticated == false)
             {
                 MyLog.e(R.string.ssh_authentication_failed);
-                return;
+                return stopped;
             }
             MyLog.i(R.string.ssh_authenticated);
 
@@ -318,18 +318,31 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
 
                     if (stop)
                     {
+                        stopped = true;
                         break;
                     }
                 }
             }
-            catch (InterruptedException e)
-            {
-            }            
+            catch (InterruptedException e) {}            
         }
         catch (IOException e)
         {
+            // SSH and Polipo errors -- tunnel problems -- result in IOException
+            // Make sure we try a different server (if any) next time
+            // Note: we're not marking the server failed if handshake/connected requests failed
+            
+            m_interface.markCurrentServerFailed();
+
+            // 1-2 second delay before retrying
+            // (same as Windows client, see comment in ConnectionManager.cpp)
+            try
+            {
+                Thread.sleep(1000 + (long)(Math.random()*1000.0));
+            }
+            catch (InterruptedException ie) {}
+            
             MyLog.e(R.string.error_message, e);
-            return;
+            return stopped;
         }
         finally
         {
@@ -362,6 +375,17 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             MyLog.d("SENDING DISCONNECTED BROADCAST");
 
             Events.showDisconnected(this);
+        }
+        
+        return stopped;
+    }
+    
+    private void runTunnel()
+    {
+        boolean stopped = false;
+        while (!stopped)
+        {
+            stopped = runTunnelOnce();
         }
     }
     
