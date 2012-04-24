@@ -38,10 +38,10 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 
-import com.psiphon3.PsiphonAndroidService.Message;
+import com.psiphon3.TunnelService.Message;
 
 
-public class PsiphonAndroidActivity extends Activity
+public class StatusActivity extends Activity
 {
     public static final String ADD_MESSAGE = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE";
     public static final String ADD_MESSAGE_TEXT = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TEXT";
@@ -50,7 +50,7 @@ public class PsiphonAndroidActivity extends Activity
     private TableLayout m_messagesTableLayout;
     private ScrollView m_messagesScrollView;
     private LocalBroadcastManager m_localBroadcastManager;
-    private PsiphonAndroidService m_service;
+    private TunnelService m_service;
     
     private static final int MENU_BROWSER = Menu.FIRST;
     private static final int MENU_EXIT = Menu.FIRST + 1;
@@ -96,7 +96,7 @@ public class PsiphonAndroidActivity extends Activity
             Events.openBrowser(this, "");
             return true;
         case MENU_EXIT:
-            stopService(new Intent(this, PsiphonAndroidService.class));
+            stopService(new Intent(this, TunnelService.class));
             this.finish();
             return true;
         default:
@@ -110,7 +110,7 @@ public class PsiphonAndroidActivity extends Activity
     {
         public void onServiceConnected(ComponentName className, IBinder service)
         {
-            m_service = ((PsiphonAndroidService.LocalBinder)service).getService();
+            m_service = ((TunnelService.LocalBinder)service).getService();
 
             // Restore messages previously posted by the service
             
@@ -122,7 +122,7 @@ public class PsiphonAndroidActivity extends Activity
             // Listen for new messages
             // Using local broad cast (http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html)
             
-            m_localBroadcastManager = LocalBroadcastManager.getInstance(PsiphonAndroidActivity.this);
+            m_localBroadcastManager = LocalBroadcastManager.getInstance(StatusActivity.this);
 
             m_localBroadcastManager.registerReceiver(
                     new AddMessageReceiver(),
@@ -148,8 +148,8 @@ public class PsiphonAndroidActivity extends Activity
         // - "started" to ensure tunnel service lives beyond this activity
         // - "bound" to interact with service (check connection status, start/stop, etc.)
         
-        startService(new Intent(this, PsiphonAndroidService.class));
-        bindService(new Intent(this, PsiphonAndroidService.class), m_connection, Context.BIND_AUTO_CREATE);
+        startService(new Intent(this, TunnelService.class));
+        bindService(new Intent(this, TunnelService.class), m_connection, Context.BIND_AUTO_CREATE);
 
         // The next step is to restore messages and hook up the message receiver.
         // Since bind is asynchronous, hookUpMessages is called by onServiceConnected...

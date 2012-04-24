@@ -31,9 +31,9 @@ public class Events
     {
     	// Local broadcast to any existing status screen
     	LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(context);
-        Intent intent = new Intent(PsiphonAndroidActivity.ADD_MESSAGE);
-        intent.putExtra(PsiphonAndroidActivity.ADD_MESSAGE_TEXT, message);
-        intent.putExtra(PsiphonAndroidActivity.ADD_MESSAGE_CLASS, messageClass);
+        Intent intent = new Intent(StatusActivity.ADD_MESSAGE);
+        intent.putExtra(StatusActivity.ADD_MESSAGE_TEXT, message);
+        intent.putExtra(StatusActivity.ADD_MESSAGE_CLASS, messageClass);
         localBroadcastManager.sendBroadcast(intent);
     }
 
@@ -44,7 +44,7 @@ public class Events
     			"ACTION_VIEW",
     			Uri.EMPTY,
     			context,
-    			com.psiphon3.PsiphonAndroidActivity.class);
+    			com.psiphon3.StatusActivity.class);
         context.startActivity(intent);    	
     }
     

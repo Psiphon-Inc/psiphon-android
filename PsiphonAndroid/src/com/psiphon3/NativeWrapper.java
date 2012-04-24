@@ -30,7 +30,7 @@ import com.psiphon3.Utils.MyLog;
 import android.content.Context;
 import android.content.res.AssetManager;
 
-public class PsiphonNativeWrapper
+public class NativeWrapper
 {
     // from: "When Runtime.exec() won't"
     // http://www.javaworld.com/javaworld/jw-12-2000/jw-1229-traps.html?page=4
@@ -66,7 +66,7 @@ public class PsiphonNativeWrapper
     private StreamGobbler errorGobbler;
     private StreamGobbler outputGobbler;
     
-    public PsiphonNativeWrapper(
+    public NativeWrapper(
             Context context,
             String executableName,
             String arguments)

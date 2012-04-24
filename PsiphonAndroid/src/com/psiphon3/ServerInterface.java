@@ -58,7 +58,7 @@ import android.os.SystemClock;
 import android.util.Pair;
 
 
-public class PsiphonServerInterface
+public class ServerInterface
 {
     /**
      * Exception type thrown by many members of the PsiphonServerInterface class.
@@ -124,7 +124,7 @@ public class PsiphonServerInterface
     private String clientSessionID; // access via getCurrentClientSessionID -- even internally
     private String serverSessionID;
 
-    PsiphonServerInterface(Context context)
+    ServerInterface(Context context)
     {
         this.ownerContext = context;
 
@@ -167,7 +167,7 @@ public class PsiphonServerInterface
             // skip loading persistent server entries
         }
         
-        for (String encodedEntry : PsiphonAndroidEmbeddedValues.EMBEDDED_SERVER_LIST.split("\n"))
+        for (String encodedEntry : EmbeddedValues.EMBEDDED_SERVER_LIST.split("\n"))
         {
             addServerEntry(encodedEntry, true);
         }
@@ -272,7 +272,7 @@ public class PsiphonServerInterface
                     
                     // Set the regexes directly in the stats object rather than 
                     // storing them in this class.
-                    PsiphonAndroidStats.getStats().setRegexes(pageViewRegexes, httpsRequestRegexes);
+                    Stats.getStats().setRegexes(pageViewRegexes, httpsRequestRegexes);
 
                     this.speedTestURL = obj.getString("speed_test_url");
 
@@ -468,9 +468,9 @@ public class PsiphonServerInterface
            .append("/").append(path)
            .append("?client_session_id=").append(Utils.urlEncode(clientSessionID))
            .append("&server_secret=").append(Utils.urlEncode(serverEntry.webServerSecret))
-           .append("&propagation_channel_id=").append(Utils.urlEncode(PsiphonAndroidEmbeddedValues.PROPAGATION_CHANNEL_ID))
-           .append("&sponsor_id=").append(Utils.urlEncode(PsiphonAndroidEmbeddedValues.SPONSOR_ID))
-           .append("&client_version=").append(Utils.urlEncode(PsiphonAndroidEmbeddedValues.CLIENT_VERSION))
+           .append("&propagation_channel_id=").append(Utils.urlEncode(EmbeddedValues.PROPAGATION_CHANNEL_ID))
+           .append("&sponsor_id=").append(Utils.urlEncode(EmbeddedValues.SPONSOR_ID))
+           .append("&client_version=").append(Utils.urlEncode(EmbeddedValues.CLIENT_VERSION))
            .append("&relay_protocol=").append(Utils.urlEncode(PsiphonConstants.RELAY_PROTOCOL))
            .append("&client_platform=").append(Utils.urlEncode(PsiphonConstants.PLATFORM));
         
@@ -693,7 +693,7 @@ public class PsiphonServerInterface
         // forced to, send the stats.
         if (finalCall
             || (this.lastStatusSendTimeMS + this.statsSendInterval) < now
-            || PsiphonAndroidStats.getStats().getCount() >= this.sendMaxEntries)
+            || Stats.getStats().getCount() >= this.sendMaxEntries)
         {
             MyLog.d("Sending stats"+(finalCall?" (final)":""));
             
@@ -701,9 +701,9 @@ public class PsiphonServerInterface
             {
                 doStatusRequest(
                         !finalCall, 
-                        PsiphonAndroidStats.getStats().getPageViewEntries(), 
-                        PsiphonAndroidStats.getStats().getHttpsRequestEntries(), 
-                        PsiphonAndroidStats.getStats().getBytesTransferred());
+                        Stats.getStats().getPageViewEntries(), 
+                        Stats.getStats().getHttpsRequestEntries(), 
+                        Stats.getStats().getBytesTransferred());
                 
                 // Reset thresholds
                 this.lastStatusSendTimeMS = now;
@@ -711,7 +711,7 @@ public class PsiphonServerInterface
                 this.sendMaxEntries = DEFAULT_SEND_MAX_ENTRIES;
                 
                 // Reset stats
-                PsiphonAndroidStats.getStats().clear();
+                Stats.getStats().clear();
             } 
             catch (PsiphonServerInterfaceException e)
             {

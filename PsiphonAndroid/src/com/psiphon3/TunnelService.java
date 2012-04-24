@@ -34,11 +34,11 @@ import android.util.Log;
 
 import ch.ethz.ssh2.*;
 
-import com.psiphon3.PsiphonAndroidActivity;
-import com.psiphon3.PsiphonServerInterface.PsiphonServerInterfaceException;
+import com.psiphon3.StatusActivity;
+import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.Utils.MyLog;
 
-public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogger
+public class TunnelService extends Service implements Utils.MyLog.ILogger
 {
     enum State
     {
@@ -51,13 +51,13 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
     private ArrayList<Message> m_messages = new ArrayList<Message>();
     private CountDownLatch m_stopSignal;
     private Thread m_tunnelThread;
-    private PsiphonServerInterface m_interface;
+    private ServerInterface m_interface;
 
     public class LocalBinder extends Binder
     {
-        PsiphonAndroidService getService()
+        TunnelService getService()
         {
-            return PsiphonAndroidService.this;
+            return TunnelService.this;
         }
     }
     
@@ -75,7 +75,7 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
             // TODO: put this stuff in onCreate instead?
 
             MyLog.logger = this;
-            m_interface = new PsiphonServerInterface(this);
+            m_interface = new ServerInterface(this);
             doForeground();
             startTunnel();
             m_firstStart = false;
@@ -105,13 +105,13 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
         switch (priority)
         {
         case Log.ERROR:
-            return PsiphonAndroidActivity.MESSAGE_CLASS_ERROR;
+            return StatusActivity.MESSAGE_CLASS_ERROR;
         case Log.INFO:
-            return PsiphonAndroidActivity.MESSAGE_CLASS_INFO;
+            return StatusActivity.MESSAGE_CLASS_INFO;
         case Log.DEBUG:
-            return PsiphonAndroidActivity.MESSAGE_CLASS_DEBUG;
+            return StatusActivity.MESSAGE_CLASS_DEBUG;
         default:
-            return PsiphonAndroidActivity.MESSAGE_CLASS_WARNING;
+            return StatusActivity.MESSAGE_CLASS_WARNING;
         }
     }
 
@@ -174,7 +174,7 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
             PendingIntent.getActivity(
                 this,
                 0,
-                new Intent(this, PsiphonAndroidActivity.class),
+                new Intent(this, StatusActivity.class),
                 0);
 
         notification.setLatestEventInfo(
@@ -222,12 +222,12 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
     
     private void runTunnel()
     {
-        PsiphonServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
+        ServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
 
         Connection conn = null;
         Monitor  monitor = new Monitor();
         DynamicPortForwarder socks = null;
-        PsiphonNativeWrapper polipo = null;
+        NativeWrapper polipo = null;
         
         // TODO: retry-next-server loop
 
@@ -268,7 +268,7 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
             // Psiphon browser activity.
             
             MyLog.i(R.string.http_proxy_starting);
-            polipo = new PsiphonNativeWrapper(
+            polipo = new NativeWrapper(
                             this,
                             PsiphonConstants.POLIPO_EXECUTABLE,
                             PsiphonConstants.POLIPO_ARGUMENTS);

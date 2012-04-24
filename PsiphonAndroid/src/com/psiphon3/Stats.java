@@ -29,18 +29,18 @@ import android.util.Pair;
 
 import com.psiphon3.Utils.MyLog;
 
-public class PsiphonAndroidStats
+public class Stats
 {
     // Singleton
     
-    private static PsiphonAndroidStats m_stats;
+    private static Stats m_stats;
     private Integer m_bytesTransferred = 0;
     private Map<String, Integer> m_pageViewEntries;
     private Map<String, Integer> m_httpsRequestEntries;
     private List<Pair<Pattern, String>> m_pageViewRegexes;
     private List<Pair<Pattern, String>> m_httpsRequestRegexes;
         
-    private PsiphonAndroidStats()
+    private Stats()
     {
         m_pageViewEntries = new HashMap<String, Integer>();
         m_httpsRequestEntries = new HashMap<String, Integer>();
@@ -51,11 +51,11 @@ public class PsiphonAndroidStats
         throw new CloneNotSupportedException();
     }
     
-    public static synchronized PsiphonAndroidStats getStats()
+    public static synchronized Stats getStats()
     {
         if (m_stats == null)
         {
-            m_stats = new PsiphonAndroidStats();
+            m_stats = new Stats();
         }
         
         return m_stats;

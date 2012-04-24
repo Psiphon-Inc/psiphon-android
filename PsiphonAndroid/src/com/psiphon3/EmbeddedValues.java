@@ -19,7 +19,7 @@
 
 package com.psiphon3;
 
-public interface PsiphonAndroidEmbeddedValues
+public interface EmbeddedValues
 {
     final String PROPAGATION_CHANNEL_ID = "3A885577DD84EF13";
     
