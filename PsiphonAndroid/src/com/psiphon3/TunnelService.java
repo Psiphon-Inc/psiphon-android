@@ -372,8 +372,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             setState(State.DISCONNECTED);
             
             // Notify Activity of disconnected status
-            MyLog.d("SENDING DISCONNECTED BROADCAST");
-
             Events.showDisconnected(this);
         }
         
