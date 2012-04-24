@@ -45,6 +45,7 @@ public class Events
     			Uri.EMPTY,
     			context,
     			com.psiphon3.StatusActivity.class);
+    	intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         context.startActivity(intent);    	
     }
     
@@ -56,6 +57,7 @@ public class Events
     			context,
     			org.zirco.ui.activities.MainActivity.class);
         intent.putExtra("localProxyPort", PsiphonConstants.HTTP_PROXY_PORT);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         context.startActivity(intent);
     }
 }
