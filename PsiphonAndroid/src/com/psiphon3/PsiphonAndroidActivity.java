@@ -26,7 +26,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -47,8 +46,6 @@ public class PsiphonAndroidActivity extends Activity
     public static final String ADD_MESSAGE = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE";
     public static final String ADD_MESSAGE_TEXT = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TEXT";
     public static final String ADD_MESSAGE_CLASS = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_CLASS";
-    public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
-    public static final String DISCONNECTED = "com.psiphon3.PsiphonAndroidActivity.DISCONNECTED";
     
     private TableLayout m_messagesTableLayout;
     private ScrollView m_messagesScrollView;
@@ -58,22 +55,6 @@ public class PsiphonAndroidActivity extends Activity
     private static final int MENU_BROWSER = Menu.FIRST;
     private static final int MENU_EXIT = Menu.FIRST + 1;
 
-    // local service binding, as in http://developer.android.com/reference/android/app/Service.html
-    
-    private ServiceConnection m_connection = new ServiceConnection()
-    {
-        public void onServiceConnected(ComponentName className, IBinder service)
-        {
-            m_service = ((PsiphonAndroidService.LocalBinder)service).getService();
-            PsiphonAndroidActivity.this.hookup();
-        }
-
-        public void onServiceDisconnected(ComponentName className)
-        {
-            m_service = null;
-        }
-    };
- 
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
@@ -89,16 +70,6 @@ public class PsiphonAndroidActivity extends Activity
         PsiphonConstants.DEBUG = Utils.isDebugMode(this);
     }
     
-    private void openZircoMainActivity()
-    {
-        Intent intent = new Intent(this, org.zirco.ui.activities.MainActivity.class);
-        
-        //TODO: get real homepage URL
-        intent.setData(Uri.parse("http://www.psiphon3.com"));
-        intent.putExtra("localProxyPort", PsiphonConstants.HTTP_PROXY_PORT);
-        startActivity(intent);
-    }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
     {
@@ -122,7 +93,7 @@ public class PsiphonAndroidActivity extends Activity
         switch(item.getItemId())
         {
         case MENU_BROWSER:         
-            openZircoMainActivity();
+            Events.openBrowser(this, "");
             return true;
         case MENU_EXIT:
             stopService(new Intent(this, PsiphonAndroidService.class));
@@ -133,27 +104,37 @@ public class PsiphonAndroidActivity extends Activity
         }
     }
 
-    public class AddMessageReceiver extends BroadcastReceiver
-    {
-        @Override
-        public void onReceive(Context context, Intent intent)
-        {
-            String message = intent.getStringExtra(ADD_MESSAGE_TEXT);
-            int messageClass = intent.getIntExtra(ADD_MESSAGE_CLASS, MESSAGE_CLASS_INFO);
-            addMessage(message, messageClass);
-        }
-    }
+    // local service binding, as in http://developer.android.com/reference/android/app/Service.html
     
-    public class HandshakeSuccessReceiver extends BroadcastReceiver
+    private ServiceConnection m_connection = new ServiceConnection()
     {
-        @Override
-        public void onReceive(Context context, Intent intent)
+        public void onServiceConnected(ComponentName className, IBinder service)
         {
-            String message = intent.getStringExtra(HANDSHAKE_SUCCESS);
-            openZircoMainActivity();
-        }
-    }
+            m_service = ((PsiphonAndroidService.LocalBinder)service).getService();
 
+            // Restore messages previously posted by the service
+            
+            for (Message msg : m_service.getMessages())
+            {
+                addMessage(msg.m_message, msg.m_messageClass);
+            }
+            
+            // Listen for new messages
+            // Using local broad cast (http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html)
+            
+            m_localBroadcastManager = LocalBroadcastManager.getInstance(PsiphonAndroidActivity.this);
+
+            m_localBroadcastManager.registerReceiver(
+                    new AddMessageReceiver(),
+                    new IntentFilter(ADD_MESSAGE));        
+        }
+
+        public void onServiceDisconnected(ComponentName className)
+        {
+            m_service = null;
+        }
+    };
+ 
     @Override
     protected void onStart()
     {
@@ -174,37 +155,23 @@ public class PsiphonAndroidActivity extends Activity
         // Since bind is asynchronous, hookUpMessages is called by onServiceConnected...
     }
 
-    protected void hookup()
-    {
-        // Restore messages previously posted by the service
-        
-        for (Message msg : m_service.getMessages())
-        {
-            addMessage(msg.m_message, msg.m_messageClass);
-        }
-        
-        // Listen for new messages
-        // Using local broad cast (http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html)
-        
-        m_localBroadcastManager = LocalBroadcastManager.getInstance(this);
-
-        m_localBroadcastManager.registerReceiver(
-                new AddMessageReceiver(),
-                new IntentFilter(ADD_MESSAGE));        
-
-        // Additional receivers
-        
-        m_localBroadcastManager.registerReceiver(
-                new HandshakeSuccessReceiver(),
-                new IntentFilter(HANDSHAKE_SUCCESS));        
-    }
-
     @Override
     protected void onStop()
     {
         super.onStop();
         
         unbindService(m_connection);
+    }
+    
+    public class AddMessageReceiver extends BroadcastReceiver
+    {
+        @Override
+        public void onReceive(Context context, Intent intent)
+        {
+            String message = intent.getStringExtra(ADD_MESSAGE_TEXT);
+            int messageClass = intent.getIntExtra(ADD_MESSAGE_CLASS, MESSAGE_CLASS_INFO);
+            addMessage(message, messageClass);
+        }
     }
     
     public static final int MESSAGE_CLASS_INFO = 0;

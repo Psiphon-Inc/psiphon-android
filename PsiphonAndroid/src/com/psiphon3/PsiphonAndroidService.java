@@ -31,7 +31,6 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
-import android.support.v4.content.LocalBroadcastManager;
 
 import ch.ethz.ssh2.*;
 
@@ -50,7 +49,6 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
     private State m_state = State.DISCONNECTED;
     private boolean m_firstStart = true;
     private ArrayList<Message> m_messages = new ArrayList<Message>();
-    private LocalBroadcastManager m_localBroadcastManager;
     private CountDownLatch m_stopSignal;
     private Thread m_tunnelThread;
     private PsiphonServerInterface m_interface;
@@ -75,9 +73,6 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
         if (m_firstStart)
         {
             // TODO: put this stuff in onCreate instead?
-
-            // NOTE: There must be no attempts to access the UI activity before this call.
-            m_localBroadcastManager = LocalBroadcastManager.getInstance(this);
 
             MyLog.logger = this;
             m_interface = new PsiphonServerInterface(this);
@@ -137,11 +132,6 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
         sendMessage(message, priority);
     }
     
-    private synchronized void sendMessage(String message)
-    {
-        sendMessage(message, PsiphonAndroidActivity.MESSAGE_CLASS_INFO);
-    }
-    
     private synchronized void sendMessage(
             String message,
             int messageClass)
@@ -149,12 +139,7 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
         // Record messages for playback in activity
         m_messages.add(new Message(message, messageClass));
         
-        if (m_localBroadcastManager == null) return;
-
-        Intent intent = new Intent(PsiphonAndroidActivity.ADD_MESSAGE);
-        intent.putExtra(PsiphonAndroidActivity.ADD_MESSAGE_TEXT, message);
-        intent.putExtra(PsiphonAndroidActivity.ADD_MESSAGE_CLASS, messageClass);
-        m_localBroadcastManager.sendBroadcast(intent);
+        Events.addMessage(this, message, messageClass);
     }
     
     public ArrayList<Message> getMessages()
@@ -296,8 +281,9 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
                 m_interface.doHandshakeRequest();
                 MyLog.d("TEMP: Handshake success");
 
-                // Notify Activity of handshake success
-                m_localBroadcastManager.sendBroadcast(new Intent(PsiphonAndroidActivity.HANDSHAKE_SUCCESS));
+                // Open home pages
+                //TODO: get real homepage URL
+                Events.openBrowser(this, "http://www.psiphon3.com");
             } 
             catch (PsiphonServerInterfaceException requestException)
             {
@@ -350,7 +336,7 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
             if (polipo != null)
             {
                 polipo.stop();
-                MyLog.e(R.string.http_proxy_stopped);
+                MyLog.w(R.string.http_proxy_stopped);
             }
             if (socks != null)
             {
@@ -362,19 +348,20 @@ public class PsiphonAndroidService extends Service implements Utils.MyLog.ILogge
                 {
                     // Ignore
                 }
-                MyLog.e(R.string.socks_stopped);
+                MyLog.w(R.string.socks_stopped);
             }
             if (conn != null)
             {
                 conn.close();
-                MyLog.e(R.string.ssh_stopped);
+                MyLog.w(R.string.ssh_stopped);
             }
 
             setState(State.DISCONNECTED);
             
             // Notify Activity of disconnected status
             MyLog.d("SENDING DISCONNECTED BROADCAST");
-            m_localBroadcastManager.sendBroadcast(new Intent(PsiphonAndroidActivity.DISCONNECTED));
+
+            Events.showDisconnected(this);
         }
     }
     
