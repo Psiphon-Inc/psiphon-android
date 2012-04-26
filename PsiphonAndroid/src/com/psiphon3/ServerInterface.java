@@ -118,7 +118,6 @@ public class ServerInterface
     
     private Context ownerContext;
     private ArrayList<ServerEntry> serverEntries = new ArrayList<ServerEntry>();
-    private ArrayList<String> homePages = new ArrayList<String>();
     private String upgradeClientVersion;
     private String speedTestURL;
     private String clientSessionID; // access via getCurrentClientSessionID -- even internally
@@ -243,7 +242,7 @@ public class ServerInterface
                     JSONArray homepages = obj.getJSONArray("homepages");
                     for (int i = 0; i < homepages.length(); i++)
                     {
-                        this.homePages.add(homepages.getString(i));
+                    	PsiphonData.getPsiphonData().addHomePage(homepages.getString(i));
                     }
 
                     this.upgradeClientVersion = obj.getString("upgrade_client_version");
@@ -272,7 +271,7 @@ public class ServerInterface
                     
                     // Set the regexes directly in the stats object rather than 
                     // storing them in this class.
-                    Stats.getStats().setRegexes(pageViewRegexes, httpsRequestRegexes);
+                    PsiphonData.getPsiphonData().getStats().setRegexes(pageViewRegexes, httpsRequestRegexes);
 
                     this.speedTestURL = obj.getString("speed_test_url");
 
@@ -679,6 +678,8 @@ public class ServerInterface
      */
     public synchronized void doPeriodicWork(boolean finalCall)
     {
+    	PsiphonData.Stats stats = PsiphonData.getPsiphonData().getStats();
+    	
         long now = SystemClock.uptimeMillis();
         
         // On the very first call, this.lastStatusSendTimeMS will be 0, but we
@@ -693,7 +694,7 @@ public class ServerInterface
         // forced to, send the stats.
         if (finalCall
             || (this.lastStatusSendTimeMS + this.statsSendInterval) < now
-            || Stats.getStats().getCount() >= this.sendMaxEntries)
+            || stats.getCount() >= this.sendMaxEntries)
         {
             MyLog.d("Sending stats"+(finalCall?" (final)":""));
             
@@ -701,9 +702,9 @@ public class ServerInterface
             {
                 doStatusRequest(
                         !finalCall, 
-                        Stats.getStats().getPageViewEntries(), 
-                        Stats.getStats().getHttpsRequestEntries(), 
-                        Stats.getStats().getBytesTransferred());
+                        stats.getPageViewEntries(), 
+                        stats.getHttpsRequestEntries(), 
+                        stats.getBytesTransferred());
                 
                 // Reset thresholds
                 this.lastStatusSendTimeMS = now;
@@ -711,7 +712,7 @@ public class ServerInterface
                 this.sendMaxEntries = DEFAULT_SEND_MAX_ENTRIES;
                 
                 // Reset stats
-                Stats.getStats().clear();
+                stats.clear();
             } 
             catch (PsiphonServerInterfaceException e)
             {

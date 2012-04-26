@@ -218,14 +218,14 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         
         Constants.initializeConstantsFromResources(this);
         
-        /*
-         * Put Psiphon local http proxy port received with the Intent
-         * in the default shared preferences
-         */
+        // PSIPHON: explicitly set proxy preference
         int localProxyPort = getIntent().getIntExtra("localProxyPort", 0);
         Editor e = PreferenceManager.getDefaultSharedPreferences(this).edit();
         e.putInt("localProxyPort", localProxyPort);
         e.commit();
+        
+        // PSIPHON: get home pages
+        ArrayList<String> homePages = getIntent().getStringArrayListExtra("homePages");
 
         Controller.getInstance().setPreferences(PreferenceManager.getDefaultSharedPreferences(this));    
         
@@ -254,12 +254,19 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         mViewFlipper.removeAllViews();   
         
         updateSwitchTabsMethod();
-        /*
-         * PSIPHON always use internal bookmarks
-        updateBookmarksDatabaseSource();
+
+        // PSIPHON: always use internal bookmarks
+        //updateBookmarksDatabaseSource();
+        //
+        //registerPreferenceChangeListener();
         
-        registerPreferenceChangeListener();
-        */
+        // PSIPHON: open home pages
+
+        for (String homePage : homePages)
+        {
+        	addTab(false);
+        	navigateToUrl(homePage);
+        }
         
         Intent i = getIntent();
         if (i.getData() != null) {
@@ -342,6 +349,9 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
      */
     @Override
 	protected void onNewIntent(Intent intent) {
+
+    	// PSIPHON: this will ignore "homePages" extra, by design
+    	
     	if (intent.getData() != null) {
     		addTab(false);
     		navigateToUrl(intent.getDataString());
@@ -669,8 +679,8 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 
     }
     	
+	// PSIPHON: always use internal DB for bookmarks
 	/*
-	 * PSIPHON always use internal DB for bookmarks
 	private void registerPreferenceChangeListener() {
     	mPreferenceChangeListener = new OnSharedPreferenceChangeListener() {			
 			@Override
@@ -1475,9 +1485,10 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 	public boolean onKeyLongPress(int keyCode, KeyEvent event) {
 		
 		switch (keyCode) {
-		case KeyEvent.KEYCODE_BACK:
-			this.moveTaskToBack(true);
-			return true;
+		// PSIPHON: don't hide app, return to status activity
+		//case KeyEvent.KEYCODE_BACK:
+		//	this.moveTaskToBack(true);
+		//	return true;
 		default: return super.onKeyLongPress(keyCode, event);
 		}
 	}
@@ -1495,7 +1506,9 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 				if (mCurrentWebView.canGoBack()) {
 					mCurrentWebView.goBack();				
 				} else {
-					this.moveTaskToBack(true);
+					// PSIPHON: don't hide app, return to status activity
+					//this.moveTaskToBack(true);
+					return super.onKeyLongPress(keyCode, event);
 				}
 			}
 			return true;

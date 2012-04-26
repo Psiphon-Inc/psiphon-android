@@ -26,20 +26,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 
-import com.psiphon3.TunnelService.Message;
+import com.psiphon3.PsiphonData.StatusMessage;
 
 
 public class StatusActivity extends Activity
@@ -75,22 +73,6 @@ public class StatusActivity extends Activity
         public void onServiceConnected(ComponentName className, IBinder service)
         {
             m_service = ((TunnelService.LocalBinder)service).getService();
-
-            // Restore messages previously posted by the service
-            
-            for (Message msg : m_service.getMessages())
-            {
-                addMessage(msg.m_message, msg.m_messageClass);
-            }
-            
-            // Listen for new messages
-            // Using local broad cast (http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html)
-            
-            m_localBroadcastManager = LocalBroadcastManager.getInstance(StatusActivity.this);
-
-            m_localBroadcastManager.registerReceiver(
-                    new AddMessageReceiver(),
-                    new IntentFilter(ADD_MESSAGE));        
         }
 
         public void onServiceDisconnected(ComponentName className)
@@ -100,9 +82,9 @@ public class StatusActivity extends Activity
     };
  
     @Override
-    protected void onStart()
+    protected void onResume()
     {
-        super.onStart();
+        super.onResume();
 
         // Remove previous messages as we'll re-populate with all messages
         // as part of binding to the service.
@@ -115,27 +97,40 @@ public class StatusActivity extends Activity
         startService(new Intent(this, TunnelService.class));
         bindService(new Intent(this, TunnelService.class), m_connection, Context.BIND_AUTO_CREATE);
 
-        // The next step is to restore messages and hook up the message receiver.
-        // Since bind is asynchronous, hookUpMessages is called by onServiceConnected...
+        // Restore messages previously posted by the service
+        
+        for (StatusMessage msg : PsiphonData.getPsiphonData().getStatusMessages())
+        {
+            addMessage(msg.m_message, msg.m_messageClass);
+        }
+        
+        // Listen for new messages
+        // Using local broad cast (http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html)
+        
+        m_localBroadcastManager = LocalBroadcastManager.getInstance(StatusActivity.this);
+
+        m_localBroadcastManager.registerReceiver(
+                new AddMessageReceiver(),
+                new IntentFilter(ADD_MESSAGE));        
     }
 
     @Override
-    protected void onStop()
+    protected void onPause()
     {
-        super.onStop();
+        super.onPause();
         
         unbindService(m_connection);
     }
     
     public void onOpenBrowserClick(View v)
     {
-        Events.openBrowser(this, "");       
+        Events.displayBrowser(this);       
     }
     
     public void onAboutClick(View v)
     {
         // TODO: if not connected, open in default browser?
-        Events.openBrowser(this, PsiphonConstants.INFO_LINK_URL);
+        Events.displayBrowser(this, Uri.parse(PsiphonConstants.INFO_LINK_URL));
     }
     
     public void onExitClick(View v)

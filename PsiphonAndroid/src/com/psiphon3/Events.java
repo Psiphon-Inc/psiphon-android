@@ -27,7 +27,7 @@ import android.support.v4.content.LocalBroadcastManager;
 
 public class Events
 {
-    static public void addMessage(Context context, String message, int messageClass)
+    static public void appendStatusMessage(Context context, String message, int messageClass)
     {
     	// Local broadcast to any existing status screen
     	LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(context);
@@ -37,7 +37,7 @@ public class Events
         localBroadcastManager.sendBroadcast(intent);
     }
 
-    static public void showDisconnected(Context context)
+    static public void displayStatus(Context context)
     {
     	// Simply display the status screen
     	Intent intent = new Intent(
@@ -49,15 +49,36 @@ public class Events
         context.startActivity(intent);    	
     }
     
-    static public void openBrowser(Context context, String uri)
+    static public void displayBrowser(Context context)
     {
+    	displayBrowser(context, Uri.EMPTY);
+    }
+
+    static public void displayBrowser(Context context, Uri uri)
+    {    	
     	Intent intent = new Intent(
     			"ACTION_VIEW",
-    			Uri.parse(uri),
+    			uri,
     			context,
     			org.zirco.ui.activities.MainActivity.class);
-        intent.putExtra("localProxyPort", PsiphonConstants.HTTP_PROXY_PORT);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+    	// This intent displays the Zirco browser.
+    	// We use "extras" to communicate Psiphon settings to Zirco, which
+    	// is packaged as an independent component (so it's can't access,
+    	// e.g., PsiphonConstants or PsiphonData). Note that the Zirco code
+    	// is customized. When Zirco is first created, it will use the localProxyPort
+    	// and homePages extras to set the proxy preference and open tabs for
+    	// each home page, respectively. When the intent triggers an existing
+    	// Zirco instance (and it's a singleton) the extras are ignored and the
+    	// browser is displayed as-is.
+    	// When a uri is specified, it will open as a new tab. This is
+    	// independent of the home pages.
+    	
+    	intent.putExtra("localProxyPort", PsiphonConstants.HTTP_PROXY_PORT);
+
+    	intent.putExtra("homePages", PsiphonData.getPsiphonData().getHomePages());
+    	
+    	intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         context.startActivity(intent);
     }
 }

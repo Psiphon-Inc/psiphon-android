@@ -48,7 +48,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
     }
     private State m_state = State.DISCONNECTED;
     private boolean m_firstStart = true;
-    private ArrayList<Message> m_messages = new ArrayList<Message>();
     private CountDownLatch m_stopSignal;
     private Thread m_tunnelThread;
     private ServerInterface m_interface;
@@ -83,17 +82,40 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         return android.app.Service.START_STICKY;
     }
 
-    public class Message
+    @Override
+    public void onCreate()
     {
-        public String m_message;
-        public int m_messageClass;
-
-        Message(String message, int messageClass) 
-        {
-            m_message = message;
-            m_messageClass = messageClass;
-        }
     }
+
+    @Override
+    public void onDestroy()
+    {
+        stopTunnel();
+    }
+
+    private void doForeground()
+    {
+        Notification notification =
+            new Notification(
+                R.drawable.notification_icon,
+                getText(R.string.app_name),
+                System.currentTimeMillis());
+
+        PendingIntent invokeActivityIntent = 
+            PendingIntent.getActivity(
+                this,
+                0,
+                new Intent(this, StatusActivity.class),
+                0);
+
+        notification.setLatestEventInfo(
+            this,
+            getText(R.string.psiphon_service_notification_message),
+            getText(R.string.app_name),
+            invokeActivityIntent);
+
+        startForeground(R.string.psiphon_service_notification_id, notification);
+    }    
 
     /**
      * Utils.MyLog.ILogger implementation
@@ -136,56 +158,12 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             String message,
             int messageClass)
     {
-        // Record messages for playback in activity
-        m_messages.add(new Message(message, messageClass));
+        // Record messages for play back in activity
+    	PsiphonData.getPsiphonData().addStatusMessage(message, messageClass);
         
-        Events.addMessage(this, message, messageClass);
+        Events.appendStatusMessage(this, message, messageClass);
     }
-    
-    public ArrayList<Message> getMessages()
-    {
-        ArrayList<Message> messages = new ArrayList<Message>();
-        messages.addAll(m_messages);
-        return messages;
-    }
-    
-    @Override
-    public void onCreate()
-    {
-    }
-
-    @Override
-    public void onDestroy()
-    {
-        stopTunnel();
-    }
-
-    private void doForeground()
-    {
-        // TODO: update notification icon when tunnel is connected
-
-        Notification notification =
-            new Notification(
-                R.drawable.notification_icon,
-                getText(R.string.app_name),
-                System.currentTimeMillis());
-
-        PendingIntent invokeActivityIntent = 
-            PendingIntent.getActivity(
-                this,
-                0,
-                new Intent(this, StatusActivity.class),
-                0);
-
-        notification.setLatestEventInfo(
-            this,
-            getText(R.string.psiphon_service_notification_message),
-            getText(R.string.app_name),
-            invokeActivityIntent);
-
-        startForeground(R.string.psiphon_service_notification_id, notification);
-    }    
-    
+        
     class PsiphonServerHostKeyVerifier implements ServerHostKeyVerifier
     {
         private String expectedHostKey;
@@ -230,6 +208,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         Monitor  monitor = new Monitor();
         DynamicPortForwarder socks = null;
         NativeWrapper polipo = null;
+        boolean unexpectedDisconnect = false;
         
         try
         {
@@ -283,7 +262,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
 
                 // Open home pages
                 //TODO: get real homepage URL
-                Events.openBrowser(this, "http://www.psiphon.ca");
+                Events.displayBrowser(this);
             } 
             catch (PsiphonServerInterfaceException requestException)
             {
@@ -313,6 +292,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                     if (!polipo.isRunning())
                     {
                         MyLog.e(R.string.http_proxy_stopped_unexpectedly);
+                        unexpectedDisconnect = true;
                         break;
                     }
 
@@ -327,7 +307,9 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         }
         catch (IOException e)
         {
-            // SSH and Polipo errors -- tunnel problems -- result in IOException
+        	unexpectedDisconnect = true;
+
+        	// SSH and Polipo errors -- tunnel problems -- result in IOException
             // Make sure we try a different server (if any) next time
             // Note: we're not marking the server failed if handshake/connected requests failed
             
@@ -342,6 +324,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             catch (InterruptedException ie) {}
             
             MyLog.e(R.string.error_message, e);
+
             return stopped;
         }
         finally
@@ -371,8 +354,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
 
             setState(State.DISCONNECTED);
             
-            // Notify Activity of disconnected status
-            Events.showDisconnected(this);
+            if (unexpectedDisconnect)
+            {
+                Events.displayStatus(this);
+            }
         }
         
         return stopped;

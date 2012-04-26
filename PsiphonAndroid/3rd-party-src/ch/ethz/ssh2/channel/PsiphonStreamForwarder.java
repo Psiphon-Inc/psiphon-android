@@ -16,7 +16,7 @@ import org.apache.http.message.BasicLineParser;
 
 import android.util.Log;
 
-import com.psiphon3.Stats;
+import com.psiphon3.PsiphonData;
 import com.psiphon3.PsiphonConstants;
 
 /**
@@ -246,14 +246,14 @@ public class PsiphonStreamForwarder extends Thread
 
         // Bytes transfered stats
 
+    	PsiphonData.Stats stats = PsiphonData.getPsiphonData().getStats();
+    	
         if (this.isHttpRequester)
         {
-            Stats stats = Stats.getStats();
             stats.addBytesSent(bytes_read);
         }
         else
         {
-            Stats stats = Stats.getStats();
             stats.addBytesReceived(bytes_read);
         }
 
@@ -463,7 +463,7 @@ public class PsiphonStreamForwarder extends Thread
     
                             if (!this.isHttpRequester)
                             {
-                                // ...continue response case now that headers are parseds
+                                // ...continue response case now that headers are parsed
                                 
                                 // Pop request URI from peer's stack
                                 // (Assumes HTTP responses return in response order)
@@ -477,7 +477,7 @@ public class PsiphonStreamForwarder extends Thread
                                     && (contentType.contains("text/html")
                                         || contentType.contains("application/xhtml+xml")))
                                 {
-                                    Stats.getStats().upsertPageView(this.destHost+requestURI);
+                                    stats.upsertPageView(this.destHost+requestURI);
                                 }
                             }
     

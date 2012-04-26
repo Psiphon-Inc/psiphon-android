@@ -63,8 +63,8 @@ public class BookmarksProviderWrapper {
         Browser.BookmarkColumns.BOOKMARK,
         Browser.BookmarkColumns.FAVICON };		
 
+	// PSIPHON: use internal bookmarks only
 	/*
-	 * PSIPHON: use internal bookmarks only
 	public static void setBookmarksSource(BookmarksSource source) {
 		switch (source) {
 		case STOCK:
