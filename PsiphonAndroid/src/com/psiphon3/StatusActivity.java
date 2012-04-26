@@ -85,10 +85,6 @@ public class StatusActivity extends Activity
     protected void onResume()
     {
         super.onResume();
-
-        // Remove previous messages as we'll re-populate with all messages
-        // as part of binding to the service.
-        m_messagesTableLayout.removeAllViews();
         
         // Using both "started" service and "bound" service interfaces:
         // - "started" to ensure tunnel service lives beyond this activity
@@ -99,6 +95,7 @@ public class StatusActivity extends Activity
 
         // Restore messages previously posted by the service
         
+        m_messagesTableLayout.removeAllViews();
         for (StatusMessage msg : PsiphonData.getPsiphonData().getStatusMessages())
         {
             addMessage(msg.m_message, msg.m_messageClass);
