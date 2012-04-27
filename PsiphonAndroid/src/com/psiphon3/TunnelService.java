@@ -387,6 +387,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             }
             if (conn != null)
             {
+                conn.clearConnectionMonitors();
                 conn.close();
                 MyLog.w(R.string.ssh_stopped);
             }

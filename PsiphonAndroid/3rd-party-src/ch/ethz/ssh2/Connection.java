@@ -497,16 +497,25 @@ public class Connection
 	 * 
 	 * @param cmon An object implementing the <code>ConnectionMonitor</code> interface.
 	 */
-	public synchronized void addConnectionMonitor(ConnectionMonitor cmon)
-	{
-		if (cmon == null)
-			throw new IllegalArgumentException("cmon argument is null");
+    public synchronized void addConnectionMonitor(ConnectionMonitor cmon)
+    {
+        if (cmon == null)
+            throw new IllegalArgumentException("cmon argument is null");
 
-		connectionMonitors.addElement(cmon);
+        connectionMonitors.addElement(cmon);
 
-		if (tm != null)
-			tm.setConnectionMonitors(connectionMonitors);
-	}
+        if (tm != null)
+            tm.setConnectionMonitors(connectionMonitors);
+    }
+
+    // PSIPHON
+    public synchronized void clearConnectionMonitors()
+    {
+        connectionMonitors.clear();
+
+        if (tm != null)
+            tm.setConnectionMonitors(connectionMonitors);
+    }
 
 	/**
 	 * Close the connection to the SSH-2 server. All assigned sessions will be
