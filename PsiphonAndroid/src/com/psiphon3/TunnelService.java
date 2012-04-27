@@ -28,6 +28,7 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
@@ -101,11 +102,18 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 getText(R.string.app_name),
                 System.currentTimeMillis());
 
+        Intent intent = new Intent(
+                "ACTION_VIEW",
+                Uri.EMPTY,
+                this,
+                com.psiphon3.StatusActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        
         PendingIntent invokeActivityIntent = 
             PendingIntent.getActivity(
                 this,
                 0,
-                new Intent(this, StatusActivity.class),
+                intent,
                 0);
 
         notification.setLatestEventInfo(

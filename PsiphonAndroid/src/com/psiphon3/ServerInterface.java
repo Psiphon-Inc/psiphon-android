@@ -55,6 +55,7 @@ import com.psiphon3.Utils.MyLog;
 
 import android.content.Context;
 import android.os.SystemClock;
+import android.util.Log;
 import android.util.Pair;
 
 

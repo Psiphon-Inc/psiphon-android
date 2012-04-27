@@ -69,6 +69,7 @@ import android.os.Message;
 import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.GestureDetector;
 import android.view.KeyEvent;
@@ -214,19 +215,18 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);              
 
+        Intent intent = getIntent();
+
         INSTANCE = this;
         
         Constants.initializeConstantsFromResources(this);
         
         // PSIPHON: explicitly set proxy preference
-        int localProxyPort = getIntent().getIntExtra("localProxyPort", 0);
+        int localProxyPort = intent.getIntExtra("localProxyPort", 0);
         Editor e = PreferenceManager.getDefaultSharedPreferences(this).edit();
         e.putInt("localProxyPort", localProxyPort);
         e.commit();
         
-        // PSIPHON: get home pages
-        ArrayList<String> homePages = getIntent().getStringArrayListExtra("homePages");
-
         Controller.getInstance().setPreferences(PreferenceManager.getDefaultSharedPreferences(this));    
         
         if (Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_SHOW_FULL_SCREEN, false)) {        	
@@ -261,18 +261,19 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         //registerPreferenceChangeListener();
         
         // PSIPHON: open home pages
-
+        ArrayList<String> homePages = intent.getStringArrayListExtra("homePages");
         for (String homePage : homePages)
         {
         	addTab(false);
         	navigateToUrl(homePage);
         }
-        
-        Intent i = getIntent();
-        if (i.getData() != null) {
+
+        // PSIPHON: don't show Zirco changelist or restore last page
+        /*
+        if (intent.getData() != null) {
         	// App first launch from another app.
         	addTab(false);
-        	navigateToUrl(i.getDataString());
+        	navigateToUrl(intent.getDataString());
         } else {
         	// Normal start.
         	int currentVersionCode = ApplicationUtils.getApplicationVersionCode(this);
@@ -306,6 +307,7 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         		addTab(true);
         	}
         }
+        */
         
         initializeWebIconDatabase();
         

@@ -42,7 +42,7 @@ public class Events
     	// Simply display the status screen
     	Intent intent = new Intent(
     			"ACTION_VIEW",
-    			Uri.EMPTY,
+    			null,
     			context,
     			com.psiphon3.StatusActivity.class);
     	intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -51,7 +51,7 @@ public class Events
     
     static public void displayBrowser(Context context)
     {
-    	displayBrowser(context, Uri.EMPTY);
+    	displayBrowser(context, null);
     }
 
     static public void displayBrowser(Context context, Uri uri)
