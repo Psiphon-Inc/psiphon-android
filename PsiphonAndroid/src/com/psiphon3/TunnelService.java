@@ -20,15 +20,14 @@
 package com.psiphon3;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
@@ -49,10 +48,17 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
     }
     private State m_state = State.DISCONNECTED;
     private boolean m_firstStart = true;
-    private CountDownLatch m_stopSignal;
     private Thread m_tunnelThread;
     private ServerInterface m_interface;
 
+    enum Signal
+    {
+        STOP_SERVICE,
+        UNEXPECTED_DISCONNECT
+    };
+    private BlockingQueue<Signal> m_signalQueue;
+
+    
     public class LocalBinder extends Binder
     {
         TunnelService getService()
@@ -104,7 +110,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
 
         Intent intent = new Intent(
                 "ACTION_VIEW",
-                Uri.EMPTY,
+                null,
                 this,
                 com.psiphon3.StatusActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -174,16 +180,16 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         
     class PsiphonServerHostKeyVerifier implements ServerHostKeyVerifier
     {
-        private String expectedHostKey;
+        private String m_expectedHostKey;
         
         PsiphonServerHostKeyVerifier(String expectedHostKey)
         {
-            this.expectedHostKey = expectedHostKey;
+            m_expectedHostKey = expectedHostKey;
         }
 
         public boolean verifyServerHostKey(String hostname, int port, String serverHostKeyAlgorithm, byte[] serverHostKey)
         {
-            return 0 == this.expectedHostKey.compareTo(Utils.Base64.encode(serverHostKey));
+            return 0 == m_expectedHostKey.compareTo(Utils.Base64.encode(serverHostKey));
         }
     }
     
@@ -199,19 +205,30 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
     
     class Monitor implements ConnectionMonitor
     {
+        private BlockingQueue<Signal> m_signalQueue;
+
+        public Monitor(BlockingQueue<Signal> signalQueue)
+        {
+            m_signalQueue = signalQueue;
+        }
+
         public void connectionLost(Throwable reason)
         {
-            //m_stopSignal.countDown();
             MyLog.e(R.string.ssh_disconnected_unexpectedly);
+            try
+            {
+                m_signalQueue.put(Signal.UNEXPECTED_DISCONNECT);
+            }
+            catch (InterruptedException e) {}            
         }
     }
 
-    private void runTunnelOnce()
+    private boolean runTunnelOnce()
     {
         ServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
 
+        boolean runAgain = true;
         Connection conn = null;
-        Monitor  monitor = new Monitor();
         DynamicPortForwarder socks = null;
         NativeWrapper polipo = null;
         boolean unexpectedDisconnect = false;
@@ -220,6 +237,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         {
             MyLog.i(R.string.ssh_connecting);
             conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
+            Monitor monitor = new Monitor(m_signalQueue);
             conn.addConnectionMonitor(monitor);
             conn.connect(
                     new PsiphonServerHostKeyVerifier(entry.sshHostKey),
@@ -232,7 +250,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             if (isAuthenticated == false)
             {
                 MyLog.e(R.string.ssh_authentication_failed);
-                return;
+                return runAgain;
             }
             MyLog.i(R.string.ssh_authenticated);
 
@@ -267,7 +285,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 MyLog.d("TEMP: Handshake success");
 
                 // Open home pages
-                //TODO: get real homepage URL
                 Events.displayBrowser(this);
             } 
             catch (PsiphonServerInterfaceException requestException)
@@ -291,9 +308,28 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             {
                 while (true)
                 {
-                    boolean stop = m_stopSignal.await(10, TimeUnit.SECONDS);
+                    boolean closeTunnel = false;
+                    
+                    Signal signal = m_signalQueue.poll(10, TimeUnit.SECONDS);
+                    
+                    if (signal != null)
+                    {
+                        switch (signal)
+                        {
+                        case STOP_SERVICE:
+                            unexpectedDisconnect = false;
+                            runAgain = false;
+                            closeTunnel = true;
+                            break;
+                        case UNEXPECTED_DISCONNECT:
+                            unexpectedDisconnect = true;
+                            runAgain = true;
+                            closeTunnel = true;
+                            break;
+                        }
+                    }
 
-                    m_interface.doPeriodicWork(stop);
+                    m_interface.doPeriodicWork(closeTunnel);
 
                     if (!polipo.isRunning())
                     {
@@ -302,7 +338,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                         break;
                     }
 
-                    if (stop)
+                    if (closeTunnel)
                     {
                         break;
                     }
@@ -362,25 +398,20 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 Events.displayStatus(this);
             }
         }
+        
+        return runAgain;
     }
     
     private void runTunnel()
     {
-        try
-        {
-            while (!m_stopSignal.await(0, TimeUnit.SECONDS))
-            {
-                runTunnelOnce();
-            }
-        }
-        catch (InterruptedException ie) {}
+        while (runTunnelOnce());
     }
     
     public void startTunnel()
     {
         stopTunnel();
         setState(State.CONNECTING);
-        m_stopSignal = new CountDownLatch(1);
+        m_signalQueue = new LinkedBlockingQueue<Signal>();
         m_tunnelThread = new Thread(
             new Runnable()
             {
@@ -397,18 +428,15 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
     {
         if (m_tunnelThread != null)
         {
-            m_stopSignal.countDown();
-    
             try
             {
+                m_signalQueue.put(Signal.STOP_SERVICE);                
                 m_tunnelThread.join();
             }
-            catch (InterruptedException e)
-            {
-            }
+            catch (InterruptedException e) {}
         }
 
-        m_stopSignal = null;
+        m_signalQueue = null;
         m_tunnelThread = null;
     }
 }
