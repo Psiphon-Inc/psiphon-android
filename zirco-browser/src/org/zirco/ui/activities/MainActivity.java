@@ -1516,7 +1516,7 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 				} else {
 					// PSIPHON: don't hide app, return to status activity
 					//this.moveTaskToBack(true);
-					return super.onKeyLongPress(keyCode, event);
+					return super.onKeyUp(keyCode, event);
 				}
 			}
 			return true;
