@@ -321,6 +321,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                             closeTunnel = true;
                             break;
                         case UNEXPECTED_DISCONNECT:
+                            // TODO: need to call MarkCurrentServerFailed()?
                             unexpectedDisconnect = true;
                             runAgain = true;
                             closeTunnel = true;
@@ -355,14 +356,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             
             m_interface.markCurrentServerFailed();
 
-            // 1-2 second delay before retrying
-            // (same as Windows client, see comment in ConnectionManager.cpp)
-            try
-            {
-                Thread.sleep(1000 + (long)(Math.random()*1000.0));
-            }
-            catch (InterruptedException ie) {}
-            
             MyLog.e(R.string.error_message, e);
         }
         finally
@@ -404,7 +397,16 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
     
     private void runTunnel()
     {
-        while (runTunnelOnce());
+        while (runTunnelOnce())
+        {
+            // 1-2 second delay before retrying
+            // (same as Windows client, see comment in ConnectionManager.cpp)
+            try
+            {
+                Thread.sleep(1000 + (long)(Math.random()*1000.0));
+            }
+            catch (InterruptedException ie) {}            
+        }
     }
     
     public void startTunnel()

@@ -21,14 +21,11 @@ package com.psiphon3;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
 import android.widget.ImageView;
@@ -136,8 +133,11 @@ public class StatusActivity extends Activity
     
     public void onExitClick(View v)
     {
+        // This command doesn't necessarily kill the process, but
+        // it stops the service and hides the app.
+        
         stopService(new Intent(this, TunnelService.class));
-        this.finish();       
+        this.moveTaskToBack(true);
     }
     
     public class AddMessageReceiver extends BroadcastReceiver
