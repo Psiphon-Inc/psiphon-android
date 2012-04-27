@@ -260,12 +260,16 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         //
         //registerPreferenceChangeListener();
         
-        // PSIPHON: open home pages
+        // PSIPHON: open home pages (or a blank tab if none)
         ArrayList<String> homePages = intent.getStringArrayListExtra("homePages");
         for (String homePage : homePages)
         {
         	addTab(false);
         	navigateToUrl(homePage);
+        }
+        if (homePages.size() == 0)
+        {
+            addTab(false);
         }
 
         // PSIPHON: don't show Zirco changelist or restore last page

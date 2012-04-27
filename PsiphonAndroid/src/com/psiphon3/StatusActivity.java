@@ -111,12 +111,21 @@ public class StatusActivity extends Activity
                 new IntentFilter(ADD_MESSAGE));        
     }
 
+    private void UnbindService()
+    {
+        if (m_connection != null)
+        {
+            unbindService(m_connection);
+            m_connection = null;
+        }
+    }
+    
     @Override
     protected void onPause()
     {
         super.onPause();
         
-        unbindService(m_connection);
+        UnbindService();
     }
     
     public void onOpenBrowserClick(View v)
@@ -132,6 +141,7 @@ public class StatusActivity extends Activity
     
     public void onExitClick(View v)
     {
+        UnbindService();
         stopService(new Intent(this, TunnelService.class));
         this.finish();       
     }

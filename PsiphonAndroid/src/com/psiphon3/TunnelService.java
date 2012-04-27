@@ -201,15 +201,13 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
     {
         public void connectionLost(Throwable reason)
         {
-            m_stopSignal.countDown();
+            //m_stopSignal.countDown();
             MyLog.e(R.string.ssh_disconnected_unexpectedly);
         }
     }
 
-    private boolean runTunnelOnce()
+    private void runTunnelOnce()
     {
-        boolean stopped = false;
-
         ServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
 
         Connection conn = null;
@@ -234,7 +232,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             if (isAuthenticated == false)
             {
                 MyLog.e(R.string.ssh_authentication_failed);
-                return stopped;
+                return;
             }
             MyLog.i(R.string.ssh_authenticated);
 
@@ -306,7 +304,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
 
                     if (stop)
                     {
-                        stopped = true;
                         break;
                     }
                 }
@@ -332,8 +329,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             catch (InterruptedException ie) {}
             
             MyLog.e(R.string.error_message, e);
-
-            return stopped;
         }
         finally
         {
@@ -367,17 +362,18 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 Events.displayStatus(this);
             }
         }
-        
-        return stopped;
     }
     
     private void runTunnel()
     {
-        boolean stopped = false;
-        while (!stopped)
+        try
         {
-            stopped = runTunnelOnce();
+            while (!m_stopSignal.await(0, TimeUnit.SECONDS))
+            {
+                runTunnelOnce();
+            }
         }
+        catch (InterruptedException ie) {}
     }
     
     public void startTunnel()
