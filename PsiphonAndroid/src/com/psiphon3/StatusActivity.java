@@ -49,7 +49,6 @@ public class StatusActivity extends Activity
     private TableLayout m_messagesTableLayout;
     private ScrollView m_messagesScrollView;
     private LocalBroadcastManager m_localBroadcastManager;
-    private TunnelService m_service;
     
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -66,32 +65,14 @@ public class StatusActivity extends Activity
         PsiphonConstants.DEBUG = Utils.isDebugMode(this);
     }
     
-    // local service binding, as in http://developer.android.com/reference/android/app/Service.html
-    
-    private ServiceConnection m_connection = new ServiceConnection()
-    {
-        public void onServiceConnected(ComponentName className, IBinder service)
-        {
-            m_service = ((TunnelService.LocalBinder)service).getService();
-        }
-
-        public void onServiceDisconnected(ComponentName className)
-        {
-            m_service = null;
-        }
-    };
- 
     @Override
     protected void onResume()
     {
         super.onResume();
-        
-        // Using both "started" service and "bound" service interfaces:
-        // - "started" to ensure tunnel service lives beyond this activity
-        // - "bound" to interact with service (check connection status, start/stop, etc.)
+
+        // Start tunnel service (if not already running)
         
         startService(new Intent(this, TunnelService.class));
-        bindService(new Intent(this, TunnelService.class), m_connection, Context.BIND_AUTO_CREATE);
 
         // Restore messages previously posted by the service
         
@@ -111,23 +92,6 @@ public class StatusActivity extends Activity
                 new IntentFilter(ADD_MESSAGE));        
     }
 
-    private void UnbindService()
-    {
-        if (m_connection != null)
-        {
-            unbindService(m_connection);
-            m_connection = null;
-        }
-    }
-    
-    @Override
-    protected void onPause()
-    {
-        super.onPause();
-        
-        UnbindService();
-    }
-    
     public void onOpenBrowserClick(View v)
     {
         Events.displayBrowser(this);       
@@ -141,7 +105,6 @@ public class StatusActivity extends Activity
     
     public void onExitClick(View v)
     {
-        UnbindService();
         stopService(new Intent(this, TunnelService.class));
         this.finish();       
     }

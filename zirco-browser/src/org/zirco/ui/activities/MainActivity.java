@@ -271,8 +271,10 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         {
             addTab(false);
         }
-
+        
         // PSIPHON: don't show Zirco changelist or restore last page
+        // The current intent data Uri is also deliberately ignored
+        //
         /*
         if (intent.getData() != null) {
         	// App first launch from another app.
