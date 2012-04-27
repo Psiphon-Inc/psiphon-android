@@ -45,6 +45,8 @@ public class StatusActivity extends Activity
     public static final String ADD_MESSAGE = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE";
     public static final String ADD_MESSAGE_TEXT = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TEXT";
     public static final String ADD_MESSAGE_CLASS = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_CLASS";
+    public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
+    public static final String UNEXPECTED_DISCONNECT = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT";
     
     private TableLayout m_messagesTableLayout;
     private ScrollView m_messagesScrollView;
@@ -90,8 +92,37 @@ public class StatusActivity extends Activity
         m_localBroadcastManager.registerReceiver(
                 new AddMessageReceiver(),
                 new IntentFilter(ADD_MESSAGE));        
+
+        // Handle explicit intent that invoked this activity
+        
+        HandleExplicitIntents(getIntent());
     }
 
+    @Override
+    protected void onNewIntent(Intent intent)
+    {
+        super.onNewIntent(intent);
+
+        // Handle explicit intent that is received when activity is already running
+        
+        HandleExplicitIntents(intent);
+    }
+
+    protected void HandleExplicitIntents(Intent intent)
+    {
+        if (intent.getAction() == null)
+        {
+            return;
+        }
+
+        if (0 == intent.getAction().compareTo(HANDSHAKE_SUCCESS))
+        {
+            Events.displayBrowser(this);
+        }
+        
+        // No explicit action for UNEXPECTED_DISCONNECT, just show the activity
+    }
+    
     public void onOpenBrowserClick(View v)
     {
         Events.displayBrowser(this);       

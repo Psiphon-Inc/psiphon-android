@@ -37,15 +37,25 @@ public class Events
         localBroadcastManager.sendBroadcast(intent);
     }
 
-    static public void displayStatus(Context context)
+    static public void signalHandshakeSuccess(Context context)
     {
-        // Simply display the status screen
         Intent intent = new Intent(
-                "ACTION_VIEW",
+                StatusActivity.HANDSHAKE_SUCCESS,
                 null,
                 context,
                 com.psiphon3.StatusActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);        
+    }
+
+    static public void signalUnexpectedDisconnect(Context context)
+    {
+        Intent intent = new Intent(
+                StatusActivity.UNEXPECTED_DISCONNECT,
+                null,
+                context,
+                com.psiphon3.StatusActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);        
     }
     
@@ -78,7 +88,6 @@ public class Events
 
         intent.putExtra("homePages", PsiphonData.getPsiphonData().getHomePages());
         
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         context.startActivity(intent);
     }
 }

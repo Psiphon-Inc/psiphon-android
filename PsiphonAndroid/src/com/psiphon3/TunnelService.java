@@ -284,8 +284,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 m_interface.doHandshakeRequest();
                 MyLog.d("TEMP: Handshake success");
 
-                // Open home pages
-                Events.displayBrowser(this);
+                Events.signalHandshakeSuccess(this);
             } 
             catch (PsiphonServerInterfaceException requestException)
             {
@@ -396,7 +395,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             
             if (unexpectedDisconnect)
             {
-                Events.displayStatus(this);
+                Events.signalUnexpectedDisconnect(this);
             }
         }
         
