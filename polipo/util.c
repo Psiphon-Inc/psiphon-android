@@ -798,6 +798,10 @@ intListCons(int from, int to, IntListPtr list)
 int
 physicalMemory()
 {
+    /* In Android, we don't have sysinfo readily available */
+    return -1;
+
+    /*
     int rc;
     struct sysinfo info;
 
@@ -809,6 +813,7 @@ physicalMemory()
         return (int)(info.totalram * info.mem_unit);
 
     return -1;
+    */
 }
 
 #elif defined(__FreeBSD__)
