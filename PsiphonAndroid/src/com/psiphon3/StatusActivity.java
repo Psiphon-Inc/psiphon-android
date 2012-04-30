@@ -62,19 +62,8 @@ public class StatusActivity extends Activity
         // Note that this must come after the above lines, or else the activity
         // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
         PsiphonConstants.DEBUG = Utils.isDebugMode(this);
-    }
-    
-    @Override
-    protected void onResume()
-    {
-        super.onResume();
-
-        // Start tunnel service (if not already running)
-        
-        startService(new Intent(this, TunnelService.class));
 
         // Restore messages previously posted by the service
-        
         m_messagesTableLayout.removeAllViews();
         for (StatusMessage msg : PsiphonData.getPsiphonData().getStatusMessages())
         {
@@ -88,7 +77,17 @@ public class StatusActivity extends Activity
 
         m_localBroadcastManager.registerReceiver(
                 new AddMessageReceiver(),
-                new IntentFilter(ADD_MESSAGE));        
+                new IntentFilter(ADD_MESSAGE));
+    }
+    
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+
+        // Start tunnel service (if not already running)
+        
+        startService(new Intent(this, TunnelService.class));
 
         // Handle explicit intent that invoked this activity
         
@@ -163,7 +162,7 @@ public class StatusActivity extends Activity
         ImageView messageClassImageView = new ImageView(this);
         
         messageTextView.setText(message);
-        
+
         int messageClassImageRes = 0;
         int messageClassImageDesc = 0;
         switch (messageClass)
@@ -192,7 +191,7 @@ public class StatusActivity extends Activity
         TableRow.LayoutParams layoutParams = new TableRow.LayoutParams();
         layoutParams.gravity = android.view.Gravity.RIGHT; 
         messageClassImageView.setLayoutParams(layoutParams);
-        
+
         row.addView(messageTextView);
         row.addView(messageClassImageView);
         
