@@ -59,6 +59,17 @@ public class Events
         context.startActivity(intent);        
     }
     
+    static public Intent pendingSignalNotification(Context context)
+    {
+        Intent intent = new Intent(
+                "ACTION_VIEW",
+                null,
+                context,
+                com.psiphon3.StatusActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        return intent;
+    }
+    
     static public void displayBrowser(Context context)
     {
         displayBrowser(context, null);

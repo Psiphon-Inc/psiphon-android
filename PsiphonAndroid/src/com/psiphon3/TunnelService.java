@@ -108,18 +108,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 getText(R.string.app_name),
                 System.currentTimeMillis());
 
-        Intent intent = new Intent(
-                "ACTION_VIEW",
-                null,
-                this,
-                com.psiphon3.StatusActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        
         PendingIntent invokeActivityIntent = 
             PendingIntent.getActivity(
                 this,
                 0,
-                intent,
+                Events.pendingSignalNotification(this),
                 0);
 
         notification.setLatestEventInfo(
