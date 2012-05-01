@@ -21,7 +21,7 @@
 
 int main(int argc, char **argv);
 
-JNIEXPORT void JNICALL  Java_runPolipo_run(JNIEnv* env, jobject obj)
+JNIEXPORT void JNICALL  Java_Polipo_runPolipo(JNIEnv* env, jobject obj)
 {
     // Call Polipo main() with Psiphon command line arguments
     // TODO: pass in a "stop" object and have polipo gracefully shutdown when the stop flag is set
