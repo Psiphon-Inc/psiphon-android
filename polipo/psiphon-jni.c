@@ -22,13 +22,13 @@
 int psiphonMain(
         int proxyPort,
         int localParentProxyPort,
-        int* polipoListening,
-        int* signalStop);
+        void (*setSignalPolipoListening)(),
+        int (*checkSignalStop)());
 
 static JNIEnv* g_env = 0;
 static jobject g_obj = 0;
-jfieldID g_polipoListeningFid = NULL;
-jfieldID g_signalStopFid = NULL;
+jfieldID g_polipoListeningFid = 0;
+jfieldID g_signalStopFid = 0;
 
 static void initFieldAccessors(JNIEnv* env, jobject obj)
 {
@@ -38,7 +38,7 @@ static void initFieldAccessors(JNIEnv* env, jobject obj)
   
     g_env = env;
     g_obj = obj;
-    jclass = (*g_env)->GetObjectClass(g_env, obj);
+    jclass cls = (*g_env)->GetObjectClass(g_env, obj);
     g_polipoListeningFid = (*g_env)->GetFieldID(g_env, cls, "m_polipoListening", "Z");
     if (!g_signalStopFid) return;
     g_signalStopFid = (*g_env)->GetFieldID(g_env, cls, "m_signalStop", "Z");
@@ -47,7 +47,7 @@ static void initFieldAccessors(JNIEnv* env, jobject obj)
 
 void setSignalPolipoListening()
 {
-    (*g_env)->SetBooleanField(g_env, g_obj, g_polipoListeningFid);
+    (*g_env)->SetBooleanField(g_env, g_obj, g_polipoListeningFid, 1);
 }
 
 int checkSignalStop()

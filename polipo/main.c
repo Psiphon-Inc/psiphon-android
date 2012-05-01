@@ -162,7 +162,7 @@ main(int argc, char **argv)
         exit(1);
     }
 
-    eventLoop();
+    eventLoop(0);
 
     if(pidFile) unlink(pidFile->string);
     return 0;
@@ -172,7 +172,6 @@ main(int argc, char **argv)
 int psiphonMain(
         int proxyPort,
         int localParentProxyPort,
-        void* jniData,
         void (*setSignalPolipoListening)(),
         int (*checkSignalStop)())
 {
