@@ -11,7 +11,7 @@ POLIPO_SRC := util.c event.c io.c chunk.c atom.c object.c log.c diskcache.c main
               http_parse.c parse_time.c dns.c forbidden.c \
               md5.c fts_compat.c socks.c mingw.c
 
-LOCAL_SRC_FILES := $(POLIPO_SRC)
+LOCAL_SRC_FILES := $(POLIPO_SRC) psiphon-jni.c
 
 include $(BUILD_SHARED_LIBRARY)
 

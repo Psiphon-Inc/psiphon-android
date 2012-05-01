@@ -32,6 +32,6 @@ JNIEXPORT void JNICALL  Java_runPolipo_run(JNIEnv* env, jobject obj)
         "disableLocalInterface=true",
         "socksParentProxy=127.0.0.1:1080",
         "logLevel=1"
-    }
+    };
     main(sizeof(args)/sizeof(char*), args);
 }
