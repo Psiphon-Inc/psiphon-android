@@ -234,7 +234,7 @@ int psiphonMain(
         return -2;
     }
 
-    setSignalPolipoListening();
+    /*setSignalPolipoListening();*/
 
     eventLoop(checkSignalStop);
 

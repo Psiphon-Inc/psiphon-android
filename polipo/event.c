@@ -629,7 +629,7 @@ eventLoop(int (*checkSignalStop)()) // PSIPHON: signalStop
 
     gettimeofday(&current_time, NULL);
 
-    while(!checkSignalStop()) { // PSIPHON: signalStop
+    while(1) {//!checkSignalStop()) { // PSIPHON: signalStop
     again:
         if(exitFlag) {
             if(exitFlag < 3)
@@ -701,7 +701,7 @@ eventLoop(int (*checkSignalStop)()) // PSIPHON: signalStop
         fd0 = 
             (current_time.tv_usec ^ (current_time.tv_usec >> 16)) % fdEventNum;
         n = rc;
-        for(i = 0; !checkSignalStop() && i < fdEventNum; i++) { // PSIPHON: signalStop
+        for(i = 0; /*!checkSignalStop() &&*/ i < fdEventNum; i++) { // PSIPHON: signalStop
             int j = (i + fd0) % fdEventNum;
             if(n <= 0)
                 break;
