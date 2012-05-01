@@ -24,37 +24,29 @@ import android.util.Log;
 public class Polipo
 {
     Thread m_polipoThread;
-    boolean m_polipoListening;
     boolean m_signalStop;
 
-    public boolean start() throws InterruptedException
+    public void start() throws InterruptedException
     {
         stop();
+
+        if (0 != initPolipo(
+                    PsiphonConstants.HTTP_PROXY_PORT,
+                    PsiphonConstants.SOCKS_PORT))
+        {
+            // TODO: throw custom exception?
+            assert(false);
+        }
+
         m_polipoThread = new Thread(
             new Runnable()
             {
                 public void run()
                 {
-                    runPolipo(
-                        PsiphonConstants.HTTP_PROXY_PORT,
-                        PsiphonConstants.SOCKS_PORT);
+                    runPolipo();
                 }
             });
         m_polipoThread.start();
-
-        // Allow up to a second for Polipo to start listening
-        for (int i = 0; i < 100; i += 10)
-        {
-            if (m_polipoListening) break;
-            Thread.sleep(10);
-        }
-        
-        if (!m_polipoListening)
-        {
-            stop();
-        }
-        
-        return m_polipoListening;
     }
     
     public void stop() throws InterruptedException
@@ -62,11 +54,12 @@ public class Polipo
         if (m_polipoThread != null)
         {
             m_signalStop = true;
+            Log.e("******", "set signal stop");
             m_polipoThread.join();
+            Log.e("******", "joined");
             // TODO: force stop() after timeout?
         }
         m_polipoThread = null;
-        m_polipoListening = false;
         m_signalStop = false;
     }
 
@@ -75,7 +68,10 @@ public class Polipo
         return m_polipoThread != null && m_polipoThread.isAlive();
     }
     
-    private native int runPolipo(int proxyPort, int localParentProxyPort);
+    // NOTE port options are only set on first init() call and ignore on
+    // subsequent calls; see note in native JNI wrapper.
+    private native int initPolipo(int proxyPort, int localParentProxyPort);
+    private native int runPolipo();
     
     static
     {

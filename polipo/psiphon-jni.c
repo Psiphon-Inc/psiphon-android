@@ -19,36 +19,34 @@
 
 #include "jni.h"
 
-int psiphonMain(
-        int proxyPort,
-        int localParentProxyPort,
-        void (*setSignalPolipoListening)(),
-        int (*checkSignalStop)());
+int psiphonMainPreInit(int proxyPortParam, int localParentProxyPortParam);
+int psiphonMainInit();
+int psiphonMainEventLoop(int (*checkSignalStop)());
+
+static int g_preInit = 0;
+
+JNIEXPORT jint JNICALL Java_com_psiphon3_Polipo_initPolipo(
+    JNIEnv* env,
+    jobject obj,
+    int proxyPort,
+    int localParentProxyPort)
+{
+    if (!g_preInit)
+    {
+        // NOTE: preInit can only be run once due to Polipo code.
+        // This means the config params are only set one time.
+
+        g_preInit = 1;
+        int errcode = psiphonMainPreInit(proxyPort, localParentProxyPort);
+        if (errcode) return errcode;
+    }
+    
+    return psiphonMainInit();
+}
 
 static JNIEnv* g_env = 0;
 static jobject g_obj = 0;
-jfieldID g_polipoListeningFid = 0;
 jfieldID g_signalStopFid = 0;
-
-static void initFieldAccessors(JNIEnv* env, jobject obj)
-{
-    // NOTE: this method of accessing fields will only work with one instance
-    // of the Polipo object; however, most of the Polipo C code uses global
-    // variables, so we can only have one instance in any case.
-  
-    g_env = env;
-    g_obj = obj;
-    jclass cls = (*g_env)->GetObjectClass(g_env, g_obj);
-    g_polipoListeningFid = (*g_env)->GetFieldID(g_env, cls, "m_polipoListening", "Z");
-    if (!g_polipoListeningFid) return;
-    g_signalStopFid = (*g_env)->GetFieldID(g_env, cls, "m_signalStop", "Z");
-    if (!g_signalStopFid) return;
-}
-
-void setSignalPolipoListening()
-{
-    (*g_env)->SetBooleanField(g_env, g_obj, g_polipoListeningFid, 1);
-}
 
 int checkSignalStop()
 {
@@ -57,15 +55,17 @@ int checkSignalStop()
 
 JNIEXPORT jint JNICALL Java_com_psiphon3_Polipo_runPolipo(
     JNIEnv* env,
-    jobject obj,
-    int proxyPort,
-    int localParentProxyPort)
+    jobject obj)
 {
-    initFieldAccessors(env, obj);
+    // NOTE: this method of accessing fields will only work with one instance
+    // of the Polipo object; however, most of the Polipo C code uses global
+    // variables, so we can only have one instance in any case.
+  
+    g_env = env;
+    g_obj = obj;
+    jclass cls = (*g_env)->GetObjectClass(g_env, g_obj);
+    g_signalStopFid = (*g_env)->GetFieldID(g_env, cls, "m_signalStop", "Z");
+    if (!g_signalStopFid) return -1;
 
-    return psiphonMain(
-                proxyPort,
-                localParentProxyPort,
-                &setSignalPolipoListening,
-                &checkSignalStop);
+    return psiphonMainEventLoop(&checkSignalStop);
 }

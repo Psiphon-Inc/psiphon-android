@@ -169,14 +169,10 @@ main(int argc, char **argv)
 }
 
 // PSIPHON: custom main() for JNI
-int psiphonMain(
-        int proxyPort,
-        int localParentProxyPort,
-        void (*setSignalPolipoListening)(),
-        int (*checkSignalStop)())
+int psiphonMainPreInit(
+        int proxyPortParam,
+        int localParentProxyPortParam)
 {
-    FdEventHandlerPtr listener;
-
     initAtoms();
     CONFIG_VARIABLE(daemonise, CONFIG_BOOLEAN, "Run as a daemon");
     CONFIG_VARIABLE(pidFile, CONFIG_ATOM, "File with pid of running daemon.");
@@ -194,49 +190,55 @@ int psiphonMain(
     preinitSocks();
 
     const int MAX_SIZE = 80;
-    char proxyPortParam[MAX_SIZE];
-    char localParentProxyPortParam[MAX_SIZE];
+    char proxyPortParamLine[MAX_SIZE];
+    char localParentProxyPortParamLine[MAX_SIZE];
     snprintf(
-        proxyPortParam,
+        proxyPortParamLine,
         MAX_SIZE,
         "proxyPort=%d",
-        proxyPort);
+        proxyPortParam);
     snprintf(
-        localParentProxyPortParam,
+        localParentProxyPortParamLine,
         MAX_SIZE,
         "socksParentProxy=127.0.0.1:%d",
-        localParentProxyPort);    
+        localParentProxyPortParam);
 
-    if (0 > parseConfigLine(proxyPortParam, "psiphon", 0, 0)
-        || 0 > parseConfigLine(localParentProxyPortParam, "psiphon", 0, 0)
+    if (0 > parseConfigLine(proxyPortParamLine, "psiphon", 0, 0)
+        || 0 > parseConfigLine(localParentProxyPortParamLine, "psiphon", 0, 0)
         || 0 > parseConfigLine("disableLocalInterface=true", "psiphon", 0, 0)
         || 0 > parseConfigLine("logLevel=1", "psiphon", 0, 0))
     {
         return -1;
     }
 
-    initChunks();
-    initLog();
-    initObject();
-    initEvents();
-    initIo();
-    initDns();
-    initHttp();
-    initServer();
-    initDiskcache();
-    initForbidden();
-    initSocks();
+    return 0;
+}
 
-    listener = create_listener(proxyAddress->string, 
-                               proxyPort, httpAccept, NULL);
-    if(!listener)
+static FdEventHandlerPtr g_listener = 0;
+
+// PSIPHON: custom main() for JNI
+int psiphonMainInit()
+{
+    g_listener = create_listener(
+                    proxyAddress->string, 
+                    proxyPort,
+                    httpAccept,
+                    NULL);
+    if (!g_listener)
     {
-        return -2;
+        return -1;
     }
 
-    /*setSignalPolipoListening();*/
+    return 0;
+}
 
+// PSIPHON: custom main() for JNI
+int psiphonMainEventLoop(int (*checkSignalStop)())
+{
     eventLoop(checkSignalStop);
+
+    // TODO: complete cleanup of all FDs and allocated memory
+    close(g_listener->fd);
 
     return 0;
 }

@@ -337,7 +337,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         {
         	unexpectedDisconnect = true;
 
-        	// SSH and Polipo errors -- tunnel problems -- result in IOException
+        	// SSH errors -- tunnel problems -- result in IOException
             // Make sure we try a different server (if any) next time
             // Note: we're not marking the server failed if handshake/connected requests failed
             
