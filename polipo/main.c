@@ -90,7 +90,7 @@ main(int argc, char **argv)
             i++;
         } else {
             usage(argv[0]);
-            exit(1);
+            exit(2);
         }
     }
 
@@ -117,12 +117,12 @@ main(int argc, char **argv)
 
     rc = parseConfigFile(configFile);
     if(rc < 0)
-        exit(1);
+        exit(3);
 
     while(i < argc) {
         rc = parseConfigLine(argv[i], "command line", 0, 0);
         if(rc < 0)
-            exit(1);
+            exit(4);
         i++;
     }
 
@@ -159,7 +159,7 @@ main(int argc, char **argv)
                                proxyPort, httpAccept, NULL);
     if(!listener) {
         if(pidFile) unlink(pidFile->string);
-        exit(1);
+        exit(5);
     }
 
     eventLoop();
