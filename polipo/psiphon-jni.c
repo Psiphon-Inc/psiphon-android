@@ -27,6 +27,7 @@ JNIEXPORT void JNICALL Java_com_psiphon3_Polipo_runPolipo(JNIEnv* env, jobject o
     // TODO: pass in a "stop" object and have polipo gracefully shutdown when the stop flag is set
     char* args[] =
     {
+        "polipo",
         "proxyPort=8080",
         "diskCacheRoot=\"\"",
         "disableLocalInterface=true",
