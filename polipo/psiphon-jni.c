@@ -19,7 +19,41 @@
 
 #include "jni.h"
 
-int psiphonMain(int proxyPort, int localParentProxyPort);
+int psiphonMain(
+        int proxyPort,
+        int localParentProxyPort,
+        int* polipoListening,
+        int* signalStop);
+
+static JNIEnv* g_env = 0;
+static jobject g_obj = 0;
+jfieldID g_polipoListeningFid = NULL;
+jfieldID g_signalStopFid = NULL;
+
+static void initFieldAccessors(JNIEnv* env, jobject obj)
+{
+    // NOTE: this method of accessing fields will only work with one instance
+    // of the Polipo object; however, most of the Polipo C code uses global
+    // variables, so we can only have one instance in any case.
+  
+    g_env = env;
+    g_obj = obj;
+    jclass = (*g_env)->GetObjectClass(g_env, obj);
+    g_polipoListeningFid = (*g_env)->GetFieldID(g_env, cls, "m_polipoListening", "Z");
+    if (!g_signalStopFid) return;
+    g_signalStopFid = (*g_env)->GetFieldID(g_env, cls, "m_signalStop", "Z");
+    if (!g_signalStopFid) return;
+}
+
+void setSignalPolipoListening()
+{
+    (*g_env)->SetBooleanField(g_env, g_obj, g_polipoListeningFid);
+}
+
+int checkSignalStop()
+{
+    return (*g_env)->GetBooleanField(g_env, g_obj, g_signalStopFid);
+}
 
 JNIEXPORT jint JNICALL Java_com_psiphon3_Polipo_runPolipo(
     JNIEnv* env,
@@ -27,7 +61,11 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_Polipo_runPolipo(
     int proxyPort,
     int localParentProxyPort)
 {
-    // TODO: pass in a "stop" object and have polipo gracefully shutdown when the stop flag is set
+    initFieldAccessors(env, obj);
 
-    return psiphonMain(proxyPort, localParentProxyPort);
+    return psiphonMain(
+                proxyPort,
+                localParentProxyPort,
+                setSignalPolipoListening,
+                checkSignalStop);
 }

@@ -19,11 +19,15 @@
 
 package com.psiphon3;
 
+import android.util.Log;
+
 public class Polipo
 {
     Thread m_polipoThread;
+    boolean m_polipoListening;
+    boolean m_signalStop;
 
-    public void start()
+    public boolean start() throws InterruptedException
     {
         stop();
         m_polipoThread = new Thread(
@@ -37,16 +41,33 @@ public class Polipo
                 }
             });
         m_polipoThread.start();
+
+        // Allow up to a second for Polipo to start listening
+        for (int i = 0; i < 100; i += 10)
+        {
+            if (m_polipoListening) break;
+            Thread.sleep(10);
+        }
+        
+        if (!m_polipoListening)
+        {
+            stop();
+        }
+        
+        return m_polipoListening;
     }
     
-    public void stop()
+    public void stop() throws InterruptedException
     {
         if (m_polipoThread != null)
         {
-            // TODO: pass in a "stop" object and have polipo gracefully shutdown when the stop flag is set
-            m_polipoThread.stop();
+            m_signalStop = true;
+            m_polipoThread.join();
+            // TODO: force stop() after timeout?
         }
         m_polipoThread = null;
+        m_polipoListening = false;
+        m_signalStop = false;
     }
 
     public boolean isRunning()

@@ -168,7 +168,13 @@ main(int argc, char **argv)
     return 0;
 }
 
-int psiphonMain(int proxyPort, int localParentProxyPort)
+// PSIPHON: custom main() for JNI
+int psiphonMain(
+        int proxyPort,
+        int localParentProxyPort,
+        void* jniData,
+        void (*setSignalPolipoListening)(),
+        int (*checkSignalStop)())
 {
     FdEventHandlerPtr listener;
 
@@ -229,7 +235,9 @@ int psiphonMain(int proxyPort, int localParentProxyPort)
         return -2;
     }
 
-    eventLoop();
+    setSignalPolipoListening();
+
+    eventLoop(checkSignalStop);
 
     return 0;
 }

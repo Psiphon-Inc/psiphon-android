@@ -168,9 +168,9 @@ THE SOFTWARE.
 #endif
 
 #ifndef WIN32 /*MINGW*/
-/* As an Android JNI lib, we don't want signals so we don't want to define HAVE_FORK.
-#define HAVE_FORK
-*/
+// PSIPHON: As an Android JNI lib, we don't want signals so we don't want to define HAVE_FORK.
+//#define HAVE_FORK
+
 #ifndef NO_SYSLOG
 #define HAVE_SYSLOG
 #endif

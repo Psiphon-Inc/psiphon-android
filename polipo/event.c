@@ -620,7 +620,7 @@ workToDo()
 }
     
 void
-eventLoop()
+eventLoop(int (*checkSignalStop)()) // PSIPHON: signalStop
 {
     struct timeval sleep_time, timeout;
     int rc, i, done, n;
@@ -629,7 +629,7 @@ eventLoop()
 
     gettimeofday(&current_time, NULL);
 
-    while(1) {
+    while(!checkSignalStop()) { // PSIPHON: signalStop
     again:
         if(exitFlag) {
             if(exitFlag < 3)
@@ -701,7 +701,7 @@ eventLoop()
         fd0 = 
             (current_time.tv_usec ^ (current_time.tv_usec >> 16)) % fdEventNum;
         n = rc;
-        for(i = 0; i < fdEventNum; i++) {
+        for(i = 0; !checkSignalStop() && i < fdEventNum; i++) { // PSIPHON: signalStop
             int j = (i + fd0) % fdEventNum;
             if(n <= 0)
                 break;

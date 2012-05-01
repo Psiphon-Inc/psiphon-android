@@ -798,7 +798,7 @@ intListCons(int from, int to, IntListPtr list)
 int
 physicalMemory()
 {
-    /* In Android, we don't have sysinfo readily available */
+    // PSIPHON: In Android, we don't have sysinfo readily available
     return -1;
 
     /*

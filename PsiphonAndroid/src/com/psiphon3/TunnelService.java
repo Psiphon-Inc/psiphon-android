@@ -216,7 +216,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         }
     }
 
-    private boolean runTunnelOnce()
+    private boolean runTunnelOnce() throws InterruptedException
     {
         ServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
 
@@ -294,48 +294,44 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 // Allow the user to continue. Their session might still function correctly.
             }
             
-            try
+            while (true)
             {
-                while (true)
+                if (!polipo.isRunning())
                 {
-                    boolean closeTunnel = false;
-                    
-                    Signal signal = m_signalQueue.poll(10, TimeUnit.SECONDS);
-                    
-                    if (signal != null)
-                    {
-                        switch (signal)
-                        {
-                        case STOP_SERVICE:
-                            unexpectedDisconnect = false;
-                            runAgain = false;
-                            closeTunnel = true;
-                            break;
-                        case UNEXPECTED_DISCONNECT:
-                            // TODO: need to call MarkCurrentServerFailed()?
-                            unexpectedDisconnect = true;
-                            runAgain = true;
-                            closeTunnel = true;
-                            break;
-                        }
-                    }
+                    MyLog.e(R.string.http_proxy_stopped_unexpectedly);
+                    unexpectedDisconnect = true;
+                    break;
+                }
 
-                    m_interface.doPeriodicWork(closeTunnel);
-
-                    if (!polipo.isRunning())
+                boolean closeTunnel = false;
+                
+                Signal signal = m_signalQueue.poll(10, TimeUnit.SECONDS);
+                
+                if (signal != null)
+                {
+                    switch (signal)
                     {
-                        MyLog.e(R.string.http_proxy_stopped_unexpectedly);
-                        unexpectedDisconnect = true;
+                    case STOP_SERVICE:
+                        unexpectedDisconnect = false;
+                        runAgain = false;
+                        closeTunnel = true;
                         break;
-                    }
-
-                    if (closeTunnel)
-                    {
+                    case UNEXPECTED_DISCONNECT:
+                        // TODO: need to call MarkCurrentServerFailed()?
+                        unexpectedDisconnect = true;
+                        runAgain = true;
+                        closeTunnel = true;
                         break;
                     }
                 }
+
+                m_interface.doPeriodicWork(closeTunnel);
+
+                if (closeTunnel)
+                {
+                    break;
+                }
             }
-            catch (InterruptedException e) {}            
         }
         catch (IOException e)
         {
@@ -386,7 +382,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         return runAgain;
     }
     
-    private void runTunnel()
+    private void runTunnel() throws InterruptedException
     {
         while (runTunnelOnce())
         {
@@ -410,7 +406,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             {
                 public void run()
                 {
-                    runTunnel();
+                    try
+                    {
+                        runTunnel();
+                    }
+                    catch (InterruptedException e) {}
                 }
             });
 
