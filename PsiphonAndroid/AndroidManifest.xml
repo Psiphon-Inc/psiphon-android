@@ -32,6 +32,7 @@
         </service>
         <activity
             android:name="org.zirco.ui.activities.MainActivity"
+            android:label="@string/browser_task_label"
             android:launchMode="singleTask"
             android:alwaysRetainTaskState="true"
             android:taskAffinity=":PsiphonZircoTask"

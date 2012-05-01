@@ -31,5 +31,6 @@
     <string name="ssh_disconnected_unexpectedly">SSH disconnected unexpectedly</string>
     <string name="exit">Exit</string>
     <string name="open_browser">Open Browser</string>
+    <string name="browser_task_label">Psiphon Browser</string>
 
 </resources>
