@@ -34,6 +34,7 @@
             android:name="org.zirco.ui.activities.MainActivity"
             android:launchMode="singleTask"
             android:alwaysRetainTaskState="true"
+            android:taskAffinity=":PsiphonZircoTask"
             android:exported="false">
         </activity>
          <activity android:name="org.zirco.ui.activities.AboutActivity" ></activity>

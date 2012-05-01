@@ -86,27 +86,32 @@ public class StatusActivity extends Activity
         super.onResume();
 
         // Start tunnel service (if not already running)
-        
         startService(new Intent(this, TunnelService.class));
 
-        // Handle explicit intent that invoked this activity
-        
-        HandleExplicitIntents(getIntent());
+        // Handle the intent that resumed that activity
+        HandleCurrentIntent();
     }
 
     @Override
     protected void onNewIntent(Intent intent)
     {
         super.onNewIntent(intent);
+        
+        // If the app is already foreground (so onNewIntent is being called), 
+        // the incoming intent is not automatically set as the activity's intent
+        // (i.e., the intent returned by getIntent()). We want this behaviour, 
+        // so we'll set it explicitly. 
+        setIntent(intent);
 
         // Handle explicit intent that is received when activity is already running
-        
-        HandleExplicitIntents(intent);
+        HandleCurrentIntent();
     }
 
-    protected void HandleExplicitIntents(Intent intent)
+    protected void HandleCurrentIntent()
     {
-        if (intent.getAction() == null)
+        Intent intent = getIntent();
+        
+        if (intent == null || intent.getAction() == null)
         {
             return;
         }
@@ -114,6 +119,14 @@ public class StatusActivity extends Activity
         if (0 == intent.getAction().compareTo(HANDSHAKE_SUCCESS))
         {
             Events.displayBrowser(this);
+            
+            // We only want to respond to the HANDSHAKE_SUCCESS action once,
+            // so we need to clear it (by setting it to a non-special intent).
+            setIntent(new Intent(
+                            "ACTION_VIEW",
+                            null,
+                            this,
+                            this.getClass()));
         }
         
         // No explicit action for UNEXPECTED_DISCONNECT, just show the activity

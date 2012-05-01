@@ -1493,10 +1493,9 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 	public boolean onKeyLongPress(int keyCode, KeyEvent event) {
 		
 		switch (keyCode) {
-		// PSIPHON: don't hide app, return to status activity
-		//case KeyEvent.KEYCODE_BACK:
-		//	this.moveTaskToBack(true);
-		//	return true;
+		case KeyEvent.KEYCODE_BACK:
+			this.moveTaskToBack(true);
+			return true;
 		default: return super.onKeyLongPress(keyCode, event);
 		}
 	}
@@ -1514,9 +1513,8 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 				if (mCurrentWebView.canGoBack()) {
 					mCurrentWebView.goBack();				
 				} else {
-					// PSIPHON: don't hide app, return to status activity
-					//this.moveTaskToBack(true);
-					return super.onKeyUp(keyCode, event);
+					this.moveTaskToBack(true);
+					return true;
 				}
 			}
 			return true;

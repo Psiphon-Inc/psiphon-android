@@ -19,6 +19,8 @@
 
 package com.psiphon3;
 
+import com.psiphon3.Utils.MyLog;
+
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -39,23 +41,25 @@ public class Events
 
     static public void signalHandshakeSuccess(Context context)
     {
+        MyLog.d("signalHandshakeSuccess: signalling");
         Intent intent = new Intent(
                 StatusActivity.HANDSHAKE_SUCCESS,
                 null,
                 context,
                 com.psiphon3.StatusActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity(intent);        
     }
 
     static public void signalUnexpectedDisconnect(Context context)
     {
+        MyLog.d("signalUnexpectedDisconnect: signalling");
         Intent intent = new Intent(
                 StatusActivity.UNEXPECTED_DISCONNECT,
                 null,
                 context,
                 com.psiphon3.StatusActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity(intent);        
     }
     
@@ -66,7 +70,7 @@ public class Events
                 null,
                 context,
                 com.psiphon3.StatusActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         return intent;
     }
     
@@ -76,12 +80,14 @@ public class Events
     }
 
     static public void displayBrowser(Context context, Uri uri)
-    {        
+    {
+        MyLog.d("displayBrowser: signalling");
         Intent intent = new Intent(
                 "ACTION_VIEW",
                 uri,
                 context,
                 org.zirco.ui.activities.MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
         // This intent displays the Zirco browser.
         // We use "extras" to communicate Psiphon settings to Zirco, which

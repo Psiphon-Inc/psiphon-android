@@ -113,7 +113,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 this,
                 0,
                 Events.pendingSignalNotification(this),
-                0);
+                PendingIntent.FLAG_UPDATE_CURRENT);
 
         notification.setLatestEventInfo(
             this,
