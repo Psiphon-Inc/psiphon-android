@@ -219,6 +219,18 @@ static FdEventHandlerPtr g_listener = 0;
 // PSIPHON: custom main() for JNI
 int psiphonMainInit()
 {
+    initChunks();
+    initLog();
+    initObject();
+    initEvents();
+    initIo();
+    initDns();
+    initHttp();
+    initServer();
+    initDiskcache();
+    initForbidden();
+    initSocks();
+
     g_listener = create_listener(
                     proxyAddress->string, 
                     proxyPort,
