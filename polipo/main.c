@@ -190,7 +190,7 @@ int psiphonMain(int proxyPort, int localParentProxyPort)
 
     const int MAX_SIZE = 80;
     char proxyPortParam[MAX_SIZE];
-    char socksParentProxyParam[MAX_SIZE];
+    char localParentProxyPortParam[MAX_SIZE];
     snprintf(
         proxyPortParam,
         MAX_SIZE,
