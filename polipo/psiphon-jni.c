@@ -19,20 +19,15 @@
 
 #include "jni.h"
 
-int main(int argc, char **argv);
+int psiphonMain(int proxyPort, int localParentProxyPort);
 
-JNIEXPORT void JNICALL Java_com_psiphon3_Polipo_runPolipo(JNIEnv* env, jobject obj)
+JNIEXPORT jint JNICALL Java_com_psiphon3_Polipo_runPolipo(
+    JNIEnv* env,
+    jobject obj,
+    int proxyPort,
+    int localParentProxyPort)
 {
-    // Call Polipo main() with Psiphon command line arguments
     // TODO: pass in a "stop" object and have polipo gracefully shutdown when the stop flag is set
-    char* args[] =
-    {
-        "polipo",
-        "proxyPort=8080",
-        "diskCacheRoot=\"\"",
-        "disableLocalInterface=true",
-        "socksParentProxy=127.0.0.1:1080",
-        "logLevel=1"
-    };
-    main(sizeof(args)/sizeof(char*), args);
+
+    return psiphonMain(proxyPort, localParentProxyPort);
 }

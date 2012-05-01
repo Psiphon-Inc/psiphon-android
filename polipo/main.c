@@ -167,3 +167,70 @@ main(int argc, char **argv)
     if(pidFile) unlink(pidFile->string);
     return 0;
 }
+
+int psiphonMain(int proxyPort, int localParentProxyPort)
+{
+    FdEventHandlerPtr listener;
+
+    initAtoms();
+    CONFIG_VARIABLE(daemonise, CONFIG_BOOLEAN, "Run as a daemon");
+    CONFIG_VARIABLE(pidFile, CONFIG_ATOM, "File with pid of running daemon.");
+
+    preinitChunks();
+    preinitLog();
+    preinitObject();
+    preinitIo();
+    preinitDns();
+    preinitServer();
+    preinitHttp();
+    preinitDiskcache();
+    preinitLocal();
+    preinitForbidden();
+    preinitSocks();
+
+    const int MAX_SIZE = 80;
+    char proxyPortParam[MAX_SIZE];
+    char socksParentProxyParam[MAX_SIZE];
+    snprintf(
+        proxyPortParam,
+        MAX_SIZE,
+        "proxyPort=%d",
+        proxyPort);
+    snprintf(
+        localParentProxyPortParam,
+        MAX_SIZE,
+        "socksParentProxy=127.0.0.1:%d",
+        localParentProxyPort);    
+
+    if (0 > parseConfigLine(proxyPortParam, "psiphon", 0, 0)
+        || 0 > parseConfigLine(localParentProxyPortParam, "psiphon", 0, 0)
+        || 0 > parseConfigLine("diskCacheRoot=\"\"", "psiphon", 0, 0)
+        || 0 > parseConfigLine("disableLocalInterface=true", "psiphon", 0, 0)
+        || 0 > parseConfigLine("logLevel=1", "psiphon", 0, 0))
+    {
+        return -1;
+    }
+
+    initChunks();
+    initLog();
+    initObject();
+    initEvents();
+    initIo();
+    initDns();
+    initHttp();
+    initServer();
+    initDiskcache();
+    initForbidden();
+    initSocks();
+
+    listener = create_listener(proxyAddress->string, 
+                               proxyPort, httpAccept, NULL);
+    if(!listener)
+    {
+        return -2;
+    }
+
+    eventLoop();
+
+    return 0;
+}

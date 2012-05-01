@@ -32,8 +32,10 @@ public class Polipo
                 public void run()
                 {
                     runPolipo();
+                    
                 }
             });
+        m_polipoThread.start();
     }
     
     public void stop()
