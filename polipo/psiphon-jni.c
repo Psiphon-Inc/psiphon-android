@@ -38,7 +38,7 @@ static void initFieldAccessors(JNIEnv* env, jobject obj)
   
     g_env = env;
     g_obj = obj;
-    jclass cls = (*g_env)->GetObjectClass(g_env, obj);
+    jclass cls = (*g_env)->GetObjectClass(g_env, g_obj);
     g_polipoListeningFid = (*g_env)->GetFieldID(g_env, cls, "m_polipoListening", "Z");
     if (!g_signalStopFid) return;
     g_signalStopFid = (*g_env)->GetFieldID(g_env, cls, "m_signalStop", "Z");
@@ -66,6 +66,6 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_Polipo_runPolipo(
     return psiphonMain(
                 proxyPort,
                 localParentProxyPort,
-                setSignalPolipoListening,
-                checkSignalStop);
+                &setSignalPolipoListening,
+                &checkSignalStop);
 }
