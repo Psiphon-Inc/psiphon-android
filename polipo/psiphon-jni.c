@@ -40,7 +40,7 @@ static void initFieldAccessors(JNIEnv* env, jobject obj)
     g_obj = obj;
     jclass cls = (*g_env)->GetObjectClass(g_env, g_obj);
     g_polipoListeningFid = (*g_env)->GetFieldID(g_env, cls, "m_polipoListening", "Z");
-    if (!g_signalStopFid) return;
+    if (!g_polipoListeningFid) return;
     g_signalStopFid = (*g_env)->GetFieldID(g_env, cls, "m_signalStop", "Z");
     if (!g_signalStopFid) return;
 }
