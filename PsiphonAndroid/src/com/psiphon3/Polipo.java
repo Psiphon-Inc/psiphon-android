@@ -31,8 +31,9 @@ public class Polipo
             {
                 public void run()
                 {
-                    runPolipo();
-                    
+                    runPolipo(
+                        PsiphonConstants.HTTP_PROXY_PORT,
+                        PsiphonConstants.SOCKS_PORT);
                 }
             });
         m_polipoThread.start();
@@ -47,8 +48,13 @@ public class Polipo
         }
         m_polipoThread = null;
     }
+
+    public boolean isRunning()
+    {
+        return m_polipoThread != null && m_polipoThread.isAlive();
+    }
     
-    private native void runPolipo();
+    private native int runPolipo(int proxyPort, int localParentProxyPort);
     
     static
     {

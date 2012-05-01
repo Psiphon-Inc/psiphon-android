@@ -223,9 +223,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         boolean runAgain = true;
         Connection conn = null;
         DynamicPortForwarder socks = null;
-        /*
-         * NativeWrapper polipo = null;
-         */
         Polipo polipo = null;
         boolean unexpectedDisconnect = false;
         
@@ -267,12 +264,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             // Psiphon browser activity.
             
             MyLog.i(R.string.http_proxy_starting);
-            /*
-            polipo = new NativeWrapper(
-                            this,
-                            PsiphonConstants.POLIPO_EXECUTABLE,
-                            PsiphonConstants.POLIPO_ARGUMENTS);
-            */
             polipo = new Polipo();
             polipo.start();
             MyLog.i(R.string.http_proxy_running);
@@ -331,14 +322,12 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
 
                     m_interface.doPeriodicWork(closeTunnel);
 
-                    /*
                     if (!polipo.isRunning())
                     {
                         MyLog.e(R.string.http_proxy_stopped_unexpectedly);
                         unexpectedDisconnect = true;
                         break;
                     }
-                    */
 
                     if (closeTunnel)
                     {

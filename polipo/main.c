@@ -204,7 +204,6 @@ int psiphonMain(int proxyPort, int localParentProxyPort)
 
     if (0 > parseConfigLine(proxyPortParam, "psiphon", 0, 0)
         || 0 > parseConfigLine(localParentProxyPortParam, "psiphon", 0, 0)
-        || 0 > parseConfigLine("diskCacheRoot=\"\"", "psiphon", 0, 0)
         || 0 > parseConfigLine("disableLocalInterface=true", "psiphon", 0, 0)
         || 0 > parseConfigLine("logLevel=1", "psiphon", 0, 0))
     {
