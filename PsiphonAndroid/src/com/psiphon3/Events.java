@@ -41,7 +41,7 @@ public class Events
 
     static public void signalHandshakeSuccess(Context context)
     {
-        MyLog.d("signalHandshakeSuccess: signalling");
+        MyLog.d("TEMP: signalHandshakeSuccess: signalling");
         Intent intent = new Intent(
                 StatusActivity.HANDSHAKE_SUCCESS,
                 null,
@@ -53,7 +53,7 @@ public class Events
 
     static public void signalUnexpectedDisconnect(Context context)
     {
-        MyLog.d("signalUnexpectedDisconnect: signalling");
+        MyLog.d("TEMP: signalUnexpectedDisconnect: signalling");
         Intent intent = new Intent(
                 StatusActivity.UNEXPECTED_DISCONNECT,
                 null,
@@ -81,7 +81,7 @@ public class Events
 
     static public void displayBrowser(Context context, Uri uri)
     {
-        MyLog.d("displayBrowser: signalling");
+        MyLog.d("TEMP: displayBrowser: signalling");
         Intent intent = new Intent(
                 "ACTION_VIEW",
                 uri,
