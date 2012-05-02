@@ -75,7 +75,7 @@ FdEventHandlerPtr registerFdEventHelper(FdEventHandlerPtr event);
 void unregisterFdEvent(FdEventHandlerPtr event);
 void pokeFdEvent(int fd, int status, int what);
 int workToDo(void);
-void eventLoop(int (*checkSignalStop)()); // PSIPHON: signalStop
+void eventLoop(void);
 ConditionPtr makeCondition(void);
 void initCondition(ConditionPtr);
 void signalCondition(ConditionPtr condition);

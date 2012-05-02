@@ -252,21 +252,15 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             MyLog.i(R.string.socks_running);
 
             // The HTTP proxy implementation is provided by Polipo,
-            // a native app that we spawn as a separate process. This
-            // proxy is chained to our SOCKS proxy.
-
-            // TODO: is this native process subject to shutdown, similar
-            // to regular Services (which we prevent with startForeground)?
+            // a native application accessed via JNI. This proxy is
+            // chained to our SOCKS proxy.
 
             // TODO: there's a security concern here - if the HTTP proxy
             // remains running after the main process dies, a malicious
             // app could plug in its own SOCKS proxy and capture all
             // Psiphon browser activity.
             
-            MyLog.i(R.string.http_proxy_starting);
-            polipo = new Polipo();
-            polipo.start();
-            MyLog.i(R.string.http_proxy_running);
+            Polipo.getPolipo().runForever();
             
             setState(State.CONNECTED);
             
@@ -296,13 +290,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             
             while (true)
             {
-                if (!polipo.isRunning())
-                {
-                    MyLog.e(R.string.http_proxy_stopped_unexpectedly);
-                    unexpectedDisconnect = true;
-                    break;
-                }
-
                 boolean closeTunnel = false;
                 
                 Signal signal = m_signalQueue.poll(10, TimeUnit.SECONDS);
@@ -347,11 +334,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         }
         finally
         {
-            if (polipo != null)
-            {
-                polipo.stop();
-                MyLog.w(R.string.http_proxy_stopped);
-            }
             if (socks != null)
             {
                 try

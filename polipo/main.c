@@ -162,17 +162,19 @@ main(int argc, char **argv)
         exit(1);
     }
 
-    eventLoop(0);
+    eventLoop();
 
     if(pidFile) unlink(pidFile->string);
     return 0;
 }
 
 // PSIPHON: custom main() for JNI
-int psiphonMainPreInit(
+int psiphonMain(
         int proxyPortParam,
         int localParentProxyPortParam)
 {
+    FdEventHandlerPtr listener;
+
     initAtoms();
     CONFIG_VARIABLE(daemonise, CONFIG_BOOLEAN, "Run as a daemon");
     CONFIG_VARIABLE(pidFile, CONFIG_ATOM, "File with pid of running daemon.");
@@ -211,14 +213,6 @@ int psiphonMainPreInit(
         return -1;
     }
 
-    return 0;
-}
-
-static FdEventHandlerPtr g_listener = 0;
-
-// PSIPHON: custom main() for JNI
-int psiphonMainInit()
-{
     initChunks();
     initLog();
     initObject();
@@ -231,26 +225,17 @@ int psiphonMainInit()
     initForbidden();
     initSocks();
 
-    g_listener = create_listener(
+    listener = create_listener(
                     proxyAddress->string, 
                     proxyPort,
                     httpAccept,
                     NULL);
-    if (!g_listener)
+    if (!listener)
     {
         return -1;
     }
 
-    return 0;
-}
-
-// PSIPHON: custom main() for JNI
-int psiphonMainEventLoop(int (*checkSignalStop)())
-{
-    eventLoop(checkSignalStop);
-
-    // TODO: complete cleanup of all FDs and allocated memory
-    close(g_listener->fd);
+    eventLoop();
 
     return 0;
 }

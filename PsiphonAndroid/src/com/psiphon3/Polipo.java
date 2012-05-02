@@ -23,19 +23,44 @@ import android.util.Log;
 
 public class Polipo
 {
-    Thread m_polipoThread;
-    boolean m_signalStop;
+    // Singleton pattern
+    
+    private static Polipo m_polipo;
 
-    public void start() throws InterruptedException
+    public Object clone() throws CloneNotSupportedException
     {
-        stop();
-
-        if (0 != initPolipo(
-                    PsiphonConstants.HTTP_PROXY_PORT,
-                    PsiphonConstants.SOCKS_PORT))
+        throw new CloneNotSupportedException();
+    }
+    
+    public static synchronized Polipo getPolipo()
+    {
+        if (m_polipo == null)
         {
-            // TODO: throw custom exception?
-            assert(false);
+            m_polipo = new Polipo();
+        }
+        
+        return m_polipo;
+    }
+
+    Thread m_polipoThread;
+
+    public void runForever() throws InterruptedException
+    {
+        // Polipo is chained to our local SOCKS proxy. We
+        // run Polipo once and leave it running for the
+        // lifetime of the main process. It should handle
+        // the underlying SOCKS parent proxy going down
+        // and coming back up. Leaving Polipo running
+        // forever is compatible with the Polipo code
+        // which is designed to run as a separate process
+        // and which does not have any cleanup/restart
+        // flow.
+        
+        // TODO: handle failed to start; e.g., port not available
+        
+        if (m_polipoThread != null)
+        {
+            return;
         }
 
         m_polipoThread = new Thread(
@@ -43,35 +68,16 @@ public class Polipo
             {
                 public void run()
                 {
-                    runPolipo();
+                    runPolipo(
+                        PsiphonConstants.HTTP_PROXY_PORT,
+                        PsiphonConstants.SOCKS_PORT);
                 }
             });
+
         m_polipoThread.start();
     }
     
-    public void stop() throws InterruptedException
-    {
-        if (m_polipoThread != null)
-        {
-            m_signalStop = true;
-            Log.e("******", "set signal stop");
-            m_polipoThread.join();
-            Log.e("******", "joined");
-            // TODO: force stop() after timeout?
-        }
-        m_polipoThread = null;
-        m_signalStop = false;
-    }
-
-    public boolean isRunning()
-    {
-        return m_polipoThread != null && m_polipoThread.isAlive();
-    }
-    
-    // NOTE port options are only set on first init() call and ignore on
-    // subsequent calls; see note in native JNI wrapper.
-    private native int initPolipo(int proxyPort, int localParentProxyPort);
-    private native int runPolipo();
+    private native int runPolipo(int proxyPort, int localParentProxyPort);
     
     static
     {

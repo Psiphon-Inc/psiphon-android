@@ -4,7 +4,7 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE := polipo
 
-LOCAL_CFLAGS := -DHAS_STDINT_H -DNO_DISK_CACHE -DNO_SYSLOG
+LOCAL_CFLAGS := -DHAS_STDINT_H -DNO_DISK_CACHE -DNO_SYSLOG -DNO_FORBIDDEN
 
 POLIPO_SRC := util.c event.c io.c chunk.c atom.c object.c log.c diskcache.c main.c \
               config.c local.c http.c client.c server.c auth.c tunnel.c \

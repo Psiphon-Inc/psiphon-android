@@ -19,53 +19,13 @@
 
 #include "jni.h"
 
-int psiphonMainPreInit(int proxyPortParam, int localParentProxyPortParam);
-int psiphonMainInit();
-int psiphonMainEventLoop(int (*checkSignalStop)());
+int psiphonMain(int proxyPortParam, int localParentProxyPortParam);
 
-static int g_preInit = 0;
-
-JNIEXPORT jint JNICALL Java_com_psiphon3_Polipo_initPolipo(
+JNIEXPORT jint JNICALL Java_com_psiphon3_Polipo_runPolipo(
     JNIEnv* env,
     jobject obj,
     int proxyPort,
     int localParentProxyPort)
 {
-    if (!g_preInit)
-    {
-        // NOTE: preInit can only be run once due to Polipo code.
-        // This means the config params are only set one time.
-
-        g_preInit = 1;
-        int errcode = psiphonMainPreInit(proxyPort, localParentProxyPort);
-        if (errcode) return errcode;
-    }
-    
-    return psiphonMainInit();
-}
-
-static JNIEnv* g_env = 0;
-static jobject g_obj = 0;
-jfieldID g_signalStopFid = 0;
-
-int checkSignalStop()
-{
-    return (*g_env)->GetBooleanField(g_env, g_obj, g_signalStopFid);
-}
-
-JNIEXPORT jint JNICALL Java_com_psiphon3_Polipo_runPolipo(
-    JNIEnv* env,
-    jobject obj)
-{
-    // NOTE: this method of accessing fields will only work with one instance
-    // of the Polipo object; however, most of the Polipo C code uses global
-    // variables, so we can only have one instance in any case.
-  
-    g_env = env;
-    g_obj = obj;
-    jclass cls = (*g_env)->GetObjectClass(g_env, g_obj);
-    g_signalStopFid = (*g_env)->GetFieldID(g_env, cls, "m_signalStop", "Z");
-    if (!g_signalStopFid) return -1;
-
-    return psiphonMainEventLoop(&checkSignalStop);
+    return psiphonMain(proxyPort, localParentProxyPort);
 }
