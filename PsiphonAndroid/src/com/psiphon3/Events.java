@@ -47,7 +47,7 @@ public class Events
                 null,
                 context,
                 com.psiphon3.StatusActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);        
     }
 
@@ -59,7 +59,7 @@ public class Events
                 null,
                 context,
                 com.psiphon3.StatusActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);        
     }
     
@@ -70,7 +70,7 @@ public class Events
                 null,
                 context,
                 com.psiphon3.StatusActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         return intent;
     }
     
@@ -87,7 +87,7 @@ public class Events
                 uri,
                 context,
                 org.zirco.ui.activities.MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
         // This intent displays the Zirco browser.
         // We use "extras" to communicate Psiphon settings to Zirco, which
