@@ -23,6 +23,9 @@ import org.greendroid.QuickAction;
 import org.greendroid.QuickActionGrid;
 import org.greendroid.QuickActionWidget;
 import org.greendroid.QuickActionWidget.OnQuickActionClickListener;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.zirco.R;
 import org.zirco.controllers.Controller;
 import org.zirco.events.EventConstants;
@@ -234,7 +237,7 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         }
         
         if (Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_GENERAL_HIDE_TITLE_BARS, true)) {
-        	requestWindowFeature(Window.FEATURE_NO_TITLE);
+        	requestWindowFeature(Window.FEATURE_NO_TITLE); 
         }
 
         setProgressBarVisibility(true);
@@ -260,14 +263,53 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         //
         //registerPreferenceChangeListener();
         
-        // PSIPHON: open home pages (or a blank tab if none)
+        //
+        // Psiphon: Restore browser tabs from last session
+        //
+        if (Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_RESTORE_LAST_PAGE, false))
+        {
+            try
+            {
+                JSONArray jsonURLs = new JSONArray(Controller.getInstance().getPreferences().getString("urlsToRestore", "[]"));
+                for (int i = 0; i < jsonURLs.length(); i++)
+                {
+                    String url = jsonURLs.getString(i);
+                    if (url == null || url.length() == 0) continue;
+                    addTab(false);
+                    navigateToUrl(url);
+                }
+            } 
+            catch (JSONException eJSON)
+            {
+                // Do nothing
+            }
+            
+        }
+        // end Psiphon changes
+        
+        // PSIPHON: open home pages if they're not already open (or a blank tab if none)
         ArrayList<String> homePages = intent.getStringArrayListExtra("homePages");
         for (String homePage : homePages)
         {
-        	addTab(false);
-        	navigateToUrl(homePage);
+            boolean urlAlreadyOpen = false;
+            for (CustomWebView webView : mWebViews)
+            {
+                String webViewUrl = webView.getUrl();
+                if (webViewUrl == null || webViewUrl.length() == 0) webViewUrl = webView.getLoadedUrl(); 
+                if (homePage.compareToIgnoreCase(webViewUrl) == 0)
+                {
+                    urlAlreadyOpen = true;
+                    break;
+                }
+            }
+            
+            if (!urlAlreadyOpen)
+            {
+            	addTab(false);
+            	navigateToUrl(homePage);
+            }
         }
-        if (homePages.size() == 0)
+        if (mWebViews.size() == 0)
         {
             addTab(false);
         }
@@ -1809,6 +1851,26 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 	
 	@Override
 	protected void onPause() {
+	    //
+	    // Psiphon: Store the URLs for the open tabs
+	    //
+	    if (Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_RESTORE_LAST_PAGE, false)) 
+	    {	    
+            JSONArray jsonURLs = new JSONArray();
+    	    for (CustomWebView webView : mWebViews)
+    	    {
+    	        String url = webView.getUrl();
+    	        if (url == null || url.length() == 0) url = webView.getLoadedUrl();
+    	        jsonURLs.put(url);
+    	    }
+    	    
+    	    SharedPreferences prefs = Controller.getInstance().getPreferences();	
+    	    SharedPreferences.Editor prefsEditor = prefs.edit();
+    	    prefsEditor.putString("urlsToRestore", jsonURLs.toString());
+    	    prefsEditor.commit();
+	    }	    
+	    // end Psiphon changes
+	    
 		mCurrentWebView.doOnPause();
 		super.onPause();
 	}
