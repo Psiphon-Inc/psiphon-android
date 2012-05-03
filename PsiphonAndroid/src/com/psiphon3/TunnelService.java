@@ -83,6 +83,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             MyLog.logger = this;
             m_interface = new ServerInterface(this);
             doForeground();
+            MyLog.i(R.string.client_version, EmbeddedValues.CLIENT_VERSION);
             startTunnel();
             m_firstStart = false;
         }
