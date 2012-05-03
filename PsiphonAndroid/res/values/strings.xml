@@ -32,6 +32,6 @@
     <string name="exit">Exit</string>
     <string name="open_browser">Open Browser</string>
     <string name="browser_task_label">Psiphon Browser</string>
-    <string name="client_version">Client Version %d</string>
+    <string name="client_version">Client Version %s</string>
 
 </resources>
