@@ -20,8 +20,8 @@
 package com.psiphon3;
 
 import java.io.IOException;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import android.app.Notification;
@@ -83,6 +83,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             MyLog.logger = this;
             m_interface = new ServerInterface(this);
             doForeground();
+            MyLog.i(R.string.client_version, EmbeddedValues.CLIENT_VERSION);
             startTunnel();
             m_firstStart = false;
         }
@@ -208,11 +209,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         public void connectionLost(Throwable reason)
         {
             MyLog.e(R.string.ssh_disconnected_unexpectedly);
-            try
-            {
-                m_signalQueue.put(Signal.UNEXPECTED_DISCONNECT);
-            }
-            catch (InterruptedException e) {}            
+    
+            // 'Add' will do nothing if there's already a pending signal.
+            // This is ok: the pending signal is either UNEXPECTED_DISCONNECT
+            // or STOP_SERVICE, and both will result in a tear down.
+            m_signalQueue.add(Signal.UNEXPECTED_DISCONNECT);
         }
     }
 
@@ -223,7 +224,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         boolean runAgain = true;
         Connection conn = null;
         DynamicPortForwarder socks = null;
-        Polipo polipo = null;
         boolean unexpectedDisconnect = false;
         
         try
@@ -231,7 +231,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             MyLog.i(R.string.ssh_connecting);
             conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
             Monitor monitor = new Monitor(m_signalQueue);
-            conn.addConnectionMonitor(monitor);
             conn.connect(
                     new PsiphonServerHostKeyVerifier(entry.sshHostKey),
                     PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS,
@@ -262,6 +261,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             
             Polipo.getPolipo().runForever();
             
+            // Don't signal unexpected disconnect until we've started
+            // and will consume the signal queue (assumes this code
+            // will fall through to the while loop below...)
+            conn.addConnectionMonitor(monitor);
+            
             setState(State.CONNECTED);
             
             try
@@ -288,10 +292,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 // Allow the user to continue. Their session might still function correctly.
             }
             
-            while (true)
+            boolean closeTunnel = false;
+            
+            while (!closeTunnel)
             {
-                boolean closeTunnel = false;
-                
                 Signal signal = m_signalQueue.poll(10, TimeUnit.SECONDS);
                 
                 if (signal != null)
@@ -299,11 +303,13 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                     switch (signal)
                     {
                     case STOP_SERVICE:
+                        MyLog.d("TEMP: runTunnelOnce: stop signal");
                         unexpectedDisconnect = false;
                         runAgain = false;
                         closeTunnel = true;
                         break;
                     case UNEXPECTED_DISCONNECT:
+                        MyLog.d("TEMP: runTunnelOnce: unexpected disconnect signal");
                         // TODO: need to call MarkCurrentServerFailed()?
                         unexpectedDisconnect = true;
                         runAgain = true;
@@ -313,11 +319,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 }
 
                 m_interface.doPeriodicWork(closeTunnel);
-
-                if (closeTunnel)
-                {
-                    break;
-                }
             }
         }
         catch (IOException e)
@@ -330,10 +331,15 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             
             m_interface.markCurrentServerFailed();
 
-            MyLog.e(R.string.error_message, e);
+            // This prints too much info -- the stack trace, but also IP
+            // address (not sure if we want to obscure that or not...) 
+            // MyLog.e(R.string.error_message, e);
+            MyLog.e(R.string.ssh_connection_failed);
         }
         finally
         {
+            MyLog.d("TEMP: runTunnelOnce: finally");
+
             if (socks != null)
             {
                 try
@@ -368,11 +374,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
     {
         while (runTunnelOnce())
         {
-            // 1-2 second delay before retrying
+            // 2-4 second delay before retrying
             // (same as Windows client, see comment in ConnectionManager.cpp)
             try
             {
-                Thread.sleep(1000 + (long)(Math.random()*1000.0));
+                Thread.sleep(2000 + (long)(Math.random()*4000.0));
             }
             catch (InterruptedException ie) {}            
         }
@@ -381,8 +387,12 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
     public void startTunnel()
     {
         stopTunnel();
+
         setState(State.CONNECTING);
-        m_signalQueue = new LinkedBlockingQueue<Signal>();
+
+        // Only allow 1 signal at a time. A backlog of signals will break the retry loop.
+        m_signalQueue = new ArrayBlockingQueue<Signal>(1);
+
         m_tunnelThread = new Thread(
             new Runnable()
             {

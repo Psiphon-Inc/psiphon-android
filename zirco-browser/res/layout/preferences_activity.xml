@@ -230,7 +230,7 @@
 	<PreferenceCategory android:title="@string/PreferencesActivity.AdBlockerSettingsCategoryTitle">
 		<CheckBoxPreference
 			android:title="@string/PreferencesActivity.EnableAdBlockerPreferenceTitle"
-			android:defaultValue="true"
+			android:defaultValue="false"
 			android:summary="@string/PreferencesActivity.EnableAdBlockerPreferenceSummary"
 			android:key="AdBlockerEnable" />
 		<Preference
