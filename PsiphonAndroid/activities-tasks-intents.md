@@ -10,6 +10,8 @@ This document will describe how activities, tasks, and intents are handled in th
 
 * The browser **must** not lose its open tabs every time it is foregrounded, even after inactivity-destruction by the system.
 
+* The browser **must** not lose or reload its open tabs on device rotation.
+
 * The browser **must** be accessible/launchable from the status activity.
 
 * After the browser is launched from the status activity, the system Back button **must** bring the user back to the status activity.
@@ -60,6 +62,21 @@ The Android documentation says that `FLAG_ACTIVITY_NEW_TASK` "produces the same 
 That is consistent with the observed behaviour (before setting the `taskAffinity`): the browser activity was being launched into the same task as the status activity. (And, in fact, was killing the status activity. Which is slightly confusing, but beside the point.)
 
 With the `taskAffinity` value set to a non-default value (we use `":PsiphonBrowserTask"`), the browser activity is reliably launched into a new task. That task shows up separately on the system task switcher, where it has a label set by the browser activity's `label` value.
+
+#### `configChanges`
+
+Following from the Zirco manifest settings, we have set the following on teh browser activity: 
+
+    android:configChanges="keyboardHidden|orientation"
+
+From the [documentation](http://developer.android.com/guide/topics/manifest/activity-element.html#config):
+
+> When a configuration change occurs at runtime, the 
+>activity is shut down and restarted by default, but 
+>declaring a configuration with this attribute will 
+>prevent the activity from being restarted.
+
+Without this setting, the tab state gets reset on device rotation (reloaded if tab-restore is on, completely lost if not).
 
 ### Events
 
