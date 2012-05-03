@@ -1985,7 +1985,7 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 	public void onPageFinished(String url) {
 		updateUI();			
 		
-		if ((Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_ADBLOCKER_ENABLE, true)) &&
+		if ((Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_ADBLOCKER_ENABLE, false)) &&
 				(!checkInAdBlockWhiteList(mCurrentWebView.getUrl()))) {
 			mCurrentWebView.loadAdSweep();
 		}
