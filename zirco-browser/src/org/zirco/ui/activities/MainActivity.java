@@ -266,7 +266,7 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         //
         // Psiphon: Restore browser tabs from last session
         //
-        if (Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_RESTORE_LAST_PAGE, false))
+        if (Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_RESTORE_LAST_PAGE, true))
         {
             try
             {
@@ -340,7 +340,7 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         	}
         	
         	boolean lastPageRestored = false;
-        	if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean(Constants.PREFERENCES_BROWSER_RESTORE_LAST_PAGE, false)) {
+        	if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean(Constants.PREFERENCES_BROWSER_RESTORE_LAST_PAGE, true)) {
         		if (savedInstanceState != null) {        		
         			String savedUrl = savedInstanceState.getString(Constants.EXTRA_SAVED_URL);
         			if (savedUrl != null) {
@@ -1854,7 +1854,7 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 	    //
 	    // Psiphon: Store the URLs for the open tabs
 	    //
-	    if (Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_RESTORE_LAST_PAGE, false)) 
+	    if (Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_RESTORE_LAST_PAGE, true)) 
 	    {	    
             JSONArray jsonURLs = new JSONArray();
     	    for (CustomWebView webView : mWebViews)

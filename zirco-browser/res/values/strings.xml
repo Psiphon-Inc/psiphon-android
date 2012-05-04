@@ -528,8 +528,8 @@
     
     <string name="AboutActivity.ContributorsText">Zirco Browser contributors:\n   • LeChuck (Proxy settings);\n   • Martin (Scroll with volume keys, German translation);\n   • Isaac L. (Spanish translation);</string>
     
-    <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Restore last page</string>
-    <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">If checked, the last page will be restore if available.</string>
+    <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Restore tabs</string>
+    <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">If checked, tabs will be restored when available.</string>
     
     <!-- 0.4.3 -->
     <string name="VideoLoading">Loading video\u2026</string>

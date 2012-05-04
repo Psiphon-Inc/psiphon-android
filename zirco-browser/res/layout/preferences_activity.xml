@@ -170,7 +170,7 @@
 		<CheckBoxPreference
 			android:title="@string/PreferencesActivity.EnableRestoreLastPagePreferenceTitle"			
 			android:summary="@string/PreferencesActivity.EnableRestoreLastPagePreferenceSummary"
-			android:defaultValue="false"
+			android:defaultValue="true"
 			android:key="PREFERENCES_BROWSER_RESTORE_LAST_PAGE" />
 		<CheckBoxPreference
 			android:title="@string/PreferencesActivity.EnablePluginsTitle"
