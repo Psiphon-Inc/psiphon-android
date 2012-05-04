@@ -221,6 +221,12 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
     {
         ServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
 
+        if (entry == null)
+        {
+            MyLog.e(R.string.no_server_entries);
+            return false;
+        }
+        
         boolean runAgain = true;
         Connection conn = null;
         DynamicPortForwarder socks = null;
