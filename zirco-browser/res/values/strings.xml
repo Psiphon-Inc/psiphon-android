@@ -18,7 +18,7 @@
 <resources>        
     <string name="ApplicationName">Psiphon Browser</string>
     <string name="ApplicationNameUrl">Psiphon - %s</string>
-    <string name="ApplicationDescription">Psiphon Browser is an open-source browser for Android based on Zirco.</string>
+    <string name="ApplicationDescription">Psiphon Browser is an open-source browser for Android based on Zirco Browser.</string>
     
     <string name="AboutActivity.Title">About</string>
 	<string name="AboutActivity.VersionText">Version:</string>
@@ -408,7 +408,7 @@
     <string name="QuickAction.SelectText">Select text</string>
     <string name="QuickAction.MobileView">Mobile view</string>
     
-    <string name="AboutActivity.OtherLicenseText">This application include code from the GreenDroid project (https://github.com/cyrilmottier/GreenDroid), and from the Shaman project (https://github.com/emergentdotorg/shaman), both licensed under the Apache license, version 2.</string>
+    <string name="AboutActivity.OtherLicenseText">This application include code from the Zirco Browser project (https://code.google.com/p/zirco-browser/) licensed under GPLv3; and from the GreenDroid project (https://github.com/cyrilmottier/GreenDroid), and from the Shaman project (https://github.com/emergentdotorg/shaman), both licensed under the Apache license, version 2.</string>
     
     <!-- 0.4.0 -->
     <string name="PreferencesActivity.WeavePreferenceTitle">Firefox bookmarks synchronization</string>
@@ -526,7 +526,7 @@
     <string name="ProxySettings.ErrorProxyInternetNotReachable">Cannot access the Web through the specified proxy server.</string>
     <string name="ProxySettings.ProxySettingsEnabled">Proxy settings succesfully enabled.</string>
     
-    <string name="AboutActivity.ContributorsText">Contributors:\n   • LeChuck (Proxy settings);\n   • Martin (Scroll with volume keys, German translation);\n   • Isaac L. (Spanish translation);</string>
+    <string name="AboutActivity.ContributorsText">Zirco Browser contributors:\n   • LeChuck (Proxy settings);\n   • Martin (Scroll with volume keys, German translation);\n   • Isaac L. (Spanish translation);</string>
     
     <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Restore last page</string>
     <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">If checked, the last page will be restore if available.</string>
