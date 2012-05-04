@@ -166,7 +166,8 @@ public class ProxySettings
 	
 	public static void setLocalProxy(Context ctx, int port)
 	{
-        Toast.makeText(ctx, ctx.getResources().getString(R.string.ProxySettings_EnablingProxySettings), Toast.LENGTH_SHORT).show();
+	    // PSIPHON: don't show this message, we're always proxied 
+        //Toast.makeText(ctx, ctx.getResources().getString(R.string.ProxySettings_EnablingProxySettings), Toast.LENGTH_SHORT).show();
         setProxy(ctx,"localhost",port);
 	}
 	
@@ -202,23 +203,23 @@ public class ProxySettings
 
     private static boolean setProxy(Context ctx, String host, int port) 
     {
-
+        // PSIPHON: added support for Android 4.x WebView proxy
         try 
         {
-                Class webViewCoreClass = Class.forName("android.webkit.WebViewCore");
-                Class proxyPropertiesClass = Class.forName("android.net.ProxyProperties");
-                if (webViewCoreClass != null && proxyPropertiesClass != null) 
-                {
-                    Method m = webViewCoreClass.getDeclaredMethod("sendStaticMessage", Integer.TYPE, Object.class);
-                    Constructor c = proxyPropertiesClass.getConstructor(String.class, Integer.TYPE, String.class);
-                    m.setAccessible(true);
-                    c.setAccessible(true);
-                    Object properties = c.newInstance(host, port, null);
-                    
-                    // android.webkit.WebViewCore.EventHub.PROXY_CHANGED = 193;
-                    m.invoke(null, 193, properties);
-                    return true;
-                }
+            Class webViewCoreClass = Class.forName("android.webkit.WebViewCore");
+            Class proxyPropertiesClass = Class.forName("android.net.ProxyProperties");
+            if (webViewCoreClass != null && proxyPropertiesClass != null) 
+            {
+                Method m = webViewCoreClass.getDeclaredMethod("sendStaticMessage", Integer.TYPE, Object.class);
+                Constructor c = proxyPropertiesClass.getConstructor(String.class, Integer.TYPE, String.class);
+                m.setAccessible(true);
+                c.setAccessible(true);
+                Object properties = c.newInstance(host, port, null);
+                
+                // android.webkit.WebViewCore.EventHub.PROXY_CHANGED = 193;
+                m.invoke(null, 193, properties);
+                return true;
+            }
         }
         catch (Exception e) 
         {
