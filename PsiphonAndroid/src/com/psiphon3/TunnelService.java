@@ -167,7 +167,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             int messageClass)
     {
         // Record messages for play back in activity
-    	PsiphonData.getPsiphonData().addStatusMessage(message, messageClass);
+        PsiphonData.getPsiphonData().addStatusMessage(message, messageClass);
         
         Events.appendStatusMessage(this, message, messageClass);
     }
@@ -329,9 +329,9 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         }
         catch (IOException e)
         {
-        	unexpectedDisconnect = true;
+            unexpectedDisconnect = true;
 
-        	// SSH errors -- tunnel problems -- result in IOException
+            // SSH errors -- tunnel problems -- result in IOException
             // Make sure we try a different server (if any) next time
             // Note: we're not marking the server failed if handshake/connected requests failed
             
