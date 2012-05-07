@@ -63,7 +63,12 @@ public class DownloadItem {
 		
 		mUrl = url;
 		mFileName = mUrl.substring(mUrl.lastIndexOf("/") + 1);
-		mFileName = mFileName.substring(0, mFileName.indexOf("?"));
+		
+		// PSIPHON: Fix Zirco crash when download file path has no query paramters
+		int queryParamStart = mFileName.indexOf("?");
+		if (queryParamStart > 0) {
+		    mFileName = mFileName.substring(0, queryParamStart);
+		}
 		
 		mProgress = 0;
 	
