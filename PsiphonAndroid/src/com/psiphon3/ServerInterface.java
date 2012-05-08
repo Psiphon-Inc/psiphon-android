@@ -523,7 +523,7 @@ public class ServerInterface
     
             if (body == null)
             {
-                conn.setRequestMethod("GET");                
+                conn.setRequestMethod("GET");
             }
             else
             {
