@@ -20,6 +20,8 @@
 package com.psiphon3;
 
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -35,6 +37,8 @@ import android.widget.TableRow;
 import android.widget.TextView;
 
 import com.psiphon3.PsiphonData.StatusMessage;
+import com.psiphon3.UpgradeManager;
+import com.psiphon3.UpgradeManager.Upgrader;
 
 
 public class StatusActivity extends Activity
@@ -85,13 +89,19 @@ public class StatusActivity extends Activity
     {
         super.onResume();
 
+        // If an upgrade should be done immediately, don't do anything else.
+        if (doUpgrade())
+        {
+            return;
+        }
+
         // Start tunnel service (if not already running)
         startService(new Intent(this, TunnelService.class));
 
         // Handle the intent that resumed that activity
         HandleCurrentIntent();
     }
-
+    
     @Override
     protected void onNewIntent(Intent intent)
     {
@@ -222,4 +232,39 @@ public class StatusActivity extends Activity
                 }
             });
     }
+    
+    /**
+     * Attempts to perform an immediate upgrade, if possible (i.e., if an upgrade
+     * is available).
+     * @return true if the upgrade is started. 
+     */
+    private boolean doUpgrade() 
+    {
+        if (isServiceRunning())
+        {
+            return false;
+        }
+        
+        Upgrader upgrader = new UpgradeManager.Upgrader(this);
+        
+        return upgrader.doUpgrade();
+    }
+    
+    /**
+     * Determine if the Psiphon local service is currently running.
+     * @see <a href="http://stackoverflow.com/a/5921190/729729">From StackOverflow answer: "android: check if a service is running"</a>
+     * @return True if the service is already running, false otherwise.
+     */
+    private boolean isServiceRunning() 
+    {
+        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (TunnelService.class.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
 }

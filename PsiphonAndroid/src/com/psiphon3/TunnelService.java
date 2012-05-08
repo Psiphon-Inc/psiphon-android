@@ -36,6 +36,7 @@ import ch.ethz.ssh2.*;
 
 import com.psiphon3.StatusActivity;
 import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
+import com.psiphon3.UpgradeManager;
 import com.psiphon3.Utils.MyLog;
 
 public class TunnelService extends Service implements Utils.MyLog.ILogger
@@ -50,6 +51,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
     private boolean m_firstStart = true;
     private Thread m_tunnelThread;
     private ServerInterface m_interface;
+    private UpgradeManager.UpgradeDownloader m_upgradeDownloader;
 
     enum Signal
     {
@@ -82,6 +84,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
 
             MyLog.logger = this;
             m_interface = new ServerInterface(this);
+            m_upgradeDownloader = new UpgradeManager.UpgradeDownloader(this, m_interface);
             doForeground();
             MyLog.i(R.string.client_version, EmbeddedValues.CLIENT_VERSION);
             startTunnel();
@@ -298,6 +301,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 // Allow the user to continue. Their session might still function correctly.
             }
             
+            if (m_interface.isUpgradeAvailable())
+            {
+                m_upgradeDownloader.start();
+            }
+            
             boolean closeTunnel = false;
             
             while (!closeTunnel)
@@ -364,6 +372,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 conn.close();
                 MyLog.w(R.string.ssh_stopped);
             }
+            
+            m_upgradeDownloader.stop();
 
             setState(State.DISCONNECTED);
             
@@ -426,7 +436,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             }
             catch (InterruptedException e) {}
         }
-
+        
         m_signalQueue = null;
         m_tunnelThread = null;
     }

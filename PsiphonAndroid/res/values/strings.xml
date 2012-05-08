@@ -34,5 +34,10 @@
     <string name="browser_task_label">Psiphon Browser</string>
     <string name="client_version">Client Version %s</string>
     <string name="no_server_entries">There are no servers to connect to</string>
+    <string name="UpgradeManager.CanNotRetrievePackageInfo">Unable to retrieve package info for current app</string>
+    <string name="UpgradeManager.UpgradeFileWriteFailed">Failed to write upgrade file</string>
+    <string name="UpgradeManager.UpgradeDownloadFailed">Upgrade download failed</string>
+    <string name="UpgradeManager.UpgradeDownloaded">Upgrade downloaded. Will be installed next time application starts.</string>
+    <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Upgrade failed. Cannot extract package info from upgrade file.</string>
 
 </resources>
