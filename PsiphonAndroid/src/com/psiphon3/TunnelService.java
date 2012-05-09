@@ -389,25 +389,25 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
     
     private void runTunnel() throws InterruptedException
     {
-        Date lastGetRemoteServerList = null;
+        Date lastFetchRemoteServerList = null;
         
         while (runTunnelOnce())
         {
             // After at least one failed connection attempt, and no more than once
             // per few hours, check for a new remote server list.
-            if (lastGetRemoteServerList == null ||
-                (new Date()).getTime() - lastGetRemoteServerList.getTime() > 1000*60*60*6)
+            if (lastFetchRemoteServerList == null ||
+                (new Date()).getTime() - lastFetchRemoteServerList.getTime() > 1000*60*60*6)
             {                
-                lastGetRemoteServerList = new Date();
+                lastFetchRemoteServerList = new Date();
                 
                 try
                 {
                     // TODO: move to background thread...?
-                    m_interface.getRemoteServerList();
+                    m_interface.fetchRemoteServerList();
                 }
                 catch (PsiphonServerInterfaceException requestException)
                 {
-                    MyLog.w(R.string.PsiphonAndroidService_GetRemoteServerListFailed, requestException);
+                    MyLog.w(R.string.TunnelService_FetchRemoteServerListFailed, requestException);
                 }
             }
 

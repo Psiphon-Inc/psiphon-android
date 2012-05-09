@@ -69,6 +69,7 @@ public class ServerEntryAuth
     }
 
     static public String validateAndExtractServerList(String remoteServerList)
+            throws ServerEntryAuthException
     {
         // Authenticate remote server list as per scheme described in
         // Psiphon/Automation/psi_ops_server_entry_auth.py
@@ -88,7 +89,8 @@ public class ServerEntryAuth
             if (0 != Base64.encode(publicKeyDigest).compareTo(signingPublicKeyDigest))
             {
                 // The entry is signed with a different public key than our embedded value
-                throw new ServerEntryAuthException(R.string.ServerEntryAuth_WrongPublicKey);
+                MyLog.w(R.string.ServerEntryAuth_WrongPublicKey);
+                throw new ServerEntryAuthException();
             }
 
             byte[] publicKeyBytes = Base64.decode(EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY);
@@ -101,7 +103,8 @@ public class ServerEntryAuth
             verifier.update(data.getBytes());
             if (!verifier.verify(Base64.decode(signature)))
             {            
-                throw new ServerEntryAuthException(R.string.ServerEntryAuth_InvalidSignature);
+                MyLog.w(R.string.ServerEntryAuth_InvalidSignature);
+                throw new ServerEntryAuthException();
             }
             
             return data;

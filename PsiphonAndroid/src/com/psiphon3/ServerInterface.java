@@ -413,7 +413,7 @@ public class ServerInterface
         makeRequest(url);
     }
 
-    synchronized public void getRemoteServerList()
+    synchronized public void fetchRemoteServerList()
         throws PsiphonServerInterfaceException
     {
         // NOTE: Running this at the start of every session may be enabling
