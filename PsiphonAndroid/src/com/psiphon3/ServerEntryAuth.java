@@ -29,6 +29,9 @@ import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import com.psiphon3.Utils.Base64;
 import com.psiphon3.Utils.MyLog;
 
@@ -40,29 +43,55 @@ import android.support.v4.content.LocalBroadcastManager;
 
 public class ServerEntryAuth
 {
-    static public String getServerList(String signedServerList)
+    public static class ServerEntryAuthException extends Exception
     {
-        // TEMP: test
-        String base64DerPublicKey = "MIICIDANBgkqhkiG9w0BAQEFAAOCAg0AMIICCAKCAgEAsaSgD99AMT98Z3hh44egpL4jBuPg98o8b/dB8aWGl3SodI+ElJ/WCq0aJaEoGJYny3WMfrlMTZGp286HIDplt4cPI+rUtHR7eLfwubJ8gPXk0B6kKs4k/BOXjNp8b9uvdDqMk6d3Bgn7kTFg9zMVeXpqbp1ftFTdu3v3c5xKW/oyTA2E9hOfX59Ns53vZU0qvIStU3NE0W0txoEhwM4YP+Vql2ZqKQDtIX8dp4Zi+pzJcO1OLooCOZoNNtYSKoqJiGjE/yzXisIwcuRcSe2+vIBgF6gCZ2opsHSFmfYOZ0yHVR8RBrG3nWUX5/Rs/ieOdaUD4lRaYib/tXptXGwd3O9xCzof6Z12oHZFPSBmXNce8aQNxm2ymUWuU0h+h6blXcaLbF8InMr7DyF/5d8SkuMM+ZpQD3XDHJaNFaiKQMPmnW+738HXrVmEviNG5Ka5P7cLSN+aRDovv5+nQ+68Y9XQ5H5LNo+sQFDZlcA7DPfFflDMRbUGeSiwa+XBPfWg3gsyddH61YLenvHeW1BM9lCPzAe8KwE4JNT5yzp3eV/qAfTLDDCTuWEMZjUs/iCKEg+6QH6/s2JfXHIIs87LxAodRNaeOAYSUcipKWHngWMVZGtKZ+LprUv8lD4GMCAixCSGfCUt8+pvqj4rYSyFp2l5rD+FDGczJJN0HkGFUNcCAQM=";
-        String data = "abcdef";
-        String base64Signature = "lPSrQhb5ZNnkUkp5u/jFZ9oU+8eTVuIA3PrEXRObNIrygkudlC/QRlNCAegPspUMD9Ajj33fgkPVtWpn60C7l3SQOUsO7IxOeqn3sWS9dDF+DYjZf+qPNFRncbWNkb8O/KMITlM1AwMLebxUSqzQQhmT4RnTqnwtuRSCpd1cG2f/UZkPljnBQHnew7B7GcO1aHOJxmVvdTSamPdR8Ol9ArFY4jserNkagf1mYr8gH2wVolgI//Zmals73Ku+3Yih72/6P4iOAAvCxq8HN+gslml7xTygliNQRqzRKt6oZPxRd5VAkOYjb0lL6VpWZ4BKj6Gt9ie8Q0IT6ScF3WkKw0EAUEjrVBFfxASJJ2JEEYAhzi/6IoFv6vCeocJxhitZzTmeF3A6oS9XgPSzVxzG1s0SICs17dNdH2fbannCy34UoKGGflLOssKxZ8b+nQTwN0Zy2zQPMlwVhWtGGvdc2I4ixEBqYBXMQFQzNPVzAd9dyDhJswJfXzixRJMTLon8Bkp92pDWptGh6+tkpbQKxZMp7VrGjWz0AsR3vEkf6RQjMhHs8Y+2fgkTGaaCpZI9/TYsYSJuTBlZ0RrIbn0VqhzhkQzjgXH6lcRYQLHcLW1/nXYo6oI7pGedK41a56C1bG9DknayNooTU71VQkfPMs2mTRFplqFQiNam2hFlkw8=";
+        private static final long serialVersionUID = 1L;
+        
+        public ServerEntryAuthException()
+        {
+            super();
+        }
+        
+        public ServerEntryAuthException(String message)
+        {
+            super(message);
+        }
 
-        String result = "";
-        boolean verified = false;
+        public ServerEntryAuthException(String message, Throwable cause)
+        {
+            super(message, cause);
+        }
+
+        public ServerEntryAuthException(Throwable cause)
+        {
+            super(cause);
+        }
+    }
+
+    static public String validateAndExtractServerList(String remoteServerList)
+    {
+        // Authenticate remote server list as per scheme described in
+        // Psiphon/Automation/psi_ops_server_entry_auth.py
         
         try
         {
-            // TODO: match public key hash
-
-            /*
+            JSONObject obj = new JSONObject(remoteServerList);
+            String data = obj.getString("data");
+            String signature = obj.getString("signature");
+            String signingPublicKeyDigest = obj.getString("signingPublicKeyDigest");
+            
             MessageDigest sha2;
             sha2 = MessageDigest.getInstance("SHA2");
-            byte[] publicKeyDigest = sha2.digest(base64DerPublicKey.getBytes());
-            */
-    
-            // TODO: parse JSON
+            byte[] publicKeyDigest = sha2.digest(
+                EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY.getBytes());
 
-            byte[] publicKeyBytes = Base64.decode(base64DerPublicKey);
+            if (0 != Base64.encode(publicKeyDigest).compareTo(signingPublicKeyDigest))
+            {
+                // The entry is signed with a different public key than our embedded value
+                throw new ServerEntryAuthException(R.string.ServerEntryAuth_WrongPublicKey);
+            }
+
+            byte[] publicKeyBytes = Base64.decode(EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY);
             java.security.spec.X509EncodedKeySpec spec = new X509EncodedKeySpec(publicKeyBytes);
             java.security.KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PublicKey publicKey = keyFactory.generatePublic(spec);
@@ -70,21 +99,33 @@ public class ServerEntryAuth
             Signature verifier = java.security.Signature.getInstance("SHA256withRSA");
             verifier.initVerify(publicKey);
             verifier.update(data.getBytes());
-            verified = verifier.verify(Base64.decode(base64Signature));
+            if (!verifier.verify(Base64.decode(signature)))
+            {            
+                throw new ServerEntryAuthException(R.string.ServerEntryAuth_InvalidSignature);
+            }
+            
+            return data;
         }
         catch (NoSuchAlgorithmException e)
         {
+            throw new ServerEntryAuthException(e);
         }
         catch (InvalidKeySpecException e)
         {
+            throw new ServerEntryAuthException(e);
         }
         catch (InvalidKeyException e)
         {
+            throw new ServerEntryAuthException(e);
         }
         catch (SignatureException e)
         {
+            throw new ServerEntryAuthException(e);
         }
-        
-        return result;
+        catch (JSONException e)
+        {
+            MyLog.w(R.string.ServerEntryAuth_FailedToParseRemoteServerEntry, e);
+            throw new ServerEntryAuthException(e);
+        }
     }
 }
