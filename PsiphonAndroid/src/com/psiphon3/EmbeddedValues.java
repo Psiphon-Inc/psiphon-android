@@ -28,4 +28,9 @@ public interface EmbeddedValues
     final String CLIENT_VERSION = "2";
     
     final String EMBEDDED_SERVER_LIST = "";
+
+    final String REMOTE_SERVER_LIST_URL =
+        "https://s3.amazonaws.com/invalid_bucket_name/server_entries";
+
+    final String REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY = "";
 }

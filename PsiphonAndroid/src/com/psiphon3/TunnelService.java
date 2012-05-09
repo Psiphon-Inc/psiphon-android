@@ -20,6 +20,7 @@
 package com.psiphon3;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -236,7 +237,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         boolean unexpectedDisconnect = false;
         
         try
-        {
+        {            
             MyLog.i(R.string.ssh_connecting);
             conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
             Monitor monitor = new Monitor(m_signalQueue);
@@ -388,8 +389,28 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
     
     private void runTunnel() throws InterruptedException
     {
+        Date lastFetchRemoteServerList = null;
+        
         while (runTunnelOnce())
         {
+            // After at least one failed connection attempt, and no more than once
+            // per few hours, check for a new remote server list.
+            if (lastFetchRemoteServerList == null ||
+                (new Date()).getTime() - lastFetchRemoteServerList.getTime() > 1000*60*60*6)
+            {                
+                lastFetchRemoteServerList = new Date();
+                
+                try
+                {
+                    // TODO: move to background thread...?
+                    m_interface.fetchRemoteServerList();
+                }
+                catch (PsiphonServerInterfaceException requestException)
+                {
+                    MyLog.w(R.string.TunnelService_FetchRemoteServerListFailed, requestException);
+                }
+            }
+
             // 2-4 second delay before retrying
             // (same as Windows client, see comment in ConnectionManager.cpp)
             try

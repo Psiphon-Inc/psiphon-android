@@ -51,6 +51,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.psiphon3.ServerEntryAuth.ServerEntryAuthException;
 import com.psiphon3.Utils.MyLog;
 
 import android.content.Context;
@@ -412,6 +413,38 @@ public class ServerInterface
         makeRequest(url);
     }
 
+    synchronized public void fetchRemoteServerList()
+        throws PsiphonServerInterfaceException
+    {
+        // NOTE: Running this at the start of every session may be enabling
+        // a monitor/probe attack that identifies outbound requests to S3,
+        // checks that the (HTTPS) response is of a certain size, and then
+        // monitors the host for connections to Psiphon nodes.
+
+        // Get remote server entries from known S3 bucket; the bucket ID
+        // is in the path component of the URL and the request is HTTPS,
+        // so this request may be difficult to block without blocking all
+        // of a valuable service.
+
+        try
+        {
+            byte[] response = makeRequest(EmbeddedValues.REMOTE_SERVER_LIST_URL);
+            // TODO: not Psiphon cert
+
+            String serverList = ServerEntryAuth.validateAndExtractServerList(new String(response));
+
+            for (String encodedEntry : serverList.split("\n"))
+            {
+                addServerEntry(encodedEntry, false);
+            }
+        }
+        catch (ServerEntryAuthException e)
+        {
+            MyLog.w(R.string.ServerInterface_InvalidRemoteServerList, e);
+            throw new PsiphonServerInterfaceException(e);            
+        }
+    }
+    
     private class CustomTrustManager implements X509TrustManager
     {
         private X509Certificate expectedServerCertificate;
@@ -535,7 +568,7 @@ public class ServerInterface
     
             if (body == null)
             {
-                conn.setRequestMethod("GET");                
+                conn.setRequestMethod("GET");
             }
             else
             {
