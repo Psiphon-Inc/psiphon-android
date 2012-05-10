@@ -29,6 +29,7 @@ import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ScrollView;
@@ -38,10 +39,11 @@ import android.widget.TextView;
 
 import com.psiphon3.PsiphonData.StatusMessage;
 import com.psiphon3.UpgradeManager;
-import com.psiphon3.UpgradeManager.Upgrader;
+import com.psiphon3.UpgradeManager.UpgradeInstaller;
+import com.psiphon3.Utils.MyLog;
 
 
-public class StatusActivity extends Activity
+public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
 {
     public static final String ADD_MESSAGE = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE";
     public static final String ADD_MESSAGE_TEXT = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TEXT";
@@ -57,6 +59,8 @@ public class StatusActivity extends Activity
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        
+        MyLog.logInfoProvider = this;
 
         setContentView(R.layout.main);
         
@@ -245,7 +249,7 @@ public class StatusActivity extends Activity
             return false;
         }
         
-        Upgrader upgrader = new UpgradeManager.Upgrader(this);
+        UpgradeInstaller upgrader = new UpgradeManager.UpgradeInstaller(this);
         
         return upgrader.doUpgrade();
     }
@@ -266,5 +270,34 @@ public class StatusActivity extends Activity
         return false;
     }
 
+    /**
+     * Utils.MyLog.ILogInfoProvider implementation
+     * For Android priority values, see <a href="http://developer.android.com/reference/android/util/Log.html">http://developer.android.com/reference/android/util/Log.html</a>
+     */
+    @Override
+    public int getAndroidLogPriorityEquivalent(int priority)
+    {
+        switch (priority)
+        {
+        case Log.ERROR:
+            return StatusActivity.MESSAGE_CLASS_ERROR;
+        case Log.INFO:
+            return StatusActivity.MESSAGE_CLASS_INFO;
+        case Log.DEBUG:
+            return StatusActivity.MESSAGE_CLASS_DEBUG;
+        default:
+            return StatusActivity.MESSAGE_CLASS_WARNING;
+        }
+    }
 
+    @Override
+    public String getResString(int stringResID, Object... formatArgs)
+    {
+        if (formatArgs == null || formatArgs.length == 0)
+        {
+            return getString(stringResID);
+        }
+        
+        return getString(stringResID, formatArgs);
+    }
 }

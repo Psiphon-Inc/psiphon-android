@@ -231,13 +231,18 @@ public class Utils {
      */
     static public class MyLog
     {
-        static public interface ILogger
+        static public interface ILogInfoProvider
         {
-            public void log(int priority, String message);
             public String getResString(int stringResID, Object... formatArgs);
             public int getAndroidLogPriorityEquivalent(int priority);
         }
         
+        static public interface ILogger
+        {
+            public void log(int priority, String message);
+        }
+        
+        static public ILogInfoProvider logInfoProvider;
         static public ILogger logger;
         
         /**
@@ -251,11 +256,11 @@ public class Utils {
         {
             try
             {
-                return logger.getResString(stringResID, formatArgs);
+                return logInfoProvider.getResString(stringResID, formatArgs);
             }
             catch (IllegalFormatException e)
             {
-                return logger.getResString(stringResID);
+                return logInfoProvider.getResString(stringResID);
             }
         }
         
@@ -320,7 +325,7 @@ public class Utils {
                     loggerMsg = loggerMsg + ' ' + Log.getStackTraceString(throwable); 
                 }
                 
-                logger.log(logger.getAndroidLogPriorityEquivalent(priority), loggerMsg);
+                logger.log(logInfoProvider.getAndroidLogPriorityEquivalent(priority), loggerMsg);
             }
             
             // Do not log to LogCat at all if we're not running in debug mode.

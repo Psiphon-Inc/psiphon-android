@@ -31,11 +31,9 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
-import android.util.Log;
 
 import ch.ethz.ssh2.*;
 
-import com.psiphon3.StatusActivity;
 import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.UpgradeManager;
 import com.psiphon3.Utils.MyLog;
@@ -131,35 +129,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
 
     /**
      * Utils.MyLog.ILogger implementation
-     * For Android priority values, see <a href="http://developer.android.com/reference/android/util/Log.html">http://developer.android.com/reference/android/util/Log.html</a>
      */
-    @Override
-    public int getAndroidLogPriorityEquivalent(int priority)
-    {
-        switch (priority)
-        {
-        case Log.ERROR:
-            return StatusActivity.MESSAGE_CLASS_ERROR;
-        case Log.INFO:
-            return StatusActivity.MESSAGE_CLASS_INFO;
-        case Log.DEBUG:
-            return StatusActivity.MESSAGE_CLASS_DEBUG;
-        default:
-            return StatusActivity.MESSAGE_CLASS_WARNING;
-        }
-    }
-
-    @Override
-    public String getResString(int stringResID, Object... formatArgs)
-    {
-        if (formatArgs == null || formatArgs.length == 0)
-        {
-            return getString(stringResID);
-        }
-        
-        return getString(stringResID, formatArgs);
-    }
-    
     @Override
     public void log(int priority, String message)
     {

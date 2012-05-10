@@ -20,6 +20,7 @@
 package com.psiphon3;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -38,11 +39,93 @@ import android.net.Uri;
  */
 public interface UpgradeManager
 {
-    static public class Upgrader
+    /**
+     * To be used by other UpgradeManager classes only.
+     */
+    static class UpgradeFile
     {
         private Context context;
         
-        public Upgrader(Context context)
+        public UpgradeFile(Context context)
+        {
+            this.context = context;
+        }
+        
+        protected final String UPGRADE_FILENAME = "PsiphonAndroidUpgrade.apk";
+        
+        public String getPath()
+        {
+            return PsiphonConstants.EXTERNAL_STORAGE_ROOT(this.context);
+        }
+        
+        public String getAbsolutePath()
+        {
+            return getPath() + "/" + UPGRADE_FILENAME;
+        }
+        
+        public boolean exists()
+        {
+            File file = new File(getAbsolutePath());
+            return file.exists();
+        }
+        
+        public void delete()
+        {
+            File file = new File(getAbsolutePath());
+            file.delete();
+        }
+        
+        public Uri getUri()
+        {
+            File file = new File(getAbsolutePath());
+            return Uri.fromFile(file);
+        }
+        
+        public boolean write(byte[] data)
+        {
+            // First make sure our directory exists.
+            File dir = new File(getPath());
+            dir.mkdirs();
+            
+            File file = new File(getAbsolutePath());
+            FileOutputStream fos;
+            
+            try
+            {
+                fos = new FileOutputStream(file);
+            } 
+            catch (FileNotFoundException e)
+            {
+                // This absolutely should not happen. The documentation indicates:
+                // "If the file exists but is a directory rather than a regular 
+                //  file, does not exist but cannot be created, or cannot be 
+                //  opened for any other reason then a FileNotFoundException is thrown."
+                MyLog.e(R.string.UpgradeManager_UpgradeFileNotFound, e);
+                return false;
+            }
+            
+            try
+            {
+                fos.write(data);
+                fos.close();
+            } 
+            catch (IOException e)
+            {
+                MyLog.e(R.string.UpgradeManager_UpgradeFileWriteFailed, e);
+                return false;
+            }
+            
+            return true;
+        }
+    }
+    
+    static public class UpgradeInstaller
+    {
+        private Context context;
+        
+        private static boolean s_upgradeAttempted = false;
+        
+        public UpgradeInstaller(Context context)
         {
             this.context = context;
         }
@@ -53,7 +136,9 @@ public interface UpgradeManager
          */
         public boolean canUpgrade()
         {
-            return isUpgradeFileAvailable();            
+            return 
+                !UpgradeInstaller.s_upgradeAttempted 
+                && isUpgradeFileAvailable();            
         }
         
         /**
@@ -78,8 +163,8 @@ public interface UpgradeManager
          */
         protected boolean isUpgradeFileAvailable()
         {
-            File file = this.context.getFileStreamPath(PsiphonConstants.UPGRADE_FILENAME);
-            
+            UpgradeFile file = new UpgradeFile(context);
+
             // Does the file exist?
             if (!file.exists())
             {
@@ -98,7 +183,7 @@ public interface UpgradeManager
             if (upgradePackageInfo == null)
             {
                 // There's probably something wrong with the upgrade file.
-                this.context.deleteFile(PsiphonConstants.UPGRADE_FILENAME);
+                file.delete();
                 MyLog.e(R.string.UpgradeManager_CannotExtractUpgradePackageInfo);
                 return false;
             }
@@ -120,18 +205,27 @@ public interface UpgradeManager
             }
             
             // Does the upgrade package have a higher version?
-            return upgradePackageInfo.versionCode > currentPackageInfo.versionCode;
+            if (upgradePackageInfo.versionCode <= currentPackageInfo.versionCode)
+            {
+                file.delete();
+                return false;
+            }
+            
+            return true;
         }
         
         protected boolean installUpgrade()
         {
-            File file = this.context.getFileStreamPath(PsiphonConstants.UPGRADE_FILENAME);
+            UpgradeFile file = new UpgradeFile(context);
             
             Intent intent = new Intent(Intent.ACTION_VIEW);
             
-            intent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive");
+            intent.setDataAndType(file.getUri(), "application/vnd.android.package-archive");
+            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             
             this.context.startActivity(intent);
+            
+            UpgradeInstaller.s_upgradeAttempted = true;
             
             return true;
         }
@@ -192,13 +286,14 @@ public interface UpgradeManager
         protected synchronized void downloadAndSaveUpgrade()
         {
             // Delete any existing upgrade file.
-            this.context.deleteFile(PsiphonConstants.UPGRADE_FILENAME);
+            UpgradeFile file = new UpgradeFile(context);
+            file.delete();
             
-            byte[] upgradeFile = null;
+            byte[] upgradeFileData = null;
             try
             {
                 // Download the upgrade.
-                upgradeFile = serverInterface.doUpgradeDownloadRequest();
+                upgradeFileData = serverInterface.doUpgradeDownloadRequest();
             } 
             catch (PsiphonServerInterfaceException e)
             {
@@ -215,17 +310,8 @@ public interface UpgradeManager
                 return;
             }
             
-            try
+            if (!file.write(upgradeFileData))
             {
-                FileOutputStream file;
-                file = this.context.openFileOutput(PsiphonConstants.UPGRADE_FILENAME, Context.MODE_PRIVATE);
-                file.write(upgradeFile);
-                file.close();
-            } 
-            catch (IOException e)
-            {
-                // This is bad, but we'll let the user keep working.
-                MyLog.e(R.string.UpgradeManager_UpgradeFileWriteFailed, e);
                 return;
             }
             

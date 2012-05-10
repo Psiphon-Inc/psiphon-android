@@ -161,12 +161,12 @@ public class ServerInterface
         }
         catch (IOException e)
         {
-            MyLog.w(R.string.PsiphonServerInterface_FailedToReadStoredServerEntries, e);
+            MyLog.w(R.string.ServerInterface_FailedToReadStoredServerEntries, e);
             // skip loading persistent server entries
         } 
         catch (JSONException e)
         {
-            MyLog.w(R.string.PsiphonServerInterface_FailedToParseStoredServerEntries, e);
+            MyLog.w(R.string.ServerInterface_FailedToParseStoredServerEntries, e);
             // skip loading persistent server entries
         }
         
@@ -292,7 +292,7 @@ public class ServerInterface
         }
         catch (JSONException e)
         {
-            MyLog.w(R.string.PsiphonServerInterface_FailedToParseHandshake, e);
+            MyLog.w(R.string.ServerInterface_FailedToParseHandshake, e);
             throw new PsiphonServerInterfaceException(e);
         }
     }
@@ -718,6 +718,7 @@ public class ServerInterface
         catch (JSONException e)
         {
             // Ignore this server entry on parse error
+            MyLog.w(R.string.ServerInterface_HandshakeJSONParseFailed, e);
             return;
         }
     }
@@ -741,12 +742,12 @@ public class ServerInterface
         }
         catch (JSONException e)
         {
-            MyLog.w(R.string.PsiphonServerInterface_FailedToCreateServerEntries, e);
+            MyLog.w(R.string.ServerInterface_FailedToCreateServerEntries, e);
             // Proceed, even if file saving fails
         } 
         catch (IOException e)
         {
-            MyLog.w(R.string.PsiphonServerInterface_FailedToStoreServerEntries, e);
+            MyLog.w(R.string.ServerInterface_FailedToStoreServerEntries, e);
             // Proceed, even if file saving fails
         }
     }
