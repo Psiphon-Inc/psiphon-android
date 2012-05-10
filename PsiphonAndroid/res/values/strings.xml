@@ -21,11 +21,11 @@
     <string name="http_proxy_running">HTTP proxy running</string>
     <string name="http_proxy_stopped">HTTP proxy stopped</string>
     <string name="http_proxy_stopped_unexpectedly">HTTP proxy stopped unexpectedly</string>
-    <string name="PsiphonServerInterface.FailedToCreateServerEntries">Failed to create server entries to store.</string>
-    <string name="PsiphonServerInterface.FailedToStoreServerEntries">Failed to store server entries.</string>
-    <string name="PsiphonServerInterface.FailedToReadStoredServerEntries">Failed to read stored server entries.</string>
-    <string name="PsiphonServerInterface.FailedToParseStoredServerEntries">Failed to parse stored server entries.</string>
-    <string name="PsiphonServerInterface.FailedToParseHandshake">Failed to parse handshake.</string>
+    <string name="ServerInterface.FailedToCreateServerEntries">Failed to create server entries to store.</string>
+    <string name="ServerInterface.FailedToStoreServerEntries">Failed to store server entries.</string>
+    <string name="ServerInterface.FailedToReadStoredServerEntries">Failed to read stored server entries.</string>
+    <string name="ServerInterface.FailedToParseStoredServerEntries">Failed to parse stored server entries.</string>
+    <string name="ServerInterface.FailedToParseHandshake">Failed to parse handshake.</string>
     <string name="PsiphonAndroidService.HandshakeRequestFailed">Handshake request failed.</string>
     <string name="PsiphonAndroidService.ConnectedRequestFailed">Connected request failed.</string>
     <string name="ssh_disconnected_unexpectedly">SSH disconnected unexpectedly</string>
@@ -39,5 +39,7 @@
     <string name="UpgradeManager.UpgradeDownloadFailed">Upgrade download failed</string>
     <string name="UpgradeManager.UpgradeDownloaded">Upgrade downloaded. Will be installed next time application starts.</string>
     <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Upgrade failed. Cannot extract package info from upgrade file.</string>
+    <string name="ServerInterface.HandshakeJSONParseFailed">Failed to parse handshake JSON</string>
+    <string name="UpgradeManager.UpgradeFileNotFound">Upgrade file not found</string>
 
 </resources>

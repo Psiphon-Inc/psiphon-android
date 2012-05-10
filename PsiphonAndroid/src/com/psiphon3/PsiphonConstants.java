@@ -19,6 +19,7 @@
 
 package com.psiphon3;
 
+import android.content.Context;
 import android.os.Build;
 
 public class PsiphonConstants
@@ -30,8 +31,6 @@ public class PsiphonConstants
     public final static String INFO_LINK_URL = "https://sites.google.com/a/psiphon3.com/psiphon3/";
     
     public final static String SERVER_ENTRY_FILENAME = "psiphon_server_entries.json";
-
-    public final static String UPGRADE_FILENAME = "PsiphonAndroidUpgrade.apk";
 
     public final static int CLIENT_SESSION_ID_SIZE_IN_BYTES = 16;
     
@@ -47,4 +46,8 @@ public class PsiphonConstants
     public final static String PLATFORM = ("Android_" + Build.VERSION.RELEASE).replaceAll("[^\\w\\-\\.]", "_");
     
     public final static int HTTPS_REQUEST_TIMEOUT = 20000;
+    
+    public static String EXTERNAL_STORAGE_ROOT(Context context) {
+        return "/sdcard/" + context.getString(R.string.app_name);
+    }
 }
