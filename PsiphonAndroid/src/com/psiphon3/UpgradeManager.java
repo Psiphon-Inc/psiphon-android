@@ -51,16 +51,14 @@ public interface UpgradeManager
             this.context = context;
         }
         
-        protected final String UPGRADE_FILENAME = "PsiphonAndroidUpgrade.apk";
-        
         public String getPath()
         {
-            return PsiphonConstants.EXTERNAL_STORAGE_ROOT(this.context);
+            return this.context.getExternalFilesDir("upgrade").getAbsolutePath();
         }
         
         public String getAbsolutePath()
         {
-            return getPath() + "/" + UPGRADE_FILENAME;
+            return getPath() + "/PsiphonAndroid.apk";
         }
         
         public boolean exists()

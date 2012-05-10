@@ -19,7 +19,6 @@
 
 package com.psiphon3;
 
-import android.content.Context;
 import android.os.Build;
 
 public class PsiphonConstants
@@ -46,8 +45,4 @@ public class PsiphonConstants
     public final static String PLATFORM = ("Android_" + Build.VERSION.RELEASE).replaceAll("[^\\w\\-\\.]", "_");
     
     public final static int HTTPS_REQUEST_TIMEOUT = 20000;
-    
-    public static String EXTERNAL_STORAGE_ROOT(Context context) {
-        return "/sdcard/" + context.getString(R.string.app_name);
-    }
 }
