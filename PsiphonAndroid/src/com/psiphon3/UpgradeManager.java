@@ -27,7 +27,9 @@ import java.io.IOException;
 import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.Utils.MyLog;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -117,10 +119,18 @@ public interface UpgradeManager
         }
     }
     
+    /**
+     * Used for checking if an upgrade has been downloaded and installing it.
+     */
     static public class UpgradeInstaller
     {
         private Context context;
         
+        /**
+         * Records whether an upgrade has already been attempted during this
+         * session. We want to avoid repeated upgrade attempts during a single
+         * session.
+         */
         private static boolean s_upgradeAttempted = false;
         
         public UpgradeInstaller(Context context)
@@ -130,28 +140,14 @@ public interface UpgradeManager
         
         /**
          * Check if an upgrade can be applied at this time.
-         * @return true if an upgrade is available to applied.
+         * @return true if an upgrade is available to applied, and if there has
+         *         not already been an attempt to upgrade during this session.
          */
         public boolean canUpgrade()
         {
             return 
                 !UpgradeInstaller.s_upgradeAttempted 
                 && isUpgradeFileAvailable();            
-        }
-        
-        /**
-         * Begin the upgrade process.
-         * @return true if the upgrade has started, false if there is no upgrade
-         *         available.
-         */
-        public boolean doUpgrade()
-        {
-            if (!canUpgrade())
-            {
-                return false;
-            }
-            
-            return installUpgrade();
         }
         
         /**
@@ -212,23 +208,71 @@ public interface UpgradeManager
             return true;
         }
         
-        protected boolean installUpgrade()
+        /**
+         * This interface must be implemented to provide callbacks for doUpgrade. 
+         */
+        public interface IUpgradeListener
         {
-            UpgradeFile file = new UpgradeFile(context);
+            public void upgradeNotStarted();
+            public void upgradeStarted();
+        }
+        
+        /**
+         * Begin the upgrade process. Note that because there's a user prompt, 
+         * this function is asynchronous. 
+         * @param upgradeListener An implementation of IUpgradeListener that is
+         *                        used as a callback for the various upgrade 
+         *                        attempt outcomes.
+         */
+        public void doUpgrade(final IUpgradeListener upgradeListener)
+        {
+            if (!canUpgrade())
+            {
+                upgradeListener.upgradeNotStarted();
+                return;
+            }
             
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            
-            intent.setDataAndType(file.getUri(), "application/vnd.android.package-archive");
-            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            
-            this.context.startActivity(intent);
-            
+            // Record that we have attempted to upgrade. We don't want to retry 
+            // again this session.
             UpgradeInstaller.s_upgradeAttempted = true;
             
-            return true;
+            // Create our user prompt.
+            
+            new AlertDialog.Builder(this.context)
+                .setTitle(R.string.UpgradeManager_UpgradePromptTitle)
+                .setMessage(R.string.UpgradeManager_UpgradePromptMessage)
+                .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        // User declied the prompt.
+                        upgradeListener.upgradeNotStarted();
+                    }})
+                .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    public void onCancel(DialogInterface dialog) {
+                        // User cancelled the prompt (i.e., hit back button).
+                        upgradeListener.upgradeNotStarted();
+                    }})
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        // User accepted the prompt. Begin the upgrade.
+                        
+                        UpgradeFile file = new UpgradeFile(context);
+                        
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        
+                        intent.setDataAndType(file.getUri(), "application/vnd.android.package-archive");
+                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        
+                        context.startActivity(intent);
+
+                        upgradeListener.upgradeStarted();
+                    }})
+                .show();                
         }
     }
 
+    /**
+     * Used to download upgradees from the server.
+     */
     static public class UpgradeDownloader
     {
         private Context context;

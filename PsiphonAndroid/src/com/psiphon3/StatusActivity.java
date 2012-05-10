@@ -92,18 +92,34 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     protected void onResume()
     {
         super.onResume();
+        
+        final Context context = this;
 
-        // If an upgrade should be done immediately, don't do anything else.
-        if (doUpgrade())
+
+        UpgradeInstaller.IUpgradeListener upgradeListener = new UpgradeInstaller.IUpgradeListener() {
+            @Override public void upgradeStarted() {
+                // If an upgrade has been started, don't do anything else.
+                return;
+            }
+            
+            @Override public void upgradeNotStarted() {
+                // Start tunnel service (if not already running)
+                startService(new Intent(context, TunnelService.class));
+
+                // Handle the intent that resumed that activity
+                HandleCurrentIntent();
+            }
+        };
+        
+        if (!isServiceRunning())
         {
-            return;
+            UpgradeInstaller upgrader = new UpgradeManager.UpgradeInstaller(this);
+            upgrader.doUpgrade(upgradeListener);
         }
-
-        // Start tunnel service (if not already running)
-        startService(new Intent(this, TunnelService.class));
-
-        // Handle the intent that resumed that activity
-        HandleCurrentIntent();
+        else
+        {
+            upgradeListener.upgradeNotStarted();
+        }
     }
     
     @Override
@@ -235,23 +251,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                     m_messagesScrollView.fullScroll(View.FOCUS_DOWN);
                 }
             });
-    }
-    
-    /**
-     * Attempts to perform an immediate upgrade, if possible (i.e., if an upgrade
-     * is available).
-     * @return true if the upgrade is started. 
-     */
-    private boolean doUpgrade() 
-    {
-        if (isServiceRunning())
-        {
-            return false;
-        }
-        
-        UpgradeInstaller upgrader = new UpgradeManager.UpgradeInstaller(this);
-        
-        return upgrader.doUpgrade();
     }
     
     /**
