@@ -29,7 +29,7 @@ int daemonise = 0;
 static void
 usage(char *argv0)
 {
-    fprintf(stderr, 
+    fprintf(stderr,
             "%s [ -h ] [ -v ] [ -x ] [ -c filename ] [ -- ] [ var=val... ]\n",
             argv0);
     fprintf(stderr, "  -h: display this message.\n");
@@ -155,7 +155,7 @@ main(int argc, char **argv)
     if(pidFile)
         writePid(pidFile->string);
 
-    listener = create_listener(proxyAddress->string, 
+    listener = create_listener(proxyAddress->string,
                                proxyPort, httpAccept, NULL);
     if(!listener) {
         if(pidFile) unlink(pidFile->string);
@@ -208,7 +208,9 @@ int psiphonMain(
     if (0 > parseConfigLine(proxyPortParamLine, "psiphon", 0, 0)
         || 0 > parseConfigLine(localParentProxyPortParamLine, "psiphon", 0, 0)
         || 0 > parseConfigLine("disableLocalInterface=true", "psiphon", 0, 0)
-        || 0 > parseConfigLine("logLevel=1", "psiphon", 0, 0))
+        || 0 > parseConfigLine("logLevel=1", "psiphon", 0, 0)
+        /* Allow HTTPS on all ports */
+        || 0 > parseConfigLine("tunnelAllowedPorts=1-65535", "psiphon", 0, 0))
     {
         return -1;
     }
@@ -226,7 +228,7 @@ int psiphonMain(
     initSocks();
 
     listener = create_listener(
-                    proxyAddress->string, 
+                    proxyAddress->string,
                     proxyPort,
                     httpAccept,
                     NULL);

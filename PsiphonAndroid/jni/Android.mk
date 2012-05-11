@@ -1,2 +1,2 @@
-include ../../polipo/Android.mk
+include ../polipo/Android.mk
 
