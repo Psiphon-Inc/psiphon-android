@@ -25,6 +25,7 @@
     <string name="ServerInterface.FailedToStoreServerEntries">Failed to store server entries.</string>
     <string name="ServerInterface.FailedToReadStoredServerEntries">Failed to read stored server entries.</string>
     <string name="ServerInterface.FailedToParseStoredServerEntries">Failed to parse stored server entries.</string>
+    <string name="ServerInterface.FailedToParseEmbeddedServerEntries">Failed to parse embedded server entries.</string>
     <string name="ServerInterface.FailedToParseHandshake">Failed to parse handshake.</string>
     <string name="PsiphonAndroidService.HandshakeRequestFailed">Handshake request failed.</string>
     <string name="PsiphonAndroidService.ConnectedRequestFailed">Connected request failed.</string>
@@ -39,7 +40,6 @@
     <string name="UpgradeManager.UpgradeDownloadFailed">Upgrade download failed</string>
     <string name="UpgradeManager.UpgradeDownloaded">Upgrade downloaded. Will be installed next time application starts.</string>
     <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Upgrade failed. Cannot extract package info from upgrade file.</string>
-    <string name="ServerInterface.HandshakeJSONParseFailed">Failed to parse handshake JSON</string>
     <string name="UpgradeManager.UpgradeFileNotFound">Upgrade file not found</string>
     <string name="ServerInterface.InvalidRemoteServerList">Invalid remote server list</string>
     <string name="TunnelService.FetchRemoteServerListFailed">Fetch remote server list failed</string>

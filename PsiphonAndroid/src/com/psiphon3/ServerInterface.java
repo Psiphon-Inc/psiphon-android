@@ -167,11 +167,11 @@ public class ServerInterface
             }
             file.close();
             JSONObject obj = new JSONObject(json.toString());
-            JSONArray serverEntries = obj.getJSONArray("serverEntries");
+            JSONArray jsonServerEntries = obj.getJSONArray("serverEntries");
     
-            for (int i = 0; i < serverEntries.length(); i++)
+            for (int i = 0; i < jsonServerEntries.length(); i++)
             {
-                addServerEntry(serverEntries.getString(i), false);
+                addServerEntry(jsonServerEntries.getString(i), false);
             }
         }
         catch (FileNotFoundException e)
@@ -189,9 +189,16 @@ public class ServerInterface
             // skip loading persistent server entries
         }
         
-        for (String encodedEntry : EmbeddedValues.EMBEDDED_SERVER_LIST.split("\n"))
+        try
         {
-            addServerEntry(encodedEntry, true);
+            for (String encodedEntry : EmbeddedValues.EMBEDDED_SERVER_LIST.split("\n"))
+            {
+                addServerEntry(encodedEntry, true);
+            }
+        } 
+        catch (JSONException e)
+        {
+            MyLog.w(R.string.ServerInterface_FailedToParseEmbeddedServerEntries, e);
         }
     }
     
@@ -243,6 +250,7 @@ public class ServerInterface
     synchronized public void doHandshakeRequest() 
         throws PsiphonServerInterfaceException
     {
+        boolean configProcessed = false;
         try
         {
             List<Pair<String,String>> extraParams = new ArrayList<Pair<String,String>>();
@@ -260,6 +268,8 @@ public class ServerInterface
             {
                 if (line.indexOf(JSON_CONFIG_PREFIX) == 0)
                 {
+                    configProcessed = true;
+                    
                     JSONObject obj = new JSONObject(line.substring(JSON_CONFIG_PREFIX.length()));
 
                     JSONArray homepages = obj.getJSONArray("homepages");
@@ -313,6 +323,12 @@ public class ServerInterface
         {
             MyLog.w(R.string.ServerInterface_FailedToParseHandshake, e);
             throw new PsiphonServerInterfaceException(e);
+        }
+        
+        if (!configProcessed)
+        {
+            MyLog.w(R.string.ServerInterface_FailedToParseHandshake);
+            throw new PsiphonServerInterfaceException();
         }
     }
     
@@ -462,6 +478,11 @@ public class ServerInterface
                 }
             }
             catch (ServerEntryAuthException e)
+            {
+                MyLog.w(R.string.ServerInterface_InvalidRemoteServerList, e);
+                throw new PsiphonServerInterfaceException(e);            
+            } 
+            catch (JSONException e)
             {
                 MyLog.w(R.string.ServerInterface_InvalidRemoteServerList, e);
                 throw new PsiphonServerInterfaceException(e);            
@@ -641,7 +662,7 @@ public class ServerInterface
             HttpConnectionParams.setSoTimeout(params, PsiphonConstants.HTTPS_REQUEST_TIMEOUT);
             
             HttpHost httpproxy;
-            if (useLocalProxy && false) // TODO: fix proxied requests
+            if (useLocalProxy)
             {
                 httpproxy = new HttpHost("localhost", PsiphonConstants.HTTP_PROXY_PORT);
                 params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
@@ -846,70 +867,62 @@ public class ServerInterface
     
     private void addServerEntry(
             String encodedServerEntry,
-            boolean isEmbedded)
+            boolean isEmbedded) 
+        throws JSONException
     {
-        try
+        String serverEntry = new String(Utils.hexStringToByteArray(encodedServerEntry));
+
+        // Skip past legacy format (4 space delimited fields) and just parse the JSON config
+        int jsonIndex = 0;
+        for (int i = 0; i < 4; i++)
         {
-            String serverEntry = new String(Utils.hexStringToByteArray(encodedServerEntry));
-
-            // Skip past legacy format (4 space delimited fields) and just parse the JSON config
-            int jsonIndex = 0;
-            for (int i = 0; i < 4; i++)
-            {
-                jsonIndex = serverEntry.indexOf(' ', jsonIndex) + 1;
-            }
-
-            JSONObject obj = new JSONObject(serverEntry.substring(jsonIndex));
-            ServerEntry newEntry = new ServerEntry();
-            newEntry.encodedEntry = encodedServerEntry;
-            newEntry.ipAddress = obj.getString("ipAddress");
-            newEntry.webServerPort = obj.getInt("webServerPort");
-            newEntry.webServerSecret = obj.getString("webServerSecret");
-            newEntry.webServerCertificate = obj.getString("webServerCertificate");
-            newEntry.sshPort = obj.getInt("sshPort");
-            newEntry.sshUsername = obj.getString("sshUsername");
-            newEntry.sshPassword = obj.getString("sshPassword");
-            newEntry.sshHostKey = obj.getString("sshHostKey");
-            newEntry.sshObfuscatedPort = obj.getInt("sshObfuscatedPort");
-            newEntry.sshObfuscatedKey = obj.getString("sshObfuscatedKey");
-
-            // Check if there's already an entry for this server
-            int existingIndex = -1;
-            for (int i = 0; i < this.serverEntries.size(); i++)
-            {
-                if (0 == newEntry.ipAddress.compareTo(serverEntries.get(i).ipAddress))
-                {
-                    existingIndex = i;
-                    break;
-                }
-            }
-            
-            if (existingIndex != -1)
-            {
-                // Only replace existing entries in the discovery case
-                if (!isEmbedded)
-                {
-                    serverEntries.remove(existingIndex);
-                    serverEntries.add(existingIndex, newEntry);
-                }
-            }
-            else
-            {
-                // New entries are added in the second position, to preserve
-                // the first position for the "current" working server
-                int index = this.serverEntries.size() > 0 ? 1 : 0;
-                this.serverEntries.add(index, newEntry);
-            }
-
-            // Save the updated server entries
-            saveServerEntries();
+            jsonIndex = serverEntry.indexOf(' ', jsonIndex) + 1;
         }
-        catch (JSONException e)
+
+        JSONObject obj = new JSONObject(serverEntry.substring(jsonIndex));
+        ServerEntry newEntry = new ServerEntry();
+        newEntry.encodedEntry = encodedServerEntry;
+        newEntry.ipAddress = obj.getString("ipAddress");
+        newEntry.webServerPort = obj.getInt("webServerPort");
+        newEntry.webServerSecret = obj.getString("webServerSecret");
+        newEntry.webServerCertificate = obj.getString("webServerCertificate");
+        newEntry.sshPort = obj.getInt("sshPort");
+        newEntry.sshUsername = obj.getString("sshUsername");
+        newEntry.sshPassword = obj.getString("sshPassword");
+        newEntry.sshHostKey = obj.getString("sshHostKey");
+        newEntry.sshObfuscatedPort = obj.getInt("sshObfuscatedPort");
+        newEntry.sshObfuscatedKey = obj.getString("sshObfuscatedKey");
+
+        // Check if there's already an entry for this server
+        int existingIndex = -1;
+        for (int i = 0; i < this.serverEntries.size(); i++)
         {
-            // Ignore this server entry on parse error
-            MyLog.w(R.string.ServerInterface_HandshakeJSONParseFailed, e);
-            return;
+            if (0 == newEntry.ipAddress.compareTo(serverEntries.get(i).ipAddress))
+            {
+                existingIndex = i;
+                break;
+            }
         }
+        
+        if (existingIndex != -1)
+        {
+            // Only replace existing entries in the discovery case
+            if (!isEmbedded)
+            {
+                serverEntries.remove(existingIndex);
+                serverEntries.add(existingIndex, newEntry);
+            }
+        }
+        else
+        {
+            // New entries are added in the second position, to preserve
+            // the first position for the "current" working server
+            int index = this.serverEntries.size() > 0 ? 1 : 0;
+            this.serverEntries.add(index, newEntry);
+        }
+
+        // Save the updated server entries
+        saveServerEntries();
     }
     
     private void saveServerEntries()

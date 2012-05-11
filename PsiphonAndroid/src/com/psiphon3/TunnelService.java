@@ -257,8 +257,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             } 
             catch (PsiphonServerInterfaceException requestException)
             {
-                MyLog.w(R.string.PsiphonAndroidService_HandshakeRequestFailed, requestException);
-                // Allow the user to continue. Their session might still function correctly.
+                MyLog.e(R.string.PsiphonAndroidService_HandshakeRequestFailed, requestException);
+                throw requestException;
             }
 
             try
@@ -320,6 +320,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             // address (not sure if we want to obscure that or not...) 
             // MyLog.e(R.string.error_message, e);
             MyLog.e(R.string.ssh_connection_failed);
+        }
+        catch (PsiphonServerInterfaceException requestException)
+        {
+            // Drop into finally...
         }
         finally
         {
