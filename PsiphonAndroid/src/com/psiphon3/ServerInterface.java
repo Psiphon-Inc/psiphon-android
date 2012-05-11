@@ -738,6 +738,9 @@ public class ServerInterface
                 int len = -1;
                 while ((len = instream.read(buffer)) != -1)
                 {
+                    // TODO: if (cancel) request.abort(); ...
+                    // See hc.apache.org/httpcomponents-client-ga/tutorial/html/fundamentals.html#d5e143
+                    
                     responseBody.write(buffer, 0, len);
                 }
             }
