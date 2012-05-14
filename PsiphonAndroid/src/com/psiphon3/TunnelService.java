@@ -191,6 +191,44 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         }
     }
 
+    private static class TunnelServiceUnexpectedDisconnect extends Exception
+    {
+        private static final long serialVersionUID = 1L;
+        
+        public TunnelServiceUnexpectedDisconnect()
+        {
+            super();
+        }
+    }
+    
+    
+    private static class TunnelServiceStop extends Exception
+    {
+        private static final long serialVersionUID = 1L;
+        
+        public TunnelServiceStop()
+        {
+            super();
+        }
+    }
+    
+    private void checkSignals(int waitTimeSeconds)
+            throws InterruptedException, TunnelServiceUnexpectedDisconnect, TunnelServiceStop
+    {
+        Signal signal = m_signalQueue.poll(waitTimeSeconds, TimeUnit.SECONDS);
+        
+        if (signal != null)
+        {
+            switch (signal)
+            {
+            case STOP_SERVICE:
+                throw new TunnelServiceStop();
+            case UNEXPECTED_DISCONNECT:
+                throw new TunnelServiceUnexpectedDisconnect();
+            }
+        }
+    }
+    
     private boolean runTunnelOnce() throws InterruptedException
     {
         ServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
@@ -202,20 +240,25 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         }
         
         boolean runAgain = true;
+        boolean unexpectedDisconnect = false;
         Connection conn = null;
         DynamicPortForwarder socks = null;
-        boolean unexpectedDisconnect = false;
         
         try
         {            
+            checkSignals(0);
+
             MyLog.i(R.string.ssh_connecting);
             conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
             Monitor monitor = new Monitor(m_signalQueue);
+            // TODO: cancel conn.connect if stop signaled
             conn.connect(
                     new PsiphonServerHostKeyVerifier(entry.sshHostKey),
                     PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS,
                     PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS);
             MyLog.i(R.string.ssh_connected);
+
+            checkSignals(0);
 
             MyLog.i(R.string.ssh_authenticating);
             boolean isAuthenticated = conn.authenticateWithPassword(entry.sshUsername, entry.sshPassword);
@@ -242,16 +285,15 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             Polipo.getPolipo().runForever();
             
             // Don't signal unexpected disconnect until we've started
-            // and will consume the signal queue (assumes this code
-            // will fall through to the while loop below...)
             conn.addConnectionMonitor(monitor);
             
             setState(State.CONNECTED);
             
+            checkSignals(0);
+
             try
             {
                 m_interface.doHandshakeRequest();
-                MyLog.d("TEMP: Handshake success");
 
                 Events.signalHandshakeSuccess(this);
             } 
@@ -261,10 +303,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 throw requestException;
             }
 
+            checkSignals(0);
+
             try
             {
                 m_interface.doConnectedRequest();
-                MyLog.d("TEMP: Connected request success");
             } 
             catch (PsiphonServerInterfaceException requestException)
             {
@@ -272,38 +315,33 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 // Allow the user to continue. Their session might still function correctly.
             }
             
+            checkSignals(0);
+
             if (m_interface.isUpgradeAvailable())
             {
                 m_upgradeDownloader.start();
             }
             
-            boolean closeTunnel = false;
-            
-            while (!closeTunnel)
+            try
             {
-                Signal signal = m_signalQueue.poll(10, TimeUnit.SECONDS);
-                
-                if (signal != null)
+                Date lastPeriodicWork = null;
+
+                while (true)
                 {
-                    switch (signal)
-                    {
-                    case STOP_SERVICE:
-                        MyLog.d("TEMP: runTunnelOnce: stop signal");
-                        unexpectedDisconnect = false;
-                        runAgain = false;
-                        closeTunnel = true;
-                        break;
-                    case UNEXPECTED_DISCONNECT:
-                        MyLog.d("TEMP: runTunnelOnce: unexpected disconnect signal");
-                        // TODO: need to call MarkCurrentServerFailed()?
-                        unexpectedDisconnect = true;
-                        runAgain = true;
-                        closeTunnel = true;
-                        break;
+                    checkSignals(1);
+    
+                    // Do periodic work every 30 minutes
+                    if (lastPeriodicWork == null ||
+                            (new Date()).getTime() - lastPeriodicWork.getTime() > 1000*60*30)
+                    {                
+                        lastPeriodicWork = new Date();
+                        m_interface.doPeriodicWork(false);
                     }
                 }
-
-                m_interface.doPeriodicWork(closeTunnel);
+            }
+            finally
+            {
+                m_interface.doPeriodicWork(true);
             }
         }
         catch (IOException e)
@@ -318,17 +356,26 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
 
             // This prints too much info -- the stack trace, but also IP
             // address (not sure if we want to obscure that or not...) 
-            // MyLog.e(R.string.error_message, e);
+            MyLog.e(R.string.error_message, e);
             MyLog.e(R.string.ssh_connection_failed);
         }
-        catch (PsiphonServerInterfaceException requestException)
+        catch (PsiphonServerInterfaceException e)
         {
             // Drop into finally...
         }
+        catch (TunnelServiceUnexpectedDisconnect e)
+        {
+            // TODO: MarkCurrentServerFailed()?
+            unexpectedDisconnect = true;
+            runAgain = true;
+        }
+        catch (TunnelServiceStop e)
+        {
+            unexpectedDisconnect = false;
+            runAgain = false;
+        }
         finally
         {
-            MyLog.d("TEMP: runTunnelOnce: finally");
-
             if (socks != null)
             {
                 try
@@ -385,11 +432,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 }
             }
 
-            // 2-4 second delay before retrying
+            // 1-2 second delay before retrying
             // (same as Windows client, see comment in ConnectionManager.cpp)
             try
             {
-                Thread.sleep(2000 + (long)(Math.random()*4000.0));
+                Thread.sleep(1000 + (long)(Math.random()*1000.0));
             }
             catch (InterruptedException ie) {}            
         }
@@ -398,6 +445,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
     public void startTunnel()
     {
         stopTunnel();
+
+        MyLog.w(R.string.starting_tunnel);
 
         setState(State.CONNECTING);
 
@@ -426,8 +475,16 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         {
             try
             {
-                m_signalQueue.put(Signal.STOP_SERVICE);                
+                MyLog.w(R.string.stopping_tunnel);
+
+                // Override UNEXPECTED_DISCONNECT
+                // TODO: race condition
+                m_signalQueue.clear();
+                m_signalQueue.offer(Signal.STOP_SERVICE);
+
                 m_tunnelThread.join();
+
+                MyLog.w(R.string.stopped_tunnel);
             }
             catch (InterruptedException e) {}
         }

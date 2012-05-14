@@ -95,14 +95,16 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         
         final Context context = this;
 
-
-        UpgradeInstaller.IUpgradeListener upgradeListener = new UpgradeInstaller.IUpgradeListener() {
-            @Override public void upgradeStarted() {
+        UpgradeInstaller.IUpgradeListener upgradeListener = new UpgradeInstaller.IUpgradeListener()
+        {
+            @Override public void upgradeStarted()
+            {
                 // If an upgrade has been started, don't do anything else.
                 return;
             }
             
-            @Override public void upgradeNotStarted() {
+            @Override public void upgradeNotStarted()
+            {
                 // Start tunnel service (if not already running)
                 startService(new Intent(context, TunnelService.class));
 
