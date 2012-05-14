@@ -34,11 +34,13 @@
 				android:defaultValue="false"
 				android:summary="@string/PreferencesActivity.FullScreenPreferenceSummary"
 				android:key="GeneralFullScreen" />
+			<!-- PSIPHON: always show the title bar
 			<CheckBoxPreference
 				android:title="@string/PreferencesActivity.HideTitleBarPreferenceTitle"
 				android:defaultValue="false"
 				android:summary="@string/PreferencesActivity.HideTitleBarPreferenceSummary"
 				android:key="GeneralHideTitleBars" />
+			-->
 			<CheckBoxPreference
 				android:title="@string/PreferencesActivity.ShowToastOnTabSwitchPreferenceTitle"
 				android:defaultValue="true"

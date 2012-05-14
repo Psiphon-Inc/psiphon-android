@@ -5,7 +5,7 @@
     android:versionName="1.0" 
     android:installLocation="preferExternal">
 
-    <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="11"/>
+    <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="14"/>
     
     <uses-permission android:name="android.permission.INTERNET"></uses-permission>    
     <uses-permission android:name="com.android.browser.permission.READ_HISTORY_BOOKMARKS"></uses-permission>    
@@ -38,7 +38,7 @@
             android:taskAffinity=":PsiphonBrowserTask"
             android:exported="false">
         </activity>
-         <activity android:name="org.zirco.ui.activities.AboutActivity" ></activity>
+        <activity android:name="org.zirco.ui.activities.AboutActivity" ></activity>
         <activity android:name="org.zirco.ui.activities.EditBookmarkActivity"></activity>        
         <activity android:name="org.zirco.ui.activities.BookmarksListActivity"></activity>
         <activity android:name="org.zirco.ui.activities.HistoryListActivity"></activity>
