@@ -43,9 +43,10 @@ public class BookmarksHistoryActivity extends TabActivity {
         	getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
         
-        if (Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_GENERAL_HIDE_TITLE_BARS, true)) {
-        	requestWindowFeature(Window.FEATURE_NO_TITLE);
-        }
+        // PSIPHON: always show the title bar
+        //if (Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_GENERAL_HIDE_TITLE_BARS, true)) {
+        //	requestWindowFeature(Window.FEATURE_NO_TITLE);
+        //}
 		
 		setContentView(R.layout.bookmarks_history_activity);
 		

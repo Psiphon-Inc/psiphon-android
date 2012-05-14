@@ -236,9 +236,10 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         	getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
         
-        if (Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_GENERAL_HIDE_TITLE_BARS, true)) {
-        	requestWindowFeature(Window.FEATURE_NO_TITLE); 
-        }
+        // PSIPHON: always show the title bar
+        //if (Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_GENERAL_HIDE_TITLE_BARS, true)) {
+        //	requestWindowFeature(Window.FEATURE_NO_TITLE); 
+        //}
 
         setProgressBarVisibility(true);
         
