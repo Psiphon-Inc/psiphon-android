@@ -732,6 +732,12 @@ public class Connection
                     {
                         while (true)
                         {
+                            // Frequent polling: we want a fast response
+                            // to the stop signal; at the same time, we
+                            // can't just wait on the stop signal itself
+                            // as we also want a fast response to a
+                            // successful connection: tear down this thread.
+                            
                             try
                             {
                                 Thread.sleep(50);
