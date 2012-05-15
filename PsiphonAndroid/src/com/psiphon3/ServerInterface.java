@@ -147,7 +147,14 @@ public class ServerInterface
     private String speedTestURL;
     private String clientSessionID; // access via getCurrentClientSessionID -- even internally
     private String serverSessionID;
+    
+    /** Array of all outstanding/ongoing requests. Anything in this array will
+     * be aborted when {@link#stop()} is called. */
     private List<HttpRequestBase> outstandingRequests = new ArrayList<HttpRequestBase>();
+    
+    /** This flag is set to true when {@link#stop()} is called, and set back to 
+     * false when {@link#start()} is called. */
+    private boolean stopped = false;
 
     ServerInterface(Context context)
     {
@@ -205,25 +212,41 @@ public class ServerInterface
         }
     }
     
+    /**
+     * Indicates that ServerInterface should transition back into an operational
+     * state.
+     */
+    public void start()
+    {
+        this.stopped = false;
+    }
+
+    /**
+     * Called when a halting of activity is required.
+     */
     public void stop()
     {
+        
+        this.stopped = true;
+        
         // This may be called from the app main thread, so it must not make 
         // network requests directly (because that's disallowed in Android).
-        
+        // request.abort() counts as "network activity", so it has to be done
+        // in a separate thread.
         Thread thread = new Thread(
-                new Runnable()
+            new Runnable()
+            {
+                public void run()
                 {
-                    public void run()
+                    synchronized(outstandingRequests)
                     {
-                        synchronized(outstandingRequests)
+                        for (HttpRequestBase request : outstandingRequests) 
                         {
-                            for (HttpRequestBase request : outstandingRequests) 
-                            {
-                                if (!request.isAborted()) request.abort();
-                            }
+                            if (!request.isAborted()) request.abort();
                         }
                     }
-                });
+                }
+            });
 
         thread.start();
         try
@@ -774,6 +797,12 @@ public class ServerInterface
                 int len = -1;
                 while ((len = instream.read(buffer)) != -1)
                 {
+                    if (this.stopped) 
+                    {
+                        throw new PsiphonServerInterfaceException(
+                                this.ownerContext.getString(R.string.ServerInterface_StopRequested));
+                    }
+                    
                     responseBody.write(buffer, 0, len);
                 }
             }

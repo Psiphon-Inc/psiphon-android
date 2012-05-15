@@ -21,9 +21,9 @@ package com.psiphon3;
 
 public interface EmbeddedValues
 {
-    final String PROPAGATION_CHANNEL_ID = "3A885577DD84EF13";
+    final String PROPAGATION_CHANNEL_ID = "CB07515CC91464B7";
     
-    final String SPONSOR_ID = "8BB28C1A8E8A9ED9";
+    final String SPONSOR_ID = "5E9C1BB997748086";
     
     final String CLIENT_VERSION = "2";
     

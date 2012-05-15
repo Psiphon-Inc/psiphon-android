@@ -463,6 +463,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         MyLog.w(R.string.starting_tunnel);
 
         setState(State.CONNECTING);
+        
+        m_interface.start();
 
         // Only allow 1 signal at a time. A backlog of signals will break the retry loop.
         m_signalQueue = new ArrayBlockingQueue<Signal>(1);
