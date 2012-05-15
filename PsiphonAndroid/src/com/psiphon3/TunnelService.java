@@ -433,6 +433,20 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         
         while (runTunnelOnce())
         {
+            try
+            {
+                checkSignals(0);
+            } 
+            catch (TunnelServiceUnexpectedDisconnect e)
+            {
+                // Continue with the retry loop
+            } 
+            catch (TunnelServiceStop e)
+            {
+                // Stop has been requested, so get out of the retry loop.
+                break;
+            }
+            
             // After at least one failed connection attempt, and no more than once
             // per few hours, check for a new remote server list.
             if (lastFetchRemoteServerList == null ||
@@ -468,6 +482,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         MyLog.w(R.string.starting_tunnel);
 
         setState(State.CONNECTING);
+        
+        m_interface.start();
 
         // Only allow 1 signal at a time. A backlog of signals will break the retry loop.
         m_signalQueue = new ArrayBlockingQueue<Signal>(1);
@@ -495,11 +511,14 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             try
             {
                 MyLog.w(R.string.stopping_tunnel);
-
+                
                 // Override UNEXPECTED_DISCONNECT
                 // TODO: race condition
                 m_signalQueue.clear();
                 m_signalQueue.offer(Signal.STOP_SERVICE);
+
+                // Tell the ServerInterface to stop (e.g., kill requests).
+                m_interface.stop();
                 
                 m_tunnelThread.join();
 

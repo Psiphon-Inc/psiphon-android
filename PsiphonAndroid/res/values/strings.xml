@@ -51,5 +51,6 @@
     <string name="starting_tunnel">Starting tunnel...</string>
     <string name="stopping_tunnel">Stopping tunnel...</string>
     <string name="stopped_tunnel">Stopped tunnel</string>
+    <string name="ServerInterface.StopRequested">Stop requested</string>
 
 </resources>

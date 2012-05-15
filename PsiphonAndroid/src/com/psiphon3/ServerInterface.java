@@ -147,6 +147,14 @@ public class ServerInterface
     private String speedTestURL;
     private String clientSessionID; // access via getCurrentClientSessionID -- even internally
     private String serverSessionID;
+    
+    /** Array of all outstanding/ongoing requests. Anything in this array will
+     * be aborted when {@link#stop()} is called. */
+    private List<HttpRequestBase> outstandingRequests = new ArrayList<HttpRequestBase>();
+    
+    /** This flag is set to true when {@link#stop()} is called, and set back to 
+     * false when {@link#start()} is called. */
+    private boolean stopped = false;
 
     ServerInterface(Context context)
     {
@@ -204,6 +212,53 @@ public class ServerInterface
         }
     }
     
+    /**
+     * Indicates that ServerInterface should transition back into an operational
+     * state.
+     */
+    public void start()
+    {
+        this.stopped = false;
+    }
+
+    /**
+     * Called when a halting of activity is required.
+     */
+    public void stop()
+    {
+        
+        this.stopped = true;
+        
+        // This may be called from the app main thread, so it must not make 
+        // network requests directly (because that's disallowed in Android).
+        // request.abort() counts as "network activity", so it has to be done
+        // in a separate thread.
+        Thread thread = new Thread(
+            new Runnable()
+            {
+                public void run()
+                {
+                    synchronized(outstandingRequests)
+                    {
+                        for (HttpRequestBase request : outstandingRequests) 
+                        {
+                            if (!request.isAborted()) request.abort();
+                        }
+                    }
+                }
+            });
+
+        thread.start();
+        try
+        {
+            thread.join();
+        } 
+        catch (InterruptedException e)
+        {
+            // do what? nothing? 
+        }
+    } 
+
     synchronized ServerEntry getCurrentServerEntry()
     {
         if (this.serverEntries.size() > 0)
@@ -657,6 +712,8 @@ public class ServerInterface
             byte[] body) 
         throws PsiphonServerInterfaceException
     {    
+        HttpRequestBase request = null;
+        
         try
         {
             HttpParams params = new BasicHttpParams();
@@ -696,8 +753,6 @@ public class ServerInterface
                 client = new DefaultHttpClient(params);
             }
 
-            HttpRequestBase request;
-
             if (body != null)
             {
                 HttpPost post = new HttpPost(url);
@@ -707,6 +762,11 @@ public class ServerInterface
             else
             {
                 request = new HttpGet(url);
+            }
+            
+            synchronized(this.outstandingRequests)
+            {
+                this.outstandingRequests.add(request);
             }
             
             if (additionalHeaders != null)
@@ -723,7 +783,6 @@ public class ServerInterface
 
             if (statusCode != HttpStatus.SC_OK)
             {
-                MyLog.d(url); // TEMP
                 throw new PsiphonServerInterfaceException("HTTPS request failed with error: " + statusCode);
             }
 
@@ -738,8 +797,11 @@ public class ServerInterface
                 int len = -1;
                 while ((len = instream.read(buffer)) != -1)
                 {
-                    // TODO: if (cancel) request.abort(); ...
-                    // See hc.apache.org/httpcomponents-client-ga/tutorial/html/fundamentals.html#d5e143
+                    if (this.stopped) 
+                    {
+                        throw new PsiphonServerInterfaceException(
+                                this.ownerContext.getString(R.string.ServerInterface_StopRequested));
+                    }
                     
                     responseBody.write(buffer, 0, len);
                 }
@@ -774,7 +836,21 @@ public class ServerInterface
         catch (CertificateException e)
         {
             throw new PsiphonServerInterfaceException(e);
-        }        
+        }
+        finally
+        {
+            if (request != null)
+            {
+                synchronized(this.outstandingRequests)
+                {
+                    // Harmless if the request was successful. Necessary clean-up if
+                    // the request was interrupted.
+                    if (!request.isAborted()) request.abort();
+                    
+                    this.outstandingRequests.remove(request);
+                }
+            }
+        }
     }
     
     /*
@@ -1030,5 +1106,5 @@ public class ServerInterface
     public boolean isUpgradeAvailable()
     {
         return !this.upgradeClientVersion.isEmpty();
-    } 
+    }
 }
