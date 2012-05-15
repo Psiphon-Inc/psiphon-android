@@ -147,6 +147,7 @@ public class ServerInterface
     private String speedTestURL;
     private String clientSessionID; // access via getCurrentClientSessionID -- even internally
     private String serverSessionID;
+    private List<HttpRequestBase> outstandingRequests = new ArrayList<HttpRequestBase>();
 
     ServerInterface(Context context)
     {
@@ -204,6 +205,37 @@ public class ServerInterface
         }
     }
     
+    public void stop()
+    {
+        // This may be called from the app main thread, so it must not make 
+        // network requests directly (because that's disallowed in Android).
+        
+        Thread thread = new Thread(
+                new Runnable()
+                {
+                    public void run()
+                    {
+                        synchronized(outstandingRequests)
+                        {
+                            for (HttpRequestBase request : outstandingRequests) 
+                            {
+                                if (!request.isAborted()) request.abort();
+                            }
+                        }
+                    }
+                });
+
+        thread.start();
+        try
+        {
+            thread.join();
+        } 
+        catch (InterruptedException e)
+        {
+            // do what? nothing? 
+        }
+    } 
+
     synchronized ServerEntry getCurrentServerEntry()
     {
         if (this.serverEntries.size() > 0)
@@ -657,6 +689,8 @@ public class ServerInterface
             byte[] body) 
         throws PsiphonServerInterfaceException
     {    
+        HttpRequestBase request = null;
+        
         try
         {
             HttpParams params = new BasicHttpParams();
@@ -696,8 +730,6 @@ public class ServerInterface
                 client = new DefaultHttpClient(params);
             }
 
-            HttpRequestBase request;
-
             if (body != null)
             {
                 HttpPost post = new HttpPost(url);
@@ -707,6 +739,11 @@ public class ServerInterface
             else
             {
                 request = new HttpGet(url);
+            }
+            
+            synchronized(this.outstandingRequests)
+            {
+                this.outstandingRequests.add(request);
             }
             
             if (additionalHeaders != null)
@@ -723,7 +760,6 @@ public class ServerInterface
 
             if (statusCode != HttpStatus.SC_OK)
             {
-                MyLog.d(url); // TEMP
                 throw new PsiphonServerInterfaceException("HTTPS request failed with error: " + statusCode);
             }
 
@@ -738,9 +774,6 @@ public class ServerInterface
                 int len = -1;
                 while ((len = instream.read(buffer)) != -1)
                 {
-                    // TODO: if (cancel) request.abort(); ...
-                    // See hc.apache.org/httpcomponents-client-ga/tutorial/html/fundamentals.html#d5e143
-                    
                     responseBody.write(buffer, 0, len);
                 }
             }
@@ -774,7 +807,21 @@ public class ServerInterface
         catch (CertificateException e)
         {
             throw new PsiphonServerInterfaceException(e);
-        }        
+        }
+        finally
+        {
+            if (request != null)
+            {
+                synchronized(this.outstandingRequests)
+                {
+                    // Harmless if the request was successful. Necessary clean-up if
+                    // the request was interrupted.
+                    if (!request.isAborted()) request.abort();
+                    
+                    this.outstandingRequests.remove(request);
+                }
+            }
+        }
     }
     
     /*
@@ -1030,5 +1077,5 @@ public class ServerInterface
     public boolean isUpgradeAvailable()
     {
         return !this.upgradeClientVersion.isEmpty();
-    } 
+    }
 }
