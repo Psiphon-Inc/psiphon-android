@@ -9,6 +9,10 @@ import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.security.SecureRandom;
 import java.util.Vector;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
+import android.util.Log;
 
 import ch.ethz.ssh2.auth.AuthenticationManager;
 import ch.ethz.ssh2.channel.ChannelManager;
@@ -552,7 +556,7 @@ public class Connection
 	 */
 	public synchronized ConnectionInfo connect() throws IOException
 	{
-		return connect(null, 0, 0);
+		return connect(null, 0, 0, null);
 	}
 
 	/**
@@ -563,9 +567,16 @@ public class Connection
 	 */
 	public synchronized ConnectionInfo connect(ServerHostKeyVerifier verifier) throws IOException
 	{
-		return connect(verifier, 0, 0);
+		return connect(verifier, 0, 0, null);
 	}
 
+    // PSIPHON: monitor and cancel connection if signaled
+
+	public interface IStopSignalPending
+	{
+	    public boolean isStopSignalPending();
+	}
+	
 	/**
 	 * Connect to the SSH-2 server and, as soon as the server has presented its
 	 * host key, use the {@link ServerHostKeyVerifier#verifyServerHostKey(String,
@@ -637,7 +648,11 @@ public class Connection
 	 *            contains the details returned by the proxy. If the proxy is buggy and does
 	 *            not return a proper HTTP response, then a normal IOException is thrown instead.        
 	 */
-	public synchronized ConnectionInfo connect(ServerHostKeyVerifier verifier, int connectTimeout, int kexTimeout)
+	public synchronized ConnectionInfo connect(
+       ServerHostKeyVerifier verifier,
+       int connectTimeout,
+       int kexTimeout,
+       final IStopSignalPending stopSignalPending)
 			throws IOException
 	{
 		final class TimeoutState
@@ -645,6 +660,8 @@ public class Connection
 			boolean isCancelled = false;
 			boolean timeoutSocketClosed = false;
 		}
+
+        Thread checkStopSignalThread = null;
 
 		if (tm != null)
 			throw new IOException("Connection to " + hostname + " is already in connected state!");
@@ -661,7 +678,7 @@ public class Connection
 
 		tm.setConnectionMonitors(connectionMonitors);
 
-		/* Make sure that the runnable below will observe the new value of "tm"
+        /* Make sure that the runnable below will observe the new value of "tm"
 		 * and "state" (the runnable will be executed in a different thread, which
 		 * may be already running, that is why we need a memory barrier here).
 		 * See also the comment in Channel.java if you
@@ -680,7 +697,7 @@ public class Connection
 
 		try
 		{
-			TimeoutToken token = null;
+            TimeoutToken token = null;
 
 			if (kexTimeout > 0)
 			{
@@ -704,6 +721,47 @@ public class Connection
 				token = TimeoutService.addTimeoutHandler(timeoutHorizont, timeoutHandler);
 			}
 
+			// PSIPHON: monitor and cancel connection if signaled
+			// This is done in a separate thread, leaving the existing SSH2 code mostly undisturbed.
+			            
+			if (stopSignalPending != null)
+			{
+                final Runnable stopSignalMonitor = new Runnable()
+                {
+                    public void run()
+                    {
+                        while (true)
+                        {
+                            try
+                            {
+                                Thread.sleep(50);
+                            }
+                            catch (InterruptedException e) {}
+                            
+                            synchronized (state)
+                            {
+                                if (state.isCancelled)
+                                {
+                                    return;
+                                }
+                            }
+
+                            if (stopSignalPending.isStopSignalPending())
+                            {
+                                if (tm != null)
+                                {
+                                    tm.close(new SocketTimeoutException("Stop signalled"), false);
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                };
+                
+                checkStopSignalThread = new Thread(stopSignalMonitor);
+                checkStopSignalThread.start();
+			}
+			
 			try
 			{
 				tm.initialize(this.obfuscationKeyword, cryptoWishList, verifier, dhgexpara, connectTimeout, getOrCreateSecureRND(), proxyData);
@@ -716,7 +774,7 @@ public class Connection
 
 			tm.setTcpNoDelay(tcpNoDelay);
 
-			/* Wait until first KEX has finished */
+            /* Wait until first KEX has finished */
 
 			ConnectionInfo ci = tm.getConnectionInfo(1);
 
@@ -748,7 +806,7 @@ public class Connection
 		}
 		catch (IOException e1)
 		{
-			/* This will also invoke any registered connection monitors */
+		    /* This will also invoke any registered connection monitors */
 			close(new Throwable("There was a problem during connect."), false);
 
 			synchronized (state)
@@ -764,6 +822,24 @@ public class Connection
 
 			throw (IOException) new IOException("There was a problem while connecting to " + hostname + ":" + port)
 					.initCause(e1);
+		}
+		finally
+		{
+            // PSIPHON: monitor and cancel connection if signaled
+		    
+		    if (stopSignalPending != null && checkStopSignalThread != null)
+            {
+                synchronized (state)
+                {
+                    state.isCancelled = true;
+                }
+                
+                try
+                {
+                    checkStopSignalThread.join();
+                }
+                catch (InterruptedException e) {}
+            }
 		}
 	}
 

@@ -33,12 +33,13 @@ import android.os.Binder;
 import android.os.IBinder;
 
 import ch.ethz.ssh2.*;
+import ch.ethz.ssh2.Connection.IStopSignalPending;
 
 import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.UpgradeManager;
 import com.psiphon3.Utils.MyLog;
 
-public class TunnelService extends Service implements Utils.MyLog.ILogger
+public class TunnelService extends Service implements Utils.MyLog.ILogger, IStopSignalPending
 {
     enum State
     {
@@ -229,6 +230,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
         }
     }
     
+    public boolean isStopSignalPending()
+    {
+        return m_signalQueue.peek() == Signal.STOP_SERVICE;
+    }
+    
     private boolean runTunnelOnce() throws InterruptedException
     {
         ServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
@@ -251,11 +257,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             MyLog.i(R.string.ssh_connecting);
             conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
             Monitor monitor = new Monitor(m_signalQueue);
-            // TODO: cancel conn.connect if stop signaled
             conn.connect(
                     new PsiphonServerHostKeyVerifier(entry.sshHostKey),
+                    0,
                     PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS,
-                    PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS);
+                    this);
             MyLog.i(R.string.ssh_connected);
 
             checkSignals(0);
@@ -344,6 +350,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
                 m_interface.doPeriodicWork(true);
             }
         }
+        catch (PsiphonServerInterfaceException e)
+        {
+            // Drop into finally...
+        }
         catch (IOException e)
         {
             unexpectedDisconnect = true;
@@ -354,18 +364,22 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             
             m_interface.markCurrentServerFailed();
 
-            // This prints too much info -- the stack trace, but also IP
+            // TODO: This prints too much info -- the stack trace, but also IP
             // address (not sure if we want to obscure that or not...) 
             MyLog.e(R.string.error_message, e);
             MyLog.e(R.string.ssh_connection_failed);
         }
-        catch (PsiphonServerInterfaceException e)
-        {
-            // Drop into finally...
-        }
         catch (TunnelServiceUnexpectedDisconnect e)
         {
-            // TODO: MarkCurrentServerFailed()?
+            // NOTE: Not calling MarkCurrentServerFailed(), although there
+            // may be a problem with the server. This exception is thrown
+            // in the case where the tunnel was successfully established
+            // and the connection monitor detected a disconnect. We'll
+            // retry the current server at least once. If it still is
+            // down -- i.e., not an intermittent problem, we'll expect
+            // an IOException on the connection attempt, which will call
+            // calling MarkCurrentServerFailed().
+
             unexpectedDisconnect = true;
             runAgain = true;
         }
@@ -399,8 +413,13 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
 
             setState(State.DISCONNECTED);
             
-            if (unexpectedDisconnect)
+            if (unexpectedDisconnect && !isStopSignalPending())
             {
+                // This will invoke the status activity to show that
+                // the tunnel is disconnected. Since that invocation
+                // will also restart the tunnel, be sure not to do
+                // it when a stop is signaled.
+                
                 Events.signalUnexpectedDisconnect(this);
             }
         }
@@ -452,7 +471,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
             {
                 Thread.sleep(1000 + (long)(Math.random()*1000.0));
             }
-            catch (InterruptedException ie) {}            
+            catch (InterruptedException ie) {}
         }
     }
     
@@ -500,7 +519,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger
 
                 // Tell the ServerInterface to stop (e.g., kill requests).
                 m_interface.stop();
-
+                
                 m_tunnelThread.join();
 
                 MyLog.w(R.string.stopped_tunnel);

@@ -133,6 +133,8 @@ public class TransportManager
 
 	Throwable reasonClosedCause = null;
 
+	// PSIPHON: obfuscated SSH protocol state
+	
 	ObfuscatedSSH ossh;
 	ObfuscatedSSH.ObfuscatedInputStream obfuscatedInputStream;
 	ObfuscatedSSH.ObfuscatedOutputStream obfuscatedOutputStream;
@@ -341,8 +343,17 @@ public class TransportManager
 
 		if (proxyData == null)
 		{
-			InetAddress addr = createInetAddress(hostname);
-			sock.connect(new InetSocketAddress(addr, port), connectTimeout);
+            InetAddress addr = createInetAddress(hostname);
+
+            // PSIPHON:
+		    // connect() cannot be interrupted with close() when connect
+		    // has a timeout. This is an Android bug (fix coming, but
+		    // broken in current devices): https://code.google.com/p/android/issues/detail?id=24318
+		    // So we don't use a connect timeout and instead handle the
+		    // timeout via the KEX timeout which calls close().
+		    
+			//sock.connect(new InetSocketAddress(addr, port), connectTimeout);
+			sock.connect(new InetSocketAddress(addr, port));
 			sock.setSoTimeout(0);
 			return;
 		}
@@ -452,7 +463,7 @@ public class TransportManager
 
 		establishConnection(proxyData, connectTimeout);
 
-		/* Send obfuscated SSH seed message */
+		// PSIPHON: Send obfuscated SSH seed message
 		
 		this.ossh = new ObfuscatedSSH(obfuscatedKeyword);
 		byte[] seedMessage = this.ossh.getSeedMessage();
@@ -467,7 +478,9 @@ public class TransportManager
 		 * for later use.
 		 */
 
-		ClientServerHello csh = new ClientServerHello(this.obfuscatedInputStream, this.obfuscatedOutputStream);
+        // PSIPHON: use obfuscated streams for handshake
+
+	    ClientServerHello csh = new ClientServerHello(this.obfuscatedInputStream, this.obfuscatedOutputStream);
 
 		tc = new TransportConnection(this.obfuscatedInputStream, this.obfuscatedOutputStream, rnd);
 
@@ -583,7 +596,10 @@ public class TransportManager
 			flagKexOngoing = false;
 			connectionSemaphore.notifyAll();
 		}
-        this.obfuscatedInputStream.disableObfuscation();
+
+		// PSIPHON: stop obfuscation once SSH handshake is complete -- remaining protocol is encrypted/random
+		
+		this.obfuscatedInputStream.disableObfuscation();
         this.obfuscatedOutputStream.disableObfuscation();
 	}
 
