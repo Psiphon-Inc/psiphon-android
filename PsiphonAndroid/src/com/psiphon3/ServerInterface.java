@@ -1105,6 +1105,6 @@ public class ServerInterface
 
     public boolean isUpgradeAvailable()
     {
-        return !this.upgradeClientVersion.isEmpty();
+        return this.upgradeClientVersion.length() > 0;
     }
 }
