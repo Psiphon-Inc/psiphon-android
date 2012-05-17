@@ -15,17 +15,30 @@
 
 package org.zirco.ui.activities;
 
+import java.lang.reflect.Field;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
+import org.apache.http.HttpHost;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.conn.params.ConnRoutePNames;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.RedirectLocations;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
 import org.greendroid.QuickAction;
 import org.greendroid.QuickActionGrid;
 import org.greendroid.QuickActionWidget;
 import org.greendroid.QuickActionWidget.OnQuickActionClickListener;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.zirco.R;
 import org.zirco.controllers.Controller;
 import org.zirco.events.EventConstants;
@@ -34,7 +47,6 @@ import org.zirco.events.IDownloadEventsListener;
 import org.zirco.model.adapters.UrlSuggestionCursorAdapter;
 import org.zirco.model.items.DownloadItem;
 import org.zirco.providers.BookmarksProviderWrapper;
-import org.zirco.providers.BookmarksProviderWrapper.BookmarksSource;
 import org.zirco.ui.activities.preferences.PreferencesActivity;
 import org.zirco.ui.components.CustomWebView;
 import org.zirco.ui.components.CustomWebViewClient;
@@ -45,7 +57,6 @@ import org.zirco.utils.AnimationManager;
 import org.zirco.utils.ApplicationUtils;
 import org.zirco.utils.Constants;
 import org.zirco.utils.UrlUtils;
-
 
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -72,7 +83,6 @@ import android.os.Message;
 import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.ContextMenu;
 import android.view.GestureDetector;
 import android.view.KeyEvent;
@@ -82,7 +92,6 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowManager;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
@@ -290,21 +299,31 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         
         // PSIPHON: open home pages if they're not already open (or a blank tab if none)
         ArrayList<String> homePages = intent.getStringArrayListExtra("homePages");
+        
         for (String homePage : homePages)
         {
+            List<String> homePageEquivs = findEquivalentUrls(localProxyPort, homePage);
             boolean urlAlreadyOpen = false;
             for (CustomWebView webView : mWebViews)
             {
                 String webViewUrl = webView.getUrl();
                 if (webViewUrl == null || webViewUrl.length() == 0)
                 {
-                    webViewUrl = webView.getLoadedUrl(); 
+                    webViewUrl = webView.getLoadedUrl();
                 }
-                if (webViewUrl != null && homePage.compareToIgnoreCase(webViewUrl) == 0)
+                
+                if (webViewUrl == null) continue;
+                
+                for (String homePageEquiv : homePageEquivs)
                 {
-                    urlAlreadyOpen = true;
-                    break;
+                    if (homePageEquiv.compareToIgnoreCase(webViewUrl) == 0)
+                    {
+                        urlAlreadyOpen = true;
+                        break;
+                    }
                 }
+                
+                if (urlAlreadyOpen) break;
             }
             
             if (!urlAlreadyOpen)
@@ -2171,6 +2190,84 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 				Toast.makeText(this, getString(R.string.Main_DownloadErrorMsg, item.getErrorMessage()), Toast.LENGTH_SHORT).show();
 			}
 		}			
+	}
+	
+	// PSIPHON
+	/**
+	 * Discover other URLs that are equivalent to the given URL, where a URL is
+	 * "equivalent" if it is in the given URL's redirection chain. 
+	 * @param proxyPort  The port that the local proxy runs on.
+	 * @param url  The URL that we want to find equivalents for.
+	 * @return An array of equivalent URLs, which will contain the original URL.
+	 *         (E.g., it's guaranteed to be at least size 1.)
+	 */
+    @SuppressWarnings("unchecked")
+	private List<String> findEquivalentUrls(int proxyPort, String url) 
+	{
+        List<String> uriStrings = new ArrayList<String>();
+        uriStrings.add(url);
+
+        HttpParams params = new BasicHttpParams();
+        HttpConnectionParams.setConnectionTimeout(params, 5000);
+        HttpConnectionParams.setSoTimeout(params, 5000);
+        HttpHost httpproxy = new HttpHost("localhost", proxyPort);
+        params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
+        DefaultHttpClient client = new DefaultHttpClient(params);
+        HttpContext context = new BasicHttpContext();
+        HttpRequestBase request = new HttpHead(url);
+        request.setHeader("User-Agent", mCurrentWebView.getSettings().getUserAgentString());
+        
+        try
+        {
+            client.execute(request, context);
+        } 
+        catch (Exception e)
+        {
+            return uriStrings;
+        }
+        
+        // Clean up the request.
+        request.abort();
+        
+        // The context holds info about the redirections that occurred.
+        RedirectLocations redirectLocations = (RedirectLocations)context.getAttribute("http.protocol.redirect-locations");
+        
+        Set<URI> uris = null;
+        try
+        {
+            // In Android's ghetto org.apache.http version, there's no way to 
+            // access `redirectLocations.uris`, so we'll have to use reflection
+            // to get at the private variable.
+            Field field;
+            field = redirectLocations.getClass().getDeclaredField("uris");
+            field.setAccessible(true);
+            uris = (Set<URI>)field.get(redirectLocations);
+        } 
+        catch (Exception e)
+        {
+            return uriStrings;
+        } 
+        
+        if (uris != null && uris.size() > 0) 
+        {
+            Iterator<URI> iter = uris.iterator();
+            while (iter.hasNext()) 
+            {
+                String uriString = iter.next().toString(); 
+                uriStrings.add(uriString);
+                
+                // Hack:
+                // If uriString doesn't end with a '/', then we'll also add an
+                // equivalent that has one. Our redirection testing doesn't seem
+                // to catch cases of http://example.com vs. http://example.com/
+                if (!uriString.endsWith("/"))
+                {
+                    uriStrings.add(uriString+"/");
+                }
+            }
+        }
+        
+        return uriStrings;
 	}
 	
 	/**
