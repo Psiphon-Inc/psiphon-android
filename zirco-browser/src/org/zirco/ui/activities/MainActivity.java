@@ -296,8 +296,11 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
             for (CustomWebView webView : mWebViews)
             {
                 String webViewUrl = webView.getUrl();
-                if (webViewUrl == null || webViewUrl.length() == 0) webViewUrl = webView.getLoadedUrl(); 
-                if (homePage.compareToIgnoreCase(webViewUrl) == 0)
+                if (webViewUrl == null || webViewUrl.length() == 0)
+                {
+                    webViewUrl = webView.getLoadedUrl(); 
+                }
+                if (webViewUrl != null && homePage.compareToIgnoreCase(webViewUrl) == 0)
                 {
                     urlAlreadyOpen = true;
                     break;
