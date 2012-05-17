@@ -45,4 +45,8 @@ public class PsiphonConstants
     public final static String PLATFORM = ("Android_" + Build.VERSION.RELEASE).replaceAll("[^\\w\\-\\.]", "_");
     
     public final static int HTTPS_REQUEST_TIMEOUT = 20000;
+    
+    public final static int SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH = 60*60*6;
+            
+    public final static int SECONDS_BETWEEN_UNSUCCESSFUL_REMOTE_SERVER_LIST_FETCH = 60*5;
 }

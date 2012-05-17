@@ -20,6 +20,7 @@
 package com.psiphon3;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,12 +55,14 @@ public class PsiphonData
 	private ArrayList<StatusMessage> m_statusMessages;
     private ArrayList<String> m_homePages;
     private Stats m_stats;
+    private Date m_nextFetchRemoteServerList;
         
     private PsiphonData()
     {
     	m_statusMessages = new ArrayList<StatusMessage>();
     	m_homePages = new ArrayList<String>();
     	m_stats = new Stats();
+    	m_nextFetchRemoteServerList = null;
     }
 
     public synchronized void addStatusMessage(String message, int messageClass)
@@ -89,6 +92,14 @@ public class PsiphonData
     public synchronized Stats getStats()
     {
     	return m_stats;
+    }
+
+    public synchronized Date getNextFetchRemoteServerList() {
+        return m_nextFetchRemoteServerList;
+    }
+
+    public synchronized void setNextFetchRemoteServerList(Date nextFetchRemoteServerList) {
+        m_nextFetchRemoteServerList = nextFetchRemoteServerList;
     }
 
     public class StatusMessage

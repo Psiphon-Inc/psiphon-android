@@ -429,8 +429,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     
     private void runTunnel() throws InterruptedException
     {
-        Date lastFetchRemoteServerList = null;
-        
         while (runTunnelOnce())
         {
             try
@@ -447,22 +445,14 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 break;
             }
             
-            // After at least one failed connection attempt, and no more than once
-            // per few hours, check for a new remote server list.
-            if (lastFetchRemoteServerList == null ||
-                (new Date()).getTime() - lastFetchRemoteServerList.getTime() > 1000*60*60*6)
-            {                
-                lastFetchRemoteServerList = new Date();
-                
-                try
-                {
-                    // TODO: move to background thread...?
-                    m_interface.fetchRemoteServerList();
-                }
-                catch (PsiphonServerInterfaceException requestException)
-                {
-                    MyLog.w(R.string.TunnelService_FetchRemoteServerListFailed, requestException);
-                }
+            try
+            {
+                // TODO: move to background thread...?
+                m_interface.fetchRemoteServerList();
+            }
+            catch (PsiphonServerInterfaceException requestException)
+            {
+                MyLog.w(R.string.TunnelService_FetchRemoteServerListFailed, requestException);
             }
 
             // 1-2 second delay before retrying

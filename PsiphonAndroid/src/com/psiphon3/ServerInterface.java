@@ -40,6 +40,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.Map;
@@ -523,10 +524,26 @@ public class ServerInterface
 
         if (0 != "".compareTo(EmbeddedValues.REMOTE_SERVER_LIST_URL))
         {
+            // After at least one failed connection attempt, and no more than once
+            // per few hours (if successful), or not more than once per few minutes
+            // (if unsuccessful), check for a new remote server list.
+            Date nextFetchRemoteServerList = PsiphonData.getPsiphonData().getNextFetchRemoteServerList();
+            if ((nextFetchRemoteServerList != null) &&
+                (nextFetchRemoteServerList.getTime() > new Date().getTime()))
+            {
+                return;
+            }
+
+            PsiphonData.getPsiphonData().setNextFetchRemoteServerList(new Date(
+                    new Date().getTime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_UNSUCCESSFUL_REMOTE_SERVER_LIST_FETCH));
+            
             try
             {
                 byte[] response = makeDirectWebRequest(EmbeddedValues.REMOTE_SERVER_LIST_URL);
     
+                PsiphonData.getPsiphonData().setNextFetchRemoteServerList(new Date(
+                        new Date().getTime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH));
+                
                 String serverList = ServerEntryAuth.validateAndExtractServerList(new String(response));
     
                 for (String encodedEntry : serverList.split("\n"))
