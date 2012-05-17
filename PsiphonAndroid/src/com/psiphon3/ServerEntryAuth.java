@@ -82,7 +82,7 @@ public class ServerEntryAuth
             String signingPublicKeyDigest = obj.getString("signingPublicKeyDigest");
             
             MessageDigest sha2;
-            sha2 = MessageDigest.getInstance("SHA2");
+            sha2 = MessageDigest.getInstance("SHA256");
             byte[] publicKeyDigest = sha2.digest(
                 EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY.getBytes());
 
