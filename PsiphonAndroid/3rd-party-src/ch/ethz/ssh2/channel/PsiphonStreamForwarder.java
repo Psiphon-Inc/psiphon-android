@@ -474,6 +474,7 @@ public class PsiphonStreamForwarder extends Thread
                                 if (this.destHost.length() > 0
                                     && requestURI.length() > 0
                                     && responseStatusCode == 200
+                                    && contentType != null
                                     && (contentType.contains("text/html")
                                         || contentType.contains("application/xhtml+xml")))
                                 {
