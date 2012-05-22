@@ -800,7 +800,8 @@ public class ServerInterface
 
             if (statusCode != HttpStatus.SC_OK)
             {
-                throw new PsiphonServerInterfaceException("HTTPS request failed with error: " + statusCode);
+                throw new PsiphonServerInterfaceException(
+                        this.ownerContext.getString(R.string.ServerInterface_HTTPSRequestFailed) + statusCode);
             }
 
             HttpEntity responseEntity = response.getEntity();

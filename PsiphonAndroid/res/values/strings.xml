@@ -52,5 +52,6 @@
     <string name="stopping_tunnel">Stopping tunnel...</string>
     <string name="stopped_tunnel">Stopped tunnel</string>
     <string name="ServerInterface.StopRequested">Stop requested</string>
+    <string name="ServerInterface.HTTPSRequestFailed">HTTPS request failed with error: </string>
 
 </resources>
