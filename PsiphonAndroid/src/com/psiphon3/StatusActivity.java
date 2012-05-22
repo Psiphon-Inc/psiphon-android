@@ -263,8 +263,10 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     private boolean isServiceRunning() 
     {
         ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (TunnelService.class.getName().equals(service.service.getClassName())) {
+        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
+        {
+            if (TunnelService.class.getName().equals(service.service.getClassName()))
+            {
                 return true;
             }
         }
