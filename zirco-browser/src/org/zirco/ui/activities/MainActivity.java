@@ -302,28 +302,41 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         
         for (String homePage : homePages)
         {
-            List<String> homePageEquivs = findEquivalentUrls(localProxyPort, homePage);
             boolean urlAlreadyOpen = false;
-            for (CustomWebView webView : mWebViews)
+            
+            // If we already have tabs open, check to make sure the homePages 
+            // won't create duplicate tabs.
+            if (mWebViews.size() > 0)
             {
-                String webViewUrl = webView.getUrl();
-                if (webViewUrl == null || webViewUrl.length() == 0)
-                {
-                    webViewUrl = webView.getLoadedUrl();
-                }
+                // Many home pages redirect to another URL, so to determine if
+                // an open tab really matches a home page, we'll need to collect
+                // that home page's redirect URLs.
+                List<String> homePageEquivs = findEquivalentUrls(
+                        localProxyPort,
+                        mWebViews.get(0).getSettings().getUserAgentString(),
+                        homePage);
                 
-                if (webViewUrl == null) continue;
-                
-                for (String homePageEquiv : homePageEquivs)
+                for (CustomWebView webView : mWebViews)
                 {
-                    if (homePageEquiv.compareToIgnoreCase(webViewUrl) == 0)
+                    String webViewUrl = webView.getUrl();
+                    if (webViewUrl == null || webViewUrl.length() == 0)
                     {
-                        urlAlreadyOpen = true;
-                        break;
+                        webViewUrl = webView.getLoadedUrl();
                     }
+                    
+                    if (webViewUrl == null) continue;
+                    
+                    for (String homePageEquiv : homePageEquivs)
+                    {
+                        if (homePageEquiv.compareToIgnoreCase(webViewUrl) == 0)
+                        {
+                            urlAlreadyOpen = true;
+                            break;
+                        }
+                    }
+                    
+                    if (urlAlreadyOpen) break;
                 }
-                
-                if (urlAlreadyOpen) break;
             }
             
             if (!urlAlreadyOpen)
@@ -2202,7 +2215,10 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 	 *         (E.g., it's guaranteed to be at least size 1.)
 	 */
     @SuppressWarnings("unchecked")
-	private List<String> findEquivalentUrls(int proxyPort, String url) 
+	private List<String> findEquivalentUrls(
+	        int proxyPort, 
+	        String userAgentString, 
+	        String url) 
 	{
         List<String> uriStrings = new ArrayList<String>();
         uriStrings.add(url);
@@ -2215,58 +2231,59 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         DefaultHttpClient client = new DefaultHttpClient(params);
         HttpContext context = new BasicHttpContext();
         HttpRequestBase request = new HttpHead(url);
-        request.setHeader("User-Agent", mCurrentWebView.getSettings().getUserAgentString());
+        request.setHeader("User-Agent", userAgentString);
+        
+        Set<URI> uris = null;
         
         try
         {
             client.execute(request, context);
+        
+            // Clean up the request.
+            request.abort();
+            
+            // The context holds info about the redirections that occurred.
+            RedirectLocations redirectLocations = (RedirectLocations)context.getAttribute("http.protocol.redirect-locations");
+            
+            if (redirectLocations != null)
+            {
+                // In Android's ghetto org.apache.http version, there's no way to 
+                // access `redirectLocations.uris`, so we'll have to use reflection
+                // to get at the private variable.
+                Field field;
+                field = redirectLocations.getClass().getDeclaredField("uris");
+                field.setAccessible(true);
+                uris = (Set<URI>)field.get(redirectLocations);
+            }
         } 
         catch (Exception e)
         {
-            return uriStrings;
+            // pass
         }
         
-        // Clean up the request.
-        request.abort();
-        
-        // The context holds info about the redirections that occurred.
-        RedirectLocations redirectLocations = (RedirectLocations)context.getAttribute("http.protocol.redirect-locations");
-        
-        Set<URI> uris = null;
-        try
-        {
-            // In Android's ghetto org.apache.http version, there's no way to 
-            // access `redirectLocations.uris`, so we'll have to use reflection
-            // to get at the private variable.
-            Field field;
-            field = redirectLocations.getClass().getDeclaredField("uris");
-            field.setAccessible(true);
-            uris = (Set<URI>)field.get(redirectLocations);
-        } 
-        catch (Exception e)
-        {
-            return uriStrings;
-        } 
-        
+        // Add in the redirected URIs we've found.
         if (uris != null && uris.size() > 0) 
         {
-            Iterator<URI> iter = uris.iterator();
-            while (iter.hasNext()) 
+            for (URI uri : uris)
             {
-                String uriString = iter.next().toString(); 
-                uriStrings.add(uriString);
-                
-                // Hack:
-                // If uriString doesn't end with a '/', then we'll also add an
-                // equivalent that has one. Our redirection testing doesn't seem
-                // to catch cases of http://example.com vs. http://example.com/
-                if (!uriString.endsWith("/"))
-                {
-                    uriStrings.add(uriString+"/");
-                }
+                uriStrings.add(uri.toString());
             }
         }
         
+        // Hack:
+        // If a uriString doesn't end with a '/', then we'll also add an
+        // equivalent that has one. Our redirection testing doesn't seem
+        // to catch cases of http://example.com vs. http://example.com/
+        for (int i = uriStrings.size()-1; i >= 0; i--)
+        {
+            String uriString = uriStrings.get(i);
+        
+            if (!uriString.endsWith("/"))
+            {
+                uriStrings.add(uriString+"/");
+            }
+        }
+            
         return uriStrings;
 	}
 	
