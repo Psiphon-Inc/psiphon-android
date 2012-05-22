@@ -159,6 +159,7 @@ public class PreferencesActivity extends PreferenceActivity {
 			}			
 		});
 		
+		/* PSIPHON: Disable AdBlocker
 		Preference whiteListPref = (Preference) findPreference("AdBlockerWhiteList");
 		whiteListPref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
 			@Override
@@ -167,6 +168,7 @@ public class PreferencesActivity extends PreferenceActivity {
 				return true;
 			}			
 		});
+		*/
 		
 		Preference clearHistoryPref = (Preference) findPreference("PrivacyClearHistory");
 		clearHistoryPref.setOnPreferenceClickListener(new OnPreferenceClickListener() {

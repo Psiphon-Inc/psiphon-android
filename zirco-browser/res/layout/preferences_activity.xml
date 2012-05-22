@@ -229,6 +229,7 @@
 				android:key="PrivacyClearCookies" />
 		</PreferenceScreen>	   
 	</PreferenceCategory>
+	<!-- PSIPHON: Disable AdBlocker
 	<PreferenceCategory android:title="@string/PreferencesActivity.AdBlockerSettingsCategoryTitle">
 		<CheckBoxPreference
 			android:title="@string/PreferencesActivity.EnableAdBlockerPreferenceTitle"
@@ -240,6 +241,7 @@
 			android:summary="@string/PreferencesActivity.AdBlockerWhiteListPreferenceSummary"
 			android:key="AdBlockerWhiteList" />
 	</PreferenceCategory>
+    -->
 	<PreferenceCategory android:title="@string/PreferencesActivity.MobileViewCategoryTitle">
 		<Preference
 			android:title="@string/PreferencesActivity.MobileViewListPreferenceTitle"
