@@ -41,7 +41,6 @@ public class Events
 
     static public void signalHandshakeSuccess(Context context)
     {
-        MyLog.d("TEMP: signalHandshakeSuccess: signalling");
         Intent intent = new Intent(
                 StatusActivity.HANDSHAKE_SUCCESS,
                 null,
@@ -53,7 +52,6 @@ public class Events
 
     static public void signalUnexpectedDisconnect(Context context)
     {
-        MyLog.d("TEMP: signalUnexpectedDisconnect: signalling");
         Intent intent = new Intent(
                 StatusActivity.UNEXPECTED_DISCONNECT,
                 null,
