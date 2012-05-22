@@ -63,7 +63,9 @@ public class UserAgentPreferenceActivity extends BaseSpinnerCustomPreferenceActi
 
 	@Override
 	protected void setSpinnerValueFromPreferences() {
-		String currentUserAgent = PreferenceManager.getDefaultSharedPreferences(this).getString(Constants.PREFERENCES_BROWSER_USER_AGENT, Constants.USER_AGENT_DEFAULT);
+	    // PSIPHON: Default to Desktop user agent
+	    //String currentUserAgent = PreferenceManager.getDefaultSharedPreferences(this).getString(Constants.PREFERENCES_BROWSER_USER_AGENT, Constants.USER_AGENT_DEFAULT);
+	    String currentUserAgent = PreferenceManager.getDefaultSharedPreferences(this).getString(Constants.PREFERENCES_BROWSER_USER_AGENT, Constants.USER_AGENT_DESKTOP);
 		
 		if (currentUserAgent.equals(Constants.USER_AGENT_DEFAULT)) {
 			mSpinner.setSelection(0);
