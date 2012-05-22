@@ -19,8 +19,12 @@
 
 package com.psiphon3;
 
+import java.util.List;
+
 import com.psiphon3.Utils.MyLog;
 
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningTaskInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -52,13 +56,27 @@ public class Events
 
     static public void signalUnexpectedDisconnect(Context context)
     {
-        Intent intent = new Intent(
-                StatusActivity.UNEXPECTED_DISCONNECT,
-                null,
-                context,
-                com.psiphon3.StatusActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intent);        
+        // Only launch the intent if the browser is the current
+        // task. We don't want to interrupt other apps; and in
+        // the case of our app (currently), only the browser needs
+        // to be interrupted.
+        
+        ActivityManager activityManager =
+                (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<RunningTaskInfo> runningTasks = activityManager.getRunningTasks(1);        
+        
+        if (runningTasks.size() > 0 &&
+                runningTasks.get(0).baseActivity.flattenToString().compareTo(
+                        "com.psiphon3/org.zirco.ui.activities.MainActivity") == 0)
+        {
+            Intent intent = new Intent(
+                    StatusActivity.UNEXPECTED_DISCONNECT,
+                    null,
+                    context,
+                    com.psiphon3.StatusActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        }
     }
     
     static public Intent pendingSignalNotification(Context context)
