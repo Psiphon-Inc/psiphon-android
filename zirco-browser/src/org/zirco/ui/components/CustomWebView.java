@@ -96,7 +96,9 @@ public class CustomWebView extends WebView {
 		settings.setSaveFormData(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_FORM_DATA, true));
 		settings.setSavePassword(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_PASSWORDS, true));
 		settings.setDefaultZoom(ZoomDensity.valueOf(Controller.getInstance().getPreferences().getString(Constants.PREFERENCES_DEFAULT_ZOOM_LEVEL, ZoomDensity.MEDIUM.toString())));		
-		settings.setUserAgentString(Controller.getInstance().getPreferences().getString(Constants.PREFERENCES_BROWSER_USER_AGENT, Constants.USER_AGENT_DEFAULT));
+		// PSIPHON: Default to Desktop user agent
+		//settings.setUserAgentString(Controller.getInstance().getPreferences().getString(Constants.PREFERENCES_BROWSER_USER_AGENT, Constants.USER_AGENT_DEFAULT));
+		settings.setUserAgentString(Controller.getInstance().getPreferences().getString(Constants.PREFERENCES_BROWSER_USER_AGENT, Constants.USER_AGENT_DESKTOP));
 		
 		CookieManager.getInstance().setAcceptCookie(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_COOKIES, true));
 		
