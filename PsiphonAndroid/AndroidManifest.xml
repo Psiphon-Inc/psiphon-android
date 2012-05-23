@@ -35,6 +35,7 @@
             android:launchMode="singleTask"
             android:configChanges="keyboardHidden|orientation"
             android:taskAffinity=":PsiphonBrowserTask"
+            android:theme="@android:style/Theme.DeviceDefault.Light.DarkActionBar"
             android:exported="false">
         </activity>
         <activity android:name="org.zirco.ui.activities.AboutActivity" ></activity>
