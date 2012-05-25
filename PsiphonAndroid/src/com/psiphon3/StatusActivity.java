@@ -19,6 +19,8 @@
 
 package com.psiphon3;
 
+import org.zirco.R;
+
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
@@ -30,11 +32,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.TextView;
 
 import com.psiphon3.PsiphonData.StatusMessage;
@@ -202,12 +204,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     
     public void addMessage(String message, int messageClass)
     {
-        TableRow row = new TableRow(this);
-        TextView messageTextView = new TextView(this);
-        ImageView messageClassImageView = new ImageView(this);
-        
-        messageTextView.setText(message);
-
         int messageClassImageRes = 0;
         int messageClassImageDesc = 0;
         switch (messageClass)
@@ -229,18 +225,22 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             messageClassImageDesc = R.string.message_image_warning_desc;
             break;
         }
-        messageClassImageView.setImageResource(messageClassImageRes);
-        messageClassImageView.setContentDescription(getResources().getText(messageClassImageDesc));
         
-        // Make sure the class image is aligned to the right.
-        TableRow.LayoutParams layoutParams = new TableRow.LayoutParams();
-        layoutParams.gravity = android.view.Gravity.RIGHT; 
-        messageClassImageView.setLayoutParams(layoutParams);
-
-        row.addView(messageTextView);
-        row.addView(messageClassImageView);
+        // 
+        // Get the message row template and fill it in
+        // 
         
-        m_messagesTableLayout.addView(row);
+        LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View rowView = inflater.inflate(R.layout.message_row, null);
+        
+        TextView textView = (TextView)rowView.findViewById(R.id.MessageRow_Text);
+        textView.setText(message);
+        
+        ImageView imageView = (ImageView)rowView.findViewById(R.id.MessageRow_Image);
+        imageView.setImageResource(messageClassImageRes);
+        imageView.setContentDescription(getResources().getText(messageClassImageDesc));
+        
+        m_messagesTableLayout.addView(rowView);
         
         // Wait until the messages list is updated before attempting to scroll 
         // to the bottom.

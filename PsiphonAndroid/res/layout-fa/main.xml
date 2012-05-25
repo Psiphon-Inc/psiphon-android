@@ -58,8 +58,8 @@
                 android:id="@+id/messagesTableLayout"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
-                android:stretchColumns="1"
-                android:shrinkColumns="0">
+                android:stretchColumns="0"
+                android:shrinkColumns="1">
             </TableLayout>
         </ScrollView>
 
