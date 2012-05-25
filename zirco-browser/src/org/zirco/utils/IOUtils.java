@@ -59,6 +59,17 @@ public class IOUtils {
 	 * @return The application download folder.
 	 */
 	public static File getDownloadFolder() {
+	    
+	       // PSIPHON: Using system download directory rather than an app-specific one.
+        File sysDownloadFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        if (sysDownloadFolder != null) {
+            if (!sysDownloadFolder.exists()) {
+                sysDownloadFolder.mkdir();
+            }
+        }
+        return sysDownloadFolder;
+
+	    /*
 		File root = getApplicationFolder();
 		
 		if (root != null) {
@@ -74,6 +85,7 @@ public class IOUtils {
 		} else {
 			return null;
 		}
+		*/
 	}
 	
 	/**
