@@ -330,19 +330,15 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             
             try
             {
-                Date lastPeriodicWork = null;
-
+                // This busy-wait-ish loop is throttled by the `checkSignals(1)`
+                // call. It will wait for 1 second before proceeding to the 
+                // `doPeriodicWork()` call (which itself only takes action every
+                // half-hour).
                 while (true)
                 {
                     checkSignals(1);
     
-                    // Do periodic work every 30 minutes
-                    if (lastPeriodicWork == null ||
-                            (new Date()).getTime() - lastPeriodicWork.getTime() > 1000*60*30)
-                    {                
-                        lastPeriodicWork = new Date();
-                        m_interface.doPeriodicWork(false);
-                    }
+                    m_interface.doPeriodicWork(false);
                 }
             }
             finally
