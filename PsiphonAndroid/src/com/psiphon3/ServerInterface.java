@@ -975,7 +975,7 @@ public class ServerInterface
         }
     }
 
-    private final long DEFAULT_STATS_SEND_INTERVAL_MS = 3*60*1000; // 30 mins
+    private final long DEFAULT_STATS_SEND_INTERVAL_MS = 30*60*1000; // 30 mins
     private long statsSendInterval = DEFAULT_STATS_SEND_INTERVAL_MS;
     private long lastStatusSendTimeMS = 0;
     private final int DEFAULT_SEND_MAX_ENTRIES = 1000;
