@@ -40,6 +40,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -182,6 +183,7 @@ public class ServerInterface
     
             for (int i = 0; i < jsonServerEntries.length(); i++)
             {
+                // NOTE: No shuffling, as we're restoring a previously arranged list
                 addServerEntry(jsonServerEntries.getString(i), false);
             }
         }
@@ -202,10 +204,8 @@ public class ServerInterface
         
         try
         {
-            for (String encodedEntry : EmbeddedValues.EMBEDDED_SERVER_LIST.split("\n"))
-            {
-                addServerEntry(encodedEntry, true);
-            }
+            shuffleAndAddServerEntries(
+                EmbeddedValues.EMBEDDED_SERVER_LIST.split("\n"), true);
         } 
         catch (JSONException e)
         {
@@ -367,10 +367,12 @@ public class ServerInterface
                     this.speedTestURL = obj.getString("speed_test_url");
 
                     JSONArray encoded_server_list = obj.getJSONArray("encoded_server_list");
+                    String[] entries = new String[encoded_server_list.length()];
                     for (int i = 0; i < encoded_server_list.length(); i++)
                     {
-                        addServerEntry(encoded_server_list.getString(i), false);
+                        entries[i] = encoded_server_list.getString(i);
                     }
+                    shuffleAndAddServerEntries(entries, false);
                     
                     // We only support SSH, so this is our server session ID.
                     this.serverSessionID = obj.getString("ssh_session_id");
@@ -546,10 +548,7 @@ public class ServerInterface
                 
                 String serverList = ServerEntryAuth.validateAndExtractServerList(new String(response));
     
-                for (String encodedEntry : serverList.split("\n"))
-                {
-                    addServerEntry(encodedEntry, false);
-                }
+                shuffleAndAddServerEntries(serverList.split("\n"), false);
             }
             catch (ServerEntryAuthException e)
             {
@@ -869,6 +868,22 @@ public class ServerInterface
                 }
             }
         }
+    }
+
+    private void shuffleAndAddServerEntries(
+    		String[] encodedServerEntries,
+    		boolean isEmbedded)
+        throws JSONException
+    {
+    	// Shuffling assists in load balancing when there
+    	// are multiple embedded/discovery servers at once
+    	
+    	List<String> encodedEntryList = Arrays.asList(encodedServerEntries);
+    	Collections.shuffle(encodedEntryList);
+    	for (String entry : encodedEntryList)
+    	{
+    		addServerEntry(entry, isEmbedded);
+    	}
     }
     
     private void addServerEntry(
