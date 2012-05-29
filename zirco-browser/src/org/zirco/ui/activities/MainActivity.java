@@ -59,9 +59,11 @@ import org.zirco.utils.Constants;
 import org.zirco.utils.UrlUtils;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -223,6 +225,10 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 		BOTH
 	}
 	
+	// PSIPHON
+	private String mPsiphonServiceClassName;
+	private String mPsiphonActivityClassName;
+	
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);              
@@ -268,6 +274,18 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         
         updateSwitchTabsMethod();
 
+        // PSIPHON: Store the class names of the service and status activity.
+        // We'll use them to make sure the service is running.
+        mPsiphonServiceClassName = intent.getStringExtra("serviceClassName");
+        mPsiphonActivityClassName = intent.getStringExtra("activityClassName");
+        
+        if (!ensurePsiphonRunning())
+        {
+            // Must return before trying to open tabs and whatnot.
+            // Control switching to Psiphon task.
+            return;
+        }
+        
         // PSIPHON: always use internal bookmarks
         //updateBookmarksDatabaseSource();
         //
@@ -397,6 +415,51 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         
         startToolbarsHideRunnable();
         
+    }
+    
+    // PSIPHON
+    // TODO: Update to ensure Psiphon is *connected*, not just that the service
+    // is running.
+    /**
+     * Check that Psiphon is running. If it isn't, launch it and close this task. 
+     * @return  true if Psiphon is running, false otherwise. If false, the caller
+     *          should avoid doing significant work (e.g., just return).
+     */
+    private boolean ensurePsiphonRunning()
+    {
+        // See com.psiphon3.StatusActivity#isServiceRunning() for details.
+        ActivityManager manager = (ActivityManager)getSystemService(ACTIVITY_SERVICE);
+        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
+        {
+            if (this.mPsiphonServiceClassName.equals(service.service.getClassName()))
+            {
+                return true;
+            }
+        }
+        
+        Class psiphonActivityClass;
+        try
+        {
+            psiphonActivityClass = Class.forName(this.mPsiphonActivityClassName);
+        } 
+        catch (ClassNotFoundException e)
+        {
+            // This shouldn't happen. 
+            return false;
+        }
+        
+        // The Psiphon service isn't running. Punt back to the Psiphon activity.
+        Intent intent = new Intent(
+                "ACTION_VIEW",
+                null,
+                this,
+                psiphonActivityClass);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        this.startActivity(intent);
+        
+        this.finish();
+        
+        return false;
     }
 
     /**
@@ -1911,11 +1974,17 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 		super.onPause();
 	}
 	
-	@Override
-	protected void onResume() {
-		mCurrentWebView.doOnResume();
-		super.onResume();
-	}
+    @Override
+    protected void onResume() {
+        mCurrentWebView.doOnResume();
+        super.onResume();
+
+        if (!ensurePsiphonRunning())
+        {
+            // Must return -- control switching to Psiphon task.
+            return;
+        }
+    }
 
 	/**
 	 * Show a toast alert on tab switch.

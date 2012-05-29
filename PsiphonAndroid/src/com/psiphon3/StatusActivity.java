@@ -19,8 +19,6 @@
 
 package com.psiphon3;
 
-import org.zirco.R;
-
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
