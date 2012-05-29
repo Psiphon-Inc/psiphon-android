@@ -121,6 +121,10 @@ public class Events
 
         intent.putExtra("homePages", PsiphonData.getPsiphonData().getHomePages());
         
+        intent.putExtra("serviceClassName", TunnelService.class.getName());
+        
+        intent.putExtra("activityClassName", StatusActivity.class.getName());
+        
         context.startActivity(intent);
     }
 }
