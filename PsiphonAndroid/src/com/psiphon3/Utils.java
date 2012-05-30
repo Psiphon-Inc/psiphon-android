@@ -324,7 +324,7 @@ public class Utils {
                 {
                     // Just report the first line of the stack trace
                     String[] stackTraceLines = Log.getStackTraceString(throwable).split("\n");
-                    loggerMsg = loggerMsg + (stackTraceLines.length > 0 ? stackTraceLines[0] : ""); 
+                    loggerMsg = loggerMsg + (stackTraceLines.length > 0 ? '\n' + stackTraceLines[0] : ""); 
                 }
                 
                 logger.log(logInfoProvider.getAndroidLogPriorityEquivalent(priority), loggerMsg);
