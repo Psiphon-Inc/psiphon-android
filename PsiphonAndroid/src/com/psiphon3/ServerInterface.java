@@ -877,8 +877,9 @@ public class ServerInterface
     {
     	// Shuffling assists in load balancing when there
     	// are multiple embedded/discovery servers at once
-    	
+        
     	List<String> encodedEntryList = Arrays.asList(encodedServerEntries);
+        // NOTE: this changes the order of the input array, encodedServerEntries
     	Collections.shuffle(encodedEntryList);
     	for (String entry : encodedEntryList)
     	{
