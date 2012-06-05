@@ -15,6 +15,8 @@
 
 package org.zirco.ui.activities;
 
+import java.io.File;
+
 import org.zirco.R;
 import org.zirco.controllers.Controller;
 import org.zirco.events.EventConstants;
@@ -23,11 +25,19 @@ import org.zirco.events.IDownloadEventsListener;
 import org.zirco.model.adapters.DownloadListAdapter;
 import org.zirco.model.items.DownloadItem;
 
+import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.content.ActivityNotFoundException;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.webkit.MimeTypeMap;
 import android.widget.ImageButton;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -77,6 +87,49 @@ public class DownloadsListActivity extends ListActivity implements IDownloadEven
 			fillData();
 			return true;
 		default: return super.onMenuItemSelected(featureId, item);
+		}
+	}
+
+	@Override
+	protected void onListItemClick(ListView l, View v, int position, long id) {
+		super.onListItemClick(l, v, position, id);
+				
+		DownloadItem item = (DownloadItem) mAdapter.getItem(position);
+		if (item != null) {
+			
+			if (item.isFinished() &&
+					!item.isAborted() &&
+					item.getErrorMessage() == null) {
+				
+				File file = new File(item.getFilePath());
+				if (file.exists()) {
+				
+					MimeTypeMap mime = MimeTypeMap.getSingleton();
+					String ext = file.getName().substring(file.getName().lastIndexOf(".") + 1).toLowerCase();
+					String type = mime.getMimeTypeFromExtension(ext);
+					
+					Intent i = new Intent(Intent.ACTION_VIEW);
+					i.setDataAndType(Uri.fromFile(file), type);
+
+					try {
+
+						startActivity(i);
+
+					} catch (ActivityNotFoundException e) {
+						new AlertDialog.Builder(this)
+						.setTitle(R.string.Main_VndErrorTitle)
+						.setMessage(String.format(getString(R.string.Main_VndErrorMessage), item.getFilePath()))
+						.setPositiveButton(android.R.string.ok,
+								new AlertDialog.OnClickListener()
+						{
+							public void onClick(DialogInterface dialog, int which) { }
+						})
+						.setCancelable(true)
+						.create()
+						.show();
+					}
+				}
+			}
 		}
 	}
 

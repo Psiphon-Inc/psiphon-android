@@ -15,6 +15,7 @@
 
 package org.zirco.model.items;
 
+import java.io.File;
 import java.util.Random;
 
 import org.zirco.R;
@@ -22,6 +23,7 @@ import org.zirco.events.EventConstants;
 import org.zirco.events.EventController;
 import org.zirco.ui.activities.DownloadsListActivity;
 import org.zirco.ui.runnables.DownloadRunnable;
+import org.zirco.utils.IOUtils;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -64,7 +66,6 @@ public class DownloadItem {
 		mUrl = url;
 		mFileName = mUrl.substring(mUrl.lastIndexOf("/") + 1);
 		
-		// PSIPHON: Fix Zirco crash when download file path has no query paramters
 		int queryParamStart = mFileName.indexOf("?");
 		if (queryParamStart > 0) {
 		    mFileName = mFileName.substring(0, queryParamStart);
@@ -98,6 +99,10 @@ public class DownloadItem {
 	 */
 	public String getFileName() {
 		return mFileName;
+	}
+	
+	public String getFilePath() {
+		return IOUtils.getDownloadFolder().getAbsolutePath() + File.separator + mFileName;
 	}
 	
 	/**
