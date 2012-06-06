@@ -65,11 +65,10 @@ public class DownloadRunnable implements Runnable {
 	private String getFileNameFromUrl() {
 		String fileName = mParent.getUrl().substring(mParent.getUrl().lastIndexOf("/") + 1);
 		
-        // PSIPHON: Fix Zirco crash when download file path has no query paramters
-        int queryParamStart = fileName.indexOf("?");
-        if (queryParamStart > 0) {
-            fileName = fileName.substring(0, queryParamStart);
-        }
+		int queryParamStart = fileName.indexOf("?");
+		if (queryParamStart > 0) {
+		    fileName = fileName.substring(0, queryParamStart);
+		}
 		
 		return fileName;
 	}

@@ -1,9 +1,9 @@
-Psiphon Browser Changelog:
-
-Version 1:
-- Initial release
-
-Zirco Browser Changelog:
+0.4.4:
+- Close last tab now return to home page (thanks to Martin).
+- Downloaded files can now be open from the download list.
+- Fix download error when url contains a "?".
+- Spanish translation (thanks to Isaac L. and Franky D.).
+- Brazilian Portuguese translation (thanks to Cynthia R., Jéssica B. and Thales A.).
 
 0.4.3:
 - Much better handling of Youtube videos.
