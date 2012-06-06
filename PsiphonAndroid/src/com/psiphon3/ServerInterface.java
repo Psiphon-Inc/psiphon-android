@@ -647,7 +647,7 @@ public class ServerInterface
     {
         private X509Certificate expectedServerCertificate;
         
-        // TODO: parse cert in addServerEntry?
+        // TODO: pre-validate cert in addServerEntry so this won't throw?
         CustomTrustManager(String serverCertificate) throws CertificateException
         {
             CertificateFactory factory = CertificateFactory.getInstance("X.509");

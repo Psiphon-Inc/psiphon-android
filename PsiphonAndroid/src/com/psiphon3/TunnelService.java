@@ -362,7 +362,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 
             // TODO: This prints too much info -- the stack trace, but also IP
             // address (not sure if we want to obscure that or not...) 
-            MyLog.e(R.string.error_message, e);
+            //MyLog.e(R.string.error_message, e);
             MyLog.e(R.string.ssh_connection_failed);
         }
         catch (TunnelServiceUnexpectedDisconnect e)
@@ -499,7 +499,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 MyLog.w(R.string.stopping_tunnel);
                 
                 // Override UNEXPECTED_DISCONNECT
-                // TODO: race condition
+                // TODO: race condition?
                 m_signalQueue.clear();
                 m_signalQueue.offer(Signal.STOP_SERVICE);
 
