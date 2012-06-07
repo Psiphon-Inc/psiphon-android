@@ -33,4 +33,7 @@ public interface EmbeddedValues
         "https://s3.amazonaws.com/invalid_bucket_name/server_entries";
 
     final String REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY = "";
+
+    // NOTE: Info link may be opened when not tunneled
+    final String INFO_LINK_URL = "https://sites.google.com/a/psiphon3.com/psiphon3/";
 }
