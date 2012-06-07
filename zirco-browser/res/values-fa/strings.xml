@@ -148,7 +148,7 @@
     <string name="PreferencesActivity.AdBlockerWhiteListPreferenceTitle">لیست سفید</string>
     <string name="PreferencesActivity.AdBlockerWhiteListPreferenceSummary">مدیریت مسدود کننده تبلیغات لیست سفید</string>
 
-    <string name="Commons.Ok">Ok</string>
+    <string name="Commons.Ok">باشه</string>
     <string name="Commons.Cancel">لغو</string>
     <string name="Commons.PleaseWait">لطفا صبر کنید</string>
     <string name="Commons.Yes">بله</string>
@@ -166,7 +166,7 @@
     <string name="Commons.SDCardErrorTitle">کارت اس دی در دسترس نیست</string>
     <string name="Commons.SDCardErrorNoSDMsg">کارت اس دی پیدا نشود</string>
     <string name="Commons.SDCardErrorSDUnavailable">کارت اس دی در دسترس نیست</string>
-    <string name="Commons.Close">Close</string>
+    <string name="Commons.Close">ببند</string>
 
     <string name="DATE_FORMAT_ISO8601">yyyy-MM-dd\'T\'HH:mm:ss.SSS</string>
 
@@ -314,7 +314,7 @@
       <item>ON</item>
     </string-array>
 
-    <string name="Commons.Continue">Continue</string>
+    <string name="Commons.Continue">ادامه</string>
 
     <string name="Commons.SslWarning">هشدار امنیتی</string>
     <string name="Commons.SslWarningsHeader">مشکلات با گواهی نامه امنیتی برای این سایت وجود دارد.</string>
