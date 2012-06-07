@@ -33,7 +33,7 @@
     <string name="exit">خروج</string>
     <string name="open_browser">مرورگر </string>
     <string name="browser_task_label">مرورگر سایفون</string>
-    <string name="client_version">نسخه کارخواه </string>
+    <string name="client_version">نسخه کارخواه %s</string>
     <string name="no_server_entries">هیچ سروری برای ارتباط موجود نیست</string>
     <string name="UpgradeManager.CanNotRetrievePackageInfo">بازیابی اطلاعات بسته برای برنامه جاری امکان پذیر نیست  </string>
     <string name="UpgradeManager.UpgradeFileWriteFailed">خطا در نوشتن فایل ارتقا</string>
