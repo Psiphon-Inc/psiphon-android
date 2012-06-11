@@ -2287,50 +2287,77 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 	 */
     @SuppressWarnings("unchecked")
 	private List<String> findEquivalentUrls(
-	        int proxyPort, 
-	        String userAgentString, 
-	        String url) 
+	        final int proxyPort, 
+	        final String userAgentString, 
+	        final String url) 
 	{
         List<String> uriStrings = new ArrayList<String>();
         uriStrings.add(url);
 
-        HttpParams params = new BasicHttpParams();
-        HttpConnectionParams.setConnectionTimeout(params, 5000);
-        HttpConnectionParams.setSoTimeout(params, 5000);
-        HttpHost httpproxy = new HttpHost("localhost", proxyPort);
-        params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
-        DefaultHttpClient client = new DefaultHttpClient(params);
-        HttpContext context = new BasicHttpContext();
-        HttpRequestBase request = new HttpHead(url);
-        request.setHeader("User-Agent", userAgentString);
-        
-        Set<URI> uris = null;
-        
+        // Hack around android.os.NetworkOnMainThreadException restriction.
+        // Still blocks the main thread!
+
+        class RedirectRequest implements Runnable
+        {
+            Set<URI> uris = null;
+            
+            public Set<URI> getUris()
+            {
+                return this.uris;
+            }
+            
+            public void run()
+            {
+                try
+                {
+                    HttpParams params = new BasicHttpParams();
+                    HttpConnectionParams.setConnectionTimeout(params, 5000);
+                    HttpConnectionParams.setSoTimeout(params, 5000);
+                    HttpHost httpproxy = new HttpHost("localhost", proxyPort);
+                    params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
+                    DefaultHttpClient client = new DefaultHttpClient(params);
+                    HttpContext context = new BasicHttpContext();
+                    HttpRequestBase request = new HttpHead(url);
+                    request.setHeader("User-Agent", userAgentString);
+                    
+                    client.execute(request, context);
+                
+                    // Clean up the request.
+                    request.abort();
+                    
+                    // The context holds info about the redirections that occurred.
+                    RedirectLocations redirectLocations = (RedirectLocations)context.getAttribute("http.protocol.redirect-locations");
+                    
+                    if (redirectLocations != null)
+                    {
+                        // In Android's org.apache.http version, there's no way to 
+                        // access `redirectLocations.uris`, so we'll have to use reflection
+                        // to get at the private variable.
+                        Field field;
+                        field = redirectLocations.getClass().getDeclaredField("uris");
+                        field.setAccessible(true);
+                        this.uris = (Set<URI>)field.get(redirectLocations);
+                    }
+                } 
+                catch (Exception e)
+                {
+                    // pass
+                }
+            }
+        }
+        RedirectRequest redirectRequest = new RedirectRequest();
+        Thread thread = new Thread(redirectRequest);
+        thread.start();
         try
         {
-            client.execute(request, context);
-        
-            // Clean up the request.
-            request.abort();
-            
-            // The context holds info about the redirections that occurred.
-            RedirectLocations redirectLocations = (RedirectLocations)context.getAttribute("http.protocol.redirect-locations");
-            
-            if (redirectLocations != null)
-            {
-                // In Android's ghetto org.apache.http version, there's no way to 
-                // access `redirectLocations.uris`, so we'll have to use reflection
-                // to get at the private variable.
-                Field field;
-                field = redirectLocations.getClass().getDeclaredField("uris");
-                field.setAccessible(true);
-                uris = (Set<URI>)field.get(redirectLocations);
-            }
+            thread.join();
         } 
-        catch (Exception e)
+        catch (InterruptedException e)
         {
             // pass
         }
+
+        Set<URI> uris = redirectRequest.getUris();
         
         // Add in the redirected URIs we've found.
         if (uris != null && uris.size() > 0) 
