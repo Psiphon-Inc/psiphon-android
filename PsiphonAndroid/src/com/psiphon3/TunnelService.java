@@ -498,12 +498,20 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             {
                 MyLog.w(R.string.stopping_tunnel);
                 
-                // Override UNEXPECTED_DISCONNECT
-                // TODO: race condition?
+                // Override UNEXPECTED_DISCONNECT; TODO: race condition?
                 m_signalQueue.clear();
                 m_signalQueue.offer(Signal.STOP_SERVICE);
 
                 // Tell the ServerInterface to stop (e.g., kill requests).
+
+                // Currently, all requests are run in the context of the
+                // tunnel thread; m_interface.outstandingRequests is not
+                // a work queue, it's just a way for another thread to
+                // reference the requests and invoke .abort(). Any
+                // request that should not abort when the tunnel thread
+                // should shut down should be omitted from the
+                // outstandingRequests list.
+
                 m_interface.stop();
                 
                 m_tunnelThread.join();

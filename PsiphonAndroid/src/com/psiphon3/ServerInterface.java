@@ -319,7 +319,7 @@ public class ServerInterface
             
             String url = getRequestURL("handshake", extraParams);
             
-            byte[] response = makeProxiedPsiphonRequest(url);
+            byte[] response = makeAbortableProxiedPsiphonRequest(url);
 
             final String JSON_CONFIG_PREFIX = "Config: ";
             for (String line : new String(response).split("\n"))
@@ -404,7 +404,7 @@ public class ServerInterface
         
         String url = getRequestURL("connected", extraParams);
         
-        makeProxiedPsiphonRequest(url);
+        makeAbortableProxiedPsiphonRequest(url);
     }
 
     /**
@@ -470,7 +470,22 @@ public class ServerInterface
         List<Pair<String,String>> additionalHeaders = new ArrayList<Pair<String,String>>();
         additionalHeaders.add(Pair.create("Content-Type", "application/json"));
         
-        makeProxiedPsiphonRequest(url, additionalHeaders, requestBody);
+        if (connected)
+        {
+            makeAbortableProxiedPsiphonRequest(url, additionalHeaders, requestBody);            
+        }
+        else
+        {
+            // The final status request is not abortable and will fail over
+            // to non-tunnel HTTPS and alternate ports. This is to maximize
+            // our chance of getting stats for session duration.
+            
+            String urls[] = new String[2];
+            urls[0] = url;
+            urls[1] = getRequestURL(false, "status", extraParams);
+
+            makePsiphonRequestWithFailover(urls, additionalHeaders, requestBody);
+        }
     }
 
     synchronized public void doSpeedRequest(String operation, String info, Integer milliseconds, Integer size) 
@@ -485,7 +500,7 @@ public class ServerInterface
         
         String url = getRequestURL("speed", extraParams);
         
-        makeProxiedPsiphonRequest(url);
+        makeAbortableProxiedPsiphonRequest(url);
     }
 
     /**
@@ -497,7 +512,7 @@ public class ServerInterface
     {
         String url = getRequestURL("download", null);
         
-        return makeProxiedPsiphonRequest(url);
+        return makeAbortableProxiedPsiphonRequest(url);
     }
     
     synchronized public void doFailedRequest(String error) 
@@ -508,7 +523,7 @@ public class ServerInterface
         
         String url = getRequestURL("failed", extraParams);
         
-        makeProxiedPsiphonRequest(url);
+        makeAbortableProxiedPsiphonRequest(url);
     }
 
     synchronized public void fetchRemoteServerList()
@@ -578,7 +593,31 @@ public class ServerInterface
      * @return  The full URL for the request.
      */
     private String getRequestURL(
-                    String path, 
+            String path,
+            List<Pair<String,String>> extraParams)
+    {
+        return getRequestURL(true, path, extraParams);
+    }
+
+    /**
+     * Helper function for constructing request URLs. The request parameters it
+     * supplies are: client_session_id, propagation_channel_id, sponsor_id, 
+     * client_version, server_secret.
+     * Any additional parameters must be provided in extraParams.
+     * @param useServerEntryWebServerPort  true: use server entry port 
+     *              false: use standard HTTPS port 443
+     * @param path  The path for the request; this is typically the name of the 
+     *              request command; e.g. "connected". Do not use a leading slash.
+     * @param extraParams  Additional parameters that should be included in the 
+     *                     request. Can be null. The parameters values *must not*
+     *                     be already URL-encoded. Note that this is a List of 
+     *                     Pairs rather than a Map because there may be entries
+     *                     with duplicate "keys".
+     * @return  The full URL for the request.
+     */
+    private String getRequestURL(
+                    boolean useServerEntryWebServerPort,
+                    String path,
                     List<Pair<String,String>> extraParams)
     {
         ServerEntry serverEntry = getCurrentServerEntry();
@@ -587,7 +626,9 @@ public class ServerInterface
         StringBuilder url = new StringBuilder();
         
         url.append("https://").append(serverEntry.ipAddress)
-           .append(":").append(serverEntry.webServerPort)
+           .append(":").append(useServerEntryWebServerPort ?
+                   serverEntry.webServerPort :
+                   PsiphonConstants.DEFAULT_WEB_SERVER_PORT)
            .append("/").append(path)
            .append("?client_session_id=").append(Utils.urlEncode(clientSessionID))
            .append("&server_secret=").append(Utils.urlEncode(serverEntry.webServerSecret))
@@ -610,13 +651,57 @@ public class ServerInterface
         return url.toString();
     }
 
-    private byte[] makeProxiedPsiphonRequest(String url)
+    private byte[] makeAbortableProxiedPsiphonRequest(String url)
             throws PsiphonServerInterfaceException
     {
-        return makeProxiedPsiphonRequest(url, null, null);
+        return makeAbortableProxiedPsiphonRequest(url, null, null);
+    }
+    
+    private byte[] makePsiphonRequestWithFailover(
+            String[] urls,
+            List<Pair<String,String>> additionalHeaders,
+            byte[] body) 
+        throws PsiphonServerInterfaceException
+    {
+        // This request won't abort and will fail over to direct requests,
+        // to multiple ports, when tunnel is down            
+
+        PsiphonServerInterfaceException lastError;
+        
+        try
+        {
+            // Try tunneled request on first port (first url)
+            
+            return makeProxiedPsiphonRequest(false, urls[0], additionalHeaders, body);
+        }
+        catch (PsiphonServerInterfaceException e1)
+        {
+            lastError = e1;
+
+            // NOTE: deliberately ignoring this.stopped and adding new non-abortable requests
+
+            // Try direct non-tunnel request
+
+            for (String url : urls)
+            {
+                try
+                {
+                    return makeRequest(false, false, null, url, additionalHeaders, body);
+                }
+                catch (PsiphonServerInterfaceException e2)
+                {
+                    lastError = e2;
+
+                    // Try next port/url...
+                }
+            }
+            
+            throw lastError;
+        }
     }
     
     private byte[] makeProxiedPsiphonRequest(
+            boolean canAbort,
             String url,
             List<Pair<String,String>> additionalHeaders,
             byte[] body) 
@@ -630,6 +715,7 @@ public class ServerInterface
         boolean useLocalProxy = true;
 
         return makeRequest(
+                true,
                 useLocalProxy,
                 psiphonServerCertificate,
                 url,
@@ -637,10 +723,19 @@ public class ServerInterface
                 body);
     }
 
+    private byte[] makeAbortableProxiedPsiphonRequest(            
+            String url,
+            List<Pair<String,String>> additionalHeaders,
+            byte[] body) 
+        throws PsiphonServerInterfaceException
+    {
+        return makeProxiedPsiphonRequest(true, url, additionalHeaders, body);
+    }
+
     private byte[] makeDirectWebRequest(String url)
             throws PsiphonServerInterfaceException
     {
-        return makeRequest(false, null, url, null, null);
+        return makeRequest(true, false, null, url, null, null);
     }
 
     private class CustomTrustManager implements X509TrustManager
@@ -721,6 +816,7 @@ public class ServerInterface
     }
 
     private byte[] makeRequest(
+            boolean canAbort,
             boolean useLocalProxy,
             String serverCertificate,
             String url,
@@ -780,9 +876,12 @@ public class ServerInterface
                 request = new HttpGet(url);
             }
             
-            synchronized(this.outstandingRequests)
+            if (canAbort)
             {
-                this.outstandingRequests.add(request);
+                synchronized(this.outstandingRequests)
+                {
+                    this.outstandingRequests.add(request);
+                }
             }
             
             if (additionalHeaders != null)
@@ -856,7 +955,7 @@ public class ServerInterface
         }
         finally
         {
-            if (request != null)
+            if (request != null && canAbort)
             {
                 synchronized(this.outstandingRequests)
                 {
