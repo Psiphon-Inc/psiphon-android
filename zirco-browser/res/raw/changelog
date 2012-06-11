@@ -1,3 +1,10 @@
+Psiphon Browser Changelog:
+
+Version 1:
+- Initial release
+
+Zirco Browser Changelog:
+
 0.4.4:
 - Close last tab now return to home page (thanks to Martin).
 - Downloaded files can now be open from the download list.
