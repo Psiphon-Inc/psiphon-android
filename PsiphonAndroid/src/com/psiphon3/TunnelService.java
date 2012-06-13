@@ -237,6 +237,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     
     private boolean runTunnelOnce() throws InterruptedException
     {
+        m_interface.start();
+        
         // Generate a new client session ID to be included with all subsequent web requests
         // It's also included with the SSH login, for GeoIP region lookup on the server-side
         m_interface.generateNewCurrentClientSessionID();
@@ -394,6 +396,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         }
         finally
         {
+            // Abort any outstanding HTTP requests.
+            // Currently this would only be the upgrade download request.
+            // Otherwise the call below to m_upgradeDownloader.stop() would block.
+            m_interface.stop();
+            
             if (socks != null)
             {
                 try
@@ -477,8 +484,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 
         setState(State.CONNECTING);
         
-        m_interface.start();
-
         // Only allow 1 signal at a time. A backlog of signals will break the retry loop.
         m_signalQueue = new ArrayBlockingQueue<Signal>(1);
 
