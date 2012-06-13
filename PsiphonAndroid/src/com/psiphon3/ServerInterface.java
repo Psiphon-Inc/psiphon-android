@@ -82,6 +82,7 @@ import com.psiphon3.Utils.MyLog;
 
 import android.content.Context;
 import android.os.SystemClock;
+import android.util.Log;
 import android.util.Pair;
 
 
@@ -282,20 +283,15 @@ public class ServerInterface
         }
     }
     
-    synchronized private void generateNewCurrentClientSessionID()
+    synchronized public void generateNewCurrentClientSessionID()
     {
         byte[] clientSessionIdBytes = Utils.generateInsecureRandomBytes(PsiphonConstants.CLIENT_SESSION_ID_SIZE_IN_BYTES);
         this.clientSessionID = Utils.byteArrayToHexString(clientSessionIdBytes);
-        MyLog.d("generated new current client session ID");
     }
     
-    synchronized private String getCurrentClientSessionID()
+    synchronized public String getCurrentClientSessionID()
     {
-        if (this.clientSessionID == null)
-        {
-            generateNewCurrentClientSessionID();
-        }
-        
+        assert(this.clientSessionID != null);
         return this.clientSessionID;
     }
     

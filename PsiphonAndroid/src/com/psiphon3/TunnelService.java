@@ -237,6 +237,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     
     private boolean runTunnelOnce() throws InterruptedException
     {
+        // Generate a new client session ID to be included with all subsequent web requests
+        // It's also included with the SSH login, for GeoIP region lookup on the server-side
+        m_interface.generateNewCurrentClientSessionID();
+        
         ServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
 
         if (entry == null)
@@ -266,8 +270,12 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 
             checkSignals(0);
 
+            // Client transmits its session ID prepended to the SSH password; the server
+            // uses this to associate the tunnel with web requests -- for GeoIP region stats
+            String sshPassword = m_interface.getCurrentClientSessionID() + entry.sshPassword;
+
             MyLog.i(R.string.ssh_authenticating);
-            boolean isAuthenticated = conn.authenticateWithPassword(entry.sshUsername, entry.sshPassword);
+            boolean isAuthenticated = conn.authenticateWithPassword(entry.sshUsername, sshPassword);
             if (isAuthenticated == false)
             {
                 MyLog.e(R.string.ssh_authentication_failed);
