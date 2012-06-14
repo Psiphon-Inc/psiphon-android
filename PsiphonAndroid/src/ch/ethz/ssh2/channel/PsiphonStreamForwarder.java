@@ -478,7 +478,7 @@ public class PsiphonStreamForwarder extends Thread
                                     && (contentType.contains("text/html")
                                         || contentType.contains("application/xhtml+xml")))
                                 {
-                                    stats.upsertPageView(this.destHost+requestURI);
+                                    stats.upsertPageView("http://"+this.destHost+requestURI);
                                 }
                             }
     

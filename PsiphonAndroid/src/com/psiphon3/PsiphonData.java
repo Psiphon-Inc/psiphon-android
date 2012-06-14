@@ -163,7 +163,7 @@ public class PsiphonData
 	            }
 	        }
 	            
-	        if (storeEntry.length() == 0) return;
+            if (storeEntry.length() == 0) return;
 	        
 	        // Add/increment the entry.
 	        Integer prevCount = this.m_pageViewEntries.get(storeEntry);
