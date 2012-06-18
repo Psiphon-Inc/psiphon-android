@@ -459,11 +459,16 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             try
             {
                 // TODO: move to background thread...?
+                m_interface.start();
                 m_interface.fetchRemoteServerList();
             }
             catch (PsiphonServerInterfaceException requestException)
             {
                 MyLog.w(R.string.TunnelService_FetchRemoteServerListFailed, requestException);
+            }
+            finally
+            {
+                m_interface.stop();
             }
 
             // 1-2 second delay before retrying
