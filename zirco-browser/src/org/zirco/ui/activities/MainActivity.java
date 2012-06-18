@@ -79,6 +79,7 @@ import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -1014,8 +1015,16 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 		        return mVideoProgressView;
 			}
 			
+			@Override
 			public void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback) {
+			    super.onShowCustomView(view, callback);
 				showCustomView(view, callback);
+		    }
+			
+			@Override
+		    public void onShowCustomView(View view, int requestedOrientation, CustomViewCallback callback) {
+			     super.onShowCustomView(view, requestedOrientation, callback);
+			    showCustomView(view, callback);
 		    }
 			
 			@Override
