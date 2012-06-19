@@ -95,6 +95,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowManager;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
@@ -219,6 +220,8 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 	private FrameLayout mFullscreenContainer;	
 	
     private WebChromeClient.CustomViewCallback mCustomViewCallback;
+    
+    private int mOriginalOrientation;
 	
 	private enum SwitchTabsMethod {
 		BUTTONS,
@@ -1018,14 +1021,14 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 			@Override
 			public void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback) {
 			    super.onShowCustomView(view, callback);
-				showCustomView(view, callback);
-		    }
-			
+			    showCustomView(view, -1, callback);
+			}
+
 			@Override
-		    public void onShowCustomView(View view, int requestedOrientation, CustomViewCallback callback) {
-			     super.onShowCustomView(view, requestedOrientation, callback);
-			    showCustomView(view, callback);
-		    }
+			public void onShowCustomView(View view, int requestedOrientation, CustomViewCallback callback) {
+			    super.onShowCustomView(view, requestedOrientation, callback);
+			    showCustomView(view, requestedOrientation, callback);
+			}
 			
 			@Override
 			public void onHideCustomView() {
@@ -2064,34 +2067,64 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 		}
 	}
 	
-	private void showCustomView(View view, WebChromeClient.CustomViewCallback callback) {
+	private void setFullscreen(boolean enabled) {
+        Window win = MainActivity.this.getWindow();
+        WindowManager.LayoutParams winParams = win.getAttributes();
+        final int bits = WindowManager.LayoutParams.FLAG_FULLSCREEN;
+        if (enabled) {
+            winParams.flags |=  bits;
+            if (mCustomView != null) {
+                mCustomView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE);
+            } else {
+                //mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE);
+            }
+        } else {
+            winParams.flags &= ~bits;
+            if (mCustomView != null) {
+                mCustomView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+            } else {
+                //mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+            }
+        }
+        win.setAttributes(winParams);
+    }
+
+	
+	private void showCustomView(View view, int requestedOrientation, WebChromeClient.CustomViewCallback callback) {
         // if a view already exists then immediately terminate the new one
         if (mCustomView != null) {
             callback.onCustomViewHidden();
             return;
         }
 
-        MainActivity.this.getWindow().getDecorView();
-        
-        FrameLayout decor = (FrameLayout) getWindow().getDecorView();
+        if (requestedOrientation == -1) {
+            requestedOrientation = MainActivity.this.getRequestedOrientation();
+        }
+
+        mOriginalOrientation = MainActivity.this.getRequestedOrientation();
+        FrameLayout decor = (FrameLayout) MainActivity.this.getWindow().getDecorView();
         mFullscreenContainer = new FullscreenHolder(MainActivity.this);
         mFullscreenContainer.addView(view, COVER_SCREEN_PARAMS);
         decor.addView(mFullscreenContainer, COVER_SCREEN_PARAMS);
         mCustomView = view;
-        setStatusBarVisibility(false);
+        setFullscreen(true);
         mCustomViewCallback = callback;
+        MainActivity.this.setRequestedOrientation(requestedOrientation);
     }
 	
 	private void hideCustomView() {
 		if (mCustomView == null)
             return;
 		
-		setStatusBarVisibility(true);
-        FrameLayout decor = (FrameLayout) getWindow().getDecorView();
+		
+		setFullscreen(false);
+        FrameLayout decor = (FrameLayout) MainActivity.this.getWindow().getDecorView();
         decor.removeView(mFullscreenContainer);
         mFullscreenContainer = null;
         mCustomView = null;
         mCustomViewCallback.onCustomViewHidden();
+        // Show the content view.
+        MainActivity.this.setRequestedOrientation(mOriginalOrientation);
 	}
 	
 	/**

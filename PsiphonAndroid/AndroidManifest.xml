@@ -33,7 +33,7 @@
             android:name="org.zirco.ui.activities.MainActivity"
             android:label="@string/browser_task_label"
             android:launchMode="singleTask"
-            android:configChanges="keyboardHidden|orientation"
+            android:configChanges="keyboardHidden|orientation|screenSize"
             android:taskAffinity=":PsiphonBrowserTask"
             android:theme="@android:style/Theme.DeviceDefault.Light.DarkActionBar"
             android:exported="false">
