@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">برنامج Psiphon 3</string>
+    <string name="about">حول برنامج Psiphon 3</string>
+    <string name="banner_desc">شعار الشركة الراعية؛ انقر لزيارة الصفحة الرئيسية للشركة الراعية</string>
+    <string name="start_desc">الاتصال ببرنامج Psiphon؛ انقر للاتصال</string>
+    <string name="message_image_success_desc">أيقونة تشير إلى رسالة نجاح</string><string name="message_image_error_desc">أيقونة تشير إلى رسالة خطأ</string><string name="message_image_debug_desc">أيقونة تشير إلى رسالة تصحيح الخطأ</string><string name="message_image_warning_desc">أيقونة تشير إلى رسالة تحذير</string>
+    <string name="psiphon_service_notification_id">إعلام خدمة Psiphon</string>
+    <string name="psiphon_service_notification_message">جاري تشغيل برنامج Psiphon 3...</string>
+    <string name="ssh_connecting">جاري اتصال بروتوكول القشرة الآمنة (SSH)...</string>
+    <string name="ssh_connected">تم اتصال بروتوكول القشرة الآمنة (SSH)</string><string name="ssh_connection_failed">فشل اتصال بروتوكول القشرة الآمنة (SSH)</string>
+    <string name="ssh_authenticating">تتم الآن مصادقة بروتوكول القشرة الآمنة (SSH)...</string>
+    <string name="ssh_authentication_failed">فشل مصادقة بروتوكول القشرة الآمنة (SSH)</string>
+    <string name="ssh_authenticated">تمت مصادقة بروتوكول القشرة الآمنة (SSH)</string>
+    <string name="socks_starting">جاري بدء تشغيل بروتوكول SOCKS...</string>
+    <string name="socks_running">بروتوكول SOCKS قيد التشغيل</string>
+    <string name="socks_stopped">توقف بروتوكول SOCKS عن العمل</string>
+    <string name="ssh_stopped">توقف بروتوكول القشرة الآمنة (SSH) عن العمل</string>
+    <string name="error_message">حدث خطأ: </string>
+    <string name="http_proxy_starting">جاري بدء تشغيل وكيل HTTP...</string>
+    <string name="http_proxy_running">وكيل HTTP قيد التشغيل</string>
+    <string name="http_proxy_stopped">توقف وكيل HTTP عن العمل</string>
+    <string name="http_proxy_stopped_unexpectedly">توقف وكيل HTTP عن العمل بشكل غير متوقع</string>
+    <string name="ServerInterface.FailedToCreateServerEntries">فشل إنشاء مدخلات الخادم للتخزين.</string>
+    <string name="ServerInterface.FailedToStoreServerEntries">فشل تخزين مدخلات الخادم.</string>
+    <string name="ServerInterface.FailedToReadStoredServerEntries">فشل قراءة مدخلات الخادم المخزنة.</string>
+    <string name="ServerInterface.FailedToParseStoredServerEntries">فشل توزيع مدخلات الخادم المخزنة.</string>
+    <string name="ServerInterface.FailedToParseEmbeddedServerEntries">فشل توزيع مدخلات الخادم المُضمنة.</string>
+    <string name="ServerInterface.FailedToParseHandshake">فشل توزيع تأكيد الاتصال.</string>
+    <string name="PsiphonAndroidService.HandshakeRequestFailed">فشل طلب تأكيد الاتصال.</string>
+    <string name="PsiphonAndroidService.ConnectedRequestFailed">فشل طلب متصل.</string>
+    <string name="ssh_disconnected_unexpectedly">تم قطع اتصال بروتوكل القشرة الآمنة (SSH) بشكل غير متوقع</string>
+    <string name="exit">خروج</string>
+    <string name="open_browser">فتح المستعرض</string>
+    <string name="browser_task_label">مستعرض برنامج Psiphon 3</string>
+    <string name="client_version">إصدار العميل %s</string>
+    <string name="no_server_entries">لا توجد خوادم كي يتم الاتصال بها</string>
+    <string name="UpgradeManager.CanNotRetrievePackageInfo">يتعذر استرجاع معلومات الحزمة للتطبيق الحالي</string>
+    <string name="UpgradeManager.UpgradeFileWriteFailed">فشل كتابة ملف الترقية</string>
+    <string name="UpgradeManager.UpgradeDownloadFailed">فشل تنزيل الترقية</string>
+    <string name="UpgradeManager.UpgradeDownloaded">تم تنزيل الترقية. سيتم تثبيته عند بدء تشغيل التطبيق في المرة المقبلة.</string>
+    <string name="UpgradeManager.CannotExtractUpgradePackageInfo">فشل الترقية. تعذر استخراج معلومات الحزمة من ملف الترقية.</string>
+    <string name="UpgradeManager.UpgradeFileNotFound">لم يتم العثور على ملف الترقية</string>
+    <string name="ServerInterface.InvalidRemoteServerList">قائمة الخادم البعيد غير صالحة</string>
+    <string name="TunnelService.FetchRemoteServerListFailed">فشل إحضار قائمة الخادم البعيد</string>
+    <string name="ServerEntryAuth.WrongPublicKey">تم توقيع مدخل الخادم البعيد باستخدام مفتاح عام مختلف</string>
+    <string name="ServerEntryAuth.InvalidSignature">توقيع غير صالح بمدخل الخادم البعيد</string>
+    <string name="ServerEntryAuth.FailedToParseRemoteServerEntry">فشل توزيع مدخل الخادم البعيد</string>
+    <string name="UpgradeManager.UpgradePromptTitle">ترقية برنامج Psiphon</string>
+    <string name="UpgradeManager.UpgradePromptMessage">ترقية برنامج Psiphon 3 جاهزة للتثبيت. من المستحسن السماح بمتابعة الترقية في هذا الوقت.\n\nبعد الترقية، سيتوجب عليك تشغيل برنامج Psiphon 3 مرة أخرى.\n\nالترقية الآن؟</string>
+    <string name="starting_tunnel">جاري بدء تشغيل النفق...</string>
+    <string name="stopping_tunnel">جاري توقف النفق عن العمل...</string>
+    <string name="stopped_tunnel">توقف النفق عن العمل</string>
+    <string name="ServerInterface.StopRequested">تم طلب التوقف</string>
+    <string name="ServerInterface.HTTPSRequestFailed">فشل طلب HTTPS مع إصدار الخطأ: </string>
+
+</resources>

@@ -1,0 +1,537 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+   Zirco Browser for Android
+  
+   Copyright (C) 2010 - 2011 J. Devauchelle and contributors.
+ 
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License
+   version 3 as published by the Free Software Foundation.
+ 
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+ -->
+
+<resources>        
+    <string name="ApplicationName">مستعرض Psiphon</string>
+    <string name="ApplicationNameUrl">Psiphon - %s</string>
+    <string name="ApplicationDescription">إن مستعرض Psiphon هو مستعرض مفتوح المصدر لنظام التشغيل Android الذي يعتمد على المستعرض Zirco.</string>
+    
+    <string name="AboutActivity.Title">حول</string>
+        <string name="AboutActivity.VersionText">الإصدار:</string>
+        <string name="AboutActivity.UrlTextValue"></string>
+        <string name="AboutActivity.LicenseText">الترخيص:</string>
+        <string name="AboutActivity.LicenseTextValue">رخصة جنو العمومية (GPL) الإصدار 3</string>
+
+    <string name="Main.MenuAddBookmark">إضافة إشارة مرجعية</string>
+    <string name="Main.MenuShowBookmarks">الإشارات المرجعية</string>
+    <string name="Main.MenuShowHistory">المحفوظات</string>
+    <string name="Main.MenuShowDownloads">التنزيلات</string>
+    <string name="Main.MenuPreferences">التفضيلات</string>
+    <string name="Main.MenuOpen">فتح</string>
+    <string name="Main.MenuOpenNewTab">فتح في تبويب جديد</string>
+    <string name="Main.MenuDownload">تنزيل</string>   
+    <string name="Main.DownloadStartedMsg">بدء التنزيل.</string>
+    <string name="Main.DownloadFinishedMsg">اكتمال التنزيل.</string>
+    <string name="Main.DownloadErrorMsg">خطأ في التنزيل: %s</string>
+    <string name="Main.ToastTabSwitchMessage">تبويب %s</string>
+    <string name="Main.ToastTabSwitchFullMessage">%1$s: %2$s تبويب</string>
+    <string name="Main.VndErrorTitle">تعذر فتح عنوان url</string>
+    <string name="Main.VndErrorMessage">قد لا يكون لديك تطبيق يمكنه فتح عنوان url هذا: %s.</string>
+    
+    <string name="BookmarksListActivity.Title">مستعرض Psiphon - الإشارات المرجعية</string>
+    <string name="BookmarksListActivity.MenuSortMode">فرز حسب</string>
+    <string name="BookmarksListActivity.MenuAddBookmark">إضافة إشارة مرجعية</string>
+    <string name="BookmarksListActivity.Empty">لا توجد إشارات مرجعية</string>
+    <string name="BookmarksListActivity.MenuOpenInTab">فتح في تبويب جديد</string>
+    <string name="BookmarksListActivity.MenuEditBookmark">تحرير إشارة مرجعية</string>
+    <string name="BookmarksListActivity.MenuDeleteBookmark">حذف إشارة مرجعية</string>
+    <string name="BookmarksListActivity.AlphaSortMode">أبجدي</string>
+    <string name="BookmarksListActivity.RecentSortMode">الأحدث</string>
+    
+    <string name="EditBookmarkActivity.Title">تحرير إشارة مرجعية</string>
+    <string name="EditBookmarkActivity.TitleAdd">إضافة إشارة مرجعية</string>
+    <string name="EditBookmarkActivity.TitleLabel">الاسم:</string>
+    <string name="EditBookmarkActivity.UrlLabel">الموقع:</string>
+    
+    <string name="HistoryListActivity.Title">مستعرض Psiphon - المحفوظات</string>
+    <string name="HistoryListActivity.MenuOpenInTab">فتح في تبويب جديد</string>
+    <string name="HistoryListActivity.MenuDelete">حذف</string>
+    
+    <string name="DownloadListActivity.Title">مستعرض Psiphon - التنزيلات</string>
+    <string name="DownloadListActivity.Empty">لا توجد تنزيلات</string>
+    <string name="DownloadListActivity.Aborted">%s (تم الإلغاء)</string>
+    <string name="DownloadListActivity.Finished">%s (تم الانتهاء)</string>
+    
+    <string name="AdBlockerWhiteListActivity.Title">مستعرض Psiphon - القائمة البيضاء لأداة حظر الإعلانات</string>
+    <string name="AdBlockerWhiteListActivity.Empty">القائمة البيضاء فارغة.</string>
+    <string name="AdBlockerWhiteListActivity.AddMessage">إضافة إلى القائمة البيضاء</string>
+    <string name="AdBlockerWhiteListActivity.ClearMessage">مسح القائمة البيضاء</string>    
+    
+    <string name="PreferencesActivity.GeneralSettingsCategoryTitle">الإعدادات العامة</string>
+    <string name="PreferencesActivity.HomePagePreferenceTitle">الصفحة الرئيسية</string>
+    <string name="PreferencesActivity.HomePagePreferenceSummary">تحديد الصفحة الرئيسية الافتراضية الخاصة بك.</string>
+    <string name="PreferencesActivity.FullScreenPreferenceTitle">ملء الشاشة</string>
+    <string name="PreferencesActivity.FullScreenPreferenceSummary">عرض المستعرض في وضع ملء الشاشة (يحتاج إلى إعادة تشغيل التطبيق).</string>
+    <string name="PreferencesActivity.ShowToastOnTabSwitchPreferenceTitle">عرض تنبيه عند تبديل التبويب</string>
+    <string name="PreferencesActivity.ShowToastOnTabSwitchPreferenceSummary">إذا تم تحديده، سيظهر تنبيه صغير لفترة وجيزة عند التبديل بين التبويبات.</string>
+    
+    <string name="PreferencesActivity.BrowserSettingsCategoryTitle">إعدادات المستعرض</string>
+    <string name="PreferencesActivity.HistorySizePreferenceTitle">حجم المحفوظات</string>
+    <string name="PreferencesActivity.HistorySizePreferenceSummary">حجم المحفوظات بالأيام.</string>
+    <string name="PreferencesActivity.EnableJavascriptPreferenceTitle">تمكين JavaScript</string>
+    <string name="PreferencesActivity.EnableJavascriptPreferenceSummary">تمكين أو تعطيل JavaScript.</string>
+    <string name="PreferencesActivity.LoadImagesPreferenceTitle">تحميل الصور</string>
+    <string name="PreferencesActivity.LoadImagesPreferenceSummary">تمكين أو تعطيل تحميل الصور.</string>
+    
+    <string name="PreferencesActivity.PrivacyPreferenceTitle">إعدادات الخصوصية</string>
+    <string name="PreferencesActivity.PrivacyPreferenceSummary">إدارة إعدادات الخصوصية.</string>
+    
+    <string name="PreferencesActivity.EnableFormDataPreferenceTitle">حفظ بيانات النماذج</string>
+    <string name="PreferencesActivity.EnableFormDataPreferenceSummary">تمكين أو تعطيل حفظ بيانات النماذج.</string>
+    <string name="PreferencesActivity.EnablePasswordsPreferenceTitle">حفظ كلمات المرور</string>
+    <string name="PreferencesActivity.EnablePasswordsPreferenceSummary">تمكين أو تعطيل حفظ كلمات المرور.</string>
+    <string name="PreferencesActivity.EnableCookiesPreferenceTitle">السماح بملفات تعريف الارتباط (cookies)</string>
+    <string name="PreferencesActivity.EnableCookiesPreferenceSummary">تمكين أو تعطيل ملفات تعريف الارتباط (cookies).</string>
+    
+    <string name="PreferencesActivity.PrivacyClearHistoryTitle">مسح المحفوظات</string>
+    <string name="PreferencesActivity.PrivacyClearFormDataTitle">مسح بيانات النماذج</string>
+    <string name="PreferencesActivity.PrivacyClearCacheTitle">مسح ذاكرة التخزين المؤقتة (cache)</string>
+    <string name="PreferencesActivity.PrivacyClearCookiesTitle">مسح ملفات تعريف الارتباط (cookies)</string>
+    
+    <string name="PreferencesActivity.BarDurationPreferenceTitle">مدة عرض الأشرطة</string>
+    <string name="PreferencesActivity.BarDurationPreferenceSummary">مدة عرض أشرطة الأدوات.</string>
+    
+    <string name="PreferencesActivity.BarDuration1sec">ثانية واحدة</string>
+    <string name="PreferencesActivity.BarDuration2sec">ثانيتان</string>
+    <string name="PreferencesActivity.BarDuration3sec">3 ثوان</string>
+    <string name="PreferencesActivity.BarDuration4sec">4 ثوان</string>
+    <string name="PreferencesActivity.BarDuration5sec">5 ثوان</string>
+    <string-array name="BarDurationEntries">
+		<item>@string/PreferencesActivity.BarDuration1sec</item>
+		<item>@string/PreferencesActivity.BarDuration2sec</item>
+		<item>@string/PreferencesActivity.BarDuration3sec</item>
+		<item>@string/PreferencesActivity.BarDuration4sec</item>
+		<item>@string/PreferencesActivity.BarDuration5sec</item>
+	</string-array>
+	<string-array name="BarDurationValues">
+		<item>1000</item>
+		<item>2000</item>
+		<item>3000</item>
+		<item>4000</item>
+		<item>5000</item>
+	</string-array>
+        
+        <string name="PreferencesActivity.BubblePositionPreferenceTitle">موضع الفقاعة</string>
+    <string name="PreferencesActivity.BubblePositionPreferenceSummary">موضع "الفقاعة".</string>
+    
+    <string name="PreferencesActivity.BubbleRight">يمين</string>
+    <string name="PreferencesActivity.BubbleLeft">يسار</string>
+    <string name="PreferencesActivity.BubbleBoth">كلاهما</string>
+    <string-array name="BubblePositionEntries">
+		<item>@string/PreferencesActivity.BubbleRight</item>
+		<item>@string/PreferencesActivity.BubbleLeft</item>
+		<item>@string/PreferencesActivity.BubbleBoth</item>
+	</string-array>
+    <string-array name="BubblePositionValues">
+		<item>right</item>
+		<item>left</item>
+		<item>both</item>
+	</string-array>
+        
+        <string name="PreferencesActivity.AdBlockerSettingsCategoryTitle">إعدادات أداة حظر الإعلانات</string>
+        <string name="PreferencesActivity.EnableAdBlockerPreferenceTitle">تمكين أداة حظر الإعلانات</string>
+    <string name="PreferencesActivity.EnableAdBlockerPreferenceSummary">لن تعمل أداة حظر الإعلانات إذا لم يتم تمكين JavaScript.</string>
+    <string name="PreferencesActivity.AdBlockerWhiteListPreferenceTitle">القائمة البيضاء</string>
+    <string name="PreferencesActivity.AdBlockerWhiteListPreferenceSummary">إدارة القائمة البيضاء لأداة حظر الإعلانات.</string>
+    
+    <string name="Commons.Ok">موافق</string>
+    <string name="Commons.Cancel">إلغاء</string>
+    <string name="Commons.PleaseWait">يرجى الانتظار</string>
+    <string name="Commons.Yes">نعم</string>
+    <string name="Commons.No">لا</string>
+    <string name="Commons.NoUndoMessage">لا يمكن التراجع عن هذه العملية. هل ترغب في المتابعة؟</string>
+    <string name="Commons.JavaScriptDialog">مربع حوار JavaScript</string>
+    <string name="Commons.ClearHistory">مسح المحفوظات</string>
+    <string name="Commons.ClearingHistory">جاري مسح المحفوظات...</string>
+    <string name="Commons.ClearFormData">مسح بيانات النماذج</string>
+    <string name="Commons.ClearingFormData">جاري مسح بيانات النماذج...</string>
+    <string name="Commons.ClearCache">مسح ذاكرة التخزين المؤقتة (cache)</string>
+    <string name="Commons.ClearingCache">جاري مسح ذاكرة التخزين المؤقتة (cache)...</string>
+    <string name="Commons.ClearCookies">مسح ملفات تعريف الارتباط (cookies)</string>
+    <string name="Commons.ClearingCookies">جاري مسح ملفات تعريف الارتباط (cookies)...</string>
+    <string name="Commons.SDCardErrorTitle">بطاقة SD غير متوفرة</string>
+    <string name="Commons.SDCardErrorNoSDMsg">لم يتم العثور على بطاقة SD.</string>
+    <string name="Commons.SDCardErrorSDUnavailable">بطاقة SD غير متوفرة.</string>
+    <string name="Commons.Close">إغلاق</string>
+    
+    <string name="DATE_FORMAT_ISO8601">سنة-شهر-يوم\'T\'ساعة:دقيقة:ثانية.SSS</string>
+    
+    <!-- 0.3.1 -->
+    <string name="PreferencesActivity.AboutCategoryTitle">حول</string>
+    <string name="PreferencesActivity.AboutPreferenceTitle">حول</string>
+    <string name="PreferencesActivity.AboutPreferenceSummary">معلومات حول هذا التطبيق.</string>
+    
+    <!-- 0.3.2 -->
+    <string name="BookmarksListActivity.MostUsedSortMode">الأكثر استخداما</string>
+    <string name="PreferencesActivity.DefaultZoomPreferenceTitle">مستوى التكبير/التصغير الافتراضي</string>
+    <string name="PreferencesActivity.DefaultZoomPreferenceSummary">ضبط مستوى التكبير/التصغير الافتراضي.</string>
+    
+    <string name="PreferencesActivity.DefaultZoomClose">قريب</string>
+    <string name="PreferencesActivity.DefaultZoomMedium">متوسط</string>
+    <string name="PreferencesActivity.DefaultZoomFar">بعيد</string>
+    
+    <string-array name="DefaultZoomEntries">
+		<item>@string/PreferencesActivity.DefaultZoomClose</item>
+		<item>@string/PreferencesActivity.DefaultZoomMedium</item>
+		<item>@string/PreferencesActivity.DefaultZoomFar</item>
+	</string-array>
+    <string-array name="DefaultZoomValues">
+		<item>CLOSE</item>
+		<item>MEDIUM</item>
+		<item>FAR</item>
+	</string-array>
+
+        <string name="StartPage.Welcome">مرحباً!</string>
+        <string name="StartPage.Bookmarks">الإشارات المرجعية الأكثر استخداما</string>
+        <string name="StartPage.History">أحدث المحفوظات</string>
+        
+        <string name="ChangelogActivity.Title">سجل التغيير</string>       
+    <string name="PreferencesActivity.ChangelogPreferenceTitle">سجل التغيير</string>
+    <string name="PreferencesActivity.ChangelogPreferenceSummary">سجل التغيير لهذا التطبيق.</string>
+    
+    <string name="HomepagePreferenceActivity.Title">الصفحة الرئيسية</string>
+    <string name="HomepagePreferenceActivity.Prompt">الصفحة الرئيسية</string>
+    
+    <string name="PreferencesActivity.HomepageStart">الصفحة البدء</string>
+    <string name="PreferencesActivity.HomepageBlank">صفحة فارغة</string>
+    <string name="PreferencesActivity.HomepageCustom">صفحة مخصصة</string>
+    
+    <string-array name="HomepageValues">
+        <item>@string/PreferencesActivity.HomepageStart</item>
+        <item>@string/PreferencesActivity.HomepageBlank</item>
+        <item>@string/PreferencesActivity.HomepageCustom</item>
+    </string-array>
+    
+    <!-- 0.3.3 -->
+    <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=en&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
+    <string name="Constants.SearchUrlWikipedia">http://en.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
+    
+    <string name="PreferencesActivity.SearchUrlPreferenceTitle">عنوان url الخاص بالبحث</string>
+    <string name="PreferencesActivity.SearchUrlPreferenceSummary">تحديد عنوان url الخاص بالبحث.</string>
+    
+    <string name="SearchUrlPreferenceActivity.Title">عنوان url الخاص بالبحث</string>
+    <string name="SearchUrlPreferenceActivity.Prompt">عنوان url الخاص بالبحث</string>
+    
+    <string name="PreferencesActivity.SearchUrlGoogle">Google</string>
+    <string name="PreferencesActivity.SearchUrlWikipedia">Wikipedia</string>
+    <string name="PreferencesActivity.SearchUrlCustom">مخصص</string>
+    
+    <string-array name="SearchUrlValues">
+        <item>@string/PreferencesActivity.SearchUrlGoogle</item>
+        <item>@string/PreferencesActivity.SearchUrlWikipedia</item>
+        <item>@string/PreferencesActivity.SearchUrlCustom</item>
+    </string-array>
+    
+    <string name="StartPage.Search">بحث</string>
+    <string name="StartPage.SearchButton">انتقال</string>
+    
+    <string name="PreferencesActivity.StartPageCustomizationPreferenceTitle">تخصيص صفحة البدء</string>
+    <string name="PreferencesActivity.StartPageCustomizationPreferenceSummary">تخصيص صفحة البدء.</string>
+    <string name="PreferencesActivity.StartPageEnableSearchPreferenceTitle">عرض مربع البحث</string>
+    <string name="PreferencesActivity.StartPageEnableSearchPreferenceSummary">إذا تم تحديده، سيتم عرض مربع البحث.</string>
+    <string name="PreferencesActivity.StartPageEnableBookmarksPreferenceTitle">عرض الإشارات المرجعية الأكثر استخداما</string>
+    <string name="PreferencesActivity.StartPageEnableBookmarksPreferenceSummary">إذا تم تحديده، سيتم عرض الإشارات المرجعية الأكثر استخداماً.</string>
+    <string name="PreferencesActivity.StartPageEnableHistoryPreferenceTitle">عرض أحدث المحفوظات</string>
+    <string name="PreferencesActivity.StartPageEnableHistoryPreferenceSummary">إذا تم تحديده، سيتم عرض أحدث المحفوظات.</string>
+    <string name="PreferencesActivity.StartPageBookmarksLimitPreferenceTitle">عدد الإشارات المرجعية الأكثر استخداما</string>
+    <string name="PreferencesActivity.StartPageBookmarksLimitPreferenceSummary">عدد الإشارات المرجعية الأكثر استخداما المراد عرضها.</string>
+    <string name="PreferencesActivity.StartPageHistoryLimitPreferenceTitle">عدد أحدث عناصر المحفوظات</string>
+    <string name="PreferencesActivity.StartPageHistoryLimitPreferenceSummary">عدد أحدث عناصر المحفوظات المراد عرضها.</string>
+    
+    <string name="PreferencesActivity.UserAgentPreferenceTitle">عامل المستخدم</string>
+    <string name="PreferencesActivity.UserAgentPreferenceSummary">حدد عامل المستخدم المراد استخدامه.</string>
+    
+    <string name="UserAgentPreferenceActivity.Title">عامل المستخدم</string>
+    <string name="UserAgentPreferenceActivity.Prompt">عامل المستخدم</string>
+    
+    <string name="PreferencesActivity.UserAgentDefault">الافتراضي</string>
+    <string name="PreferencesActivity.UserAgentDesktop">سطح المكتب</string>
+    <string name="PreferencesActivity.UserAgentCustom">مخصص</string>
+    
+    <string-array name="UserAgentValues">
+        <item>@string/PreferencesActivity.UserAgentDefault</item>
+        <item>@string/PreferencesActivity.UserAgentDesktop</item>
+        <item>@string/PreferencesActivity.UserAgentCustom</item>
+    </string-array>
+    
+    <!-- 0.3.4 -->
+    <string name="Main.MenuCopyLinkUrl">نسخ عنوان url الخاص بالارتباط</string>
+    <string name="Main.MenuViewImage">عرض الصورة</string>
+    <string name="Main.MenuCopyImageUrl">"نسخ عنوان url الخاص بالصورة</string>
+    <string name="Main.MenuDownloadImage">تنزيل الصورة</string>
+    <string name="Main.MenuSendEmail">إرسال بريد إلكتروني</string>
+    <string name="Main.MenuCopyEmailUrl">نسخ عنوان url الخاص بالبريد الإلكتروني</string>
+    
+    <string name="Commons.UrlCopyToastMessage">تم نسخ عنوان Url إلى الحافظة.</string>
+    
+    <string name="DownloadNotification.DownloadStart">بدء التنزيل.</string>
+    <string name="DownloadNotification.DownloadInProgress">التنزيل قيد التقدم.</string>
+    <string name="DownloadNotification.DownloadComplete">اكتمال التنزيل.</string>
+    <string name="DownloadNotification.DownloadCanceled">تم إلغاء التنزيل.</string>
+    
+    <string name="BookmarksHistoryActivity.MenuCopyLinkUrl">نسخ عنوان url</string>
+    
+    <string name="PreferencesActivity.ClearCacheOnExitPreferenceTitle">مسح ذاكرة التخزين المؤقتة (cache) عند الخروج</string>
+    <string name="PreferencesActivity.ClearCacheOnExitPreferenceSummary">إذا تم تحديده، سيتم مسح ذاكرة التخزين المؤقتة (cache) عند الخروج من التطبيق.</string>
+    
+    <string name="PreferencesActivity.UIPreferenceTitle">إعدادات واجهة المستخدم</string>
+    <string name="PreferencesActivity.UIPreferenceSummary">تخصيص واجهة المستخدم.</string>
+    
+    <string name="Main.MenuExit">خروج</string>
+    
+    <string name="PreferencesActivity.RestartDialogTitle">مطلوب إعادة التشغيل</string>
+    <string name="PreferencesActivity.RestartDialogMessage">لن يدخل هذا التغيير حيز التنفيذ إلا بعد إعادة تشغيل التطبيق. هل ترغب في القيام بذلك الآن؟</string>
+    
+    <!-- 0.3.5 -->
+    <string name="PreferencesActivity.EnablePluginsTitle">تمكين المكونات الإضافية</string>
+    
+    <string name="PreferencesActivity.PluginsAlwaysOff">إيقاف التشغيل دائماً</string>
+    <string name="PreferencesActivity.PluginsOnDemand">حسب الطلب</string>
+    <string name="PreferencesActivity.PluginsAlwaysOn">التشغيل دائماً</string>
+    
+    <string-array name="PluginsEntries">
+		<item>@string/PreferencesActivity.PluginsAlwaysOff</item>
+		<item>@string/PreferencesActivity.PluginsOnDemand</item>
+		<item>@string/PreferencesActivity.PluginsAlwaysOn</item>
+	</string-array>
+    <string-array name="PluginsValues">
+		<item>OFF</item>
+		<item>ON_DEMAND</item>
+		<item>ON</item>
+	</string-array>
+        
+        <string name="Commons.Continue">متابعة</string>
+        
+        <string name="Commons.SslWarning">تحذير الأمان</string>
+        <string name="Commons.SslWarningsHeader">هناك مشاكل بخصوص شهادة الأمان لهذا الموقع.</string>
+        <string name="Commons.SslUntrusted">هذه الشهادة ليست صادرة من مصدر موثوق به.</string>
+        <string name="Commons.SslIDMismatch">اسم الموقع لا يتطابق مع الاسم الموجود في الشهادة.</string>
+        <string name="Commons.SslExpired">انتهت صلاحية هذه الشهادة.</string>
+        <string name="Commons.SslNotYetValid">هذه الشهادة لم تعد صالحة بعد.</string>
+        
+        <string name="MobileViewListActivity.Title">مستعرض Psiphon - قائمة مواقع الويب لطريقة العرض المتنقلة</string>
+        <string name="MobileViewListActivity.ListEmpty">القائمة فارغة.</string> 
+    <string name="MobileViewListActivity.AddMessage">إضافة موقع ويب.</string>
+    <string name="MobileViewListActivity.ClearMessage">مسح جميع مواقع الويب</string>
+        
+        <string name="PreferencesActivity.MobileViewCategoryTitle">إعدادات طريقة العرض المتنقلة</string>
+        <string name="PreferencesActivity.MobileViewListPreferenceTitle">إدارة مواقع الويب</string>
+        <string name="PreferencesActivity.MobileViewListPreferenceSummary">سيتم تحميل المواقع الموجودة في هذه القائمة باستخدام طريقة العرض المتنقلة من Google (مجموعة أدوات الويب من Google).</string>
+        
+        <string name="Commons.Add">إضافة</string>
+    <string name="Commons.Clear">مسح</string>
+    <string name="Commons.Delete">حذف</string>
+    
+    <!-- 0.3.6 -->
+    <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceTitle">سلوك مفاتيح التحكم في الصوت</string>
+    <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceSummary">اختيار عمل مفاتيح التحكم في الصوت</string>
+    
+    <string name="PreferencesActivity.VolumeKeysActionDefault">السلوك الافتراضي</string>
+    <string name="PreferencesActivity.VolumeKeysActionZoom">تكبير/تصغير</string>
+    <string name="PreferencesActivity.VolumeKeysActionScroll">التمرير لأعلى/لأسفل</string>
+    <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">التبديل بين التبويبات</string>
+    <string name="PreferencesActivity.VolumeKeysActionHistory">العودة/التقدم</string>
+    
+    <string-array name="VolumeKeysActionEntries">
+		<item>@string/PreferencesActivity.VolumeKeysActionDefault</item>
+		<item>@string/PreferencesActivity.VolumeKeysActionZoom</item>
+		<item>@string/PreferencesActivity.VolumeKeysActionScroll</item>
+		<item>@string/PreferencesActivity.VolumeKeysActionSwitchTabs</item>
+		<item>@string/PreferencesActivity.VolumeKeysActionHistory</item>
+	</string-array>
+	
+    <string-array name="VolumeKeysActionValues">
+		<item>DEFAULT</item>
+		<item>ZOOM</item>
+		<item>SCROLL</item>
+		<item>SWITCH_TABS</item>
+		<item>HISTORY</item>
+	</string-array>
+        
+        <!-- 0.3.7 -->
+        <string name="Main.ShareChooserTitle">مشاركة عبر</string>
+        
+        <string name="Main.MenuShareLinkUrl">مشاركة ارتباط</string>
+        <string name="Main.MenuShareImageUrl">مشاركة صورة</string>
+        <string name="Main.MenuShareEmailUrl">مشاركة بريد إلكتروني</string>
+        
+        <!-- 0.3.8 -->
+        <string name="PreferencesActivity.HideTitleBarPreferenceTitle">إخفاء أشرطة العنوان</string>
+    <string name="PreferencesActivity.HideTitleBarPreferenceSummary">إذا تم تحديده، لن يتم عرض أشرطة عنوان النوافذ (يحتاج إلى إعادة تشغيل التطبيق).</string>
+    
+    <string name="PreferencesActivity.UseWideViewPortPreferenceTitle">استخدام منفذ عرض عريض</string>
+    <string name="PreferencesActivity.UseWideViewPortPreferenceSummary">إذا تم تحديده، سيستخدم المستعرض منفذ عرض مشابه لمستعرضات سطح المكتب.</string>
+    
+    <string name="PreferencesActivity.LoadWithOverviewPreferenceTitle">تحميل الصفحات مع نظرة عامة</string>
+    <string name="PreferencesActivity.LoadWithOverviewPreferenceSummary">إذا تم تحديده، سيتم تحميل الصفحات بشكل مصغر لعرض نظرة عامة للصفحة.</string>
+    
+    <string name="PreferencesActivity.SwitchTabsMethodPreferenceTitle">طريقة التبديل بين التبويبات</string>
+    <string name="PreferencesActivity.SwitchTabsMethodPreferenceSummary">حدد الطريقة التي يمكنك من خلالها التبديل بين التبويبات المفتوحة.</string>
+    
+    <string name="PreferencesActivity.SwitchTabButtons">الأزرار</string>
+    <string name="PreferencesActivity.SwitchTabFling">قذف</string>
+    <string name="PreferencesActivity.SwitchTabBoth">كلاهما</string>
+    <string-array name="SwitchTabsMethodEntries">
+		<item>@string/PreferencesActivity.SwitchTabButtons</item>
+		<item>@string/PreferencesActivity.SwitchTabFling</item>
+		<item>@string/PreferencesActivity.SwitchTabBoth</item>
+	</string-array>
+    <string-array name="SwitchTabsMethodValues">
+		<item>buttons</item>
+		<item>fling</item>
+		<item>both</item>
+	</string-array>
+        
+        <!-- 0.3.9 -->
+        <string name="HistoryListActivity.Today">اليوم</string>
+    <string name="HistoryListActivity.Yesterday">أمس</string>
+    <string name="HistoryListActivity.LastSevenDays">آخر 7 أيام</string>
+    <string name="HistoryListActivity.LastMonth">آخر شهر</string>
+    <string name="HistoryListActivity.Older">أقدم</string>
+    
+    <string name="QuickAction.Home">الصفحة الرئيسية</string>
+    <string name="QuickAction.Share">مشاركة</string>
+    <string name="QuickAction.SelectText">تحديد النص</string>
+    <string name="QuickAction.MobileView">طريقة العرض المتنقلة</string>
+    
+    <string name="AboutActivity.OtherLicenseText">يشتمل هذا التطبيق على كود من مشروع مستعرض Zirco (https://code.google.com/p/zirco-browser/) مرخص له بموجب رخصة جنو العمومية (GPL) الإصدار 3؛ ومن مشروع GreenDroid (https://github.com/cyrilmottier/GreenDroid)، ومن مشروع Shaman (https://github.com/emergentdotorg/shaman)، وكلاهما مرخص له بموجب ترخيص Apache، الإصدار 2.</string>
+    
+    <!-- 0.4.0 -->
+    <string name="PreferencesActivity.WeavePreferenceTitle">مزامنة الإشارات المرجعية لـ Firefox</string>
+    <string name="PreferencesActivity.WeavePreferenceSummary">إدارة إعدادات مزامنة الإشارات المرجعية مع مزامنة Firefox.</string>
+    <string name="PreferencesActivity.UseWeavePreferenceTitle">استخدام مزامنة Firefox</string>
+    <string name="PreferencesActivity.UseWeavePreferenceSummary">إذا تم تحديده، يمكنك استرجاع الإشارات المرجعية الخاصة بك من مزامنة Firefox.</string>
+    <string name="PreferencesActivity.WeaveServerPreferenceTitle">الخادم</string>
+    <string name="PreferencesActivity.WeaveServerPreferenceSummary">ضبط خادم مزامنة Firefox.</string>
+    <string name="PreferencesActivity.WeaveUsernameTitle">اسم المستخدم</string>
+    <string name="PreferencesActivity.WeaveUsernameSummary">أدخل اسم مستخدم مزامنة Firefox الخاص بك.</string>
+    <string name="PreferencesActivity.WeavePasswordTitle">كلمة المرور</string>
+    <string name="PreferencesActivity.WeavePasswordSummary">أدخل كلمة مرور مزامنة Firefox الخاصة بك.</string>
+    <string name="PreferencesActivity.WeaveKeyTitle">المفتاح</string>
+    <string name="PreferencesActivity.WeaveKeySummary">أدخل مفتاح مزامنة Firefox الخاص بك.</string>
+    
+    <string name="WeaveBookmarksListActivity.Title">الإشارات المرجعية لـ Firefox</string>  
+    <string name="WeaveBookmarksListActivity.MenuSync">مزامنة</string>
+    <string name="WeaveBookmarksListActivity.MenuClear">مسح</string>
+    <string name="WeaveBookmarksListActivity.WeaveRootFolder">الأماكن</string>
+    <string name="WeaveBookmarksListActivity.EmptyText">لم يتم مزامنة الإشارات المرجعية لـ Firefox. قم بإعداد معلومات الحساب الخاص بك ثم قم بالمزامنة.</string>
+    <string name="WeaveBookmarksListActivity.EmptyFolderText">لا يوجد إشارات مرجعية في هذا المجلد.</string>
+    <string name="WeaveBookmarksListActivity.SetupButton">الإعداد</string>
+    <string name="WeaveBookmarksListActivity.SyncButton">مزامنة</string>
+    
+    <string name="WeaveSync.SyncTitle">المزامنة</string>
+    <string name="WeaveSync.Connecting">جاري الاتصال بالخادم...</string>
+    <string name="WeaveSync.GettingData">جاري الحصول على البيانات...</string>
+    <string name="WeaveSync.ReadingData"> %1$s / %2$s قراءة البيانات</string>
+    <string name="WeaveSync.WrittingData">جاري كتابة البيانات...</string>
+    
+    <string name="Errors.WeaveSyncFailedTitle">فشل المزامنة.</string>
+    <string name="Errors.WeaveSyncFailedMessage">فشل المزامنة: %s</string>
+    <string name="Errors.WeaveAuthFailedMessage">الرمز المميز للمصادقة غير صالح. تحقق من إعداداتك.</string>
+    
+    <string name="WeaveServerPreferenceActivity.Prompt">الخادم</string>    
+    <string name="WeaveServerPreferenceActivity.Title">الخادم</string>    
+    <string name="WeaveServerPreferenceActivity.DefaultServer">خادم مزامنة Firefox</string>
+    <string name="WeaveServerPreferenceActivity.CustomServer">خادم مخصص</string>
+    
+    <string-array name="WeaveServerValues">
+        <item>@string/WeaveServerPreferenceActivity.DefaultServer</item>
+        <item>@string/WeaveServerPreferenceActivity.CustomServer</item>        
+    </string-array>
+    
+    <string name="Main.FileChooserPrompt">اختر ملف للتحميل</string>
+    
+    <string name="Commons.HistoryBookmarksExportSDCardConfirmation">تصدير الإشارات المرجعية والمحفوظات</string>
+    <string name="Commons.HistoryBookmarksExportSDCardDoneTitle">تم الانتهاء من التصدير</string>
+    <string name="Commons.HistoryBookmarksExportSDCardDoneMessage">تم حفظ الإشارات المرجعية والمحفوظات الخاصة بك في %s.</string>
+    <string name="Commons.HistoryBookmarksExportSDCardFailedTitle">فشل التصدير</string>
+    <string name="Commons.HistoryBookmarksFailedMessage">رسالة خطأ: %s.</string>
+    <string name="Commons.HistoryBookmarksImportSDCardFailedTitle">فشل الاستيراد</string>
+    
+    <string name="Commons.OperationCanBeLongMessage">قد تستغرق هذه العملية بعض الوقت. هل ترغب في المتابعة؟</string>
+    
+    <string name="PreferencesActivity.ToolsHistoryBookmarksPreferenceTitle">إدارة الإشارات المرجعية والمحفوظات</string>
+    <string name="PreferencesActivity.ToolsHistoryBookmarksPreferenceSummary">قم باستيراد وتصدير ومسح الإشارات المرجعية والمحفوظات.</string>
+    <string name="PreferencesActivity.ExportHistoryBookmarksPreferenceTitle">تصدير الإشارات المرجعية والمحفوظات</string>
+    <string name="PreferencesActivity.ExportHistoryBookmarksPreferenceSummary">قم بتصدير الإشارات المرجعية والمحفوظات إلى بطاقة SD.</string>
+    <string name="PreferencesActivity.ImportHistoryBookmarksPreferenceTitle">استيراد الإشارات المرجعية والمحفوظات</string>
+    <string name="PreferencesActivity.ImportHistoryBookmarksPreferenceSummary">قم باستيراد الإشارات المرجعية والمحفوظات من بطاقة SD.</string>
+    <string name="PreferencesActivity.PrivacyClearHistoryBookmarksTitle">مسح الإشارات المرجعية و/أو المحفوظات</string>
+    <string name="PreferencesActivity.SummaryCannotBeUndone">استخدم بحذر، لا يمكن التراجع عن هذه العملية.</string>
+    
+    <string name="Commons.ClearingHistoryBookmarks">جاري مسح الإشارات المرجعية و/أو المحفوظات...</string>
+    <string name="Commons.ClearHistoryBookmarks">مسح الإشارات المرجعية و/أو المحفوظات</string>
+    
+    <string name="Commons.Bookmarks">الإشارات المرجعية</string>
+    <string name="Commons.History">المحفوظات</string>
+    <string name="Commons.All">الجميع</string>
+    
+    <string name="Commons.ExportingHistoryBookmarks">جاري تصدير الإشارات المرجعية والمحفوظات...</string>
+    <string name="Commons.ImportingHistoryBookmarks">جاري استيراد الإشارات المرجعية والمحفوظات...</string>
+    <string name="Commons.ImportHistoryBookmarksSource">اختيار مصدر الاستيراد</string>
+    
+    <string name="Commons.ClearingBookmarks">جاري مسح الإشارات المرجعية...</string>
+    
+    <string name="DownloadListActivity.RemoveCompletedDownloads">إزالة التنزيلات المكتملة</string>
+    
+    <string name="QuickAction.Find">البحث داخل الصفحة</string>
+    <string name="SearchDialog.Hint">البحث داخل الصفحة</string>
+    
+    <!-- 0.4.2 -->
+    <string name="PreferencesActivity.AdvancedCategoryTitle">متقدم</string>
+    
+    <string name="PreferencesActivity.BookmarksDatabaseTitle">تخزين الإشارات المرجعية</string>
+    <string name="PreferencesActivity.BookmarksDatabaseSummary">اختر وضع تخزين الإشارات المرجعية.</string>
+    
+    <string name="PreferencesActivity.BookmarksDatabaseStock">الإشارات المرجعية لنظام التشغيل Android</string>
+    <string name="PreferencesActivity.BookmarksDatabaseInternal">داخلي</string>
+        
+    <string-array name="BookmarksDatabaseEntries">
+		<item>@string/PreferencesActivity.BookmarksDatabaseStock</item>
+		<item>@string/PreferencesActivity.BookmarksDatabaseInternal</item>
+	</string-array>
+    <string-array name="BookmarksDatabaseValues">
+		<item>STOCK</item>
+		<item>INTERNAL</item>
+	</string-array>    
+    
+    <string name="HistoryListActivity.BookmarkAdded">إضافة إلى الإشارات المرجعية.</string>
+    <string name="HistoryListActivity.BookmarkRemoved">إزالة من الإشارات المرجعية</string>
+    
+    <string name="HttpAuthenticationDialog.DialogTitle">تسجيل الدخول إلىs %1$s - %2$s</string>
+    <string name="HttpAuthenticationDialog.UserName">الاسم</string>
+    <string name="HttpAuthenticationDialog.Password">كلمة المرور</string>
+    
+    <string name="Commons.Proceed">متابعة</string>
+    
+    <string name="PreferencesActivity.EnableProxySettings">تمكين وكيل النظام</string>
+    <string name="PreferencesActivity.EnableProxySettingsSummary">تمكين أو تعطيل دعم إعدادات وكيل النظام.</string>
+    <string name="ProxySettings.EnablingProxySettings">جاري تمكين إعدادات الوكيل...</string>
+    <string name="ProxySettings.ErrorProxySettingsNotValid">إعدادات وكيل النظام غير صالحة.</string>
+    <string name="ProxySettings.ErrorProxyServerNotReachable">يتعذر الوصول إلى خادم الوكيل.</string>
+    <string name="ProxySettings.ErrorProxyInternetNotReachable">يتعذر الوصول إلى الويب من خلال خادم الوكيل المُحدد.</string>
+    <string name="ProxySettings.ProxySettingsEnabled">تم تميكن إعدادات الوكيل بنجاح.</string>
+    
+    <string name="AboutActivity.ContributorsText">المساهمون في مستعرض Zirco:\n • LeChuck (إعدادات الوكيل)؛ \n • Martin (التمرير باستخدام مفاتيح التحكم بالصوت، الترجمة الألمانية)؛ \n • إيزاك إل. (الترجمة الإسبانية)؛</string>
+    
+    <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">استعادة التبويبات</string>
+    <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">إذا تم تحديده، سيتم استعادة التبويبات عند توافرها.</string>
+    
+    <!-- 0.4.3 -->
+    <string name="VideoLoading">جاري تحميل video\u2026</string>
+    
+</resources>
