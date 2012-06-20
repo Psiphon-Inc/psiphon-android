@@ -166,7 +166,7 @@
 			android:key="BrowserUseWideViewPort" />
 		<CheckBoxPreference
 			android:title="@string/PreferencesActivity.LoadWithOverviewPreferenceTitle"
-			android:defaultValue="false"
+			android:defaultValue="true"
 			android:summary="@string/PreferencesActivity.LoadWithOverviewPreferenceSummary"
 			android:key="BrowserLoadWithOverview" />
 		<CheckBoxPreference

@@ -79,6 +79,7 @@ import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -94,6 +95,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowManager;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
@@ -218,6 +220,8 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 	private FrameLayout mFullscreenContainer;	
 	
     private WebChromeClient.CustomViewCallback mCustomViewCallback;
+    
+    private int mOriginalOrientation;
 	
 	private enum SwitchTabsMethod {
 		BUTTONS,
@@ -1014,9 +1018,17 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 		        return mVideoProgressView;
 			}
 			
+			@Override
 			public void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback) {
-				showCustomView(view, callback);
-		    }
+			    super.onShowCustomView(view, callback);
+			    showCustomView(view, -1, callback);
+			}
+
+			@Override
+			public void onShowCustomView(View view, int requestedOrientation, CustomViewCallback callback) {
+			    super.onShowCustomView(view, requestedOrientation, callback);
+			    showCustomView(view, requestedOrientation, callback);
+			}
 			
 			@Override
 			public void onHideCustomView() {
@@ -1363,7 +1375,13 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
      * @param visible If True, the tool bars will be shown.
      */
     private void setToolbarsVisibility(boolean visible) {
-    	    	
+
+        // PSIPHON: disable hiding chrome
+        if (!visible)
+        {
+            return;
+        }
+        
     	boolean switchTabByButtons = isSwitchTabsByButtonsEnabled();
     	boolean showPreviousTabView = mViewFlipper.getDisplayedChild() > 0;
 		boolean showNextTabView = mViewFlipper.getDisplayedChild() < mViewFlipper.getChildCount() - 1;
@@ -2055,34 +2073,64 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 		}
 	}
 	
-	private void showCustomView(View view, WebChromeClient.CustomViewCallback callback) {
+	private void setFullscreen(boolean enabled) {
+        Window win = MainActivity.this.getWindow();
+        WindowManager.LayoutParams winParams = win.getAttributes();
+        final int bits = WindowManager.LayoutParams.FLAG_FULLSCREEN;
+        if (enabled) {
+            winParams.flags |=  bits;
+            if (mCustomView != null) {
+                mCustomView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE);
+            } else {
+                //mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE);
+            }
+        } else {
+            winParams.flags &= ~bits;
+            if (mCustomView != null) {
+                mCustomView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+            } else {
+                //mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+            }
+        }
+        win.setAttributes(winParams);
+    }
+
+	
+	private void showCustomView(View view, int requestedOrientation, WebChromeClient.CustomViewCallback callback) {
         // if a view already exists then immediately terminate the new one
         if (mCustomView != null) {
             callback.onCustomViewHidden();
             return;
         }
 
-        MainActivity.this.getWindow().getDecorView();
-        
-        FrameLayout decor = (FrameLayout) getWindow().getDecorView();
+        if (requestedOrientation == -1) {
+            requestedOrientation = MainActivity.this.getRequestedOrientation();
+        }
+
+        mOriginalOrientation = MainActivity.this.getRequestedOrientation();
+        FrameLayout decor = (FrameLayout) MainActivity.this.getWindow().getDecorView();
         mFullscreenContainer = new FullscreenHolder(MainActivity.this);
         mFullscreenContainer.addView(view, COVER_SCREEN_PARAMS);
         decor.addView(mFullscreenContainer, COVER_SCREEN_PARAMS);
         mCustomView = view;
-        setStatusBarVisibility(false);
+        setFullscreen(true);
         mCustomViewCallback = callback;
+        MainActivity.this.setRequestedOrientation(requestedOrientation);
     }
 	
 	private void hideCustomView() {
 		if (mCustomView == null)
             return;
 		
-		setStatusBarVisibility(true);
-        FrameLayout decor = (FrameLayout) getWindow().getDecorView();
+		
+		setFullscreen(false);
+        FrameLayout decor = (FrameLayout) MainActivity.this.getWindow().getDecorView();
         decor.removeView(mFullscreenContainer);
         mFullscreenContainer = null;
         mCustomView = null;
         mCustomViewCallback.onCustomViewHidden();
+        // Show the content view.
+        MainActivity.this.setRequestedOrientation(mOriginalOrientation);
 	}
 	
 	/**
@@ -2287,50 +2335,77 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 	 */
     @SuppressWarnings("unchecked")
 	private List<String> findEquivalentUrls(
-	        int proxyPort, 
-	        String userAgentString, 
-	        String url) 
+	        final int proxyPort, 
+	        final String userAgentString, 
+	        final String url) 
 	{
         List<String> uriStrings = new ArrayList<String>();
         uriStrings.add(url);
 
-        HttpParams params = new BasicHttpParams();
-        HttpConnectionParams.setConnectionTimeout(params, 5000);
-        HttpConnectionParams.setSoTimeout(params, 5000);
-        HttpHost httpproxy = new HttpHost("localhost", proxyPort);
-        params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
-        DefaultHttpClient client = new DefaultHttpClient(params);
-        HttpContext context = new BasicHttpContext();
-        HttpRequestBase request = new HttpHead(url);
-        request.setHeader("User-Agent", userAgentString);
-        
-        Set<URI> uris = null;
-        
+        // Hack around android.os.NetworkOnMainThreadException restriction.
+        // Still blocks the main thread!
+
+        class RedirectRequest implements Runnable
+        {
+            Set<URI> uris = null;
+            
+            public Set<URI> getUris()
+            {
+                return this.uris;
+            }
+            
+            public void run()
+            {
+                try
+                {
+                    HttpParams params = new BasicHttpParams();
+                    HttpConnectionParams.setConnectionTimeout(params, 5000);
+                    HttpConnectionParams.setSoTimeout(params, 5000);
+                    HttpHost httpproxy = new HttpHost("localhost", proxyPort);
+                    params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
+                    DefaultHttpClient client = new DefaultHttpClient(params);
+                    HttpContext context = new BasicHttpContext();
+                    HttpRequestBase request = new HttpHead(url);
+                    request.setHeader("User-Agent", userAgentString);
+                    
+                    client.execute(request, context);
+                
+                    // Clean up the request.
+                    request.abort();
+                    
+                    // The context holds info about the redirections that occurred.
+                    RedirectLocations redirectLocations = (RedirectLocations)context.getAttribute("http.protocol.redirect-locations");
+                    
+                    if (redirectLocations != null)
+                    {
+                        // In Android's org.apache.http version, there's no way to 
+                        // access `redirectLocations.uris`, so we'll have to use reflection
+                        // to get at the private variable.
+                        Field field;
+                        field = redirectLocations.getClass().getDeclaredField("uris");
+                        field.setAccessible(true);
+                        this.uris = (Set<URI>)field.get(redirectLocations);
+                    }
+                } 
+                catch (Exception e)
+                {
+                    // pass
+                }
+            }
+        }
+        RedirectRequest redirectRequest = new RedirectRequest();
+        Thread thread = new Thread(redirectRequest);
+        thread.start();
         try
         {
-            client.execute(request, context);
-        
-            // Clean up the request.
-            request.abort();
-            
-            // The context holds info about the redirections that occurred.
-            RedirectLocations redirectLocations = (RedirectLocations)context.getAttribute("http.protocol.redirect-locations");
-            
-            if (redirectLocations != null)
-            {
-                // In Android's ghetto org.apache.http version, there's no way to 
-                // access `redirectLocations.uris`, so we'll have to use reflection
-                // to get at the private variable.
-                Field field;
-                field = redirectLocations.getClass().getDeclaredField("uris");
-                field.setAccessible(true);
-                uris = (Set<URI>)field.get(redirectLocations);
-            }
+            thread.join();
         } 
-        catch (Exception e)
+        catch (InterruptedException e)
         {
             // pass
         }
+
+        Set<URI> uris = redirectRequest.getUris();
         
         // Add in the redirected URIs we've found.
         if (uris != null && uris.size() > 0) 

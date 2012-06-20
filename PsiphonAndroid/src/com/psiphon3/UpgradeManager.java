@@ -308,7 +308,8 @@ public interface UpgradeManager
          */
         public void stop()
         {
-            // TODO: Actually stop
+            // The owner of the serverInterface must abort outstanding requests to ensure that
+            // this function does not block.
             if (this.thread != null)
             {
                 try
@@ -336,7 +337,7 @@ public interface UpgradeManager
             {
                 // Download the upgrade.
                 upgradeFileData = serverInterface.doUpgradeDownloadRequest();
-            } 
+            }
             catch (PsiphonServerInterfaceException e)
             {
                 // Comment from the Windows client:

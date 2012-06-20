@@ -237,6 +237,12 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     
     private boolean runTunnelOnce() throws InterruptedException
     {
+        m_interface.start();
+        
+        // Generate a new client session ID to be included with all subsequent web requests
+        // It's also included with the SSH login, for GeoIP region lookup on the server-side
+        m_interface.generateNewCurrentClientSessionID();
+        
         ServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
 
         if (entry == null)
@@ -266,8 +272,12 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 
             checkSignals(0);
 
+            // Client transmits its session ID prepended to the SSH password; the server
+            // uses this to associate the tunnel with web requests -- for GeoIP region stats
+            String sshPassword = m_interface.getCurrentClientSessionID() + entry.sshPassword;
+
             MyLog.i(R.string.ssh_authenticating);
-            boolean isAuthenticated = conn.authenticateWithPassword(entry.sshUsername, entry.sshPassword);
+            boolean isAuthenticated = conn.authenticateWithPassword(entry.sshUsername, sshPassword);
             if (isAuthenticated == false)
             {
                 MyLog.e(R.string.ssh_authentication_failed);
@@ -362,7 +372,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 
             // TODO: This prints too much info -- the stack trace, but also IP
             // address (not sure if we want to obscure that or not...) 
-            MyLog.e(R.string.error_message, e);
+            //MyLog.e(R.string.error_message, e);
             MyLog.e(R.string.ssh_connection_failed);
         }
         catch (TunnelServiceUnexpectedDisconnect e)
@@ -386,6 +396,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         }
         finally
         {
+            // Abort any outstanding HTTP requests.
+            // Currently this would only be the upgrade download request.
+            // Otherwise the call below to m_upgradeDownloader.stop() would block.
+            m_interface.stop();
+            
             if (socks != null)
             {
                 try
@@ -444,11 +459,16 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             try
             {
                 // TODO: move to background thread...?
+                m_interface.start();
                 m_interface.fetchRemoteServerList();
             }
             catch (PsiphonServerInterfaceException requestException)
             {
                 MyLog.w(R.string.TunnelService_FetchRemoteServerListFailed, requestException);
+            }
+            finally
+            {
+                m_interface.stop();
             }
 
             // 1-2 second delay before retrying
@@ -469,8 +489,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 
         setState(State.CONNECTING);
         
-        m_interface.start();
-
         // Only allow 1 signal at a time. A backlog of signals will break the retry loop.
         m_signalQueue = new ArrayBlockingQueue<Signal>(1);
 
@@ -498,12 +516,20 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             {
                 MyLog.w(R.string.stopping_tunnel);
                 
-                // Override UNEXPECTED_DISCONNECT
-                // TODO: race condition
+                // Override UNEXPECTED_DISCONNECT; TODO: race condition?
                 m_signalQueue.clear();
                 m_signalQueue.offer(Signal.STOP_SERVICE);
 
                 // Tell the ServerInterface to stop (e.g., kill requests).
+
+                // Currently, all requests are run in the context of the
+                // tunnel thread; m_interface.outstandingRequests is not
+                // a work queue, it's just a way for another thread to
+                // reference the requests and invoke .abort(). Any
+                // request that should not abort when the tunnel thread
+                // should shut down should be omitted from the
+                // outstandingRequests list.
+
                 m_interface.stop();
                 
                 m_tunnelThread.join();

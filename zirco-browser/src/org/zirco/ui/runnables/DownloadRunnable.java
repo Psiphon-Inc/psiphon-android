@@ -21,15 +21,20 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
+import java.net.Proxy;
 import java.net.URL;
 import java.net.URLConnection;
 
+import org.zirco.controllers.Controller;
 import org.zirco.model.items.DownloadItem;
 import org.zirco.utils.IOUtils;
+import org.zirco.utils.ProxySettings;
 
 import android.os.Handler;
 import android.os.Message;
+import android.preference.PreferenceManager;
 
 /**
  * Background downloader.
@@ -65,11 +70,10 @@ public class DownloadRunnable implements Runnable {
 	private String getFileNameFromUrl() {
 		String fileName = mParent.getUrl().substring(mParent.getUrl().lastIndexOf("/") + 1);
 		
-        // PSIPHON: Fix Zirco crash when download file path has no query paramters
-        int queryParamStart = fileName.indexOf("?");
-        if (queryParamStart > 0) {
-            fileName = fileName.substring(0, queryParamStart);
-        }
+		int queryParamStart = fileName.indexOf("?");
+		if (queryParamStart > 0) {
+		    fileName = fileName.substring(0, queryParamStart);
+		}
 		
 		return fileName;
 	}
@@ -110,7 +114,22 @@ public class DownloadRunnable implements Runnable {
 				mParent.onStart();
 				
 				URL url = new URL(mParent.getUrl());
-				URLConnection conn = url.openConnection();
+				
+                URLConnection conn;
+
+                //Psiphon we are opening connection via local proxy
+				int localProxyPort = Controller.getInstance().getPreferences().getInt("localProxyPort", 0);
+				
+				if(localProxyPort > 0)
+				{
+				    Proxy localProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", localProxyPort));
+				    conn = url.openConnection(localProxy);
+				}
+				else 
+				{
+				    conn = url.openConnection();
+				}
+				//end Psiphon changes
 				
 				InputStream is = conn.getInputStream();
 							

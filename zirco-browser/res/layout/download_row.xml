@@ -17,6 +17,7 @@
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_height="wrap_content" android:layout_width="fill_parent"
+	android:descendantFocusability="blocksDescendants"
 	android:padding="5dip" android:orientation="vertical">
 
 	<LinearLayout android:layout_height="wrap_content" android:layout_width="fill_parent">

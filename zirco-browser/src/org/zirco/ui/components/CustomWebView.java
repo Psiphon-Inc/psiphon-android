@@ -92,7 +92,7 @@ public class CustomWebView extends WebView {
 		settings.setJavaScriptEnabled(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_JAVASCRIPT, true));
 		settings.setLoadsImagesAutomatically(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_IMAGES, true));
 		settings.setUseWideViewPort(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_USE_WIDE_VIEWPORT, true));
-		settings.setLoadWithOverviewMode(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_LOAD_WITH_OVERVIEW, false));
+		settings.setLoadWithOverviewMode(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_LOAD_WITH_OVERVIEW, true));
 		settings.setSaveFormData(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_FORM_DATA, true));
 		settings.setSavePassword(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_PASSWORDS, true));
 		settings.setDefaultZoom(ZoomDensity.valueOf(Controller.getInstance().getPreferences().getString(Constants.PREFERENCES_DEFAULT_ZOOM_LEVEL, ZoomDensity.MEDIUM.toString())));		

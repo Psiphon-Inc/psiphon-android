@@ -27,8 +27,6 @@ public class PsiphonConstants
     
     public final static String TAG = "Psiphon";
 
-    public final static String INFO_LINK_URL = "https://sites.google.com/a/psiphon3.com/psiphon3/";
-    
     public final static String SERVER_ENTRY_FILENAME = "psiphon_server_entries.json";
 
     public final static int CLIENT_SESSION_ID_SIZE_IN_BYTES = 16;
@@ -37,6 +35,8 @@ public class PsiphonConstants
     
     public final static int HTTP_PROXY_PORT = 8080;
 
+    public final static int DEFAULT_WEB_SERVER_PORT = 443;
+    
     public final static int SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS = 20000;
     
     public final static String RELAY_PROTOCOL = "OSSH";

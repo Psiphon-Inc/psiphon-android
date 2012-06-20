@@ -171,8 +171,11 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     
     public void onAboutClick(View v)
     {
-        // TODO: if not connected, open in default browser?
-        Events.displayBrowser(this, Uri.parse(PsiphonConstants.INFO_LINK_URL));
+        // TODO: if connected, open in Psiphon browser? 
+        // Events.displayBrowser(this, Uri.parse(PsiphonConstants.INFO_LINK_URL));
+
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(EmbeddedValues.INFO_LINK_URL));
+        startActivity(browserIntent);
     }
     
     public void onExitClick(View v)
