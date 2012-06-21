@@ -22,7 +22,7 @@
     
     <string name="AboutActivity.Title">حول</string>
         <string name="AboutActivity.VersionText">الإصدار:</string>
-        <string name="AboutActivity.UrlTextValue"></string>
+        <string name="AboutActivity.UrlTextValue">https://bitbucket.org/psiphon/psiphon-circumvention-system/overview</string>
         <string name="AboutActivity.LicenseText">الترخيص:</string>
         <string name="AboutActivity.LicenseTextValue">رخصة جنو العمومية (GPL) الإصدار 3</string>
 
