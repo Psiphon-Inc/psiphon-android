@@ -1375,13 +1375,6 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
      * @param visible If True, the tool bars will be shown.
      */
     private void setToolbarsVisibility(boolean visible) {
-
-        // PSIPHON: disable hiding chrome
-        if (!visible)
-        {
-            return;
-        }
-        
     	boolean switchTabByButtons = isSwitchTabsByButtonsEnabled();
     	boolean showPreviousTabView = mViewFlipper.getDisplayedChild() > 0;
 		boolean showNextTabView = mViewFlipper.getDisplayedChild() < mViewFlipper.getChildCount() - 1;
