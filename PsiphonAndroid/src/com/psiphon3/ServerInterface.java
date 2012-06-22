@@ -333,6 +333,12 @@ public class ServerInterface
                     }
 
                     this.upgradeClientVersion = obj.getString("upgrade_client_version");
+                    
+                    // Fix for null/"null" JSONLib issue
+                    if (this.upgradeClientVersion.compareTo("null") == 0)
+                    {
+                        this.upgradeClientVersion = "";
+                    }
 
                     List<Pair<Pattern, String>> pageViewRegexes = new ArrayList<Pair<Pattern, String>>();
                     JSONArray jsonPageViewRegexes = obj.getJSONArray("page_view_regexes");
