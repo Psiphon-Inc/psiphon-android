@@ -93,6 +93,8 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     {
         super.onResume();
         
+        PsiphonData.getPsiphonData().setStatusActivityForeground(true);
+        
         final Context context = this;
 
         UpgradeInstaller.IUpgradeListener upgradeListener = new UpgradeInstaller.IUpgradeListener()
@@ -125,10 +127,18 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     }
     
     @Override
+    protected void onPause()
+    {
+        super.onResume();
+        
+        PsiphonData.getPsiphonData().setStatusActivityForeground(false);
+    }
+
+    @Override
     protected void onNewIntent(Intent intent)
     {
         super.onNewIntent(intent);
-        
+            
         // If the app is already foreground (so onNewIntent is being called), 
         // the incoming intent is not automatically set as the activity's intent
         // (i.e., the intent returned by getIntent()). We want this behaviour, 

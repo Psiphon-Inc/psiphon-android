@@ -56,6 +56,7 @@ public class PsiphonData
     private ArrayList<String> m_homePages;
     private Stats m_stats;
     private Date m_nextFetchRemoteServerList;
+    private boolean m_statusActivityForeground;
         
     private PsiphonData()
     {
@@ -63,6 +64,7 @@ public class PsiphonData
     	m_homePages = new ArrayList<String>();
     	m_stats = new Stats();
     	m_nextFetchRemoteServerList = null;
+    	m_statusActivityForeground = false;
     }
 
     public synchronized void addStatusMessage(String message, int messageClass)
@@ -102,6 +104,16 @@ public class PsiphonData
         m_nextFetchRemoteServerList = nextFetchRemoteServerList;
     }
 
+    public synchronized void setStatusActivityForeground(boolean visible)
+    {
+        m_statusActivityForeground = visible;
+    }
+    
+    public synchronized boolean getStatusActivityForeground()
+    {
+        return m_statusActivityForeground;
+    }
+    
     public class StatusMessage
     {
         public String m_message;

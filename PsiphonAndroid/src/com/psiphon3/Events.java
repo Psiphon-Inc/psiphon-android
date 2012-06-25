@@ -21,8 +21,6 @@ package com.psiphon3;
 
 import java.util.List;
 
-import com.psiphon3.Utils.MyLog;
-
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningTaskInfo;
 import android.content.Context;
@@ -45,13 +43,23 @@ public class Events
 
     static public void signalHandshakeSuccess(Context context)
     {
-        Intent intent = new Intent(
-                StatusActivity.HANDSHAKE_SUCCESS,
-                null,
-                context,
-                com.psiphon3.StatusActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intent);        
+        // Only send this intent if the StatusActivity is
+        // in the foreground. If it isn't and we sent the
+        // intent, the activity will interrupt the user in
+        // some other app.        
+        // It's too late to do this check in StatusActivity
+        // onNewIntent.
+        
+        if (PsiphonData.getPsiphonData().getStatusActivityForeground())
+        {
+            Intent intent = new Intent(
+                    StatusActivity.HANDSHAKE_SUCCESS,
+                    null,
+                    context,
+                    com.psiphon3.StatusActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        }
     }
 
     static public void signalUnexpectedDisconnect(Context context)
@@ -60,6 +68,11 @@ public class Events
         // task. We don't want to interrupt other apps; and in
         // the case of our app (currently), only the browser needs
         // to be interrupted.
+
+        // TODO: track with onResume/onPause flag, as per:
+        // http://stackoverflow.com/questions/3667022/android-is-application-running-in-background
+        // In the meantime, the imprecision of the getRunningTasks method is acceptable in
+        // our current case since it's is only used to not annoy the user.
         
         ActivityManager activityManager =
                 (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -97,7 +110,6 @@ public class Events
 
     static public void displayBrowser(Context context, Uri uri)
     {
-        MyLog.d("TEMP: displayBrowser: signalling");
         Intent intent = new Intent(
                 "ACTION_VIEW",
                 uri,
