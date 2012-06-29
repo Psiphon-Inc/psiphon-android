@@ -212,19 +212,28 @@ public class ProxySettings
             {
                 Method m = webViewCoreClass.getDeclaredMethod("sendStaticMessage", Integer.TYPE, Object.class);
                 Constructor c = proxyPropertiesClass.getConstructor(String.class, Integer.TYPE, String.class);
-                m.setAccessible(true);
-                c.setAccessible(true);
-                Object properties = c.newInstance(host, port, null);
                 
-                // android.webkit.WebViewCore.EventHub.PROXY_CHANGED = 193;
-                m.invoke(null, 193, properties);
-                return true;
+                if (m != null && c != null)
+                {
+                    m.setAccessible(true);
+                    c.setAccessible(true);
+                    Object properties = c.newInstance(host, port, null);
+                
+                    // android.webkit.WebViewCore.EventHub.PROXY_CHANGED = 193;
+                    m.invoke(null, 193, properties);
+                    return true;
+                }
             }
         }
         catch (Exception e) 
         {
             Log.e("ProxySettings","Exception setting WebKit proxy through android.net.ProxyProperties: " + e.toString());
         }
+        catch (Error e)
+        {
+            Log.e("ProxySettings","Exception setting WebKit proxy through android.net.ProxyProperties: " + e.toString());
+        }
+        
         try
         {
             Object requestQueueObject = getRequestQueue(ctx);
@@ -235,12 +244,17 @@ public class ProxySettings
                 setDeclaredField(requestQueueObject, "mProxyHost", httpHost);
                 //Log.d("Webkit Setted Proxy to: " + host + ":" + port);
                 return true;
-             }
-         }
+            }
+        }
         catch (Exception e) 
         {
             Log.e("ProxySettings","Exception setting WebKit proxy through android.webkit.Network: " + e.toString());
         }
+        catch (Error e)
+        {
+            Log.e("ProxySettings","Exception setting WebKit proxy through android.webkit.Network: " + e.toString());
+        }
+        
         return false;
     }
 
