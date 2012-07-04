@@ -4,10 +4,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.MailTo;
 import android.os.Bundle;
-import android.text.Html;
-import android.text.Spannable;
-import android.text.SpannableString;
-import android.text.util.Linkify;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -39,9 +35,7 @@ public class FeedbackActivity extends Activity {
         });
 
         // Load the default text
-        Spannable sp = new SpannableString(getString(R.string.FeedbackActivity_DefaultText));
-        Linkify.addLinks(sp,  Linkify.ALL);
-        final String defaultHtml = "<body>" + Html.toHtml(sp) + "</body>";
+        final String defaultHtml = "<body>" + getString(R.string.FeedbackActivity_DefaultText) + "</body>";
         webView.loadData(defaultHtml, "text/html", "utf-8");
     }
 }
