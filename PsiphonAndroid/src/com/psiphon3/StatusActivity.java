@@ -179,6 +179,12 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         Events.displayBrowser(this);       
     }
     
+    public void onFeedbackClick(View v)
+    {
+        Intent feedbackIntent = new Intent(this, FeedbackActivity.class);
+        startActivity(feedbackIntent);
+    }
+
     public void onAboutClick(View v)
     {
         // TODO: if connected, open in Psiphon browser? 

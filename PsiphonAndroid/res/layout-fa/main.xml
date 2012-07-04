@@ -71,7 +71,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_alignParentBottom="true"
-        android:weightSum="3.0">
+        android:weightSum="4.0">
 
         <Button
             android:id="@+id/openBrowserButton"
@@ -81,6 +81,15 @@
             android:text="@string/open_browser"
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:layout_weight="1.0" />
+
+        <Button
+            android:id="@+id/feedbackButton"
+            android:onClick="onFeedbackClick"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:text="@string/feedback"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:layout_weight="0.95" />
 
         <Button
             android:id="@+id/aboutButton"
@@ -98,7 +107,7 @@
             android:layout_height="fill_parent"
             android:text="@string/exit"
             android:textAppearance="?android:attr/textAppearanceSmall"
-            android:layout_weight="1.0" />
+            android:layout_weight="1.05" />
         
     </LinearLayout>
 
