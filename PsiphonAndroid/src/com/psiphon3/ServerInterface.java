@@ -717,7 +717,7 @@ public class ServerInterface
         boolean useLocalProxy = true;
 
         return makeRequest(
-                true,
+                canAbort,
                 useLocalProxy,
                 psiphonServerCertificate,
                 url,
