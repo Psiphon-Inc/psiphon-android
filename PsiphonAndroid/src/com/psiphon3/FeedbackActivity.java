@@ -14,6 +14,7 @@ import android.net.MailTo;
 import android.os.Bundle;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Toast;
 
 public class FeedbackActivity extends Activity {
 
@@ -21,9 +22,10 @@ public class FeedbackActivity extends Activity {
     
     public void onCreate(Bundle savedInstanceState)
     {
+        final Activity activity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.feedback);
-        
+
         webView = (WebView)findViewById(R.id.feedbackWebView);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new WebViewClient()
@@ -36,6 +38,14 @@ public class FeedbackActivity extends Activity {
                     intent.setType("message/rfc822");
                     intent.putExtra(Intent.EXTRA_EMAIL, new String[] {MailTo.parse(url).getTo()});
                     startActivity(intent);
+                    return true;
+                }
+                else if (url.startsWith("feedback"))
+                {
+                    Toast.makeText(activity,
+                                   getString(R.string.FeedbackActivity_Success),
+                                   Toast.LENGTH_SHORT).show();
+                    activity.finish();
                     return true;
                 }
                 return false;
