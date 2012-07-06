@@ -1,5 +1,13 @@
 package com.psiphon3;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.net.MailTo;
@@ -34,8 +42,47 @@ public class FeedbackActivity extends Activity {
             }
         });
 
-        // Load the default text
-        final String defaultHtml = "<body>" + getString(R.string.FeedbackActivity_DefaultText) + "</body>";
-        webView.loadData(defaultHtml, "text/html", "utf-8");
+        // Load the feedback page
+        String html = getHTMLContent();
+        webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null);
+    }
+
+    private String getHTMLContent()
+    {
+        String html = "";
+        
+        try
+        {
+            InputStream stream = getAssets().open("feedback.html");
+            html = streamToString(stream);
+        }
+        catch (IOException e)
+        {
+            // Render the default text
+            html = "<body>" + getString(R.string.FeedbackActivity_DefaultText) + "</body>";
+        }
+        
+        return html;
+    }
+
+    private String streamToString(InputStream stream) throws IOException
+    {
+        try
+        {
+            Reader reader = new BufferedReader(new InputStreamReader(stream));
+            Writer writer = new StringWriter();
+        
+            int n;
+            char[] buffer = new char[2048];
+            while ((n = reader.read(buffer)) != -1)
+            {
+                writer.write(buffer, 0, n);
+            }
+            return writer.toString();
+        }
+        finally
+        {
+            stream.close();
+        }
     }
 }
