@@ -9,6 +9,7 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URLDecoder;
+import java.util.Locale;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -89,7 +90,9 @@ public class FeedbackActivity extends Activity {
 
         // Load the feedback page
         String html = getHTMLContent();
-        webView.loadDataWithBaseURL("file:///", html, "text/html", "utf-8", null);
+        // Get the current locale
+        String language = Locale.getDefault().getLanguage();
+        webView.loadDataWithBaseURL("file:///#" + language, html, "text/html", "utf-8", null);
     }
 
     private String getHTMLContent()
