@@ -56,5 +56,6 @@
     <string name="feedback">Feedback</string>
     <string name="FeedbackActivity.DefaultText">If you have any specific comments, further information about web sites that do not work, or if this form is not working for you, please email &lt;a href=&quot;mailto:feedback@psiphon.ca&quot;&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
     <string name="FeedbackActivity.Success">Thank you for submitting your feedback</string>
+    <string name="FeedbackActivity.Failure">Submission failed.  Please try again.</string>
 
 </resources>
