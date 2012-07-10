@@ -137,6 +137,7 @@ public class FeedbackActivity extends Activity
                         }
                         catch (PsiphonServerInterfaceException e)
                         {
+                            MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, e);
                         }
                     }
                     
