@@ -467,13 +467,12 @@ public class ServerInterface
         extraParams.add(Pair.create("session_id", this.serverSessionID));
         extraParams.add(Pair.create("connected", connected ? "1" : "0"));
 
-        String url = getRequestURL("status", extraParams);
-        
         List<Pair<String,String>> additionalHeaders = new ArrayList<Pair<String,String>>();
         additionalHeaders.add(Pair.create("Content-Type", "application/json"));
         
         if (connected)
         {
+            String url = getRequestURL("status", extraParams);
             makeAbortableProxiedPsiphonRequest(url, additionalHeaders, requestBody);            
         }
         else
@@ -482,10 +481,7 @@ public class ServerInterface
             // to non-tunnel HTTPS and alternate ports. This is to maximize
             // our chance of getting stats for session duration.
             
-            String urls[] = new String[2];
-            urls[0] = url;
-            urls[1] = getRequestURL(false, "status", extraParams);
-
+            String urls[] = getRequestURLsWithFailover("status", extraParams);
             makePsiphonRequestWithFailover(urls, additionalHeaders, requestBody);
         }
     }
@@ -526,6 +522,30 @@ public class ServerInterface
         String url = getRequestURL("failed", extraParams);
         
         makeAbortableProxiedPsiphonRequest(url);
+    }
+
+    /**
+     * Make the 'feedback' request to the server. 
+     * @throws PsiphonServerInterfaceException
+     */
+    synchronized public void doFeedbackRequest(String feedbackData) 
+        throws PsiphonServerInterfaceException
+    {
+        // TODO: set relay protocol to (NONE) if not connected
+        // TODO: protect server list with mutex
+
+        // NOTE: feedbackData is not being validated here
+        byte[] requestBody = feedbackData.getBytes();
+
+        List<Pair<String,String>> extraParams = new ArrayList<Pair<String,String>>();
+        // TODO: when is this.serverSessionID valid?
+        extraParams.add(Pair.create("session_id", this.serverSessionID));
+
+        List<Pair<String,String>> additionalHeaders = new ArrayList<Pair<String,String>>();
+        additionalHeaders.add(Pair.create("Content-Type", "application/json"));
+
+        String urls[] = getRequestURLsWithFailover("feedback", extraParams);
+        makePsiphonRequestWithFailover(urls, additionalHeaders, requestBody);
     }
 
     synchronized public void fetchRemoteServerList()
@@ -651,6 +671,16 @@ public class ServerInterface
         }
 
         return url.toString();
+    }
+
+    private String[] getRequestURLsWithFailover(
+            String path,
+            List<Pair<String,String>> extraParams)
+    {
+        String urls[] = new String[2];
+        urls[0] = getRequestURL(path, extraParams);
+        urls[1] = getRequestURL(false, path, extraParams);
+        return urls;
     }
 
     private byte[] makeAbortableProxiedPsiphonRequest(String url)

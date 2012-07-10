@@ -11,6 +11,9 @@ import java.io.Writer;
 import java.net.URLDecoder;
 import java.util.Locale;
 
+import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
+import com.psiphon3.Utils.MyLog;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.net.MailTo;
@@ -76,13 +79,24 @@ public class FeedbackActivity extends Activity {
                     try
                     {
                         formdata = URLDecoder.decode(urlParameters.substring(formDataParameterName.length()), "utf-8");
-                        // TODO: submit this now.
+                        ServerInterface serverInterface = new ServerInterface(activity);
+                        serverInterface.doFeedbackRequest(formdata);
                         return true;
                     }
                     catch (UnsupportedEncodingException e)
                     {
                         // Just fail
+                        MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, e);
                     }
+                    catch (PsiphonServerInterfaceException e)
+                    {
+                        // Just fail
+                        MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, e);
+                    }
+                }
+                else
+                {
+                    MyLog.w(R.string.FeedbackActivity_InvalidURLParameters);
                 }
                 return false;
             }
@@ -106,6 +120,8 @@ public class FeedbackActivity extends Activity {
         }
         catch (IOException e)
         {
+            MyLog.w(R.string.FeedbackActivity_GetHTMLContentFailed, e);
+            
             // Render the default text
             html = "<body>" + getString(R.string.FeedbackActivity_DefaultText) + "</body>";
         }
