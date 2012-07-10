@@ -544,8 +544,6 @@ public class ServerInterface
     synchronized public void doFeedbackRequest(String feedbackData) 
         throws PsiphonServerInterfaceException
     {
-        // TODO: protect server list with mutex
-
         // NOTE: feedbackData is not being validated here
         byte[] requestBody = feedbackData.getBytes();
 
