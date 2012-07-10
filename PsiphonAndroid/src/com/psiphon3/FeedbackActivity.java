@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2012, Psiphon Inc.
+ * All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package com.psiphon3;
 
 import java.io.BufferedReader;
@@ -22,7 +41,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
-public class FeedbackActivity extends Activity {
+public class FeedbackActivity extends Activity
+{
 
     private WebView webView;
     
@@ -73,32 +93,71 @@ public class FeedbackActivity extends Activity {
             private boolean submitFeedback(String urlParameters)
             {
                 final String formDataParameterName = "formdata=";
-                if (urlParameters.startsWith(formDataParameterName))
-                {
-                    String formdata;
-                    try
-                    {
-                        formdata = URLDecoder.decode(urlParameters.substring(formDataParameterName.length()), "utf-8");
-                        ServerInterface serverInterface = new ServerInterface(activity);
-                        serverInterface.doFeedbackRequest(formdata);
-                        return true;
-                    }
-                    catch (UnsupportedEncodingException e)
-                    {
-                        // Just fail
-                        MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, e);
-                    }
-                    catch (PsiphonServerInterfaceException e)
-                    {
-                        // Just fail
-                        MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, e);
-                    }
-                }
-                else
+                if (!urlParameters.startsWith(formDataParameterName))
                 {
                     MyLog.w(R.string.FeedbackActivity_InvalidURLParameters);
+                    return false;
                 }
-                return false;
+
+                ServerInterface serverInterface = new ServerInterface(activity);
+                serverInterface.start();
+
+                String formData;
+                try
+                {
+                    formData = URLDecoder.decode(urlParameters.substring(formDataParameterName.length()), "utf-8");
+                }
+                catch (UnsupportedEncodingException e)
+                {
+                    MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, e);
+                    return false;
+                }
+                
+                // Hack to get around network/UI restriction. Still blocks the UI
+                // for the duration of the request until timeout.
+                // TODO: Actually run in the background
+                class FeedbackRequestThread extends Thread
+                {
+                    private ServerInterface m_serverInterface;
+                    private String m_formData;
+                    private boolean m_success = false;
+                    
+                    FeedbackRequestThread(ServerInterface serverInterface, String formData)
+                    {
+                        m_serverInterface = serverInterface;
+                        m_formData = formData;
+                    }
+
+                    public void run()
+                    {
+                        try
+                        {
+                            m_serverInterface.doFeedbackRequest(m_formData);
+                            m_success = true;
+                        }
+                        catch (PsiphonServerInterfaceException e)
+                        {
+                        }
+                    }
+                    
+                    public boolean getSuccess()
+                    {
+                        return m_success;
+                    }
+                }
+                    
+                try
+                {
+                    FeedbackRequestThread thread = new FeedbackRequestThread(serverInterface, formData);
+                    thread.start();
+                    thread.join();                 
+                    return thread.getSuccess();
+                }
+                catch (InterruptedException e)
+                {
+                    MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, e);
+                    return false;
+                }
             }
         });
 

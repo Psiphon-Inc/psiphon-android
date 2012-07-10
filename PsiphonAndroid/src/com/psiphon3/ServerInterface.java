@@ -165,42 +165,45 @@ public class ServerInterface
 
         // Load persistent server entries, then add embedded entries
         
-        try
+        synchronized(PsiphonData.getPsiphonData().serverEntryFileLock)
         {
-            FileInputStream file = context.openFileInput(
-                    PsiphonConstants.SERVER_ENTRY_FILENAME);
-            BufferedReader reader =
-                new BufferedReader(
-                    new InputStreamReader(file));
-            StringBuilder json = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null)
+            try
             {
-                json.append(line);
+                FileInputStream file = context.openFileInput(
+                        PsiphonConstants.SERVER_ENTRY_FILENAME);
+                BufferedReader reader =
+                    new BufferedReader(
+                        new InputStreamReader(file));
+                StringBuilder json = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null)
+                {
+                    json.append(line);
+                }
+                file.close();
+                JSONObject obj = new JSONObject(json.toString());
+                JSONArray jsonServerEntries = obj.getJSONArray("serverEntries");
+        
+                for (int i = 0; i < jsonServerEntries.length(); i++)
+                {
+                    // NOTE: No shuffling, as we're restoring a previously arranged list
+                    addServerEntry(jsonServerEntries.getString(i), false);
+                }
             }
-            file.close();
-            JSONObject obj = new JSONObject(json.toString());
-            JSONArray jsonServerEntries = obj.getJSONArray("serverEntries");
-    
-            for (int i = 0; i < jsonServerEntries.length(); i++)
+            catch (FileNotFoundException e)
             {
-                // NOTE: No shuffling, as we're restoring a previously arranged list
-                addServerEntry(jsonServerEntries.getString(i), false);
+                // pass
             }
-        }
-        catch (FileNotFoundException e)
-        {
-            // pass
-        }
-        catch (IOException e)
-        {
-            MyLog.w(R.string.ServerInterface_FailedToReadStoredServerEntries, e);
-            // skip loading persistent server entries
-        } 
-        catch (JSONException e)
-        {
-            MyLog.w(R.string.ServerInterface_FailedToParseStoredServerEntries, e);
-            // skip loading persistent server entries
+            catch (IOException e)
+            {
+                MyLog.w(R.string.ServerInterface_FailedToReadStoredServerEntries, e);
+                // skip loading persistent server entries
+            } 
+            catch (JSONException e)
+            {
+                MyLog.w(R.string.ServerInterface_FailedToParseStoredServerEntries, e);
+                // skip loading persistent server entries
+            }
         }
         
         try
@@ -293,6 +296,16 @@ public class ServerInterface
     {
         assert(this.clientSessionID != null);
         return this.clientSessionID;
+    }
+    
+    synchronized public String getCurrentServerSessionID()
+    {
+        if (this.serverSessionID != null)
+        {
+            return this.serverSessionID;
+        }
+        
+        return "";
     }
     
     /**
@@ -531,15 +544,14 @@ public class ServerInterface
     synchronized public void doFeedbackRequest(String feedbackData) 
         throws PsiphonServerInterfaceException
     {
-        // TODO: set relay protocol to (NONE) if not connected
         // TODO: protect server list with mutex
 
         // NOTE: feedbackData is not being validated here
         byte[] requestBody = feedbackData.getBytes();
 
         List<Pair<String,String>> extraParams = new ArrayList<Pair<String,String>>();
-        // TODO: when is this.serverSessionID valid?
-        extraParams.add(Pair.create("session_id", this.serverSessionID));
+
+        extraParams.add(Pair.create("session_id", PsiphonData.getPsiphonData().getTunnelSessionID()));
 
         List<Pair<String,String>> additionalHeaders = new ArrayList<Pair<String,String>>();
         additionalHeaders.add(Pair.create("Content-Type", "application/json"));
@@ -657,7 +669,7 @@ public class ServerInterface
            .append("&propagation_channel_id=").append(Utils.urlEncode(EmbeddedValues.PROPAGATION_CHANNEL_ID))
            .append("&sponsor_id=").append(Utils.urlEncode(EmbeddedValues.SPONSOR_ID))
            .append("&client_version=").append(Utils.urlEncode(EmbeddedValues.CLIENT_VERSION))
-           .append("&relay_protocol=").append(Utils.urlEncode(PsiphonConstants.RELAY_PROTOCOL))
+           .append("&relay_protocol=").append(Utils.urlEncode(PsiphonData.getPsiphonData().getTunnelRelayProtocol()))
            .append("&client_platform=").append(Utils.urlEncode(PsiphonConstants.PLATFORM));
         
         if (extraParams != null)
@@ -1080,30 +1092,32 @@ public class ServerInterface
     
     private void saveServerEntries()
     {
-        try
+        synchronized(PsiphonData.getPsiphonData().serverEntryFileLock)
         {
-            FileOutputStream file;
-            file = this.ownerContext.openFileOutput(PsiphonConstants.SERVER_ENTRY_FILENAME, Context.MODE_PRIVATE);
-            JSONObject obj = new JSONObject();
-            JSONArray array = new JSONArray();
-            for (ServerEntry serverEntry : this.serverEntries)
+            try
             {
-                array.put(serverEntry.encodedEntry);
-                
+                FileOutputStream file;
+                file = this.ownerContext.openFileOutput(PsiphonConstants.SERVER_ENTRY_FILENAME, Context.MODE_PRIVATE);
+                JSONObject obj = new JSONObject();
+                JSONArray array = new JSONArray();
+                for (ServerEntry serverEntry : this.serverEntries)
+                {
+                    array.put(serverEntry.encodedEntry);
+                }
+                obj.put("serverEntries", array);
+                file.write(obj.toString().getBytes());
+                file.close();
             }
-            obj.put("serverEntries", array);
-            file.write(obj.toString().getBytes());
-            file.close();
-        }
-        catch (JSONException e)
-        {
-            MyLog.w(R.string.ServerInterface_FailedToCreateServerEntries, e);
-            // Proceed, even if file saving fails
-        } 
-        catch (IOException e)
-        {
-            MyLog.w(R.string.ServerInterface_FailedToStoreServerEntries, e);
-            // Proceed, even if file saving fails
+            catch (JSONException e)
+            {
+                MyLog.w(R.string.ServerInterface_FailedToCreateServerEntries, e);
+                // Proceed, even if file saving fails
+            } 
+            catch (IOException e)
+            {
+                MyLog.w(R.string.ServerInterface_FailedToStoreServerEntries, e);
+                // Proceed, even if file saving fails
+            }
         }
     }
 

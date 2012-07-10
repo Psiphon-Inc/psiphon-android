@@ -57,6 +57,10 @@ public class PsiphonData
     private Stats m_stats;
     private Date m_nextFetchRemoteServerList;
     private boolean m_statusActivityForeground;
+    private String m_tunnelSessionID;
+    private String m_tunnelRelayProtocol;
+
+    public Object serverEntryFileLock = new Object(); // Used as an intrinsic lock
         
     private PsiphonData()
     {
@@ -112,6 +116,26 @@ public class PsiphonData
     public synchronized boolean getStatusActivityForeground()
     {
         return m_statusActivityForeground;
+    }
+    
+    public synchronized void setTunnelSessionID(String sessionID)
+    {
+        m_tunnelSessionID = sessionID;
+    }
+    
+    public synchronized String getTunnelSessionID()
+    {
+        return m_tunnelSessionID;
+    }
+    
+    public synchronized void setTunnelRelayProtocol(String relayProtocol)
+    {
+        m_tunnelRelayProtocol = relayProtocol;
+    }
+    
+    public synchronized String getTunnelRelayProtocol()
+    {
+        return m_tunnelRelayProtocol;
     }
     
     public class StatusMessage
