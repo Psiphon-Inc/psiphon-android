@@ -414,12 +414,50 @@ public class ServerInterface
     synchronized public void doConnectedRequest() 
         throws PsiphonServerInterfaceException
     {
+        String lastConnected = "None";
+        try
+        {
+            FileInputStream file = this.ownerContext.openFileInput(
+                    PsiphonConstants.LAST_CONNECTED_FILENAME);
+            BufferedReader reader =
+                new BufferedReader(
+                    new InputStreamReader(file));
+            char[] buf = new char[30];
+            reader.read(buf);
+            file.close();
+            lastConnected = new String(buf);
+            lastConnected = lastConnected.trim();
+        }
+        catch (FileNotFoundException e)
+        {
+            // pass
+        }
+        catch (IOException e)
+        {
+            MyLog.w(R.string.ServerInterface_FailedToReadLastConnected, e);
+            // skip loading persistent server entries
+        }         
+        
         List<Pair<String,String>> extraParams = new ArrayList<Pair<String,String>>();
         extraParams.add(Pair.create("session_id", this.serverSessionID));
+        extraParams.add(Pair.create("last_connected", lastConnected));
         
         String url = getRequestURL("connected", extraParams);
         
         makeAbortableProxiedPsiphonRequest(url);
+
+        try
+        {
+            FileOutputStream file;
+            file = this.ownerContext.openFileOutput(PsiphonConstants.LAST_CONNECTED_FILENAME, Context.MODE_PRIVATE);
+            file.write(Utils.getISO8601String().getBytes());
+            file.close();
+        }
+        catch (IOException e)
+        {
+            MyLog.w(R.string.ServerInterface_FailedToStoreLastConnected, e);
+            // Proceed, even if file saving fails
+        }
     }
 
     /**
