@@ -237,6 +237,9 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     
     private boolean runTunnelOnce() throws InterruptedException
     {
+        PsiphonData.getPsiphonData().setTunnelRelayProtocol("");
+        PsiphonData.getPsiphonData().setTunnelSessionID("");
+
         m_interface.start();
         
         // Generate a new client session ID to be included with all subsequent web requests
@@ -304,12 +307,14 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             conn.addConnectionMonitor(monitor);
             
             setState(State.CONNECTED);
+            PsiphonData.getPsiphonData().setTunnelRelayProtocol(PsiphonConstants.RELAY_PROTOCOL);
             
             checkSignals(0);
 
             try
             {
                 m_interface.doHandshakeRequest();
+                PsiphonData.getPsiphonData().setTunnelSessionID(m_interface.getCurrentServerSessionID());
 
                 Events.signalHandshakeSuccess(this);
             } 
@@ -396,6 +401,9 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         }
         finally
         {
+            PsiphonData.getPsiphonData().setTunnelRelayProtocol("");
+            PsiphonData.getPsiphonData().setTunnelSessionID("");
+
             // Abort any outstanding HTTP requests.
             // Currently this would only be the upgrade download request.
             // Otherwise the call below to m_upgradeDownloader.stop() would block.

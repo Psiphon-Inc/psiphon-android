@@ -29,6 +29,8 @@ public class PsiphonConstants
 
     public final static String SERVER_ENTRY_FILENAME = "psiphon_server_entries.json";
 
+    public final static String LAST_CONNECTED_FILENAME = "last_connected";
+
     public final static int CLIENT_SESSION_ID_SIZE_IN_BYTES = 16;
     
     public final static int SOCKS_PORT = 1080;
