@@ -17,11 +17,13 @@ package org.zirco.ui.components;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Iterator;
 
 import org.zirco.controllers.Controller;
 import org.zirco.utils.ApplicationUtils;
 import org.zirco.utils.Constants;
 import org.zirco.utils.ProxySettings;
+import org.zirco.utils.UrlUtils;
 
 import android.content.Context;
 import android.os.Build;
@@ -96,9 +98,7 @@ public class CustomWebView extends WebView {
 		settings.setSaveFormData(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_FORM_DATA, true));
 		settings.setSavePassword(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_PASSWORDS, true));
 		settings.setDefaultZoom(ZoomDensity.valueOf(Controller.getInstance().getPreferences().getString(Constants.PREFERENCES_DEFAULT_ZOOM_LEVEL, ZoomDensity.MEDIUM.toString())));		
-		// PSIPHON: Default to Desktop user agent
-		//settings.setUserAgentString(Controller.getInstance().getPreferences().getString(Constants.PREFERENCES_BROWSER_USER_AGENT, Constants.USER_AGENT_DEFAULT));
-		settings.setUserAgentString(Controller.getInstance().getPreferences().getString(Constants.PREFERENCES_BROWSER_USER_AGENT, Constants.USER_AGENT_DESKTOP));
+		settings.setUserAgentString(Controller.getInstance().getPreferences().getString(Constants.PREFERENCES_BROWSER_USER_AGENT, Constants.USER_AGENT_DEFAULT));
 		
 		CookieManager.getInstance().setAcceptCookie(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_COOKIES, true));
 		
@@ -169,7 +169,16 @@ public class CustomWebView extends WebView {
 	
 	@Override
 	public void loadUrl(String url) {
-		mLoadedUrl = url;
+        WebSettings settings = getSettings();
+        if(UrlUtils.checkInDesktopViewUrlList(mContext, url) )
+        {
+            settings.setUserAgentString(Controller.getInstance().getPreferences().getString(Constants.USER_AGENT_DESKTOP, Constants.USER_AGENT_DESKTOP));
+        }
+        else
+        {
+            settings.setUserAgentString(Controller.getInstance().getPreferences().getString(Constants.PREFERENCES_BROWSER_USER_AGENT, Constants.USER_AGENT_DEFAULT));
+        }
+        mLoadedUrl = url;
 		super.loadUrl(url);
 	}
 

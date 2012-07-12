@@ -36,6 +36,7 @@ public final class Controller {
 	private List<DownloadItem> mDownloadList;
 	private List<String> mAdBlockWhiteList = null;
 	private List<String> mMobileViewUrlList = null;
+	private List<String> mDesktopViewUrlList = null;
 	
 	/**
 	 * Holder for singleton implementation.
@@ -167,5 +168,28 @@ public final class Controller {
 	public void resetMobileViewUrlList() {
 		mMobileViewUrlList = null;
 	}
+
+	/**
+     * Reset the desktop view url list, so that it will be reloaded.
+     */
+    public void resetDesktopViewUrlList() {
+        mDesktopViewUrlList = null;
+    }
+    
+    /**
+     * Get the list of desktop view urls.
+     * @param context The current context.
+     * @return A list of String url.
+     */
+    public List<String> getDesktopViewUrlList(Context context) {
+        if (mDesktopViewUrlList == null) {
+            DbAdapter db = new DbAdapter(context);
+            db.open();
+            mDesktopViewUrlList = db.getDesktopViewUrlList();
+            db.close();
+        }
+        return mDesktopViewUrlList;
+    }
+    
 	
 }

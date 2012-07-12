@@ -248,7 +248,13 @@
 			android:summary="@string/PreferencesActivity.MobileViewListPreferenceSummary"
 			android:key="MobileViewList" />
 	</PreferenceCategory>
-	<PreferenceCategory android:title="@string/PreferencesActivity.AdvancedCategoryTitle">
+	<PreferenceCategory android:title="@string/PreferencesActivity.DesktopViewCategoryTitle">
+		<Preference
+			android:title="@string/PreferencesActivity.DesktopViewListPreferenceTitle"
+			android:summary="@string/PreferencesActivity.DesktopViewListPreferenceSummary"
+			android:key="DesktopViewList" />
+	</PreferenceCategory>
+		<PreferenceCategory android:title="@string/PreferencesActivity.AdvancedCategoryTitle">
     	<PreferenceScreen
             android:key="ToolsHistoryBookmarksPreferencesScreen"
             android:title="@string/PreferencesActivity.ToolsHistoryBookmarksPreferenceTitle"

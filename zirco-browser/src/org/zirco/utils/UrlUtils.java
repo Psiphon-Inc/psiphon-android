@@ -96,4 +96,27 @@ public class UrlUtils {
 		}
 	}
 	
+	   /**
+     * Check if there is an item in the desktop view url list that match a given url.
+     * @param context The current context.
+     * @param url The url to check.
+     * @return True if an item in the list match the given url.
+     */
+    public static boolean checkInDesktopViewUrlList(Context context, String url) {
+        
+        if (url != null) {
+            boolean inList = false;
+            Iterator<String> iter = Controller.getInstance().getDesktopViewUrlList(context).iterator();          
+            while ((iter.hasNext()) &&
+                    (!inList)) {
+                if (url.contains(iter.next())) {
+                    inList = true;
+                }
+            }
+            return inList;
+        } else {
+            return false;
+        }
+    }
+	
 }
