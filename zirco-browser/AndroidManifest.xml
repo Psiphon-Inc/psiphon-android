@@ -56,6 +56,7 @@
 		<activity android:name=".ui.activities.preferences.SearchUrlPreferenceActivity" android:theme="@android:style/Theme.Dialog" android:label="@string/SearchUrlPreferenceActivity.Title"></activity>
 		<activity android:name=".ui.activities.preferences.UserAgentPreferenceActivity" android:theme="@android:style/Theme.Dialog" android:label="@string/UserAgentPreferenceActivity.Title"></activity>
 		<activity android:name=".ui.activities.MobileViewListActivity"></activity>
+		<activity android:name=".ui.activities.DesktopViewListActivity"></activity>
 		<activity android:name=".ui.activities.WeaveBookmarksListActivity"></activity>
 		<activity android:name=".ui.activities.preferences.WeavePreferencesActivity"></activity>
 		<activity android:name=".ui.activities.preferences.WeaveServerPreferenceActivity" android:theme="@android:style/Theme.Dialog" android:label="@string/WeaveServerPreferenceActivity.Title"></activity>

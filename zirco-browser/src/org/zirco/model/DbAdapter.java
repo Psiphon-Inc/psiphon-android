@@ -40,7 +40,11 @@ public class DbAdapter {
 	private static final String TAG = "DbAdapter";
 
 	private static final String DATABASE_NAME = "ZIRCO";
-	private static final int DATABASE_VERSION = 6;
+	//private static final int DATABASE_VERSION = 6;
+	/* PSIPHON
+	 * bump the version to create DESKTOP_VIEW_URL table
+	 */
+	private static final int DATABASE_VERSION = 7;
 	
 	/**
 	 * Adblock white list table.
@@ -66,7 +70,20 @@ public class DbAdapter {
 		MOBILE_VIEW_URL_ROWID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
 		MOBILE_VIEW_URL_URL + " TEXT NOT NULL);";
 	
-	protected boolean mAdBlockListNeedPopulate = false;
+    /**
+     * Mobile view url table.
+     */
+    public static final String DESKTOP_VIEW_URL_ROWID = "_id";
+    public static final String DESKTOP_VIEW_URL_URL = "url";
+    
+    private static final String DESKTOP_VIEW_DATABASE_TABLE = "DESKTOP_VIEW_URL";
+    
+    private static final String DESKTOP_VIEW_DATABASE_CREATE = "CREATE TABLE " + DESKTOP_VIEW_DATABASE_TABLE + " (" +
+        DESKTOP_VIEW_URL_ROWID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+        DESKTOP_VIEW_URL_URL + " TEXT NOT NULL);";
+
+    protected boolean mAdBlockListNeedPopulate = false;
+    protected boolean mDesktopViewListNeedPopulate = false;
 	
 	private DatabaseHelper mDbHelper;
     private SQLiteDatabase mDb;
@@ -92,6 +109,10 @@ public class DbAdapter {
         if (mAdBlockListNeedPopulate) {
         	populateDefaultWhiteList();
         	mAdBlockListNeedPopulate = false;
+        }
+        if (mDesktopViewListNeedPopulate) {
+            populateDesktopViewDefault();
+            mDesktopViewListNeedPopulate = false;
         }
         
         return this;
@@ -202,22 +223,22 @@ public class DbAdapter {
      * @return The url.
      */
     public String getMobileViewUrlItemById(long rowId) {
-    	Cursor cursor = mDb.query(true, MOBILE_VIEW_DATABASE_TABLE, new String[] {MOBILE_VIEW_URL_ROWID, MOBILE_VIEW_URL_URL},
-    			MOBILE_VIEW_URL_ROWID + "=" + rowId, null, null, null, null, null);
-    	
-    	if (cursor.moveToFirst()) {
-    		
-    		String result;
-    		result = cursor.getString(cursor.getColumnIndex(MOBILE_VIEW_URL_URL));
-    		
-    		cursor.close();
-    		
-    		return result;
-    		
-    	} else {
-    		cursor.close();
-    		return null;
-    	}
+        Cursor cursor = mDb.query(true, MOBILE_VIEW_DATABASE_TABLE, new String[] {MOBILE_VIEW_URL_ROWID, MOBILE_VIEW_URL_URL},
+                MOBILE_VIEW_URL_ROWID + "=" + rowId, null, null, null, null, null);
+        
+        if (cursor.moveToFirst()) {
+            
+            String result;
+            result = cursor.getString(cursor.getColumnIndex(MOBILE_VIEW_URL_URL));
+            
+            cursor.close();
+            
+            return result;
+            
+        } else {
+            cursor.close();
+            return null;
+        }
     }
     
     /**
@@ -225,21 +246,21 @@ public class DbAdapter {
      * @return A list of url.
      */
     public List<String> getMobileViewUrlList() {
-    	List<String> result = new ArrayList<String>();
-    	
-    	Cursor cursor = getMobileViewUrlCursor();
-    	
-    	if (cursor.moveToFirst()) {
-    		do {
-    			
-    			result.add(cursor.getString(cursor.getColumnIndex(MOBILE_VIEW_URL_URL)));
-    			
-    		} while (cursor.moveToNext());
-    	}
-    	
-    	cursor.close();
-    	
-    	return result;
+        List<String> result = new ArrayList<String>();
+        
+        Cursor cursor = getMobileViewUrlCursor();
+        
+        if (cursor.moveToFirst()) {
+            do {
+                
+                result.add(cursor.getString(cursor.getColumnIndex(MOBILE_VIEW_URL_URL)));
+                
+            } while (cursor.moveToNext());
+        }
+        
+        cursor.close();
+        
+        return result;
     }
     
     /**
@@ -247,7 +268,7 @@ public class DbAdapter {
      * @return A Cursor to the mobile view url list.
      */
     public Cursor getMobileViewUrlCursor() {
-    	return mDb.query(MOBILE_VIEW_DATABASE_TABLE, new String[] {MOBILE_VIEW_URL_ROWID, MOBILE_VIEW_URL_URL}, null, null, null, null, null);
+        return mDb.query(MOBILE_VIEW_DATABASE_TABLE, new String[] {MOBILE_VIEW_URL_ROWID, MOBILE_VIEW_URL_URL}, null, null, null, null, null);
     }
     
     /**
@@ -255,7 +276,7 @@ public class DbAdapter {
      * @param url The new url.
      */
     public void insertInMobileViewUrlList(String url) {
-    	ContentValues initialValues = new ContentValues();
+        ContentValues initialValues = new ContentValues();
         initialValues.put(MOBILE_VIEW_URL_URL, url);
         
         mDb.insert(MOBILE_VIEW_DATABASE_TABLE, null, initialValues);
@@ -266,15 +287,100 @@ public class DbAdapter {
      * @param id The id of the url to delete.
      */
     public void deleteFromMobileViewUrlList(long id) {
-    	mDb.execSQL("DELETE FROM " + MOBILE_VIEW_DATABASE_TABLE + " WHERE " + MOBILE_VIEW_URL_ROWID + " = " + id + ";");
+        mDb.execSQL("DELETE FROM " + MOBILE_VIEW_DATABASE_TABLE + " WHERE " + MOBILE_VIEW_URL_ROWID + " = " + id + ";");
     }
     
     /**
      * Clear the mobile view url list.
      */
     public void clearMobileViewUrlList() {
-    	mDb.execSQL("DELETE FROM " + MOBILE_VIEW_DATABASE_TABLE + ";");
+        mDb.execSQL("DELETE FROM " + MOBILE_VIEW_DATABASE_TABLE + ";");
     }
+    
+    /*******************************************************************************************************************************************************    
+    /*PSIPHON:
+     * Websites to use desktop User Agent on
+     */
+    public String getDesktopViewUrlItemById(long rowId) {
+        Cursor cursor = mDb.query(true, DESKTOP_VIEW_DATABASE_TABLE, new String[] {DESKTOP_VIEW_URL_ROWID, DESKTOP_VIEW_URL_URL},
+                DESKTOP_VIEW_URL_ROWID + "=" + rowId, null, null, null, null, null);
+        
+        if (cursor.moveToFirst()) {
+            
+            String result;
+            result = cursor.getString(cursor.getColumnIndex(DESKTOP_VIEW_URL_URL));
+            
+            cursor.close();
+            
+            return result;
+            
+        } else {
+            cursor.close();
+            return null;
+        }
+    }
+    
+    /**
+     * Get a list of all urls in mobile view list.
+     * @return A list of url.
+     */
+    public List<String> getDesktopViewUrlList() {
+        List<String> result = new ArrayList<String>();
+        
+        Cursor cursor = getDesktopViewUrlCursor();
+        
+        if (cursor.moveToFirst()) {
+            do {
+                
+                result.add(cursor.getString(cursor.getColumnIndex(DESKTOP_VIEW_URL_URL)));
+                
+            } while (cursor.moveToNext());
+        }
+        
+        cursor.close();
+        
+        return result;
+    }
+    
+    /**
+     * Get a Cursor to the mobile view url list.
+     * @return A Cursor to the mobile view url list.
+     */
+    public Cursor getDesktopViewUrlCursor() {
+        return mDb.query(DESKTOP_VIEW_DATABASE_TABLE, new String[] {DESKTOP_VIEW_URL_ROWID, DESKTOP_VIEW_URL_URL}, null, null, null, null, null);
+    }
+    
+    /**
+     * Insert an url in the mobile view url list.
+     * @param url The new url.
+     */
+    public void insertInDesktopViewUrlList(String url) {
+        ContentValues initialValues = new ContentValues();
+        initialValues.put(DESKTOP_VIEW_URL_URL, url);
+        
+        mDb.insert(DESKTOP_VIEW_DATABASE_TABLE, null, initialValues);
+    }
+    
+    /**
+     * Delete an url from the mobile view url list.
+     * @param id The id of the url to delete.
+     */
+    public void deleteFromDesktopViewUrlList(long id) {
+        mDb.execSQL("DELETE FROM " + DESKTOP_VIEW_DATABASE_TABLE + " WHERE " + DESKTOP_VIEW_URL_ROWID + " = " + id + ";");
+    }
+    
+    /**
+     * Clear the mobile view url list.
+     */
+    public void clearDesktopViewUrlList() {
+        mDb.execSQL("DELETE FROM " + DESKTOP_VIEW_DATABASE_TABLE + ";");
+    }
+    
+    private void populateDesktopViewDefault()
+    {
+        insertInDesktopViewUrlList("youtube.com");
+    }
+    
     
     /**
      * Populate the white list with default values.
@@ -307,6 +413,8 @@ public class DbAdapter {
 			db.execSQL(ADBLOCK_WHITELIST_DATABASE_CREATE);
 			db.execSQL(MOBILE_VIEW_DATABASE_CREATE);
 			mParent.mAdBlockListNeedPopulate = true;
+            db.execSQL(DESKTOP_VIEW_DATABASE_CREATE);
+			mParent.mDesktopViewListNeedPopulate = true;
 		}		
 
 		@Override
@@ -326,6 +434,9 @@ public class DbAdapter {
 				exportOldBookmarks(db);
 				db.execSQL("DROP TABLE IF EXISTS BOOKMARKS;");
 				db.execSQL("DROP TABLE IF EXISTS HISTORY;");
+			case 6: 
+			    db.execSQL(DESKTOP_VIEW_DATABASE_CREATE);
+			    mParent.mDesktopViewListNeedPopulate = true;
 			default: break;
 			}
 		}
