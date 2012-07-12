@@ -688,7 +688,10 @@ public class ServerInterface
             {
                 try
                 {
-                    return makeRequest(false, false, null, url, additionalHeaders, body);
+                    // Psiphon web request: authenticate the web server using the embedded certificate.
+                    String psiphonServerCertificate = getCurrentServerEntry().webServerCertificate;
+
+                    return makeRequest(false, false, psiphonServerCertificate, url, additionalHeaders, body);
                 }
                 catch (PsiphonServerInterfaceException e2)
                 {
