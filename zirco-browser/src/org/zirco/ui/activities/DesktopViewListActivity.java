@@ -27,7 +27,7 @@ import android.widget.SimpleCursorAdapter;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
- * AdBlocker white list activity.
+ * Desktop View list activity.
  */
 public class DesktopViewListActivity extends ListActivity {
     
@@ -157,7 +157,7 @@ public class DesktopViewListActivity extends ListActivity {
     }
     
     /**
-     * Add a value to the white list.
+     * Add a value to the list.
      * @param value The value to add.
      */
     private void doAddToDesktopViewList(String value) {
@@ -199,7 +199,7 @@ public class DesktopViewListActivity extends ListActivity {
     }
     
     /**
-     * Clear the white list.
+     * Clear the list.
      */
     private void doClearDesktopViewList() {
         mDbAdapter.clearDesktopViewUrlList();
@@ -208,7 +208,7 @@ public class DesktopViewListActivity extends ListActivity {
     }
     
     /**
-     * Display a confirmation dialog and clear the white list.
+     * Display a confirmation dialog and clear the list.
      */
     private void clearDesktopViewList() {
         ApplicationUtils.showYesNoDialog(this,
