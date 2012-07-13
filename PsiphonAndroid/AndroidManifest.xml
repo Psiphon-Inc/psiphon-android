@@ -51,6 +51,7 @@
         <activity android:name="org.zirco.ui.activities.preferences.SearchUrlPreferenceActivity"></activity>
         <activity android:name="org.zirco.ui.activities.preferences.UserAgentPreferenceActivity"></activity>
         <activity android:name="org.zirco.ui.activities.MobileViewListActivity"></activity>
+        <activity android:name="org.zirco.ui.activities.DesktopViewListActivity"></activity>
         <activity android:name="org.zirco.ui.activities.WeaveBookmarksListActivity"></activity>
         <activity android:name="org.zirco.ui.activities.preferences.WeavePreferencesActivity"></activity>
         <activity android:name="org.zirco.ui.activities.preferences.WeaveServerPreferenceActivity"></activity>

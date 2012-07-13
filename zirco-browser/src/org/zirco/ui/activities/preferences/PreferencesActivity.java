@@ -24,6 +24,7 @@ import org.zirco.ui.activities.AboutActivity;
 import org.zirco.ui.activities.AdBlockerWhiteListActivity;
 import org.zirco.ui.activities.ChangelogActivity;
 import org.zirco.ui.activities.MobileViewListActivity;
+import org.zirco.ui.activities.DesktopViewListActivity;
 import org.zirco.ui.activities.MainActivity;
 import org.zirco.ui.components.CustomWebView;
 import org.zirco.ui.runnables.XmlHistoryBookmarksExporter;
@@ -158,7 +159,16 @@ public class PreferencesActivity extends PreferenceActivity {
 				return true;
 			}			
 		});
-		
+
+		//PSIPHON
+        Preference desktopViewPref = (Preference) findPreference("DesktopViewList");
+        desktopViewPref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                openDesktopViewListActivity();
+                return true;
+            }           
+        });
 		/* PSIPHON: Disable AdBlocker
 		Preference whiteListPref = (Preference) findPreference("AdBlockerWhiteList");
 		whiteListPref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -314,7 +324,15 @@ public class PreferencesActivity extends PreferenceActivity {
 		startActivity(i);
 	}
 	
-	/**
+    /**
+     * Display the desktop view list activity.
+     */
+    private void openDesktopViewListActivity() {
+        Intent i = new Intent(this, DesktopViewListActivity.class);
+        startActivity(i);
+    }
+
+    /**
 	 * Display the ad blocker white list activity.
 	 */
 	private void openWhiteListActivity() {

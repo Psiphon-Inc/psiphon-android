@@ -1381,8 +1381,9 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
     	
     	if (visible) {
     		
-    		if (!mUrlBarVisible) {    			
-    			mTopBar.startAnimation(AnimationManager.getInstance().getTopBarShowAnimation());
+    		if (!mUrlBarVisible) {    
+    		    // PSIPHON: disable hiding the address bar
+    			// mTopBar.startAnimation(AnimationManager.getInstance().getTopBarShowAnimation());
     			mBottomBar.startAnimation(AnimationManager.getInstance().getBottomBarShowAnimation());
     			
     			if (switchTabByButtons) {
@@ -1419,7 +1420,8 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
     	} else {  	
     		
     		if (mUrlBarVisible) {
-    			mTopBar.startAnimation(AnimationManager.getInstance().getTopBarHideAnimation());
+                // PSIPHON: disable hiding the address bar
+    		    // mTopBar.startAnimation(AnimationManager.getInstance().getTopBarHideAnimation());
     			mBottomBar.startAnimation(AnimationManager.getInstance().getBottomBarHideAnimation());    			    			
     			
     			if (switchTabByButtons) {
@@ -1432,7 +1434,8 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
     				}
     			}
     			
-    			mTopBar.setVisibility(View.GONE);
+                // PSIPHON: disable hiding the address bar
+    			// mTopBar.setVisibility(View.GONE);
     			mBottomBar.setVisibility(View.GONE);
     			
     			if (switchTabByButtons) {
@@ -1598,7 +1601,6 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
     				
     				url = String.format(Constants.URL_GOOGLE_MOBILE_VIEW, url);    				
     			}
-    			
     			mCurrentWebView.loadUrl(url);    			
     		}
     	}
