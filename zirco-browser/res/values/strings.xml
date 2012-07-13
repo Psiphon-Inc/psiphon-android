@@ -535,7 +535,7 @@
     <string name="VideoLoading">Loading video\u2026</string>
     <string name="PreferencesActivity.DesktopViewCategoryTitle">Desktop view settings</string>
     <string name="PreferencesActivity.DesktopViewListPreferenceTitle">Desktop mode list</string>
-    <string name="PreferencesActivity.DesktopViewListPreferenceSummary">Websites in this list wil be loaded using the Desktop User Agent</string>
+    <string name="PreferencesActivity.DesktopViewListPreferenceSummary">Websites in this list will be loaded using the Desktop User Agent.</string>
     
     <string name="DesktopViewListActivity.Title">Psiphon Browser - Websites list for desktop view</string>
 	<string name="DesktopViewListActivity.ListEmpty">List is empty.</string>	
