@@ -3,8 +3,12 @@ package com.psiphon3;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.IllegalFormatException;
+import java.util.Locale;
 import java.util.Random;
+import java.util.TimeZone;
 
 import android.app.Activity;
 import android.content.pm.ApplicationInfo;
@@ -391,5 +395,14 @@ public class Utils {
             }
         }
         return debug;
+    }
+
+    public static String getISO8601String()
+    {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String date = sdf.format(new Date());
+        date += "Z";
+        return date;
     }
 }
