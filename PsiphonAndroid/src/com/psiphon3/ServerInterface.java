@@ -707,6 +707,12 @@ public class ServerInterface
            .append("&client_version=").append(Utils.urlEncode(EmbeddedValues.CLIENT_VERSION))
            .append("&relay_protocol=").append(Utils.urlEncode(PsiphonData.getPsiphonData().getTunnelRelayProtocol()))
            .append("&client_platform=").append(Utils.urlEncode(PsiphonConstants.PLATFORM));
+
+        //try to detect if device is rooted and append to the client_platform string
+        if( Utils.isRooted())
+        {
+            url.append(Utils.urlEncode(PsiphonConstants.ROOTED));
+        }
         
         if (extraParams != null)
         {

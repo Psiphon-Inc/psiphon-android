@@ -51,4 +51,6 @@ public class PsiphonConstants
     public final static int SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH = 60*60*6;
             
     public final static int SECONDS_BETWEEN_UNSUCCESSFUL_REMOTE_SERVER_LIST_FETCH = 60*5;
+
+    public final static String ROOTED = "_rooted";
 }
