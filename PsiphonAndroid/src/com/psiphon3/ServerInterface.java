@@ -694,6 +694,13 @@ public class ServerInterface
         String clientSessionID = getCurrentClientSessionID();
         
         StringBuilder url = new StringBuilder();
+        String clientPlatform = PsiphonConstants.PLATFORM;
+        
+        //try to detect if device is rooted and append to the client_platform string
+        if( Utils.isRooted())
+        {
+            clientPlatform += PsiphonConstants.ROOTED;
+        }
         
         url.append("https://").append(serverEntry.ipAddress)
            .append(":").append(useServerEntryWebServerPort ?
@@ -706,14 +713,8 @@ public class ServerInterface
            .append("&sponsor_id=").append(Utils.urlEncode(EmbeddedValues.SPONSOR_ID))
            .append("&client_version=").append(Utils.urlEncode(EmbeddedValues.CLIENT_VERSION))
            .append("&relay_protocol=").append(Utils.urlEncode(PsiphonData.getPsiphonData().getTunnelRelayProtocol()))
-           .append("&client_platform=").append(Utils.urlEncode(PsiphonConstants.PLATFORM));
+           .append("&client_platform=").append(Utils.urlEncode(clientPlatform));
 
-        //try to detect if device is rooted and append to the client_platform string
-        if( Utils.isRooted())
-        {
-            url.append(Utils.urlEncode(PsiphonConstants.ROOTED));
-        }
-        
         if (extraParams != null)
         {
             for (Pair<String,String> param : extraParams) 
