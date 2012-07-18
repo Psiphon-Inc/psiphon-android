@@ -55,7 +55,7 @@ public interface UpgradeManager
         
         public String getPath()
         {
-            return this.context.getExternalFilesDir("upgrade").getAbsolutePath();
+            return this.context.getFilesDir().getAbsolutePath();
         }
         
         public String getAbsolutePath()
