@@ -57,6 +57,7 @@ public class PsiphonData
     private Stats m_stats;
     private Date m_nextFetchRemoteServerList;
     private boolean m_statusActivityForeground;
+    private String m_clientSessionID;
     private String m_tunnelSessionID;
     private String m_tunnelRelayProtocol;
 
@@ -116,6 +117,16 @@ public class PsiphonData
     public synchronized boolean getStatusActivityForeground()
     {
         return m_statusActivityForeground;
+    }
+    
+    public synchronized void setClientSessionID(String clientSessionID)
+    {
+        m_clientSessionID = clientSessionID;
+    }
+    
+    public synchronized String getClientSessionID()
+    {
+        return m_clientSessionID;
     }
     
     public synchronized void setTunnelSessionID(String sessionID)

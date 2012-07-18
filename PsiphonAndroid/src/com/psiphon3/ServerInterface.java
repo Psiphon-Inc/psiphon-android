@@ -148,7 +148,6 @@ public class ServerInterface
     private ArrayList<ServerEntry> serverEntries = new ArrayList<ServerEntry>();
     private String upgradeClientVersion;
     private String speedTestURL;
-    private String clientSessionID; // access via getCurrentClientSessionID -- even internally
     private String serverSessionID;
     
     /** Array of all outstanding/ongoing requests. Anything in this array will
@@ -289,13 +288,14 @@ public class ServerInterface
     synchronized public void generateNewCurrentClientSessionID()
     {
         byte[] clientSessionIdBytes = Utils.generateInsecureRandomBytes(PsiphonConstants.CLIENT_SESSION_ID_SIZE_IN_BYTES);
-        this.clientSessionID = Utils.byteArrayToHexString(clientSessionIdBytes);
+        PsiphonData.getPsiphonData().setClientSessionID(Utils.byteArrayToHexString(clientSessionIdBytes));
     }
     
     synchronized public String getCurrentClientSessionID()
     {
-        assert(this.clientSessionID != null);
-        return this.clientSessionID;
+        String clientSessionID = PsiphonData.getPsiphonData().getClientSessionID();
+        assert(clientSessionID != null);
+        return clientSessionID;
     }
     
     synchronized public String getCurrentServerSessionID()
