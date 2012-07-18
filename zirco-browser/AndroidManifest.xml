@@ -74,7 +74,7 @@
         </receiver>
 	</application>
 
-	<uses-sdk android:minSdkVersion="7" android:targetSdkVersion="14" />
+	<uses-sdk android:minSdkVersion="8" android:targetSdkVersion="14" />
 	<uses-permission android:name="android.permission.INTERNET"></uses-permission>	
 	<uses-permission android:name="com.android.browser.permission.READ_HISTORY_BOOKMARKS"></uses-permission>	
 	<uses-permission android:name="com.android.browser.permission.WRITE_HISTORY_BOOKMARKS"></uses-permission>
