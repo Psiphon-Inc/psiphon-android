@@ -369,7 +369,7 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         }
         if (mWebViews.size() == 0)
         {
-            addTab(false);
+            addTab(true);
         }
         
         // PSIPHON: don't show Zirco changelist or restore last page
@@ -418,7 +418,6 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         initializeWebIconDatabase();
         
         startToolbarsHideRunnable();
-        
     }
     
     // PSIPHON
