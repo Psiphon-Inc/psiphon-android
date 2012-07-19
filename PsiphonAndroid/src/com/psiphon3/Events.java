@@ -130,12 +130,10 @@ public class Events
         // independent of the home pages.
         
         intent.putExtra("localProxyPort", PsiphonConstants.HTTP_PROXY_PORT);
-
         intent.putExtra("homePages", PsiphonData.getPsiphonData().getHomePages());
-        
-        intent.putExtra("serviceClassName", TunnelService.class.getName());
-        
-        intent.putExtra("activityClassName", StatusActivity.class.getName());
+        intent.putExtra("serviceClassName", TunnelService.class.getName());        
+        intent.putExtra("statusActivityClassName", StatusActivity.class.getName());
+        intent.putExtra("feedbackActivityClassName", FeedbackActivity.class.getName());
         
         context.startActivity(intent);
     }

@@ -79,7 +79,6 @@ import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -134,11 +133,12 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 	private static final int FLIP_PIXEL_THRESHOLD = 200;
 	private static final int FLIP_TIME_THRESHOLD = 400;
 	
-	private static final int MENU_ADD_BOOKMARK = Menu.FIRST;
-	private static final int MENU_SHOW_BOOKMARKS = Menu.FIRST + 1;
-	private static final int MENU_SHOW_DOWNLOADS = Menu.FIRST + 2;	
-	private static final int MENU_PREFERENCES = Menu.FIRST + 3;
-	private static final int MENU_EXIT = Menu.FIRST + 4;	
+    private static final int MENU_FEEDBACK = Menu.FIRST;
+    private static final int MENU_ADD_BOOKMARK = Menu.FIRST + 1;
+	private static final int MENU_SHOW_BOOKMARKS = Menu.FIRST + 2;
+	private static final int MENU_SHOW_DOWNLOADS = Menu.FIRST + 3;	
+	private static final int MENU_PREFERENCES = Menu.FIRST + 4;
+	private static final int MENU_EXIT = Menu.FIRST + 5;
 	
 	private static final int CONTEXT_MENU_OPEN = Menu.FIRST + 10;
 	private static final int CONTEXT_MENU_OPEN_IN_NEW_TAB = Menu.FIRST + 11;
@@ -231,7 +231,8 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 	
 	// PSIPHON
 	private String mPsiphonServiceClassName;
-	private String mPsiphonActivityClassName;
+    private String mPsiphonStatusActivityClassName;
+    private String mPsiphonFeedbackActivityClassName;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -281,7 +282,8 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         // PSIPHON: Store the class names of the service and status activity.
         // We'll use them to make sure the service is running.
         mPsiphonServiceClassName = intent.getStringExtra("serviceClassName");
-        mPsiphonActivityClassName = intent.getStringExtra("activityClassName");
+        mPsiphonStatusActivityClassName = intent.getStringExtra("statusActivityClassName");
+        mPsiphonFeedbackActivityClassName = intent.getStringExtra("feedbackActivityClassName");
         
         if (!ensurePsiphonRunning())
         {
@@ -440,10 +442,10 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
             }
         }
         
-        Class psiphonActivityClass;
+        Class psiphonStatusActivityClass;
         try
         {
-            psiphonActivityClass = Class.forName(this.mPsiphonActivityClassName);
+            psiphonStatusActivityClass = Class.forName(this.mPsiphonStatusActivityClassName);
         } 
         catch (ClassNotFoundException e)
         {
@@ -451,12 +453,12 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
             return false;
         }
         
-        // The Psiphon service isn't running. Punt back to the Psiphon activity.
+        // The Psiphon service isn't running. Punt back to the Psiphon status activity.
         Intent intent = new Intent(
                 "ACTION_VIEW",
                 null,
                 this,
-                psiphonActivityClass);
+                psiphonStatusActivityClass);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         this.startActivity(intent);
         
@@ -1883,6 +1885,29 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 		Intent preferencesActivity = new Intent(this, PreferencesActivity.class);
   		startActivity(preferencesActivity);
 	}
+
+    // PSIPHON
+	// feedback menu item
+	private void launchFeedback()
+	{	    
+        Class psiphonFeedbackActivityClass;
+        try
+        {
+            psiphonFeedbackActivityClass = Class.forName(this.mPsiphonFeedbackActivityClassName);
+        } 
+        catch (ClassNotFoundException e)
+        {
+            // This shouldn't happen. 
+            return;
+        }
+        
+        Intent intent = new Intent(
+                "ACTION_VIEW",
+                null,
+                this,
+                psiphonFeedbackActivityClass);
+        this.startActivity(intent);
+	}
 	
 	@Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -1890,7 +1915,12 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
     	
     	MenuItem item;
     	
-    	item = menu.add(0, MENU_ADD_BOOKMARK, 0, R.string.Main_MenuAddBookmark);
+        // PSIPHON
+        // feedback menu item
+        item = menu.add(0, MENU_FEEDBACK, 0, R.string.Main_MenuFeedback);
+        item.setIcon(R.drawable.ic_menu_feedback);
+        
+        item = menu.add(0, MENU_ADD_BOOKMARK, 0, R.string.Main_MenuAddBookmark);
         item.setIcon(R.drawable.ic_menu_add_bookmark);
         
         item = menu.add(0, MENU_SHOW_BOOKMARKS, 0, R.string.Main_MenuShowBookmarks);
@@ -1911,8 +1941,13 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 	@Override
     public boolean onMenuItemSelected(int featureId, MenuItem item) {
     	switch(item.getItemId()) {
-    	case MENU_ADD_BOOKMARK:    		
-    		openAddBookmarkDialog();
+        // PSIPHON
+        // feedback menu item
+        case MENU_FEEDBACK:         
+            launchFeedback();
+            return true;
+        case MENU_ADD_BOOKMARK:         
+            openAddBookmarkDialog();
             return true;
     	case MENU_SHOW_BOOKMARKS:    		
     		openBookmarksHistoryActivity();
