@@ -321,7 +321,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             catch (PsiphonServerInterfaceException requestException)
             {
                 MyLog.e(R.string.PsiphonAndroidService_HandshakeRequestFailed, requestException);
-                throw requestException;
+
+                // Treat this case like a tunnel failure -- we don't want to proceed without
+                // a session ID, home page, etc. We don't expect it's likely that the handshake
+                // will fail if the tunnel is successfully established.
+                throw new IOException();
             }
 
             checkSignals(0);
@@ -360,10 +364,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             {
                 m_interface.doPeriodicWork(true);
             }
-        }
-        catch (PsiphonServerInterfaceException e)
-        {
-            // Drop into finally...
         }
         catch (IOException e)
         {
