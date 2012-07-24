@@ -541,6 +541,7 @@
 	<string name="DesktopViewListActivity.ListEmpty">List is empty.</string>	
     <string name="DesktopViewListActivity.AddMessage">Add a website</string>
     <string name="DesktopViewListActivity.ClearMessage">Clear all sites</string>
+    <string name="Main.MenuFeedback">Feedback</string>
     
     
 </resources>
