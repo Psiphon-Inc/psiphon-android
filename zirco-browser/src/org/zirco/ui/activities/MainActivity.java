@@ -908,6 +908,11 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 			public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 				HitTestResult result = ((WebView) v).getHitTestResult();
 				
+				if (result == null) 
+				{
+				    return;
+				}
+				
 				int resultType = result.getType();
 				if ((resultType == HitTestResult.ANCHOR_TYPE) ||
 						(resultType == HitTestResult.IMAGE_ANCHOR_TYPE) ||
