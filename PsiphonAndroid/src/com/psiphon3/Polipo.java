@@ -76,7 +76,6 @@ public class Polipo
             {
                 public void run() 
                 {
-                     Log.e(PsiphonConstants.TAG, "run");
                      runPolipo(
                              PsiphonData.getPsiphonData().getHttpProxyPort(),
                              PsiphonData.getPsiphonData().getSocksPort());
