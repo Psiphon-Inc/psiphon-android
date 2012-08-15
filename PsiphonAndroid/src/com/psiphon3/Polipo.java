@@ -63,14 +63,23 @@ public class Polipo
             return;
         }
 
+        int port = Utils.findAvailablePort(PsiphonConstants.HTTP_PROXY_PORT, 10);
+        if(port == 0)
+        {
+            return;
+        }
+
+        PsiphonData.getPsiphonData().setHttpProxyPort(port);
+
         m_polipoThread = new Thread(
             new Runnable()
             {
-                public void run()
+                public void run() 
                 {
-                    runPolipo(
-                        PsiphonConstants.HTTP_PROXY_PORT,
-                        PsiphonConstants.SOCKS_PORT);
+                     Log.e(PsiphonConstants.TAG, "run");
+                     runPolipo(
+                             PsiphonData.getPsiphonData().getHttpProxyPort(),
+                             PsiphonData.getPsiphonData().getSocksPort());
                 }
             });
 

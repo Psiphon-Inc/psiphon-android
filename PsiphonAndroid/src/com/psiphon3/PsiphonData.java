@@ -60,6 +60,8 @@ public class PsiphonData
     private String m_clientSessionID;
     private String m_tunnelSessionID;
     private String m_tunnelRelayProtocol;
+    private int m_socksPort;
+    private int m_httpProxyPort;
 
     public Object serverEntryFileLock = new Object(); // Used as an intrinsic lock
         
@@ -149,6 +151,26 @@ public class PsiphonData
         return m_tunnelRelayProtocol;
     }
     
+    public synchronized void setHttpProxyPort(int httpProxyPort)
+    {
+        m_httpProxyPort = httpProxyPort;
+    }
+
+    public synchronized int getHttpProxyPort()
+    {
+        return m_httpProxyPort;
+    }
+
+    public synchronized void setSocksPort(int socksPort)
+    {
+        m_socksPort = socksPort;
+    }
+
+    public synchronized int getSocksPort()
+    {
+        return m_socksPort;
+    }
+
     public class StatusMessage
     {
         public String m_message;
