@@ -1,538 +1,427 @@
-<?xml version="1.0" encoding="utf-8"?>
-
-<!--
-   Zirco Browser for Android
-  
-   Copyright (C) 2010 - 2011 J. Devauchelle and contributors.
- 
-   This program is free software; you can redistribute it and/or
-   modify it under the terms of the GNU General Public License
-   version 3 as published by the Free Software Foundation.
- 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
- -->
-
-<resources>        
-    <string name="ApplicationName">Psiphon Browser</string>
-    <string name="ApplicationNameUrl">Psiphon - %s</string>
-    <string name="ApplicationDescription">Psiphon Browser это веб-браузер с открытым исходным кодом для Android на основе браузера Zirco Browser.</string>
-    
-    <string name="AboutActivity.Title">О проекте</string>
-	<string name="AboutActivity.VersionText">Версия:</string>
-	<string name="AboutActivity.UrlTextValue">https://bitbucket.org/psiphon/psiphon-circumvention-system/overview</string>
-	<string name="AboutActivity.LicenseText">Лицензия:</string>
-	<string name="AboutActivity.LicenseTextValue">GPL v3</string>
-
-    <string name="Main.MenuAddBookmark">Добавить закладку</string>
-    <string name="Main.MenuShowBookmarks">Закладки</string>
-    <string name="Main.MenuShowHistory">История</string>
-    <string name="Main.MenuShowDownloads">Загрузки</string>
-    <string name="Main.MenuPreferences">Настройки</string>
-    <string name="Main.MenuOpen">Открыть</string>
-    <string name="Main.MenuOpenNewTab">Открыть в новой вкладке</string>
-    <string name="Main.MenuDownload">Скачать</string>   
-    <string name="Main.DownloadStartedMsg">Закачка началась.</string>
-    <string name="Main.DownloadFinishedMsg">Закачка завершилась.</string>
-    <string name="Main.DownloadErrorMsg">Ошибка закачивания: %s</string>
-    <string name="Main.ToastTabSwitchMessage">Вкладка %s</string>
-    <string name="Main.ToastTabSwitchFullMessage">Вкладка %1$s: %2$s</string>
-    <string name="Main.VndErrorTitle">Ошибка при открывании URL</string>
-    <string name="Main.VndErrorMessage">Приложение для открывания : %s не найдено.</string>
-    
-    <string name="BookmarksListActivity.Title">Psiphon Browser - Закладки</string>
-    <string name="BookmarksListActivity.MenuSortMode">Сортировать по</string>
-    <string name="BookmarksListActivity.MenuAddBookmark">Добавить закладку</string>
-    <string name="BookmarksListActivity.Empty">Закладки отсутствуют</string>
-    <string name="BookmarksListActivity.MenuOpenInTab">Открыть в новой вкладке</string>
-    <string name="BookmarksListActivity.MenuEditBookmark">Редактировать закладку</string>
-    <string name="BookmarksListActivity.MenuDeleteBookmark">Удалить закладку</string>
-    <string name="BookmarksListActivity.AlphaSortMode">По алфавиту</string>
-    <string name="BookmarksListActivity.RecentSortMode">По дате добавления</string>
-    
-    <string name="EditBookmarkActivity.Title">Редактирование закладку</string>
-    <string name="EditBookmarkActivity.TitleAdd">Добавление закладки</string>
-    <string name="EditBookmarkActivity.TitleLabel">Названия:</string>
-    <string name="EditBookmarkActivity.UrlLabel">Адрес:</string>
-    
-    <string name="HistoryListActivity.Title">Psiphon Browser - История</string>
-    <string name="HistoryListActivity.MenuOpenInTab">Открыть в новой вкладке</string>
-    <string name="HistoryListActivity.MenuDelete">Удалить</string>
-    
-    <string name="DownloadListActivity.Title">Psiphon Browser - Закачки</string>
-    <string name="DownloadListActivity.Empty">Файлы отсутствуют</string>
-    <string name="DownloadListActivity.Aborted">%s (Закачка остановлено)</string>
-    <string name="DownloadListActivity.Finished">%s (Закачка закончено)</string>
-    
-    <string name="AdBlockerWhiteListActivity.Title">Psiphon Browser - White list для Ad Blocker</string>
-    <string name="AdBlockerWhiteListActivity.Empty">White list пуст.</string>
-    <string name="AdBlockerWhiteListActivity.AddMessage">Добавить в white list</string>
-    <string name="AdBlockerWhiteListActivity.ClearMessage">Очистить white list</string>    
-    
-    <string name="PreferencesActivity.GeneralSettingsCategoryTitle">Основные настройки</string>
-    <string name="PreferencesActivity.HomePagePreferenceTitle">Домашняя страница</string>
-    <string name="PreferencesActivity.HomePagePreferenceSummary">Задайте вашу домашнюю страницу по умолчанию.</string>
-    <string name="PreferencesActivity.FullScreenPreferenceTitle">На весь экран</string>
-    <string name="PreferencesActivity.FullScreenPreferenceSummary">Показывать приложение в полноэкранном режиме(требует перезапуска).</string>
-    <string name="PreferencesActivity.ShowToastOnTabSwitchPreferenceTitle">Показывать предупреждение о смене вкладок</string>
-    <string name="PreferencesActivity.ShowToastOnTabSwitchPreferenceSummary">Показывать краткое предупреждение о смене вкладок.</string>
-    
-    <string name="PreferencesActivity.BrowserSettingsCategoryTitle">Настройки браузера</string>
-    <string name="PreferencesActivity.HistorySizePreferenceTitle">Размер истории</string>
-    <string name="PreferencesActivity.HistorySizePreferenceSummary">Сколько дней хранить историю.</string>
-    <string name="PreferencesActivity.EnableJavascriptPreferenceTitle">Поддержка JavaScript</string>
-    <string name="PreferencesActivity.EnableJavascriptPreferenceSummary">Включить или выключить поддержку JavaScript.</string>
-    <string name="PreferencesActivity.LoadImagesPreferenceTitle">Загружать картинки</string>
-    <string name="PreferencesActivity.LoadImagesPreferenceSummary">Включить или выключить загрузку картинок.</string>
-    
-    <string name="PreferencesActivity.PrivacyPreferenceTitle">Настройки конфиденциальности</string>
-    <string name="PreferencesActivity.PrivacyPreferenceSummary">Управление настройками конфиденциальности и безопасности.</string>
-    
-    <string name="PreferencesActivity.EnableFormDataPreferenceTitle">Сохранять данные форм</string>
-    <string name="PreferencesActivity.EnableFormDataPreferenceSummary">Включить или выключить запоминание введенных в формы данных.</string>
-    <string name="PreferencesActivity.EnablePasswordsPreferenceTitle">Сохранять пароли</string>
-    <string name="PreferencesActivity.EnablePasswordsPreferenceSummary">Включить или выключить сохранение паролей.</string>
-    <string name="PreferencesActivity.EnableCookiesPreferenceTitle">Разрешить cookies</string>
-    <string name="PreferencesActivity.EnableCookiesPreferenceSummary">Разрешить или запретить cookies.</string>
-    
-    <string name="PreferencesActivity.PrivacyClearHistoryTitle">Удалить историю</string>
-    <string name="PreferencesActivity.PrivacyClearFormDataTitle">Удалить данные форм</string>
-    <string name="PreferencesActivity.PrivacyClearCacheTitle">Удалить кэш</string>
-    <string name="PreferencesActivity.PrivacyClearCookiesTitle">Удалить cookies</string>
-    
-    <string name="PreferencesActivity.BarDurationPreferenceTitle">Время показа toolbars</string>
-    <string name="PreferencesActivity.BarDurationPreferenceSummary">В течение какого времени показывать toolbars.</string>
-    
-    <string name="PreferencesActivity.BarDuration1sec">1 секунду</string>
-    <string name="PreferencesActivity.BarDuration2sec">2 секунды</string>
-    <string name="PreferencesActivity.BarDuration3sec">3 секунды</string>
-    <string name="PreferencesActivity.BarDuration4sec">4 секунды</string>
-    <string name="PreferencesActivity.BarDuration5sec">5 секунды</string>
-    <string-array name="BarDurationEntries">
-		<item>@string/PreferencesActivity.BarDuration1sec</item>
-		<item>@string/PreferencesActivity.BarDuration2sec</item>
-		<item>@string/PreferencesActivity.BarDuration3sec</item>
-		<item>@string/PreferencesActivity.BarDuration4sec</item>
-		<item>@string/PreferencesActivity.BarDuration5sec</item>
-	</string-array>
-	<string-array name="BarDurationValues">
-		<item>1000</item>
-		<item>2000</item>
-		<item>3000</item>
-		<item>4000</item>
-		<item>5000</item>
-	</string-array>
-	
-	<string name="PreferencesActivity.BubblePositionPreferenceTitle">Позиция "пузырька"</string>
-    <string name="PreferencesActivity.BubblePositionPreferenceSummary">Позиция навигационного "пузырька".</string>
-    
-    <string name="PreferencesActivity.BubbleRight">Справа</string>
-    <string name="PreferencesActivity.BubbleLeft">Слева</string>
-    <string name="PreferencesActivity.BubbleBoth">С обоих сторон</string>
-    <string-array name="BubblePositionEntries">
-		<item>@string/PreferencesActivity.BubbleRight</item>
-		<item>@string/PreferencesActivity.BubbleLeft</item>
-		<item>@string/PreferencesActivity.BubbleBoth</item>
-	</string-array>
-    <string-array name="BubblePositionValues">
-		<item>right</item>
-		<item>left</item>
-		<item>both</item>
-	</string-array>
-	
-	<string name="PreferencesActivity.AdBlockerSettingsCategoryTitle">Настройки Ad-blocker</string>
-	<string name="PreferencesActivity.EnableAdBlockerPreferenceTitle">Активировать Ad-blocker</string>
-    <string name="PreferencesActivity.EnableAdBlockerPreferenceSummary">Ad-blocker не будет работать если поддержка JavaScript выключена.</string>
-    <string name="PreferencesActivity.AdBlockerWhiteListPreferenceTitle">White list</string>
-    <string name="PreferencesActivity.AdBlockerWhiteListPreferenceSummary">Настройки white list для Ad-blocker.</string>
-    
-    <string name="Commons.Ok">Ok</string>
-    <string name="Commons.Cancel">Отмена</string>
-    <string name="Commons.PleaseWait">Пожалуйста, подождите</string>
-    <string name="Commons.Yes">Да</string>
-    <string name="Commons.No">Нет</string>
-    <string name="Commons.NoUndoMessage">Эта операция необратима. Продолжить операцию?</string>
-    <string name="Commons.JavaScriptDialog">Диалог JavaScript</string>
-    <string name="Commons.ClearHistory">Удалить историю</string>
-    <string name="Commons.ClearingHistory">Удаление истории&#8230;</string>
-    <string name="Commons.ClearFormData">Удалить данные форм</string>
-    <string name="Commons.ClearingFormData">Удаление данных форм&#8230;</string>
-    <string name="Commons.ClearCache">Удалить кэш</string>
-    <string name="Commons.ClearingCache">Удаление кэша&#8230;</string>
-    <string name="Commons.ClearCookies">Удалить cookies</string>
-    <string name="Commons.ClearingCookies">Удаление cookies&#8230;</string>
-    <string name="Commons.SDCardErrorTitle">SD карта недоступна</string>
-    <string name="Commons.SDCardErrorNoSDMsg">SD карта не найдена.</string>
-    <string name="Commons.SDCardErrorSDUnavailable">SD карта недоступна.</string>
-    <string name="Commons.Close">Закрыть</string>
-    
-    <string name="DATE_FORMAT_ISO8601">yyyy-MM-dd\'T\'HH:mm:ss.SSS</string>
-    
-    <!-- 0.3.1 -->
-    <string name="PreferencesActivity.AboutCategoryTitle">О приложении</string>
-    <string name="PreferencesActivity.AboutPreferenceTitle">О приложении</string>
-    <string name="PreferencesActivity.AboutPreferenceSummary">Информация о приложении.</string>
-    
-    <!-- 0.3.2 -->
-    <string name="BookmarksListActivity.MostUsedSortMode">По популярности</string>
-    <string name="PreferencesActivity.DefaultZoomPreferenceTitle">Масштабирование</string>
-    <string name="PreferencesActivity.DefaultZoomPreferenceSummary">Установить уровень масштабирования по умолчанию.</string>
-    
-    <string name="PreferencesActivity.DefaultZoomClose">Близко</string>
-    <string name="PreferencesActivity.DefaultZoomMedium">Нормально</string>
-    <string name="PreferencesActivity.DefaultZoomFar">Далеко</string>
-    
-    <string-array name="DefaultZoomEntries">
-		<item>@string/PreferencesActivity.DefaultZoomClose</item>
-		<item>@string/PreferencesActivity.DefaultZoomMedium</item>
-		<item>@string/PreferencesActivity.DefaultZoomFar</item>
-	</string-array>
-    <string-array name="DefaultZoomValues">
-		<item>CLOSE</item>
-		<item>MEDIUM</item>
-		<item>FAR</item>
-	</string-array>
-
-	<string name="StartPage.Welcome">Добро пожаловать!</string>
-	<string name="StartPage.Bookmarks">Самые популярные закладки</string>
-	<string name="StartPage.History">Недавняя история</string>
-	
-	<string name="ChangelogActivity.Title">Changelog</string>	
-    <string name="PreferencesActivity.ChangelogPreferenceTitle">Changelog</string>
-    <string name="PreferencesActivity.ChangelogPreferenceSummary">Changelog этого приложения.</string>
-    
-    <string name="HomepagePreferenceActivity.Title">Домашняя страница</string>
-    <string name="HomepagePreferenceActivity.Prompt">Домашняя страница</string>
-    
-    <string name="PreferencesActivity.HomepageStart">Стартовая страница</string>
-    <string name="PreferencesActivity.HomepageBlank">Пустая страница</string>
-    <string name="PreferencesActivity.HomepageCustom">Пользовательская страница</string>
-    
-    <string-array name="HomepageValues">
-        <item>@string/PreferencesActivity.HomepageStart</item>
-        <item>@string/PreferencesActivity.HomepageBlank</item>
-        <item>@string/PreferencesActivity.HomepageCustom</item>
-    </string-array>
-    
-    <!-- 0.3.3 -->
-    <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=en&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
-    <string name="Constants.SearchUrlWikipedia">http://en.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
-    
-    <string name="PreferencesActivity.SearchUrlPreferenceTitle">URL поисковой системы</string>
-    <string name="PreferencesActivity.SearchUrlPreferenceSummary">URL поисковой системы.</string>
-    
-    <string name="SearchUrlPreferenceActivity.Title">URL поисковой системы</string>
-    <string name="SearchUrlPreferenceActivity.Prompt">URL поисковой системы</string>
-    
-    <string name="PreferencesActivity.SearchUrlGoogle">Google</string>
-    <string name="PreferencesActivity.SearchUrlWikipedia">Wikipedia</string>
-    <string name="PreferencesActivity.SearchUrlCustom">Пользовательский</string>
-    
-    <string-array name="SearchUrlValues">
-        <item>@string/PreferencesActivity.SearchUrlGoogle</item>
-        <item>@string/PreferencesActivity.SearchUrlWikipedia</item>
-        <item>@string/PreferencesActivity.SearchUrlCustom</item>
-    </string-array>
-    
-    <string name="StartPage.Search">Поиск</string>
-    <string name="StartPage.SearchButton">Искать</string>
-    
-    <string name="PreferencesActivity.StartPageCustomizationPreferenceTitle">Настройки стартовой страницы</string>
-    <string name="PreferencesActivity.StartPageCustomizationPreferenceSummary">Пользовательские настройки стартовой страницы.</string>
-    <string name="PreferencesActivity.StartPageEnableSearchPreferenceTitle">Показывать поиск</string>
-    <string name="PreferencesActivity.StartPageEnableSearchPreferenceSummary">Показывать поле ввода поиска.</string>
-    <string name="PreferencesActivity.StartPageEnableBookmarksPreferenceTitle">Показывать популярные закладки</string>
-    <string name="PreferencesActivity.StartPageEnableBookmarksPreferenceSummary">Показывать наиболее часто используемые закладки.</string>
-    <string name="PreferencesActivity.StartPageEnableHistoryPreferenceTitle">Показывать историю</string>
-    <string name="PreferencesActivity.StartPageEnableHistoryPreferenceSummary">Показывать самые последние посещенные страницы.</string>
-    <string name="PreferencesActivity.StartPageBookmarksLimitPreferenceTitle">Количество популярных закладок</string>
-    <string name="PreferencesActivity.StartPageBookmarksLimitPreferenceSummary">Количество наиболее часто используемых закладок показывать на стартовой странице.</string>
-    <string name="PreferencesActivity.StartPageHistoryLimitPreferenceTitle">Количество страниц из истории</string>
-    <string name="PreferencesActivity.StartPageHistoryLimitPreferenceSummary">Сколько последних посещенных страниц показывать на стартовой странице.</string>
-    
-    <string name="PreferencesActivity.UserAgentPreferenceTitle">User agent</string>
-    <string name="PreferencesActivity.UserAgentPreferenceSummary">User Agent браузера.</string>
-    
-    <string name="UserAgentPreferenceActivity.Title">User agent</string>
-    <string name="UserAgentPreferenceActivity.Prompt">User agent</string>
-    
-    <string name="PreferencesActivity.UserAgentDefault">По умолчанию</string>
-    <string name="PreferencesActivity.UserAgentDesktop">Десктоп</string>
-    <string name="PreferencesActivity.UserAgentCustom">Пользовательский</string>
-    
-    <string-array name="UserAgentValues">
-        <item>@string/PreferencesActivity.UserAgentDefault</item>
-        <item>@string/PreferencesActivity.UserAgentDesktop</item>
-        <item>@string/PreferencesActivity.UserAgentCustom</item>
-    </string-array>
-    
-    <!-- 0.3.4 -->
-    <string name="Main.MenuCopyLinkUrl">Скопировать линк</string>
-    <string name="Main.MenuViewImage">Показать картинку</string>
-    <string name="Main.MenuCopyImageUrl">"Скопировать адрес картинки</string>
-    <string name="Main.MenuDownloadImage">Скачать картинку</string>
-    <string name="Main.MenuSendEmail">Послать письмо</string>
-    <string name="Main.MenuCopyEmailUrl">Скопировать адрес эл. почты</string>
-    
-    <string name="Commons.UrlCopyToastMessage">URL скопирован в буфер.</string>
-    
-    <string name="DownloadNotification.DownloadStart">Закачка началась.</string>
-    <string name="DownloadNotification.DownloadInProgress">Идет закачка файла.</string>
-    <string name="DownloadNotification.DownloadComplete">Закачка завершена.</string>
-    <string name="DownloadNotification.DownloadCanceled">Отмена закачки.</string>
-    
-    <string name="BookmarksHistoryActivity.MenuCopyLinkUrl">Скопировать линк</string>
-    
-    <string name="PreferencesActivity.ClearCacheOnExitPreferenceTitle">Удалять кэш по завершению</string>
-    <string name="PreferencesActivity.ClearCacheOnExitPreferenceSummary">Удалять кэш по завершению работы приложения.</string>
-    
-    <string name="PreferencesActivity.UIPreferenceTitle">Настройки интерфейса</string>
-    <string name="PreferencesActivity.UIPreferenceSummary">Настройки пользовательского интерфейса.</string>
-    
-    <string name="Main.MenuExit">Закрыть</string>
-    
-    <string name="PreferencesActivity.RestartDialogTitle"> Перезапуск</string>
-    <string name="PreferencesActivity.RestartDialogMessage">Эти изменения не вступят в силу до перезапуска приложения. Вы хотите сделать это сейчас?</string>
-    
-    <!-- 0.3.5 -->
-    <string name="PreferencesActivity.EnablePluginsTitle">Разрешить плагины</string>
-    
-    <string name="PreferencesActivity.PluginsAlwaysOff">Нет</string>
-    <string name="PreferencesActivity.PluginsOnDemand">По требованию</string>
-    <string name="PreferencesActivity.PluginsAlwaysOn">Да</string>
-    
-    <string-array name="PluginsEntries">
-		<item>@string/PreferencesActivity.PluginsAlwaysOff</item>
-		<item>@string/PreferencesActivity.PluginsOnDemand</item>
-		<item>@string/PreferencesActivity.PluginsAlwaysOn</item>
-	</string-array>
-    <string-array name="PluginsValues">
-		<item>OFF</item>
-		<item>ON_DEMAND</item>
-		<item>ON</item>
-	</string-array>
-	
-	<string name="Commons.Continue">Продолжить</string>
-	
-	<string name="Commons.SslWarning">Предупреждение системы безопасности браузера</string>
-	<string name="Commons.SslWarningsHeader">Проблемы с сертификатом этого сайта.</string>
-	<string name="Commons.SslUntrusted">Сертификат выдан организацией, не входящей в состав доверенных.</string>
-	<string name="Commons.SslIDMismatch">Название сайта не соответствует имени в сертификате.</string>
-	<string name="Commons.SslExpired">Сертификат просрочен.</string>
-	<string name="Commons.SslNotYetValid">Этот сертификат еще не действителен.</string>
-	
-	<string name="MobileViewListActivity.Title">Psiphon Browser - Сайты для показа в мобильном режиме</string>
-	<string name="MobileViewListActivity.ListEmpty">Список пуст.</string>	
-    <string name="MobileViewListActivity.AddMessage">Добавить сайт</string>
-    <string name="MobileViewListActivity.ClearMessage">Удалить все сайты</string>
-	
-	<string name="PreferencesActivity.MobileViewCategoryTitle">Настройки мобильного режима</string>
-	<string name="PreferencesActivity.MobileViewListPreferenceTitle">Сайты</string>
-	<string name="PreferencesActivity.MobileViewListPreferenceSummary">Сайты из списка будут отображаться в мобильном режиме, используя сервис Google mobile view (GWT).</string>
-	
-	<string name="Commons.Add">Добавить</string>
-    <string name="Commons.Clear">Очистить</string>
-    <string name="Commons.Delete">Удалить</string>
-    
-    <!-- 0.3.6 -->
-    <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceTitle">Настройки регулятора громкости</string>
-    <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceSummary">Выбор настроек поведения кнопок громкости</string>
-    
-    <string name="PreferencesActivity.VolumeKeysActionDefault">По умолчанию</string>
-    <string name="PreferencesActivity.VolumeKeysActionZoom">Масштабирование</string>
-    <string name="PreferencesActivity.VolumeKeysActionScroll">Прокрутка вниз/вверх</string>
-    <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">Переключать вкладки</string>
-    <string name="PreferencesActivity.VolumeKeysActionHistory">Вперед/Назад</string>
-    
-    <string-array name="VolumeKeysActionEntries">
-		<item>@string/PreferencesActivity.VolumeKeysActionDefault</item>
-		<item>@string/PreferencesActivity.VolumeKeysActionZoom</item>
-		<item>@string/PreferencesActivity.VolumeKeysActionScroll</item>
-		<item>@string/PreferencesActivity.VolumeKeysActionSwitchTabs</item>
-		<item>@string/PreferencesActivity.VolumeKeysActionHistory</item>
-	</string-array>
-	
-    <string-array name="VolumeKeysActionValues">
-		<item>DEFAULT</item>
-		<item>ZOOM</item>
-		<item>SCROLL</item>
-		<item>SWITCH_TABS</item>
-		<item>HISTORY</item>
-	</string-array>
-	
-	<!-- 0.3.7 -->
-	<string name="Main.ShareChooserTitle">Способ отправки</string>
-	
-	<string name="Main.MenuShareLinkUrl">Отправить линк</string>
-	<string name="Main.MenuShareImageUrl">Отправить картинку</string>
-	<string name="Main.MenuShareEmailUrl">Оправить адрес эл. почты</string>
-	
-	<!-- 0.3.8 -->
-	<string name="PreferencesActivity.HideTitleBarPreferenceTitle">Спрятать заголовки окон</string>
-    <string name="PreferencesActivity.HideTitleBarPreferenceSummary">Не показывать заголовки окон (требует перезапуска).</string>
-    
-    <string name="PreferencesActivity.UseWideViewPortPreferenceTitle">Широкоформатный просмотр</string>
-    <string name="PreferencesActivity.UseWideViewPortPreferenceSummary">Включить широкоформатный просмотр аналогичный полноформатным браузерам</string>
-    
-    <string name="PreferencesActivity.LoadWithOverviewPreferenceTitle">Предпросмотр страниц </string>
-    <string name="PreferencesActivity.LoadWithOverviewPreferenceSummary">Загружаемая страница будет масштабирована для просмотра целиком</string>
-    
-    <string name="PreferencesActivity.SwitchTabsMethodPreferenceTitle">Метод переключения вкладок</string>
-    <string name="PreferencesActivity.SwitchTabsMethodPreferenceSummary">Задайте метод переключения вкладок</string>
-    
-    <string name="PreferencesActivity.SwitchTabButtons">Кнопкой</string>
-    <string name="PreferencesActivity.SwitchTabFling">Щелчком</string>
-    <string name="PreferencesActivity.SwitchTabBoth">Оба метода</string>
-    <string-array name="SwitchTabsMethodEntries">
-		<item>@string/PreferencesActivity.SwitchTabButtons</item>
-		<item>@string/PreferencesActivity.SwitchTabFling</item>
-		<item>@string/PreferencesActivity.SwitchTabBoth</item>
-	</string-array>
-    <string-array name="SwitchTabsMethodValues">
-		<item>buttons</item>
-		<item>fling</item>
-		<item>both</item>
-	</string-array>
-	
-	<!-- 0.3.9 -->
-	<string name="HistoryListActivity.Today">Сегодня</string>
-    <string name="HistoryListActivity.Yesterday">Вчера</string>
-    <string name="HistoryListActivity.LastSevenDays">За последнюю неделю</string>
-    <string name="HistoryListActivity.LastMonth">За последний месяц</string>
-    <string name="HistoryListActivity.Older">Ранее</string>
-    
-    <string name="QuickAction.Home">Домашняя страница</string>
-    <string name="QuickAction.Share">Отправить</string>
-    <string name="QuickAction.SelectText">Выделить текст</string>
-    <string name="QuickAction.MobileView">Мобильный просмотр</string>
-    
-    <string name="AboutActivity.OtherLicenseText">Это приложение использует исходный код из проекта Zirco Browser (https://code.google.com/p/zirco-browser/) под лицензией GPLv3, а также из проекта GreenDroid  (https://github.com/cyrilmottier/GreenDroid) и из проекта Shaman (https://github.com/emergentdotorg/shaman), оба под лицензией Apache, версия 2.</string>
-    
-    <!-- 0.4.0 -->
-    <!-- not translatin Weave features -->
-    <string name="PreferencesActivity.WeavePreferenceTitle">Синхронизация закладок Firefox</string>
-    <string name="PreferencesActivity.WeavePreferenceSummary">Настройки синхронизации закладок с сервисом Firefox Sync.</string>
-    <string name="PreferencesActivity.UseWeavePreferenceTitle">Использовать Firefox Sync</string>
-    <string name="PreferencesActivity.UseWeavePreferenceSummary">Использовать сервис синхронизации закладок Firefox Sync.</string>
-    <string name="PreferencesActivity.WeaveServerPreferenceTitle">Сервер</string>
-    <string name="PreferencesActivity.WeaveServerPreferenceSummary">Адрес Firefox Sync сервера.</string>
-    <string name="PreferencesActivity.WeaveUsernameTitle">Имя пользователя</string>
-    <string name="PreferencesActivity.WeaveUsernameSummary">Ваше имя в системе Firefox Sync.</string>
-    <string name="PreferencesActivity.WeavePasswordTitle">Пароль</string>
-    <string name="PreferencesActivity.WeavePasswordSummary">Ваш Firefox Sync пароль.</string>
-    <string name="PreferencesActivity.WeaveKeyTitle">Ключ</string>
-    <string name="PreferencesActivity.WeaveKeySummary">Ваш Firefox Sync ключ.</string>
-    
-    <string name="WeaveBookmarksListActivity.Title">Закладки Firefox</string>	
-    <string name="WeaveBookmarksListActivity.MenuSync">Синхронизация</string>
-    <string name="WeaveBookmarksListActivity.MenuClear">Очистить</string>
-    <string name="WeaveBookmarksListActivity.WeaveRootFolder">Places</string>
-    <string name="WeaveBookmarksListActivity.EmptyText">Закладки Firefox не синхронизированы. Введите данные вашего аккаунта и нажмите \'Синхронизировать\'.</string>
-    <string name="WeaveBookmarksListActivity.EmptyFolderText">В этой папке нет закладок.</string>
-    <string name="WeaveBookmarksListActivity.SetupButton">Установить</string>
-    <string name="WeaveBookmarksListActivity.SyncButton">Синхронизировать</string>
-    
-    <string name="WeaveSync.SyncTitle">Синхронизация</string>
-    <string name="WeaveSync.Connecting">Соединение с сервером&#8230;</string>
-    <string name="WeaveSync.GettingData">Запрос данных&#8230;</string>
-    <string name="WeaveSync.ReadingData">Чтение данных: %1$s / %2$s</string>
-    <string name="WeaveSync.WrittingData">Запись данных&#8230;</string>
-    
-    <string name="Errors.WeaveSyncFailedTitle">Ошибка синхронизации.</string>
-    <string name="Errors.WeaveSyncFailedMessage">Ошибка синхронизации: %s</string>
-    <string name="Errors.WeaveAuthFailedMessage">Ошибка аутенфикации. Проверьте настройки своего аккаунта.</string>
-    
-    <string name="WeaveServerPreferenceActivity.Prompt">Сервер</string>    
-    <string name="WeaveServerPreferenceActivity.Title">Сервер</string>    
-    <string name="WeaveServerPreferenceActivity.DefaultServer">Сервер Firefox Sync</string>
-    <string name="WeaveServerPreferenceActivity.CustomServer">Пользовательский сервер</string>
-    
-    <string-array name="WeaveServerValues">
-        <item>@string/WeaveServerPreferenceActivity.DefaultServer</item>
-        <item>@string/WeaveServerPreferenceActivity.CustomServer</item>        
-    </string-array>
-    
-    <string name="Main.FileChooserPrompt">Выберите файл для загрузки</string>
-    
-    <string name="Commons.HistoryBookmarksExportSDCardConfirmation">Экспортировать историю и закладки</string>
-    <string name="Commons.HistoryBookmarksExportSDCardDoneTitle">Экспортирование завершено</string>
-    <string name="Commons.HistoryBookmarksExportSDCardDoneMessage">Ваша история и закладки сохранены в %s.</string>
-    <string name="Commons.HistoryBookmarksExportSDCardFailedTitle">Ошибка экспортирования</string>
-    <string name="Commons.HistoryBookmarksFailedMessage">Сообщение об ошибке: %s.</string>
-    <string name="Commons.HistoryBookmarksImportSDCardFailedTitle">Ошибка импортирования</string>
-    
-    <string name="Commons.OperationCanBeLongMessage">Эта операция может занять некоторое время. Вы хотите продолжить?</string>
-    
-    <string name="PreferencesActivity.ToolsHistoryBookmarksPreferenceTitle">Управление закладками и историей</string>
-    <string name="PreferencesActivity.ToolsHistoryBookmarksPreferenceSummary">Импорт, экспорт, очистка истории и закладок.</string>
-    <string name="PreferencesActivity.ExportHistoryBookmarksPreferenceTitle">Экспорт истории и закладок</string>
-    <string name="PreferencesActivity.ExportHistoryBookmarksPreferenceSummary">Экспортирование закладок и истории на SD карту.</string>
-    <string name="PreferencesActivity.ImportHistoryBookmarksPreferenceTitle">Импорт истории и закладок</string>
-    <string name="PreferencesActivity.ImportHistoryBookmarksPreferenceSummary">Импортирование закладок и истории с SD карты</string>
-    <string name="PreferencesActivity.PrivacyClearHistoryBookmarksTitle">Удаление истории и/или закладок</string>
-    <string name="PreferencesActivity.SummaryCannotBeUndone">Осторожно, эта операция необратима.</string>
-    
-    <string name="Commons.ClearingHistoryBookmarks">Удаление истории и/или закладок&#8230;</string>
-    <string name="Commons.ClearHistoryBookmarks">Удалить историию и/или закладки</string>
-    
-    <string name="Commons.Bookmarks">Закладки</string>
-    <string name="Commons.History">История</string>
-    <string name="Commons.All">Все</string>
-    
-    <string name="Commons.ExportingHistoryBookmarks">Экспортирование истории и закладок&#8230;</string>
-    <string name="Commons.ImportingHistoryBookmarks">Импортирование истории и закладок&#8230;</string>
-    <string name="Commons.ImportHistoryBookmarksSource">Выберите источник импорта</string>
-    
-    <string name="Commons.ClearingBookmarks">Удаление закладок&#8230;</string>
-    
-    <string name="DownloadListActivity.RemoveCompletedDownloads">Убрать завершенные закачки</string>
-    
-    <string name="QuickAction.Find">Найти на странице</string>
-    <string name="SearchDialog.Hint">Найти на странице</string>
-    
-    <!-- 0.4.2 -->
-    <string name="PreferencesActivity.AdvancedCategoryTitle">Продвинутые настройки</string>
-    
-    <string name="PreferencesActivity.BookmarksDatabaseTitle">Хранение закладок</string>
-    <string name="PreferencesActivity.BookmarksDatabaseSummary">Выберите метод хранения закладок.</string>
-    
-    <string name="PreferencesActivity.BookmarksDatabaseStock">Закладки Android</string>
-    <string name="PreferencesActivity.BookmarksDatabaseInternal">Внутреннее хранилище</string>
-        
-    <string-array name="BookmarksDatabaseEntries">
-		<item>@string/PreferencesActivity.BookmarksDatabaseStock</item>
-		<item>@string/PreferencesActivity.BookmarksDatabaseInternal</item>
-	</string-array>
-    <string-array name="BookmarksDatabaseValues">
-		<item>STOCK</item>
-		<item>INTERNAL</item>
-	</string-array>    
-    
-    <string name="HistoryListActivity.BookmarkAdded">Добавлено в закладки.</string>
-    <string name="HistoryListActivity.BookmarkRemoved">Убрано из закладок.</string>
-    
-    <string name="HttpAuthenticationDialog.DialogTitle">Войти в %1$s - %2$s</string>
-    <string name="HttpAuthenticationDialog.UserName">Имя</string>
-    <string name="HttpAuthenticationDialog.Password">Пароль</string>
-    
-    <string name="Commons.Proceed">Продолжить</string>
-    
-    <string name="PreferencesActivity.EnableProxySettings">Включить прокси системы</string>
-    <string name="PreferencesActivity.EnableProxySettingsSummary">Включить или выключить поддержку прокси системы.</string>
-    <string name="ProxySettings.EnablingProxySettings">Включение поддержки прокси системы&#8230;</string>
-    <string name="ProxySettings.ErrorProxySettingsNotValid">Неверные настройки прокси системы.</string>
-    <string name="ProxySettings.ErrorProxyServerNotReachable">Прокси-сервер недосягаем.</string>
-    <string name="ProxySettings.ErrorProxyInternetNotReachable">Не удается получить доступ к веб через указанный прокси-сервер.</string>
-    <string name="ProxySettings.ProxySettingsEnabled">Настройки прокси успешно включены.</string>
-    
-    <string name="AboutActivity.ContributorsText">Zirco Browser contributors:\n   • LeChuck (Proxy settings);\n   • Martin (Scroll with volume keys, German translation);\n   • Isaac L. (Spanish translation);</string>
-    
-    <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Восстановить вкладки</string>
-    <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">Восстанавливать вкладки при следующем запуске приложения</string>
-    
-    <!-- 0.4.3 -->
-    <string name="VideoLoading">Загрузка видео\u2026</string>
-    
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <string name="ApplicationName">Psiphon Browser</string>
+  <string name="ApplicationNameUrl">Psiphon - %s</string>
+  <string name="ApplicationDescription">Psiphon Browser это веб-браузер с открытым исходным кодом для Android на основе браузера Zirco Browser.</string>
+  <string name="AboutActivity.Title">О проекте</string>
+  <string name="AboutActivity.VersionText">Версия:</string>
+  <string name="AboutActivity.UrlTextValue">https://bitbucket.org/psiphon/psiphon-circumvention-system/overview</string>
+  <string name="AboutActivity.LicenseText">Лицензия:</string>
+  <string name="AboutActivity.LicenseTextValue">GPL v3</string>
+  <string name="Main.MenuAddBookmark">Добавить закладку</string>
+  <string name="Main.MenuShowBookmarks">Закладки</string>
+  <string name="Main.MenuShowHistory">История</string>
+  <string name="Main.MenuShowDownloads">Загрузки</string>
+  <string name="Main.MenuPreferences">Настройки</string>
+  <string name="Main.MenuOpen">Открыть</string>
+  <string name="Main.MenuOpenNewTab">Открыть в новой вкладке</string>
+  <string name="Main.MenuDownload">Скачать</string>
+  <string name="Main.DownloadStartedMsg">Закачка началась.</string>
+  <string name="Main.DownloadFinishedMsg">Закачка завершилась.</string>
+  <string name="Main.DownloadErrorMsg">Ошибка закачивания: %s</string>
+  <string name="Main.ToastTabSwitchMessage">Вкладка %s</string>
+  <string name="Main.ToastTabSwitchFullMessage">Вкладка %1$s: %2$s</string>
+  <string name="Main.VndErrorTitle">Ошибка при открывании URL</string>
+  <string name="Main.VndErrorMessage">Приложение для открывания : %s не найдено.</string>
+  <string name="BookmarksListActivity.Title">Psiphon Browser - Закладки</string>
+  <string name="BookmarksListActivity.MenuSortMode">Сортировать по</string>
+  <string name="BookmarksListActivity.MenuAddBookmark">Добавить закладку</string>
+  <string name="BookmarksListActivity.Empty">Закладки отсутствуют</string>
+  <string name="BookmarksListActivity.MenuOpenInTab">Открыть в новой вкладке</string>
+  <string name="BookmarksListActivity.MenuEditBookmark">Редактировать закладку</string>
+  <string name="BookmarksListActivity.MenuDeleteBookmark">Удалить закладку</string>
+  <string name="BookmarksListActivity.AlphaSortMode">По алфавиту</string>
+  <string name="BookmarksListActivity.RecentSortMode">По дате добавления</string>
+  <string name="EditBookmarkActivity.Title">Редактирование закладку</string>
+  <string name="EditBookmarkActivity.TitleAdd">Добавление закладки</string>
+  <string name="EditBookmarkActivity.TitleLabel">Названия:</string>
+  <string name="EditBookmarkActivity.UrlLabel">Адрес:</string>
+  <string name="HistoryListActivity.Title">Psiphon Browser - История</string>
+  <string name="HistoryListActivity.MenuOpenInTab">Открыть в новой вкладке</string>
+  <string name="HistoryListActivity.MenuDelete">Удалить</string>
+  <string name="DownloadListActivity.Title">Psiphon Browser - Закачки</string>
+  <string name="DownloadListActivity.Empty">Файлы отсутствуют</string>
+  <string name="DownloadListActivity.Aborted">%s (Закачка остановлено)</string>
+  <string name="DownloadListActivity.Finished">%s (Закачка закончено)</string>
+  <string name="AdBlockerWhiteListActivity.Title">Psiphon Browser - White list для Ad Blocker</string>
+  <string name="AdBlockerWhiteListActivity.Empty">White list пуст.</string>
+  <string name="AdBlockerWhiteListActivity.AddMessage">Добавить в white list</string>
+  <string name="AdBlockerWhiteListActivity.ClearMessage">Очистить white list</string>
+  <string name="PreferencesActivity.GeneralSettingsCategoryTitle">Основные настройки</string>
+  <string name="PreferencesActivity.HomePagePreferenceTitle">Домашняя страница</string>
+  <string name="PreferencesActivity.HomePagePreferenceSummary">Задайте вашу домашнюю страницу по умолчанию.</string>
+  <string name="PreferencesActivity.FullScreenPreferenceTitle">На весь экран</string>
+  <string name="PreferencesActivity.FullScreenPreferenceSummary">Показывать приложение в полноэкранном режиме(требует перезапуска).</string>
+  <string name="PreferencesActivity.ShowToastOnTabSwitchPreferenceTitle">Показывать предупреждение о смене вкладок</string>
+  <string name="PreferencesActivity.ShowToastOnTabSwitchPreferenceSummary">Показывать краткое предупреждение о смене вкладок.</string>
+  <string name="PreferencesActivity.BrowserSettingsCategoryTitle">Настройки браузера</string>
+  <string name="PreferencesActivity.HistorySizePreferenceTitle">Размер истории</string>
+  <string name="PreferencesActivity.HistorySizePreferenceSummary">Сколько дней хранить историю.</string>
+  <string name="PreferencesActivity.EnableJavascriptPreferenceTitle">Поддержка JavaScript</string>
+  <string name="PreferencesActivity.EnableJavascriptPreferenceSummary">Включить или выключить поддержку JavaScript.</string>
+  <string name="PreferencesActivity.LoadImagesPreferenceTitle">Загружать картинки</string>
+  <string name="PreferencesActivity.LoadImagesPreferenceSummary">Включить или выключить загрузку картинок.</string>
+  <string name="PreferencesActivity.PrivacyPreferenceTitle">Настройки конфиденциальности</string>
+  <string name="PreferencesActivity.PrivacyPreferenceSummary">Управление настройками конфиденциальности и безопасности.</string>
+  <string name="PreferencesActivity.EnableFormDataPreferenceTitle">Сохранять данные форм</string>
+  <string name="PreferencesActivity.EnableFormDataPreferenceSummary">Включить или выключить запоминание введенных в формы данных.</string>
+  <string name="PreferencesActivity.EnablePasswordsPreferenceTitle">Сохранять пароли</string>
+  <string name="PreferencesActivity.EnablePasswordsPreferenceSummary">Включить или выключить сохранение паролей.</string>
+  <string name="PreferencesActivity.EnableCookiesPreferenceTitle">Разрешить cookies</string>
+  <string name="PreferencesActivity.EnableCookiesPreferenceSummary">Разрешить или запретить cookies.</string>
+  <string name="PreferencesActivity.PrivacyClearHistoryTitle">Удалить историю</string>
+  <string name="PreferencesActivity.PrivacyClearFormDataTitle">Удалить данные форм</string>
+  <string name="PreferencesActivity.PrivacyClearCacheTitle">Удалить кэш</string>
+  <string name="PreferencesActivity.PrivacyClearCookiesTitle">Удалить cookies</string>
+  <string name="PreferencesActivity.BarDurationPreferenceTitle">Время показа toolbars</string>
+  <string name="PreferencesActivity.BarDurationPreferenceSummary">В течение какого времени показывать toolbars.</string>
+  <string name="PreferencesActivity.BarDuration1sec">1 секунду</string>
+  <string name="PreferencesActivity.BarDuration2sec">2 секунды</string>
+  <string name="PreferencesActivity.BarDuration3sec">3 секунды</string>
+  <string name="PreferencesActivity.BarDuration4sec">4 секунды</string>
+  <string name="PreferencesActivity.BarDuration5sec">5 секунды</string>
+  <string-array name="BarDurationEntries">
+    <item>@string/PreferencesActivity.BarDuration1sec</item>
+    <item>@string/PreferencesActivity.BarDuration2sec</item>
+    <item>@string/PreferencesActivity.BarDuration3sec</item>
+    <item>@string/PreferencesActivity.BarDuration4sec</item>
+    <item>@string/PreferencesActivity.BarDuration5sec</item>
+  </string-array>
+  <string-array name="BarDurationValues">
+    <item>1000</item>
+    <item>2000</item>
+    <item>3000</item>
+    <item>4000</item>
+    <item>5000</item>
+  </string-array>
+  <string name="PreferencesActivity.BubblePositionPreferenceTitle">Позиция \"пузырька\"</string>
+  <string name="PreferencesActivity.BubblePositionPreferenceSummary">Позиция навигационного \"пузырька\".</string>
+  <string name="PreferencesActivity.BubbleRight">Справа</string>
+  <string name="PreferencesActivity.BubbleLeft">Слева</string>
+  <string name="PreferencesActivity.BubbleBoth">С обоих сторон</string>
+  <string-array name="BubblePositionEntries">
+    <item>@string/PreferencesActivity.BubbleRight</item>
+    <item>@string/PreferencesActivity.BubbleLeft</item>
+    <item>@string/PreferencesActivity.BubbleBoth</item>
+  </string-array>
+  <string-array name="BubblePositionValues">
+    <item>right</item>
+    <item>left</item>
+    <item>both</item>
+  </string-array>
+  <string name="PreferencesActivity.AdBlockerSettingsCategoryTitle">Настройки Ad-blocker</string>
+  <string name="PreferencesActivity.EnableAdBlockerPreferenceTitle">Активировать Ad-blocker</string>
+  <string name="PreferencesActivity.EnableAdBlockerPreferenceSummary">Ad-blocker не будет работать если поддержка JavaScript выключена.</string>
+  <string name="PreferencesActivity.AdBlockerWhiteListPreferenceTitle">White list</string>
+  <string name="PreferencesActivity.AdBlockerWhiteListPreferenceSummary">Настройки white list для Ad-blocker.</string>
+  <string name="Commons.Ok">Ok</string>
+  <string name="Commons.Cancel">Отмена</string>
+  <string name="Commons.PleaseWait">Пожалуйста, подождите</string>
+  <string name="Commons.Yes">Да</string>
+  <string name="Commons.No">Нет</string>
+  <string name="Commons.NoUndoMessage">Эта операция необратима. Продолжить операцию?</string>
+  <string name="Commons.JavaScriptDialog">Диалог JavaScript</string>
+  <string name="Commons.ClearHistory">Удалить историю</string>
+  <string name="Commons.ClearingHistory">Удаление истории…</string>
+  <string name="Commons.ClearFormData">Удалить данные форм</string>
+  <string name="Commons.ClearingFormData">Удаление данных форм…</string>
+  <string name="Commons.ClearCache">Удалить кэш</string>
+  <string name="Commons.ClearingCache">Удаление кэша…</string>
+  <string name="Commons.ClearCookies">Удалить cookies</string>
+  <string name="Commons.ClearingCookies">Удаление cookies…</string>
+  <string name="Commons.SDCardErrorTitle">SD карта недоступна</string>
+  <string name="Commons.SDCardErrorNoSDMsg">SD карта не найдена.</string>
+  <string name="Commons.SDCardErrorSDUnavailable">SD карта недоступна.</string>
+  <string name="Commons.Close">Закрыть</string>
+  <string name="DATE_FORMAT_ISO8601">yyyy-MM-dd\'T\'HH:mm:ss.SSS</string>
+  <!--0.3.1-->
+  <string name="PreferencesActivity.AboutCategoryTitle">О приложении</string>
+  <string name="PreferencesActivity.AboutPreferenceTitle">О приложении</string>
+  <string name="PreferencesActivity.AboutPreferenceSummary">Информация о приложении.</string>
+  <!--0.3.2-->
+  <string name="BookmarksListActivity.MostUsedSortMode">По популярности</string>
+  <string name="PreferencesActivity.DefaultZoomPreferenceTitle">Масштабирование</string>
+  <string name="PreferencesActivity.DefaultZoomPreferenceSummary">Установить уровень масштабирования по умолчанию.</string>
+  <string name="PreferencesActivity.DefaultZoomClose">Близко</string>
+  <string name="PreferencesActivity.DefaultZoomMedium">Нормально</string>
+  <string name="PreferencesActivity.DefaultZoomFar">Далеко</string>
+  <string-array name="DefaultZoomEntries">
+    <item>@string/PreferencesActivity.DefaultZoomClose</item>
+    <item>@string/PreferencesActivity.DefaultZoomMedium</item>
+    <item>@string/PreferencesActivity.DefaultZoomFar</item>
+  </string-array>
+  <string-array name="DefaultZoomValues">
+    <item>CLOSE</item>
+    <item>MEDIUM</item>
+    <item>FAR</item>
+  </string-array>
+  <string name="StartPage.Welcome">Добро пожаловать!</string>
+  <string name="StartPage.Bookmarks">Самые популярные закладки</string>
+  <string name="StartPage.History">Недавняя история</string>
+  <string name="ChangelogActivity.Title">Changelog</string>
+  <string name="PreferencesActivity.ChangelogPreferenceTitle">Changelog</string>
+  <string name="PreferencesActivity.ChangelogPreferenceSummary">Changelog этого приложения.</string>
+  <string name="HomepagePreferenceActivity.Title">Домашняя страница</string>
+  <string name="HomepagePreferenceActivity.Prompt">Домашняя страница</string>
+  <string name="PreferencesActivity.HomepageStart">Стартовая страница</string>
+  <string name="PreferencesActivity.HomepageBlank">Пустая страница</string>
+  <string name="PreferencesActivity.HomepageCustom">Пользовательская страница</string>
+  <string-array name="HomepageValues">
+    <item>@string/PreferencesActivity.HomepageStart</item>
+    <item>@string/PreferencesActivity.HomepageBlank</item>
+    <item>@string/PreferencesActivity.HomepageCustom</item>
+  </string-array>
+  <!--0.3.3-->
+  <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=en&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
+  <string name="Constants.SearchUrlWikipedia">http://en.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
+  <string name="PreferencesActivity.SearchUrlPreferenceTitle">URL поисковой системы</string>
+  <string name="PreferencesActivity.SearchUrlPreferenceSummary">URL поисковой системы.</string>
+  <string name="SearchUrlPreferenceActivity.Title">URL поисковой системы</string>
+  <string name="SearchUrlPreferenceActivity.Prompt">URL поисковой системы</string>
+  <string name="PreferencesActivity.SearchUrlGoogle">Google</string>
+  <string name="PreferencesActivity.SearchUrlWikipedia">Wikipedia</string>
+  <string name="PreferencesActivity.SearchUrlCustom">Пользовательский</string>
+  <string-array name="SearchUrlValues">
+    <item>@string/PreferencesActivity.SearchUrlGoogle</item>
+    <item>@string/PreferencesActivity.SearchUrlWikipedia</item>
+    <item>@string/PreferencesActivity.SearchUrlCustom</item>
+  </string-array>
+  <string name="StartPage.Search">Поиск</string>
+  <string name="StartPage.SearchButton">Искать</string>
+  <string name="PreferencesActivity.StartPageCustomizationPreferenceTitle">Настройки стартовой страницы</string>
+  <string name="PreferencesActivity.StartPageCustomizationPreferenceSummary">Пользовательские настройки стартовой страницы.</string>
+  <string name="PreferencesActivity.StartPageEnableSearchPreferenceTitle">Показывать поиск</string>
+  <string name="PreferencesActivity.StartPageEnableSearchPreferenceSummary">Показывать поле ввода поиска.</string>
+  <string name="PreferencesActivity.StartPageEnableBookmarksPreferenceTitle">Показывать популярные закладки</string>
+  <string name="PreferencesActivity.StartPageEnableBookmarksPreferenceSummary">Показывать наиболее часто используемые закладки.</string>
+  <string name="PreferencesActivity.StartPageEnableHistoryPreferenceTitle">Показывать историю</string>
+  <string name="PreferencesActivity.StartPageEnableHistoryPreferenceSummary">Показывать самые последние посещенные страницы.</string>
+  <string name="PreferencesActivity.StartPageBookmarksLimitPreferenceTitle">Количество популярных закладок</string>
+  <string name="PreferencesActivity.StartPageBookmarksLimitPreferenceSummary">Количество наиболее часто используемых закладок показывать на стартовой странице.</string>
+  <string name="PreferencesActivity.StartPageHistoryLimitPreferenceTitle">Количество страниц из истории</string>
+  <string name="PreferencesActivity.StartPageHistoryLimitPreferenceSummary">Сколько последних посещенных страниц показывать на стартовой странице.</string>
+  <string name="PreferencesActivity.UserAgentPreferenceTitle">User agent</string>
+  <string name="PreferencesActivity.UserAgentPreferenceSummary">User Agent браузера.</string>
+  <string name="UserAgentPreferenceActivity.Title">User agent</string>
+  <string name="UserAgentPreferenceActivity.Prompt">User agent</string>
+  <string name="PreferencesActivity.UserAgentDefault">По умолчанию</string>
+  <string name="PreferencesActivity.UserAgentDesktop">Десктоп</string>
+  <string name="PreferencesActivity.UserAgentCustom">Пользовательский</string>
+  <string-array name="UserAgentValues">
+    <item>@string/PreferencesActivity.UserAgentDefault</item>
+    <item>@string/PreferencesActivity.UserAgentDesktop</item>
+    <item>@string/PreferencesActivity.UserAgentCustom</item>
+  </string-array>
+  <!--0.3.4-->
+  <string name="Main.MenuCopyLinkUrl">Скопировать линк</string>
+  <string name="Main.MenuViewImage">Показать картинку</string>
+  <string name="Main.MenuCopyImageUrl">\"Скопировать адрес картинки</string>
+  <string name="Main.MenuDownloadImage">Скачать картинку</string>
+  <string name="Main.MenuSendEmail">Послать письмо</string>
+  <string name="Main.MenuCopyEmailUrl">Скопировать адрес эл. почты</string>
+  <string name="Commons.UrlCopyToastMessage">URL скопирован в буфер.</string>
+  <string name="DownloadNotification.DownloadStart">Закачка началась.</string>
+  <string name="DownloadNotification.DownloadInProgress">Идет закачка файла.</string>
+  <string name="DownloadNotification.DownloadComplete">Закачка завершена.</string>
+  <string name="DownloadNotification.DownloadCanceled">Отмена закачки.</string>
+  <string name="BookmarksHistoryActivity.MenuCopyLinkUrl">Скопировать линк</string>
+  <string name="PreferencesActivity.ClearCacheOnExitPreferenceTitle">Удалять кэш по завершению</string>
+  <string name="PreferencesActivity.ClearCacheOnExitPreferenceSummary">Удалять кэш по завершению работы приложения.</string>
+  <string name="PreferencesActivity.UIPreferenceTitle">Настройки интерфейса</string>
+  <string name="PreferencesActivity.UIPreferenceSummary">Настройки пользовательского интерфейса.</string>
+  <string name="Main.MenuExit">Закрыть</string>
+  <string name="PreferencesActivity.RestartDialogTitle"> Перезапуск</string>
+  <string name="PreferencesActivity.RestartDialogMessage">Эти изменения не вступят в силу до перезапуска приложения. Вы хотите сделать это сейчас?</string>
+  <!--0.3.5-->
+  <string name="PreferencesActivity.EnablePluginsTitle">Разрешить плагины</string>
+  <string name="PreferencesActivity.PluginsAlwaysOff">Нет</string>
+  <string name="PreferencesActivity.PluginsOnDemand">По требованию</string>
+  <string name="PreferencesActivity.PluginsAlwaysOn">Да</string>
+  <string-array name="PluginsEntries">
+    <item>@string/PreferencesActivity.PluginsAlwaysOff</item>
+    <item>@string/PreferencesActivity.PluginsOnDemand</item>
+    <item>@string/PreferencesActivity.PluginsAlwaysOn</item>
+  </string-array>
+  <string-array name="PluginsValues">
+    <item>OFF</item>
+    <item>ON_DEMAND</item>
+    <item>ON</item>
+  </string-array>
+  <string name="Commons.Continue">Продолжить</string>
+  <string name="Commons.SslWarning">Предупреждение системы безопасности браузера</string>
+  <string name="Commons.SslWarningsHeader">Проблемы с сертификатом этого сайта.</string>
+  <string name="Commons.SslUntrusted">Сертификат выдан организацией, не входящей в состав доверенных.</string>
+  <string name="Commons.SslIDMismatch">Название сайта не соответствует имени в сертификате.</string>
+  <string name="Commons.SslExpired">Сертификат просрочен.</string>
+  <string name="Commons.SslNotYetValid">Этот сертификат еще не действителен.</string>
+  <string name="MobileViewListActivity.Title">Psiphon Browser - Сайты для показа в мобильном режиме</string>
+  <string name="MobileViewListActivity.ListEmpty">Список пуст.</string>
+  <string name="MobileViewListActivity.AddMessage">Добавить сайт</string>
+  <string name="MobileViewListActivity.ClearMessage">Удалить все сайты</string>
+  <string name="PreferencesActivity.MobileViewCategoryTitle">Настройки мобильного режима</string>
+  <string name="PreferencesActivity.MobileViewListPreferenceTitle">Сайты</string>
+  <string name="PreferencesActivity.MobileViewListPreferenceSummary">Сайты из списка будут отображаться в мобильном режиме, используя сервис Google mobile view (GWT).</string>
+  <string name="Commons.Add">Добавить</string>
+  <string name="Commons.Clear">Очистить</string>
+  <string name="Commons.Delete">Удалить</string>
+  <!--0.3.6-->
+  <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceTitle">Настройки регулятора громкости</string>
+  <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceSummary">Выбор настроек поведения кнопок громкости</string>
+  <string name="PreferencesActivity.VolumeKeysActionDefault">По умолчанию</string>
+  <string name="PreferencesActivity.VolumeKeysActionZoom">Масштабирование</string>
+  <string name="PreferencesActivity.VolumeKeysActionScroll">Прокрутка вниз/вверх</string>
+  <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">Переключать вкладки</string>
+  <string name="PreferencesActivity.VolumeKeysActionHistory">Вперед/Назад</string>
+  <string-array name="VolumeKeysActionEntries">
+    <item>@string/PreferencesActivity.VolumeKeysActionDefault</item>
+    <item>@string/PreferencesActivity.VolumeKeysActionZoom</item>
+    <item>@string/PreferencesActivity.VolumeKeysActionScroll</item>
+    <item>@string/PreferencesActivity.VolumeKeysActionSwitchTabs</item>
+    <item>@string/PreferencesActivity.VolumeKeysActionHistory</item>
+  </string-array>
+  <string-array name="VolumeKeysActionValues">
+    <item>DEFAULT</item>
+    <item>ZOOM</item>
+    <item>SCROLL</item>
+    <item>SWITCH_TABS</item>
+    <item>HISTORY</item>
+  </string-array>
+  <!--0.3.7-->
+  <string name="Main.ShareChooserTitle">Способ отправки</string>
+  <string name="Main.MenuShareLinkUrl">Отправить линк</string>
+  <string name="Main.MenuShareImageUrl">Отправить картинку</string>
+  <string name="Main.MenuShareEmailUrl">Оправить адрес эл. почты</string>
+  <!--0.3.8-->
+  <string name="PreferencesActivity.HideTitleBarPreferenceTitle">Спрятать заголовки окон</string>
+  <string name="PreferencesActivity.HideTitleBarPreferenceSummary">Не показывать заголовки окон (требует перезапуска).</string>
+  <string name="PreferencesActivity.UseWideViewPortPreferenceTitle">Широкоформатный просмотр</string>
+  <string name="PreferencesActivity.UseWideViewPortPreferenceSummary">Включить широкоформатный просмотр аналогичный полноформатным браузерам</string>
+  <string name="PreferencesActivity.LoadWithOverviewPreferenceTitle">Предпросмотр страниц </string>
+  <string name="PreferencesActivity.LoadWithOverviewPreferenceSummary">Загружаемая страница будет масштабирована для просмотра целиком</string>
+  <string name="PreferencesActivity.SwitchTabsMethodPreferenceTitle">Метод переключения вкладок</string>
+  <string name="PreferencesActivity.SwitchTabsMethodPreferenceSummary">Задайте метод переключения вкладок</string>
+  <string name="PreferencesActivity.SwitchTabButtons">Кнопкой</string>
+  <string name="PreferencesActivity.SwitchTabFling">Щелчком</string>
+  <string name="PreferencesActivity.SwitchTabBoth">Оба метода</string>
+  <string-array name="SwitchTabsMethodEntries">
+    <item>@string/PreferencesActivity.SwitchTabButtons</item>
+    <item>@string/PreferencesActivity.SwitchTabFling</item>
+    <item>@string/PreferencesActivity.SwitchTabBoth</item>
+  </string-array>
+  <string-array name="SwitchTabsMethodValues">
+    <item>buttons</item>
+    <item>fling</item>
+    <item>both</item>
+  </string-array>
+  <!--0.3.9-->
+  <string name="HistoryListActivity.Today">Сегодня</string>
+  <string name="HistoryListActivity.Yesterday">Вчера</string>
+  <string name="HistoryListActivity.LastSevenDays">За последнюю неделю</string>
+  <string name="HistoryListActivity.LastMonth">За последний месяц</string>
+  <string name="HistoryListActivity.Older">Ранее</string>
+  <string name="QuickAction.Home">Домашняя страница</string>
+  <string name="QuickAction.Share">Отправить</string>
+  <string name="QuickAction.SelectText">Выделить текст</string>
+  <string name="QuickAction.MobileView">Мобильный просмотр</string>
+  <string name="AboutActivity.OtherLicenseText">Это приложение использует исходный код из проекта Zirco Browser (https://code.google.com/p/zirco-browser/) под лицензией GPLv3, а также из проекта GreenDroid  (https://github.com/cyrilmottier/GreenDroid) и из проекта Shaman (https://github.com/emergentdotorg/shaman), оба под лицензией Apache, версия 2.</string>
+  <!--0.4.0-->
+  <string name="PreferencesActivity.WeavePreferenceTitle">Синхронизация закладок Firefox</string>
+  <string name="PreferencesActivity.WeavePreferenceSummary">Настройки синхронизации закладок с сервисом Firefox Sync.</string>
+  <string name="PreferencesActivity.UseWeavePreferenceTitle">Использовать Firefox Sync</string>
+  <string name="PreferencesActivity.UseWeavePreferenceSummary">Использовать сервис синхронизации закладок Firefox Sync.</string>
+  <string name="PreferencesActivity.WeaveServerPreferenceTitle">Сервер</string>
+  <string name="PreferencesActivity.WeaveServerPreferenceSummary">Адрес Firefox Sync сервера.</string>
+  <string name="PreferencesActivity.WeaveUsernameTitle">Имя пользователя</string>
+  <string name="PreferencesActivity.WeaveUsernameSummary">Ваше имя в системе Firefox Sync.</string>
+  <string name="PreferencesActivity.WeavePasswordTitle">Пароль</string>
+  <string name="PreferencesActivity.WeavePasswordSummary">Ваш Firefox Sync пароль.</string>
+  <string name="PreferencesActivity.WeaveKeyTitle">Ключ</string>
+  <string name="PreferencesActivity.WeaveKeySummary">Ваш Firefox Sync ключ.</string>
+  <string name="WeaveBookmarksListActivity.Title">Закладки Firefox</string>
+  <string name="WeaveBookmarksListActivity.MenuSync">Синхронизация</string>
+  <string name="WeaveBookmarksListActivity.MenuClear">Очистить</string>
+  <string name="WeaveBookmarksListActivity.WeaveRootFolder">Places</string>
+  <string name="WeaveBookmarksListActivity.EmptyText">Закладки Firefox не синхронизированы. Введите данные вашего аккаунта и нажмите \'Синхронизировать\'.</string>
+  <string name="WeaveBookmarksListActivity.EmptyFolderText">В этой папке нет закладок.</string>
+  <string name="WeaveBookmarksListActivity.SetupButton">Установить</string>
+  <string name="WeaveBookmarksListActivity.SyncButton">Синхронизировать</string>
+  <string name="WeaveSync.SyncTitle">Синхронизация</string>
+  <string name="WeaveSync.Connecting">Соединение с сервером…</string>
+  <string name="WeaveSync.GettingData">Запрос данных…</string>
+  <string name="WeaveSync.ReadingData">Чтение данных: %1$s / %2$s</string>
+  <string name="WeaveSync.WrittingData">Запись данных…</string>
+  <string name="Errors.WeaveSyncFailedTitle">Ошибка синхронизации.</string>
+  <string name="Errors.WeaveSyncFailedMessage">Ошибка синхронизации: %s</string>
+  <string name="Errors.WeaveAuthFailedMessage">Ошибка аутенфикации. Проверьте настройки своего аккаунта.</string>
+  <string name="WeaveServerPreferenceActivity.Prompt">Сервер</string>
+  <string name="WeaveServerPreferenceActivity.Title">Сервер</string>
+  <string name="WeaveServerPreferenceActivity.DefaultServer">Сервер Firefox Sync</string>
+  <string name="WeaveServerPreferenceActivity.CustomServer">Пользовательский сервер</string>
+  <string-array name="WeaveServerValues">
+    <item>@string/WeaveServerPreferenceActivity.DefaultServer</item>
+    <item>@string/WeaveServerPreferenceActivity.CustomServer</item>
+  </string-array>
+  <string name="Main.FileChooserPrompt">Выберите файл для загрузки</string>
+  <string name="Commons.HistoryBookmarksExportSDCardConfirmation">Экспортировать историю и закладки</string>
+  <string name="Commons.HistoryBookmarksExportSDCardDoneTitle">Экспортирование завершено</string>
+  <string name="Commons.HistoryBookmarksExportSDCardDoneMessage">Ваша история и закладки сохранены в %s.</string>
+  <string name="Commons.HistoryBookmarksExportSDCardFailedTitle">Ошибка экспортирования</string>
+  <string name="Commons.HistoryBookmarksFailedMessage">Сообщение об ошибке: %s.</string>
+  <string name="Commons.HistoryBookmarksImportSDCardFailedTitle">Ошибка импортирования</string>
+  <string name="Commons.OperationCanBeLongMessage">Эта операция может занять некоторое время. Вы хотите продолжить?</string>
+  <string name="PreferencesActivity.ToolsHistoryBookmarksPreferenceTitle">Управление закладками и историей</string>
+  <string name="PreferencesActivity.ToolsHistoryBookmarksPreferenceSummary">Импорт, экспорт, очистка истории и закладок.</string>
+  <string name="PreferencesActivity.ExportHistoryBookmarksPreferenceTitle">Экспорт истории и закладок</string>
+  <string name="PreferencesActivity.ExportHistoryBookmarksPreferenceSummary">Экспортирование закладок и истории на SD карту.</string>
+  <string name="PreferencesActivity.ImportHistoryBookmarksPreferenceTitle">Импорт истории и закладок</string>
+  <string name="PreferencesActivity.ImportHistoryBookmarksPreferenceSummary">Импортирование закладок и истории с SD карты</string>
+  <string name="PreferencesActivity.PrivacyClearHistoryBookmarksTitle">Удаление истории и/или закладок</string>
+  <string name="PreferencesActivity.SummaryCannotBeUndone">Осторожно, эта операция необратима.</string>
+  <string name="Commons.ClearingHistoryBookmarks">Удаление истории и/или закладок…</string>
+  <string name="Commons.ClearHistoryBookmarks">Удалить историию и/или закладки</string>
+  <string name="Commons.Bookmarks">Закладки</string>
+  <string name="Commons.History">История</string>
+  <string name="Commons.All">Все</string>
+  <string name="Commons.ExportingHistoryBookmarks">Экспортирование истории и закладок…</string>
+  <string name="Commons.ImportingHistoryBookmarks">Импортирование истории и закладок…</string>
+  <string name="Commons.ImportHistoryBookmarksSource">Выберите источник импорта</string>
+  <string name="Commons.ClearingBookmarks">Удаление закладок…</string>
+  <string name="DownloadListActivity.RemoveCompletedDownloads">Убрать завершенные закачки</string>
+  <string name="QuickAction.Find">Найти на странице</string>
+  <string name="SearchDialog.Hint">Найти на странице</string>
+  <!--0.4.2-->
+  <string name="PreferencesActivity.AdvancedCategoryTitle">Продвинутые настройки</string>
+  <string name="PreferencesActivity.BookmarksDatabaseTitle">Хранение закладок</string>
+  <string name="PreferencesActivity.BookmarksDatabaseSummary">Выберите метод хранения закладок.</string>
+  <string name="PreferencesActivity.BookmarksDatabaseStock">Закладки Android</string>
+  <string name="PreferencesActivity.BookmarksDatabaseInternal">Внутреннее хранилище</string>
+  <string-array name="BookmarksDatabaseEntries">
+    <item>@string/PreferencesActivity.BookmarksDatabaseStock</item>
+    <item>@string/PreferencesActivity.BookmarksDatabaseInternal</item>
+  </string-array>
+  <string-array name="BookmarksDatabaseValues">
+    <item>STOCK</item>
+    <item>INTERNAL</item>
+  </string-array>
+  <string name="HistoryListActivity.BookmarkAdded">Добавлено в закладки.</string>
+  <string name="HistoryListActivity.BookmarkRemoved">Убрано из закладок.</string>
+  <string name="HttpAuthenticationDialog.DialogTitle">Войти в %1$s - %2$s</string>
+  <string name="HttpAuthenticationDialog.UserName">Имя</string>
+  <string name="HttpAuthenticationDialog.Password">Пароль</string>
+  <string name="Commons.Proceed">Продолжить</string>
+  <string name="PreferencesActivity.EnableProxySettings">Включить прокси системы</string>
+  <string name="PreferencesActivity.EnableProxySettingsSummary">Включить или выключить поддержку прокси системы.</string>
+  <string name="ProxySettings.EnablingProxySettings">Включение поддержки прокси системы…</string>
+  <string name="ProxySettings.ErrorProxySettingsNotValid">Неверные настройки прокси системы.</string>
+  <string name="ProxySettings.ErrorProxyServerNotReachable">Прокси-сервер недосягаем.</string>
+  <string name="ProxySettings.ErrorProxyInternetNotReachable">Не удается получить доступ к веб через указанный прокси-сервер.</string>
+  <string name="ProxySettings.ProxySettingsEnabled">Настройки прокси успешно включены.</string>
+  <string name="AboutActivity.ContributorsText">Zirco Browser contributors:\n   • LeChuck (Proxy settings);\n   • Martin (Scroll with volume keys, German translation);\n   • Isaac L. (Spanish translation);</string>
+  <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Восстановить вкладки</string>
+  <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">Восстанавливать вкладки при следующем запуске приложения</string>
+  <!--0.4.3-->
+  <string name="VideoLoading">Загрузка видео\u2026</string>
+  <string name="DesktopViewListActivity.ListEmpty">Список пуст.</string>
+  <string name="DesktopViewListActivity.AddMessage">Добавить сайт</string>
+  <string name="DesktopViewListActivity.ClearMessage">Удалить все сайты</string>
 </resources>
