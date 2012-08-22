@@ -11,6 +11,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
+import java.io.IOException;
+import java.net.ServerSocket;
 
 import android.app.Activity;
 import android.content.pm.ApplicationInfo;
@@ -439,5 +441,38 @@ public class Utils {
             }
         }
         return false;
+    }
+    public static int findAvailablePort(int start_port, int max_increment)
+    {
+        ServerSocket ss = null;
+        int port;
+        for(port = start_port; port < (start_port + max_increment); port++)
+        {
+            try 
+            {
+                ss = new ServerSocket(port);
+                ss.setReuseAddress(true);
+                return port;
+            } 
+            catch (IOException e) 
+            {
+            } 
+            finally 
+            {
+                if (ss != null) 
+                {
+                    try 
+                    {
+                        ss.close();
+                    } 
+                    catch (IOException e) 
+                    {
+                        /* should not be thrown */
+                    }
+                }
+            }
+        }
+
+        return 0;
     }
 }
