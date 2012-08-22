@@ -53,46 +53,49 @@ public interface UpgradeManager
             this.context = context;
         }
         
-        public String getPath()
+        public String getFullPath()
         {
-            return this.context.getFilesDir().getAbsolutePath();
+            return this.context.getFileStreamPath(getFilename()).getAbsolutePath();
         }
         
-        public String getAbsolutePath()
+        public String getFilename()
         {
-            return getPath() + "/PsiphonAndroid.apk";
+            return "PsiphonAndroid.apk";
         }
         
         public boolean exists()
         {
-            File file = new File(getAbsolutePath());
-            return file.exists();
+            try
+            {
+                this.context.openFileInput(getFilename());
+            } 
+            catch (FileNotFoundException e)
+            {
+                return false;
+            }
+            
+            return true;
         }
         
         public void delete()
         {
-            File file = new File(getAbsolutePath());
-            file.delete();
+            this.context.deleteFile(getFilename());
         }
         
         public Uri getUri()
         {
-            File file = new File(getAbsolutePath());
+            File file = new File(getFullPath());
             return Uri.fromFile(file);
         }
         
         public boolean write(byte[] data)
         {
-            // First make sure our directory exists.
-            File dir = new File(getPath());
-            dir.mkdirs();
-            
-            File file = new File(getAbsolutePath());
             FileOutputStream fos;
-            
             try
             {
-                fos = new FileOutputStream(file);
+                fos = this.context.openFileOutput(
+                                    getFilename(), 
+                                    Context.MODE_WORLD_READABLE);
             } 
             catch (FileNotFoundException e)
             {
@@ -171,7 +174,7 @@ public interface UpgradeManager
             
             // Info about the potential upgrade file
             PackageInfo upgradePackageInfo = pm.getPackageArchiveInfo(
-                                                    file.getAbsolutePath(), 
+                                                    file.getFullPath(), 
                                                     0);
 
             if (upgradePackageInfo == null)
