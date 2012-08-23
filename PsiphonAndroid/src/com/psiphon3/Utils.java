@@ -2,6 +2,10 @@ package com.psiphon3;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
@@ -12,7 +16,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
 import java.io.IOException;
-import java.net.ServerSocket;
 
 import android.app.Activity;
 import android.content.pm.ApplicationInfo;
@@ -442,34 +445,46 @@ public class Utils {
         }
         return false;
     }
+    
+    public static boolean isPortAvailable(int port)
+    {
+        Socket socket = new Socket();
+        SocketAddress sockaddr = new InetSocketAddress("127.0.0.1", port);
+        
+        try 
+        {
+            socket.connect(sockaddr);
+            // The connect succeeded, so there is already something running on that port
+            return false;
+        }
+        catch (IOException e) 
+        {
+            // The connect failed, so the port is available
+            return true;
+        }
+        finally
+        {
+            if (socket != null)
+            {
+                try 
+                {
+                    socket.close();
+                } 
+                catch (IOException e) 
+                {
+                    /* should not be thrown */
+                }
+            }
+        }
+    }
+
     public static int findAvailablePort(int start_port, int max_increment)
     {
-        ServerSocket ss = null;
-        int port;
-        for(port = start_port; port < (start_port + max_increment); port++)
+        for(int port = start_port; port < (start_port + max_increment); port++)
         {
-            try 
+            if (isPortAvailable(port))
             {
-                ss = new ServerSocket(port);
-                ss.setReuseAddress(true);
                 return port;
-            } 
-            catch (IOException e) 
-            {
-            } 
-            finally 
-            {
-                if (ss != null) 
-                {
-                    try 
-                    {
-                        ss.close();
-                    } 
-                    catch (IOException e) 
-                    {
-                        /* should not be thrown */
-                    }
-                }
             }
         }
 

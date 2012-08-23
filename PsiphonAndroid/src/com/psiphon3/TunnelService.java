@@ -290,18 +290,36 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 
             MyLog.i(R.string.socks_starting);
 
-            int port = Utils.findAvailablePort(PsiphonConstants.SOCKS_PORT, 10);
-            if(port == 0)
+            // If polipo is already running, we must use the same SOCKS port that polipo is
+            // already using as it's parent proxy port.
+            if (Polipo.isPolipoThreadRunning())
             {
-                MyLog.e(R.string.socks_ports_failed);
-                runAgain = false;
-
-                //request tunnel stop
-                stopTunnel();
-
-                return runAgain;
+                if (!Utils.isPortAvailable(PsiphonData.getPsiphonData().getSocksPort()))
+                {
+                    MyLog.e(R.string.socks_port_in_use, PsiphonData.getPsiphonData().getSocksPort());
+                    runAgain = false;
+    
+                    //request tunnel stop
+                    stopTunnel();
+    
+                    return runAgain;
+                }
             }
-            PsiphonData.getPsiphonData().setSocksPort(port);
+            else
+            {
+                int port = Utils.findAvailablePort(PsiphonConstants.SOCKS_PORT, 10);
+                if(port == 0)
+                {
+                    MyLog.e(R.string.socks_ports_failed);
+                    runAgain = false;
+    
+                    //request tunnel stop
+                    stopTunnel();
+    
+                    return runAgain;
+                }
+                PsiphonData.getPsiphonData().setSocksPort(port);
+            }
             socks = conn.createDynamicPortForwarder(PsiphonData.getPsiphonData().getSocksPort());
             MyLog.i(R.string.socks_running, PsiphonData.getPsiphonData().getSocksPort());
 

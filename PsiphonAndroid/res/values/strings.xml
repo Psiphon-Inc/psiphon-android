@@ -64,5 +64,6 @@
     <string name="FeedbackActivity.GetHTMLContentFailed">Failed to get feedback page content</string>
     <string name="socks_ports_failed">Failed to start SOCKS, no available ports found</string>
     <string name="http_proxy_ports_failed">Failed to start HTTP proxy, no available ports found</string>
+    <string name="socks_port_in_use">Port %d is already in use by another app.  Cannot continue.</string>
 
 </resources>

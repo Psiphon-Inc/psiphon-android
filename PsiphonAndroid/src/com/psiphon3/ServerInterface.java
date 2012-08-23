@@ -925,7 +925,7 @@ public class ServerInterface
             HttpHost httpproxy;
             if (useLocalProxy)
             {
-                httpproxy = new HttpHost("127.0.0.1", PsiphonConstants.HTTP_PROXY_PORT);
+                httpproxy = new HttpHost("127.0.0.1", PsiphonData.getPsiphonData().getHttpProxyPort());
                 params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
             }
 

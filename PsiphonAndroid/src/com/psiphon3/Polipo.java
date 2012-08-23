@@ -19,7 +19,6 @@
 
 package com.psiphon3;
 
-import android.util.Log;
 
 public class Polipo
 {
@@ -42,7 +41,17 @@ public class Polipo
         return m_polipo;
     }
 
-    Thread m_polipoThread;
+    static Thread m_polipoThread;
+
+    public static synchronized boolean isPolipoThreadRunning()
+    {
+        if (m_polipoThread != null)
+        {
+            return true;
+        }
+        
+        return false;
+    }
 
     public void runForever() throws InterruptedException
     {
