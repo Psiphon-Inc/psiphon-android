@@ -424,4 +424,5 @@
   <string name="DesktopViewListActivity.ListEmpty">Список пуст.</string>
   <string name="DesktopViewListActivity.AddMessage">Добавить сайт</string>
   <string name="DesktopViewListActivity.ClearMessage">Удалить все сайты</string>
+  <string name="Main.MenuFeedback">Отзыв</string>
 </resources>

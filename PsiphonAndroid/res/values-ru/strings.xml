@@ -31,6 +31,8 @@
   <string name="ServerInterface.FailedToParseStoredServerEntries">Ошибка разбора(парсинга) сохраненного списка серверов.</string>
   <string name="ServerInterface.FailedToParseEmbeddedServerEntries">Ошибка разбора(парсинга) встроенного списка серверов.</string>
   <string name="ServerInterface.FailedToParseHandshake">Ошибка разбора(парсинга) handshake.</string>
+  <string name="ServerInterface.FailedToStoreLastConnected">Ошибка сохранения параметра \'last connected time\'</string>
+  <string name="ServerInterface.FailedToReadLastConnected">Ошибка чтения параметра \'last connected time\'</string>
   <string name="PsiphonAndroidService.HandshakeRequestFailed">Ошибка запроса инициализации(handshake request).</string>
   <string name="PsiphonAndroidService.ConnectedRequestFailed">Ошибка запроса постинициализации(connected request).</string>
   <string name="ssh_disconnected_unexpectedly">Неожиданный обрыв соединения SSH </string>
@@ -57,4 +59,11 @@
   <string name="stopped_tunnel">Тоннель остановлен</string>
   <string name="ServerInterface.StopRequested">Получен сигмнал остановки</string>
   <string name="ServerInterface.HTTPSRequestFailed">Ошибка HTTPS запроса: </string>
+  <string name="feedback">Отзыв</string>
+  <string name="FeedbackActivity.DefaultText">Если у вас есть какие-либо особые  комментарии, дополнительная информация о сайтах, которые не загружаются или эта форма не работает для вас, пишите нам на &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
+  <string name="FeedbackActivity.Success">Спасибо за ваш отзыв</string>
+  <string name="FeedbackActivity.Failure">Отсылка не сработала. Попробуйте еще раз</string>
+  <string name="FeedbackActivity.SubmitFeedbackFailed">Ошибка при отсылке отзыва.</string>
+  <string name="FeedbackActivity.InvalidURLParameters">Неверные параметры в URL при отсылке формы отзыва</string>
+  <string name="FeedbackActivity.GetHTMLContentFailed">Форма отзыва не загружается</string>
 </resources>
