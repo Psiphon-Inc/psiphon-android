@@ -582,6 +582,10 @@ public class ServerInterface
     synchronized public void doFeedbackRequest(String feedbackData) 
         throws PsiphonServerInterfaceException
     {
+        if(getCurrentServerEntry() == null)
+        {
+            throw new PsiphonServerInterfaceException();
+        }
         // NOTE: feedbackData is not being validated here
         byte[] requestBody = feedbackData.getBytes();
 
