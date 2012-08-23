@@ -20,7 +20,6 @@
 package com.psiphon3;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -298,10 +297,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 {
                     MyLog.e(R.string.socks_port_in_use, PsiphonData.getPsiphonData().getSocksPort());
                     runAgain = false;
-    
-                    //request tunnel stop
-                    stopTunnel();
-    
                     return runAgain;
                 }
             }
@@ -312,10 +307,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 {
                     MyLog.e(R.string.socks_ports_failed);
                     runAgain = false;
-    
-                    //request tunnel stop
-                    stopTunnel();
-    
                     return runAgain;
                 }
                 PsiphonData.getPsiphonData().setSocksPort(port);
@@ -339,10 +330,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             {
                 MyLog.e(R.string.http_proxy_ports_failed);
                 runAgain = false;
-
-                //request tunnel stop
-                stopTunnel();
-
                 return runAgain;
             }
 
