@@ -171,42 +171,61 @@ public class ProxySettings
         setProxy(ctx,"localhost",port);
 	}
 	
-	public static void setSystemProxy(Context ctx)
-	{
-		Toast.makeText(ctx, ctx.getResources().getString(R.string.ProxySettings_EnablingProxySettings), Toast.LENGTH_SHORT).show();
-		if (_proxyStatus == null || _proxyStatus == false)
-			testSystemProxy(ctx);
-		
-		if (_proxyStatus)
-		{
-			setProxy(ctx,getSystemProxyAddress(ctx),getSystemProxyPort(ctx));
-			Toast.makeText(ctx, ctx.getResources().getString(R.string.ProxySettings_ProxySettingsEnabled), Toast.LENGTH_LONG).show();
-		}
-		else
-			resetSystemProxy(ctx);
-	}
-	
-	public static void resetSystemProxy(Context ctx)
-	{
-		if (_proxyStatus != null && _proxyStatus == true)
-		{
-    		try
-    		{
-    			resetProxy(ctx);
-    		}
-    		catch (Exception e)
-    		{
-    			Log.e("ProxySettings","Exception resetting WebKit proxy settings: " + e.toString());
-    		}
-		}
-	}
+    /* 
+    Proxy setting code taken directly from Orweb, with some modifications.
+    (...And some of the Orweb code was taken from an earlier version of our code.)
+    See: https://github.com/guardianproject/Orweb/blob/master/src/org/torproject/android/OrbotHelper.java#L39
+    Note that we tried and abandoned doing feature detection by trying the 
+    newer (>= ICS) proxy setting, catching, and then failing over to the older
+    approach. The problem was that on Android 3.0, an exception would be thrown
+    *in another thread*, so we couldn't catch it and the whole app would force-close.
+    Orweb has always been doing an explicit version check, and it seems to work,
+    so we're so going to switch to that approach.
+    */
+    public static boolean setProxy (Context ctx, String host, int port)
+    {
+        boolean worked = false;
 
-    private static boolean setProxy(Context ctx, String host, int port) 
+        if (Build.VERSION.SDK_INT < 14) 
+        {
+            worked = setWebkitProxyGingerbread(ctx, host, port);
+        }
+        else
+        {
+            worked = setWebkitProxyICS(ctx, host, port);
+        }
+        
+        return worked;
+    }
+
+    private static boolean setWebkitProxyGingerbread(Context ctx, String host, int port)
+    {
+        try
+        {
+            Object requestQueueObject = getRequestQueue(ctx);
+            if (requestQueueObject != null) {
+                //Create Proxy config object and set it into request Q
+                HttpHost httpHost = new HttpHost(host, port, "http");   
+                setDeclaredField(requestQueueObject, "mProxyHost", httpHost);
+                
+                return true;
+            }
+        }
+        catch (Throwable e)
+        {
+            // Failed. Fall through to false return.
+        }
+        
+        return false;
+    }
+    
+    private static boolean setWebkitProxyICS(Context ctx, String host, int port)
     {
         // PSIPHON: added support for Android 4.x WebView proxy
         try 
         {
             Class webViewCoreClass = Class.forName("android.webkit.WebViewCore");
+           
             Class proxyPropertiesClass = Class.forName("android.net.ProxyProperties");
             if (webViewCoreClass != null && proxyPropertiesClass != null) 
             {
@@ -229,42 +248,12 @@ public class ProxySettings
         {
             Log.e("ProxySettings","Exception setting WebKit proxy through android.net.ProxyProperties: " + e.toString());
         }
-        catch (Error e)
-        {
-            Log.e("ProxySettings","Exception setting WebKit proxy through android.net.ProxyProperties: " + e.toString());
-        }
-        
-        try
-        {
-            Object requestQueueObject = getRequestQueue(ctx);
-            if (requestQueueObject != null) 
-            {
-                //Create Proxy config object and set it into request Q
-                HttpHost httpHost = new HttpHost(host, port, "http");
-                setDeclaredField(requestQueueObject, "mProxyHost", httpHost);
-                //Log.d("Webkit Setted Proxy to: " + host + ":" + port);
-                return true;
-            }
-        }
-        catch (Exception e) 
-        {
-            Log.e("ProxySettings","Exception setting WebKit proxy through android.webkit.Network: " + e.toString());
-        }
-        catch (Error e)
+        catch (Error e) 
         {
             Log.e("ProxySettings","Exception setting WebKit proxy through android.webkit.Network: " + e.toString());
         }
         
         return false;
-    }
-
-    private static void resetProxy(Context ctx) throws Exception 
-    {
-        Object requestQueueObject = getRequestQueue(ctx);
-        if (requestQueueObject != null) 
-        {
-            setDeclaredField(requestQueueObject, "mProxyHost", null);
-        }
     }
 
     @SuppressWarnings("rawtypes")
