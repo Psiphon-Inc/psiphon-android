@@ -2,10 +2,10 @@ package com.psiphon3;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
@@ -453,11 +453,16 @@ public class Utils {
         
         try 
         {
-            socket.connect(sockaddr);
+            socket.connect(sockaddr, 1000);
             // The connect succeeded, so there is already something running on that port
             return false;
         }
-        catch (IOException e) 
+        catch (SocketTimeoutException e)
+        {
+            // The socket is in use, but the server didn't respond quickly enough
+            return false;
+        }
+        catch (IOException e)
         {
             // The connect failed, so the port is available
             return true;
