@@ -1,0 +1,432 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <string name="ApplicationName">Navegador Psiphon</string>
+  <string name="ApplicationNameUrl">Psiphon - %s</string>
+  <string name="ApplicationDescription">El Navegador Psiphon es un navegador de código abierto para Android, basado en el Navegador Zirco.</string>
+  <string name="AboutActivity.Title">Acerca de</string>
+  <string name="AboutActivity.VersionText">Versión:</string>
+  <string name="AboutActivity.UrlTextValue">https://bitbucket.org/psiphon/psiphon-circumvention-system/overview</string>
+  <string name="AboutActivity.LicenseText">Licencia:</string>
+  <string name="AboutActivity.LicenseTextValue">GPL v3</string>
+  <string name="Main.MenuAddBookmark">Agregar favorito</string>
+  <string name="Main.MenuShowBookmarks">Favoritos</string>
+  <string name="Main.MenuShowHistory">Historia</string>
+  <string name="Main.MenuShowDownloads">Descargas</string>
+  <string name="Main.MenuPreferences">Preferencias</string>
+  <string name="Main.MenuOpen">Abrir</string>
+  <string name="Main.MenuOpenNewTab">Abrir en nueva pestaña</string>
+  <string name="Main.MenuDownload">Descargar</string>
+  <string name="Main.DownloadStartedMsg">Inicia descarga.</string>
+  <string name="Main.DownloadFinishedMsg">Descarga completa.</string>
+  <string name="Main.DownloadErrorMsg">Error de descarga: %s</string>
+  <string name="Main.ToastTabSwitchMessage">Tab %s</string>
+  <string name="Main.ToastTabSwitchFullMessage">Tab %1$s: %2$s</string>
+  <string name="Main.VndErrorTitle">No es posible abrir URL</string>
+  <string name="Main.VndErrorMessage">Es posible que no tenga una aplicación capaz de abrir esta url: %s.</string>
+  <string name="BookmarksListActivity.Title">Navegador Psiphon - Favoritos</string>
+  <string name="BookmarksListActivity.MenuSortMode">Ordenar por</string>
+  <string name="BookmarksListActivity.MenuAddBookmark">Agregar Favorito</string>
+  <string name="BookmarksListActivity.Empty">No hay favoritos</string>
+  <string name="BookmarksListActivity.MenuOpenInTab">Abrir en nueva pestaña</string>
+  <string name="BookmarksListActivity.MenuEditBookmark">Editar favorito</string>
+  <string name="BookmarksListActivity.MenuDeleteBookmark">Eliminar favorito</string>
+  <string name="BookmarksListActivity.AlphaSortMode">Alfabético</string>
+  <string name="BookmarksListActivity.RecentSortMode">Más reciente</string>
+  <string name="EditBookmarkActivity.Title">Editar favorito</string>
+  <string name="EditBookmarkActivity.TitleAdd">Agregar favorito</string>
+  <string name="EditBookmarkActivity.TitleLabel">Nombre:</string>
+  <string name="EditBookmarkActivity.UrlLabel">Lugar:</string>
+  <string name="HistoryListActivity.Title">Navegador Psiphon - Historia</string>
+  <string name="HistoryListActivity.MenuOpenInTab">Abrir en nueva pestaña</string>
+  <string name="HistoryListActivity.MenuDelete">Eliminar</string>
+  <string name="DownloadListActivity.Title">Navegador Psiphon - Descargas</string>
+  <string name="DownloadListActivity.Empty">No hay descargas</string>
+  <string name="DownloadListActivity.Aborted">%s (Cancelado)</string>
+  <string name="DownloadListActivity.Finished">%s (Completo)</string>
+  <string name="AdBlockerWhiteListActivity.Title">Navegador Psiphon - Agregar lista de aceptados al bloqueador</string>
+  <string name="AdBlockerWhiteListActivity.Empty">La lista de aceptados está vacía.</string>
+  <string name="AdBlockerWhiteListActivity.AddMessage">Agregar a la lista de aceptados</string>
+  <string name="AdBlockerWhiteListActivity.ClearMessage">Vaciar lista de aceptados</string>
+  <string name="PreferencesActivity.GeneralSettingsCategoryTitle">Ajustes generales</string>
+  <string name="PreferencesActivity.HomePagePreferenceTitle">Página inicial</string>
+  <string name="PreferencesActivity.HomePagePreferenceSummary">Seleccione su página inicial por defecto.</string>
+  <string name="PreferencesActivity.FullScreenPreferenceTitle">Pantalla completa</string>
+  <string name="PreferencesActivity.FullScreenPreferenceSummary">Desplegar el navegador en pantalla completa (requiere reiniciar la aplicación).</string>
+  <string name="PreferencesActivity.ShowToastOnTabSwitchPreferenceTitle">Mostrar aviso al cambiar de pestaña</string>
+  <string name="PreferencesActivity.ShowToastOnTabSwitchPreferenceSummary">Si está seleccionada, se mostrará un breve aviso al cambiar de pestaña.</string>
+  <string name="PreferencesActivity.BrowserSettingsCategoryTitle">Ajustes de navegador</string>
+  <string name="PreferencesActivity.HistorySizePreferenceTitle">Tamaño de la historia</string>
+  <string name="PreferencesActivity.HistorySizePreferenceSummary">Tamaño de la historia en días.</string>
+  <string name="PreferencesActivity.EnableJavascriptPreferenceTitle">Activar JavaScript</string>
+  <string name="PreferencesActivity.EnableJavascriptPreferenceSummary">Activar o inactivar JavaScript.</string>
+  <string name="PreferencesActivity.LoadImagesPreferenceTitle">Cargar imágenes</string>
+  <string name="PreferencesActivity.LoadImagesPreferenceSummary">Activar o inactivar la carga de imágenes.</string>
+  <string name="PreferencesActivity.PrivacyPreferenceTitle">Ajustes de privacidad</string>
+  <string name="PreferencesActivity.PrivacyPreferenceSummary">Administrar ajustes de privacidad.</string>
+  <string name="PreferencesActivity.EnableFormDataPreferenceTitle">Guardar los datos de la forma</string>
+  <string name="PreferencesActivity.EnableFormDataPreferenceSummary">Activar o inactivar guardar datos de la forma.</string>
+  <string name="PreferencesActivity.EnablePasswordsPreferenceTitle">Guardar contraseñas</string>
+  <string name="PreferencesActivity.EnablePasswordsPreferenceSummary">Activar o inactivar guardar contraseñas.</string>
+  <string name="PreferencesActivity.EnableCookiesPreferenceTitle">Permitir cookies</string>
+  <string name="PreferencesActivity.EnableCookiesPreferenceSummary">Activar o inactivar cookies.</string>
+  <string name="PreferencesActivity.PrivacyClearHistoryTitle">Vaciar historia</string>
+  <string name="PreferencesActivity.PrivacyClearFormDataTitle">Vaciar forma de datos</string>
+  <string name="PreferencesActivity.PrivacyClearCacheTitle">Vaciar cache</string>
+  <string name="PreferencesActivity.PrivacyClearCookiesTitle">Vaciar cookies</string>
+  <string name="PreferencesActivity.BarDurationPreferenceTitle">Duración del despliegue de las barras</string>
+  <string name="PreferencesActivity.BarDurationPreferenceSummary">Duración del despliegue de las barras de herramientas.</string>
+  <string name="PreferencesActivity.BarDuration1sec">1 segundo</string>
+  <string name="PreferencesActivity.BarDuration2sec">2 segundos</string>
+  <string name="PreferencesActivity.BarDuration3sec">3 segundos</string>
+  <string name="PreferencesActivity.BarDuration4sec">4 segundos</string>
+  <string name="PreferencesActivity.BarDuration5sec">5 segundos</string>
+  <string-array name="BarDurationEntries">
+    <item>@string/PreferencesActivity.BarDuration1sec</item>
+    <item>@string/PreferencesActivity.BarDuration2sec</item>
+    <item>@string/PreferencesActivity.BarDuration3sec</item>
+    <item>@string/PreferencesActivity.BarDuration4sec</item>
+    <item>@string/PreferencesActivity.BarDuration5sec</item>
+  </string-array>
+  <string-array name="BarDurationValues">
+    <item>1000</item>
+    <item>2000</item>
+    <item>3000</item>
+    <item>4000</item>
+    <item>5000</item>
+  </string-array>
+  <string name="PreferencesActivity.BubblePositionPreferenceTitle">Posición de la burbuja</string>
+  <string name="PreferencesActivity.BubblePositionPreferenceSummary">Posición de la \"burbuja\".</string>
+  <string name="PreferencesActivity.BubbleRight">Derecha</string>
+  <string name="PreferencesActivity.BubbleLeft">Izquierda</string>
+  <string name="PreferencesActivity.BubbleBoth">Ambas</string>
+  <string-array name="BubblePositionEntries">
+    <item>@string/PreferencesActivity.BubbleRight</item>
+    <item>@string/PreferencesActivity.BubbleLeft</item>
+    <item>@string/PreferencesActivity.BubbleBoth</item>
+  </string-array>
+  <string-array name="BubblePositionValues">
+    <item>right</item>
+    <item>left</item>
+    <item>both</item>
+  </string-array>
+  <string name="PreferencesActivity.AdBlockerSettingsCategoryTitle">Ajustes del bloqueador de anuncios</string>
+  <string name="PreferencesActivity.EnableAdBlockerPreferenceTitle">Activar bloqueador de anuncios</string>
+  <string name="PreferencesActivity.EnableAdBlockerPreferenceSummary">El bloqueador de anuncios no funcionará si JavaScript no está activo.</string>
+  <string name="PreferencesActivity.AdBlockerWhiteListPreferenceTitle">Lista de autorizados</string>
+  <string name="PreferencesActivity.AdBlockerWhiteListPreferenceSummary">Administrar la lista de autorizados del bloqueador de anuncios.</string>
+  <string name="Commons.Ok">OK</string>
+  <string name="Commons.Cancel">Cancelar</string>
+  <string name="Commons.PleaseWait">Por favor espere</string>
+  <string name="Commons.Yes">Si</string>
+  <string name="Commons.No">No</string>
+  <string name="Commons.NoUndoMessage">Esta operación no se puede restituir. ¿Desea proceder?</string>
+  <string name="Commons.JavaScriptDialog">Diálogo de JavaScript</string>
+  <string name="Commons.ClearHistory">Eliminar historia</string>
+  <string name="Commons.ClearingHistory">Eliminando historia...</string>
+  <string name="Commons.ClearFormData">Eliminar datos de la forma</string>
+  <string name="Commons.ClearingFormData">Eliminando los datos de la forma...</string>
+  <string name="Commons.ClearCache">Vaciar cache</string>
+  <string name="Commons.ClearingCache">Vaciando cache...</string>
+  <string name="Commons.ClearCookies">Eliminar cookies</string>
+  <string name="Commons.ClearingCookies">Eliminando cookies...</string>
+  <string name="Commons.SDCardErrorTitle">Tarjeta SD no disponible</string>
+  <string name="Commons.SDCardErrorNoSDMsg">No se encontró tarjeta SD.</string>
+  <string name="Commons.SDCardErrorSDUnavailable">La tarjeta SD no está disponible.</string>
+  <string name="Commons.Close">Cerrar</string>
+  <string name="DATE_FORMAT_ISO8601">yyyy-MM-dd\'T\'HH:mm:ss.SSS</string>
+  <!--0.3.1-->
+  <string name="PreferencesActivity.AboutCategoryTitle">Acerca de</string>
+  <string name="PreferencesActivity.AboutPreferenceTitle">Acerca de</string>
+  <string name="PreferencesActivity.AboutPreferenceSummary">Información acerca de esta aplicación.</string>
+  <!--0.3.2-->
+  <string name="BookmarksListActivity.MostUsedSortMode">Más usado</string>
+  <string name="PreferencesActivity.DefaultZoomPreferenceTitle">Nivel de zoom por defecto</string>
+  <string name="PreferencesActivity.DefaultZoomPreferenceSummary">Ajuste el nivel de zoom por defecto.</string>
+  <string name="PreferencesActivity.DefaultZoomClose">Cerrar</string>
+  <string name="PreferencesActivity.DefaultZoomMedium">Medio</string>
+  <string name="PreferencesActivity.DefaultZoomFar">Lejos</string>
+  <string-array name="DefaultZoomEntries">
+    <item>@string/PreferencesActivity.DefaultZoomClose</item>
+    <item>@string/PreferencesActivity.DefaultZoomMedium</item>
+    <item>@string/PreferencesActivity.DefaultZoomFar</item>
+  </string-array>
+  <string-array name="DefaultZoomValues">
+    <item>CLOSE</item>
+    <item>MEDIUM</item>
+    <item>FAR</item>
+  </string-array>
+  <string name="StartPage.Welcome">Bienvenido!</string>
+  <string name="StartPage.Bookmarks">Favoritos más empleados</string>
+  <string name="StartPage.History">Historia reciente</string>
+  <string name="ChangelogActivity.Title">Lista de cambios</string>
+  <string name="PreferencesActivity.ChangelogPreferenceTitle">Lista de cambios</string>
+  <string name="PreferencesActivity.ChangelogPreferenceSummary">Lista de cambios para esta aplicación</string>
+  <string name="HomepagePreferenceActivity.Title">Página inicial</string>
+  <string name="HomepagePreferenceActivity.Prompt">Página inicial</string>
+  <string name="PreferencesActivity.HomepageStart">Página de inicio</string>
+  <string name="PreferencesActivity.HomepageBlank">Página en blanco</string>
+  <string name="PreferencesActivity.HomepageCustom">Página personalizada</string>
+  <string-array name="HomepageValues">
+    <item>@string/PreferencesActivity.HomepageStart</item>
+    <item>@string/PreferencesActivity.HomepageBlank</item>
+    <item>@string/PreferencesActivity.HomepageCustom</item>
+  </string-array>
+  <!--0.3.3-->
+  <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=en&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
+  <string name="Constants.SearchUrlWikipedia">http://en.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
+  <string name="PreferencesActivity.SearchUrlPreferenceTitle">url de búsqueda</string>
+  <string name="PreferencesActivity.SearchUrlPreferenceSummary">Definir la url de búsqueda.</string>
+  <string name="SearchUrlPreferenceActivity.Title">url de búsqueda</string>
+  <string name="SearchUrlPreferenceActivity.Prompt">url de búsqueda</string>
+  <string name="PreferencesActivity.SearchUrlGoogle">Google</string>
+  <string name="PreferencesActivity.SearchUrlWikipedia">Wikipedia</string>
+  <string name="PreferencesActivity.SearchUrlCustom">Personalizada</string>
+  <string-array name="SearchUrlValues">
+    <item>@string/PreferencesActivity.SearchUrlGoogle</item>
+    <item>@string/PreferencesActivity.SearchUrlWikipedia</item>
+    <item>@string/PreferencesActivity.SearchUrlCustom</item>
+  </string-array>
+  <string name="StartPage.Search">Buscar</string>
+  <string name="StartPage.SearchButton">Ir</string>
+  <string name="PreferencesActivity.StartPageCustomizationPreferenceTitle">Personalización de página de inicio</string>
+  <string name="PreferencesActivity.StartPageCustomizationPreferenceSummary">Personalizar la página de inicio.</string>
+  <string name="PreferencesActivity.StartPageEnableSearchPreferenceTitle">Mostrar campo de búsqueda</string>
+  <string name="PreferencesActivity.StartPageEnableSearchPreferenceSummary">Si se marca, se mostrará un campo de búsqueda.</string>
+  <string name="PreferencesActivity.StartPageEnableBookmarksPreferenceTitle">Mostrar los favoritos más usados</string>
+  <string name="PreferencesActivity.StartPageEnableBookmarksPreferenceSummary">Si se marca, se mostrarán los favoritos más usados.</string>
+  <string name="PreferencesActivity.StartPageEnableHistoryPreferenceTitle">Mostrar historia reciente</string>
+  <string name="PreferencesActivity.StartPageEnableHistoryPreferenceSummary">Si se marca, se mostrará la historia reciente.</string>
+  <string name="PreferencesActivity.StartPageBookmarksLimitPreferenceTitle">Número de favoritos más usados</string>
+  <string name="PreferencesActivity.StartPageBookmarksLimitPreferenceSummary">Número de favoritos más usados a mostrar.</string>
+  <string name="PreferencesActivity.StartPageHistoryLimitPreferenceTitle">Número de artículos de historia reciente</string>
+  <string name="PreferencesActivity.StartPageHistoryLimitPreferenceSummary">Número de artículos de historia reciente a mostrar.</string>
+  <string name="PreferencesActivity.UserAgentPreferenceTitle">Agente del usuario</string>
+  <string name="PreferencesActivity.UserAgentPreferenceSummary">Defina el agente de usuario a emplear.</string>
+  <string name="UserAgentPreferenceActivity.Title">Agente de usuario</string>
+  <string name="UserAgentPreferenceActivity.Prompt">Agente de usuario</string>
+  <string name="PreferencesActivity.UserAgentDefault">Por defecto</string>
+  <string name="PreferencesActivity.UserAgentDesktop">Escritorio</string>
+  <string name="PreferencesActivity.UserAgentCustom">Personalizado</string>
+  <string-array name="UserAgentValues">
+    <item>@string/PreferencesActivity.UserAgentDefault</item>
+    <item>@string/PreferencesActivity.UserAgentDesktop</item>
+    <item>@string/PreferencesActivity.UserAgentCustom</item>
+  </string-array>
+  <!--0.3.4-->
+  <string name="Main.MenuCopyLinkUrl">Copiar url de liga</string>
+  <string name="Main.MenuViewImage">Ver imagen</string>
+  <string name="Main.MenuCopyImageUrl">Copiar url de imagen</string>
+  <string name="Main.MenuDownloadImage">Descargar imagen</string>
+  <string name="Main.MenuSendEmail">Enviar email</string>
+  <string name="Main.MenuCopyEmailUrl">Copiar url de email</string>
+  <string name="Commons.UrlCopyToastMessage">Url copiada al portapapeles.</string>
+  <string name="DownloadNotification.DownloadStart">Inicia descarga.</string>
+  <string name="DownloadNotification.DownloadInProgress">Descarga en proceso.</string>
+  <string name="DownloadNotification.DownloadComplete">Descarga completa.</string>
+  <string name="DownloadNotification.DownloadCanceled">Descarga cancelada.</string>
+  <string name="BookmarksHistoryActivity.MenuCopyLinkUrl">Copiar url</string>
+  <string name="PreferencesActivity.ClearCacheOnExitPreferenceTitle">Vaciar cache al salir</string>
+  <string name="PreferencesActivity.ClearCacheOnExitPreferenceSummary">Si se marca, el cache del navegador será vaciado al salir de la aplicación.</string>
+  <string name="PreferencesActivity.UIPreferenceTitle">Parámetros de la interfaz de usuario</string>
+  <string name="PreferencesActivity.UIPreferenceSummary">Personalizar la interfaz de usuario.</string>
+  <string name="Main.MenuExit">Salir</string>
+  <string name="PreferencesActivity.RestartDialogTitle">Requiere reinicio</string>
+  <string name="PreferencesActivity.RestartDialogMessage">Este cambio no surtirá efecto hasta que se reinicie la aplicación. ¿Quiere hacerlo ahora?</string>
+  <!--0.3.5-->
+  <string name="PreferencesActivity.EnablePluginsTitle">Activar plug-ins</string>
+  <string name="PreferencesActivity.PluginsAlwaysOff">Siempre inactivo</string>
+  <string name="PreferencesActivity.PluginsOnDemand">Por demanda</string>
+  <string name="PreferencesActivity.PluginsAlwaysOn">Siempre activo</string>
+  <string-array name="PluginsEntries">
+    <item>@string/PreferencesActivity.PluginsAlwaysOff</item>
+    <item>@string/PreferencesActivity.PluginsOnDemand</item>
+    <item>@string/PreferencesActivity.PluginsAlwaysOn</item>
+  </string-array>
+  <string-array name="PluginsValues">
+    <item>OFF</item>
+    <item>ON_DEMAND</item>
+    <item>ON</item>
+  </string-array>
+  <string name="Commons.Continue">Continuar</string>
+  <string name="Commons.SslWarning">Advertencia de seguridad</string>
+  <string name="Commons.SslWarningsHeader">Existen problemas con el certificado de seguridad de este sitio.</string>
+  <string name="Commons.SslUntrusted">Este certificado no proviene de una autoridad confiable.</string>
+  <string name="Commons.SslIDMismatch">El nombre del sitio no es igual al nombre del certificado.</string>
+  <string name="Commons.SslExpired">Este certificado ya expiró.</string>
+  <string name="Commons.SslNotYetValid">Este certificado aún no es válido.</string>
+  <string name="MobileViewListActivity.Title">Navegador Psiphon - Lista de sitios web para vista móvil</string>
+  <string name="MobileViewListActivity.ListEmpty">La lista está vacía.</string>
+  <string name="MobileViewListActivity.AddMessage">Agregar un sitio web</string>
+  <string name="MobileViewListActivity.ClearMessage">Eliminar todos los sitios</string>
+  <string name="PreferencesActivity.MobileViewCategoryTitle">Ajustes de vista móvil</string>
+  <string name="PreferencesActivity.MobileViewListPreferenceTitle">Administrar sitios web</string>
+  <string name="PreferencesActivity.MobileViewListPreferenceSummary">Los sitios web en esta lista serán cargados usando la vista móvil de Google (VMG).</string>
+  <string name="Commons.Add">Agregar</string>
+  <string name="Commons.Clear">Eliminar</string>
+  <string name="Commons.Delete">Borrar</string>
+  <!--0.3.6-->
+  <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceTitle">Comportamiento de teclas de volumen</string>
+  <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceSummary">Elija la acción de las teclas de volumen.</string>
+  <string name="PreferencesActivity.VolumeKeysActionDefault">Comportamiento por defecto</string>
+  <string name="PreferencesActivity.VolumeKeysActionZoom">Zoom</string>
+  <string name="PreferencesActivity.VolumeKeysActionScroll">Desplazamiento arriba/abajo</string>
+  <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">Cambiar de pestaña</string>
+  <string name="PreferencesActivity.VolumeKeysActionHistory">atrás/adelante</string>
+  <string-array name="VolumeKeysActionEntries">
+    <item>@string/PreferencesActivity.VolumeKeysActionDefault</item>
+    <item>@string/PreferencesActivity.VolumeKeysActionZoom</item>
+    <item>@string/PreferencesActivity.VolumeKeysActionScroll</item>
+    <item>@string/PreferencesActivity.VolumeKeysActionSwitchTabs</item>
+    <item>@string/PreferencesActivity.VolumeKeysActionHistory</item>
+  </string-array>
+  <string-array name="VolumeKeysActionValues">
+    <item>DEFAULT</item>
+    <item>ZOOM</item>
+    <item>SCROLL</item>
+    <item>SWITCH_TABS</item>
+    <item>HISTORY</item>
+  </string-array>
+  <!--0.3.7-->
+  <string name="Main.ShareChooserTitle">Compartir por</string>
+  <string name="Main.MenuShareLinkUrl">Compartir liga</string>
+  <string name="Main.MenuShareImageUrl">Compartir imagen</string>
+  <string name="Main.MenuShareEmailUrl">Compartir email</string>
+  <!--0.3.8-->
+  <string name="PreferencesActivity.HideTitleBarPreferenceTitle">Ocultar barra de títulos</string>
+  <string name="PreferencesActivity.HideTitleBarPreferenceSummary">Si se marca, no se mostrarán las barras de títulos de las ventanas (requiere reinicio de la aplicación).</string>
+  <string name="PreferencesActivity.UseWideViewPortPreferenceTitle">Usar una ventana ancha</string>
+  <string name="PreferencesActivity.UseWideViewPortPreferenceSummary">Si se marca, el navegador empleará una ventana similar a la de los navegadores de escritorio.</string>
+  <string name="PreferencesActivity.LoadWithOverviewPreferenceTitle">Cargar páginas con vista previa</string>
+  <string name="PreferencesActivity.LoadWithOverviewPreferenceSummary">Si se marca, se reducirá el tamaño de las páginas para mostrar una vista previa.</string>
+  <string name="PreferencesActivity.SwitchTabsMethodPreferenceTitle">Método para alternar pestañas</string>
+  <string name="PreferencesActivity.SwitchTabsMethodPreferenceSummary">Defina como puede alternar entre pestañas abiertas.</string>
+  <string name="PreferencesActivity.SwitchTabButtons">Botones</string>
+  <string name="PreferencesActivity.SwitchTabFling">Fling</string>
+  <string name="PreferencesActivity.SwitchTabBoth">Ambos</string>
+  <string-array name="SwitchTabsMethodEntries">
+    <item>@string/PreferencesActivity.SwitchTabButtons</item>
+    <item>@string/PreferencesActivity.SwitchTabFling</item>
+    <item>@string/PreferencesActivity.SwitchTabBoth</item>
+  </string-array>
+  <string-array name="SwitchTabsMethodValues">
+    <item>buttons</item>
+    <item>fling</item>
+    <item>both</item>
+  </string-array>
+  <!--0.3.9-->
+  <string name="HistoryListActivity.Today">Hoy</string>
+  <string name="HistoryListActivity.Yesterday">Ayer</string>
+  <string name="HistoryListActivity.LastSevenDays">Últimos 7 días</string>
+  <string name="HistoryListActivity.LastMonth">Último mes</string>
+  <string name="HistoryListActivity.Older">Anteriores</string>
+  <string name="QuickAction.Home">Página Inicial</string>
+  <string name="QuickAction.Share">Compartir</string>
+  <string name="QuickAction.SelectText">Seleccionar texto</string>
+  <string name="QuickAction.MobileView">Vista de móvil</string>
+  <string name="AboutActivity.OtherLicenseText">Esta aplicación incluye código del proyecto de Navegador Zirco (https://code.google.com/p/zirco-browser/) con licencia bajo GPLv3; y del proyecto GreenDroid (https://github.com/cyrilmottier/GreenDroid), y del proyecto Shaman (https://github.com/emergentdotorg/shaman), ambos bajo licencia Apache, versión 2.</string>
+  <!--0.4.0-->
+  <string name="PreferencesActivity.WeavePreferenceTitle">Sincronización con favoritos Firefox</string>
+  <string name="PreferencesActivity.WeavePreferenceSummary">Administre los ajustes de sincronización de favoritos con Firefox Sync.</string>
+  <string name="PreferencesActivity.UseWeavePreferenceTitle">Usar Firefox Sync</string>
+  <string name="PreferencesActivity.UseWeavePreferenceSummary">Si se marca, podrá obtener sus favoritos de Firefox Sync.</string>
+  <string name="PreferencesActivity.WeaveServerPreferenceTitle">Servidor</string>
+  <string name="PreferencesActivity.WeaveServerPreferenceSummary">Ajuste el servidor de Firefox Sync.</string>
+  <string name="PreferencesActivity.WeaveUsernameTitle">Nombre de usuario</string>
+  <string name="PreferencesActivity.WeaveUsernameSummary">Proporcione su nombre de usuario de Firefox Sync.</string>
+  <string name="PreferencesActivity.WeavePasswordTitle">Contraseña</string>
+  <string name="PreferencesActivity.WeavePasswordSummary">Proporcione su contraseña de Firefox Sync.</string>
+  <string name="PreferencesActivity.WeaveKeyTitle">Clave</string>
+  <string name="PreferencesActivity.WeaveKeySummary">Proporcione su clave de Firefox Sync.</string>
+  <string name="WeaveBookmarksListActivity.Title">Favoritos de Firefox</string>
+  <string name="WeaveBookmarksListActivity.MenuSync">Sincronizar</string>
+  <string name="WeaveBookmarksListActivity.MenuClear">Vaciar</string>
+  <string name="WeaveBookmarksListActivity.WeaveRootFolder">Lugares</string>
+  <string name="WeaveBookmarksListActivity.EmptyText">Los favoritos de Firefox no están sincronizados. Ajuste la información de su cuenta y realice una sincronización.</string>
+  <string name="WeaveBookmarksListActivity.EmptyFolderText">No hay favoritos en esta carpeta.</string>
+  <string name="WeaveBookmarksListActivity.SetupButton">Ajustar</string>
+  <string name="WeaveBookmarksListActivity.SyncButton">Sincronizar</string>
+  <string name="WeaveSync.SyncTitle">Sincronización</string>
+  <string name="WeaveSync.Connecting">Conectando al servidor...</string>
+  <string name="WeaveSync.GettingData">Obteniendo datos...</string>
+  <string name="WeaveSync.ReadingData">Leyendo datos: %1$s / %2$s</string>
+  <string name="WeaveSync.WrittingData">Escribiendo datos..</string>
+  <string name="Errors.WeaveSyncFailedTitle">Falló la sincronización</string>
+  <string name="Errors.WeaveSyncFailedMessage">Falló la sincronización: %s</string>
+  <string name="Errors.WeaveAuthFailedMessage">Ficha de autenticación inválida. Verifique sus parámetros.</string>
+  <string name="WeaveServerPreferenceActivity.Prompt">Servidor</string>
+  <string name="WeaveServerPreferenceActivity.Title">Servidor</string>
+  <string name="WeaveServerPreferenceActivity.DefaultServer">Servidor de sincronización Firefox</string>
+  <string name="WeaveServerPreferenceActivity.CustomServer">Servidor personalizado</string>
+  <string-array name="WeaveServerValues">
+    <item>@string/WeaveServerPreferenceActivity.DefaultServer</item>
+    <item>@string/WeaveServerPreferenceActivity.CustomServer</item>
+  </string-array>
+  <string name="Main.FileChooserPrompt">Seleccione archivo para subir</string>
+  <string name="Commons.HistoryBookmarksExportSDCardConfirmation">Exportar historia y favoritos</string>
+  <string name="Commons.HistoryBookmarksExportSDCardDoneTitle">Exportación finalizada</string>
+  <string name="Commons.HistoryBookmarksExportSDCardDoneMessage">Su historia y favoritos fueron guardados en %s.</string>
+  <string name="Commons.HistoryBookmarksExportSDCardFailedTitle">Falló la exportación</string>
+  <string name="Commons.HistoryBookmarksFailedMessage">Mensaje de error: %s.</string>
+  <string name="Commons.HistoryBookmarksImportSDCardFailedTitle">Falló la importación</string>
+  <string name="Commons.OperationCanBeLongMessage">Esta operación puede tardar. ¿Quiere proceder?</string>
+  <string name="PreferencesActivity.ToolsHistoryBookmarksPreferenceTitle">Administrar favoritos e historia</string>
+  <string name="PreferencesActivity.ToolsHistoryBookmarksPreferenceSummary">Importar, exportar, eliminar historia y favoritos.</string>
+  <string name="PreferencesActivity.ExportHistoryBookmarksPreferenceTitle">Exportar favoritos e historia</string>
+  <string name="PreferencesActivity.ExportHistoryBookmarksPreferenceSummary">Exportar favoritos e historia a la tarjeta SD.</string>
+  <string name="PreferencesActivity.ImportHistoryBookmarksPreferenceTitle">Importar favoritos e historia</string>
+  <string name="PreferencesActivity.ImportHistoryBookmarksPreferenceSummary">Importar favoritos e historia de la tarjeta SD.</string>
+  <string name="PreferencesActivity.PrivacyClearHistoryBookmarksTitle">Eliminar historia y/o favoritos</string>
+  <string name="PreferencesActivity.SummaryCannotBeUndone">Emplee con precaución, esta acción no se puede revertir.</string>
+  <string name="Commons.ClearingHistoryBookmarks">Eliminando historia y/o favoritos...</string>
+  <string name="Commons.ClearHistoryBookmarks">Eliminar historia y/o favoritos</string>
+  <string name="Commons.Bookmarks">Favoritos</string>
+  <string name="Commons.History">Historia</string>
+  <string name="Commons.All">Todos</string>
+  <string name="Commons.ExportingHistoryBookmarks">Exportando historia y favoritos...</string>
+  <string name="Commons.ImportingHistoryBookmarks">Importando historia y favoritos..</string>
+  <string name="Commons.ImportHistoryBookmarksSource">Elegir la fuente de importación</string>
+  <string name="Commons.ClearingBookmarks">Borrando favoritos...</string>
+  <string name="DownloadListActivity.RemoveCompletedDownloads">Eliminar descargas finalizadas</string>
+  <string name="QuickAction.Find">Encontrar en la página</string>
+  <string name="SearchDialog.Hint">Encontrar en la página</string>
+  <!--0.4.2-->
+  <string name="PreferencesActivity.AdvancedCategoryTitle">Avanzado</string>
+  <string name="PreferencesActivity.BookmarksDatabaseTitle">Almacén de favoritos</string>
+  <string name="PreferencesActivity.BookmarksDatabaseSummary">Elija la modalidad de almacenamiento de favoritos.</string>
+  <string name="PreferencesActivity.BookmarksDatabaseStock">Favoritos de Android</string>
+  <string name="PreferencesActivity.BookmarksDatabaseInternal">Interna</string>
+  <string-array name="BookmarksDatabaseEntries">
+    <item>@string/PreferencesActivity.BookmarksDatabaseStock</item>
+    <item>@string/PreferencesActivity.BookmarksDatabaseInternal</item>
+  </string-array>
+  <string-array name="BookmarksDatabaseValues">
+    <item>STOCK</item>
+    <item>INTERNAL</item>
+  </string-array>
+  <string name="HistoryListActivity.BookmarkAdded">Agregado a favoritos.</string>
+  <string name="HistoryListActivity.BookmarkRemoved">Eliminado de favoritos.</string>
+  <string name="HttpAuthenticationDialog.DialogTitle">Registrarse a %1$s - %2$s</string>
+  <string name="HttpAuthenticationDialog.UserName">Nombre</string>
+  <string name="HttpAuthenticationDialog.Password">Contraseña</string>
+  <string name="Commons.Proceed">Proceder</string>
+  <string name="PreferencesActivity.EnableProxySettings">Activar proxy del sistema</string>
+  <string name="PreferencesActivity.EnableProxySettingsSummary">Activar o inactivar el soporte a los ajustes del proxy.</string>
+  <string name="ProxySettings.EnablingProxySettings">Activando parámetros del proxy...</string>
+  <string name="ProxySettings.ErrorProxySettingsNotValid">Parámetros del proxy inválidos.</string>
+  <string name="ProxySettings.ErrorProxyServerNotReachable">No se puede contactar el proxy.</string>
+  <string name="ProxySettings.ErrorProxyInternetNotReachable">No se puede acceder a la red a través del proxy especificado.</string>
+  <string name="ProxySettings.ProxySettingsEnabled">Los parámetros del proxy fueron activados con éxito.</string>
+  <string name="AboutActivity.ContributorsText">Colaboradores del Navegador Zirco:\n   • LeChuck (parámetros del Proxy);\n   • Martin (desplazamiento con teclas de volumen, traducción al alemán);\n   • Isaac L. (traducción al español);</string>
+  <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Pestañas de restauración</string>
+  <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">Si se marca, las pestañas se restaurarán cuando estén disponibles.</string>
+  <!--0.4.3-->
+  <string name="VideoLoading">Cargando video\u2026</string>
+  <string name="PreferencesActivity.DesktopViewCategoryTitle">Ajustes de la vista de escritorio</string>
+  <string name="PreferencesActivity.DesktopViewListPreferenceTitle">Lista de modo de escritorio</string>
+  <string name="PreferencesActivity.DesktopViewListPreferenceSummary">Los sitios web en esta lista serán cargados usando el Agente de Usuario de Escritorio.</string>
+  <string name="DesktopViewListActivity.Title">Navegador Psiphon - Lista de sitios web para vista de escritorio</string>
+  <string name="DesktopViewListActivity.ListEmpty">La lista está vacía.</string>
+  <string name="DesktopViewListActivity.AddMessage">Agregar un sitio web</string>
+  <string name="DesktopViewListActivity.ClearMessage">Eliminar todos los sitios</string>
+  <string name="Main.MenuFeedback">Comentarios</string>
+</resources>

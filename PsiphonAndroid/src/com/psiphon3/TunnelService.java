@@ -20,7 +20,6 @@
 package com.psiphon3;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -289,8 +288,32 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             MyLog.i(R.string.ssh_authenticated);
 
             MyLog.i(R.string.socks_starting);
-            socks = conn.createDynamicPortForwarder(PsiphonConstants.SOCKS_PORT);
-            MyLog.i(R.string.socks_running);
+
+            // If polipo is already running, we must use the same SOCKS port that polipo is
+            // already using as it's parent proxy port.
+            if (Polipo.isPolipoThreadRunning())
+            {
+                if (!Utils.isPortAvailable(PsiphonData.getPsiphonData().getSocksPort()))
+                {
+                    MyLog.e(R.string.socks_port_in_use, PsiphonData.getPsiphonData().getSocksPort());
+                    runAgain = false;
+                    return runAgain;
+                }
+            }
+            else
+            {
+                int port = Utils.findAvailablePort(PsiphonConstants.SOCKS_PORT, 10);
+                if(port == 0)
+                {
+                    MyLog.e(R.string.socks_ports_failed);
+                    runAgain = false;
+                    return runAgain;
+                }
+                PsiphonData.getPsiphonData().setSocksPort(port);
+            }
+            socks = conn.createDynamicPortForwarder(PsiphonData.getPsiphonData().getSocksPort());
+            MyLog.i(R.string.socks_running, PsiphonData.getPsiphonData().getSocksPort());
+
 
             // The HTTP proxy implementation is provided by Polipo,
             // a native application accessed via JNI. This proxy is
@@ -302,6 +325,15 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             // Psiphon browser activity.
             
             Polipo.getPolipo().runForever();
+
+            if(PsiphonData.getPsiphonData().getHttpProxyPort() == 0)
+            {
+                MyLog.e(R.string.http_proxy_ports_failed);
+                runAgain = false;
+                return runAgain;
+            }
+
+            MyLog.i(R.string.http_proxy_running, PsiphonData.getPsiphonData().getHttpProxyPort());
             
             // Don't signal unexpected disconnect until we've started
             conn.addConnectionMonitor(monitor);

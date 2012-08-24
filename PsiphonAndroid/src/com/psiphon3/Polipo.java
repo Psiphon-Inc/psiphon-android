@@ -19,7 +19,6 @@
 
 package com.psiphon3;
 
-import android.util.Log;
 
 public class Polipo
 {
@@ -42,7 +41,17 @@ public class Polipo
         return m_polipo;
     }
 
-    Thread m_polipoThread;
+    static Thread m_polipoThread;
+
+    public static synchronized boolean isPolipoThreadRunning()
+    {
+        if (m_polipoThread != null)
+        {
+            return true;
+        }
+        
+        return false;
+    }
 
     public void runForever() throws InterruptedException
     {
@@ -63,14 +72,22 @@ public class Polipo
             return;
         }
 
+        int port = Utils.findAvailablePort(PsiphonConstants.HTTP_PROXY_PORT, 10);
+        if(port == 0)
+        {
+            return;
+        }
+
+        PsiphonData.getPsiphonData().setHttpProxyPort(port);
+
         m_polipoThread = new Thread(
             new Runnable()
             {
-                public void run()
+                public void run() 
                 {
-                    runPolipo(
-                        PsiphonConstants.HTTP_PROXY_PORT,
-                        PsiphonConstants.SOCKS_PORT);
+                     runPolipo(
+                             PsiphonData.getPsiphonData().getHttpProxyPort(),
+                             PsiphonData.getPsiphonData().getSocksPort());
                 }
             });
 

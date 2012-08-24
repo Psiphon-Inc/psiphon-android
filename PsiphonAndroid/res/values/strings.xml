@@ -13,12 +13,12 @@
     <string name="ssh_authentication_failed">SSH authentication failed</string>
     <string name="ssh_authenticated">SSH authenticated</string>
     <string name="socks_starting">SOCKS starting...</string>
-    <string name="socks_running">SOCKS running</string>
+    <string name="socks_running">SOCKS running on port %d</string>
     <string name="socks_stopped">SOCKS stopped</string>
     <string name="ssh_stopped">SSH stopped</string>
     <string name="error_message">An error occurred: </string>
     <string name="http_proxy_starting">HTTP proxy starting...</string>
-    <string name="http_proxy_running">HTTP proxy running</string>
+    <string name="http_proxy_running">HTTP proxy running on port %d</string>
     <string name="http_proxy_stopped">HTTP proxy stopped</string>
     <string name="http_proxy_stopped_unexpectedly">HTTP proxy stopped unexpectedly</string>
     <string name="ServerInterface.FailedToCreateServerEntries">Failed to create server entries to store.</string>
@@ -62,5 +62,8 @@
     <string name="FeedbackActivity.SubmitFeedbackFailed">Failed to submit feedback</string>
     <string name="FeedbackActivity.InvalidURLParameters">Invalid URL Parameters in feedback form submission</string>
     <string name="FeedbackActivity.GetHTMLContentFailed">Failed to get feedback page content</string>
+    <string name="socks_ports_failed">Failed to start SOCKS, no available ports found</string>
+    <string name="http_proxy_ports_failed">Failed to start HTTP proxy, no available ports found</string>
+    <string name="socks_port_in_use">Port %d is already in use by another app.  Cannot continue.</string>
 
 </resources>

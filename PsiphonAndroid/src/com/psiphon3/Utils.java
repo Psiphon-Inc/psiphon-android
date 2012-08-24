@@ -2,6 +2,10 @@ package com.psiphon3;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
@@ -11,6 +15,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
+import java.io.IOException;
 
 import android.app.Activity;
 import android.content.pm.ApplicationInfo;
@@ -439,5 +444,55 @@ public class Utils {
             }
         }
         return false;
+    }
+    
+    public static boolean isPortAvailable(int port)
+    {
+        Socket socket = new Socket();
+        SocketAddress sockaddr = new InetSocketAddress("127.0.0.1", port);
+        
+        try 
+        {
+            socket.connect(sockaddr, 1000);
+            // The connect succeeded, so there is already something running on that port
+            return false;
+        }
+        catch (SocketTimeoutException e)
+        {
+            // The socket is in use, but the server didn't respond quickly enough
+            return false;
+        }
+        catch (IOException e)
+        {
+            // The connect failed, so the port is available
+            return true;
+        }
+        finally
+        {
+            if (socket != null)
+            {
+                try 
+                {
+                    socket.close();
+                } 
+                catch (IOException e) 
+                {
+                    /* should not be thrown */
+                }
+            }
+        }
+    }
+
+    public static int findAvailablePort(int start_port, int max_increment)
+    {
+        for(int port = start_port; port < (start_port + max_increment); port++)
+        {
+            if (isPortAvailable(port))
+            {
+                return port;
+            }
+        }
+
+        return 0;
     }
 }
