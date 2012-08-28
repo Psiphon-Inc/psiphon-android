@@ -17,8 +17,11 @@
  *
  */
 
+#include <limits.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <linux/netfilter_ipv4.h>
+#include <stdio.h>
 #include "jni.h"
 
 // from: http://stackoverflow.com/questions/6899868/how-to-pass-java-net-socket-to-a-c-dll-function-waiting-for-boostsocket-assig
@@ -49,7 +52,8 @@ static int getFd(JNIEnv *env, jobject sock)
     return e->GetIntField(env,fdesc,fid);
 }
 
-JNIEXPORT jstring JNICALL Java_com_psiphon3_OriginalDest_getDestination(JNIEnv* env, jobject obj, jobject sock)
+JNIEXPORT jstring JNICALL Java_ch_ethz_ssh2_channel_TransparentProxyAcceptThread_getOriginalDest(
+    JNIEnv* env, jobject obj, jobject sock)
 {
     const char* ret = "";
     int fd = 0;
@@ -66,9 +70,9 @@ JNIEXPORT jstring JNICALL Java_com_psiphon3_OriginalDest_getDestination(JNIEnv* 
         if (saddr->sa_family == AF_INET)
         {
             struct sockaddr_in *sin = (struct sockaddr_in*)saddr;
-            const int buffer_size = INET_ADDRSTRLEN + 1 + 5 + 1; // "IP:port"
+            const int buffer_size = INET_ADDRSTRLEN + 1 + sizeof(unsigned int)*2 + 1; // "<IP>:<port>\0"
             char buffer[buffer_size];
-            snprintf(buffer, buffer_size, "%s:%d", inet_ntoa(sin->sin_addr), ntohs(sin->sin_port));
+            snprintf(buffer, buffer_size, "%s:%u", inet_ntoa(sin->sin_addr), ntohs(sin->sin_port));
             ret = buffer;
         }
     }

@@ -19,26 +19,10 @@
 
 package ch.ethz.ssh2.channel;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InterruptedIOException;
-import java.io.OutputStream;
-import java.io.PushbackInputStream;
-import java.net.ConnectException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NoRouteToHostException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import net.sourceforge.jsocks.socks.Proxy;
-import net.sourceforge.jsocks.socks.ProxyMessage;
-import net.sourceforge.jsocks.socks.Socks4Message;
-import net.sourceforge.jsocks.socks.Socks5Message;
-import net.sourceforge.jsocks.socks.SocksException;
-import net.sourceforge.jsocks.socks.server.ServerAuthenticator;
-import net.sourceforge.jsocks.socks.server.ServerAuthenticatorNone;
 
 // Based on LocalAcceptThread
 
@@ -86,6 +70,7 @@ public class TransparentProxyAcceptThread extends Thread implements IChannelWork
             
             // Determine original destination IP address and port
 
+            String originalDest = getOriginalDest(socket);
             String destIP = null;
             int destPort = 0;
 
@@ -152,5 +137,12 @@ public class TransparentProxyAcceptThread extends Thread implements IChannelWork
         catch (IOException e)
         {
         }
+    }
+
+    private native String getOriginalDest(Socket socket);
+    
+    static
+    {
+        System.loadLibrary("OriginalDest");
     }
 }
