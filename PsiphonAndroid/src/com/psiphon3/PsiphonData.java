@@ -62,6 +62,7 @@ public class PsiphonData
     private String m_tunnelRelayProtocol;
     private int m_socksPort;
     private int m_httpProxyPort;
+    private int m_transparentProxyPort;
 
     public Object serverEntryFileLock = new Object(); // Used as an intrinsic lock
         
@@ -169,6 +170,16 @@ public class PsiphonData
     public synchronized int getSocksPort()
     {
         return m_socksPort;
+    }
+
+    public synchronized void setTransparentProxyPort(int transparentProxyPort)
+    {
+        m_transparentProxyPort = transparentProxyPort;
+    }
+
+    public synchronized int getTransparentProxyPort()
+    {
+        return m_transparentProxyPort;
     }
 
     public class StatusMessage

@@ -257,6 +257,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         boolean unexpectedDisconnect = false;
         Connection conn = null;
         DynamicPortForwarder socks = null;
+        TransparentProxyPortForwarder transparentProxy = null;
         
         try
         {            
@@ -311,8 +312,24 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 }
                 PsiphonData.getPsiphonData().setSocksPort(port);
             }
+
             socks = conn.createDynamicPortForwarder(PsiphonData.getPsiphonData().getSocksPort());
             MyLog.i(R.string.socks_running, PsiphonData.getPsiphonData().getSocksPort());
+
+            // Start transparent proxy
+            // TODO: start DNS service
+
+            int port = Utils.findAvailablePort(PsiphonConstants.TRANSPARENT_PROXY_PORT, 10);
+            if(port == 0)
+            {
+                MyLog.e(R.string.transparent_proxy_ports_failed);
+                runAgain = false;
+                return runAgain;
+            }
+            PsiphonData.getPsiphonData().setTransparentPort(port);
+
+            transparentProxy = conn.createTransparentProxyPortForwarder(PsiphonData.getPsiphonData().getTransparentProxyPort());
+            MyLog.i(R.string.transparent_proxy_running, PsiphonData.getPsiphonData().getTransparentProxyPort());
 
 
             // The HTTP proxy implementation is provided by Polipo,
