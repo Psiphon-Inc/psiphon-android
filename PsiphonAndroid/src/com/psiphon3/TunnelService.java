@@ -317,7 +317,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             MyLog.i(R.string.socks_running, PsiphonData.getPsiphonData().getSocksPort());
 
             // Start transparent proxy
-            // TODO: start DNS service
+            // TODO: start DNS server
 
             int port = Utils.findAvailablePort(PsiphonConstants.TRANSPARENT_PROXY_PORT, 10);
             if(port == 0)

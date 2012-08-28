@@ -33,6 +33,8 @@ public class PsiphonConstants
 
     public final static int CLIENT_SESSION_ID_SIZE_IN_BYTES = 16;
     
+    public final static int STANDARD_DNS_PORT = 53;
+    
     public final static int SOCKS_PORT = 1080;
     
     public final static int HTTP_PROXY_PORT = 8080;
