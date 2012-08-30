@@ -70,9 +70,10 @@ public class TransparentProxyAcceptThread extends Thread implements IChannelWork
             
             // Determine original destination IP address and port
 
-            String originalDest = getOriginalDest(socket);
-            String destIP = null;
-            int destPort = 0;
+            String[] tokens = getOriginalDest(socket).split(":");
+            if (tokens.length != 2) continue;
+            String destIP = tokens[0];
+            int destPort = Integer.parseInt(tokens[1]);
 
             try
             {
