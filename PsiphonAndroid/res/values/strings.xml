@@ -1,27 +1,3 @@
-                int port = Utils.findAvailablePort(PsiphonConstants.SOCKS_PORT, 10);
-                if(port == 0)
-                {
-                    MyLog.e(R.string.socks_ports_failed);
-                    runAgain = false;
-                    return runAgain;
-                }
-                PsiphonData.getPsiphonData().setSocksPort(port);
-                int port = Utils.findAvailablePort(PsiphonConstants.SOCKS_PORT, 10);
-                if(port == 0)
-                {
-                    MyLog.e(R.string.socks_ports_failed);
-                    runAgain = false;
-                    return runAgain;
-                }
-                PsiphonData.getPsiphonData().setSocksPort(port);
-                int port = Utils.findAvailablePort(PsiphonConstants.SOCKS_PORT, 10);
-                if(port == 0)
-                {
-                    MyLog.e(R.string.socks_ports_failed);
-                    runAgain = false;
-                    return runAgain;
-                }
-                PsiphonData.getPsiphonData().setSocksPort(port);
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Psiphon 3</string>
@@ -91,5 +67,7 @@
     <string name="socks_port_in_use">Port %d is already in use by another app.  Cannot continue.</string>
     <string name="transparent_proxy_running">Transparent proxy running on port %d</string>
     <string name="transparent_proxy_ports_failed">Failed to start transparent proxy: no available ports found</string>
+    <string name="transparent_proxy_command_failed">Transparent proxy configuration command failed: %d</string>
+    <string name="transparent_proxy_stopped">Transparent proxy stopped</string>
 
 </resources>

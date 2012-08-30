@@ -35,6 +35,7 @@ import ch.ethz.ssh2.*;
 import ch.ethz.ssh2.Connection.IStopSignalPending;
 
 import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
+import com.psiphon3.TransparentProxyConfig.PsiphonTransparentProxyException;
 import com.psiphon3.UpgradeManager;
 import com.psiphon3.Utils.MyLog;
 
@@ -326,12 +327,22 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 runAgain = false;
                 return runAgain;
             }
-            PsiphonData.getPsiphonData().setTransparentPort(port);
+            PsiphonData.getPsiphonData().setTransparentProxyPort(port);
 
-            transparentProxy = conn.createTransparentProxyPortForwarder(PsiphonData.getPsiphonData().getTransparentProxyPort());
-            MyLog.i(R.string.transparent_proxy_running, PsiphonData.getPsiphonData().getTransparentProxyPort());
+            transparentProxy = conn.createTransparentProxyForwarder(PsiphonData.getPsiphonData().getTransparentProxyPort());
 
-
+            try
+            {
+                TransparentProxyConfig.setupTransparentProxyRouting(this);
+            }
+            catch (PsiphonTransparentProxyException e)
+            {
+                // If we can't configure the iptables routing, abort
+                throw new TunnelServiceStop();
+            }
+            
+            MyLog.i(R.string.transparent_proxy_running, PsiphonData.getPsiphonData().getTransparentProxyPort());            
+            
             // The HTTP proxy implementation is provided by Polipo,
             // a native application accessed via JNI. This proxy is
             // chained to our SOCKS proxy.
@@ -457,6 +468,27 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             // Currently this would only be the upgrade download request.
             // Otherwise the call below to m_upgradeDownloader.stop() would block.
             m_interface.stop();
+
+            try
+            {
+                TransparentProxyConfig.teardownTransparentProxyRouting(this);
+            }
+            catch (PsiphonTransparentProxyException e)
+            {
+            }
+            
+            if (transparentProxy != null)
+            {
+                try
+                {
+                    transparentProxy.close();
+                }
+                catch (IOException e)
+                {
+                    // Ignore
+                }
+                MyLog.w(R.string.transparent_proxy_stopped);                
+            }
             
             if (socks != null)
             {
@@ -470,6 +502,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 }
                 MyLog.w(R.string.socks_stopped);
             }
+
             if (conn != null)
             {
                 conn.clearConnectionMonitors();

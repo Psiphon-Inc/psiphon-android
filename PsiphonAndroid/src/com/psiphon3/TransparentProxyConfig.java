@@ -19,6 +19,12 @@
 
 package com.psiphon3;
 
+import java.io.File;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+
+import android.content.Context;
+
 import com.psiphon3.Utils.MyLog;
 
 
@@ -27,19 +33,33 @@ import com.psiphon3.Utils.MyLog;
 // https://guardianproject.info/apps/orbot/
 // https://gitweb.torproject.org/orbot.git
 
-public class TransparentProxy
+public class TransparentProxyConfig
 {    
-    public static void setupTransparentProxy(Context context)
+    public static class PsiphonTransparentProxyException extends Exception
+    {
+        private static final long serialVersionUID = 1L;
+        
+        public PsiphonTransparentProxyException()
+        {
+            super();
+        }
+        
+        public PsiphonTransparentProxyException(String message)
+        {
+            super(message);
+        }
+    }
+
+    public static void setupTransparentProxyRouting(Context context)
+            throws PsiphonTransparentProxyException
     {
         boolean runRoot = true;
         boolean waitFor = true;
         String ipTablesPath = getIpTablesPath(context);
         StringBuilder script = new StringBuilder();        
-        StringBuilder res = new StringBuilder();
-        int code = -1;
         int psiphonUid = context.getApplicationInfo().uid;
         
-        flushIptables(context);
+        flushIpTables(context);
         
         // Set up port redirection
 
@@ -55,6 +75,7 @@ public class TransparentProxy
         script.append(" || exit\n");
         
         /* TODO: provide DNS server
+
         // Same for DNS
 
         script.append(ipTablesPath);
@@ -71,8 +92,8 @@ public class TransparentProxy
         int[] ports = {
                 /*PsiphonData.getPsiphonData().getDNSPort(),*/
                 PsiphonData.getPsiphonData().getTransparentProxyPort(),
-                PsiphonData.getPsiphonData().getHTTPPort(),
-                PsiphonData.getPsiphonData().getSOCKSPort()
+                PsiphonData.getPsiphonData().getHttpProxyPort(),
+                PsiphonData.getPsiphonData().getSocksPort()
         };
         
         for (int port : ports)
@@ -83,14 +104,13 @@ public class TransparentProxy
             script.append(" -t filter");
             script.append(" -A OUTPUT");
             script.append(" -m owner ! --uid-owner ");
-            script.append(torUid);
+            script.append(psiphonUid);
             script.append(" -p tcp");
             script.append(" -d 127.0.0.1");
             script.append(" --dport ");
             script.append(port);    
             script.append(" -j ACCEPT");
-            script.append(" || exit\n");
-        
+            script.append(" || exit\n");        
         }
         
         // Allow loopback
@@ -135,21 +155,21 @@ public class TransparentProxy
         
         String[] cmdAdd = {script.toString()};      
         
-        doShellCommand(cmdAdd, runRoot, waitFor);
+        doShellCommand(context, cmdAdd, runRoot, waitFor);
     }
 
-    public static void teardownTransparentProxy(Context context)
+    public static void teardownTransparentProxyRouting(Context context)
+            throws PsiphonTransparentProxyException
     {
-        flushIpTables();
+        flushIpTables(context);
     }
 
-    public static void flushIpTables(Context context)
+    private static void flushIpTables(Context context)
+            throws PsiphonTransparentProxyException
     {
         String ipTablesPath = getIpTablesPath(context);
         
         final StringBuilder script = new StringBuilder();        
-        StringBuilder res = new StringBuilder();
-        int code = -1;
         
         script.append(ipTablesPath);
         script.append(" -t nat");
@@ -160,7 +180,8 @@ public class TransparentProxy
         script.append(" -F || exit\n");
         
         String[] cmd = {script.toString()};
-        doShellCommand(cmd, true, true);        
+
+        doShellCommand(context, cmd, true, true);        
     }
 
     private static String getIpTablesPath(Context context)
@@ -171,7 +192,7 @@ public class TransparentProxy
             return iptables.getAbsolutePath();
         }
                 
-        File iptables = new File("/system/xbin/iptables");
+        iptables = new File("/system/xbin/iptables");
         if (iptables.exists())
         {
             return iptables.getAbsolutePath();
@@ -182,61 +203,72 @@ public class TransparentProxy
         return "";
     }
 
-    private static int doShellCommand(String[] cmds, boolean runAsRoot, boolean waitFor) throws Exception
+    private static void doShellCommand(Context context, String[] cmds, boolean runAsRoot, boolean waitFor)
+            throws PsiphonTransparentProxyException
     {
-        Process proc = null;
         int exitCode = -1;
-        
-        if (runAsRoot)
-        {
-            proc = Runtime.getRuntime().exec("su");
-        }
-        else
-        {
-            proc = Runtime.getRuntime().exec("sh");
-        }
-                
-        OutputStreamWriter out = new OutputStreamWriter(proc.getOutputStream());
-        for (int i = 0; i < cmds.length; i++)
-        {
-            MyLog.d("executing shell cmd: " + cmds[i] + "; runAsRoot=" + runAsRoot + ";waitFor=" + waitFor);
-            out.write(cmds[i]);
-            out.write("\n");
-        }
-        
-        out.flush();
-        out.write("exit\n");
-        out.flush();
-            
-        StringBuilder log;
 
-        if (waitFor)
-        {            
-            final char buf[] = new char[10];
+        try
+        {
+            Process proc = null;
             
-            // Consume the "stdout"
-            InputStreamReader reader = new InputStreamReader(proc.getInputStream());
-            int read=0;
-            while ((read=reader.read(buf)) != -1)
+            if (runAsRoot)
             {
-                if (log != null) log.append(buf, 0, read);
+                proc = Runtime.getRuntime().exec("su");
+            }
+            else
+            {
+                proc = Runtime.getRuntime().exec("sh");
+            }
+                    
+            OutputStreamWriter out = new OutputStreamWriter(proc.getOutputStream());
+            for (int i = 0; i < cmds.length; i++)
+            {
+                MyLog.d("executing shell cmd: " + cmds[i] + "; runAsRoot=" + runAsRoot + ";waitFor=" + waitFor);
+                out.write(cmds[i]);
+                out.write("\n");
             }
             
-            // Consume the "stderr"
-            reader = new InputStreamReader(proc.getErrorStream());
-            read=0;
-            while ((read=reader.read(buf)) != -1)
-            {
-                if (log != null) log.append(buf, 0, read);
+            out.flush();
+            out.write("exit\n");
+            out.flush();
+                
+            StringBuilder output = new StringBuilder();
+    
+            if (waitFor)
+            {            
+                final char buf[] = new char[100];
+                
+                // Consume stdout
+                InputStreamReader reader = new InputStreamReader(proc.getInputStream());
+                int read = 0;
+                while ((read = reader.read(buf)) != -1)
+                {
+                    output.append(buf, 0, read);
+                }
+                
+                // Consume stderr
+                reader = new InputStreamReader(proc.getErrorStream());
+                read = 0;
+                while ((read = reader.read(buf)) != -1)
+                {
+                    output.append(buf, 0, read);
+                }
+                
+                exitCode = proc.waitFor();
             }
             
-            exitCode = proc.waitFor();
+            MyLog.d(output.toString());
+        }
+        catch (Exception ex)
+        {
+            throw new PsiphonTransparentProxyException(ex.getMessage());
         }
         
-        MyLog.d(log.toString());
-        
-        // TODO: throw on failure
-        
-        return exitCode;
+        if (exitCode != 0)
+        {
+            throw new PsiphonTransparentProxyException(
+                    String.format(context.getString(R.string.transparent_proxy_command_failed), exitCode));
+        }
     }
 }
