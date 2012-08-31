@@ -69,5 +69,8 @@
     <string name="transparent_proxy_ports_failed">Failed to start transparent proxy: no available ports found</string>
     <string name="transparent_proxy_command_failed">Transparent proxy configuration command failed: %d</string>
     <string name="transparent_proxy_stopped">Transparent proxy stopped</string>
+    <string name="dns_proxy_running">DNS proxy running on port %d</string>
+    <string name="dns_proxy_ports_failed">Failed to start DNS proxy: no available ports found</string>
+    <string name="dns_proxy_stopped">DNS proxy stopped</string>
 
 </resources>

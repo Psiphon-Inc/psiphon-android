@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 import com.psiphon3.Utils.MyLog;
 
 
-public class DnsRelay
+public class DnsProxy
 {
     private final int NUM_THREADS = 10;
     private final int SHUTDOWN_POLL_MILLISECONDS = 100;
@@ -51,7 +51,7 @@ public class DnsRelay
     private Thread serverThread = null;
     private DatagramSocket serverSocket = null;
 
-    DnsRelay(
+    DnsProxy(
             String remoteDnsServerIPAddress,
             int remoteDnsPort,
             int localDnsPort)

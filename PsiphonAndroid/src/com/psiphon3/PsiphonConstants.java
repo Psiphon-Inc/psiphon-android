@@ -39,6 +39,8 @@ public class PsiphonConstants
     
     public final static int HTTP_PROXY_PORT = 8080;
 
+    public final static int DNS_PROXY_PORT = 9053;
+
     public final static int TRANSPARENT_PROXY_PORT = 9080;
 
     public final static int DEFAULT_WEB_SERVER_PORT = 443;

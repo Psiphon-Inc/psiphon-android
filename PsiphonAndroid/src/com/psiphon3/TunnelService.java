@@ -259,6 +259,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         Connection conn = null;
         DynamicPortForwarder socks = null;
         TransparentProxyPortForwarder transparentProxy = null;
+        DnsProxy dnsProxy = null;
         
         try
         {            
@@ -305,7 +306,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             else
             {
                 int port = Utils.findAvailablePort(PsiphonConstants.SOCKS_PORT, 10);
-                if(port == 0)
+                if (port == 0)
                 {
                     MyLog.e(R.string.socks_ports_failed);
                     runAgain = false;
@@ -317,11 +318,32 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             socks = conn.createDynamicPortForwarder(PsiphonData.getPsiphonData().getSocksPort());
             MyLog.i(R.string.socks_running, PsiphonData.getPsiphonData().getSocksPort());
 
-            // Start transparent proxy
-            // TODO: start DNS server
+            // Start transparent proxy, DNS proxy, and iptables config
 
-            int port = Utils.findAvailablePort(PsiphonConstants.TRANSPARENT_PROXY_PORT, 10);
-            if(port == 0)
+            int port = Utils.findAvailablePort(PsiphonConstants.DNS_PROXY_PORT, 10);
+            if (port == 0)
+            {
+                MyLog.e(R.string.dns_proxy_ports_failed);
+                runAgain = false;
+                return runAgain;
+            }
+            PsiphonData.getPsiphonData().setDnsProxyPort(port);
+
+            dnsProxy = new DnsProxy(
+                            "8.8.8.8", // TEMP. TODO: get remote address/port from Psiphon server
+                            53,
+                            PsiphonData.getPsiphonData().getDnsProxyPort());
+
+            if (!dnsProxy.Start())
+            {
+                // If we can't run the local DNS proxy, abort
+                throw new TunnelServiceStop();                
+            }
+            
+            MyLog.i(R.string.dns_proxy_running, PsiphonData.getPsiphonData().getDnsProxyPort());            
+            
+            port = Utils.findAvailablePort(PsiphonConstants.TRANSPARENT_PROXY_PORT, 10);
+            if (port == 0)
             {
                 MyLog.e(R.string.transparent_proxy_ports_failed);
                 runAgain = false;
@@ -354,7 +376,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             
             Polipo.getPolipo().runForever();
 
-            if(PsiphonData.getPsiphonData().getHttpProxyPort() == 0)
+            if (PsiphonData.getPsiphonData().getHttpProxyPort() == 0)
             {
                 MyLog.e(R.string.http_proxy_ports_failed);
                 runAgain = false;
@@ -475,6 +497,12 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             }
             catch (PsiphonTransparentProxyException e)
             {
+            }
+            
+            if (dnsProxy != null)
+            {
+                dnsProxy.Stop();
+                MyLog.w(R.string.dns_proxy_stopped);                
             }
             
             if (transparentProxy != null)
