@@ -33,11 +33,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+/*
 //----- TEMP -----
 import android.util.Log;
 import com.appspot.trent.denis.DnsRequest;
 import com.appspot.trent.denis.DnsResponse;
 //----- TEMP -----
+*/
 
 import com.psiphon3.Utils.MyLog;
 
@@ -47,7 +49,7 @@ public class DnsProxy
     private final int NUM_THREADS = 10;
     private final int SHUTDOWN_POLL_MILLISECONDS = 100;
     private final int SHUTDOWN_TIMEOUT_MILLISECONDS = 1000;
-    private final int MAX_PACKET_SIZE = 1024;
+    private final int MAX_PACKET_SIZE = 1500;
 
     private final String remoteDnsServerIPAddress;
     private final int remoteDnsPort;
@@ -120,7 +122,7 @@ public class DnsProxy
                     serverSocket.receive(packet);
                     
                     byte[] request = new byte[packet.getLength()];
-                    System.arraycopy(buffer, 0, request, 0, packet.getLength());
+                    System.arraycopy(packet.getData(), 0, request, 0, packet.getLength());
 
                     threadPool.submit(new Relayer(
                             serverSocket,
@@ -212,7 +214,8 @@ public class DnsProxy
     
                 DataInputStream in = new DataInputStream(socket.getInputStream());
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-    
+
+                /*
                 //----- TEMP -----
                 try
                 {
@@ -225,6 +228,7 @@ public class DnsProxy
                     return new byte[0];
                 }
                 //----- TEMP -----
+                */
                 
                 // Need a length prefix for TCP DNS requests
                 byte[] prefix = new byte[2];
@@ -247,6 +251,7 @@ public class DnsProxy
                 
                 byte[] response = responseBuffer.toByteArray();
 
+                /*
                 //----- TEMP -----
                 try
                 {
@@ -259,6 +264,7 @@ public class DnsProxy
                     return new byte[0];
                 }
                 //----- TEMP -----
+                */
                 
                 return response;
             }

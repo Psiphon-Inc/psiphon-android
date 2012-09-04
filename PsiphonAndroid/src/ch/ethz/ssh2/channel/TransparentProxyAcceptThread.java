@@ -23,6 +23,11 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+/*
+//----- TEMP -----
+import android.util.Log;
+//----- TEMP -----
+*/
 
 // Based on LocalAcceptThread
 
@@ -71,6 +76,13 @@ public class TransparentProxyAcceptThread extends Thread implements IChannelWork
             // Determine original destination IP address and port
 
             String originalDest = getOriginalDest(socket);
+            
+            /*
+            //----- TEMP -----
+            Log.d("TEMP", originalDest);
+            //----- TEMP -----
+            */
+            
             String[] tokens = originalDest.split(":");
             if (tokens.length != 2) continue;
             String destIP = tokens[0];

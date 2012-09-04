@@ -80,7 +80,8 @@ public class TransparentProxyConfig
 
         script.append(ipTablesPath);
         script.append(" -t nat");
-        script.append(" -A OUTPUT -p udp -m owner ! --uid-owner ");
+        script.append(" -A OUTPUT -p udp");
+        script.append(" -m owner ! --uid-owner ");
         script.append(psiphonUid);
         script.append(" -m udp --dport "); 
         script.append(PsiphonConstants.STANDARD_DNS_PORT);
@@ -94,7 +95,7 @@ public class TransparentProxyConfig
         script.append(ipTablesPath);
         script.append(" -t nat");
         script.append(" -A OUTPUT -p tcp");
-        script.append(" -m tcp --dport "); 
+        script.append(" -m tcp --syn --dport "); 
         script.append(PsiphonConstants.STANDARD_DNS_PORT);
         script.append(" -j REDIRECT --to-ports ");
         script.append(PsiphonData.getPsiphonData().getTransparentProxyPort());
