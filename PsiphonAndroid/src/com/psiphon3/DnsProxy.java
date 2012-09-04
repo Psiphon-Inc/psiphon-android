@@ -33,6 +33,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+//----- TEMP -----
+import android.util.Log;
+import com.appspot.trent.denis.DnsRequest;
+import com.appspot.trent.denis.DnsResponse;
+//----- TEMP -----
+
 import com.psiphon3.Utils.MyLog;
 
 
@@ -78,6 +84,7 @@ public class DnsProxy
         }
         
         serverThread = new Thread(new Server());
+        serverThread.start();
         
         return true;
     }
@@ -102,7 +109,6 @@ public class DnsProxy
     {
         public void run()
         {
-            
             byte[] buffer = new byte[MAX_PACKET_SIZE];
             ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 
@@ -177,7 +183,8 @@ public class DnsProxy
                 this.serverSocket.send(new DatagramPacket(
                         response,
                         response.length,
-                        this.clientAddress,
+                        // TODO: this.clientAddress, ...?
+                        InetAddress.getLocalHost(),
                         this.port));
             }
             catch (IOException e)
@@ -196,19 +203,34 @@ public class DnsProxy
             {
                 // Note: remote DNS server must support TCP requests. We're making
                 // TCP requests as we can't do UDP through the SSH tunnel.
+
+                // Note: each request is a new TCP socket through a new SSH tunnel
+                // Consider keeping up long-running tunnels and/or sockets per
+                // worker thread.
                 
-                // TEMP: explicit SSH forward or transparent proxy?
-                // TEMP: long-term tunnel per worker thread? http://docs.oracle.com/javase/1.5.0/docs/api/java/util/concurrent/ThreadPoolExecutor.html
                 socket = new Socket(remoteDnsServerIPAddress, remoteDnsPort);
     
                 DataInputStream in = new DataInputStream(socket.getInputStream());
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
     
+                //----- TEMP -----
+                try
+                {
+                    DnsRequest req = new DnsRequest(request, request.length);
+                    Log.d("TEMP", "request " + req.toString());
+                }
+                catch (Exception e)
+                {
+                    Log.d("TEMP", e.getMessage());
+                    return new byte[0];
+                }
+                //----- TEMP -----
+                
                 // Need a length prefix for TCP DNS requests
                 byte[] prefix = new byte[2];
-                prefix[0] = (byte)(request.length & 0xFF);
-                prefix[1] = (byte)((request.length >> 8) & 0xFF);
-    
+                prefix[0] = (byte)((request.length >> 8) & 0xFF);
+                prefix[1] = (byte)(request.length & 0xFF);
+
                 out.write(prefix);
                 out.write(request);
                 out.flush();
@@ -216,12 +238,29 @@ public class DnsProxy
                 ByteArrayOutputStream responseBuffer = new ByteArrayOutputStream();
     
                 int responseByte = -1;
+                int skip = 2; // skip TCP DNS length prefix
                 while ((responseByte = in.read()) != -1)
                 {
-                    responseBuffer.write(responseByte);
+                    if (skip > 0) --skip;
+                    else responseBuffer.write(responseByte);
                 }
                 
-                return responseBuffer.toByteArray();
+                byte[] response = responseBuffer.toByteArray();
+
+                //----- TEMP -----
+                try
+                {
+                    DnsResponse res = new DnsResponse(response, response.length);
+                    Log.d("TEMP", "response " + res.toString());
+                }
+                catch (Exception e)
+                {
+                    Log.d("TEMP", e.getMessage());
+                    return new byte[0];
+                }
+                //----- TEMP -----
+                
+                return response;
             }
             finally
             {

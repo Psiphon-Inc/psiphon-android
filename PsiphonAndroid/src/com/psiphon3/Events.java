@@ -110,7 +110,13 @@ public class Events
 
     static public void displayBrowser(Context context, Uri uri)
     {
-        // TEMP: disabled in transparent proxy mode
+        // TEMP: use default browser in transparent proxy mode
+        for (String homePage : PsiphonData.getPsiphonData().getHomePages())
+        {
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(homePage));
+            context.startActivity(browserIntent);
+        }
+
         /*
 
         Intent intent = new Intent(

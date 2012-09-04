@@ -75,11 +75,13 @@ public class TransparentProxyConfig
         script.append(PsiphonData.getPsiphonData().getTransparentProxyPort());
         script.append(" || exit\n");
 
-        // Forward all UDP DNS through the DNS proxy 
+        // Forward all UDP DNS through the DNS proxy, excepting
+        // Psiphon DNS proxy responses
 
         script.append(ipTablesPath);
         script.append(" -t nat");
-        script.append(" -A OUTPUT -p udp");
+        script.append(" -A OUTPUT -p udp -m owner ! --uid-owner ");
+        script.append(psiphonUid);
         script.append(" -m udp --dport "); 
         script.append(PsiphonConstants.STANDARD_DNS_PORT);
         script.append(" -j REDIRECT --to-ports ");
@@ -87,7 +89,7 @@ public class TransparentProxyConfig
         script.append(" || exit\n");
         
         // Forward TCP DNS through transparent proxy
-        // (Including the Psiphon DNS proxy)
+        // (including the Psiphon DNS proxy requests)
 
         script.append(ipTablesPath);
         script.append(" -t nat");
@@ -142,7 +144,7 @@ public class TransparentProxyConfig
         script.append(psiphonUid);
         script.append(" -j ACCEPT");
         script.append(" || exit\n");
-        
+
         // Reject DNS that is not from Psiphon (order is important - first matched rule counts!)
 
         script.append(ipTablesPath);
@@ -162,7 +164,7 @@ public class TransparentProxyConfig
         script.append(" -p tcp");
         script.append(" -j REJECT");
         script.append(" || exit\n");
-        
+
         String[] cmdAdd = {script.toString()};      
         
         doShellCommand(context, cmdAdd, runRoot, waitFor);
