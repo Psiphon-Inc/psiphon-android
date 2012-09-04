@@ -61,7 +61,8 @@ public class TransparentProxyConfig
         
         flushIpTables(context);
         
-        // Set up port redirection
+        // Forward all TCP connections, except for Psiphon,
+        // through the transparent proxy
 
         script.append(ipTablesPath);
         script.append(" -t nat");
@@ -73,19 +74,30 @@ public class TransparentProxyConfig
         script.append(" -j REDIRECT --to-ports ");
         script.append(PsiphonData.getPsiphonData().getTransparentProxyPort());
         script.append(" || exit\n");
-        
-        // Same for DNS
+
+        // Forward all UDP DNS through the DNS proxy 
 
         script.append(ipTablesPath);
         script.append(" -t nat");
-        script.append(" -A OUTPUT -p udp -m owner ! --uid-owner ");
-        script.append(psiphonUid);
+        script.append(" -A OUTPUT -p udp");
         script.append(" -m udp --dport "); 
         script.append(PsiphonConstants.STANDARD_DNS_PORT);
         script.append(" -j REDIRECT --to-ports ");
         script.append(PsiphonData.getPsiphonData().getDnsProxyPort());
         script.append(" || exit\n");
         
+        // Forward TCP DNS through transparent proxy
+        // (Including the Psiphon DNS proxy)
+
+        script.append(ipTablesPath);
+        script.append(" -t nat");
+        script.append(" -A OUTPUT -p tcp");
+        script.append(" -m tcp --dport "); 
+        script.append(PsiphonConstants.STANDARD_DNS_PORT);
+        script.append(" -j REDIRECT --to-ports ");
+        script.append(PsiphonData.getPsiphonData().getTransparentProxyPort());
+        script.append(" || exit\n");
+
         int[] ports =
         {
             PsiphonData.getPsiphonData().getDnsProxyPort(),
@@ -106,7 +118,7 @@ public class TransparentProxyConfig
             script.append(" -p tcp");
             script.append(" -d 127.0.0.1");
             script.append(" --dport ");
-            script.append(port);    
+            script.append(port);
             script.append(" -j ACCEPT");
             script.append(" || exit\n");        
         }
@@ -222,7 +234,7 @@ public class TransparentProxyConfig
             OutputStreamWriter out = new OutputStreamWriter(proc.getOutputStream());
             for (int i = 0; i < cmds.length; i++)
             {
-                MyLog.d("executing shell cmd: " + cmds[i] + "; runAsRoot=" + runAsRoot + ";waitFor=" + waitFor);
+                MyLog.d("executing shell cmd: " + cmds[i] + "; runAsRoot=" + runAsRoot + "; waitFor=" + waitFor);
                 out.write(cmds[i]);
                 out.write("\n");
             }
