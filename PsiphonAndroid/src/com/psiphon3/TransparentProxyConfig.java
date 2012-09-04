@@ -74,26 +74,24 @@ public class TransparentProxyConfig
         script.append(PsiphonData.getPsiphonData().getTransparentProxyPort());
         script.append(" || exit\n");
         
-        /* TODO: provide DNS server
-
         // Same for DNS
 
         script.append(ipTablesPath);
         script.append(" -t nat");
         script.append(" -A OUTPUT -p udp -m owner ! --uid-owner ");
-        script.append(torUid);
+        script.append(psiphonUid);
         script.append(" -m udp --dport "); 
-        script.append(PsiphonContants.STANDARD_DNS_PORT);
+        script.append(PsiphonConstants.STANDARD_DNS_PORT);
         script.append(" -j REDIRECT --to-ports ");
-        script.append(PsiphonData.getPsiphonData().getDNSPort());
+        script.append(PsiphonData.getPsiphonData().getDnsProxyPort());
         script.append(" || exit\n");
-        */
         
-        int[] ports = {
-                /*PsiphonData.getPsiphonData().getDNSPort(),*/
-                PsiphonData.getPsiphonData().getTransparentProxyPort(),
-                PsiphonData.getPsiphonData().getHttpProxyPort(),
-                PsiphonData.getPsiphonData().getSocksPort()
+        int[] ports =
+        {
+            PsiphonData.getPsiphonData().getDnsProxyPort(),
+            PsiphonData.getPsiphonData().getTransparentProxyPort(),
+            PsiphonData.getPsiphonData().getHttpProxyPort(),
+            PsiphonData.getPsiphonData().getSocksPort()
         };
         
         for (int port : ports)
@@ -143,7 +141,7 @@ public class TransparentProxyConfig
         script.append(PsiphonConstants.STANDARD_DNS_PORT);
         script.append(" -j REJECT");
         script.append(" || exit\n");
-        
+
         // Reject all other outbound TCP packets
 
         script.append(ipTablesPath);

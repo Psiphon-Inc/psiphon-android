@@ -29,7 +29,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -85,15 +84,18 @@ public class DnsProxy
     
     public void Stop()
     {
-        this.stopFlag = true;
-        try
+        if (this.serverThread != null)
         {
-            this.serverThread.join();
+            this.stopFlag = true;
+            try
+            {
+                this.serverThread.join();
+            }
+            catch (InterruptedException e)
+            {
+            }
+            this.serverThread = null;
         }
-        catch (InterruptedException e)
-        {
-        }
-        this.serverThread = null;
     }
         
     class Server implements Runnable
@@ -110,7 +112,7 @@ public class DnsProxy
                 {
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length); 
                     serverSocket.receive(packet);
-
+                    
                     byte[] request = new byte[packet.getLength()];
                     System.arraycopy(buffer, 0, request, 0, packet.getLength());
 

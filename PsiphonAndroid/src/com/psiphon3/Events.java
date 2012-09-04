@@ -110,6 +110,9 @@ public class Events
 
     static public void displayBrowser(Context context, Uri uri)
     {
+        // TEMP: disabled in transparent proxy mode
+        /*
+
         Intent intent = new Intent(
                 "ACTION_VIEW",
                 uri,
@@ -136,5 +139,7 @@ public class Events
         intent.putExtra("feedbackActivityClassName", FeedbackActivity.class.getName());
         
         context.startActivity(intent);
+        
+        */
     }
 }

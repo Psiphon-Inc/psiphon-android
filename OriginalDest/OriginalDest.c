@@ -46,7 +46,7 @@ static int getFd(JNIEnv *env, jobject sock)
 
     /* get the fd from the FileDescriptor */
     if (!(clazz = e->GetObjectClass(env,fdesc)) ||
-        !(fid = e->GetFieldID(env,clazz,"fd","I"))) return -1;
+        !(fid = e->GetFieldID(env,clazz,"descriptor","I"))) return -1;
 
     /* return the descriptor */
     return e->GetIntField(env,fdesc,fid);
