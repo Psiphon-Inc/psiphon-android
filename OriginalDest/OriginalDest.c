@@ -60,6 +60,8 @@ JNIEXPORT jstring JNICALL Java_ch_ethz_ssh2_channel_TransparentProxyAcceptThread
     struct sockaddr_storage orig_dst;
     socklen_t orig_dst_len = sizeof(orig_dst);
     struct sockaddr* saddr = 0;
+    const int buffer_size = INET_ADDRSTRLEN + 1 + sizeof(unsigned int)*2 + 1; // "<IP>:<port>\0"
+    char buffer[buffer_size];
 
     if (-1 != (fd = getFd(env, sock)) &&
         0 == getsockopt(fd, SOL_IP, SO_ORIGINAL_DST, (struct sockaddr*)&orig_dst, &orig_dst_len))
@@ -70,8 +72,6 @@ JNIEXPORT jstring JNICALL Java_ch_ethz_ssh2_channel_TransparentProxyAcceptThread
         if (saddr->sa_family == AF_INET)
         {
             struct sockaddr_in *sin = (struct sockaddr_in*)saddr;
-            const int buffer_size = INET_ADDRSTRLEN + 1 + sizeof(unsigned int)*2 + 1; // "<IP>:<port>\0"
-            char buffer[buffer_size];
             snprintf(buffer, buffer_size, "%s:%u", inet_ntoa(sin->sin_addr), ntohs(sin->sin_port));
             ret = buffer;
         }
