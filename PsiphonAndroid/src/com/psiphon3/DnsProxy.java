@@ -29,17 +29,10 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-/*
-//----- TEMP -----
-import android.util.Log;
-import com.appspot.trent.denis.DnsRequest;
-import com.appspot.trent.denis.DnsResponse;
-//----- TEMP -----
-*/
 
 import com.psiphon3.Utils.MyLog;
 
@@ -76,10 +69,15 @@ public class DnsProxy
 
         try
         {
-            this.serverSocket = new DatagramSocket(this.localDnsPort);
+            this.serverSocket = new DatagramSocket(this.localDnsPort, InetAddress.getByName("127.0.0.1"));
             this.serverSocket.setSoTimeout(SHUTDOWN_POLL_MILLISECONDS);
         }
         catch(SocketException e)
+        {
+            MyLog.d("Failed to start DNS listener", e);
+            return false;
+        }
+        catch (UnknownHostException e)
         {
             MyLog.d("Failed to start DNS listener", e);
             return false;
@@ -185,8 +183,7 @@ public class DnsProxy
                 this.serverSocket.send(new DatagramPacket(
                         response,
                         response.length,
-                        // TODO: this.clientAddress, ...?
-                        InetAddress.getLocalHost(),
+                        this.clientAddress,
                         this.port));
             }
             catch (IOException e)
@@ -215,21 +212,6 @@ public class DnsProxy
                 DataInputStream in = new DataInputStream(socket.getInputStream());
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
-                /*
-                //----- TEMP -----
-                try
-                {
-                    DnsRequest req = new DnsRequest(request, request.length);
-                    Log.d("TEMP", "request " + req.toString());
-                }
-                catch (Exception e)
-                {
-                    Log.d("TEMP", e.getMessage());
-                    return new byte[0];
-                }
-                //----- TEMP -----
-                */
-                
                 // Need a length prefix for TCP DNS requests
                 byte[] prefix = new byte[2];
                 prefix[0] = (byte)((request.length >> 8) & 0xFF);
@@ -251,21 +233,6 @@ public class DnsProxy
                 
                 byte[] response = responseBuffer.toByteArray();
 
-                /*
-                //----- TEMP -----
-                try
-                {
-                    DnsResponse res = new DnsResponse(response, response.length);
-                    Log.d("TEMP", "response " + res.toString());
-                }
-                catch (Exception e)
-                {
-                    Log.d("TEMP", e.getMessage());
-                    return new byte[0];
-                }
-                //----- TEMP -----
-                */
-                
                 return response;
             }
             finally

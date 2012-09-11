@@ -34,7 +34,7 @@ import com.psiphon3.Utils.MyLog;
 // https://gitweb.torproject.org/orbot.git
 
 public class TransparentProxyConfig
-{    
+{
     public static class PsiphonTransparentProxyException extends Exception
     {
         private static final long serialVersionUID = 1L;
@@ -53,8 +53,6 @@ public class TransparentProxyConfig
     public static void setupTransparentProxyRouting(Context context)
             throws PsiphonTransparentProxyException
     {
-        boolean runRoot = true;
-        boolean waitFor = true;
         String ipTablesPath = getIpTablesPath(context);
         StringBuilder script = new StringBuilder();        
         int psiphonUid = context.getApplicationInfo().uid;
@@ -75,8 +73,7 @@ public class TransparentProxyConfig
         script.append(PsiphonData.getPsiphonData().getTransparentProxyPort());
         script.append(" || exit\n");
 
-        // Forward all UDP DNS through the DNS proxy, excepting
-        // Psiphon DNS proxy responses
+        // Forward all UDP DNS through the DNS proxy, except for Psiphon
 
         script.append(ipTablesPath);
         script.append(" -t nat");
@@ -88,7 +85,7 @@ public class TransparentProxyConfig
         script.append(" -j REDIRECT --to-ports ");
         script.append(PsiphonData.getPsiphonData().getDnsProxyPort());
         script.append(" || exit\n");
-        
+
         // Forward TCP DNS through transparent proxy
         // (including the Psiphon DNS proxy requests)
 
@@ -168,7 +165,7 @@ public class TransparentProxyConfig
 
         String[] cmdAdd = {script.toString()};      
         
-        doShellCommand(context, cmdAdd, runRoot, waitFor);
+        doShellCommand(context, cmdAdd, true, true);
     }
 
     public static void teardownTransparentProxyRouting(Context context)
