@@ -74,12 +74,12 @@ public class DnsProxy
         }
         catch(SocketException e)
         {
-            MyLog.d("Failed to start DNS listener", e);
+            MyLog.e(R.string.dns_proxy_failed, e);
             return false;
         }
         catch (UnknownHostException e)
         {
-            MyLog.d("Failed to start DNS listener", e);
+            MyLog.e(R.string.dns_proxy_failed, e);
             return false;
         }
         

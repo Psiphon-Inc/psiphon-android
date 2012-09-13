@@ -342,6 +342,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             
             if (PsiphonData.getPsiphonData().getTunnelWholeDevice())
             {
+                // TODO: findAvailablePort is only effective for TCP services
                 int port = Utils.findAvailablePort(PsiphonConstants.DNS_PROXY_PORT, 10);
                 if (port == 0)
                 {
@@ -382,6 +383,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 catch (PsiphonTransparentProxyException e)
                 {
                     // If we can't configure the iptables routing, abort
+                    MyLog.e(R.string.transparent_proxy_failed);
                     throw new TunnelServiceStop();
                 }
                 
