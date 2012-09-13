@@ -26,8 +26,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences.Editor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -51,6 +53,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     public static final String ADD_MESSAGE_CLASS = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_CLASS";
     public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
     public static final String UNEXPECTED_DISCONNECT = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT";
+    public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
     
     private TableLayout m_messagesTableLayout;
     private ScrollView m_messagesScrollView;
@@ -70,8 +73,16 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
         m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
 
-        m_tunnelWholeDeviceToggle.setEnabled(Utils.isRooted());
-        m_tunnelWholeDeviceToggle.setChecked(PsiphonData.getPsiphonData().getTunnelWholeDevice());
+        // "Tunnel Whole Device" option is only available on rooted
+        // devices and defaults to true on rooted devices.
+        boolean isRooted = Utils.isRooted();
+        m_tunnelWholeDeviceToggle.setEnabled(isRooted);
+        boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, isRooted);        
+        m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
+        // Use PsiphonData to communicate the setting to the TunnelService so it doesn't need to
+        // repeat the isRooted check. The preference is retained even if the phone becomes "unrooted"
+        // and that's why setTunnelWholeDevice != tunnelWholeDevicePreference.
+        PsiphonData.getPsiphonData().setTunnelWholeDevice(isRooted && tunnelWholeDevicePreference);
         
         // Note that this must come after the above lines, or else the activity
         // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
@@ -182,9 +193,14 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     
     public void onTunnelWholeDeviceToggle(View v)
     {
-        // TODO: store persistent preference
-        PsiphonData.getPsiphonData().setTunnelWholeDevice(m_tunnelWholeDeviceToggle.isChecked());
-
+        boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
+        
+        // No isRooted check: the user can specify whatever preference they
+        // wish. Also, CheckBox enabling should cover this (but isn't required to).
+        Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+        editor.putBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, tunnelWholeDevicePreference);
+        editor.commit();
+        
         // TODO: don't need to stop/start tunnel to change this preference
         stopService(new Intent(this, TunnelService.class));
         startService(new Intent(this, TunnelService.class));
