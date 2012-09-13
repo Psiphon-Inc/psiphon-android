@@ -72,5 +72,6 @@
     <string name="dns_proxy_running">DNS proxy running on port %d</string>
     <string name="dns_proxy_ports_failed">Failed to start DNS proxy: no available ports found</string>
     <string name="dns_proxy_stopped">DNS proxy stopped</string>
+    <string name="tunnel_whole_device_toggle">Tunnel Whole Device</string>
 
 </resources>

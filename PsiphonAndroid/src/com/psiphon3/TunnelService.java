@@ -318,53 +318,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             socks = conn.createDynamicPortForwarder(PsiphonData.getPsiphonData().getSocksPort());
             MyLog.i(R.string.socks_running, PsiphonData.getPsiphonData().getSocksPort());
 
-            // Start transparent proxy, DNS proxy, and iptables config
-
-            int port = Utils.findAvailablePort(PsiphonConstants.DNS_PROXY_PORT, 10);
-            if (port == 0)
-            {
-                MyLog.e(R.string.dns_proxy_ports_failed);
-                runAgain = false;
-                return runAgain;
-            }
-            PsiphonData.getPsiphonData().setDnsProxyPort(port);
-
-            dnsProxy = new DnsProxy(
-                            "8.8.8.8", // TEMP. TODO: get remote address/port from Psiphon server
-                            53,
-                            PsiphonData.getPsiphonData().getDnsProxyPort());
-
-            if (!dnsProxy.Start())
-            {
-                // If we can't run the local DNS proxy, abort
-                throw new TunnelServiceStop();                
-            }
-            
-            MyLog.i(R.string.dns_proxy_running, PsiphonData.getPsiphonData().getDnsProxyPort());            
-            
-            port = Utils.findAvailablePort(PsiphonConstants.TRANSPARENT_PROXY_PORT, 10);
-            if (port == 0)
-            {
-                MyLog.e(R.string.transparent_proxy_ports_failed);
-                runAgain = false;
-                return runAgain;
-            }
-            PsiphonData.getPsiphonData().setTransparentProxyPort(port);
-
-            transparentProxy = conn.createTransparentProxyForwarder(PsiphonData.getPsiphonData().getTransparentProxyPort());
-
-            try
-            {
-                TransparentProxyConfig.setupTransparentProxyRouting(this);
-            }
-            catch (PsiphonTransparentProxyException e)
-            {
-                // If we can't configure the iptables routing, abort
-                throw new TunnelServiceStop();
-            }
-            
-            MyLog.i(R.string.transparent_proxy_running, PsiphonData.getPsiphonData().getTransparentProxyPort());            
-            
             // The HTTP proxy implementation is provided by Polipo,
             // a native application accessed via JNI. This proxy is
             // chained to our SOCKS proxy.
@@ -384,6 +337,56 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             }
 
             MyLog.i(R.string.http_proxy_running, PsiphonData.getPsiphonData().getHttpProxyPort());
+            
+            // Start transparent proxy, DNS proxy, and iptables config
+            
+            if (PsiphonData.getPsiphonData().getTunnelWholeDevice())
+            {
+                int port = Utils.findAvailablePort(PsiphonConstants.DNS_PROXY_PORT, 10);
+                if (port == 0)
+                {
+                    MyLog.e(R.string.dns_proxy_ports_failed);
+                    runAgain = false;
+                    return runAgain;
+                }
+                PsiphonData.getPsiphonData().setDnsProxyPort(port);
+    
+                dnsProxy = new DnsProxy(
+                                "8.8.8.8", // TEMP. TODO: get remote address/port from Psiphon server
+                                53,
+                                PsiphonData.getPsiphonData().getDnsProxyPort());
+    
+                if (!dnsProxy.Start())
+                {
+                    // If we can't run the local DNS proxy, abort
+                    throw new TunnelServiceStop();                
+                }
+                
+                MyLog.i(R.string.dns_proxy_running, PsiphonData.getPsiphonData().getDnsProxyPort());            
+                
+                port = Utils.findAvailablePort(PsiphonConstants.TRANSPARENT_PROXY_PORT, 10);
+                if (port == 0)
+                {
+                    MyLog.e(R.string.transparent_proxy_ports_failed);
+                    runAgain = false;
+                    return runAgain;
+                }
+                PsiphonData.getPsiphonData().setTransparentProxyPort(port);
+    
+                transparentProxy = conn.createTransparentProxyForwarder(PsiphonData.getPsiphonData().getTransparentProxyPort());
+    
+                try
+                {
+                    TransparentProxyConfig.setupTransparentProxyRouting(this);
+                }
+                catch (PsiphonTransparentProxyException e)
+                {
+                    // If we can't configure the iptables routing, abort
+                    throw new TunnelServiceStop();
+                }
+                
+                MyLog.i(R.string.transparent_proxy_running, PsiphonData.getPsiphonData().getTransparentProxyPort());
+            }
             
             // Don't signal unexpected disconnect until we've started
             conn.addConnectionMonitor(monitor);

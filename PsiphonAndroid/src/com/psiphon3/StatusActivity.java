@@ -32,6 +32,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TableLayout;
@@ -53,6 +54,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     
     private TableLayout m_messagesTableLayout;
     private ScrollView m_messagesScrollView;
+    private CheckBox m_tunnelWholeDeviceToggle;
     private LocalBroadcastManager m_localBroadcastManager;
     
     @Override
@@ -66,7 +68,11 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         
         m_messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
         m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
+        m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
 
+        m_tunnelWholeDeviceToggle.setEnabled(Utils.isRooted());
+        m_tunnelWholeDeviceToggle.setChecked(PsiphonData.getPsiphonData().getTunnelWholeDevice());
+        
         // Note that this must come after the above lines, or else the activity
         // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
         PsiphonConstants.DEBUG = Utils.isDebugMode(this);
@@ -172,6 +178,16 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         }
         
         // No explicit action for UNEXPECTED_DISCONNECT, just show the activity
+    }
+    
+    public void onTunnelWholeDeviceToggle(View v)
+    {
+        // TODO: store persistent preference
+        PsiphonData.getPsiphonData().setTunnelWholeDevice(m_tunnelWholeDeviceToggle.isChecked());
+
+        // TODO: don't need to stop/start tunnel to change this preference
+        stopService(new Intent(this, TunnelService.class));
+        startService(new Intent(this, TunnelService.class));
     }
     
     public void onOpenBrowserClick(View v)

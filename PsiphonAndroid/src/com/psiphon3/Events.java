@@ -110,42 +110,42 @@ public class Events
 
     static public void displayBrowser(Context context, Uri uri)
     {
-        // TEMP: use default browser in transparent proxy mode
-        for (String homePage : PsiphonData.getPsiphonData().getHomePages())
+        if (PsiphonData.getPsiphonData().getTunnelWholeDevice())
         {
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(homePage));
-            context.startActivity(browserIntent);
+            for (String homePage : PsiphonData.getPsiphonData().getHomePages())
+            {
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(homePage));
+                context.startActivity(browserIntent);
+            }
         }
-
-        /*
-
-        Intent intent = new Intent(
-                "ACTION_VIEW",
-                uri,
-                context,
-                org.zirco.ui.activities.MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-        // This intent displays the Zirco browser.
-        // We use "extras" to communicate Psiphon settings to Zirco, which
-        // is packaged as an independent component (so it's can't access,
-        // e.g., PsiphonConstants or PsiphonData). Note that the Zirco code
-        // is customized. When Zirco is first created, it will use the localProxyPort
-        // and homePages extras to set the proxy preference and open tabs for
-        // each home page, respectively. When the intent triggers an existing
-        // Zirco instance (and it's a singleton) the extras are ignored and the
-        // browser is displayed as-is.
-        // When a uri is specified, it will open as a new tab. This is
-        // independent of the home pages.
-        
-        intent.putExtra("localProxyPort", PsiphonData.getPsiphonData().getHttpProxyPort());
-        intent.putExtra("homePages", PsiphonData.getPsiphonData().getHomePages());
-        intent.putExtra("serviceClassName", TunnelService.class.getName());        
-        intent.putExtra("statusActivityClassName", StatusActivity.class.getName());
-        intent.putExtra("feedbackActivityClassName", FeedbackActivity.class.getName());
-        
-        context.startActivity(intent);
-        
-        */
+        else
+        {
+            Intent intent = new Intent(
+                    "ACTION_VIEW",
+                    uri,
+                    context,
+                    org.zirco.ui.activities.MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    
+            // This intent displays the Zirco browser.
+            // We use "extras" to communicate Psiphon settings to Zirco, which
+            // is packaged as an independent component (so it's can't access,
+            // e.g., PsiphonConstants or PsiphonData). Note that the Zirco code
+            // is customized. When Zirco is first created, it will use the localProxyPort
+            // and homePages extras to set the proxy preference and open tabs for
+            // each home page, respectively. When the intent triggers an existing
+            // Zirco instance (and it's a singleton) the extras are ignored and the
+            // browser is displayed as-is.
+            // When a uri is specified, it will open as a new tab. This is
+            // independent of the home pages.
+            
+            intent.putExtra("localProxyPort", PsiphonData.getPsiphonData().getHttpProxyPort());
+            intent.putExtra("homePages", PsiphonData.getPsiphonData().getHomePages());
+            intent.putExtra("serviceClassName", TunnelService.class.getName());        
+            intent.putExtra("statusActivityClassName", StatusActivity.class.getName());
+            intent.putExtra("feedbackActivityClassName", FeedbackActivity.class.getName());
+            
+            context.startActivity(intent);
+        }
     }
 }
