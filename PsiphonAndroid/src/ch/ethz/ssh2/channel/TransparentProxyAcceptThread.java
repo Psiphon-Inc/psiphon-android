@@ -65,8 +65,8 @@ public class TransparentProxyAcceptThread extends Thread implements IChannelWork
             }
 
             Channel channel = null;
-            StreamForwarder r2l = null;
-            StreamForwarder l2r = null;
+            PsiphonStreamForwarder r2l = null;
+            PsiphonStreamForwarder l2r = null;
             
             // Determine original destination IP address and port
 
@@ -105,8 +105,8 @@ public class TransparentProxyAcceptThread extends Thread implements IChannelWork
 
             try
             {
-                r2l = new StreamForwarder(channel, null, null, channel.stdoutStream, socket.getOutputStream(), "RemoteToLocal");
-                l2r = new StreamForwarder(channel, r2l, socket, socket.getInputStream(), channel.stdinStream, "LocalToRemote");
+                l2r = new PsiphonStreamForwarder(channel, null, socket.getInputStream(), channel.stdinStream, "LocalToRemote", null);
+                r2l = new PsiphonStreamForwarder(channel, l2r, channel.stdoutStream, socket.getOutputStream(), "RemoteToLocal", null);
             }
             catch (IOException e)
             {
