@@ -75,5 +75,6 @@
     <string name="tunnel_whole_device_toggle">Tunnel Whole Device</string>
     <string name="dns_proxy_failed">Failed to start DNS proxy</string>
     <string name="transparent_proxy_failed">Failed to start transparent proxy</string>
+    <string name="iptables_binary_not_found">Cannot find iptables implementation required for transparent proxy</string>
 
 </resources>
