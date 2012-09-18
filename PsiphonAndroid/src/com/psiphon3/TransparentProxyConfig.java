@@ -187,7 +187,7 @@ public class TransparentProxyConfig
         doShellCommand(context, cmd, true, true);        
     }
 
-    static final String IPTABLES_SAVED_RULES_SUBDIRECTORY = "saved-iptables-rules/";
+    static final String IPTABLES_SAVED_RULES_SUBDIRECTORY = "saved-iptables-rules";
     static final String IPTABLES_SAVED_RULES_FILENAME = "iptables.rules";
 
     static final String IPTABLES_FILENAME = "iptables";
@@ -198,8 +198,8 @@ public class TransparentProxyConfig
     static final String IPTABLES_BUNDLED_ARM_BINARIES_SUFFIX = "_arm.zip";
     static final String IPTABLES_BUNDLED_X86_BINARIES_SUFFIX = "_x86.zip";
 
-    static final String BUNDLED_BINARY_DATA_SUBDIRECTORY = "bundled-binaries/";
-    static final String BUNDLED_BINARY_ASSET_SUBDIRECTORY = "bundled-binaries/";
+    static final String BUNDLED_BINARY_DATA_SUBDIRECTORY = "bundled-binaries";
+    static final String BUNDLED_BINARY_ASSET_SUBDIRECTORY = "bundled-binaries";
     static final String SYSTEM_BINARY_PATH = "/system/bin/";
     static final String SYSTEM_BINARY_ALT_PATH = "/system/xbin/";
     
@@ -261,7 +261,7 @@ public class TransparentProxyConfig
         {        
             binary = new File(
                             context.getDir(BUNDLED_BINARY_DATA_SUBDIRECTORY, Context.MODE_PRIVATE),
-                            binaryFilename + bundledSuffix);
+                            binaryFilename);
             if (binary.exists())
             {
                 return binary.getAbsolutePath();
