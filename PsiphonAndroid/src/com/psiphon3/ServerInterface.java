@@ -273,6 +273,18 @@ public class ServerInterface
         return null;
     }
     
+    synchronized ArrayList<ServerEntry> getServerEntries()
+    {
+        ArrayList<ServerEntry> serverEntries = new ArrayList<ServerEntry>();
+
+        for (ServerEntry serverEntry : this.serverEntries)
+        {
+            serverEntries.add(serverEntry.clone());
+        }
+
+        return serverEntries;
+    }
+    
     synchronized void markCurrentServerFailed()
     {
         if (this.serverEntries.size() > 0)
@@ -1171,6 +1183,51 @@ public class ServerInterface
         }
     }
 
+    public synchronized void MoveEntriesToFront(ArrayList<ServerEntry> reorderedServerEntries)
+    {
+        // Insert entries in input order
+
+        for (int i = reorderedServerEntries.size() - 1; i >= 0; i--)
+        {
+            ServerEntry reorderedEntry = reorderedServerEntries.get(i);
+            // Remove existing entry for server, if present. In the case where
+            // the existing entry has different data, we must assume that a
+            // discovery has happened that overwrote the data that's being
+            // passed in. In that edge case, we just keep the existing entry
+            // in its current position.
+
+            boolean existingEntryChanged = false;
+
+            for (int j = 0; j < this.serverEntries.size(); j++)
+            {
+                ServerEntry existingEntry = this.serverEntries.get(j);
+
+                if (reorderedEntry.ipAddress == existingEntry.ipAddress)
+                {
+                    // NOTE: depends on encodedEntry representing the entire object
+                    if (0 != reorderedEntry.encodedEntry.compareTo(existingEntry.encodedEntry))
+                    {
+                        existingEntryChanged = true;
+                    }
+                    else
+                    {
+                        this.serverEntries.remove(j);
+                    }
+                    break;
+                }
+            }
+
+            // Re-insert entry for server in new position
+
+            if (!existingEntryChanged)
+            {
+                this.serverEntries.add(0, reorderedEntry);
+            }
+        }
+
+        saveServerEntries();
+    }
+    
     private final long DEFAULT_STATS_SEND_INTERVAL_MS = 5*60*1000; // 5 mins
     private long statsSendInterval = DEFAULT_STATS_SEND_INTERVAL_MS;
     private long lastStatusSendTimeMS = 0;

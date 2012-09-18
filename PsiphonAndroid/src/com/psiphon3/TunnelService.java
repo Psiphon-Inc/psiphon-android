@@ -51,6 +51,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     private Thread m_tunnelThread;
     private ServerInterface m_interface;
     private UpgradeManager.UpgradeDownloader m_upgradeDownloader;
+    private ServerListReorder m_serverListReorder = null;
 
     enum Signal
     {
@@ -87,6 +88,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             doForeground();
             MyLog.i(R.string.client_version, EmbeddedValues.CLIENT_VERSION);
             startTunnel();
+            
+            m_serverListReorder = new ServerListReorder(m_interface);
+            m_serverListReorder.Start();
+            
             m_firstStart = false;
         }
         return android.app.Service.START_STICKY;
@@ -100,6 +105,13 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     @Override
     public void onDestroy()
     {
+        // TODO: ServerListReorder lifetime on Android isn't the same as on Windows
+        if (m_serverListReorder != null)
+        {
+            m_serverListReorder.Stop();
+            m_serverListReorder = null;
+        }
+        
         stopTunnel();
     }
 
