@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <xtables.h>
-#include <linux/netfilter/xt_connmark.h>
+#include <linux/netfilter/xt_connmark_.h>
 
 struct xt_connmark_info {
 	unsigned long mark, mask;

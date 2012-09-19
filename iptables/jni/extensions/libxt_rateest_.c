@@ -6,7 +6,7 @@
 #include <getopt.h>
 
 #include <xtables.h>
-#include <linux/netfilter/xt_rateest.h>
+#include <linux/netfilter/xt_rateest_.h>
 
 /* Ugly hack to pass info to final_check function. We should fix the API */
 static struct xt_rateest_match_info *rateest_info;

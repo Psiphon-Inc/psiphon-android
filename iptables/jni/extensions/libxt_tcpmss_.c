@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <xtables.h>
-#include <linux/netfilter/xt_tcpmss.h>
+#include <linux/netfilter/xt_tcpmss_.h>
 
 enum {
 	O_TCPMSS = 0,

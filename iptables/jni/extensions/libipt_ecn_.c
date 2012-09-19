@@ -9,7 +9,7 @@
  */
 #include <stdio.h>
 #include <xtables.h>
-#include <linux/netfilter_ipv4/ipt_ecn.h>
+#include <linux/netfilter_ipv4/ipt_ecn_.h>
 
 enum {
 	O_ECN_TCP_CWR = 0,

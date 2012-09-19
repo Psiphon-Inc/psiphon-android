@@ -4,7 +4,7 @@
  * This program is released under the terms of GNU GPL */
 #include <stdio.h>
 #include <xtables.h>
-#include <linux/netfilter_ipv4/ipt_ttl.h>
+#include <linux/netfilter_ipv4/ipt_ttl_.h>
 
 enum {
 	O_TTL_EQ = 0,

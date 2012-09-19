@@ -4,7 +4,7 @@
  *
  * This software is distributed under GNU GPL v2, 1991
  * 
- * ipt_ecn.h,v 1.4 2002/08/05 19:39:00 laforge Exp
+ * ipt_ecn_.h,v 1.4 2002/08/05 19:39:00 laforge Exp
 */
 #ifndef _IPT_ECN_H
 #define _IPT_ECN_H
