@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <xtables.h>
-#include <linux/netfilter/xt_mark.h>
+#include <linux/netfilter/xt_mark_.h>
 
 struct xt_mark_info {
 	unsigned long mark, mask;
