@@ -197,6 +197,7 @@ public class TransparentProxyConfig
     static final String IPTABLES_BUNDLED_ARM7_BINARIES_SUFFIX = "_arm7.zip";
     static final String IPTABLES_BUNDLED_ARM_BINARIES_SUFFIX = "_arm.zip";
     static final String IPTABLES_BUNDLED_X86_BINARIES_SUFFIX = "_x86.zip";
+    static final String IPTABLES_BUNDLED_MIPS_BINARIES_SUFFIX = "_mips.zip";
 
     static final String BUNDLED_BINARY_DATA_SUBDIRECTORY = "bundled-binaries";
     static final String BUNDLED_BINARY_ASSET_SUBDIRECTORY = "bundled-binaries";
@@ -209,6 +210,7 @@ public class TransparentProxyConfig
         if (0 == Build.CPU_ABI.compareTo("armeabi-v7a")) return IPTABLES_BUNDLED_ARM7_BINARIES_SUFFIX;
         else if (0 == Build.CPU_ABI.compareTo("armeabi")) return IPTABLES_BUNDLED_ARM_BINARIES_SUFFIX;
         else if (0 == Build.CPU_ABI.compareTo("x86")) return IPTABLES_BUNDLED_X86_BINARIES_SUFFIX;
+        else if (0 == Build.CPU_ABI.compareTo("mips")) return IPTABLES_BUNDLED_MIPS_BINARIES_SUFFIX;
         return null;
     }
     
@@ -256,7 +258,7 @@ public class TransparentProxyConfig
         // Try to use bundled binary
 
         String bundledSuffix = getBundledBinaryPlatformSuffix(context);
-
+        
         if (bundledSuffix != null)
         {        
             binary = new File(

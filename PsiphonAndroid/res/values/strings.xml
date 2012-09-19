@@ -76,5 +76,7 @@
     <string name="dns_proxy_failed">Failed to start DNS proxy</string>
     <string name="transparent_proxy_failed">Failed to start transparent proxy</string>
     <string name="iptables_binary_not_found">Cannot find iptables implementation required for transparent proxy</string>
+    <string name="StatusActivity.WholeDeviceTunnelPromptTitle">New! Whole Device Tunnel</string>
+    <string name="StatusActivity.WholeDeviceTunnelPromptMessage">The whole device tunnel option is available for your device.\n\nWith this option, all of your Internet traffic for all apps will be tunneled through Psiphon.\n\nWould you like to proceed with this option enabled?</string>
 
 </resources>

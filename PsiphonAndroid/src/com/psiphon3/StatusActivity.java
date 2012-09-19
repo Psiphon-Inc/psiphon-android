@@ -21,9 +21,11 @@ package com.psiphon3;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.AlertDialog;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences.Editor;
@@ -42,6 +44,7 @@ import android.widget.TextView;
 
 import com.psiphon3.PsiphonData.StatusMessage;
 import com.psiphon3.UpgradeManager;
+import com.psiphon3.UpgradeManager.UpgradeFile;
 import com.psiphon3.UpgradeManager.UpgradeInstaller;
 import com.psiphon3.Utils.MyLog;
 
@@ -124,8 +127,41 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             
             @Override public void upgradeNotStarted()
             {
-                // Start tunnel service (if not already running)
-                startService(new Intent(context, TunnelService.class));
+                boolean hasPreference = PreferenceManager.getDefaultSharedPreferences(context).contains(TUNNEL_WHOLE_DEVICE_PREFERENCE);
+                        
+                if (PsiphonData.getPsiphonData().getTunnelWholeDevice() &&
+                    !hasPreference &&
+                    !isServiceRunning())
+                {
+                    new AlertDialog.Builder(context)
+                        .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
+                        .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                // Persist the "on" setting
+                                updateWholeDevicePreference(true);
+                                startService(new Intent(context, TunnelService.class));
+                            }})
+                        .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                // Turn off and persist the "off" setting
+                                m_tunnelWholeDeviceToggle.setChecked(false);
+                                updateWholeDevicePreference(false);
+                                startService(new Intent(context, TunnelService.class));
+                            }})
+                        .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                            public void onCancel(DialogInterface dialog) {
+                                // Don't change or persist preference (this prompt may reappear)
+                                startService(new Intent(context, TunnelService.class));
+                            }})
+                        .show();
+                    // ...wait and let onClick handlers will start tunnel
+                }
+                else
+                {
+                    // Start tunnel service (if not already running)
+                    startService(new Intent(context, TunnelService.class));                    
+                }
 
                 // Handle the intent that resumed that activity
                 HandleCurrentIntent();
@@ -195,15 +231,20 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     {
         boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
         
-        // No isRooted check: the user can specify whatever preference they
-        // wish. Also, CheckBox enabling should cover this (but isn't required to).
-        Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-        editor.putBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, tunnelWholeDevicePreference);
-        editor.commit();
+        updateWholeDevicePreference(tunnelWholeDevicePreference);
         
         // TODO: don't need to stop/start tunnel to change this preference
         stopService(new Intent(this, TunnelService.class));
         startService(new Intent(this, TunnelService.class));
+    }
+    
+    protected void updateWholeDevicePreference(boolean tunnelWholeDevicePreference)
+    {
+        // No isRooted check: the user can specify whatever preference they
+        // wish. Also, CheckBox enabling should cover this (but isn't required to).
+        Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+        editor.putBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, tunnelWholeDevicePreference);
+        editor.commit();        
     }
     
     public void onOpenBrowserClick(View v)
@@ -309,7 +350,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
      * @see <a href="http://stackoverflow.com/a/5921190/729729">From StackOverflow answer: "android: check if a service is running"</a>
      * @return True if the service is already running, false otherwise.
      */
-    private boolean isServiceRunning() 
+    private boolean isServiceRunning()
     {
         ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
