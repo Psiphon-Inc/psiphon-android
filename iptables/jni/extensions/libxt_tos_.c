@@ -12,7 +12,7 @@
 #include <string.h>
 
 #include <xtables.h>
-#include <linux/netfilter/xt_dscp.h>
+#include <linux/netfilter/xt_dscp_.h>
 #include "tos_values.c"
 
 struct ipt_tos_info {

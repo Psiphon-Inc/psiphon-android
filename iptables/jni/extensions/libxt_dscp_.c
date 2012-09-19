@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <xtables.h>
-#include <linux/netfilter/xt_dscp.h>
+#include <linux/netfilter/xt_dscp_.h>
 
 /* This is evil, but it's my code - HW*/
 #include "dscp_helper.c"

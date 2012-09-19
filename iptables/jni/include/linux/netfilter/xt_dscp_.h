@@ -5,7 +5,7 @@
  *
  * See RFC2474 for a description of the DSCP field within the IP Header.
  *
- * xt_dscp.h,v 1.3 2002/08/05 19:00:21 laforge Exp
+ * xt_dscp_.h,v 1.3 2002/08/05 19:00:21 laforge Exp
 */
 #ifndef _XT_DSCP_H
 #define _XT_DSCP_H
