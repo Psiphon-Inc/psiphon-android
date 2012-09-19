@@ -7,7 +7,7 @@
  */
 #include <stdio.h>
 #include <xtables.h>
-#include <linux/netfilter_ipv6/ip6t_hl.h>
+#include <linux/netfilter_ipv6/ip6t_hl_.h>
 
 enum {
 	O_HL_EQ = 0,
