@@ -61,6 +61,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     private TableLayout m_messagesTableLayout;
     private ScrollView m_messagesScrollView;
     private CheckBox m_tunnelWholeDeviceToggle;
+    private boolean m_tunnelWholeDevicePromptShown = false;
     private LocalBroadcastManager m_localBroadcastManager;
     
     @Override
@@ -129,43 +130,57 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             {
                 // The "normal" Resume code path, when no upgrade has started.
                 
+                // If the user hasn't set a whole-device-tunnel preference, show a prompt
+                // (and delay starting the tunnel service until the prompt is completed)
+                
                 boolean hasPreference = PreferenceManager.getDefaultSharedPreferences(context).contains(TUNNEL_WHOLE_DEVICE_PREFERENCE);
                         
                 if (m_tunnelWholeDeviceToggle.isEnabled() &&
                     !hasPreference &&
                     !isServiceRunning())
                 {
-                    new AlertDialog.Builder(context)
-                        .setCancelable(false)
-                        .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
-                        .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
-                        .setPositiveButton(R.string.StatusActivity_WholePhoneTunnelPositiveButton,
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int whichButton) {
-                                        // Persist the "on" setting
-                                        updateWholeDevicePreference(true);
-                                        startService(new Intent(context, TunnelService.class));
-                                    }})
-                        .setNegativeButton(R.string.StatusActivity_WholePhoneTunnelNegativeButton,
+                    if (!m_tunnelWholeDevicePromptShown)
+                    {
+                        new AlertDialog.Builder(context)
+                            .setCancelable(false)
+                            .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
+                            .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
+                            .setPositiveButton(R.string.StatusActivity_WholePhoneTunnelPositiveButton,
                                     new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int whichButton) {
-                                            // Turn off and persist the "off" setting
-                                            m_tunnelWholeDeviceToggle.setChecked(false);
-                                            updateWholeDevicePreference(false);
+                                            // Persist the "on" setting
+                                            updateWholeDevicePreference(true);
                                             startService(new Intent(context, TunnelService.class));
                                         }})
-                        .setOnCancelListener(
-                                new DialogInterface.OnCancelListener() {
-                                    public void onCancel(DialogInterface dialog) {
-                                        // Don't change or persist preference (this prompt may reappear)
-                                        startService(new Intent(context, TunnelService.class));
-                                    }})
-                        .show();
+                            .setNegativeButton(R.string.StatusActivity_WholePhoneTunnelNegativeButton,
+                                        new DialogInterface.OnClickListener() {
+                                            public void onClick(DialogInterface dialog, int whichButton) {
+                                                // Turn off and persist the "off" setting
+                                                m_tunnelWholeDeviceToggle.setChecked(false);
+                                                updateWholeDevicePreference(false);
+                                                startService(new Intent(context, TunnelService.class));
+                                            }})
+                            .setOnCancelListener(
+                                    new DialogInterface.OnCancelListener() {
+                                        public void onCancel(DialogInterface dialog) {
+                                            // Don't change or persist preference (this prompt may reappear)
+                                            startService(new Intent(context, TunnelService.class));
+                                        }})
+                            .show();
+                        m_tunnelWholeDevicePromptShown = true;
+                    }
+                    else
+                    {
+                        // ...there's a prompt already showing (e.g., user hit Home with the
+                        // prompt up, then resumed Psiphon)
+                    }
+                    
                     // ...wait and let onClick handlers will start tunnel
                 }
                 else
                 {
-                    // Start tunnel service (if not already running)
+                    // No prompt, just start the tunnel (if not already running)
+                    
                     startService(new Intent(context, TunnelService.class));                    
                 }
 
