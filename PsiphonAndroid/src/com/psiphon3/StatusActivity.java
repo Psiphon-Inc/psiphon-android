@@ -131,11 +131,12 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                 
                 boolean hasPreference = PreferenceManager.getDefaultSharedPreferences(context).contains(TUNNEL_WHOLE_DEVICE_PREFERENCE);
                         
-                if (PsiphonData.getPsiphonData().getTunnelWholeDevice() &&
+                if (m_tunnelWholeDeviceToggle.isEnabled() &&
                     !hasPreference &&
                     !isServiceRunning())
                 {
                     new AlertDialog.Builder(context)
+                        .setCancelable(false)
                         .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
                         .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
                         .setPositiveButton(R.string.StatusActivity_WholePhoneTunnelPositiveButton,
@@ -249,7 +250,9 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         // wish. Also, CheckBox enabling should cover this (but isn't required to).
         Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
         editor.putBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, tunnelWholeDevicePreference);
-        editor.commit();        
+        editor.commit();
+        
+        PsiphonData.getPsiphonData().setTunnelWholeDevice(tunnelWholeDevicePreference);
     }
     
     public void onOpenBrowserClick(View v)
