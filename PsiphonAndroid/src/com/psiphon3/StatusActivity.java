@@ -127,6 +127,8 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             
             @Override public void upgradeNotStarted()
             {
+                // The "normal" Resume code path, when no upgrade has started.
+                
                 boolean hasPreference = PreferenceManager.getDefaultSharedPreferences(context).contains(TUNNEL_WHOLE_DEVICE_PREFERENCE);
                         
                 if (PsiphonData.getPsiphonData().getTunnelWholeDevice() &&
@@ -136,24 +138,27 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                     new AlertDialog.Builder(context)
                         .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
                         .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
-                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                // Persist the "on" setting
-                                updateWholeDevicePreference(true);
-                                startService(new Intent(context, TunnelService.class));
-                            }})
-                        .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                // Turn off and persist the "off" setting
-                                m_tunnelWholeDeviceToggle.setChecked(false);
-                                updateWholeDevicePreference(false);
-                                startService(new Intent(context, TunnelService.class));
-                            }})
-                        .setOnCancelListener(new DialogInterface.OnCancelListener() {
-                            public void onCancel(DialogInterface dialog) {
-                                // Don't change or persist preference (this prompt may reappear)
-                                startService(new Intent(context, TunnelService.class));
-                            }})
+                        .setPositiveButton(R.string.StatusActivity_WholePhoneTunnelPositiveButton,
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int whichButton) {
+                                        // Persist the "on" setting
+                                        updateWholeDevicePreference(true);
+                                        startService(new Intent(context, TunnelService.class));
+                                    }})
+                        .setNegativeButton(R.string.StatusActivity_WholePhoneTunnelNegativeButton,
+                                    new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int whichButton) {
+                                            // Turn off and persist the "off" setting
+                                            m_tunnelWholeDeviceToggle.setChecked(false);
+                                            updateWholeDevicePreference(false);
+                                            startService(new Intent(context, TunnelService.class));
+                                        }})
+                        .setOnCancelListener(
+                                new DialogInterface.OnCancelListener() {
+                                    public void onCancel(DialogInterface dialog) {
+                                        // Don't change or persist preference (this prompt may reappear)
+                                        startService(new Intent(context, TunnelService.class));
+                                    }})
                         .show();
                     // ...wait and let onClick handlers will start tunnel
                 }
