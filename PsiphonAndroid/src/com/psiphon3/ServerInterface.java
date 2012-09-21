@@ -717,7 +717,8 @@ public class ServerInterface
            .append("&sponsor_id=").append(Utils.urlEncode(EmbeddedValues.SPONSOR_ID))
            .append("&client_version=").append(Utils.urlEncode(EmbeddedValues.CLIENT_VERSION))
            .append("&relay_protocol=").append(Utils.urlEncode(PsiphonData.getPsiphonData().getTunnelRelayProtocol()))
-           .append("&client_platform=").append(Utils.urlEncode(clientPlatform));
+           .append("&client_platform=").append(Utils.urlEncode(clientPlatform))
+           .append("&tunnel_whole_device=").append(Utils.urlEncode(PsiphonData.getPsiphonData().getTunnelWholeDevice() ? "1" : "0"));
 
         if (extraParams != null)
         {
