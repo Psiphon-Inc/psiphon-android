@@ -67,14 +67,14 @@
     <string name="socks_port_in_use">Port %d is already in use by another app.  Cannot continue.</string>
     <string name="transparent_proxy_running">Transparent proxy running on port %d</string>
     <string name="transparent_proxy_ports_failed">Failed to start transparent proxy: no available ports found</string>
-    <string name="transparent_proxy_command_failed">Transparent proxy configuration command failed: %d</string>
+    <string name="transparent_proxy_command_failed">Transparent proxy configuration command failed: %s</string>
     <string name="transparent_proxy_stopped">Transparent proxy stopped</string>
     <string name="dns_proxy_running">DNS proxy running on port %d</string>
     <string name="dns_proxy_ports_failed">Failed to start DNS proxy: no available ports found</string>
     <string name="dns_proxy_stopped">DNS proxy stopped</string>
     <string name="tunnel_whole_device_toggle">Tunnel Whole Device</string>
     <string name="dns_proxy_failed">Failed to start DNS proxy</string>
-    <string name="transparent_proxy_failed">Failed to start transparent proxy</string>
+    <string name="transparent_proxy_failed">Failed to start transparent proxy: %s</string>
     <string name="iptables_binary_not_found">Cannot find iptables implementation required for transparent proxy</string>
     <string name="StatusActivity.WholeDeviceTunnelPromptTitle">Tunnel the whole device?</string>
     <string name="StatusActivity.WholeDeviceTunnelPromptMessage">The whole device tunnel option is available for your device.\n\nWith this option, all of your Internet traffic for all apps including all browsers will be tunneled through Psiphon.\n\nAlternatively, you can choose to tunnel only the bundled Psiphon browser, leaving all other apps with a direct Internet connection.</string>

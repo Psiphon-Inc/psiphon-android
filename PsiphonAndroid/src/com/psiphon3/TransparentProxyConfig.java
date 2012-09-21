@@ -337,6 +337,7 @@ public class TransparentProxyConfig
             throws PsiphonTransparentProxyException
     {
         int exitCode = -1;
+        StringBuilder output = new StringBuilder();
 
         try
         {
@@ -354,7 +355,6 @@ public class TransparentProxyConfig
             OutputStreamWriter out = new OutputStreamWriter(proc.getOutputStream());
             for (int i = 0; i < cmds.length; i++)
             {
-                MyLog.d("executing shell cmd: " + cmds[i] + "; runAsRoot=" + runAsRoot + "; waitFor=" + waitFor);
                 out.write(cmds[i]);
                 out.write("\n");
             }
@@ -362,9 +362,7 @@ public class TransparentProxyConfig
             out.flush();
             out.write("exit\n");
             out.flush();
-                
-            StringBuilder output = new StringBuilder();
-    
+
             if (waitFor)
             {            
                 final char buf[] = new char[100];
@@ -387,8 +385,6 @@ public class TransparentProxyConfig
                 
                 exitCode = proc.waitFor();
             }
-            
-            MyLog.d(output.toString());
         }
         catch (Exception ex)
         {
@@ -397,8 +393,10 @@ public class TransparentProxyConfig
         
         if (exitCode != 0)
         {
-            throw new PsiphonTransparentProxyException(
-                    String.format(context.getString(R.string.transparent_proxy_command_failed), exitCode));
+            String message = String.format(context.getString(
+                                    R.string.transparent_proxy_command_failed),
+                                    output.toString());
+            throw new PsiphonTransparentProxyException(message);
         }
     }
 }

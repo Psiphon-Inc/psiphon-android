@@ -383,7 +383,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 catch (PsiphonTransparentProxyException e)
                 {
                     // If we can't configure the iptables routing, abort
-                    MyLog.e(R.string.transparent_proxy_failed);
+                    MyLog.e(R.string.transparent_proxy_failed, e.getMessage());
                     throw new TunnelServiceStop();
                 }
                 
