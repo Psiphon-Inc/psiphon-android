@@ -138,13 +138,24 @@ public class TransparentProxyConfig
 
         final StringBuilder script = new StringBuilder();        
         
-        script.append(ipTablesSavePath);
-        script.append(" > ");
-        script.append(rulesFile.getAbsolutePath());
-        
-        String[] cmd = {script.toString()};
+        // If the rules file already exists, assume it's there because
+        // of a failed restore and don't overwrite it. That way the original
+        // rules from the previous save will still be restored.
 
-        doShellCommand(context, cmd, true, true);        
+        // NOTE: this  isn't completely robust. A user may have manually
+        // (or via DroidWall) repaired rules after a failed restore and
+        // this logic will ignore those changes.
+        
+        if (!rulesFile.exists())
+        {
+            script.append(ipTablesSavePath);
+            script.append(" > ");
+            script.append(rulesFile.getAbsolutePath());
+            
+            String[] cmd = {script.toString()};
+    
+            doShellCommand(context, cmd, true, true);
+        }
     }
 
     private static void restoreIpTables(Context context)
@@ -161,7 +172,15 @@ public class TransparentProxyConfig
         script.append(ipTablesRestorePath);
         script.append(" < ");
         script.append(rulesFile.getAbsolutePath());
+        script.append(" || exit\n");
+
+        // Remove the rules file when successfully restored. If the restore
+        // fails, the file is retained and will be retried next time.
         
+        script.append("rm ");
+        script.append(rulesFile.getAbsolutePath());
+        script.append(" || exit\n");
+
         String[] cmd = {script.toString()};
 
         doShellCommand(context, cmd, true, true);        
