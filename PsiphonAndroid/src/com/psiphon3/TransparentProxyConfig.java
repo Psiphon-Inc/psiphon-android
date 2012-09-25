@@ -70,14 +70,16 @@ public class TransparentProxyConfig
         flushIpTables(context);
         
         // Forward all TCP connections, except for Psiphon,
-        // through the transparent proxy
+        // through the transparent proxy.
+        // Also exclude LAN IP addresses.
 
-        // TODO: test for REDIRECT support and use NATD when unsupported?
+        // TODO: test for REDIRECT support and use DNAT when unsupported?
         
         script.append(ipTablesPath);
         script.append(" -t nat");
         script.append(" -A OUTPUT -p tcp");
-        script.append(" ! -d 127.0.0.1"); // allow access to localhost
+        // allow access to localhost and LAN ranges
+        script.append(" ! -d 127.0.0.1,192.168.0.0/16,172.16.0.0/12,10.0.0.0/8");
         script.append(" -m owner ! --uid-owner ");
         script.append(psiphonUid);
         script.append(" -m tcp --syn");
