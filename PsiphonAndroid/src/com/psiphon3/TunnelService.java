@@ -260,6 +260,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         DynamicPortForwarder socks = null;
         TransparentProxyPortForwarder transparentProxy = null;
         DnsProxy dnsProxy = null;
+        boolean cleanupTransparentProxyRouting = false;
         
         try
         {            
@@ -379,6 +380,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 try
                 {
                     TransparentProxyConfig.setupTransparentProxyRouting(this);
+                    cleanupTransparentProxyRouting = true;
                 }
                 catch (PsiphonTransparentProxyException e)
                 {
@@ -496,12 +498,15 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             // Otherwise the call below to m_upgradeDownloader.stop() would block.
             m_interface.stop();
 
-            try
+            if (cleanupTransparentProxyRouting)
             {
-                TransparentProxyConfig.teardownTransparentProxyRouting(this);
-            }
-            catch (PsiphonTransparentProxyException e)
-            {
+                try
+                {
+                    TransparentProxyConfig.teardownTransparentProxyRouting(this);
+                }
+                catch (PsiphonTransparentProxyException e)
+                {
+                }
             }
             
             if (dnsProxy != null)

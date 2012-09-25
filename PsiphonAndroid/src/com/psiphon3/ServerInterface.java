@@ -340,10 +340,14 @@ public class ServerInterface
                     JSONObject obj = new JSONObject(line.substring(JSON_CONFIG_PREFIX.length()));
 
                     JSONArray homepages = obj.getJSONArray("homepages");
+                    
+                    ArrayList<String> sessionHomePages = new ArrayList<String>();
+                    
                     for (int i = 0; i < homepages.length(); i++)
                     {
-                    	PsiphonData.getPsiphonData().addHomePage(homepages.getString(i));
+                        sessionHomePages.add(homepages.getString(i));
                     }
+                    PsiphonData.getPsiphonData().setHomePages(sessionHomePages);
 
                     this.upgradeClientVersion = obj.getString("upgrade_client_version");
                     

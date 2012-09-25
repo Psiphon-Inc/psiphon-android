@@ -31,8 +31,6 @@ import android.content.Context;
 import android.content.res.AssetManager;
 import android.os.Build;
 
-import com.psiphon3.Utils.MyLog;
-
 
 // Based on Orbot's TorTransProxy/TorServiceUtils/TorBinaryInstaller implementations
 //
@@ -351,15 +349,15 @@ public class TransparentProxyConfig
             {
                 proc = Runtime.getRuntime().exec("sh");
             }
-                    
+
             OutputStreamWriter out = new OutputStreamWriter(proc.getOutputStream());
             for (int i = 0; i < cmds.length; i++)
             {
                 out.write(cmds[i]);
                 out.write("\n");
+                out.flush();
             }
             
-            out.flush();
             out.write("exit\n");
             out.flush();
 

@@ -57,4 +57,9 @@
   <string name="stopped_tunnel">اجرای تونل ایستاد </string>
   <string name="ServerInterface.StopRequested">درخواست توقف</string>
   <string name="ServerInterface.HTTPSRequestFailed">درخواست اچ تی تی پی اس به دلیل خطا نا موفق بود  </string>
+  <string name="tunnel_whole_device_toggle">تمام دستگاه را پراکسی کن</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptTitle">تمام دستگاه را پراکسی کن؟</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptMessage">امکان پراکسی تمام دستگاه برای شما موجود است. با این امکان، ارتباط و ترافیک تمامی آپلیکیشن ها و مرورگرهای شما از طریق سایفون انجام میشود. اگرمایل به استفاده ی این امکان نیستید، میتوانید فقط از مروگر سایفون استفاده کنید و از ارتباط مستقیم برای اپلیکیشن ها و مرور گر های دیگرتان استفاده کنید</string>
+  <string name="StatusActivity.WholePhoneTunnelPositiveButton">تمام دستگاه را پراکسی کن</string>
+  <string name="StatusActivity.WholePhoneTunnelNegativeButton">فقط از مرورگر سایفون استفاده کن</string>
 </resources>

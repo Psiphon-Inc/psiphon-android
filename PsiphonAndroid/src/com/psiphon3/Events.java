@@ -27,6 +27,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 
 public class Events
@@ -112,10 +113,14 @@ public class Events
     {
         if (PsiphonData.getPsiphonData().getTunnelWholeDevice())
         {
+            // TODO: support multiple home pages in whole device mode. This is
+            // disabled due to the case where users haven't set a default browser
+            // and will get the prompt once per home page.
             for (String homePage : PsiphonData.getPsiphonData().getHomePages())
             {
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(homePage));
                 context.startActivity(browserIntent);
+                break; // Only open the first home page
             }
         }
         else

@@ -90,9 +90,13 @@ public class PsiphonData
         return messages;
     }
 
-    public synchronized void addHomePage(String uri)
+    public synchronized void setHomePages(ArrayList<String> homePages)
     {
-    	m_homePages.add(uri);
+        m_homePages.clear();
+        for (int i = 0; i < homePages.size(); i++)
+        {
+            m_homePages.add(homePages.get(i));
+        }
     }
 
     public synchronized ArrayList<String> getHomePages()
