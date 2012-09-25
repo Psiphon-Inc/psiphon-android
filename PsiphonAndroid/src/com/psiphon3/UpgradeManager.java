@@ -35,6 +35,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
+import android.view.KeyEvent;
 
 /**
  * Contains logic relating to downloading and applying upgrades.
@@ -244,6 +245,12 @@ public interface UpgradeManager
             new AlertDialog.Builder(this.context)
                 .setTitle(R.string.UpgradeManager_UpgradePromptTitle)
                 .setMessage(R.string.UpgradeManager_UpgradePromptMessage)
+                .setOnKeyListener(
+                        new DialogInterface.OnKeyListener() {
+                            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                                // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
+                                return keyCode == KeyEvent.KEYCODE_SEARCH;
+                            }})
                 .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         // User declied the prompt.
