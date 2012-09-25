@@ -78,8 +78,8 @@ public class TransparentProxyConfig
         script.append(ipTablesPath);
         script.append(" -t nat");
         script.append(" -A OUTPUT -p tcp");
-        // allow access to localhost and LAN ranges
-        script.append(" ! -d 127.0.0.1,192.168.0.0/16,172.16.0.0/12,10.0.0.0/8");
+        // allow access to localhost
+        script.append(" ! -d 127.0.0.1");
         script.append(" -m owner ! --uid-owner ");
         script.append(psiphonUid);
         script.append(" -m tcp --syn");
