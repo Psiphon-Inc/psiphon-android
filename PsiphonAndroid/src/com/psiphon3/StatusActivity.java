@@ -48,6 +48,7 @@ import com.psiphon3.UpgradeManager;
 import com.psiphon3.UpgradeManager.UpgradeFile;
 import com.psiphon3.UpgradeManager.UpgradeInstaller;
 import com.psiphon3.Utils.MyLog;
+import com.stericson.RootTools.RootTools;
 
 
 public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
@@ -80,7 +81,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
 
         // "Tunnel Whole Device" option is only available on rooted
         // devices and defaults to true on rooted devices.
-        boolean isRooted = Utils.isRooted();
+        boolean isRooted = RootTools.isRootAvailable();
         m_tunnelWholeDeviceToggle.setEnabled(isRooted);
         boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, isRooted);        
         m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);

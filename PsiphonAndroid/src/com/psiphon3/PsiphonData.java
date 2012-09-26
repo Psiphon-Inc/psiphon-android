@@ -75,7 +75,7 @@ public class PsiphonData
     	m_stats = new Stats();
     	m_nextFetchRemoteServerList = null;
     	m_statusActivityForeground = false;
-    	m_tunnelWholeDevice = Utils.isRooted();
+    	m_tunnelWholeDevice = false;
     }
 
     public synchronized void addStatusMessage(String message, int messageClass)

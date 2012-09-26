@@ -27,6 +27,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.zip.ZipInputStream;
 
+import com.stericson.RootTools.Command;
+import com.stericson.RootTools.RootTools;
+
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.os.Build;
@@ -53,12 +56,13 @@ public class TransparentProxyConfig
             super(message);
         }
     }
+    
+    static int SHELL_COMMAND_TIMEOUT = 2000; // 2 seconds 
 
     public static void setupTransparentProxyRouting(Context context)
             throws PsiphonTransparentProxyException
     {
         String ipTablesPath = getIpTables(context);
-        StringBuilder script = new StringBuilder();        
         int psiphonUid = context.getApplicationInfo().uid;
         
         // Store existing iptables configuration to be restored later on. This
@@ -69,52 +73,35 @@ public class TransparentProxyConfig
         
         flushIpTables(context);
         
-        // Forward all TCP connections, except for Psiphon,
-        // through the transparent proxy.
-        // Also exclude LAN IP addresses.
+        String[] commands = new String[]
+        {
+            // Forward all TCP connections, except for Psiphon, through the transparent proxy.
+            // Localhost is excepted
+            // TODO: also except LAN IP address ranges
+            // TODO: test for REDIRECT support and use DNAT when unsupported?
+            ipTablesPath +
+                " -t nat -A OUTPUT -p tcp  ! -d 127.0.0.1 -m owner ! --uid-owner " +
+                psiphonUid +
+                " -m tcp --syn -j REDIRECT --to-ports " +
+                PsiphonData.getPsiphonData().getTransparentProxyPort(),
 
-        // TODO: test for REDIRECT support and use DNAT when unsupported?
+            // Forward all UDP DNS through the DNS proxy, except for Psiphon
+            ipTablesPath +
+                " -t nat -A OUTPUT -p udp -m owner ! --uid-owner " +
+                psiphonUid + " -m udp --dport " +
+                PsiphonConstants.STANDARD_DNS_PORT +
+                " -j REDIRECT --to-ports " +
+                PsiphonData.getPsiphonData().getDnsProxyPort(),
+
+            // Forward TCP DNS through transparent proxy (including the Psiphon DNS proxy requests)
+            ipTablesPath +
+                " -t nat -A OUTPUT -p tcp -m tcp --syn --dport " +
+                PsiphonConstants.STANDARD_DNS_PORT +
+                " -j REDIRECT --to-ports " +
+                PsiphonData.getPsiphonData().getTransparentProxyPort()
+        };
         
-        script.append(ipTablesPath);
-        script.append(" -t nat");
-        script.append(" -A OUTPUT -p tcp");
-        // allow access to localhost
-        script.append(" ! -d 127.0.0.1");
-        script.append(" -m owner ! --uid-owner ");
-        script.append(psiphonUid);
-        script.append(" -m tcp --syn");
-        script.append(" -j REDIRECT --to-ports ");
-        script.append(PsiphonData.getPsiphonData().getTransparentProxyPort());
-        script.append(" || exit\n");
-
-        // Forward all UDP DNS through the DNS proxy, except for Psiphon
-
-        script.append(ipTablesPath);
-        script.append(" -t nat");
-        script.append(" -A OUTPUT -p udp");
-        script.append(" -m owner ! --uid-owner ");
-        script.append(psiphonUid);
-        script.append(" -m udp --dport "); 
-        script.append(PsiphonConstants.STANDARD_DNS_PORT);
-        script.append(" -j REDIRECT --to-ports ");
-        script.append(PsiphonData.getPsiphonData().getDnsProxyPort());
-        script.append(" || exit\n");
-
-        // Forward TCP DNS through transparent proxy
-        // (including the Psiphon DNS proxy requests)
-
-        script.append(ipTablesPath);
-        script.append(" -t nat");
-        script.append(" -A OUTPUT -p tcp");
-        script.append(" -m tcp --syn --dport "); 
-        script.append(PsiphonConstants.STANDARD_DNS_PORT);
-        script.append(" -j REDIRECT --to-ports ");
-        script.append(PsiphonData.getPsiphonData().getTransparentProxyPort());
-        script.append(" || exit\n");
-
-        String[] cmdAdd = {script.toString()};      
-        
-        doShellCommand(context, cmdAdd, true, true);
+        doShellCommands(context, commands);
     }
 
     public static void teardownTransparentProxyRouting(Context context)
@@ -148,13 +135,7 @@ public class TransparentProxyConfig
         
         if (!rulesFile.exists())
         {
-            script.append(ipTablesSavePath);
-            script.append(" > ");
-            script.append(rulesFile.getAbsolutePath());
-            
-            String[] cmd = {script.toString()};
-    
-            doShellCommand(context, cmd, true, true);
+            doShellCommands(context, ipTablesSavePath + " > " + rulesFile.getAbsolutePath());
         }
     }
 
@@ -167,23 +148,16 @@ public class TransparentProxyConfig
                 context.getDir(IPTABLES_SAVED_RULES_SUBDIRECTORY, Context.MODE_PRIVATE),
                 IPTABLES_SAVED_RULES_FILENAME);
 
-        final StringBuilder script = new StringBuilder();        
+        String[] commands = new String[]
+        {
+            ipTablesRestorePath + " < " + rulesFile.getAbsolutePath(),
+            
+            // Remove the rules file when successfully restored. If the restore
+            // fails, the file is retained and will be retried next time.
+            "rm " + rulesFile.getAbsolutePath()
+        };
         
-        script.append(ipTablesRestorePath);
-        script.append(" < ");
-        script.append(rulesFile.getAbsolutePath());
-        script.append(" || exit\n");
-
-        // Remove the rules file when successfully restored. If the restore
-        // fails, the file is retained and will be retried next time.
-        
-        script.append("rm ");
-        script.append(rulesFile.getAbsolutePath());
-        script.append(" || exit\n");
-
-        String[] cmd = {script.toString()};
-
-        doShellCommand(context, cmd, true, true);        
+        doShellCommands(context, commands);
     }
 
     private static void flushIpTables(Context context)
@@ -191,19 +165,13 @@ public class TransparentProxyConfig
     {
         String ipTablesPath = getIpTables(context);
         
-        final StringBuilder script = new StringBuilder();        
+        String[] commands = new String[]
+        {
+            ipTablesPath + " -t nat -F",
+            ipTablesPath + " -t filter -F"
+        };
         
-        script.append(ipTablesPath);
-        script.append(" -t nat");
-        script.append(" -F || exit\n");
-        
-        script.append(ipTablesPath);
-        script.append(" -t filter");
-        script.append(" -F || exit\n");
-        
-        String[] cmd = {script.toString()};
-
-        doShellCommand(context, cmd, true, true);        
+        doShellCommands(context, commands);
     }
 
     static final String IPTABLES_SAVED_RULES_SUBDIRECTORY = "saved-iptables-rules";
@@ -333,70 +301,42 @@ public class TransparentProxyConfig
         return getBinaryPath(context, IPTABLES_RESTORE_FILENAME);
     }
 
-    private static void doShellCommand(Context context, String[] cmds, boolean runAsRoot, boolean waitFor)
+    private static void doShellCommands(Context context, String... commands)
             throws PsiphonTransparentProxyException
     {
-        int exitCode = -1;
-        StringBuilder output = new StringBuilder();
-
-        try
-        {
-            Process proc = null;
-            
-            if (runAsRoot)
-            {
-                proc = Runtime.getRuntime().exec("su");
-            }
-            else
-            {
-                proc = Runtime.getRuntime().exec("sh");
-            }
-
-            OutputStreamWriter out = new OutputStreamWriter(proc.getOutputStream());
-            for (int i = 0; i < cmds.length; i++)
-            {
-                out.write(cmds[i]);
-                out.write("\n");
-                out.flush();
-            }
-            
-            out.write("exit\n");
-            out.flush();
-
-            if (waitFor)
-            {            
-                final char buf[] = new char[100];
-                
-                // Consume stdout
-                InputStreamReader reader = new InputStreamReader(proc.getInputStream());
-                int read = 0;
-                while ((read = reader.read(buf)) != -1)
-                {
-                    output.append(buf, 0, read);
-                }
-                
-                // Consume stderr
-                reader = new InputStreamReader(proc.getErrorStream());
-                read = 0;
-                while ((read = reader.read(buf)) != -1)
-                {
-                    output.append(buf, 0, read);
-                }
-                
-                exitCode = proc.waitFor();
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new PsiphonTransparentProxyException(ex.getMessage());
-        }
+        // Run commands one-at-a-time in persistent root shell and abort after the first error
         
-        if (exitCode != 0)
+        for (String command : commands)
         {
-            String message = String.format(context.getString(
-                                    R.string.transparent_proxy_command_failed),
-                                    output.toString());
-            throw new PsiphonTransparentProxyException(message);
+            int exitCode = -1;
+            
+            final StringBuilder outputBuffer = new StringBuilder();
+            try
+            {
+                Command cmd = new Command(0, command)
+                {
+                        @Override
+                        public void output(int id, String line)
+                        {
+                            outputBuffer.append(line);
+                            outputBuffer.append("\n");
+                        }
+                };
+
+                exitCode = RootTools.getShell(true).add(cmd).exitCode(SHELL_COMMAND_TIMEOUT);
+            }
+            catch (Exception ex)
+            {
+                throw new PsiphonTransparentProxyException(ex.getMessage());
+            }
+            
+            if (exitCode != 0)
+            {
+                String message = String.format(context.getString(
+                                        R.string.transparent_proxy_command_failed),
+                                        outputBuffer.toString());
+                throw new PsiphonTransparentProxyException(message);
+            }
         }
     }
 }

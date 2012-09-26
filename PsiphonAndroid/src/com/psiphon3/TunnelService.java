@@ -38,6 +38,7 @@ import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.TransparentProxyConfig.PsiphonTransparentProxyException;
 import com.psiphon3.UpgradeManager;
 import com.psiphon3.Utils.MyLog;
+import com.stericson.RootTools.RootTools;
 
 public class TunnelService extends Service implements Utils.MyLog.ILogger, IStopSignalPending
 {
@@ -343,6 +344,15 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             
             if (PsiphonData.getPsiphonData().getTunnelWholeDevice())
             {
+                if (!RootTools.isAccessGiven())
+                {
+                    // The getTunnelWholeDevice option will only be on when the device
+                    // is rooted, but our app may still be denied su privileges
+                    MyLog.e(R.string.root_access_denied);
+                    runAgain = false;
+                    return runAgain;
+                }
+                
                 // TODO: findAvailablePort is only effective for TCP services
                 int port = Utils.findAvailablePort(PsiphonConstants.DNS_PROXY_PORT, 10);
                 if (port == 0)
@@ -361,7 +371,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 if (!dnsProxy.Start())
                 {
                     // If we can't run the local DNS proxy, abort
-                    throw new TunnelServiceStop();                
+                    runAgain = false;
+                    return runAgain;             
                 }
                 
                 MyLog.i(R.string.dns_proxy_running, PsiphonData.getPsiphonData().getDnsProxyPort());            
@@ -386,7 +397,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 {
                     // If we can't configure the iptables routing, abort
                     MyLog.e(R.string.transparent_proxy_failed, e.getMessage());
-                    throw new TunnelServiceStop();
+                    runAgain = false;
+                    return runAgain;
                 }
                 
                 MyLog.i(R.string.transparent_proxy_running, PsiphonData.getPsiphonData().getTransparentProxyPort());
