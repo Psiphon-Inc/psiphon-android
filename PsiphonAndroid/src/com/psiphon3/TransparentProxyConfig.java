@@ -230,6 +230,7 @@ public class TransparentProxyConfig
         }
         catch (InterruptedException e)
         {
+            Thread.currentThread().interrupt();
         }
         catch (IOException e)
         {

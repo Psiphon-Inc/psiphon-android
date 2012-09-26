@@ -742,7 +742,10 @@ public class Connection
                             {
                                 Thread.sleep(50);
                             }
-                            catch (InterruptedException e) {}
+                            catch (InterruptedException e)
+                            {
+                                Thread.currentThread().interrupt();
+                            }
                             
                             synchronized (state)
                             {
@@ -844,7 +847,10 @@ public class Connection
                 {
                     checkStopSignalThread.join();
                 }
-                catch (InterruptedException e) {}
+                catch (InterruptedException e)
+                {
+                    Thread.currentThread().interrupt();
+                }
             }
 		}
 	}

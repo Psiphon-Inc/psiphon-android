@@ -328,6 +328,7 @@ public interface UpgradeManager
                 } 
                 catch (InterruptedException e)
                 {
+                    Thread.currentThread().interrupt();
                 }
             }
             this.thread = null;

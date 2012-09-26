@@ -260,7 +260,7 @@ public class ServerInterface
         } 
         catch (InterruptedException e)
         {
-            // do what? nothing? 
+            Thread.currentThread().interrupt();
         }
     } 
 

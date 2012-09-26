@@ -100,6 +100,7 @@ public class DnsProxy
             }
             catch (InterruptedException e)
             {
+                Thread.currentThread().interrupt();
             }
             this.serverThread = null;
         }
@@ -146,6 +147,7 @@ public class DnsProxy
             }
             catch (InterruptedException e)
             {
+                Thread.currentThread().interrupt();
             }
             threadPool.shutdownNow();
         }        

@@ -236,7 +236,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         return m_signalQueue.peek() == Signal.STOP_SERVICE;
     }
     
-    private boolean runTunnelOnce() throws InterruptedException
+    private boolean runTunnelOnce()
     {
         PsiphonData.getPsiphonData().setTunnelRelayProtocol("");
         PsiphonData.getPsiphonData().setTunnelSessionID("");
@@ -500,6 +500,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             unexpectedDisconnect = false;
             runAgain = false;
         }
+        catch (InterruptedException e)
+        {
+            runAgain = false;
+        }
         finally
         {
             PsiphonData.getPsiphonData().setTunnelRelayProtocol("");
@@ -617,7 +621,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             {
                 Thread.sleep(1000 + (long)(Math.random()*1000.0));
             }
-            catch (InterruptedException ie) {}
+            catch (InterruptedException ie)
+            {
+                break;
+            }
         }
     }
     
@@ -641,7 +648,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                     {
                         runTunnel();
                     }
-                    catch (InterruptedException e) {}
+                    catch (InterruptedException e)
+                    {
+                        Thread.currentThread().interrupt();
+                    }
                 }
             });
 
@@ -676,7 +686,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 
                 MyLog.w(R.string.stopped_tunnel);
             }
-            catch (InterruptedException e) {}
+            catch (InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
+            }
         }
         
         m_signalQueue = null;
