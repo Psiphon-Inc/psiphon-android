@@ -34,6 +34,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.CheckBox;
@@ -143,6 +144,12 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                     {
                         new AlertDialog.Builder(context)
                             .setCancelable(false)
+                            .setOnKeyListener(
+                                    new DialogInterface.OnKeyListener() {
+                                        public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                                            // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
+                                            return keyCode == KeyEvent.KEYCODE_SEARCH;
+                                        }})
                             .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
                             .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
                             .setPositiveButton(R.string.StatusActivity_WholePhoneTunnelPositiveButton,
