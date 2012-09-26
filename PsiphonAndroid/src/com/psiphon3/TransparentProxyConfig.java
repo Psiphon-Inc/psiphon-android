@@ -75,16 +75,6 @@ public class TransparentProxyConfig
         
         String[] commands = new String[]
         {
-            // Forward all TCP connections, except for Psiphon, through the transparent proxy.
-            // Localhost is excepted
-            // TODO: also except LAN IP address ranges
-            // TODO: test for REDIRECT support and use DNAT when unsupported?
-            ipTablesPath +
-                " -t nat -A OUTPUT -p tcp  ! -d 127.0.0.1 -m owner ! --uid-owner " +
-                psiphonUid +
-                " -m tcp --syn -j REDIRECT --to-ports " +
-                PsiphonData.getPsiphonData().getTransparentProxyPort(),
-
             // Forward all UDP DNS through the DNS proxy, except for Psiphon
             ipTablesPath +
                 " -t nat -A OUTPUT -p udp -m owner ! --uid-owner " +
@@ -98,6 +88,21 @@ public class TransparentProxyConfig
                 " -t nat -A OUTPUT -p tcp -m tcp --syn --dport " +
                 PsiphonConstants.STANDARD_DNS_PORT +
                 " -j REDIRECT --to-ports " +
+                PsiphonData.getPsiphonData().getTransparentProxyPort(),
+
+            // Exclude LAN ranges from remaining rules
+            ipTablesPath + " -t nat -A OUTPUT -d 192.168.0.0/16 -j ACCEPT",
+            ipTablesPath + " -t nat -A OUTPUT -d 172.16.0.0/12 -j ACCEPT",
+            ipTablesPath + " -t nat -A OUTPUT -d 10.0.0.0/8 -j ACCEPT",
+                
+            // Forward all TCP connections, except for Psiphon, through the transparent proxy.
+            // Localhost is excepted (as are LAN ranges, which match the ACCEPT rules above)
+            // TODO: test for REDIRECT support and use DNAT when unsupported?
+                
+            ipTablesPath +
+                " -t nat -A OUTPUT -p tcp  ! -d 127.0.0.1 -m owner ! --uid-owner " +
+                psiphonUid +
+                " -m tcp --syn -j REDIRECT --to-ports " +
                 PsiphonData.getPsiphonData().getTransparentProxyPort()
         };
         
