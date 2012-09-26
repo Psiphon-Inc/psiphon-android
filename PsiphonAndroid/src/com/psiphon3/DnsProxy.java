@@ -75,11 +75,13 @@ public class DnsProxy
         catch(SocketException e)
         {
             MyLog.e(R.string.dns_proxy_failed, e);
+            this.serverSocket.close();
             return false;
         }
         catch (UnknownHostException e)
         {
             MyLog.e(R.string.dns_proxy_failed, e);
+            this.serverSocket.close();
             return false;
         }
         
@@ -102,6 +104,7 @@ public class DnsProxy
             {
                 Thread.currentThread().interrupt();
             }
+            this.serverSocket.close();
             this.serverThread = null;
         }
     }
