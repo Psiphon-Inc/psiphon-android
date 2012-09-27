@@ -88,10 +88,10 @@ public class TransparentProxyConfig
                 " -j REDIRECT --to-ports " +
                 PsiphonData.getPsiphonData().getTransparentProxyPort(),
 
-            // Exclude LAN ranges from remaining rules
-            ipTablesPath + " -t nat -A psiphon -d 192.168.0.0/16 -j ACCEPT",
-            ipTablesPath + " -t nat -A psiphon -d 172.16.0.0/12 -j ACCEPT",
-            ipTablesPath + " -t nat -A psiphon -d 10.0.0.0/8 -j ACCEPT",
+            // Exclude LAN ranges from remaining rules (return to parent chain)
+            ipTablesPath + " -t nat -A psiphon -d 192.168.0.0/16 -j RETURN",
+            ipTablesPath + " -t nat -A psiphon -d 172.16.0.0/12 -j RETURN",
+            ipTablesPath + " -t nat -A psiphon -d 10.0.0.0/8 -j RETURN",
                 
             // Forward all TCP connections, except for Psiphon, through the transparent proxy.
             // Localhost is excepted (as are LAN ranges, which match the ACCEPT rules above)
