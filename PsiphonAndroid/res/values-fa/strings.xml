@@ -86,5 +86,5 @@
   <string name="root_access_denied">دسترسی روت امکان پذیر نیست</string>
   <string name="psiphon_stopped">سایفون متوقف شد</string>
   <string name="psiphon_running_whole_device">سایفون در حالت تمام موبایل در حال اجراست</string>
-  <string name="psiphon_running_browser_only"فقط مرورگر سایفون در حال اجراست</string>
+  <string name="psiphon_running_browser_only">فقط مرورگر سایفون در حال اجراست</string>
 </resources>
