@@ -81,6 +81,10 @@
   <string name="tunnel_whole_device_toggle">تمام دستگاه را پراکسی کن</string>
   <string name="StatusActivity.WholeDeviceTunnelPromptTitle">تمام دستگاه را پراکسی کن؟</string>
   <string name="StatusActivity.WholeDeviceTunnelPromptMessage">امکان پراکسی تمام دستگاه برای شما موجود است. با این امکان، ارتباط و ترافیک تمامی آپلیکیشن ها و مرورگرهای شما از طریق سایفون انجام میشود. اگرمایل به استفاده ی این امکان نیستید، میتوانید فقط از مروگر سایفون استفاده کنید و از ارتباط مستقیم برای اپلیکیشن ها و مرور گر های دیگرتان استفاده کنید</string>
-  <string name="StatusActivity.WholePhoneTunnelPositiveButton">تمام دستگاه را پراکسی کن</string>
-  <string name="StatusActivity.WholePhoneTunnelNegativeButton">فقط از مرورگر سایفون استفاده کن</string>
+  <string name="StatusActivity.WholeDeviceTunnelPositiveButton">تمام دستگاه را پراکسی کن</string>
+  <string name="StatusActivity.WholeDeviceTunnelNegativeButton">فقط از مرورگر سایفون استفاده کن</string>
+  <string name="root_access_denied">دسترسی روت امکان پذیر نیست</string>
+  <string name="psiphon_stopped">سایفون متوقف شد</string>
+  <string name="psiphon_running_whole_device">سایفون در حالت تمام موبایل در حال اجراست</string>
+  <string name="psiphon_running_browser_only"فقط مرورگر سایفون در حال اجراست</string>
 </resources>
