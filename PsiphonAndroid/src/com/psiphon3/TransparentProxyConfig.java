@@ -62,22 +62,20 @@ public class TransparentProxyConfig
     public static void setupTransparentProxyRouting(Context context)
             throws PsiphonTransparentProxyException
     {
+        // Ensure any dangling Psiphon configuration has been removed.
+        teardownTransparentProxyRouting(context);
+
         String ipTablesPath = getIpTables(context);
         int psiphonUid = context.getApplicationInfo().uid;
         
-        // Store existing iptables configuration to be restored later on. This
-        // will help with compatibility with other apps using iptables, although
-        // we'll still have conflicts if they're running at the same time.
-
-        saveIpTables(context);
-        
-        flushIpTables(context);
-        
         String[] commands = new String[]
         {
+            // Create a user-defined chain to hold the Psiphon rules
+            ipTablesPath + " -t nat -N psiphon",
+                
             // Forward all UDP DNS through the DNS proxy, except for Psiphon
             ipTablesPath +
-                " -t nat -A OUTPUT -p udp -m owner ! --uid-owner " +
+                " -t nat -A psiphon -p udp -m owner ! --uid-owner " +
                 psiphonUid + " -m udp --dport " +
                 PsiphonConstants.STANDARD_DNS_PORT +
                 " -j REDIRECT --to-ports " +
@@ -85,25 +83,28 @@ public class TransparentProxyConfig
 
             // Forward TCP DNS through transparent proxy (including the Psiphon DNS proxy requests)
             ipTablesPath +
-                " -t nat -A OUTPUT -p tcp -m tcp --syn --dport " +
+                " -t nat -A psiphon -p tcp -m tcp --syn --dport " +
                 PsiphonConstants.STANDARD_DNS_PORT +
                 " -j REDIRECT --to-ports " +
                 PsiphonData.getPsiphonData().getTransparentProxyPort(),
 
             // Exclude LAN ranges from remaining rules
-            ipTablesPath + " -t nat -A OUTPUT -d 192.168.0.0/16 -j ACCEPT",
-            ipTablesPath + " -t nat -A OUTPUT -d 172.16.0.0/12 -j ACCEPT",
-            ipTablesPath + " -t nat -A OUTPUT -d 10.0.0.0/8 -j ACCEPT",
+            ipTablesPath + " -t nat -A psiphon -d 192.168.0.0/16 -j ACCEPT",
+            ipTablesPath + " -t nat -A psiphon -d 172.16.0.0/12 -j ACCEPT",
+            ipTablesPath + " -t nat -A psiphon -d 10.0.0.0/8 -j ACCEPT",
                 
             // Forward all TCP connections, except for Psiphon, through the transparent proxy.
             // Localhost is excepted (as are LAN ranges, which match the ACCEPT rules above)
             // TODO: test for REDIRECT support and use DNAT when unsupported?
                 
             ipTablesPath +
-                " -t nat -A OUTPUT -p tcp  ! -d 127.0.0.1 -m owner ! --uid-owner " +
+                " -t nat -A psiphon -p tcp  ! -d 127.0.0.1 -m owner ! --uid-owner " +
                 psiphonUid +
                 " -m tcp --syn -j REDIRECT --to-ports " +
-                PsiphonData.getPsiphonData().getTransparentProxyPort()
+                PsiphonData.getPsiphonData().getTransparentProxyPort(),
+            
+            // Insert the Psiphon rules at the start of the OUTPUT chain
+            ipTablesPath + " -t nat -I OUTPUT -j psiphon"
         };
         
         doShellCommands(context, commands);
@@ -112,79 +113,35 @@ public class TransparentProxyConfig
     public static void teardownTransparentProxyRouting(Context context)
             throws PsiphonTransparentProxyException
     {
-        // (Do an explict flush in case the restore does nothing)
+        String ipTablesPath = getIpTables(context);
         
-        flushIpTables(context);
-
-        restoreIpTables(context);
-    }
-
-    private static void saveIpTables(Context context)
-            throws PsiphonTransparentProxyException
-    {
-        String ipTablesSavePath = getIpTablesSave(context);
-
-        File rulesFile = new File(
-                context.getDir(IPTABLES_SAVED_RULES_SUBDIRECTORY, Context.MODE_PRIVATE),
-                IPTABLES_SAVED_RULES_FILENAME);
-
-        final StringBuilder script = new StringBuilder();        
-        
-        // If the rules file already exists, assume it's there because
-        // of a failed restore and don't overwrite it. That way the original
-        // rules from the previous save will still be restored.
-
-        // NOTE: this  isn't completely robust. A user may have manually
-        // (or via DroidWall) repaired rules after a failed restore and
-        // this logic will ignore those changes.
-        
-        if (!rulesFile.exists())
+        boolean psiphonChainExists = false;
+        try
         {
-            doShellCommands(context, ipTablesSavePath + " > " + rulesFile.getAbsolutePath());
+            // Check if user-defined Psiphon chain exists
+            doShellCommands(context, ipTablesPath + " -t nat -F psiphon");
+            psiphonChainExists = true;
+        }
+        catch (PsiphonTransparentProxyException e)
+        {
+            // Assume this is the "No chain/target/match by that name." error
+        }
+        
+        if (psiphonChainExists)
+        {
+            String[] commands = new String[]
+            {
+                // Delete the user-defined Psiphon chain
+                ipTablesPath + " -t nat -F psiphon",
+                ipTablesPath + " -t nat -D OUTPUT -j psiphon",
+                ipTablesPath + " -t nat -X psiphon",
+            };
+            
+            doShellCommands(context, commands);
         }
     }
 
-    private static void restoreIpTables(Context context)
-            throws PsiphonTransparentProxyException
-    {
-        String ipTablesRestorePath = getIpTablesRestore(context);
-        
-        File rulesFile = new File(
-                context.getDir(IPTABLES_SAVED_RULES_SUBDIRECTORY, Context.MODE_PRIVATE),
-                IPTABLES_SAVED_RULES_FILENAME);
-
-        String[] commands = new String[]
-        {
-            ipTablesRestorePath + " < " + rulesFile.getAbsolutePath(),
-            
-            // Remove the rules file when successfully restored. If the restore
-            // fails, the file is retained and will be retried next time.
-            "rm " + rulesFile.getAbsolutePath()
-        };
-        
-        doShellCommands(context, commands);
-    }
-
-    private static void flushIpTables(Context context)
-            throws PsiphonTransparentProxyException
-    {
-        String ipTablesPath = getIpTables(context);
-        
-        String[] commands = new String[]
-        {
-            ipTablesPath + " -t nat -F",
-            ipTablesPath + " -t filter -F"
-        };
-        
-        doShellCommands(context, commands);
-    }
-
-    static final String IPTABLES_SAVED_RULES_SUBDIRECTORY = "saved-iptables-rules";
-    static final String IPTABLES_SAVED_RULES_FILENAME = "iptables.rules";
-
     static final String IPTABLES_FILENAME = "iptables";
-    static final String IPTABLES_SAVE_FILENAME = "iptables-save";
-    static final String IPTABLES_RESTORE_FILENAME = "iptables-restore";
 
     static final String IPTABLES_BUNDLED_ARM7_BINARIES_SUFFIX = "_arm7.zip";
     static final String IPTABLES_BUNDLED_ARM_BINARIES_SUFFIX = "_arm.zip";
@@ -293,18 +250,6 @@ public class TransparentProxyConfig
             throws PsiphonTransparentProxyException
     {
         return getBinaryPath(context, IPTABLES_FILENAME);
-    }
-
-    private static String getIpTablesSave(Context context)
-            throws PsiphonTransparentProxyException
-    {
-        return getBinaryPath(context, IPTABLES_SAVE_FILENAME);
-    }
-
-    private static String getIpTablesRestore(Context context)
-            throws PsiphonTransparentProxyException
-    {
-        return getBinaryPath(context, IPTABLES_RESTORE_FILENAME);
     }
 
     private static void doShellCommands(Context context, String... commands)
