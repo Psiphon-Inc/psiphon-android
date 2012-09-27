@@ -22,6 +22,6 @@
 <TableRow xmlns:android="http://schemas.android.com/apk/res/android">
     <ImageView
         android:id="@+id/MessageRow.Image"
-        android:layout_gravity="left"/>
+        android:layout_gravity="right"/>
     <TextView android:id="@+id/MessageRow.Text"/>
 </TableRow>

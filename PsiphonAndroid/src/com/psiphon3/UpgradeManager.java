@@ -104,7 +104,7 @@ public interface UpgradeManager
                 // "If the file exists but is a directory rather than a regular 
                 //  file, does not exist but cannot be created, or cannot be 
                 //  opened for any other reason then a FileNotFoundException is thrown."
-                MyLog.e(R.string.UpgradeManager_UpgradeFileNotFound, e);
+                MyLog.w(R.string.UpgradeManager_UpgradeFileNotFound, e);
                 return false;
             }
             
@@ -115,7 +115,7 @@ public interface UpgradeManager
             } 
             catch (IOException e)
             {
-                MyLog.e(R.string.UpgradeManager_UpgradeFileWriteFailed, e);
+                MyLog.w(R.string.UpgradeManager_UpgradeFileWriteFailed, e);
                 return false;
             }
             
@@ -182,7 +182,7 @@ public interface UpgradeManager
             {
                 // There's probably something wrong with the upgrade file.
                 file.delete();
-                MyLog.e(R.string.UpgradeManager_CannotExtractUpgradePackageInfo);
+                MyLog.w(R.string.UpgradeManager_CannotExtractUpgradePackageInfo);
                 return false;
             }
             
@@ -198,7 +198,7 @@ public interface UpgradeManager
             {
                 // This really shouldn't happen -- we're getting info about the 
                 // current package, which clearly exists.
-                MyLog.e(R.string.UpgradeManager_CanNotRetrievePackageInfo, e);
+                MyLog.w(R.string.UpgradeManager_CanNotRetrievePackageInfo, e);
                 return false;
             }
             
@@ -369,7 +369,7 @@ public interface UpgradeManager
                 return;
             }
             
-            MyLog.i(R.string.UpgradeManager_UpgradeDownloaded);
+            MyLog.v(R.string.UpgradeManager_UpgradeDownloaded);
         }
     }
 }

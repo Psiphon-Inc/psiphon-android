@@ -29,6 +29,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences.Editor;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -86,7 +87,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, isRooted);        
         m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
         // Use PsiphonData to communicate the setting to the TunnelService so it doesn't need to
-        // repeat the isRooted check. The preference is retained even if the phone becomes "unrooted"
+        // repeat the isRooted check. The preference is retained even if the device becomes "unrooted"
         // and that's why setTunnelWholeDevice != tunnelWholeDevicePreference.
         PsiphonData.getPsiphonData().setTunnelWholeDevice(isRooted && tunnelWholeDevicePreference);
         
@@ -153,14 +154,14 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                                         }})
                             .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
                             .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
-                            .setPositiveButton(R.string.StatusActivity_WholePhoneTunnelPositiveButton,
+                            .setPositiveButton(R.string.StatusActivity_WholeDeviceTunnelPositiveButton,
                                     new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int whichButton) {
                                             // Persist the "on" setting
                                             updateWholeDevicePreference(true);
                                             startService(new Intent(context, TunnelService.class));
                                         }})
-                            .setNegativeButton(R.string.StatusActivity_WholePhoneTunnelNegativeButton,
+                            .setNegativeButton(R.string.StatusActivity_WholeDeviceTunnelNegativeButton,
                                         new DialogInterface.OnClickListener() {
                                             public void onClick(DialogInterface dialog, int whichButton) {
                                                 // Turn off and persist the "off" setting
@@ -318,48 +319,44 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         }
     }
     
-    public static final int MESSAGE_CLASS_INFO = 0;
-    public static final int MESSAGE_CLASS_ERROR = 1;
-    public static final int MESSAGE_CLASS_DEBUG = 2;
-    public static final int MESSAGE_CLASS_WARNING = 3;
+    public static final int MESSAGE_CLASS_VERBOSE = 0;
+    public static final int MESSAGE_CLASS_INFO = 1;
+    public static final int MESSAGE_CLASS_WARNING = 2;
+    public static final int MESSAGE_CLASS_ERROR = 3;
+    public static final int MESSAGE_CLASS_DEBUG = 4;
     
     public void addMessage(String message, int messageClass)
     {
-        int messageClassImageRes = 0;
-        int messageClassImageDesc = 0;
+        int messageClassImageRes = -1;
+        boolean boldText = true;
+
         switch (messageClass)
         {
         case MESSAGE_CLASS_INFO:
             messageClassImageRes = android.R.drawable.presence_online;
-            messageClassImageDesc = R.string.message_image_success_desc;
             break;
         case MESSAGE_CLASS_ERROR:
             messageClassImageRes = android.R.drawable.presence_busy;
-            messageClassImageDesc = R.string.message_image_error_desc;
             break;
-        case MESSAGE_CLASS_DEBUG:
-            messageClassImageRes = android.R.drawable.presence_offline;
-            messageClassImageDesc = R.string.message_image_debug_desc;
-            break;
-        case MESSAGE_CLASS_WARNING:
-            messageClassImageRes = android.R.drawable.presence_invisible;
-            messageClassImageDesc = R.string.message_image_warning_desc;
+        default:
+            // No image
+            boldText = false;
             break;
         }
         
-        // 
-        // Get the message row template and fill it in
-        // 
         
         LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View rowView = inflater.inflate(R.layout.message_row, null);
         
         TextView textView = (TextView)rowView.findViewById(R.id.MessageRow_Text);
         textView.setText(message);
+        textView.setTypeface(boldText ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
         
         ImageView imageView = (ImageView)rowView.findViewById(R.id.MessageRow_Image);
-        imageView.setImageResource(messageClassImageRes);
-        imageView.setContentDescription(getResources().getText(messageClassImageDesc));
+        if (messageClassImageRes != -1)
+        {
+            imageView.setImageResource(messageClassImageRes);
+        }
         
         m_messagesTableLayout.addView(rowView);
         
@@ -405,12 +402,14 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         {
         case Log.ERROR:
             return StatusActivity.MESSAGE_CLASS_ERROR;
+        case Log.WARN:
+            return StatusActivity.MESSAGE_CLASS_WARNING;
         case Log.INFO:
             return StatusActivity.MESSAGE_CLASS_INFO;
         case Log.DEBUG:
             return StatusActivity.MESSAGE_CLASS_DEBUG;
         default:
-            return StatusActivity.MESSAGE_CLASS_WARNING;
+            return StatusActivity.MESSAGE_CLASS_VERBOSE;
         }
     }
 

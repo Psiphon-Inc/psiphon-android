@@ -295,6 +295,16 @@ public class Utils {
             MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.ERROR);
         }
         
+        static void w(int stringResID, Object... formatArgs)
+        {
+            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.WARN);
+        }
+
+        static void w(int stringResID, Throwable throwable)
+        {
+            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.WARN);
+        }
+        
         static void i(int stringResID, Object... formatArgs)
         {
             MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.INFO);
@@ -305,14 +315,14 @@ public class Utils {
             MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.INFO);
         }
         
-        static void w(int stringResID, Object... formatArgs)
+        static void v(int stringResID, Object... formatArgs)
         {
-            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.WARN);
+            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.VERBOSE);
         }
 
-        static void w(int stringResID, Throwable throwable)
+        static void v(int stringResID, Throwable throwable)
         {
-            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.WARN);
+            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.VERBOSE);
         }
         
         private static void println(String msg, Throwable throwable, int priority)

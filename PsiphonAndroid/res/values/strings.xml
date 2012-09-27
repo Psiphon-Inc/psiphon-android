@@ -78,8 +78,11 @@
     <string name="iptables_binary_not_found">Cannot find iptables implementation required for transparent proxy</string>
     <string name="StatusActivity.WholeDeviceTunnelPromptTitle">Tunnel the whole device?</string>
     <string name="StatusActivity.WholeDeviceTunnelPromptMessage">The whole device tunnel option is available for your device.\n\nWith this option, all of your Internet traffic for all apps including all browsers will be tunneled through Psiphon.\n\nAlternatively, you can choose to tunnel only the bundled Psiphon browser which will leave all other apps going directly through your standard Internet connection.</string>
-    <string name="StatusActivity.WholePhoneTunnelPositiveButton">Tunnel Whole Device</string>
-    <string name="StatusActivity.WholePhoneTunnelNegativeButton">Use Psiphon Browser Only</string>
+    <string name="StatusActivity.WholeDeviceTunnelPositiveButton">Tunnel Whole Device</string>
+    <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Use Psiphon Browser Only</string>
     <string name="root_access_denied">Root access denied</string>
+    <string name="psiphon_stopped">Psiphon is stopped</string>
+    <string name="psiphon_running_whole_device">Psiphon is running in whole device mode</string>
+    <string name="psiphon_running_browser_only">Psiphon is running in browser-only mode</string>
 
 </resources>
