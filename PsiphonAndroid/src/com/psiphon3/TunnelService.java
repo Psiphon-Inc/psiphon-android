@@ -283,6 +283,21 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 
                 MyLog.v(R.string.checking_for_root_access);
 
+                // Check root access
+                //
+                // Some known Superuser/RootTools/Psiphon limitations:
+                // - The root-check timeout will block tunnel shutdown. It's now 10 seconds instead of 5 seconds because it's best
+                //   when the user responds within the first time period (see race condition note below). This is mitigated by the
+                //   fact that you can't click Quit with the Superuser prompt up.
+                // - Clicking Home and presumably other app switch methods loses the Superuser prompt -- but doesn't stop the root-check
+                //   waiting on it. The timeout loop will cause the prompt to re-appear (even over the home screen).
+                // - There's a frequently exhibiting race condition between clicking the prompt and the timeout, so often you can click
+                //   Deny or Allow and get asked again right away. The "remember" option mitigates this. And the increase to 10 seconds
+                //   also mitigates this.
+                // - Could probably make the root-check timeout not block the tunnel shutdown and so lengthen the timeout, but there's
+                //   another limiting factor that keeps that timeout short-ish: the Runtime.getRuntime.exec() hang bug. This code *needs*
+                //   to timeout and kill the proc and retry without waiting forever.                
+                
                 while (true)
                 {
                     // The getTunnelWholeDevice option will only be on when the device
