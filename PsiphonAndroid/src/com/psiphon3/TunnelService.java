@@ -163,8 +163,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 	
 	    notification.setLatestEventInfo(
 	        this,
+	        getText(R.string.app_name),
 	        getText(contentTextID),
-	        null,
 	        invokeActivityIntent); 
     	
     	return notification;
