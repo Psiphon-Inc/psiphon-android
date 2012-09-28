@@ -265,6 +265,22 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         
         try
         {            
+            boolean tunnelWholeDevice = PsiphonData.getPsiphonData().getTunnelWholeDevice();
+            
+            if (tunnelWholeDevice)
+            {
+                // Check for required root access *before* establishing the SSH connection
+                
+                if (!RootTools.isAccessGiven())
+                {
+                    // The getTunnelWholeDevice option will only be on when the device
+                    // is rooted, but our app may still be denied su privileges
+                    MyLog.e(R.string.root_access_denied);
+                    runAgain = false;
+                    return runAgain;
+                }
+            }
+
             checkSignals(0);
 
             MyLog.v(R.string.ssh_connecting);
@@ -341,15 +357,15 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             MyLog.v(R.string.http_proxy_running, PsiphonData.getPsiphonData().getHttpProxyPort());
             
             // Start transparent proxy, DNS proxy, and iptables config
-            
-            boolean tunnelWholeDevice = PsiphonData.getPsiphonData().getTunnelWholeDevice();
-            
+                        
             if (tunnelWholeDevice)
             {
+                // Re-check for required root access again, since the connection time
+                // would allow the user to go into SuperUser and revoke. This is just
+                // for a more graceful error message.
+                
                 if (!RootTools.isAccessGiven())
                 {
-                    // The getTunnelWholeDevice option will only be on when the device
-                    // is rooted, but our app may still be denied su privileges
                     MyLog.e(R.string.root_access_denied);
                     runAgain = false;
                     return runAgain;

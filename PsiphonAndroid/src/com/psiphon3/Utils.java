@@ -414,6 +414,39 @@ public class Utils {
         return debug;
     }
 
+    public static boolean isRooted()
+    {
+        //Method 1 check for presence of 'test-keys' in the build tags 
+        String buildTags = android.os.Build.TAGS;
+        if (buildTags != null && buildTags.contains("test-keys")) {
+            return true;
+        }
+        
+        //Method 2 check for presence of Superuser app
+        try {
+            File file = new File("/system/app/Superuser.apk");
+            if (file.exists()) {
+                return true;
+            }
+        } catch (Exception e) { }
+        
+        //Method 3 check for presence of 'su' in the PATH
+        String path = null;
+        Map<String,String> env = System.getenv();
+
+        if (env != null && (path = env.get("PATH")) != null) {
+            String [] dirs = path.split(":");
+            for (String dir : dirs){
+                String suPath = dir + "/" + "su";
+                File suFile = new File(suPath);
+                if (suFile != null && suFile.exists()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
     public static String getISO8601String()
     {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);

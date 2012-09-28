@@ -82,7 +82,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
 
         // "Tunnel Whole Device" option is only available on rooted
         // devices and defaults to true on rooted devices.
-        boolean isRooted = RootTools.isRootAvailable();
+        boolean isRooted = Utils.isRooted();
         m_tunnelWholeDeviceToggle.setEnabled(isRooted);
         boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, isRooted);        
         m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
