@@ -281,13 +281,32 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             {
                 // Check for required root access *before* establishing the SSH connection
                 
-                if (!RootTools.isAccessGiven())
+                MyLog.v(R.string.checking_for_root_access);
+
+                while (true)
                 {
                     // The getTunnelWholeDevice option will only be on when the device
                     // is rooted, but our app may still be denied su privileges
-                    MyLog.e(R.string.root_access_denied);
-                    runAgain = false;
-                    return runAgain;
+                    int result = RootTools.isAccessGiven();
+                    if (result == 0)
+                    {
+                        // Root access denied
+                        MyLog.e(R.string.root_access_denied);
+                        runAgain = false;
+                        return runAgain;                        
+                    }
+                    else if (result == 1)
+                    {
+                        // Root access granted
+                        break;
+                    }
+                    else
+                    {
+                        // Timeout/unknown (user hasn't responded to prompt)
+                        // ...fall through to checkSignals and then try again
+                    }
+                    
+                    checkSignals(0);
                 }
             }
 
@@ -370,17 +389,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                         
             if (tunnelWholeDevice)
             {
-                // Re-check for required root access again, since the connection time
-                // would allow the user to go into SuperUser and revoke. This is just
-                // for a more graceful error message.
-                
-                if (!RootTools.isAccessGiven())
-                {
-                    MyLog.e(R.string.root_access_denied);
-                    runAgain = false;
-                    return runAgain;
-                }
-                
                 // TODO: findAvailablePort is only effective for TCP services
                 int port = Utils.findAvailablePort(PsiphonConstants.DNS_PROXY_PORT, 10);
                 if (port == 0)
