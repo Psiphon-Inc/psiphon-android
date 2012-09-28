@@ -288,6 +288,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     
     private boolean runTunnelOnce()
     {
+    	setState(State.CONNECTING);
+    	
         PsiphonData.getPsiphonData().setTunnelRelayProtocol("");
         PsiphonData.getPsiphonData().setTunnelSessionID("");
 
@@ -321,9 +323,12 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 
             while (!Utils.hasNetworkConnectivity(this))
             {
+            	setState(State.DISCONNECTED);
                 // Sleep 1 second before checking again
                 checkSignals(1);
-            }            
+            }
+            
+            setState(State.CONNECTING);
             
             boolean tunnelWholeDevice = PsiphonData.getPsiphonData().getTunnelWholeDevice();
             
