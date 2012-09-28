@@ -82,4 +82,10 @@
   <string name="StatusActivity.WholeDeviceTunnelPromptMessage">我们提供隧道整个设备的选项。使用此选项，你的网络流量为了所有的应用程序，包括所有的浏览器将会隧道通过赛风。或者，您可以选择隧道只赛风浏览器，以及所有其他应用程序将直接连接通过你的标准网络连接。</string>
   <string name="StatusActivity.WholeDeviceTunnelPositiveButton">隧道整个设备</string>
   <string name="StatusActivity.WholeDeviceTunnelNegativeButton">只使用赛风浏览器</string>
+  <string name="root_access_denied">植根访问权限被拒绝</string>
+  <string name="psiphon_stopped">赛风停止了</string>
+  <string name="psiphon_running_whole_device">赛风运行在整个设备上的模式</string>
+  <string name="psiphon_running_browser_only">赛风运行在只浏览器的模式</string>
+  <string name="waiting_for_network_connectivity">等待网络连接...</string>
+  <string name="checking_for_root_access">检查的植根访问权限...</string>
 </resources>
