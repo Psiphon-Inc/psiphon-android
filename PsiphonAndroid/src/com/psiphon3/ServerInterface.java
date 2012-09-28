@@ -79,7 +79,6 @@ import org.json.JSONObject;
 
 import com.psiphon3.ServerEntryAuth.ServerEntryAuthException;
 import com.psiphon3.Utils.MyLog;
-import com.stericson.RootTools.RootTools;
 
 import android.content.Context;
 import android.os.SystemClock;
@@ -705,7 +704,7 @@ public class ServerInterface
         String clientPlatform = PsiphonConstants.PLATFORM;
         
         // Detect if device is rooted and append to the client_platform string
-        if (RootTools.isRootAvailable())
+        if (Utils.isRooted())
         {
             clientPlatform += PsiphonConstants.ROOTED;
         }

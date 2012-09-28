@@ -46,10 +46,8 @@ import android.widget.TextView;
 
 import com.psiphon3.PsiphonData.StatusMessage;
 import com.psiphon3.UpgradeManager;
-import com.psiphon3.UpgradeManager.UpgradeFile;
 import com.psiphon3.UpgradeManager.UpgradeInstaller;
 import com.psiphon3.Utils.MyLog;
-import com.stericson.RootTools.RootTools;
 
 
 public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
