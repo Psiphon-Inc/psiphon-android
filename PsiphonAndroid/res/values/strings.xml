@@ -84,5 +84,6 @@
     <string name="psiphon_stopped">Psiphon is stopped</string>
     <string name="psiphon_running_whole_device">Psiphon is running in whole device mode</string>
     <string name="psiphon_running_browser_only">Psiphon is running in browser-only mode</string>
+    <string name="waiting_for_network_connectivity">Waiting for network connectivity...</string>
 
 </resources>

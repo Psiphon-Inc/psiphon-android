@@ -264,7 +264,17 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         boolean cleanupTransparentProxyRouting = false;
         
         try
-        {            
+        {
+            // Wait for network connectivity before proceeding
+
+            MyLog.v(R.string.waiting_for_network_connectivity);
+
+            while (!Utils.hasNetworkConnectivity(this))
+            {
+                // Sleep 1 second before checking again
+                checkSignals(1);
+            }            
+            
             boolean tunnelWholeDevice = PsiphonData.getPsiphonData().getTunnelWholeDevice();
             
             if (tunnelWholeDevice)
