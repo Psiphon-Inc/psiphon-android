@@ -5,8 +5,6 @@
     <string name="banner_desc">sponsor banner; click to visit sponsor home page</string>
     <string name="start_desc">connect to Psiphon; click to connect</string>
     <string name="message_image_success_desc">icon indicating a success message</string><string name="message_image_error_desc">icon indicating an error message</string><string name="message_image_debug_desc">icon indicating a debug message</string><string name="message_image_warning_desc">icon indicating a warning message</string>
-    <string name="psiphon_service_notification_id">Psiphon Service Notification</string>
-    <string name="psiphon_service_notification_message">Psiphon 3 is running...</string>
     <string name="ssh_connecting">SSH connecting...</string>
     <string name="ssh_connected">SSH connected</string><string name="ssh_connection_failed">SSH connection failed</string>
     <string name="ssh_authenticating">SSH authenticating...</string>
@@ -86,4 +84,6 @@
     <string name="psiphon_running_browser_only">Psiphon is running in browser-only mode</string>
     <string name="waiting_for_network_connectivity">Waiting for network connectivity...</string>
     <string name="checking_for_root_access">Checking for root access...</string>
+    <string name="psiphon_service_notification_message_connecting">Psiphon 3 is connecting...</string>
+    <string name="psiphon_service_notification_id">Psiphon Service Notification</string>
 </resources>

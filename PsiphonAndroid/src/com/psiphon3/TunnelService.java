@@ -25,8 +25,10 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
@@ -53,6 +55,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     private Thread m_tunnelThread;
     private ServerInterface m_interface;
     private UpgradeManager.UpgradeDownloader m_upgradeDownloader;
+    private boolean m_destroyed = false;
 
     enum Signal
     {
@@ -102,32 +105,70 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     @Override
     public void onDestroy()
     {
+    	m_destroyed = true;
         stopTunnel();
     }
 
     private void doForeground()
     {
-        Notification notification =
-            new Notification(
-                R.drawable.notification_icon,
-                getText(R.string.app_name),
-                System.currentTimeMillis());
-
+        startForeground(R.string.psiphon_service_notification_id, this.createNotification());
+    }
+    
+    private Notification createNotification()
+    {
+    	int contentTextID = -1;
+    	int iconID = -1;
+    	
+    	switch (getState())
+    	{
+    	case CONNECTING:
+    		contentTextID = R.string.psiphon_service_notification_message_connecting;
+    		iconID = R.drawable.notification_icon_connecting;
+    		break;
+    		
+    	case CONNECTED:
+    		if (PsiphonData.getPsiphonData().getTunnelWholeDevice())
+    		{
+	    		contentTextID = R.string.psiphon_running_whole_device;
+    		}
+    		else
+    		{
+    			contentTextID = R.string.psiphon_running_browser_only;
+    		}
+    		
+    		iconID = R.drawable.notification_icon_connected;
+    		break;
+    		
+    	case DISCONNECTED:
+    		contentTextID = R.string.psiphon_stopped;
+    		iconID = R.drawable.notification_icon_disconnected;
+    		break;
+    	
+		default:
+			assert(false);    			
+    	}
+    	
         PendingIntent invokeActivityIntent = 
-            PendingIntent.getActivity(
-                this,
-                0,
-                Events.pendingSignalNotification(this),
-                PendingIntent.FLAG_UPDATE_CURRENT);
+                PendingIntent.getActivity(
+                    this,
+                    0,
+                    Events.pendingSignalNotification(this),
+                    PendingIntent.FLAG_UPDATE_CURRENT);
 
-        notification.setLatestEventInfo(
-            this,
-            getText(R.string.psiphon_service_notification_message),
-            getText(R.string.app_name),
-            invokeActivityIntent);
-
-        startForeground(R.string.psiphon_service_notification_id, notification);
-    }    
+	    Notification notification =
+	            new Notification(
+	            		iconID,
+		                getText(R.string.app_name),
+		                System.currentTimeMillis());
+	
+	    notification.setLatestEventInfo(
+	        this,
+	        getText(contentTextID),
+	        null,
+	        invokeActivityIntent); 
+    	
+    	return notification;
+    }
 
     /**
      * Utils.MyLog.ILogger implementation
@@ -171,6 +212,15 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     private synchronized void setState(State newState)
     {
         m_state = newState;
+        
+        if (!this.m_destroyed)
+        {
+        	String ns = Context.NOTIFICATION_SERVICE;
+        	NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);
+            mNotificationManager.notify(
+            		R.string.psiphon_service_notification_id, 
+            		createNotification());
+        }
     }
     
     class Monitor implements ConnectionMonitor
