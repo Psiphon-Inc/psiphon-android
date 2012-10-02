@@ -21,17 +21,24 @@ package com.psiphon3;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.AlertDialog;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences.Editor;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TableLayout;
@@ -50,9 +57,12 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     public static final String ADD_MESSAGE_CLASS = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_CLASS";
     public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
     public static final String UNEXPECTED_DISCONNECT = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT";
+    public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
     
     private TableLayout m_messagesTableLayout;
     private ScrollView m_messagesScrollView;
+    private CheckBox m_tunnelWholeDeviceToggle;
+    private boolean m_tunnelWholeDevicePromptShown = false;
     private LocalBroadcastManager m_localBroadcastManager;
     
     @Override
@@ -66,7 +76,19 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         
         m_messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
         m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
+        m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
 
+        // "Tunnel Whole Device" option is only available on rooted
+        // devices and defaults to true on rooted devices.
+        boolean isRooted = Utils.isRooted();
+        m_tunnelWholeDeviceToggle.setEnabled(isRooted);
+        boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, isRooted);        
+        m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
+        // Use PsiphonData to communicate the setting to the TunnelService so it doesn't need to
+        // repeat the isRooted check. The preference is retained even if the device becomes "unrooted"
+        // and that's why setTunnelWholeDevice != tunnelWholeDevicePreference.
+        PsiphonData.getPsiphonData().setTunnelWholeDevice(isRooted && tunnelWholeDevicePreference);
+        
         // Note that this must come after the above lines, or else the activity
         // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
         PsiphonConstants.DEBUG = Utils.isDebugMode(this);
@@ -107,8 +129,67 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             
             @Override public void upgradeNotStarted()
             {
-                // Start tunnel service (if not already running)
-                startService(new Intent(context, TunnelService.class));
+                // The "normal" Resume code path, when no upgrade has started.
+                
+                // If the user hasn't set a whole-device-tunnel preference, show a prompt
+                // (and delay starting the tunnel service until the prompt is completed)
+                
+                boolean hasPreference = PreferenceManager.getDefaultSharedPreferences(context).contains(TUNNEL_WHOLE_DEVICE_PREFERENCE);
+                        
+                if (m_tunnelWholeDeviceToggle.isEnabled() &&
+                    !hasPreference &&
+                    !isServiceRunning())
+                {
+                    if (!m_tunnelWholeDevicePromptShown)
+                    {
+                        new AlertDialog.Builder(context)
+                            .setCancelable(false)
+                            .setOnKeyListener(
+                                    new DialogInterface.OnKeyListener() {
+                                        public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                                            // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
+                                            return keyCode == KeyEvent.KEYCODE_SEARCH;
+                                        }})
+                            .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
+                            .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
+                            .setPositiveButton(R.string.StatusActivity_WholeDeviceTunnelPositiveButton,
+                                    new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int whichButton) {
+                                            // Persist the "on" setting
+                                            updateWholeDevicePreference(true);
+                                            startService(new Intent(context, TunnelService.class));
+                                        }})
+                            .setNegativeButton(R.string.StatusActivity_WholeDeviceTunnelNegativeButton,
+                                        new DialogInterface.OnClickListener() {
+                                            public void onClick(DialogInterface dialog, int whichButton) {
+                                                // Turn off and persist the "off" setting
+                                                m_tunnelWholeDeviceToggle.setChecked(false);
+                                                updateWholeDevicePreference(false);
+                                                startService(new Intent(context, TunnelService.class));
+                                            }})
+                            .setOnCancelListener(
+                                    new DialogInterface.OnCancelListener() {
+                                        public void onCancel(DialogInterface dialog) {
+                                            // Don't change or persist preference (this prompt may reappear)
+                                            startService(new Intent(context, TunnelService.class));
+                                        }})
+                            .show();
+                        m_tunnelWholeDevicePromptShown = true;
+                    }
+                    else
+                    {
+                        // ...there's a prompt already showing (e.g., user hit Home with the
+                        // prompt up, then resumed Psiphon)
+                    }
+                    
+                    // ...wait and let onClick handlers will start tunnel
+                }
+                else
+                {
+                    // No prompt, just start the tunnel (if not already running)
+                    
+                    startService(new Intent(context, TunnelService.class));                    
+                }
 
                 // Handle the intent that resumed that activity
                 HandleCurrentIntent();
@@ -174,6 +255,28 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         // No explicit action for UNEXPECTED_DISCONNECT, just show the activity
     }
     
+    public void onTunnelWholeDeviceToggle(View v)
+    {
+        boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
+        
+        updateWholeDevicePreference(tunnelWholeDevicePreference);
+        
+        // TODO: don't need to stop/start tunnel to change this preference
+        stopService(new Intent(this, TunnelService.class));
+        startService(new Intent(this, TunnelService.class));
+    }
+    
+    protected void updateWholeDevicePreference(boolean tunnelWholeDevicePreference)
+    {
+        // No isRooted check: the user can specify whatever preference they
+        // wish. Also, CheckBox enabling should cover this (but isn't required to).
+        Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+        editor.putBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, tunnelWholeDevicePreference);
+        editor.commit();
+        
+        PsiphonData.getPsiphonData().setTunnelWholeDevice(tunnelWholeDevicePreference);
+    }
+    
     public void onOpenBrowserClick(View v)
     {
         Events.displayBrowser(this);       
@@ -214,48 +317,44 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         }
     }
     
-    public static final int MESSAGE_CLASS_INFO = 0;
-    public static final int MESSAGE_CLASS_ERROR = 1;
-    public static final int MESSAGE_CLASS_DEBUG = 2;
-    public static final int MESSAGE_CLASS_WARNING = 3;
+    public static final int MESSAGE_CLASS_VERBOSE = 0;
+    public static final int MESSAGE_CLASS_INFO = 1;
+    public static final int MESSAGE_CLASS_WARNING = 2;
+    public static final int MESSAGE_CLASS_ERROR = 3;
+    public static final int MESSAGE_CLASS_DEBUG = 4;
     
     public void addMessage(String message, int messageClass)
     {
-        int messageClassImageRes = 0;
-        int messageClassImageDesc = 0;
+        int messageClassImageRes = -1;
+        boolean boldText = true;
+
         switch (messageClass)
         {
         case MESSAGE_CLASS_INFO:
             messageClassImageRes = android.R.drawable.presence_online;
-            messageClassImageDesc = R.string.message_image_success_desc;
             break;
         case MESSAGE_CLASS_ERROR:
             messageClassImageRes = android.R.drawable.presence_busy;
-            messageClassImageDesc = R.string.message_image_error_desc;
             break;
-        case MESSAGE_CLASS_DEBUG:
-            messageClassImageRes = android.R.drawable.presence_offline;
-            messageClassImageDesc = R.string.message_image_debug_desc;
-            break;
-        case MESSAGE_CLASS_WARNING:
-            messageClassImageRes = android.R.drawable.presence_invisible;
-            messageClassImageDesc = R.string.message_image_warning_desc;
+        default:
+            // No image
+            boldText = false;
             break;
         }
         
-        // 
-        // Get the message row template and fill it in
-        // 
         
         LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View rowView = inflater.inflate(R.layout.message_row, null);
         
         TextView textView = (TextView)rowView.findViewById(R.id.MessageRow_Text);
         textView.setText(message);
+        textView.setTypeface(boldText ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
         
         ImageView imageView = (ImageView)rowView.findViewById(R.id.MessageRow_Image);
-        imageView.setImageResource(messageClassImageRes);
-        imageView.setContentDescription(getResources().getText(messageClassImageDesc));
+        if (messageClassImageRes != -1)
+        {
+            imageView.setImageResource(messageClassImageRes);
+        }
         
         m_messagesTableLayout.addView(rowView);
         
@@ -277,7 +376,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
      * @see <a href="http://stackoverflow.com/a/5921190/729729">From StackOverflow answer: "android: check if a service is running"</a>
      * @return True if the service is already running, false otherwise.
      */
-    private boolean isServiceRunning() 
+    private boolean isServiceRunning()
     {
         ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
@@ -301,12 +400,14 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         {
         case Log.ERROR:
             return StatusActivity.MESSAGE_CLASS_ERROR;
+        case Log.WARN:
+            return StatusActivity.MESSAGE_CLASS_WARNING;
         case Log.INFO:
             return StatusActivity.MESSAGE_CLASS_INFO;
         case Log.DEBUG:
             return StatusActivity.MESSAGE_CLASS_DEBUG;
         default:
-            return StatusActivity.MESSAGE_CLASS_WARNING;
+            return StatusActivity.MESSAGE_CLASS_VERBOSE;
         }
     }
 

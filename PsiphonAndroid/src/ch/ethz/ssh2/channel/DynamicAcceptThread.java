@@ -202,8 +202,8 @@ public class DynamicAcceptThread extends Thread implements IChannelWorkerThread 
 			}
 
 			try {
-				l2r = new PsiphonStreamForwarder(cn, null, sock, in, cn.stdinStream, "LocalToRemote", destHost);
-                r2l = new PsiphonStreamForwarder(cn, l2r, sock, cn.stdoutStream, out, "RemoteToLocal", destHost);
+				l2r = new PsiphonStreamForwarder(cn, null, in, cn.stdinStream, "LocalToRemote", destHost);
+                r2l = new PsiphonStreamForwarder(cn, l2r, cn.stdoutStream, out, "RemoteToLocal", destHost);
                 // TODO: set l2r sibling?
 			} catch (IOException e) {
 				try {

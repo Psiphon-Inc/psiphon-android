@@ -28,7 +28,7 @@
     android:weightSum="1.0">
 
     <LinearLayout
-        android:id="@+id/linearLayout4"
+        android:id="@+id/linearLayout1"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:background="#FFFFFFFF" >
@@ -59,7 +59,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:stretchColumns="1"
-                android:shrinkColumns="0">
+                android:shrinkColumns="1">
             </TableLayout>
         </ScrollView>
 
@@ -67,6 +67,25 @@
 
     <LinearLayout
         android:id="@+id/linearLayout3"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:weightSum="4.0">
+
+        <CheckBox
+            android:id="@+id/tunnelWholeDeviceToggle"
+            android:onClick="onTunnelWholeDeviceToggle"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/tunnel_whole_device_toggle"
+            android:textAppearance="?android:attr/textAppearanceSmall"/>
+        
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/linearLayout4"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
