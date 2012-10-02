@@ -87,4 +87,6 @@
   <string name="psiphon_stopped">سایفون متوقف شد</string>
   <string name="psiphon_running_whole_device">سایفون در حالت تمام موبایل در حال اجراست</string>
   <string name="psiphon_running_browser_only">فقط مرورگر سایفون در حال اجراست</string>
+  <string name="waiting_for_network_connectivity"> ...انتظار برای اتصال به شبکه </string>
+  <string name="checking_for_root_access">... چک کردن برای دسترسی به روت </string>
 </resources>
