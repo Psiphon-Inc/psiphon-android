@@ -82,7 +82,6 @@ import com.psiphon3.Utils.MyLog;
 
 import android.content.Context;
 import android.os.SystemClock;
-import android.util.Log;
 import android.util.Pair;
 
 
@@ -259,7 +258,7 @@ public class ServerInterface
         } 
         catch (InterruptedException e)
         {
-            // do what? nothing? 
+            Thread.currentThread().interrupt();
         }
     } 
 
@@ -340,10 +339,14 @@ public class ServerInterface
                     JSONObject obj = new JSONObject(line.substring(JSON_CONFIG_PREFIX.length()));
 
                     JSONArray homepages = obj.getJSONArray("homepages");
+                    
+                    ArrayList<String> sessionHomePages = new ArrayList<String>();
+                    
                     for (int i = 0; i < homepages.length(); i++)
                     {
-                    	PsiphonData.getPsiphonData().addHomePage(homepages.getString(i));
+                        sessionHomePages.add(homepages.getString(i));
                     }
+                    PsiphonData.getPsiphonData().setHomePages(sessionHomePages);
 
                     this.upgradeClientVersion = obj.getString("upgrade_client_version");
                     
@@ -700,8 +703,8 @@ public class ServerInterface
         StringBuilder url = new StringBuilder();
         String clientPlatform = PsiphonConstants.PLATFORM;
         
-        //try to detect if device is rooted and append to the client_platform string
-        if( Utils.isRooted())
+        // Detect if device is rooted and append to the client_platform string
+        if (Utils.isRooted())
         {
             clientPlatform += PsiphonConstants.ROOTED;
         }
@@ -717,7 +720,8 @@ public class ServerInterface
            .append("&sponsor_id=").append(Utils.urlEncode(EmbeddedValues.SPONSOR_ID))
            .append("&client_version=").append(Utils.urlEncode(EmbeddedValues.CLIENT_VERSION))
            .append("&relay_protocol=").append(Utils.urlEncode(PsiphonData.getPsiphonData().getTunnelRelayProtocol()))
-           .append("&client_platform=").append(Utils.urlEncode(clientPlatform));
+           .append("&client_platform=").append(Utils.urlEncode(clientPlatform))
+           .append("&tunnel_whole_device=").append(Utils.urlEncode(PsiphonData.getPsiphonData().getTunnelWholeDevice() ? "1" : "0"));
 
         if (extraParams != null)
         {

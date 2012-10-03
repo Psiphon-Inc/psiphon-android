@@ -20,8 +20,9 @@
  -->
 
 <TableRow xmlns:android="http://schemas.android.com/apk/res/android">
-    <TextView android:id="@+id/MessageRow.Text"/>
     <ImageView
         android:id="@+id/MessageRow.Image"
-        android:layout_gravity="right"/>
+        android:minWidth="25dp"
+        android:layout_gravity="left"/>
+    <TextView android:id="@+id/MessageRow.Text"/>
 </TableRow>
