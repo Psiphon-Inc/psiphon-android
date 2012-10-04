@@ -62,6 +62,9 @@ public class PsiphonData
     private String m_tunnelRelayProtocol;
     private int m_socksPort;
     private int m_httpProxyPort;
+    private int m_dnsProxyPort;
+    private int m_transparentProxyPort;
+    private boolean m_tunnelWholeDevice;
 
     public Object serverEntryFileLock = new Object(); // Used as an intrinsic lock
         
@@ -72,6 +75,7 @@ public class PsiphonData
     	m_stats = new Stats();
     	m_nextFetchRemoteServerList = null;
     	m_statusActivityForeground = false;
+    	m_tunnelWholeDevice = false;
     }
 
     public synchronized void addStatusMessage(String message, int messageClass)
@@ -86,9 +90,13 @@ public class PsiphonData
         return messages;
     }
 
-    public synchronized void addHomePage(String uri)
+    public synchronized void setHomePages(ArrayList<String> homePages)
     {
-    	m_homePages.add(uri);
+        m_homePages.clear();
+        for (int i = 0; i < homePages.size(); i++)
+        {
+            m_homePages.add(homePages.get(i));
+        }
     }
 
     public synchronized ArrayList<String> getHomePages()
@@ -169,6 +177,36 @@ public class PsiphonData
     public synchronized int getSocksPort()
     {
         return m_socksPort;
+    }
+
+    public synchronized void setDnsProxyPort(int dnsProxyPort)
+    {
+        m_dnsProxyPort = dnsProxyPort;
+    }
+
+    public synchronized int getDnsProxyPort()
+    {
+        return m_dnsProxyPort;
+    }
+
+    public synchronized void setTransparentProxyPort(int transparentProxyPort)
+    {
+        m_transparentProxyPort = transparentProxyPort;
+    }
+
+    public synchronized int getTransparentProxyPort()
+    {
+        return m_transparentProxyPort;
+    }
+
+    public synchronized void setTunnelWholeDevice(boolean tunnelWholeDevice)
+    {
+        m_tunnelWholeDevice = tunnelWholeDevice;
+    }
+
+    public synchronized boolean getTunnelWholeDevice()
+    {
+        return m_tunnelWholeDevice;
     }
 
     public class StatusMessage

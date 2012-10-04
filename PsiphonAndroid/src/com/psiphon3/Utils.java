@@ -18,10 +18,13 @@ import java.util.TimeZone;
 import java.io.IOException;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.util.Log;
 
 
@@ -295,6 +298,16 @@ public class Utils {
             MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.ERROR);
         }
         
+        static void w(int stringResID, Object... formatArgs)
+        {
+            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.WARN);
+        }
+
+        static void w(int stringResID, Throwable throwable)
+        {
+            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.WARN);
+        }
+        
         static void i(int stringResID, Object... formatArgs)
         {
             MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.INFO);
@@ -305,14 +318,14 @@ public class Utils {
             MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.INFO);
         }
         
-        static void w(int stringResID, Object... formatArgs)
+        static void v(int stringResID, Object... formatArgs)
         {
-            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.WARN);
+            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.VERBOSE);
         }
 
-        static void w(int stringResID, Throwable throwable)
+        static void v(int stringResID, Throwable throwable)
         {
-            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.WARN);
+            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.VERBOSE);
         }
         
         private static void println(String msg, Throwable throwable, int priority)
@@ -404,15 +417,6 @@ public class Utils {
         return debug;
     }
 
-    public static String getISO8601String()
-    {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);
-        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String date = sdf.format(new Date());
-        date += "Z";
-        return date;
-    }
-
     public static boolean isRooted()
     {
         //Method 1 check for presence of 'test-keys' in the build tags 
@@ -446,6 +450,15 @@ public class Utils {
         return false;
     }
     
+    public static String getISO8601String()
+    {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String date = sdf.format(new Date());
+        date += "Z";
+        return date;
+    }
+
     public static boolean isPortAvailable(int port)
     {
         Socket socket = new Socket();
@@ -494,5 +507,13 @@ public class Utils {
         }
 
         return 0;
+    }
+    
+    public static boolean hasNetworkConnectivity(Context context)
+    {
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        return networkInfo != null && networkInfo.isConnected();
     }
 }

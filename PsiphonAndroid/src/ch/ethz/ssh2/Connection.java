@@ -742,7 +742,10 @@ public class Connection
                             {
                                 Thread.sleep(50);
                             }
-                            catch (InterruptedException e) {}
+                            catch (InterruptedException e)
+                            {
+                                Thread.currentThread().interrupt();
+                            }
                             
                             synchronized (state)
                             {
@@ -844,7 +847,10 @@ public class Connection
                 {
                     checkStopSignalThread.join();
                 }
-                catch (InterruptedException e) {}
+                catch (InterruptedException e)
+                {
+                    Thread.currentThread().interrupt();
+                }
             }
 		}
 	}
@@ -977,7 +983,33 @@ public class Connection
 
         return new DynamicPortForwarder(cm, addr);
     }
-    	/**
+
+    /**
+     * Creates a new {@link TransparentProxyPortForwarder}. A
+     * <codeTransparentProxyPortForwarder</code> forwards TCP/IP connections that arrive
+     * at a local port via the secure tunnel to another host that is chosen via
+     * transparent proxy (using IP tables and SO_ORIGINAL_DST).
+     * <p>
+     * This method must only be called after one has passed successfully the
+     * authentication step. There is no limit on the number of concurrent
+     * forwardings.
+     * 
+     * @param local_port
+     * @return A {@link TransparentProxyPortForwarder} object.
+     * @throws IOException
+     */
+    public synchronized TransparentProxyPortForwarder createTransparentProxyForwarder(int local_port) throws IOException
+    {
+        if (tm == null)
+            throw new IllegalStateException("Cannot forward ports, you need to establish a connection first.");
+
+        if (!authenticated)
+            throw new IllegalStateException("Cannot forward ports, connection is not authenticated.");
+
+        return new TransparentProxyPortForwarder(cm, local_port);
+    }
+    
+    /**
 	 * Create a very basic {@link SCPClient} that can be used to copy
 	 * files from/to the SSH-2 server.
 	 * <p>

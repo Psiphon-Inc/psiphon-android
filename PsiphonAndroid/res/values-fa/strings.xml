@@ -57,4 +57,36 @@
   <string name="stopped_tunnel">اجرای تونل ایستاد </string>
   <string name="ServerInterface.StopRequested">درخواست توقف</string>
   <string name="ServerInterface.HTTPSRequestFailed">درخواست اچ تی تی پی اس به دلیل خطا نا موفق بود  </string>
+  <string name="feedback">نظر </string>
+  <string name="FeedbackActivity.DefaultText">اگر نظر خاصی دارید، اطلاعات بیشتر در مورد سایت های که کار نمیکنند یا این فرم برای شما کار نمیکند، لطفآ ایمیل بزنید به &lt;a href=&quot;mailto:feedback@psiphon.ca&quot;&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
+  <string name="FeedbackActivity.Success">از اینکه نظرتون رو با ما در میان گذاشتید سپاسگزاریم</string>
+  <string name="FeedbackActivity.Failure">ارسال نشد. لطفآ دوباره امتحان کنید</string>
+  <string name="FeedbackActivity.SubmitFeedbackFailed">ارسال نظر ناموفق بود</string>
+  <string name="FeedbackActivity.InvalidURLParameters">پارامترهای نامعتبر در ارسال فرم </string>
+  <string name="FeedbackActivity.GetHTMLContentFailed">گرفتن صفحه ارسال نظر ناموفق بود </string>
+  <string name="socks_ports_failed">شروع پراکسی ساکس نا موفق بود: هیچ پورتی در دسترس نیست </string>
+  <string name="http_proxy_ports_failed">شروع پراکسی اچ تی تی پی نا موفق بود: هیچ پورتی در دسترس نیست </string>
+  <string name="socks_port_in_use">پورت %d در حال استفاده یک برنامه دیگر است. ادامه امکان پذیر نیست.</string>
+  <string name="transparent_proxy_running">پراکسی شفاف بر روی پورت %d در حال اجراست</string>
+  <string name="transparent_proxy_ports_failed">شروع پراکسی شفاف نا موفق بود: هیچ پورتی در دسترس نیست </string>
+  <string name="transparent_proxy_command_failed">دستور تنظیمات پورت شفاف  نا موفق بود: %s</string>
+  <string name="transparent_proxy_stopped">پراکسی شفاف متوقف شد </string>
+  <string name="dns_proxy_running">پراکسی دی ان اس بر روی پورت %d در حال اجراست</string>
+  <string name="dns_proxy_ports_failed">شروع پراکسی دی ان اس  نا موفق بود: هیچ پورتی در دسترس نیست </string>
+  <string name="dns_proxy_stopped">پراکسی دی ان اس  متوقف شد </string>
+  <string name="tunnel_whole_device_toggle">تمام موبایل را تونل کن </string>
+  <string name="dns_proxy_failed">شروع پراکسی دی ان اس  نا موفق بود</string>
+  <string name="transparent_proxy_failed">شروع پراکسی شفاف نا موفق بود</string>
+  <string name="iptables_binary_not_found">آی‌‌‌پی‌تیبلز نیاز برای اجرای پراکسی شفاف پیدا نمیشود </string>
+  <string name="tunnel_whole_device_toggle">تمام دستگاه را پراکسی کن</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptTitle">تمام دستگاه را پراکسی کن؟</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptMessage">امکان پراکسی تمام دستگاه برای شما موجود است. با این امکان، ارتباط و ترافیک تمامی آپلیکیشن ها و مرورگرهای شما از طریق سایفون انجام میشود. اگرمایل به استفاده ی این امکان نیستید، میتوانید فقط از مروگر سایفون استفاده کنید و از ارتباط مستقیم برای اپلیکیشن ها و مرور گر های دیگرتان استفاده کنید</string>
+  <string name="StatusActivity.WholeDeviceTunnelPositiveButton">تمام دستگاه را پراکسی کن</string>
+  <string name="StatusActivity.WholeDeviceTunnelNegativeButton">فقط از مرورگر سایفون استفاده کن</string>
+  <string name="root_access_denied">دسترسی روت امکان پذیر نیست</string>
+  <string name="psiphon_stopped">سایفون متوقف شد</string>
+  <string name="psiphon_running_whole_device">سایفون در حالت تمام موبایل در حال اجراست</string>
+  <string name="psiphon_running_browser_only">فقط مرورگر سایفون در حال اجراست</string>
+  <string name="waiting_for_network_connectivity"> ...انتظار برای اتصال به شبکه </string>
+  <string name="checking_for_root_access">... چک کردن برای دسترسی به روت </string>
 </resources>
