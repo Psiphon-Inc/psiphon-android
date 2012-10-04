@@ -1141,7 +1141,7 @@ public class ServerInterface
         {
         	// At the time of introduction of the server capabilities feature
         	// these are the default capabilities possessed by all servers.
-        	newEntry.capabilities.add("SSH+");
+        	newEntry.capabilities.add("OSSH");
         	newEntry.capabilities.add("SSH");
         	newEntry.capabilities.add("VPN");
         	newEntry.capabilities.add("handshake");
