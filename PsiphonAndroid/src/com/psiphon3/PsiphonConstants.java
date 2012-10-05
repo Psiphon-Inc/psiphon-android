@@ -62,5 +62,5 @@ public class PsiphonConstants
 
     public final static String ROOTED = "_rooted";
     
-    public final static ArrayList<String> REQUIRED_CAPABILITIES = new ArrayList<String>(){{ add("OSSH"); }};
+    public final static ArrayList<String> REQUIRED_CAPABILITIES = new ArrayList<String>(){{ add(PsiphonConstants.RELAY_PROTOCOL); }};
 }
