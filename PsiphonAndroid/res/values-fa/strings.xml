@@ -78,7 +78,6 @@
   <string name="dns_proxy_failed">شروع پراکسی دی ان اس  نا موفق بود</string>
   <string name="transparent_proxy_failed">شروع پراکسی شفاف نا موفق بود: %s</string>
   <string name="iptables_binary_not_found">آی‌‌‌پی‌تیبلز نیاز برای اجرای پراکسی شفاف پیدا نمیشود </string>
-  <string name="tunnel_whole_device_toggle">تمام دستگاه را پراکسی کن</string>
   <string name="StatusActivity.WholeDeviceTunnelPromptTitle">تمام دستگاه را پراکسی کن؟</string>
   <string name="StatusActivity.WholeDeviceTunnelPromptMessage">امکان پراکسی تمام دستگاه برای شما موجود است. با این امکان، ارتباط و ترافیک تمامی آپلیکیشن ها و مرورگرهای شما از طریق سایفون انجام میشود. اگرمایل به استفاده ی این امکان نیستید، میتوانید فقط از مروگر سایفون استفاده کنید و از ارتباط مستقیم برای اپلیکیشن ها و مرور گر های دیگرتان استفاده کنید</string>
   <string name="StatusActivity.WholeDeviceTunnelPositiveButton">تمام دستگاه را پراکسی کن</string>
