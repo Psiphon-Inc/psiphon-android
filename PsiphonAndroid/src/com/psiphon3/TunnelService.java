@@ -712,6 +712,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     {
     	if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES))
     	{
+    		setState(State.DISCONNECTED);
     		MyLog.e(R.string.no_server_entries);
     		return;
     	}
