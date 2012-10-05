@@ -74,7 +74,7 @@
   <string name="dns_proxy_running">DNS代理运行在端口%d</string>
   <string name="dns_proxy_ports_failed">运行失败DNS代理：找不到可用的端口。</string>
   <string name="dns_proxy_stopped">DNS代理停止了。</string>
-  <string name="tunnel_whole_device_toggle">隧道整个设备</string>
+  <string name="tunnel_whole_device_toggle">隧道整个设备 (requires root)</string>
   <string name="dns_proxy_failed">运行失败DNS代理。</string>
   <string name="transparent_proxy_failed">运行失败透明代理。 %s</string>
   <string name="iptables_binary_not_found">无法找到所需的iptables执行为透明代理。</string>
