@@ -128,6 +128,7 @@ public class ServerInterface
         public String sshHostKey;
         public int sshObfuscatedPort;
         public String sshObfuscatedKey;
+        public ArrayList<String> capabilities;
 
         @Override
         public ServerEntry clone()
@@ -141,12 +142,16 @@ public class ServerInterface
                 throw new AssertionError();
             }
         }
+        
+        boolean hasCapabilities(List<String> capabilities)
+        {
+        	return this.capabilities.containsAll(capabilities);
+        }
     }
     
     private Context ownerContext;
     private ArrayList<ServerEntry> serverEntries = new ArrayList<ServerEntry>();
     private String upgradeClientVersion;
-    private String speedTestURL;
     private String serverSessionID;
     
     /** Array of all outstanding/ongoing requests. Anything in this array will
@@ -272,6 +277,19 @@ public class ServerInterface
         return null;
     }
     
+    synchronized boolean serverWithCapabilitiesExists(List<String> capabilities)
+    {
+    	for (ServerEntry entry: this.serverEntries)
+    	{
+    		if (entry.hasCapabilities(capabilities))
+    		{
+    			return true;
+    		}
+    	}
+    	
+    	return false;
+    }
+    
     synchronized void markCurrentServerFailed()
     {
         if (this.serverEntries.size() > 0)
@@ -381,8 +399,6 @@ public class ServerInterface
                     // Set the regexes directly in the stats object rather than 
                     // storing them in this class.
                     PsiphonData.getPsiphonData().getStats().setRegexes(pageViewRegexes, httpsRequestRegexes);
-
-                    this.speedTestURL = obj.getString("speed_test_url");
 
                     JSONArray encoded_server_list = obj.getJSONArray("encoded_server_list");
                     String[] entries = new String[encoded_server_list.length()];
@@ -1111,6 +1127,25 @@ public class ServerInterface
         newEntry.sshHostKey = obj.getString("sshHostKey");
         newEntry.sshObfuscatedPort = obj.getInt("sshObfuscatedPort");
         newEntry.sshObfuscatedKey = obj.getString("sshObfuscatedKey");
+        
+        newEntry.capabilities = new ArrayList<String>(); 
+        if (obj.has("capabilities"))
+        {
+	        JSONArray caps = obj.getJSONArray("capabilities");
+	        for (int i = 0; i < caps.length(); i++)
+	        {
+	        	newEntry.capabilities.add(caps.getString(i));
+	        }
+        }
+        else
+        {
+        	// At the time of introduction of the server capabilities feature
+        	// these are the default capabilities possessed by all servers.
+        	newEntry.capabilities.add("OSSH");
+        	newEntry.capabilities.add("SSH");
+        	newEntry.capabilities.add("VPN");
+        	newEntry.capabilities.add("handshake");
+        }
 
         // Check if there's already an entry for this server
         int existingIndex = -1;

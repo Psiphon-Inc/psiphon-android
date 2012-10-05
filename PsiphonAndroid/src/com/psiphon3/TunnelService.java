@@ -301,12 +301,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         
         ServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
 
-        if (entry == null)
-        {
-            MyLog.e(R.string.no_server_entries);
-            return false;
-        }
-        
         boolean runAgain = true;
         boolean unexpectedDisconnect = false;
         Connection conn = null;
@@ -317,6 +311,28 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         
         try
         {
+            if (entry == null)
+            {
+                MyLog.e(R.string.no_server_entries);
+                runAgain = false;
+                return runAgain;
+            }
+            else if (!entry.hasCapabilities(PsiphonConstants.REQUIRED_CAPABILITIES))
+            {
+            	// This server hasn't failed, per se, but it doesn't satisfy our
+            	// required capabilities, so we're moving it to the bottom of the list.
+            	m_interface.markCurrentServerFailed();
+            	
+            	// Don't need to set state to 
+            	
+            	// We're returning true to run again. We're assuming that the calling
+            	// function knows that there's at least one server to try. We're 
+            	// not logging anything, as the user doesn't need to know what's
+            	// going on under the hood at this point.
+            	runAgain = true;
+            	return runAgain;
+            }
+        	
             // Wait for network connectivity before proceeding
 
             MyLog.v(R.string.waiting_for_network_connectivity);
@@ -327,7 +343,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 // Sleep 1 second before checking again
                 checkSignals(1);
             }
-            
             setState(State.CONNECTING);
             
             boolean tunnelWholeDevice = PsiphonData.getPsiphonData().getTunnelWholeDevice();
@@ -674,7 +689,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             
             m_upgradeDownloader.stop();
 
-            setState(State.DISCONNECTED);
+            if (!runAgain)
+            {
+            	setState(State.DISCONNECTED);
+            }
             
             if (unexpectedDisconnect && !isStopSignalPending())
             {
@@ -692,6 +710,13 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     
     private void runTunnel() throws InterruptedException
     {
+    	if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES))
+    	{
+    		setState(State.DISCONNECTED);
+    		MyLog.e(R.string.no_server_entries);
+    		return;
+    	}
+    	
         while (runTunnelOnce())
         {
             try
@@ -705,6 +730,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             catch (TunnelServiceStop e)
             {
                 // Stop has been requested, so get out of the retry loop.
+            	setState(State.DISCONNECTED);
                 break;
             }
             
@@ -731,6 +757,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             }
             catch (InterruptedException ie)
             {
+            	setState(State.DISCONNECTED);
                 break;
             }
         }
