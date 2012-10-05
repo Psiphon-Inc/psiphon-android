@@ -76,7 +76,7 @@
   <string name="dns_proxy_stopped">پراکسی دی ان اس  متوقف شد </string>
   <string name="tunnel_whole_device_toggle">تمام موبایل را تونل کن </string>
   <string name="dns_proxy_failed">شروع پراکسی دی ان اس  نا موفق بود</string>
-  <string name="transparent_proxy_failed">شروع پراکسی شفاف نا موفق بود</string>
+  <string name="transparent_proxy_failed">شروع پراکسی شفاف نا موفق بود: %s</string>
   <string name="iptables_binary_not_found">آی‌‌‌پی‌تیبلز نیاز برای اجرای پراکسی شفاف پیدا نمیشود </string>
   <string name="tunnel_whole_device_toggle">تمام دستگاه را پراکسی کن</string>
   <string name="StatusActivity.WholeDeviceTunnelPromptTitle">تمام دستگاه را پراکسی کن؟</string>
