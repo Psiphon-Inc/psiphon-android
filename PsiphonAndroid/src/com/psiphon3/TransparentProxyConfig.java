@@ -129,15 +129,19 @@ public class TransparentProxyConfig
         
         if (psiphonChainExists)
         {
-            String[] commands = new String[]
+            // Delete the user-defined Psiphon chain. The -D (delete) command
+            // may fail in the case of a partial setup, so we allow it to fail.
+
+            doShellCommands(context, ipTablesPath + " -t nat -F psiphon");
+            try
             {
-                // Delete the user-defined Psiphon chain
-                ipTablesPath + " -t nat -F psiphon",
-                ipTablesPath + " -t nat -D OUTPUT -j psiphon",
-                ipTablesPath + " -t nat -X psiphon",
-            };
-            
-            doShellCommands(context, commands);
+                doShellCommands(context, ipTablesPath + " -t nat -D OUTPUT -j psiphon");
+            }
+            catch (PsiphonTransparentProxyException e)
+            {
+                // Assume this is the "No chain/target/match by that name." error
+            }
+            doShellCommands(context, ipTablesPath + " -t nat -X psiphon");
         }
     }
 
