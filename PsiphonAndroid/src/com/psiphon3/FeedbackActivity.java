@@ -20,6 +20,8 @@
 package com.psiphon3;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -36,6 +38,7 @@ import com.psiphon3.Utils.MyLog;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.MailTo;
+import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -66,6 +69,28 @@ public class FeedbackActivity extends Activity
                     Intent intent = new Intent(Intent.ACTION_SEND);
                     intent.setType("message/rfc822");
                     intent.putExtra(Intent.EXTRA_EMAIL, new String[] {MailTo.parse(url).getTo()});
+                    
+                    File attachmentFile = null;
+                    try 
+                    {
+                        attachmentFile = new File(getExternalCacheDir(), PsiphonConstants.FEEDBACK_ATTACHMENT_FILENAME);
+
+                        // Note that we're overwriting any existing file
+                        FileWriter writer = new FileWriter(attachmentFile, false);
+                        writer.write("{}");
+                        writer.close();
+                    } 
+                    catch (IOException e) 
+                    {
+                        attachmentFile = null;
+                        MyLog.e(R.string.FeedbackActivity_AttachmentWriteFailed);
+                    }
+                    
+                    if (attachmentFile != null)
+                    {
+                        intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(attachmentFile));
+                    }
+                    
                     startActivity(intent);
                     return true;
                 }

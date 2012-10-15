@@ -63,4 +63,6 @@ public class PsiphonConstants
     public final static String ROOTED = "_rooted";
     
     public final static ArrayList<String> REQUIRED_CAPABILITIES = new ArrayList<String>(){{ add(PsiphonConstants.RELAY_PROTOCOL); }};
+
+    public final static String FEEDBACK_ATTACHMENT_FILENAME = "psiphon-android-feedback.json";
 }
