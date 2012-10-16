@@ -44,7 +44,6 @@ import android.widget.ScrollView;
 import android.widget.TableLayout;
 import android.widget.TextView;
 
-import com.psiphon3.PsiphonData.StatusMessage;
 import com.psiphon3.UpgradeManager;
 import com.psiphon3.UpgradeManager.UpgradeInstaller;
 import com.psiphon3.Utils.MyLog;
@@ -93,13 +92,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
         PsiphonConstants.DEBUG = Utils.isDebugMode(this);
 
-        // Restore messages previously posted by the service
-        m_messagesTableLayout.removeAllViews();
-        for (StatusMessage msg : PsiphonData.getPsiphonData().getStatusMessages())
-        {
-            addMessage(msg.m_message, msg.m_messageClass);
-        }
-        
         // Listen for new messages
         // Using local broad cast (http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html)
         
@@ -108,6 +100,11 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         m_localBroadcastManager.registerReceiver(
                 new AddMessageReceiver(),
                 new IntentFilter(ADD_MESSAGE));
+        
+        // Restore messages previously posted by the service.
+        // Note that this must come *after* this activity registers to receive ADD_MESSAGE intents.
+        m_messagesTableLayout.removeAllViews();
+        MyLog.restoreLogHistory();
     }
     
     @Override
@@ -412,7 +409,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     }
 
     @Override
-    public String getResString(int stringResID, Object... formatArgs)
+    public String getResourceString(int stringResID, Object[] formatArgs)
     {
         if (formatArgs == null || formatArgs.length == 0)
         {
@@ -420,5 +417,11 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         }
         
         return getString(stringResID, formatArgs);
+    }
+
+    @Override
+    public String getResourceEntryName(int stringResID)
+    {
+        return getResources().getResourceEntryName(stringResID);
     }
 }

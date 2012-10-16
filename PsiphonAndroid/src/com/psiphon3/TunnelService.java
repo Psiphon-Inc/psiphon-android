@@ -183,9 +183,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             String message,
             int messageClass)
     {
-        // Record messages for play back in activity
-        PsiphonData.getPsiphonData().addStatusMessage(message, messageClass);
-        
         Events.appendStatusMessage(this, message, messageClass);
     }
         

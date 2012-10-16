@@ -9,6 +9,7 @@ import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.IllegalFormatException;
 import java.util.Locale;
@@ -16,6 +17,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
 import java.io.IOException;
+
+import com.psiphon3.PsiphonData.StatusEntry;
 
 import android.app.Activity;
 import android.content.Context;
@@ -247,8 +250,9 @@ public class Utils {
     {
         static public interface ILogInfoProvider
         {
-            public String getResString(int stringResID, Object... formatArgs);
+            public String getResourceString(int stringResID, Object[] formatArgs);
             public int getAndroidLogPriorityEquivalent(int priority);
+            public String getResourceEntryName(int stringResID);
         }
         
         static public interface ILogger
@@ -266,15 +270,29 @@ public class Utils {
          * @param formatArgs The format arguments. May be empty (non-existent).
          * @return The requested string, possibly formatted.
          */
-        static private String myGetResString(int stringResID, Object... formatArgs)
+        static private String myGetResString(int stringResID, Object[] formatArgs)
         {
             try
             {
-                return logInfoProvider.getResString(stringResID, formatArgs);
+                return logInfoProvider.getResourceString(stringResID, formatArgs);
             }
             catch (IllegalFormatException e)
             {
-                return logInfoProvider.getResString(stringResID);
+                return logInfoProvider.getResourceString(stringResID, null);
+            }
+        }
+        
+        static public void restoreLogHistory()
+        {
+            // We need to clear out the history and restore a copy, because the
+            // act of restoring will rebuild the history.
+            
+            ArrayList<StatusEntry> history = PsiphonData.cloneStatusHistory();
+            PsiphonData.clearStatusHistory();
+            
+            for (StatusEntry logEntry : history)
+            {
+                MyLog.println(logEntry.id, logEntry.formatArgs, logEntry.throwable, logEntry.priority);
             }
         }
         
@@ -290,42 +308,54 @@ public class Utils {
 
         static void e(int stringResID, Object... formatArgs)
         {
-            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.ERROR);
+            MyLog.println(stringResID, formatArgs, null, Log.ERROR);
         }
 
         static void e(int stringResID, Throwable throwable)
         {
-            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.ERROR);
+            MyLog.println(stringResID, null, throwable, Log.ERROR);
         }
         
         static void w(int stringResID, Object... formatArgs)
         {
-            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.WARN);
+            MyLog.println(stringResID, formatArgs, null, Log.WARN);
         }
 
         static void w(int stringResID, Throwable throwable)
         {
-            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.WARN);
+            MyLog.println(stringResID, null, throwable, Log.WARN);
         }
         
         static void i(int stringResID, Object... formatArgs)
         {
-            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.INFO);
+            MyLog.println(stringResID, formatArgs, null, Log.INFO);
         }
 
         static void i(int stringResID, Throwable throwable)
         {
-            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.INFO);
+            MyLog.println(stringResID, null, throwable, Log.INFO);
         }
         
         static void v(int stringResID, Object... formatArgs)
         {
-            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.VERBOSE);
+            MyLog.println(stringResID, formatArgs, null, Log.VERBOSE);
         }
 
         static void v(int stringResID, Throwable throwable)
         {
-            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.VERBOSE);
+            MyLog.println(stringResID, null, throwable, Log.VERBOSE);
+        }
+        
+        private static void println(int stringResID, Object[] formatArgs, Throwable throwable, int priority)
+        {
+            PsiphonData.addStatusEntry(
+                    stringResID, 
+                    logInfoProvider.getResourceEntryName(stringResID), 
+                    formatArgs, 
+                    throwable, 
+                    priority);
+            
+            println(MyLog.myGetResString(stringResID, formatArgs), throwable, priority);
         }
         
         private static void println(String msg, Throwable throwable, int priority)
@@ -348,7 +378,7 @@ public class Utils {
                 {
                     // Just report the first line of the stack trace
                     String[] stackTraceLines = Log.getStackTraceString(throwable).split("\n");
-                    loggerMsg = loggerMsg + (stackTraceLines.length > 0 ? '\n' + stackTraceLines[0] : ""); 
+                    loggerMsg = loggerMsg + (stackTraceLines.length > 0 ? "\n" + stackTraceLines[0] : ""); 
                 }
                 
                 logger.log(logInfoProvider.getAndroidLogPriorityEquivalent(priority), loggerMsg);
