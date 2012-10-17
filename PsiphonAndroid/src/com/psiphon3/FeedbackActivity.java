@@ -73,11 +73,15 @@ public class FeedbackActivity extends Activity
                     File attachmentFile = null;
                     try 
                     {
-                        attachmentFile = new File(getExternalCacheDir(), PsiphonConstants.FEEDBACK_ATTACHMENT_FILENAME);
+                    	// The attachment must be created on external storage, 
+                    	// or else Gmail gives this error:
+                    	// E/Gmail(18760): file:// attachment paths must point to file:///storage/sdcard0. Ignoring attachment [obscured file path]
+
+                        attachmentFile = new File(getExternalFilesDir("feedback"), PsiphonConstants.FEEDBACK_ATTACHMENT_FILENAME);
 
                         // Note that we're overwriting any existing file
                         FileWriter writer = new FileWriter(attachmentFile, false);
-                        writer.write("{}");
+                        writer.write("{test3}");
                         writer.close();
                     } 
                     catch (IOException e) 
