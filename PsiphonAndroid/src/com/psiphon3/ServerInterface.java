@@ -143,9 +143,32 @@ public class ServerInterface
             }
         }
         
+        boolean hasCapability(String capability)
+        {
+            return this.capabilities.contains(capability);
+        }
+
         boolean hasCapabilities(List<String> capabilities)
         {
-        	return this.capabilities.containsAll(capabilities);
+            return this.capabilities.containsAll(capabilities);
+        }
+
+        int getPreferredReachablityTestPort()
+        {
+            if (hasCapability("OSSH"))
+            {
+                return this.sshObfuscatedPort;
+            }
+            else if (hasCapability("SSH"))
+            {
+                return this.sshPort;
+            }
+            else if (hasCapability("handshake"))
+            {
+                return this.webServerPort;
+            }
+
+            return -1;
         }
     }
     
@@ -649,22 +672,22 @@ public class ServerInterface
             // After at least one failed connection attempt, and no more than once
             // per few hours (if successful), or not more than once per few minutes
             // (if unsuccessful), check for a new remote server list.
-            Date nextFetchRemoteServerList = PsiphonData.getPsiphonData().getNextFetchRemoteServerList();
-            if ((nextFetchRemoteServerList != null) &&
-                (nextFetchRemoteServerList.getTime() > new Date().getTime()))
+            long nextFetchRemoteServerList = PsiphonData.getPsiphonData().getNextFetchRemoteServerList();
+            if ((nextFetchRemoteServerList != -1) &&
+                (nextFetchRemoteServerList > SystemClock.elapsedRealtime()))
             {
                 return;
             }
 
-            PsiphonData.getPsiphonData().setNextFetchRemoteServerList(new Date(
-                    new Date().getTime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_UNSUCCESSFUL_REMOTE_SERVER_LIST_FETCH));
+            PsiphonData.getPsiphonData().setNextFetchRemoteServerList(
+                    SystemClock.elapsedRealtime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_UNSUCCESSFUL_REMOTE_SERVER_LIST_FETCH);
             
             try
             {
                 byte[] response = makeDirectWebRequest(EmbeddedValues.REMOTE_SERVER_LIST_URL);
     
-                PsiphonData.getPsiphonData().setNextFetchRemoteServerList(new Date(
-                        new Date().getTime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH));
+                PsiphonData.getPsiphonData().setNextFetchRemoteServerList(
+                        SystemClock.elapsedRealtime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH);
                 
                 String serverList = ServerEntryAuth.validateAndExtractServerList(new String(response));
     
@@ -1222,7 +1245,7 @@ public class ServerInterface
         }
     }
 
-    public synchronized void MoveEntriesToFront(ArrayList<ServerEntry> reorderedServerEntries)
+    public synchronized void moveEntriesToFront(ArrayList<ServerEntry> reorderedServerEntries)
     {
         // Insert entries in input order
 

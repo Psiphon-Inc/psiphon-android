@@ -19,32 +19,47 @@
 
 package com.psiphon3;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import android.os.SystemClock;
+
 import com.psiphon3.ServerInterface.ServerEntry;
 import com.psiphon3.TunnelService.Signal;
 import com.psiphon3.Utils.MyLog;
 
 public class ServerListReorder
 {
-    static final int MAX_WORKER_THREADS = 30;
-    static final int MAX_CHECK_TIME_MILLISECONDS = 5000;
-    static final int RESPONSE_TIME_THRESHOLD_FACTOR = 2;
+    private final int NUM_THREADS = 10;
+    private final int SHUTDOWN_POLL_MILLISECONDS = 100;
+    private final int SHUTDOWN_TIMEOUT_MILLISECONDS = 1000;
+    private final int MAX_WORK_TIME_MILLISECONDS = 5000;
+    private final int RESPONSE_TIME_THRESHOLD_FACTOR = 2;
+
+    private ServerInterface serverInterface = null;
+    private Thread thread = null;
+    boolean stopFlag = false;
     
-    private ServerInterface serverInterface;
-    private Thread thread;
-    
-    //static const TCHAR* HTTP_CHECK_REQUEST_PATH = _T("/check");
-    
-    public ServerListReorder(ServerInterface serverInterface)
+    ServerListReorder(ServerInterface serverInterface)
     {
         this.serverInterface = serverInterface;
     }
-
+    
     class CheckServerWorker implements Runnable
     {
         ServerEntry entry = null;
         boolean responded = false;
-        int responseTime = -1;
-        //StopInfo m_stopInfo;
+        long responseTime = -1;
 
         CheckServerWorker(ServerEntry entry)
         {
@@ -53,145 +68,124 @@ public class ServerListReorder
         
         public void run()
         {
-            /*
-            DWORD start_time = GetTickCount();
+            long startTime = SystemClock.elapsedRealtime();
+
+            try
+            {
+                SocketChannel channel = SocketChannel.open();
+                channel.configureBlocking(false);
+                channel.connect(new InetSocketAddress(
+                                        this.entry.ipAddress,
+                                        this.entry.getPreferredReachablityTestPort()));
+                Selector selector = Selector.open();
+                channel.register(selector, SelectionKey.OP_CONNECT);
+                
+                while (selector.select(SHUTDOWN_POLL_MILLISECONDS) == 0)
+                {
+                    if (stopFlag)
+                    {
+                        break;
+                    }
+                }
+                
+                this.responded = channel.finishConnect();
+            }
+            catch (IOException e)
+            {
+            }
             
-            
-            //
-            // TODO: replace HTTPS with SSH+?
-            //
-        
-            tstring requestPath =
-                tstring(HTTP_CHECK_REQUEST_PATH) + 
-                _T("?server_secret=") + NarrowToTString(data->m_entry.webServerSecret);
-        
-            HTTPSRequest httpsRequest(true); // silentMode: don't print errors
-            string response;
-            bool requestSuccess = 
-                httpsRequest.MakeRequest(
-                    NarrowToTString(data->m_entry.serverAddress).c_str(),
-                    data->m_entry.webServerPort,
-                    data->m_entry.webServerCertificate,
-                    requestPath.c_str(),
-                    response,
-                    data->m_stopInfo, 
-                    false); // don't use local proxy
-        
-            DWORD end_time = GetTickCount(); // GetTickCount can wrap
-        
-            data->m_responseTime = (end_time >= start_time) ?
-                                   (end_time - start_time) :
-                                   (0xFFFFFFFF - start_time + end_time);
-        
-            data->m_responded = requestSuccess;            
-            */
+            this.responseTime = SystemClock.elapsedRealtime() - startTime;
         }
     }
     
     class ReorderServerList implements Runnable
-    {
-        
+    {        
         public void run()
         {
-            /*
-            ServerEntries serverEntries = serverList.GetList();
-        
-            // Check response time from each server (in parallel).
-            // At most the first MAX_WORKER_THREADS servers in the
-            // current server list will be checked. We select the
-            // first MAX/2 server from the top of the list (they
-            // may be better/fresher) and then MAX/2 random servers
-            // from the rest of the list (they may be underused).
-        
-            // TODO: use a thread pool?
-        
-            vector<HANDLE> threadHandles;
-            vector<WorkerThreadData*> threadData;
-        
-            if (serverEntries.size() > MAX_WORKER_THREADS)
+            // Adapted from Psiphon Windows client module server_list_reordering.cpp; see comments there.
+            // Revision: https://bitbucket.org/psiphon/psiphon-circumvention-system/src/881d32d09e3a/Client/psiclient/server_list_reordering.cpp
+
+            ArrayList<ServerEntry> serverEntries = serverInterface.getServerEntries();
+            ArrayList<CheckServerWorker> workers = new ArrayList<CheckServerWorker>();
+
+            // Unlike the Windows implementation, we're using a proper thread pool.
+            // We still prioritize the first few servers (first enqueued into the
+            // work queue) along with a randomly prioritized sampling some servers
+            // from deeper in the list. Assumes the default Executors.newFixedThreadPool
+            // priority is FIFO.
+            
+            if (serverEntries.size() > NUM_THREADS)
             {
-                random_shuffle(serverEntries.begin() + MAX_WORKER_THREADS/2, serverEntries.end());
+                Collections.shuffle(serverEntries.subList(NUM_THREADS, serverEntries.size()));
             }
+            
+            ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
         
-            for (ServerEntryIterator entry = serverEntries.begin(); entry != serverEntries.end(); ++entry)
+            for (ServerEntry entry : serverEntries)
             {
-                WorkerThreadData* data = new WorkerThreadData(*entry, stopInfo);
-        
-                HANDLE threadHandle;
-                if (!(threadHandle = CreateThread(0, 0, CheckServerThread, (void*)data, 0, 0)))
+                if (-1 != entry.getPreferredReachablityTestPort())
                 {
-                    continue;
-                }
-        
-                threadHandles.push_back(threadHandle);
-                threadData.push_back(data);
-        
-                if (threadHandles.size() >= MAX_WORKER_THREADS)
-                {
-                    break;
+                    CheckServerWorker worker = new CheckServerWorker(entry);
+                    threadPool.submit(worker);
+                    workers.add(worker);
                 }
             }
-        
-            // Wait for all threads to finish
-        
-            // TODO: stop waiting early if all threads finish?
-        
-            for (int waits = 0; waits < MAX_CHECK_TIME_MILLISECONDS/100; waits++)
+            
+            try
             {
-                Sleep(100);
-        
-                if (stopInfo.stopSignal->CheckSignal(stopInfo.stopReasons))
+                // Wait for either all tasks to complete, an abort request, or the
+                // maximum work time.
+                
+                for (int wait = 0;
+                     !threadPool.awaitTermination(0, TimeUnit.MILLISECONDS) &&
+                     !stopFlag &&
+                     wait <= MAX_WORK_TIME_MILLISECONDS;
+                     wait += SHUTDOWN_POLL_MILLISECONDS)
                 {
-                    // Stop waiting early if exiting the app, etc.
-                    // NOTE: we still process results in this case
-                    break;
+                    Thread.sleep(SHUTDOWN_POLL_MILLISECONDS);
                 }
+
+                threadPool.shutdownNow();
+                threadPool.awaitTermination(SHUTDOWN_TIMEOUT_MILLISECONDS, TimeUnit.MILLISECONDS);
             }
-            stopInfo.stopSignal->SignalStop(stopInfo.stopReasons);
-        
-            for (vector<HANDLE>::iterator handle = threadHandles.begin(); handle != threadHandles.end(); ++handle)
+            catch (InterruptedException e)
             {
-                WaitForSingleObject(*handle, INFINITE);
-                CloseHandle(*handle);
+                Thread.currentThread().interrupt();
             }
-        
+            
             // Build a list of all servers that responded within the threshold
             // time (+100%) of the best server. Using the best server as a base
             // is intended to factor out local network conditions, local cpu
             // conditions (e.g., SSL overhead) etc. We randomly shuffle the
-            // rsulting list for some client-side load balancing. Any server
+            // resulting list for some client-side load balancing. Any server
             // that meets the threshold is considered equally qualified for
             // any position towards the top of the list.
         
-            unsigned int fastestResponseTime = UINT_MAX;
+            long fastestResponseTime = Long.MAX_VALUE;
         
-            for (vector<WorkerThreadData*>::iterator data = threadData.begin(); data != threadData.end(); ++data)
+            for (CheckServerWorker worker : workers)
             {
-                my_print(
-                    true,
-                    _T("server: %s, responded: %s, response time: %d"),
-                    NarrowToTString((*data)->m_entry.serverAddress).c_str(),
-                    (*data)->m_responded ? L"yes" : L"no",
-                    (*data)->m_responseTime);
+                MyLog.d(
+                    String.format("server: %s, responded: %s, response time: %d",
+                            worker.entry.ipAddress, worker.responded ? "Yes" : "No", worker.responseTime));
         
-                if ((*data)->m_responded && (*data)->m_responseTime < fastestResponseTime)
+                if (worker.responded && worker.responseTime < fastestResponseTime)
                 {
-                    fastestResponseTime = (*data)->m_responseTime;
+                    fastestResponseTime = worker.responseTime;
                 }
             }
         
-            ServerEntries respondingServers;
+            ArrayList<ServerEntry> respondingServers = new ArrayList<ServerEntry>();
         
-            for (vector<WorkerThreadData*>::iterator data = threadData.begin(); data != threadData.end(); ++data)
+            for (CheckServerWorker worker : workers)
             {
-                if ((*data)->m_responded && (*data)->m_responseTime <=
-                        fastestResponseTime*RESPONSE_TIME_THRESHOLD_FACTOR)
+                if (worker.responded && worker.responseTime <= fastestResponseTime*RESPONSE_TIME_THRESHOLD_FACTOR)
                 {
-                    respondingServers.push_back((*data)->m_entry);
+                    respondingServers.add(worker.entry);
                 }
             }
         
-            random_shuffle(respondingServers.begin(), respondingServers.end());
+            Collections.shuffle(respondingServers);
         
             // Merge back into server entry list. MoveEntriesToFront will move
             // these servers to the top of the list in the order submitted. Any
@@ -202,23 +196,16 @@ public class ServerListReorder
         
             if (respondingServers.size() > 0)
             {
-                serverList.MoveEntriesToFront(respondingServers);
+                serverInterface.moveEntriesToFront(respondingServers);
         
-                my_print(false, _T("Preferred servers: %d"), respondingServers.size());
+                MyLog.i(R.string.preferred_servers, respondingServers.size());
             }
-        
-            // Cleanup
-        
-            for (vector<WorkerThreadData*>::iterator data = threadData.begin(); data != threadData.end(); ++data)
-            {
-                delete *data;
-            }
-            */
         }
     }
 
     public void Start()
     {
+        Stop();
         this.thread = new Thread(new ReorderServerList());
         this.thread.start();
     }
@@ -229,12 +216,16 @@ public class ServerListReorder
         {
             try
             {
-                // signal                
+                this.stopFlag = true;                
                 this.thread.join();
             }
-            catch (InterruptedException e) {}
+            catch (InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
+            }
         }
         
         this.thread = null;
+        this.stopFlag = false;
     }
 }

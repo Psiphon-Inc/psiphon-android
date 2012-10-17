@@ -330,7 +330,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 runAgain = false;
                 return runAgain;
             }
-            else if (!entry.hasCapabilities(PsiphonConstants.REQUIRED_CAPABILITIES))
+            else if (!entry.hasCapabilities(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
             {
             	// This server hasn't failed, per se, but it doesn't satisfy our
             	// required capabilities, so we're moving it to the bottom of the list.
@@ -723,7 +723,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     
     private void runTunnel() throws InterruptedException
     {
-    	if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES))
+    	if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
     	{
     		setState(State.DISCONNECTED);
     		MyLog.e(R.string.no_server_entries);
