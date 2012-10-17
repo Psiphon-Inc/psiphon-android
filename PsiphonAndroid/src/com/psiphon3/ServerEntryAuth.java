@@ -89,7 +89,7 @@ public class ServerEntryAuth
             if (0 != Base64.encode(publicKeyDigest).compareTo(signingPublicKeyDigest))
             {
                 // The entry is signed with a different public key than our embedded value
-                MyLog.w(R.string.ServerEntryAuth_WrongPublicKey);
+                MyLog.w(R.string.ServerEntryAuth_WrongPublicKey, MyLog.Sensitivity.NOT_SENSITIVE);
                 throw new ServerEntryAuthException();
             }
 
@@ -103,7 +103,7 @@ public class ServerEntryAuth
             verifier.update(data.getBytes());
             if (!verifier.verify(Base64.decode(signature)))
             {            
-                MyLog.w(R.string.ServerEntryAuth_InvalidSignature);
+                MyLog.w(R.string.ServerEntryAuth_InvalidSignature, MyLog.Sensitivity.NOT_SENSITIVE);
                 throw new ServerEntryAuthException();
             }
             
@@ -127,7 +127,7 @@ public class ServerEntryAuth
         }
         catch (JSONException e)
         {
-            MyLog.w(R.string.ServerEntryAuth_FailedToParseRemoteServerEntry, e);
+            MyLog.w(R.string.ServerEntryAuth_FailedToParseRemoteServerEntry, MyLog.Sensitivity.NOT_SENSITIVE, e);
             throw new ServerEntryAuthException(e);
         }
     }

@@ -83,7 +83,7 @@ public class FeedbackActivity extends Activity
                     catch (IOException e) 
                     {
                         attachmentFile = null;
-                        MyLog.e(R.string.FeedbackActivity_AttachmentWriteFailed);
+                        MyLog.e(R.string.FeedbackActivity_AttachmentWriteFailed, MyLog.Sensitivity.NOT_SENSITIVE);
                     }
                     
                     if (attachmentFile != null)
@@ -120,7 +120,7 @@ public class FeedbackActivity extends Activity
                 final String formDataParameterName = "formdata=";
                 if (!urlParameters.startsWith(formDataParameterName))
                 {
-                    MyLog.w(R.string.FeedbackActivity_InvalidURLParameters);
+                    MyLog.w(R.string.FeedbackActivity_InvalidURLParameters, MyLog.Sensitivity.NOT_SENSITIVE);
                     return false;
                 }
 
@@ -134,7 +134,7 @@ public class FeedbackActivity extends Activity
                 }
                 catch (UnsupportedEncodingException e)
                 {
-                    MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, e);
+                    MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                     return false;
                 }
                 
@@ -162,7 +162,7 @@ public class FeedbackActivity extends Activity
                         }
                         catch (PsiphonServerInterfaceException e)
                         {
-                            MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, e);
+                            MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                         }
                     }
                     
@@ -181,7 +181,7 @@ public class FeedbackActivity extends Activity
                 }
                 catch (InterruptedException e)
                 {
-                    MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, e);
+                    MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                     return false;
                 }
             }
@@ -205,7 +205,7 @@ public class FeedbackActivity extends Activity
         }
         catch (IOException e)
         {
-            MyLog.w(R.string.FeedbackActivity_GetHTMLContentFailed, e);
+            MyLog.w(R.string.FeedbackActivity_GetHTMLContentFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
             
             // Render the default text
             html = "<body>" + getString(R.string.FeedbackActivity_DefaultText) + "</body>";

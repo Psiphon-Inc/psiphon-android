@@ -322,17 +322,23 @@ public class PsiphonData
         Object[] formatArgs;
         Throwable throwable;
         int priority;
-        boolean sensitiveLog;
-        boolean sensitiveFormatArgs;
+        MyLog.Sensitivity sensitivity;
     }
     
     static private ArrayList<StatusEntry> m_statusHistory = new ArrayList<StatusEntry>();
     
-    static public void addStatusEntry(int id, String idName, Object[] formatArgs, Throwable throwable, int priority)
+    static public void addStatusEntry(
+    		int id, 
+    		String idName, 
+    		MyLog.Sensitivity sensitivity, 
+    		Object[] formatArgs, 
+    		Throwable throwable, 
+    		int priority)
     {
         StatusEntry entry = new StatusEntry();
         entry.id = id;
         entry.idName = idName;
+        entry.sensitivity = sensitivity;
         entry.formatArgs = formatArgs;
         entry.throwable = throwable;
         entry.priority = priority;

@@ -104,7 +104,7 @@ public interface UpgradeManager
                 // "If the file exists but is a directory rather than a regular 
                 //  file, does not exist but cannot be created, or cannot be 
                 //  opened for any other reason then a FileNotFoundException is thrown."
-                MyLog.w(R.string.UpgradeManager_UpgradeFileNotFound, e);
+                MyLog.w(R.string.UpgradeManager_UpgradeFileNotFound, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return false;
             }
             
@@ -115,7 +115,7 @@ public interface UpgradeManager
             } 
             catch (IOException e)
             {
-                MyLog.w(R.string.UpgradeManager_UpgradeFileWriteFailed, e);
+                MyLog.w(R.string.UpgradeManager_UpgradeFileWriteFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return false;
             }
             
@@ -182,7 +182,7 @@ public interface UpgradeManager
             {
                 // There's probably something wrong with the upgrade file.
                 file.delete();
-                MyLog.w(R.string.UpgradeManager_CannotExtractUpgradePackageInfo);
+                MyLog.w(R.string.UpgradeManager_CannotExtractUpgradePackageInfo, MyLog.Sensitivity.NOT_SENSITIVE);
                 return false;
             }
             
@@ -198,7 +198,7 @@ public interface UpgradeManager
             {
                 // This really shouldn't happen -- we're getting info about the 
                 // current package, which clearly exists.
-                MyLog.w(R.string.UpgradeManager_CanNotRetrievePackageInfo, e);
+                MyLog.w(R.string.UpgradeManager_CanNotRetrievePackageInfo, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return false;
             }
             
@@ -360,7 +360,7 @@ public interface UpgradeManager
                 //   client will never connect.
                 // - Fail-over exposes new server IPs to hostile networks, so we don't
                 //   like doing it in the case where we know the handshake already succeeded.
-                MyLog.w(R.string.UpgradeManager_UpgradeDownloadFailed, e);
+                MyLog.w(R.string.UpgradeManager_UpgradeDownloadFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return;
             }
             
@@ -369,7 +369,7 @@ public interface UpgradeManager
                 return;
             }
             
-            MyLog.v(R.string.UpgradeManager_UpgradeDownloaded);
+            MyLog.v(R.string.UpgradeManager_UpgradeDownloaded, MyLog.Sensitivity.NOT_SENSITIVE);
         }
     }
 }

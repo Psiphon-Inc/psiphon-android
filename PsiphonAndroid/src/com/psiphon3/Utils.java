@@ -263,6 +263,13 @@ public class Utils {
         static public ILogInfoProvider logInfoProvider;
         static public ILogger logger;
         
+        public enum Sensitivity
+        {
+        	NOT_SENSITIVE,
+        	SENSITIVE_LOG,
+        	SENSITIVE_FORMAT_ARGS
+        }
+        
         /**
          * Safely wraps the string resource extraction function. If an error 
          * occurs with the format specifiers, the raw string will be returned.
@@ -292,7 +299,12 @@ public class Utils {
             
             for (StatusEntry logEntry : history)
             {
-                MyLog.println(logEntry.id, logEntry.formatArgs, logEntry.throwable, logEntry.priority);
+                MyLog.println(
+                		logEntry.id, 
+                		logEntry.sensitivity, 
+                		logEntry.formatArgs, 
+                		logEntry.throwable, 
+                		logEntry.priority);
             }
         }
         
@@ -306,51 +318,57 @@ public class Utils {
             MyLog.println(msg, throwable, Log.DEBUG);
         }
 
-        static void e(int stringResID, Object... formatArgs)
+        static void e(int stringResID, Sensitivity sensitivity, Object... formatArgs)
         {
-            MyLog.println(stringResID, formatArgs, null, Log.ERROR);
+            MyLog.println(stringResID, sensitivity, formatArgs, null, Log.ERROR);
         }
 
-        static void e(int stringResID, Throwable throwable)
+        static void e(int stringResID, Sensitivity sensitivity, Throwable throwable)
         {
-            MyLog.println(stringResID, null, throwable, Log.ERROR);
+            MyLog.println(stringResID, sensitivity, null, throwable, Log.ERROR);
         }
         
-        static void w(int stringResID, Object... formatArgs)
+        static void w(int stringResID, Sensitivity sensitivity, Object... formatArgs)
         {
-            MyLog.println(stringResID, formatArgs, null, Log.WARN);
+            MyLog.println(stringResID, sensitivity, formatArgs, null, Log.WARN);
         }
 
-        static void w(int stringResID, Throwable throwable)
+        static void w(int stringResID, Sensitivity sensitivity, Throwable throwable)
         {
-            MyLog.println(stringResID, null, throwable, Log.WARN);
+            MyLog.println(stringResID, sensitivity, null, throwable, Log.WARN);
         }
         
-        static void i(int stringResID, Object... formatArgs)
+        static void i(int stringResID, Sensitivity sensitivity, Object... formatArgs)
         {
-            MyLog.println(stringResID, formatArgs, null, Log.INFO);
+            MyLog.println(stringResID, sensitivity, formatArgs, null, Log.INFO);
         }
 
-        static void i(int stringResID, Throwable throwable)
+        static void i(int stringResID, Sensitivity sensitivity, Throwable throwable)
         {
-            MyLog.println(stringResID, null, throwable, Log.INFO);
+            MyLog.println(stringResID, sensitivity, null, throwable, Log.INFO);
         }
         
-        static void v(int stringResID, Object... formatArgs)
+        static void v(int stringResID, Sensitivity sensitivity, Object... formatArgs)
         {
-            MyLog.println(stringResID, formatArgs, null, Log.VERBOSE);
+            MyLog.println(stringResID, sensitivity, formatArgs, null, Log.VERBOSE);
         }
 
-        static void v(int stringResID, Throwable throwable)
+        static void v(int stringResID, Sensitivity sensitivity, Throwable throwable)
         {
-            MyLog.println(stringResID, null, throwable, Log.VERBOSE);
+            MyLog.println(stringResID, sensitivity, null, throwable, Log.VERBOSE);
         }
         
-        private static void println(int stringResID, Object[] formatArgs, Throwable throwable, int priority)
+        private static void println(
+        		int stringResID, 
+        		Sensitivity sensitivity, 
+        		Object[] formatArgs, 
+        		Throwable throwable, 
+        		int priority)
         {
             PsiphonData.addStatusEntry(
-                    stringResID, 
+                    stringResID,
                     logInfoProvider.getResourceEntryName(stringResID), 
+                    sensitivity,
                     formatArgs, 
                     throwable, 
                     priority);

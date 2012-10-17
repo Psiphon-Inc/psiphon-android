@@ -74,13 +74,13 @@ public class DnsProxy
         }
         catch(SocketException e)
         {
-            MyLog.e(R.string.dns_proxy_failed, e);
+            MyLog.e(R.string.dns_proxy_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
             this.serverSocket.close();
             return false;
         }
         catch (UnknownHostException e)
         {
-            MyLog.e(R.string.dns_proxy_failed, e);
+            MyLog.e(R.string.dns_proxy_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
             this.serverSocket.close();
             return false;
         }

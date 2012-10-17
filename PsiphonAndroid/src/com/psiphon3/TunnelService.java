@@ -90,7 +90,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             m_interface = new ServerInterface(this);
             m_upgradeDownloader = new UpgradeManager.UpgradeDownloader(this, m_interface);
             doForeground();
-            MyLog.v(R.string.client_version, EmbeddedValues.CLIENT_VERSION);
+            MyLog.v(R.string.client_version, MyLog.Sensitivity.NOT_SENSITIVE, EmbeddedValues.CLIENT_VERSION);
             startTunnel();
             m_firstStart = false;
         }
@@ -231,7 +231,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 
         public void connectionLost(Throwable reason)
         {
-            MyLog.e(R.string.ssh_disconnected_unexpectedly);
+            MyLog.e(R.string.ssh_disconnected_unexpectedly, MyLog.Sensitivity.NOT_SENSITIVE);
     
             // 'Add' will do nothing if there's already a pending signal.
             // This is ok: the pending signal is either UNEXPECTED_DISCONNECT
@@ -310,7 +310,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         {
             if (entry == null)
             {
-                MyLog.e(R.string.no_server_entries);
+                MyLog.e(R.string.no_server_entries, MyLog.Sensitivity.NOT_SENSITIVE);
                 runAgain = false;
                 return runAgain;
             }
@@ -332,7 +332,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         	
             // Wait for network connectivity before proceeding
 
-            MyLog.v(R.string.waiting_for_network_connectivity);
+            MyLog.v(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);
 
             while (!Utils.hasNetworkConnectivity(this))
             {
@@ -348,7 +348,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             {
                 // Check for required root access *before* establishing the SSH connection
                 
-                MyLog.v(R.string.checking_for_root_access);
+                MyLog.v(R.string.checking_for_root_access, MyLog.Sensitivity.NOT_SENSITIVE);
 
                 // Check root access
                 //
@@ -373,7 +373,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                     if (result == 0)
                     {
                         // Root access denied
-                        MyLog.e(R.string.root_access_denied);
+                        MyLog.e(R.string.root_access_denied, MyLog.Sensitivity.NOT_SENSITIVE);
                         runAgain = false;
                         return runAgain;                        
                     }
@@ -394,7 +394,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 
             checkSignals(0);
 
-            MyLog.v(R.string.ssh_connecting);
+            MyLog.v(R.string.ssh_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
             conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
             Monitor monitor = new Monitor(m_signalQueue);
             conn.connect(
@@ -402,7 +402,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                     0,
                     PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS,
                     this);
-            MyLog.v(R.string.ssh_connected);
+            MyLog.v(R.string.ssh_connected, MyLog.Sensitivity.NOT_SENSITIVE);
 
             checkSignals(0);
 
@@ -410,16 +410,16 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             // uses this to associate the tunnel with web requests -- for GeoIP region stats
             String sshPassword = m_interface.getCurrentClientSessionID() + entry.sshPassword;
 
-            MyLog.v(R.string.ssh_authenticating);
+            MyLog.v(R.string.ssh_authenticating, MyLog.Sensitivity.NOT_SENSITIVE);
             boolean isAuthenticated = conn.authenticateWithPassword(entry.sshUsername, sshPassword);
             if (isAuthenticated == false)
             {
-                MyLog.e(R.string.ssh_authentication_failed);
+                MyLog.e(R.string.ssh_authentication_failed, MyLog.Sensitivity.NOT_SENSITIVE);
                 return runAgain;
             }
-            MyLog.v(R.string.ssh_authenticated);
+            MyLog.v(R.string.ssh_authenticated, MyLog.Sensitivity.NOT_SENSITIVE);
 
-            MyLog.v(R.string.socks_starting);
+            MyLog.v(R.string.socks_starting, MyLog.Sensitivity.NOT_SENSITIVE);
 
             // If polipo is already running, we must use the same SOCKS port that polipo is
             // already using as it's parent proxy port.
@@ -427,7 +427,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             {
                 if (!Utils.isPortAvailable(PsiphonData.getPsiphonData().getSocksPort()))
                 {
-                    MyLog.e(R.string.socks_port_in_use, PsiphonData.getPsiphonData().getSocksPort());
+                    MyLog.e(R.string.socks_port_in_use, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getSocksPort());
                     runAgain = false;
                     return runAgain;
                 }
@@ -437,7 +437,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 int port = Utils.findAvailablePort(PsiphonConstants.SOCKS_PORT, 10);
                 if (port == 0)
                 {
-                    MyLog.e(R.string.socks_ports_failed);
+                    MyLog.e(R.string.socks_ports_failed, MyLog.Sensitivity.NOT_SENSITIVE);
                     runAgain = false;
                     return runAgain;
                 }
@@ -445,7 +445,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             }
 
             socks = conn.createDynamicPortForwarder(PsiphonData.getPsiphonData().getSocksPort());
-            MyLog.v(R.string.socks_running, PsiphonData.getPsiphonData().getSocksPort());
+            MyLog.v(R.string.socks_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getSocksPort());
 
             // The HTTP proxy implementation is provided by Polipo,
             // a native application accessed via JNI. This proxy is
@@ -460,12 +460,12 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 
             if (PsiphonData.getPsiphonData().getHttpProxyPort() == 0)
             {
-                MyLog.e(R.string.http_proxy_ports_failed);
+                MyLog.e(R.string.http_proxy_ports_failed, MyLog.Sensitivity.NOT_SENSITIVE);
                 runAgain = false;
                 return runAgain;
             }
 
-            MyLog.v(R.string.http_proxy_running, PsiphonData.getPsiphonData().getHttpProxyPort());
+            MyLog.v(R.string.http_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getHttpProxyPort());
             
             // Start transparent proxy, DNS proxy, and iptables config
                         
@@ -475,7 +475,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 int port = Utils.findAvailablePort(PsiphonConstants.DNS_PROXY_PORT, 10);
                 if (port == 0)
                 {
-                    MyLog.e(R.string.dns_proxy_ports_failed);
+                    MyLog.e(R.string.dns_proxy_ports_failed, MyLog.Sensitivity.NOT_SENSITIVE);
                     runAgain = false;
                     return runAgain;
                 }
@@ -493,12 +493,12 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                     return runAgain;             
                 }
                 
-                MyLog.v(R.string.dns_proxy_running, PsiphonData.getPsiphonData().getDnsProxyPort());            
+                MyLog.v(R.string.dns_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getDnsProxyPort());            
                 
                 port = Utils.findAvailablePort(PsiphonConstants.TRANSPARENT_PROXY_PORT, 10);
                 if (port == 0)
                 {
-                    MyLog.e(R.string.transparent_proxy_ports_failed);
+                    MyLog.e(R.string.transparent_proxy_ports_failed, MyLog.Sensitivity.NOT_SENSITIVE);
                     runAgain = false;
                     return runAgain;
                 }
@@ -514,12 +514,12 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 catch (PsiphonTransparentProxyException e)
                 {
                     // If we can't configure the iptables routing, abort
-                    MyLog.e(R.string.transparent_proxy_failed, e.getMessage());
+                    MyLog.e(R.string.transparent_proxy_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
                     runAgain = false;
                     return runAgain;
                 }
                 
-                MyLog.v(R.string.transparent_proxy_running, PsiphonData.getPsiphonData().getTransparentProxyPort());
+                MyLog.v(R.string.transparent_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getTransparentProxyPort());
             }
             
             // Don't signal unexpected disconnect until we've started
@@ -539,7 +539,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             } 
             catch (PsiphonServerInterfaceException requestException)
             {
-                MyLog.e(R.string.PsiphonAndroidService_HandshakeRequestFailed, requestException);
+                MyLog.e(R.string.PsiphonAndroidService_HandshakeRequestFailed, MyLog.Sensitivity.NOT_SENSITIVE, requestException);
 
                 // Treat this case like a tunnel failure -- we don't want to proceed without
                 // a session ID, home page, etc. We don't expect it's likely that the handshake
@@ -547,7 +547,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 throw new IOException();
             }
             
-            MyLog.i(tunnelWholeDevice ? R.string.psiphon_running_whole_device : R.string.psiphon_running_browser_only);
+            MyLog.i(tunnelWholeDevice ? R.string.psiphon_running_whole_device : R.string.psiphon_running_browser_only, MyLog.Sensitivity.NOT_SENSITIVE);
 
             checkSignals(0);
 
@@ -557,7 +557,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             } 
             catch (PsiphonServerInterfaceException requestException)
             {
-                MyLog.w(R.string.PsiphonAndroidService_ConnectedRequestFailed, requestException);
+                MyLog.w(R.string.PsiphonAndroidService_ConnectedRequestFailed, MyLog.Sensitivity.NOT_SENSITIVE, requestException);
                 // Allow the user to continue. Their session might still function correctly.
             }
             
@@ -599,7 +599,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             // TODO: This prints too much info -- the stack trace, but also IP
             // address (not sure if we want to obscure that or not...) 
             //MyLog.e(R.string.error_message, e);
-            MyLog.e(R.string.ssh_connection_failed);
+            MyLog.e(R.string.ssh_connection_failed, MyLog.Sensitivity.NOT_SENSITIVE);
         }
         catch (TunnelServiceUnexpectedDisconnect e)
         {
@@ -648,7 +648,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             if (dnsProxy != null)
             {
                 dnsProxy.Stop();
-                MyLog.v(R.string.dns_proxy_stopped);                
+                MyLog.v(R.string.dns_proxy_stopped, MyLog.Sensitivity.NOT_SENSITIVE);                
             }
             
             if (transparentProxy != null)
@@ -661,7 +661,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 {
                     // Ignore
                 }
-                MyLog.v(R.string.transparent_proxy_stopped);                
+                MyLog.v(R.string.transparent_proxy_stopped, MyLog.Sensitivity.NOT_SENSITIVE);                
             }
             
             if (socks != null)
@@ -674,14 +674,14 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 {
                     // Ignore
                 }
-                MyLog.v(R.string.socks_stopped);
+                MyLog.v(R.string.socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
             }
 
             if (conn != null)
             {
                 conn.clearConnectionMonitors();
                 conn.close();
-                MyLog.v(R.string.ssh_stopped);
+                MyLog.v(R.string.ssh_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
             }
             
             m_upgradeDownloader.stop();
@@ -710,7 +710,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     	if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES))
     	{
     		setState(State.DISCONNECTED);
-    		MyLog.e(R.string.no_server_entries);
+    		MyLog.e(R.string.no_server_entries, MyLog.Sensitivity.NOT_SENSITIVE);
     		return;
     	}
     	
@@ -739,7 +739,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             }
             catch (PsiphonServerInterfaceException requestException)
             {
-                MyLog.w(R.string.TunnelService_FetchRemoteServerListFailed, requestException);
+                MyLog.w(R.string.TunnelService_FetchRemoteServerListFailed, MyLog.Sensitivity.NOT_SENSITIVE, requestException);
             }
             finally
             {
@@ -764,7 +764,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     {
         stopTunnel();
 
-        MyLog.v(R.string.starting_tunnel);
+        MyLog.v(R.string.starting_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
         setState(State.CONNECTING);
         
@@ -796,7 +796,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         {
             try
             {
-                MyLog.v(R.string.stopping_tunnel);
+                MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
                 
                 // Override UNEXPECTED_DISCONNECT; TODO: race condition?
                 m_signalQueue.clear();
@@ -816,8 +816,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 
                 m_tunnelThread.join();
 
-                MyLog.v(R.string.stopped_tunnel);
-                MyLog.e(R.string.psiphon_stopped);
+                MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+                MyLog.e(R.string.psiphon_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
             }
             catch (InterruptedException e)
             {
