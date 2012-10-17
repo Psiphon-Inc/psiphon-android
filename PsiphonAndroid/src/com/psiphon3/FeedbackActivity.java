@@ -30,8 +30,10 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Locale;
 
+import com.psiphon3.PsiphonData.StatusEntry;
 import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.Utils.MyLog;
 
@@ -59,6 +61,78 @@ public class FeedbackActivity extends Activity
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new WebViewClient()
         {
+        	private File createEmailAttachment()
+        	{
+        		StringBuilder content = new StringBuilder();
+
+        		content.append("\n--- # Status History\n\n");
+        		ArrayList<StatusEntry> history = PsiphonData.cloneStatusHistory();
+        		for (StatusEntry entry : history)
+        		{
+        			// Don't send any sensitive logs
+        			if (entry.sensitivity == MyLog.Sensitivity.SENSITIVE_LOG)
+        			{
+        				continue;
+        			}
+        			
+        			StringBuilder formatArgs = new StringBuilder();
+        			if (entry.formatArgs != null && entry.formatArgs.length > 0
+    					// Don't send any sensitive format args
+    					&& entry.sensitivity != MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS)
+        			{
+            			formatArgs.append("[");
+	        			for (int i = 0; i < entry.formatArgs.length; i++)
+	        			{
+	        				String arg = entry.formatArgs[i].toString();
+	        				formatArgs.append("\"").append(arg).append("\"");
+	        				if (i < entry.formatArgs.length-1)
+	        				{
+	        					formatArgs.append(", ");
+	        				}
+	        			}
+	        			formatArgs.append("]");
+        			}
+        			
+        			StringBuilder throwable = new StringBuilder();
+        			if (entry.throwable != null)
+    				{
+        				throwable.append("\n    message: \"").append(entry.throwable.toString()).append("\"");
+        				throwable.append("\n    stack: ");
+        				for (StackTraceElement element : entry.throwable.getStackTrace())
+        				{
+        					throwable.append("\n      - \"").append(element).append("\"");
+        				}
+    				}
+        			
+        		    
+        			content.append("- id: ").append(entry.idName).append("\n");
+        			content.append("  formatArgs: ").append(formatArgs).append("\n");
+        			content.append("  throwable: ").append(throwable).append("\n");
+        		}
+        		
+                File attachmentFile = null;
+                try 
+                {
+                	// The attachment must be created on external storage, 
+                	// or else Gmail gives this error:
+                	// E/Gmail(18760): file:// attachment paths must point to file:///storage/sdcard0. Ignoring attachment [obscured file path]
+
+                    attachmentFile = new File(getExternalFilesDir("feedback"), PsiphonConstants.FEEDBACK_ATTACHMENT_FILENAME);
+
+                    // Note that we're overwriting any existing file
+                    FileWriter writer = new FileWriter(attachmentFile, false);
+                    writer.write(content.toString());
+                    writer.close();
+                } 
+                catch (IOException e) 
+                {
+                    attachmentFile = null;
+                    MyLog.e(R.string.FeedbackActivity_AttachmentWriteFailed, MyLog.Sensitivity.NOT_SENSITIVE);
+                }
+                
+                return attachmentFile;        		
+        	}
+        	
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url)
             {
@@ -70,26 +144,7 @@ public class FeedbackActivity extends Activity
                     intent.setType("message/rfc822");
                     intent.putExtra(Intent.EXTRA_EMAIL, new String[] {MailTo.parse(url).getTo()});
                     
-                    File attachmentFile = null;
-                    try 
-                    {
-                    	// The attachment must be created on external storage, 
-                    	// or else Gmail gives this error:
-                    	// E/Gmail(18760): file:// attachment paths must point to file:///storage/sdcard0. Ignoring attachment [obscured file path]
-
-                        attachmentFile = new File(getExternalFilesDir("feedback"), PsiphonConstants.FEEDBACK_ATTACHMENT_FILENAME);
-
-                        // Note that we're overwriting any existing file
-                        FileWriter writer = new FileWriter(attachmentFile, false);
-                        writer.write("{test3}");
-                        writer.close();
-                    } 
-                    catch (IOException e) 
-                    {
-                        attachmentFile = null;
-                        MyLog.e(R.string.FeedbackActivity_AttachmentWriteFailed, MyLog.Sensitivity.NOT_SENSITIVE);
-                    }
-                    
+                    File attachmentFile = createEmailAttachment();
                     if (attachmentFile != null)
                     {
                         intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(attachmentFile));
