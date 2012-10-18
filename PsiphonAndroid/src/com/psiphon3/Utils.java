@@ -265,9 +265,9 @@ public class Utils {
         
         public enum Sensitivity
         {
-        	NOT_SENSITIVE,
-        	SENSITIVE_LOG,
-        	SENSITIVE_FORMAT_ARGS
+            NOT_SENSITIVE,
+            SENSITIVE_LOG,
+            SENSITIVE_FORMAT_ARGS
         }
         
         /**
@@ -300,11 +300,11 @@ public class Utils {
             for (StatusEntry logEntry : history)
             {
                 MyLog.println(
-                		logEntry.id, 
-                		logEntry.sensitivity, 
-                		logEntry.formatArgs, 
-                		logEntry.throwable, 
-                		logEntry.priority);
+                        logEntry.id, 
+                        logEntry.sensitivity, 
+                        logEntry.formatArgs, 
+                        logEntry.throwable, 
+                        logEntry.priority);
             }
         }
         
@@ -359,11 +359,11 @@ public class Utils {
         }
         
         private static void println(
-        		int stringResID, 
-        		Sensitivity sensitivity, 
-        		Object[] formatArgs, 
-        		Throwable throwable, 
-        		int priority)
+                int stringResID, 
+                Sensitivity sensitivity, 
+                Object[] formatArgs, 
+                Throwable throwable, 
+                int priority)
         {
             PsiphonData.addStatusEntry(
                     stringResID,
