@@ -317,6 +317,7 @@ public class PsiphonData
 
     static public class StatusEntry
     {
+        String timestamp;
         int id;
         String idName;
         Object[] formatArgs;
@@ -328,6 +329,7 @@ public class PsiphonData
     static private ArrayList<StatusEntry> m_statusHistory = new ArrayList<StatusEntry>();
     
     static public void addStatusEntry(
+            String timestamp,
     		int id, 
     		String idName, 
     		MyLog.Sensitivity sensitivity, 
@@ -336,6 +338,7 @@ public class PsiphonData
     		int priority)
     {
         StatusEntry entry = new StatusEntry();
+        entry.timestamp = timestamp;
         entry.id = id;
         entry.idName = idName;
         entry.sensitivity = sensitivity;

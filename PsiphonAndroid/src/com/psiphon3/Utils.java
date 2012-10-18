@@ -366,6 +366,7 @@ public class Utils {
                 int priority)
         {
             PsiphonData.addStatusEntry(
+                    Utils.getISO8601String(),
                     stringResID,
                     logInfoProvider.getResourceEntryName(stringResID), 
                     sensitivity,

@@ -106,6 +106,7 @@ public class FeedbackActivity extends Activity
         			
         		    
         			content.append("- id: ").append(entry.idName).append("\n");
+                    content.append("  timestamp: ").append(entry.timestamp).append("\n");
         			content.append("  formatArgs: ").append(formatArgs).append("\n");
         			content.append("  throwable: ").append(throwable).append("\n");
         		}
