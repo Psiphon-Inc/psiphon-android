@@ -198,7 +198,7 @@ public class ServerListReorder
             {
                 serverInterface.moveEntriesToFront(respondingServers);
         
-                MyLog.i(R.string.preferred_servers, respondingServers.size());
+                MyLog.v(R.string.preferred_servers, respondingServers.size());
             }
         }
     }
