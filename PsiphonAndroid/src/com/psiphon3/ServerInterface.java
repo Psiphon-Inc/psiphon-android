@@ -340,10 +340,17 @@ public class ServerInterface
     
     synchronized void markCurrentServerFailed()
     {
-        if (this.serverEntries.size() > 0)
+        if (this.currentServerEntry != null)
         {
             // Move to end of list for last chance retry
-            this.serverEntries.add(this.serverEntries.remove(0));
+            for (int i = 0; i < this.serverEntries.size(); i++)
+            {
+                if (this.serverEntries.get(i).ipAddress.equals(this.currentServerEntry.ipAddress))
+                {
+                    this.serverEntries.add(this.serverEntries.remove(i));
+                    break;
+                }
+            }
             
             // Save the new server order
             saveServerEntries();
@@ -1277,7 +1284,7 @@ public class ServerInterface
             {
                 ServerEntry existingEntry = this.serverEntries.get(j);
 
-                if (reorderedEntry.ipAddress == existingEntry.ipAddress)
+                if (reorderedEntry.ipAddress.equals(existingEntry.ipAddress))
                 {
                     // NOTE: depends on encodedEntry representing the entire object
                     if (0 != reorderedEntry.encodedEntry.compareTo(existingEntry.encodedEntry))
