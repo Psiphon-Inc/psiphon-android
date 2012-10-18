@@ -312,7 +312,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         // It's also included with the SSH login, for GeoIP region lookup on the server-side
         m_interface.generateNewCurrentClientSessionID();
         
-        ServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
+        ServerInterface.ServerEntry entry = m_interface.setCurrentServerEntry();
 
         boolean runAgain = true;
         boolean unexpectedDisconnect = false;

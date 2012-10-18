@@ -176,6 +176,7 @@ public class ServerInterface
     private ArrayList<ServerEntry> serverEntries = new ArrayList<ServerEntry>();
     private String upgradeClientVersion;
     private String serverSessionID;
+    private ServerEntry currentServerEntry;
     
     /** Array of all outstanding/ongoing requests. Anything in this array will
      * be aborted when {@link#stop()} is called. */
@@ -250,6 +251,7 @@ public class ServerInterface
     public void start()
     {
         this.stopped = false;
+        this.currentServerEntry = null;
     }
 
     /**
@@ -259,6 +261,9 @@ public class ServerInterface
     {
         
         this.stopped = true;
+        
+        // NOTE: can't clear this here, as some requests are done after stop() is called in stopTunnel()
+        //this.currentServerEntry = null;
         
         // This may be called from the app main thread, so it must not make 
         // network requests directly (because that's disallowed in Android).
@@ -290,14 +295,22 @@ public class ServerInterface
         }
     } 
 
-    synchronized ServerEntry getCurrentServerEntry()
+    synchronized ServerEntry setCurrentServerEntry()
     {
+        // Saves selected currentServerEntry for future reference (e.g., used by getRequestURL calls)
+        
         if (this.serverEntries.size() > 0)
         {
-            return this.serverEntries.get(0).clone();
+            this.currentServerEntry = this.serverEntries.get(0).clone();
+            return this.currentServerEntry;
         }
 
         return null;
+    }
+    
+    synchronized ServerEntry getCurrentServerEntry()
+    {
+        return this.currentServerEntry.clone();
     }
     
     synchronized ArrayList<ServerEntry> getServerEntries()
