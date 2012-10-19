@@ -41,7 +41,6 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.Map;
@@ -237,6 +236,7 @@ public class ServerInterface
         {
             shuffleAndAddServerEntries(
                 EmbeddedValues.EMBEDDED_SERVER_LIST.split("\n"), true);
+            saveServerEntries();
         } 
         catch (JSONException e)
         {
@@ -461,7 +461,11 @@ public class ServerInterface
                     {
                         entries[i] = encoded_server_list.getString(i);
                     }
-                    shuffleAndAddServerEntries(entries, false);
+                    if (encoded_server_list.length() > 0)
+                    {
+                        shuffleAndAddServerEntries(entries, false);
+                        saveServerEntries();
+                    }
                     
                     // We only support SSH, so this is our server session ID.
                     this.serverSessionID = obj.getString("ssh_session_id");
@@ -1229,9 +1233,6 @@ public class ServerInterface
             int index = this.serverEntries.size() > 0 ? 1 : 0;
             this.serverEntries.add(index, newEntry);
         }
-
-        // Save the updated server entries
-        saveServerEntries();
     }
     
     private void saveServerEntries()
