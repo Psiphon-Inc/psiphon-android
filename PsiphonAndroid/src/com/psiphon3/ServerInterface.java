@@ -471,7 +471,6 @@ public class ServerInterface
             String connected_timestamp = obj.getString("connected_timestamp");
             FileOutputStream file;
             file = this.ownerContext.openFileOutput(PsiphonConstants.LAST_CONNECTED_FILENAME, Context.MODE_PRIVATE);
-            file.write(Utils.getISO8601String().getBytes());
             file.write(connected_timestamp.getBytes());
             file.close();
         }
