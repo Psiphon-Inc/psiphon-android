@@ -463,19 +463,28 @@ public class ServerInterface
         
         String url = getRequestURL("connected", extraParams);
         
-        makeAbortableProxiedPsiphonRequest(url);
+        byte[] response = makeAbortableProxiedPsiphonRequest(url);
 
         try
         {
+            JSONObject obj = new JSONObject(new String(response));
+            String connected_timestamp = obj.getString("connected_timestamp");
             FileOutputStream file;
             file = this.ownerContext.openFileOutput(PsiphonConstants.LAST_CONNECTED_FILENAME, Context.MODE_PRIVATE);
             file.write(Utils.getISO8601String().getBytes());
+            file.write(connected_timestamp.getBytes());
             file.close();
         }
         catch (IOException e)
         {
             MyLog.w(R.string.ServerInterface_FailedToStoreLastConnected, e);
             // Proceed, even if file saving fails
+        }
+        catch(JSONException e)
+        {
+            MyLog.w(R.string.ServerInterface_FailedToParseLastConnected, e);
+            // Proceed if parsing response fails
+
         }
     }
 

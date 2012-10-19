@@ -26,6 +26,7 @@
     <string name="ServerInterface.FailedToParseEmbeddedServerEntries">Failed to parse embedded server entries.</string>
     <string name="ServerInterface.FailedToParseHandshake">Failed to parse handshake.</string>
     <string name="ServerInterface.FailedToStoreLastConnected">Failed to store last connected time.</string>
+    <string name="ServerInterface.FailedToParseLastConnected">Failed to parse JSON last connected time response.</string>
     <string name="ServerInterface.FailedToReadLastConnected">Failed to read last connected time.</string>
     <string name="PsiphonAndroidService.HandshakeRequestFailed">Handshake request failed.</string>
     <string name="PsiphonAndroidService.ConnectedRequestFailed">Connected request failed.</string>
