@@ -143,16 +143,15 @@ public class DnsProxy
                 }
             }
             
-            threadPool.shutdown();
             try
             {
+                threadPool.shutdownNow();
                 threadPool.awaitTermination(SHUTDOWN_TIMEOUT_MILLISECONDS, TimeUnit.MILLISECONDS);
             }
             catch (InterruptedException e)
             {
                 Thread.currentThread().interrupt();
             }
-            threadPool.shutdownNow();
         }        
     }
     

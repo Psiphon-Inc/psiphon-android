@@ -62,5 +62,5 @@ public class PsiphonConstants
 
     public final static String ROOTED = "_rooted";
     
-    public final static ArrayList<String> REQUIRED_CAPABILITIES = new ArrayList<String>(){{ add(PsiphonConstants.RELAY_PROTOCOL); }};
+    public final static ArrayList<String> REQUIRED_CAPABILITIES_FOR_TUNNEL = new ArrayList<String>(){{ add(PsiphonConstants.RELAY_PROTOCOL); }};
 }
