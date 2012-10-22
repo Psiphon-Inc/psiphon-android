@@ -30,11 +30,21 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URLDecoder;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+
 import com.psiphon3.PsiphonData.StatusEntry;
 import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
+import com.psiphon3.Utils.Base64;
 import com.psiphon3.Utils.MyLog;
 
 import android.app.Activity;
@@ -63,6 +73,9 @@ public class FeedbackActivity extends Activity
         {
         	private File createEmailAttachment()
         	{
+        	    // Our attachment is YAML, which is then encrypted, and the 
+        	    // encryption elements stored in JSON.        	    
+        	    
         		StringBuilder content = new StringBuilder();
 
         		content.append("\n--- # Status History\n\n");
@@ -111,24 +124,89 @@ public class FeedbackActivity extends Activity
         			content.append("  throwable: ").append(throwable).append("\n");
         		}
         		
-                File attachmentFile = null;
-                try 
+        		// Encrypt the file contents
+        		byte[] contentCiphertext = null, iv = null, 
+        		        wrappedEncryptionKey = null, contentMac = null, 
+        		        wrappedMacKey = null;
+        		boolean attachOkay = false;
+                try
                 {
-                	// The attachment must be created on external storage, 
-                	// or else Gmail gives this error:
-                	// E/Gmail(18760): file:// attachment paths must point to file:///storage/sdcard0. Ignoring attachment [obscured file path]
+                    KeyGenerator keygen = KeyGenerator.getInstance("AES");
+                    keygen.init(128);
 
-                    attachmentFile = new File(getExternalFilesDir("feedback"), PsiphonConstants.FEEDBACK_ATTACHMENT_FILENAME);
+                    SecretKey encryptionKey = keygen.generateKey();
+                    
+                    // Note that we're using GCM, so an additional MAC isn't necessary.
+                    Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                    aesCipher.init(Cipher.ENCRYPT_MODE, encryptionKey);
+                    
+                    // Encrypt the cleartext content
+                    contentCiphertext = aesCipher.doFinal(content.toString().getBytes("UTF-8"));
+                    
+                    // Get the IV
+                    iv = aesCipher.getIV();
+                    
+                    // Created a MAC (encrypt-then-MAC).
+                    SecretKey macKey = keygen.generateKey();
+                    Mac mac = Mac.getInstance("HmacSHA256");
+                    mac.init(macKey);
+                    contentMac = mac.doFinal(contentCiphertext);
+                    
+                    // Ready the public key that we'll ues to share keys
+                    byte[] publicKeyBytes = Base64.decode(EmbeddedValues.ENCRYPTION_PUBLIC_KEY);
+                    X509EncodedKeySpec spec = new X509EncodedKeySpec(publicKeyBytes);
+                    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+                    PublicKey publicKey = keyFactory.generatePublic(spec);
+                    Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+                    rsaCipher.init(Cipher.WRAP_MODE, publicKey);
+                    
+                    // Wrap the encryption key.
+                    wrappedEncryptionKey = rsaCipher.wrap(encryptionKey);
 
-                    // Note that we're overwriting any existing file
-                    FileWriter writer = new FileWriter(attachmentFile, false);
-                    writer.write(content.toString());
-                    writer.close();
+                    // Wrap the MAC key.
+                    wrappedMacKey = rsaCipher.wrap(macKey);
+                    
+                    attachOkay = true;
+                }
+                catch (GeneralSecurityException e)
+                {
+                    MyLog.e(R.string.FeedbackActivity_EncryptedFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 } 
-                catch (IOException e) 
+                catch (UnsupportedEncodingException e)
                 {
-                    attachmentFile = null;
-                    MyLog.e(R.string.FeedbackActivity_AttachmentWriteFailed, MyLog.Sensitivity.NOT_SENSITIVE);
+                    MyLog.e(R.string.FeedbackActivity_EncryptedFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+                }
+
+                File attachmentFile = null;
+                if (attachOkay)
+                {
+                    StringBuilder encryptedContent = new StringBuilder();
+                    encryptedContent.append("{\n");
+                    encryptedContent.append("  \"contentCiphertext\": \"").append(Utils.Base64.encode(contentCiphertext)).append("\",\n");
+                    encryptedContent.append("  \"iv\": \"").append(Utils.Base64.encode(iv)).append("\",\n");
+                    encryptedContent.append("  \"wrappedEncryptionKey\": \"").append(Utils.Base64.encode(wrappedEncryptionKey)).append("\",\n");
+                    encryptedContent.append("  \"contentMac\": \"").append(Utils.Base64.encode(contentMac)).append("\",\n");
+                    encryptedContent.append("  \"wrappedMacKey\": \"").append(Utils.Base64.encode(wrappedMacKey)).append("\"\n");
+                    encryptedContent.append("}");
+                    
+                    try 
+                    {
+                    	// The attachment must be created on external storage, 
+                    	// or else Gmail gives this error:
+                    	// E/Gmail(18760): file:// attachment paths must point to file:///storage/sdcard0. Ignoring attachment [obscured file path]
+    
+                        attachmentFile = new File(getExternalFilesDir("feedback"), PsiphonConstants.FEEDBACK_ATTACHMENT_FILENAME);
+    
+                        // Note that we're overwriting any existing file
+                        FileWriter writer = new FileWriter(attachmentFile, false);
+                        writer.write(encryptedContent.toString());
+                        writer.close();
+                    } 
+                    catch (IOException e) 
+                    {
+                        attachmentFile = null;
+                        MyLog.e(R.string.FeedbackActivity_AttachmentWriteFailed, MyLog.Sensitivity.NOT_SENSITIVE);
+                    }
                 }
                 
                 return attachmentFile;        		
