@@ -716,6 +716,7 @@ public class ServerInterface
                 String serverList = ServerEntryAuth.validateAndExtractServerList(new String(response));
     
                 shuffleAndAddServerEntries(serverList.split("\n"), false);
+                saveServerEntries();
             }
             catch (ServerEntryAuthException e)
             {
