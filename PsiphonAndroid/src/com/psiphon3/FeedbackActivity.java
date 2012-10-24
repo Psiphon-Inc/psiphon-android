@@ -51,6 +51,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.MailTo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -78,7 +79,19 @@ public class FeedbackActivity extends Activity
         	    
         		StringBuilder content = new StringBuilder();
 
-        		content.append("\n--- # Status History\n\n");
+                content.append("--- # System Info\n\n");
+                content.append("Build:\n");
+                content.append("  BRAND: ").append(Build.BRAND).append("\n");
+                content.append("  CPU_ABI: ").append(Build.CPU_ABI).append("\n");
+                content.append("  DISPLAY: ").append(Build.DISPLAY).append("\n");
+                content.append("  MANUFACTURER: ").append(Build.MANUFACTURER).append("\n");
+                content.append("  MODEL: ").append(Build.MODEL).append("\n");
+                content.append("  VERSION.CODENAME: ").append(Build.VERSION.CODENAME).append("\n");
+                content.append("  VERSION.RELEASE: ").append(Build.VERSION.RELEASE).append("\n");
+                content.append("  VERSION.SDK_INT: ").append(Build.VERSION.SDK_INT).append("\n");
+                content.append("\n");
+        		
+        		content.append("--- # Status History\n\n");
         		ArrayList<StatusEntry> history = PsiphonData.cloneStatusHistory();
         		for (StatusEntry entry : history)
         		{
@@ -123,6 +136,7 @@ public class FeedbackActivity extends Activity
         			content.append("  formatArgs: ").append(formatArgs).append("\n");
         			content.append("  throwable: ").append(throwable).append("\n");
         		}
+        		content.append("\n");
         		
         		// Encrypt the file contents
         		byte[] contentCiphertext = null, iv = null, 
