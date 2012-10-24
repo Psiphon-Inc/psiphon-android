@@ -35,11 +35,6 @@ import org.json.JSONObject;
 import com.psiphon3.Utils.Base64;
 import com.psiphon3.Utils.MyLog;
 
-import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
-import android.support.v4.content.LocalBroadcastManager;
-
 
 public class ServerEntryAuth
 {

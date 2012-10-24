@@ -54,7 +54,7 @@ public class PsiphonData
 
     private ArrayList<String> m_homePages;
     private Stats m_stats;
-    private Date m_nextFetchRemoteServerList;
+    private long m_nextFetchRemoteServerList;
     private boolean m_statusActivityForeground;
     private String m_clientSessionID;
     private String m_tunnelSessionID;
@@ -71,7 +71,7 @@ public class PsiphonData
     {
         m_homePages = new ArrayList<String>();
         m_stats = new Stats();
-        m_nextFetchRemoteServerList = null;
+        m_nextFetchRemoteServerList = -1;
         m_statusActivityForeground = false;
         m_tunnelWholeDevice = false;
     }
@@ -97,11 +97,13 @@ public class PsiphonData
         return m_stats;
     }
 
-    public synchronized Date getNextFetchRemoteServerList() {
+    public synchronized long getNextFetchRemoteServerList()
+    {
         return m_nextFetchRemoteServerList;
     }
 
-    public synchronized void setNextFetchRemoteServerList(Date nextFetchRemoteServerList) {
+    public synchronized void setNextFetchRemoteServerList(long nextFetchRemoteServerList)
+    {
         m_nextFetchRemoteServerList = nextFetchRemoteServerList;
     }
 

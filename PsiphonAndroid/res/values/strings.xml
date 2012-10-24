@@ -92,4 +92,5 @@
     <string name="psiphon_service_notification_id">Psiphon Service Notification</string>
     <string name="FeedbackActivity.AttachmentWriteFailed">Failed to create or write feedback attachment file</string>
     <string name="FeedbackActivity.EncryptedFailed">Failed to encrypt feedback diagnostic information. This information will not be attached to the feedback email.</string>
+    <string name="preferred_servers">Preferred servers: %d</string>
 </resources>

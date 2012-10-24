@@ -55,6 +55,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     private Thread m_tunnelThread;
     private ServerInterface m_interface;
     private UpgradeManager.UpgradeDownloader m_upgradeDownloader;
+    private ServerListReorder m_serverListReorder = null;
     private boolean m_destroyed = false;
 
     enum Signal
@@ -92,6 +93,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             doForeground();
             MyLog.v(R.string.client_version, MyLog.Sensitivity.NOT_SENSITIVE, EmbeddedValues.CLIENT_VERSION);
             startTunnel();
+            
+            m_serverListReorder = new ServerListReorder(m_interface);
+            m_serverListReorder.Start();
+            
             m_firstStart = false;
         }
         return android.app.Service.START_STICKY;
@@ -105,7 +110,15 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     @Override
     public void onDestroy()
     {
+        // TODO: ServerListReorder lifetime on Android isn't the same as on Windows
+        if (m_serverListReorder != null)
+        {
+            m_serverListReorder.Stop();
+            m_serverListReorder = null;
+        }
+        
     	m_destroyed = true;
+
         stopTunnel();
     }
 
@@ -296,7 +309,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         // It's also included with the SSH login, for GeoIP region lookup on the server-side
         m_interface.generateNewCurrentClientSessionID();
         
-        ServerInterface.ServerEntry entry = m_interface.getCurrentServerEntry();
+        ServerInterface.ServerEntry entry = m_interface.setCurrentServerEntry();
 
         boolean runAgain = true;
         boolean unexpectedDisconnect = false;
@@ -314,7 +327,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 runAgain = false;
                 return runAgain;
             }
-            else if (!entry.hasCapabilities(PsiphonConstants.REQUIRED_CAPABILITIES))
+            else if (!entry.hasCapabilities(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
             {
             	// This server hasn't failed, per se, but it doesn't satisfy our
             	// required capabilities, so we're moving it to the bottom of the list.
@@ -707,7 +720,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     
     private void runTunnel() throws InterruptedException
     {
-    	if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES))
+    	if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
     	{
     		setState(State.DISCONNECTED);
     		MyLog.e(R.string.no_server_entries, MyLog.Sensitivity.NOT_SENSITIVE);
