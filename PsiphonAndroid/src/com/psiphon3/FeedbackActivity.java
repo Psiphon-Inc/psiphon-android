@@ -72,77 +72,86 @@ public class FeedbackActivity extends Activity
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new WebViewClient()
         {
-        	private File createEmailAttachment()
-        	{
-        	    // Our attachment is YAML, which is then encrypted, and the 
-        	    // encryption elements stored in JSON.        	    
-        	    
-        		StringBuilder content = new StringBuilder();
+            private File createEmailAttachment()
+            {
+                // Our attachment is YAML, which is then encrypted, and the 
+                // encryption elements stored in JSON.                
+                
+                StringBuilder content = new StringBuilder();
 
                 content.append("--- # System Info\n\n");
                 content.append("Build:\n");
                 content.append("  BRAND: ").append(Build.BRAND).append("\n");
                 content.append("  CPU_ABI: ").append(Build.CPU_ABI).append("\n");
-                content.append("  DISPLAY: ").append(Build.DISPLAY).append("\n");
                 content.append("  MANUFACTURER: ").append(Build.MANUFACTURER).append("\n");
                 content.append("  MODEL: ").append(Build.MODEL).append("\n");
+                content.append("  TAGS: ").append(Build.TAGS).append("\n");
                 content.append("  VERSION.CODENAME: ").append(Build.VERSION.CODENAME).append("\n");
                 content.append("  VERSION.RELEASE: ").append(Build.VERSION.RELEASE).append("\n");
                 content.append("  VERSION.SDK_INT: ").append(Build.VERSION.SDK_INT).append("\n");
+                content.append("isRooted: ").append(Utils.isRooted()).append("\n");
                 content.append("\n");
-        		
-        		content.append("--- # Status History\n\n");
-        		ArrayList<StatusEntry> history = PsiphonData.cloneStatusHistory();
-        		for (StatusEntry entry : history)
-        		{
-        			// Don't send any sensitive logs
-        			if (entry.sensitivity == MyLog.Sensitivity.SENSITIVE_LOG)
-        			{
-        				continue;
-        			}
-        			
-        			StringBuilder formatArgs = new StringBuilder();
-        			if (entry.formatArgs != null && entry.formatArgs.length > 0
-    					// Don't send any sensitive format args
-    					&& entry.sensitivity != MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS)
-        			{
-            			formatArgs.append("[");
-	        			for (int i = 0; i < entry.formatArgs.length; i++)
-	        			{
-	        				String arg = entry.formatArgs[i].toString();
-	        				formatArgs.append("\"").append(arg).append("\"");
-	        				if (i < entry.formatArgs.length-1)
-	        				{
-	        					formatArgs.append(", ");
-	        				}
-	        			}
-	        			formatArgs.append("]");
-        			}
-        			
-        			StringBuilder throwable = new StringBuilder();
-        			if (entry.throwable != null)
-    				{
-        				throwable.append("\n    message: \"").append(entry.throwable.toString()).append("\"");
-        				throwable.append("\n    stack: ");
-        				for (StackTraceElement element : entry.throwable.getStackTrace())
-        				{
-        					throwable.append("\n      - \"").append(element).append("\"");
-        				}
-    				}
-        			
-        		    
-        			content.append("- id: ").append(entry.idName).append("\n");
+                
+                content.append("--- # Diagnostic History\n\n");
+                ArrayList<String> diagnosticHistory = PsiphonData.cloneDiagnosticHistory();
+                for (String entry : diagnosticHistory)
+                {
+                    content.append("- \"").append(entry).append("\"\n");
+                }
+                content.append("\n");
+
+                content.append("--- # Status History\n\n");
+                ArrayList<StatusEntry> history = PsiphonData.cloneStatusHistory();
+                for (StatusEntry entry : history)
+                {
+                    // Don't send any sensitive logs
+                    if (entry.sensitivity == MyLog.Sensitivity.SENSITIVE_LOG)
+                    {
+                        continue;
+                    }
+                    
+                    StringBuilder formatArgs = new StringBuilder();
+                    if (entry.formatArgs != null && entry.formatArgs.length > 0
+                        // Don't send any sensitive format args
+                        && entry.sensitivity != MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS)
+                    {
+                        formatArgs.append("[");
+                        for (int i = 0; i < entry.formatArgs.length; i++)
+                        {
+                            String arg = entry.formatArgs[i].toString();
+                            formatArgs.append("\"").append(arg).append("\"");
+                            if (i < entry.formatArgs.length-1)
+                            {
+                                formatArgs.append(", ");
+                            }
+                        }
+                        formatArgs.append("]");
+                    }
+                    
+                    StringBuilder throwable = new StringBuilder();
+                    if (entry.throwable != null)
+                    {
+                        throwable.append("\n    message: \"").append(entry.throwable.toString()).append("\"");
+                        throwable.append("\n    stack: ");
+                        for (StackTraceElement element : entry.throwable.getStackTrace())
+                        {
+                            throwable.append("\n      - \"").append(element).append("\"");
+                        }
+                    }
+                    
+                    
+                    content.append("- id: ").append(entry.idName).append("\n");
                     content.append("  timestamp: ").append(entry.timestamp).append("\n");
-        			content.append("  formatArgs: ").append(formatArgs).append("\n");
-        			content.append("  throwable: ").append(throwable).append("\n");
-        		}
-        		content.append("\n");
-        		
-        		// Encrypt the file contents
-        		byte[] contentCiphertext = null, iv = null, 
-        		        wrappedEncryptionKey = null, contentMac = null, 
-        		        wrappedMacKey = null;
-        		boolean attachOkay = false;
+                    content.append("  formatArgs: ").append(formatArgs).append("\n");
+                    content.append("  throwable: ").append(throwable).append("\n");
+                }
+                content.append("\n");
+                
+                // Encrypt the file contents
+                byte[] contentCiphertext = null, iv = null, 
+                        wrappedEncryptionKey = null, contentMac = null, 
+                        wrappedMacKey = null;
+                boolean attachOkay = false;
                 try
                 {
                     KeyGenerator keygen = KeyGenerator.getInstance("AES");
@@ -205,9 +214,9 @@ public class FeedbackActivity extends Activity
                     
                     try 
                     {
-                    	// The attachment must be created on external storage, 
-                    	// or else Gmail gives this error:
-                    	// E/Gmail(18760): file:// attachment paths must point to file:///storage/sdcard0. Ignoring attachment [obscured file path]
+                        // The attachment must be created on external storage, 
+                        // or else Gmail gives this error:
+                        // E/Gmail(18760): file:// attachment paths must point to file:///storage/sdcard0. Ignoring attachment [obscured file path]
     
                         attachmentFile = new File(getExternalFilesDir("feedback"), PsiphonConstants.FEEDBACK_ATTACHMENT_FILENAME);
     
@@ -223,9 +232,9 @@ public class FeedbackActivity extends Activity
                     }
                 }
                 
-                return attachmentFile;        		
-        	}
-        	
+                return attachmentFile;                
+            }
+            
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url)
             {

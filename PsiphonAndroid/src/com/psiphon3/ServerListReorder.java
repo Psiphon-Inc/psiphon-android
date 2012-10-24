@@ -165,7 +165,7 @@ public class ServerListReorder
         
             for (CheckServerWorker worker : workers)
             {
-                MyLog.d(
+                MyLog.g(
                     String.format("server: %s, responded: %s, response time: %d",
                             worker.entry.ipAddress, worker.responded ? "Yes" : "No", worker.responseTime));
         

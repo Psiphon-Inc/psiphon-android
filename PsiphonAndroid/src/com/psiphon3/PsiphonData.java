@@ -371,4 +371,21 @@ public class PsiphonData
             m_statusHistory.clear();
         }
     }
+
+    static private ArrayList<String> m_diagnosticHistory = new ArrayList<String>();
+
+    static public void addDiagnosticEntry(String entry)
+    {
+        m_diagnosticHistory.add(entry);
+    }
+    
+    static public ArrayList<String> cloneDiagnosticHistory()
+    {
+        ArrayList<String> copy;
+        synchronized(m_diagnosticHistory) 
+        {
+            copy = new ArrayList<String>(m_diagnosticHistory);
+        }
+        return copy;
+    }
 }

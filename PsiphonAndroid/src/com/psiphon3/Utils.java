@@ -318,6 +318,17 @@ public class Utils {
             MyLog.println(msg, throwable, Log.DEBUG);
         }
 
+        /**
+         * Log a diagnostic entry. This is the same as a debug ({@link #d(String)}) entry,
+         * except it will also be included in the feedback diagnostic attachment.
+         * @param msg The message to log.
+         */
+        static void g(String msg)
+        {
+            PsiphonData.addDiagnosticEntry(msg);
+            MyLog.d(msg);
+        }
+
         static void e(int stringResID, Sensitivity sensitivity, Object... formatArgs)
         {
             MyLog.println(stringResID, sensitivity, formatArgs, null, Log.ERROR);
