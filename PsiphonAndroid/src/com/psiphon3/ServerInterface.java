@@ -540,7 +540,7 @@ public class ServerInterface
         }
         catch(JSONException e)
         {
-            MyLog.w(R.string.ServerInterface_FailedToParseLastConnected, e);
+            MyLog.w(R.string.ServerInterface_FailedToParseLastConnected, MyLog.Sensitivity.NOT_SENSITIVE, e);
             // Proceed if parsing response fails
 
         }
