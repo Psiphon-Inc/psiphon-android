@@ -388,4 +388,43 @@ public class PsiphonData
         }
         return copy;
     }
+
+    /*
+     * Server Response Check info support
+     */
+
+    static public class ServerResponseCheck
+    {
+        String ipAddress;
+        boolean responded;
+        long responseTime;
+    }
+    
+    static private ArrayList<ServerResponseCheck> m_serverResponses = new ArrayList<ServerResponseCheck>();
+    
+    static public void addServerResponseCheck(
+            String ipAddress,
+            boolean responded,
+            long responseTime)
+    {
+        ServerResponseCheck entry = new ServerResponseCheck();
+        entry.ipAddress = ipAddress;
+        entry.responded = responded;
+        entry.responseTime = responseTime;
+        
+        synchronized(m_serverResponses) 
+        {
+            m_serverResponses.add(entry);
+        }
+    }
+    
+    static public ArrayList<ServerResponseCheck> cloneServerResponseChecks()
+    {
+        ArrayList<ServerResponseCheck> copy;
+        synchronized(m_serverResponses) 
+        {
+            copy = new ArrayList<ServerResponseCheck>(m_serverResponses);
+        }
+        return copy;
+    }
 }

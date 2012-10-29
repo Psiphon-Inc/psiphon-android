@@ -165,7 +165,8 @@ public class ServerListReorder
         
             for (CheckServerWorker worker : workers)
             {
-                MyLog.g(
+                PsiphonData.addServerResponseCheck(worker.entry.ipAddress, worker.responded, worker.responseTime);
+                MyLog.d(
                     String.format("server: %s, responded: %s, response time: %d",
                             worker.entry.ipAddress, worker.responded ? "Yes" : "No", worker.responseTime));
         

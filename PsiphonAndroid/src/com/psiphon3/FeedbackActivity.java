@@ -92,6 +92,16 @@ public class FeedbackActivity extends Activity
                 content.append("isRooted: ").append(Utils.isRooted()).append("\n");
                 content.append("\n");
                 
+                content.append("--- # Server Response Check\n\n");
+                ArrayList<PsiphonData.ServerResponseCheck> serverResponseChecks = PsiphonData.cloneServerResponseChecks();
+                for (PsiphonData.ServerResponseCheck entry : serverResponseChecks)
+                {
+                    content.append("- ipAddress: \"").append(entry.ipAddress).append("\"\n");
+                    content.append("  responded: ").append(entry.responded).append("\n");
+                    content.append("  responseTime: ").append(entry.responseTime).append("\n");
+                }
+                content.append("\n");
+
                 content.append("--- # Diagnostic History\n\n");
                 ArrayList<String> diagnosticHistory = PsiphonData.cloneDiagnosticHistory();
                 for (String entry : diagnosticHistory)
