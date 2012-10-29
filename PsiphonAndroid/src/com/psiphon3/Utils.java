@@ -9,6 +9,7 @@ import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.IllegalFormatException;
 import java.util.Locale;
@@ -16,6 +17,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
 import java.io.IOException;
+
+import com.psiphon3.PsiphonData.StatusEntry;
 
 import android.app.Activity;
 import android.content.Context;
@@ -247,8 +250,9 @@ public class Utils {
     {
         static public interface ILogInfoProvider
         {
-            public String getResString(int stringResID, Object... formatArgs);
+            public String getResourceString(int stringResID, Object[] formatArgs);
             public int getAndroidLogPriorityEquivalent(int priority);
+            public String getResourceEntryName(int stringResID);
         }
         
         static public interface ILogger
@@ -259,6 +263,13 @@ public class Utils {
         static public ILogInfoProvider logInfoProvider;
         static public ILogger logger;
         
+        public enum Sensitivity
+        {
+            NOT_SENSITIVE,
+            SENSITIVE_LOG,
+            SENSITIVE_FORMAT_ARGS
+        }
+        
         /**
          * Safely wraps the string resource extraction function. If an error 
          * occurs with the format specifiers, the raw string will be returned.
@@ -266,15 +277,34 @@ public class Utils {
          * @param formatArgs The format arguments. May be empty (non-existent).
          * @return The requested string, possibly formatted.
          */
-        static private String myGetResString(int stringResID, Object... formatArgs)
+        static private String myGetResString(int stringResID, Object[] formatArgs)
         {
             try
             {
-                return logInfoProvider.getResString(stringResID, formatArgs);
+                return logInfoProvider.getResourceString(stringResID, formatArgs);
             }
             catch (IllegalFormatException e)
             {
-                return logInfoProvider.getResString(stringResID);
+                return logInfoProvider.getResourceString(stringResID, null);
+            }
+        }
+        
+        static public void restoreLogHistory()
+        {
+            // We need to clear out the history and restore a copy, because the
+            // act of restoring will rebuild the history.
+            
+            ArrayList<StatusEntry> history = PsiphonData.cloneStatusHistory();
+            PsiphonData.clearStatusHistory();
+            
+            for (StatusEntry logEntry : history)
+            {
+                MyLog.println(
+                        logEntry.id, 
+                        logEntry.sensitivity, 
+                        logEntry.formatArgs, 
+                        logEntry.throwable, 
+                        logEntry.priority);
             }
         }
         
@@ -288,44 +318,74 @@ public class Utils {
             MyLog.println(msg, throwable, Log.DEBUG);
         }
 
-        static void e(int stringResID, Object... formatArgs)
+        /**
+         * Log a diagnostic entry. This is the same as a debug ({@link #d(String)}) entry,
+         * except it will also be included in the feedback diagnostic attachment.
+         * @param msg The message to log.
+         */
+        static void g(String msg)
         {
-            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.ERROR);
+            PsiphonData.addDiagnosticEntry(msg);
+            MyLog.d(msg);
         }
 
-        static void e(int stringResID, Throwable throwable)
+        static void e(int stringResID, Sensitivity sensitivity, Object... formatArgs)
         {
-            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.ERROR);
+            MyLog.println(stringResID, sensitivity, formatArgs, null, Log.ERROR);
+        }
+
+        static void e(int stringResID, Sensitivity sensitivity, Throwable throwable)
+        {
+            MyLog.println(stringResID, sensitivity, null, throwable, Log.ERROR);
         }
         
-        static void w(int stringResID, Object... formatArgs)
+        static void w(int stringResID, Sensitivity sensitivity, Object... formatArgs)
         {
-            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.WARN);
+            MyLog.println(stringResID, sensitivity, formatArgs, null, Log.WARN);
         }
 
-        static void w(int stringResID, Throwable throwable)
+        static void w(int stringResID, Sensitivity sensitivity, Throwable throwable)
         {
-            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.WARN);
+            MyLog.println(stringResID, sensitivity, null, throwable, Log.WARN);
         }
         
-        static void i(int stringResID, Object... formatArgs)
+        static void i(int stringResID, Sensitivity sensitivity, Object... formatArgs)
         {
-            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.INFO);
+            MyLog.println(stringResID, sensitivity, formatArgs, null, Log.INFO);
         }
 
-        static void i(int stringResID, Throwable throwable)
+        static void i(int stringResID, Sensitivity sensitivity, Throwable throwable)
         {
-            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.INFO);
+            MyLog.println(stringResID, sensitivity, null, throwable, Log.INFO);
         }
         
-        static void v(int stringResID, Object... formatArgs)
+        static void v(int stringResID, Sensitivity sensitivity, Object... formatArgs)
         {
-            MyLog.println(MyLog.myGetResString(stringResID, formatArgs), null, Log.VERBOSE);
+            MyLog.println(stringResID, sensitivity, formatArgs, null, Log.VERBOSE);
         }
 
-        static void v(int stringResID, Throwable throwable)
+        static void v(int stringResID, Sensitivity sensitivity, Throwable throwable)
         {
-            MyLog.println(MyLog.myGetResString(stringResID), throwable, Log.VERBOSE);
+            MyLog.println(stringResID, sensitivity, null, throwable, Log.VERBOSE);
+        }
+        
+        private static void println(
+                int stringResID, 
+                Sensitivity sensitivity, 
+                Object[] formatArgs, 
+                Throwable throwable, 
+                int priority)
+        {
+            PsiphonData.addStatusEntry(
+                    Utils.getISO8601String(),
+                    stringResID,
+                    logInfoProvider.getResourceEntryName(stringResID), 
+                    sensitivity,
+                    formatArgs, 
+                    throwable, 
+                    priority);
+            
+            println(MyLog.myGetResString(stringResID, formatArgs), throwable, priority);
         }
         
         private static void println(String msg, Throwable throwable, int priority)
@@ -348,7 +408,7 @@ public class Utils {
                 {
                     // Just report the first line of the stack trace
                     String[] stackTraceLines = Log.getStackTraceString(throwable).split("\n");
-                    loggerMsg = loggerMsg + (stackTraceLines.length > 0 ? '\n' + stackTraceLines[0] : ""); 
+                    loggerMsg = loggerMsg + (stackTraceLines.length > 0 ? "\n" + stackTraceLines[0] : ""); 
                 }
                 
                 logger.log(logInfoProvider.getAndroidLogPriorityEquivalent(priority), loggerMsg);

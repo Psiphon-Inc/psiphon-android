@@ -35,7 +35,7 @@ public class PsiphonData
 {
     // Singleton pattern
     
-	private static PsiphonData m_psiphonData;
+    private static PsiphonData m_psiphonData;
 
     public Object clone() throws CloneNotSupportedException
     {
@@ -46,13 +46,12 @@ public class PsiphonData
     {
         if (m_psiphonData == null)
         {
-        	m_psiphonData = new PsiphonData();
+            m_psiphonData = new PsiphonData();
         }
         
         return m_psiphonData;
     }
 
-	private ArrayList<StatusMessage> m_statusMessages;
     private ArrayList<String> m_homePages;
     private Stats m_stats;
     private long m_nextFetchRemoteServerList;
@@ -70,24 +69,11 @@ public class PsiphonData
         
     private PsiphonData()
     {
-    	m_statusMessages = new ArrayList<StatusMessage>();
-    	m_homePages = new ArrayList<String>();
-    	m_stats = new Stats();
-    	m_nextFetchRemoteServerList = -1;
-    	m_statusActivityForeground = false;
-    	m_tunnelWholeDevice = false;
-    }
-
-    public synchronized void addStatusMessage(String message, int messageClass)
-    {
-    	m_statusMessages.add(new StatusMessage(message, messageClass));
-    }
-
-    public synchronized ArrayList<StatusMessage> getStatusMessages()
-    {
-        ArrayList<StatusMessage> messages = new ArrayList<StatusMessage>();
-        messages.addAll(m_statusMessages);
-        return messages;
+        m_homePages = new ArrayList<String>();
+        m_stats = new Stats();
+        m_nextFetchRemoteServerList = -1;
+        m_statusActivityForeground = false;
+        m_tunnelWholeDevice = false;
     }
 
     public synchronized void setHomePages(ArrayList<String> homePages)
@@ -108,7 +94,7 @@ public class PsiphonData
 
     public synchronized Stats getStats()
     {
-    	return m_stats;
+        return m_stats;
     }
 
     public synchronized long getNextFetchRemoteServerList()
@@ -211,131 +197,195 @@ public class PsiphonData
         return m_tunnelWholeDevice;
     }
 
-    public class StatusMessage
+    public class Stats
     {
-        public String m_message;
-        public int m_messageClass;
-
-        StatusMessage(String message, int messageClass) 
+        private Integer m_bytesTransferred = 0;
+        private Map<String, Integer> m_pageViewEntries;
+        private Map<String, Integer> m_httpsRequestEntries;
+        private List<Pair<Pattern, String>> m_pageViewRegexes;
+        private List<Pair<Pattern, String>> m_httpsRequestRegexes;
+            
+        Stats()
         {
-            m_message = message;
-            m_messageClass = messageClass;
+            m_pageViewEntries = new HashMap<String, Integer>();
+            m_httpsRequestEntries = new HashMap<String, Integer>();
+        }
+    
+        public synchronized void setRegexes(
+                List<Pair<Pattern, String>> pageViewRegexes,
+                List<Pair<Pattern, String>> httpsRequestRegexes)
+        {
+            m_stats.m_pageViewRegexes = pageViewRegexes;
+            m_stats.m_httpsRequestRegexes = httpsRequestRegexes;
+        }
+    
+        public synchronized void addBytesSent(int byteCount)
+        {
+            this.m_bytesTransferred += byteCount;
+        }
+    
+        public synchronized void addBytesReceived(int byteCount)
+        {
+            this.m_bytesTransferred += byteCount;
+        }
+        
+        public synchronized void upsertPageView(String entry)
+        {
+            String storeEntry = "(OTHER)";
+            
+            if (this.m_pageViewRegexes != null)
+            {
+                for (Pair<Pattern, String> regexReplace : this.m_pageViewRegexes)
+                {
+                    Matcher matcher = regexReplace.first.matcher(entry);
+                    if (matcher.find())
+                    {
+                        storeEntry = matcher.replaceFirst(regexReplace.second);
+                        break;
+                    }
+                }
+            }
+                
+            if (storeEntry.length() == 0) return;
+            
+            // Add/increment the entry.
+            Integer prevCount = this.m_pageViewEntries.get(storeEntry);
+            if (prevCount == null) prevCount = 0;
+            this.m_pageViewEntries.put(storeEntry, prevCount+1);
+            
+            MyLog.d("upsertPageView: ("+(prevCount+1)+") "+storeEntry);
+        }
+        
+        public synchronized void upsertHttpsRequest(String entry)
+        {
+            // TODO: This is identical code to the function above, because we don't
+            // yet know what a HTTPS "entry" looks like, because we haven't implemented
+            // HTTPS response parsing yet.
+            
+            String storeEntry = "(OTHER)";
+            
+            if (this.m_httpsRequestRegexes != null)
+            {
+                for (Pair<Pattern, String> regexReplace : this.m_httpsRequestRegexes)
+                {
+                    Matcher matcher = regexReplace.first.matcher(entry);
+                    if (matcher.find())
+                    {
+                        storeEntry = matcher.replaceFirst(regexReplace.second);
+                        break;
+                    }
+                }
+            }
+            
+            if (storeEntry.length() == 0) return;
+            
+            // Add/increment the entry.
+            Integer prevCount = this.m_httpsRequestEntries.get(storeEntry);
+            if (prevCount == null) prevCount = 0;
+            this.m_httpsRequestEntries.put(storeEntry, prevCount+1);
+        }
+        
+        public synchronized int getCount()
+        {
+            return this.m_pageViewEntries.size() + this.m_httpsRequestEntries.size();
+        }
+    
+        public synchronized Map<String, Integer> getPageViewEntries()
+        {
+            return this.m_pageViewEntries;
+        }
+    
+        public synchronized Map<String, Integer> getHttpsRequestEntries()
+        {
+            return this.m_httpsRequestEntries;
+        }
+    
+        public synchronized Integer getBytesTransferred()
+        {
+            return this.m_bytesTransferred;
+        }
+    
+        public synchronized void clear()
+        {
+            this.m_bytesTransferred = 0;
+            this.m_pageViewEntries.clear();
+            this.m_httpsRequestEntries.clear();
+        }
+    }
+    
+    /*
+     * Status Message History support
+     */
+
+    static public class StatusEntry
+    {
+        String timestamp;
+        int id;
+        String idName;
+        Object[] formatArgs;
+        Throwable throwable;
+        int priority;
+        MyLog.Sensitivity sensitivity;
+    }
+    
+    static private ArrayList<StatusEntry> m_statusHistory = new ArrayList<StatusEntry>();
+    
+    static public void addStatusEntry(
+            String timestamp,
+    		int id, 
+    		String idName, 
+    		MyLog.Sensitivity sensitivity, 
+    		Object[] formatArgs, 
+    		Throwable throwable, 
+    		int priority)
+    {
+        StatusEntry entry = new StatusEntry();
+        entry.timestamp = timestamp;
+        entry.id = id;
+        entry.idName = idName;
+        entry.sensitivity = sensitivity;
+        entry.formatArgs = formatArgs;
+        entry.throwable = throwable;
+        entry.priority = priority;
+        
+        synchronized(m_statusHistory) 
+        {
+            m_statusHistory.add(entry);
+        }
+    }
+    
+    static public ArrayList<StatusEntry> cloneStatusHistory()
+    {
+        ArrayList<StatusEntry> copy;
+        synchronized(m_statusHistory) 
+        {
+            copy = new ArrayList<StatusEntry>(m_statusHistory);
+        }
+        return copy;
+    }
+    
+    static public void clearStatusHistory()
+    {
+        synchronized(m_statusHistory) 
+        {        
+            m_statusHistory.clear();
         }
     }
 
-	public class Stats
-	{
-	    private Integer m_bytesTransferred = 0;
-	    private Map<String, Integer> m_pageViewEntries;
-	    private Map<String, Integer> m_httpsRequestEntries;
-	    private List<Pair<Pattern, String>> m_pageViewRegexes;
-	    private List<Pair<Pattern, String>> m_httpsRequestRegexes;
-	        
-	    Stats()
-	    {
-	        m_pageViewEntries = new HashMap<String, Integer>();
-	        m_httpsRequestEntries = new HashMap<String, Integer>();
-	    }
-	
-	    public synchronized void setRegexes(
-	            List<Pair<Pattern, String>> pageViewRegexes,
-	            List<Pair<Pattern, String>> httpsRequestRegexes)
-	    {
-	        m_stats.m_pageViewRegexes = pageViewRegexes;
-	        m_stats.m_httpsRequestRegexes = httpsRequestRegexes;
-	    }
-	
-	    public synchronized void addBytesSent(int byteCount)
-	    {
-	        this.m_bytesTransferred += byteCount;
-	    }
-	
-	    public synchronized void addBytesReceived(int byteCount)
-	    {
-	        this.m_bytesTransferred += byteCount;
-	    }
-	    
-	    public synchronized void upsertPageView(String entry)
-	    {
-	        String storeEntry = "(OTHER)";
-	        
-	        if (this.m_pageViewRegexes != null)
-	        {
-	            for (Pair<Pattern, String> regexReplace : this.m_pageViewRegexes)
-	            {
-	                Matcher matcher = regexReplace.first.matcher(entry);
-	                if (matcher.find())
-	                {
-	                    storeEntry = matcher.replaceFirst(regexReplace.second);
-	                    break;
-	                }
-	            }
-	        }
-	            
-            if (storeEntry.length() == 0) return;
-	        
-	        // Add/increment the entry.
-	        Integer prevCount = this.m_pageViewEntries.get(storeEntry);
-	        if (prevCount == null) prevCount = 0;
-	        this.m_pageViewEntries.put(storeEntry, prevCount+1);
-	        
-	        MyLog.d("upsertPageView: ("+(prevCount+1)+") "+storeEntry);
-	    }
-	    
-	    public synchronized void upsertHttpsRequest(String entry)
-	    {
-	        // TODO: This is identical code to the function above, because we don't
-	        // yet know what a HTTPS "entry" looks like, because we haven't implemented
-	        // HTTPS response parsing yet.
-	        
-	        String storeEntry = "(OTHER)";
-	        
-	        if (this.m_httpsRequestRegexes != null)
-	        {
-	            for (Pair<Pattern, String> regexReplace : this.m_httpsRequestRegexes)
-	            {
-	                Matcher matcher = regexReplace.first.matcher(entry);
-	                if (matcher.find())
-	                {
-	                    storeEntry = matcher.replaceFirst(regexReplace.second);
-	                    break;
-	                }
-	            }
-	        }
-	        
-	        if (storeEntry.length() == 0) return;
-	        
-	        // Add/increment the entry.
-	        Integer prevCount = this.m_httpsRequestEntries.get(storeEntry);
-	        if (prevCount == null) prevCount = 0;
-	        this.m_httpsRequestEntries.put(storeEntry, prevCount+1);
-	    }
-	    
-	    public synchronized int getCount()
-	    {
-	        return this.m_pageViewEntries.size() + this.m_httpsRequestEntries.size();
-	    }
-	
-	    public synchronized Map<String, Integer> getPageViewEntries()
-	    {
-	        return this.m_pageViewEntries;
-	    }
-	
-	    public synchronized Map<String, Integer> getHttpsRequestEntries()
-	    {
-	        return this.m_httpsRequestEntries;
-	    }
-	
-	    public synchronized Integer getBytesTransferred()
-	    {
-	        return this.m_bytesTransferred;
-	    }
-	
-	    public synchronized void clear()
-	    {
-	        this.m_bytesTransferred = 0;
-	        this.m_pageViewEntries.clear();
-	        this.m_httpsRequestEntries.clear();
-	    }
-	}
+    static private ArrayList<String> m_diagnosticHistory = new ArrayList<String>();
+
+    static public void addDiagnosticEntry(String entry)
+    {
+        m_diagnosticHistory.add(entry);
+    }
+    
+    static public ArrayList<String> cloneDiagnosticHistory()
+    {
+        ArrayList<String> copy;
+        synchronized(m_diagnosticHistory) 
+        {
+            copy = new ArrayList<String>(m_diagnosticHistory);
+        }
+        return copy;
+    }
 }

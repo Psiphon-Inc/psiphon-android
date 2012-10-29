@@ -222,12 +222,12 @@ public class ServerInterface
             }
             catch (IOException e)
             {
-                MyLog.w(R.string.ServerInterface_FailedToReadStoredServerEntries, e);
+                MyLog.w(R.string.ServerInterface_FailedToReadStoredServerEntries, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 // skip loading persistent server entries
             } 
             catch (JSONException e)
             {
-                MyLog.w(R.string.ServerInterface_FailedToParseStoredServerEntries, e);
+                MyLog.w(R.string.ServerInterface_FailedToParseStoredServerEntries, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 // skip loading persistent server entries
             }
         }
@@ -240,7 +240,7 @@ public class ServerInterface
         } 
         catch (JSONException e)
         {
-            MyLog.w(R.string.ServerInterface_FailedToParseEmbeddedServerEntries, e);
+            MyLog.w(R.string.ServerInterface_FailedToParseEmbeddedServerEntries, MyLog.Sensitivity.NOT_SENSITIVE, e);
         }
     }
     
@@ -474,13 +474,13 @@ public class ServerInterface
         }
         catch (JSONException e)
         {
-            MyLog.w(R.string.ServerInterface_FailedToParseHandshake, e);
+            MyLog.w(R.string.ServerInterface_FailedToParseHandshake, MyLog.Sensitivity.NOT_SENSITIVE, e);
             throw new PsiphonServerInterfaceException(e);
         }
         
         if (!configProcessed)
         {
-            MyLog.w(R.string.ServerInterface_FailedToParseHandshake);
+            MyLog.w(R.string.ServerInterface_FailedToParseHandshake, MyLog.Sensitivity.NOT_SENSITIVE);
             throw new PsiphonServerInterfaceException();
         }
     }
@@ -512,7 +512,7 @@ public class ServerInterface
         }
         catch (IOException e)
         {
-            MyLog.w(R.string.ServerInterface_FailedToReadLastConnected, e);
+            MyLog.w(R.string.ServerInterface_FailedToReadLastConnected, MyLog.Sensitivity.NOT_SENSITIVE, e);
             // skip loading persistent server entries
         }         
         
@@ -535,7 +535,7 @@ public class ServerInterface
         }
         catch (IOException e)
         {
-            MyLog.w(R.string.ServerInterface_FailedToStoreLastConnected, e);
+            MyLog.w(R.string.ServerInterface_FailedToStoreLastConnected, MyLog.Sensitivity.NOT_SENSITIVE, e);
             // Proceed, even if file saving fails
         }
         catch(JSONException e)
@@ -728,12 +728,12 @@ public class ServerInterface
             }
             catch (ServerEntryAuthException e)
             {
-                MyLog.w(R.string.ServerInterface_InvalidRemoteServerList, e);
+                MyLog.w(R.string.ServerInterface_InvalidRemoteServerList, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 throw new PsiphonServerInterfaceException(e);            
             } 
             catch (JSONException e)
             {
-                MyLog.w(R.string.ServerInterface_InvalidRemoteServerList, e);
+                MyLog.w(R.string.ServerInterface_InvalidRemoteServerList, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 throw new PsiphonServerInterfaceException(e);            
             }
         }
@@ -1264,12 +1264,12 @@ public class ServerInterface
             }
             catch (JSONException e)
             {
-                MyLog.w(R.string.ServerInterface_FailedToCreateServerEntries, e);
+                MyLog.w(R.string.ServerInterface_FailedToCreateServerEntries, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 // Proceed, even if file saving fails
             } 
             catch (IOException e)
             {
-                MyLog.w(R.string.ServerInterface_FailedToStoreServerEntries, e);
+                MyLog.w(R.string.ServerInterface_FailedToStoreServerEntries, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 // Proceed, even if file saving fails
             }
         }

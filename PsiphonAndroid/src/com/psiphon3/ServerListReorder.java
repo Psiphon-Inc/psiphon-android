@@ -165,7 +165,7 @@ public class ServerListReorder
         
             for (CheckServerWorker worker : workers)
             {
-                MyLog.d(
+                MyLog.g(
                     String.format("server: %s, responded: %s, response time: %d",
                             worker.entry.ipAddress, worker.responded ? "Yes" : "No", worker.responseTime));
         
@@ -198,7 +198,7 @@ public class ServerListReorder
             {
                 serverInterface.moveEntriesToFront(respondingServers);
         
-                MyLog.v(R.string.preferred_servers, respondingServers.size());
+                MyLog.v(R.string.preferred_servers, MyLog.Sensitivity.NOT_SENSITIVE, respondingServers.size());
             }
         }
     }
