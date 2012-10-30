@@ -186,7 +186,7 @@ public class FeedbackActivity extends Activity
                     contentMac = mac.doFinal(contentCiphertext);
                     
                     // Ready the public key that we'll ues to share keys
-                    byte[] publicKeyBytes = Base64.decode(EmbeddedValues.ENCRYPTION_PUBLIC_KEY);
+                    byte[] publicKeyBytes = Base64.decode(EmbeddedValues.FEEDBACK_ENCRYPTION_PUBLIC_KEY);
                     X509EncodedKeySpec spec = new X509EncodedKeySpec(publicKeyBytes);
                     KeyFactory keyFactory = KeyFactory.getInstance("RSA");
                     PublicKey publicKey = keyFactory.generatePublic(spec);
