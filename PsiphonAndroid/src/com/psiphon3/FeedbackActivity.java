@@ -34,6 +34,7 @@ import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.Utils.MyLog;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.MailTo;
 import android.os.Bundle;
@@ -66,7 +67,15 @@ public class FeedbackActivity extends Activity
                     Intent intent = new Intent(Intent.ACTION_SEND);
                     intent.setType("message/rfc822");
                     intent.putExtra(Intent.EXTRA_EMAIL, new String[] {MailTo.parse(url).getTo()});
-                    startActivity(intent);
+                    try
+                    {
+                        startActivity(intent);
+                    }
+                    catch (ActivityNotFoundException e)
+                    {
+                        // Do nothing
+                    }
+                    
                     return true;
                 }
                 else if (url.contains(feedbackUrl))
