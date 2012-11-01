@@ -20,22 +20,24 @@
 package com.psiphon3;
 
 import java.io.IOException;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import android.os.Build;
 import android.os.SystemClock;
 
 import com.psiphon3.ServerInterface.ServerEntry;
-import com.psiphon3.TunnelService.Signal;
 import com.psiphon3.Utils.MyLog;
 
 public class ServerListReorder
@@ -203,9 +205,39 @@ public class ServerListReorder
         }
     }
 
+    boolean CheckIPv6Support()
+    {
+        try
+        {
+            for (NetworkInterface netInt : Collections.list(NetworkInterface.getNetworkInterfaces()))
+            {
+                for (InetAddress address : Collections.list(netInt.getInetAddresses()))
+                {
+                    if (address instanceof Inet6Address)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        catch (SocketException e)
+        {
+        }
+        return false;
+    }
+
     public void Start()
     {
         Stop();
+        
+        // Android 2.2 bug workaround
+        // See http://code.google.com/p/android/issues/detail?id=9431
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.FROYO &&
+            !CheckIPv6Support())
+        {
+            System.setProperty("java.net.preferIPv6Addresses", "false");
+        }
+
         this.thread = new Thread(new ReorderServerList());
         this.thread.start();
     }
