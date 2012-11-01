@@ -41,7 +41,6 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.Map;
@@ -82,7 +81,6 @@ import com.psiphon3.Utils.MyLog;
 
 import android.content.Context;
 import android.os.SystemClock;
-import android.util.Log;
 import android.util.Pair;
 
 
@@ -129,6 +127,7 @@ public class ServerInterface
         public String sshHostKey;
         public int sshObfuscatedPort;
         public String sshObfuscatedKey;
+        public ArrayList<String> capabilities;
 
         @Override
         public ServerEntry clone()
@@ -142,13 +141,41 @@ public class ServerInterface
                 throw new AssertionError();
             }
         }
+        
+        boolean hasCapability(String capability)
+        {
+            return this.capabilities.contains(capability);
+        }
+
+        boolean hasCapabilities(List<String> capabilities)
+        {
+            return this.capabilities.containsAll(capabilities);
+        }
+
+        int getPreferredReachablityTestPort()
+        {
+            if (hasCapability("OSSH"))
+            {
+                return this.sshObfuscatedPort;
+            }
+            else if (hasCapability("SSH"))
+            {
+                return this.sshPort;
+            }
+            else if (hasCapability("handshake"))
+            {
+                return this.webServerPort;
+            }
+
+            return -1;
+        }
     }
     
     private Context ownerContext;
     private ArrayList<ServerEntry> serverEntries = new ArrayList<ServerEntry>();
     private String upgradeClientVersion;
-    private String speedTestURL;
     private String serverSessionID;
+    private ServerEntry currentServerEntry;
     
     /** Array of all outstanding/ongoing requests. Anything in this array will
      * be aborted when {@link#stop()} is called. */
@@ -209,6 +236,7 @@ public class ServerInterface
         {
             shuffleAndAddServerEntries(
                 EmbeddedValues.EMBEDDED_SERVER_LIST.split("\n"), true);
+            saveServerEntries();
         } 
         catch (JSONException e)
         {
@@ -223,6 +251,7 @@ public class ServerInterface
     public void start()
     {
         this.stopped = false;
+        this.currentServerEntry = null;
     }
 
     /**
@@ -232,6 +261,9 @@ public class ServerInterface
     {
         
         this.stopped = true;
+        
+        // NOTE: can't clear this here, as some requests are done after stop() is called in stopTunnel()
+        //this.currentServerEntry = null;
         
         // This may be called from the app main thread, so it must not make 
         // network requests directly (because that's disallowed in Android).
@@ -259,26 +291,66 @@ public class ServerInterface
         } 
         catch (InterruptedException e)
         {
-            // do what? nothing? 
+            Thread.currentThread().interrupt();
         }
     } 
 
-    synchronized ServerEntry getCurrentServerEntry()
+    synchronized ServerEntry setCurrentServerEntry()
     {
+        // Saves selected currentServerEntry for future reference (e.g., used by getRequestURL calls)
+        
         if (this.serverEntries.size() > 0)
         {
-            return this.serverEntries.get(0).clone();
+            this.currentServerEntry = this.serverEntries.get(0).clone();
+            return this.currentServerEntry;
         }
 
         return null;
     }
     
+    synchronized ServerEntry getCurrentServerEntry()
+    {
+        return this.currentServerEntry.clone();
+    }
+    
+    synchronized ArrayList<ServerEntry> getServerEntries()
+    {
+        ArrayList<ServerEntry> serverEntries = new ArrayList<ServerEntry>();
+
+        for (ServerEntry serverEntry : this.serverEntries)
+        {
+            serverEntries.add(serverEntry.clone());
+        }
+
+        return serverEntries;        
+    }
+
+    synchronized boolean serverWithCapabilitiesExists(List<String> capabilities)
+    {
+    	for (ServerEntry entry: this.serverEntries)
+    	{
+    		if (entry.hasCapabilities(capabilities))
+    		{
+    			return true;
+    		}
+    	}
+    	
+    	return false;
+    }
+    
     synchronized void markCurrentServerFailed()
     {
-        if (this.serverEntries.size() > 0)
+        if (this.currentServerEntry != null)
         {
             // Move to end of list for last chance retry
-            this.serverEntries.add(this.serverEntries.remove(0));
+            for (int i = 0; i < this.serverEntries.size(); i++)
+            {
+                if (this.serverEntries.get(i).ipAddress.equals(this.currentServerEntry.ipAddress))
+                {
+                    this.serverEntries.add(this.serverEntries.remove(i));
+                    break;
+                }
+            }
             
             // Save the new server order
             saveServerEntries();
@@ -340,10 +412,14 @@ public class ServerInterface
                     JSONObject obj = new JSONObject(line.substring(JSON_CONFIG_PREFIX.length()));
 
                     JSONArray homepages = obj.getJSONArray("homepages");
+                    
+                    ArrayList<String> sessionHomePages = new ArrayList<String>();
+                    
                     for (int i = 0; i < homepages.length(); i++)
                     {
-                    	PsiphonData.getPsiphonData().addHomePage(homepages.getString(i));
+                        sessionHomePages.add(homepages.getString(i));
                     }
+                    PsiphonData.getPsiphonData().setHomePages(sessionHomePages);
 
                     this.upgradeClientVersion = obj.getString("upgrade_client_version");
                     
@@ -379,15 +455,17 @@ public class ServerInterface
                     // storing them in this class.
                     PsiphonData.getPsiphonData().getStats().setRegexes(pageViewRegexes, httpsRequestRegexes);
 
-                    this.speedTestURL = obj.getString("speed_test_url");
-
                     JSONArray encoded_server_list = obj.getJSONArray("encoded_server_list");
                     String[] entries = new String[encoded_server_list.length()];
                     for (int i = 0; i < encoded_server_list.length(); i++)
                     {
                         entries[i] = encoded_server_list.getString(i);
                     }
-                    shuffleAndAddServerEntries(entries, false);
+                    if (encoded_server_list.length() > 0)
+                    {
+                        shuffleAndAddServerEntries(entries, false);
+                        saveServerEntries();
+                    }
                     
                     // We only support SSH, so this is our server session ID.
                     this.serverSessionID = obj.getString("ssh_session_id");
@@ -444,19 +522,27 @@ public class ServerInterface
         
         String url = getRequestURL("connected", extraParams);
         
-        makeAbortableProxiedPsiphonRequest(url);
+        byte[] response = makeAbortableProxiedPsiphonRequest(url);
 
         try
         {
+            JSONObject obj = new JSONObject(new String(response));
+            String connected_timestamp = obj.getString("connected_timestamp");
             FileOutputStream file;
             file = this.ownerContext.openFileOutput(PsiphonConstants.LAST_CONNECTED_FILENAME, Context.MODE_PRIVATE);
-            file.write(Utils.getISO8601String().getBytes());
+            file.write(connected_timestamp.getBytes());
             file.close();
         }
         catch (IOException e)
         {
             MyLog.w(R.string.ServerInterface_FailedToStoreLastConnected, e);
             // Proceed, even if file saving fails
+        }
+        catch(JSONException e)
+        {
+            MyLog.w(R.string.ServerInterface_FailedToParseLastConnected, e);
+            // Proceed if parsing response fails
+
         }
     }
 
@@ -618,26 +704,27 @@ public class ServerInterface
             // After at least one failed connection attempt, and no more than once
             // per few hours (if successful), or not more than once per few minutes
             // (if unsuccessful), check for a new remote server list.
-            Date nextFetchRemoteServerList = PsiphonData.getPsiphonData().getNextFetchRemoteServerList();
-            if ((nextFetchRemoteServerList != null) &&
-                (nextFetchRemoteServerList.getTime() > new Date().getTime()))
+            long nextFetchRemoteServerList = PsiphonData.getPsiphonData().getNextFetchRemoteServerList();
+            if ((nextFetchRemoteServerList != -1) &&
+                (nextFetchRemoteServerList > SystemClock.elapsedRealtime()))
             {
                 return;
             }
 
-            PsiphonData.getPsiphonData().setNextFetchRemoteServerList(new Date(
-                    new Date().getTime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_UNSUCCESSFUL_REMOTE_SERVER_LIST_FETCH));
+            PsiphonData.getPsiphonData().setNextFetchRemoteServerList(
+                    SystemClock.elapsedRealtime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_UNSUCCESSFUL_REMOTE_SERVER_LIST_FETCH);
             
             try
             {
                 byte[] response = makeDirectWebRequest(EmbeddedValues.REMOTE_SERVER_LIST_URL);
     
-                PsiphonData.getPsiphonData().setNextFetchRemoteServerList(new Date(
-                        new Date().getTime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH));
+                PsiphonData.getPsiphonData().setNextFetchRemoteServerList(
+                        SystemClock.elapsedRealtime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH);
                 
                 String serverList = ServerEntryAuth.validateAndExtractServerList(new String(response));
     
                 shuffleAndAddServerEntries(serverList.split("\n"), false);
+                saveServerEntries();
             }
             catch (ServerEntryAuthException e)
             {
@@ -700,8 +787,8 @@ public class ServerInterface
         StringBuilder url = new StringBuilder();
         String clientPlatform = PsiphonConstants.PLATFORM;
         
-        //try to detect if device is rooted and append to the client_platform string
-        if( Utils.isRooted())
+        // Detect if device is rooted and append to the client_platform string
+        if (Utils.isRooted())
         {
             clientPlatform += PsiphonConstants.ROOTED;
         }
@@ -717,7 +804,8 @@ public class ServerInterface
            .append("&sponsor_id=").append(Utils.urlEncode(EmbeddedValues.SPONSOR_ID))
            .append("&client_version=").append(Utils.urlEncode(EmbeddedValues.CLIENT_VERSION))
            .append("&relay_protocol=").append(Utils.urlEncode(PsiphonData.getPsiphonData().getTunnelRelayProtocol()))
-           .append("&client_platform=").append(Utils.urlEncode(clientPlatform));
+           .append("&client_platform=").append(Utils.urlEncode(clientPlatform))
+           .append("&tunnel_whole_device=").append(Utils.urlEncode(PsiphonData.getPsiphonData().getTunnelWholeDevice() ? "1" : "0"));
 
         if (extraParams != null)
         {
@@ -1107,6 +1195,25 @@ public class ServerInterface
         newEntry.sshHostKey = obj.getString("sshHostKey");
         newEntry.sshObfuscatedPort = obj.getInt("sshObfuscatedPort");
         newEntry.sshObfuscatedKey = obj.getString("sshObfuscatedKey");
+        
+        newEntry.capabilities = new ArrayList<String>(); 
+        if (obj.has("capabilities"))
+        {
+	        JSONArray caps = obj.getJSONArray("capabilities");
+	        for (int i = 0; i < caps.length(); i++)
+	        {
+	        	newEntry.capabilities.add(caps.getString(i));
+	        }
+        }
+        else
+        {
+        	// At the time of introduction of the server capabilities feature
+        	// these are the default capabilities possessed by all servers.
+        	newEntry.capabilities.add("OSSH");
+        	newEntry.capabilities.add("SSH");
+        	newEntry.capabilities.add("VPN");
+        	newEntry.capabilities.add("handshake");
+        }
 
         // Check if there's already an entry for this server
         int existingIndex = -1;
@@ -1135,9 +1242,6 @@ public class ServerInterface
             int index = this.serverEntries.size() > 0 ? 1 : 0;
             this.serverEntries.add(index, newEntry);
         }
-
-        // Save the updated server entries
-        saveServerEntries();
     }
     
     private void saveServerEntries()
@@ -1171,6 +1275,51 @@ public class ServerInterface
         }
     }
 
+    public synchronized void moveEntriesToFront(ArrayList<ServerEntry> reorderedServerEntries)
+    {
+        // Insert entries in input order
+
+        for (int i = reorderedServerEntries.size() - 1; i >= 0; i--)
+        {
+            ServerEntry reorderedEntry = reorderedServerEntries.get(i);
+            // Remove existing entry for server, if present. In the case where
+            // the existing entry has different data, we must assume that a
+            // discovery has happened that overwrote the data that's being
+            // passed in. In that edge case, we just keep the existing entry
+            // in its current position.
+
+            boolean existingEntryChanged = false;
+
+            for (int j = 0; j < this.serverEntries.size(); j++)
+            {
+                ServerEntry existingEntry = this.serverEntries.get(j);
+
+                if (reorderedEntry.ipAddress.equals(existingEntry.ipAddress))
+                {
+                    // NOTE: depends on encodedEntry representing the entire object
+                    if (0 != reorderedEntry.encodedEntry.compareTo(existingEntry.encodedEntry))
+                    {
+                        existingEntryChanged = true;
+                    }
+                    else
+                    {
+                        this.serverEntries.remove(j);
+                    }
+                    break;
+                }
+            }
+
+            // Re-insert entry for server in new position
+
+            if (!existingEntryChanged)
+            {
+                this.serverEntries.add(0, reorderedEntry);
+            }
+        }
+
+        saveServerEntries();
+    }
+    
     private final long DEFAULT_STATS_SEND_INTERVAL_MS = 5*60*1000; // 5 mins
     private long statsSendInterval = DEFAULT_STATS_SEND_INTERVAL_MS;
     private long lastStatusSendTimeMS = 0;

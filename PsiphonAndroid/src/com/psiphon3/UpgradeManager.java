@@ -35,6 +35,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
+import android.view.KeyEvent;
 
 /**
  * Contains logic relating to downloading and applying upgrades.
@@ -103,7 +104,7 @@ public interface UpgradeManager
                 // "If the file exists but is a directory rather than a regular 
                 //  file, does not exist but cannot be created, or cannot be 
                 //  opened for any other reason then a FileNotFoundException is thrown."
-                MyLog.e(R.string.UpgradeManager_UpgradeFileNotFound, e);
+                MyLog.w(R.string.UpgradeManager_UpgradeFileNotFound, e);
                 return false;
             }
             
@@ -114,7 +115,7 @@ public interface UpgradeManager
             } 
             catch (IOException e)
             {
-                MyLog.e(R.string.UpgradeManager_UpgradeFileWriteFailed, e);
+                MyLog.w(R.string.UpgradeManager_UpgradeFileWriteFailed, e);
                 return false;
             }
             
@@ -181,7 +182,7 @@ public interface UpgradeManager
             {
                 // There's probably something wrong with the upgrade file.
                 file.delete();
-                MyLog.e(R.string.UpgradeManager_CannotExtractUpgradePackageInfo);
+                MyLog.w(R.string.UpgradeManager_CannotExtractUpgradePackageInfo);
                 return false;
             }
             
@@ -197,7 +198,7 @@ public interface UpgradeManager
             {
                 // This really shouldn't happen -- we're getting info about the 
                 // current package, which clearly exists.
-                MyLog.e(R.string.UpgradeManager_CanNotRetrievePackageInfo, e);
+                MyLog.w(R.string.UpgradeManager_CanNotRetrievePackageInfo, e);
                 return false;
             }
             
@@ -244,6 +245,12 @@ public interface UpgradeManager
             new AlertDialog.Builder(this.context)
                 .setTitle(R.string.UpgradeManager_UpgradePromptTitle)
                 .setMessage(R.string.UpgradeManager_UpgradePromptMessage)
+                .setOnKeyListener(
+                        new DialogInterface.OnKeyListener() {
+                            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                                // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
+                                return keyCode == KeyEvent.KEYCODE_SEARCH;
+                            }})
                 .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         // User declied the prompt.
@@ -321,6 +328,7 @@ public interface UpgradeManager
                 } 
                 catch (InterruptedException e)
                 {
+                    Thread.currentThread().interrupt();
                 }
             }
             this.thread = null;
@@ -361,7 +369,7 @@ public interface UpgradeManager
                 return;
             }
             
-            MyLog.i(R.string.UpgradeManager_UpgradeDownloaded);
+            MyLog.v(R.string.UpgradeManager_UpgradeDownloaded);
         }
     }
 }

@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2012, Psiphon Inc.
+ * All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 
 package ch.ethz.ssh2.channel;
 
@@ -19,33 +37,6 @@ import android.util.Log;
 import com.psiphon3.PsiphonData;
 import com.psiphon3.PsiphonConstants;
 
-/**
- * A StreamForwarder forwards data between two given streams. 
- * If two StreamForwarder threads are used (one for each direction)
- * then one can be configured to shutdown the underlying channel/socket
- * if both threads have finished forwarding (EOF).
- * 
- * @author Christian Plattner
- * @version 2.50, 03/15/10
- */
-/*
- * Copyright (c) 2012, Psiphon Inc.
- * All rights reserved.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- */
 public class PsiphonStreamForwarder extends Thread
 {
     OutputStream os;
@@ -70,7 +61,6 @@ public class PsiphonStreamForwarder extends Thread
     PsiphonStreamForwarder(
             Channel c,
             PsiphonStreamForwarder sibling,
-            Socket s,
             InputStream is,
             OutputStream os,
             String mode,
@@ -82,7 +72,6 @@ public class PsiphonStreamForwarder extends Thread
         this.mode = mode;
         this.c = c;
         this.sibling = sibling;
-        this.s = s;
         this.destHost = destHost;
         this.isHttpRequester = (mode == "LocalToRemote");
     }
@@ -101,10 +90,7 @@ public class PsiphonStreamForwarder extends Thread
                 // NOTE: need to process stats before write to ensure
                 // request stack is in correct state before response arrives
                 // to sibling thread
-                if (this.destHost != null)
-                {
-                    doStats(len);
-                }
+                doStats(len);
 
                 os.write(buffer, 0, len);
                 os.flush();
@@ -413,32 +399,23 @@ public class PsiphonStreamForwarder extends Thread
                             BasicLineParser parser = new BasicLineParser();
                             int responseStatusCode = 0;
     
-                            if (this.isHttpRequester)
-                            {
-                                RequestLine requestLine = BasicLineParser.parseRequestLine(lines[0], parser);
-                                
-                                // Push URI on stack to be consumed by peer on response
-                                // (Assumes HTTP responses return in request order)
-                                String uri = requestLine.getUri();
+                            // Parse headers:
+                            // Host header is used for stats (socket destination host is used when Host header is missing)
+                            // Content/Transfer-Encoding header is used to skip content
 
-                                this.pendingRequestStack.add(0, uri);
-                            }
-                            else
-                            {
-                                StatusLine statusLine = BasicLineParser.parseStatusLine(lines[0], parser);
-                                responseStatusCode = statusLine.getStatusCode();
-                                
-                                // More response case below...
-                            }
-                                
-                            // Parse content headers
+                            String host = this.destHost == null ? "" : this.destHost;
                             String contentType = null;
                             int contentLength = 0;
     
                             for (int i = 1; i < lines.length; i++)
                             {
                                 Header header = BasicLineParser.parseHeader(lines[i], parser);
-                                if (header.getName().compareToIgnoreCase("Content-Type") == 0)
+                                if (header.getName().compareToIgnoreCase("Host") == 0)
+                                {
+                                    // TODO: strip port suffix?
+                                    host = header.getValue();
+                                }
+                                else if (header.getName().compareToIgnoreCase("Content-Type") == 0)
                                 {
                                     contentType = header.getValue();
                                 }
@@ -460,25 +437,39 @@ public class PsiphonStreamForwarder extends Thread
                                     }
                                 }
                             }
-    
-                            if (!this.isHttpRequester)
+                            
+                            if (this.isHttpRequester)
                             {
-                                // ...continue response case now that headers are parsed
+                                RequestLine requestLine = BasicLineParser.parseRequestLine(lines[0], parser);
+                                                                
+                                // Push URI on stack to be consumed by peer on response
+                                // (Assumes HTTP responses return in request order)
+                                String uri = requestLine.getUri();
+
+                                // TODO: " " delimiter is ok? (http://en.wikipedia.org/wiki/Hostname#Restrictions_on_valid_host_names)
+                                this.pendingRequestStack.add(0, host + " " + uri);
+                            }
+                            else
+                            {
+                                StatusLine statusLine = BasicLineParser.parseStatusLine(lines[0], parser);
+                                responseStatusCode = statusLine.getStatusCode();
                                 
                                 // Pop request URI from peer's stack
-                                // (Assumes HTTP responses return in response order)
-                                String requestURI = this.sibling.pendingRequestStack.remove(0);
-
+                                // (Assumes HTTP responses return in request order)
+                                String[] requestInfo = this.sibling.pendingRequestStack.remove(0).split(" ");
+                                String requestHost = requestInfo[0];
+                                String requestURI = requestInfo[1];
+                                
                                 // We update the stats if the response code is 200 
                                 // and the content type is some kind of HTML page.
-                                if (this.destHost.length() > 0
+                                if (requestHost.length() > 0
                                     && requestURI.length() > 0
                                     && responseStatusCode == 200
                                     && contentType != null
                                     && (contentType.contains("text/html")
                                         || contentType.contains("application/xhtml+xml")))
                                 {
-                                    stats.upsertPageView("http://"+this.destHost+requestURI);
+                                    stats.upsertPageView("http://"+requestHost+requestURI);
                                 }
                             }
     

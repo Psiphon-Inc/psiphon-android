@@ -19,6 +19,8 @@
 
 package com.psiphon3;
 
+import java.util.ArrayList;
+
 import android.os.Build;
 
 public class PsiphonConstants
@@ -33,9 +35,15 @@ public class PsiphonConstants
 
     public final static int CLIENT_SESSION_ID_SIZE_IN_BYTES = 16;
     
+    public final static int STANDARD_DNS_PORT = 53;
+    
     public final static int SOCKS_PORT = 1080;
     
     public final static int HTTP_PROXY_PORT = 8080;
+
+    public final static int DNS_PROXY_PORT = 9053;
+
+    public final static int TRANSPARENT_PROXY_PORT = 9080;
 
     public final static int DEFAULT_WEB_SERVER_PORT = 443;
     
@@ -53,4 +61,6 @@ public class PsiphonConstants
     public final static int SECONDS_BETWEEN_UNSUCCESSFUL_REMOTE_SERVER_LIST_FETCH = 60*5;
 
     public final static String ROOTED = "_rooted";
+    
+    public final static ArrayList<String> REQUIRED_CAPABILITIES_FOR_TUNNEL = new ArrayList<String>(){{ add(PsiphonConstants.RELAY_PROTOCOL); }};
 }
