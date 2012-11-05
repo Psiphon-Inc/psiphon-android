@@ -102,13 +102,16 @@ public class FeedbackActivity extends Activity
                 }
                 content.append("\n");
 
-                content.append("--- # Diagnostic History\n\n");
                 ArrayList<String> diagnosticHistory = PsiphonData.cloneDiagnosticHistory();
-                for (String entry : diagnosticHistory)
+                if (!diagnosticHistory.isEmpty())
                 {
-                    content.append("- \"").append(entry).append("\"\n");
+                    content.append("--- # Diagnostic History\n\n");
+                    for (String entry : diagnosticHistory)
+                    {
+                        content.append("- \"").append(entry).append("\"\n");
+                    }
+                    content.append("\n");
                 }
-                content.append("\n");
 
                 content.append("--- # Status History\n\n");
                 ArrayList<StatusEntry> history = PsiphonData.cloneStatusHistory();
