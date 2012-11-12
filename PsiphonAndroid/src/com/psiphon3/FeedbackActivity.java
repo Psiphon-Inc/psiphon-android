@@ -193,7 +193,7 @@ public class FeedbackActivity extends Activity
                     X509EncodedKeySpec spec = new X509EncodedKeySpec(publicKeyBytes);
                     KeyFactory keyFactory = KeyFactory.getInstance("RSA");
                     PublicKey publicKey = keyFactory.generatePublic(spec);
-                    Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+                    Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
                     rsaCipher.init(Cipher.WRAP_MODE, publicKey);
                     
                     // Wrap the encryption key.
