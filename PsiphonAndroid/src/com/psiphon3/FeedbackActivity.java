@@ -53,6 +53,7 @@ import android.net.MailTo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
@@ -228,12 +229,16 @@ public class FeedbackActivity extends Activity
                     try 
                     {
                         // The attachment must be created on external storage, 
-                        // or else Gmail gives this error:
+                        // and be publicly readable, or else Gmail gives this error:
                         // E/Gmail(18760): file:// attachment paths must point to file:///storage/sdcard0. Ignoring attachment [obscured file path]
-    
-                        attachmentFile = new File(getExternalFilesDir("feedback"), PsiphonConstants.FEEDBACK_ATTACHMENT_FILENAME);
-    
-                        // Note that we're overwriting any existing file
+                        
+                        File extDir = Environment.getExternalStoragePublicDirectory(PsiphonConstants.TAG);
+                        extDir.mkdirs();
+
+                        attachmentFile = new File(
+                                extDir, 
+                                PsiphonConstants.FEEDBACK_ATTACHMENT_FILENAME);
+                        
                         FileWriter writer = new FileWriter(attachmentFile, false);
                         writer.write(encryptedContent.toString());
                         writer.close();
