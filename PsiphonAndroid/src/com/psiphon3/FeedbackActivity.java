@@ -203,6 +203,8 @@ public class FeedbackActivity extends Activity
                     SecretKey macKey = macKeygen.generateKey();
                     Mac mac = Mac.getInstance("HmacSHA256");
                     mac.init(macKey);
+                    // Include the IV in the MAC'd data, as per http://tools.ietf.org/html/draft-mcgrew-aead-aes-cbc-hmac-sha2-01
+                    mac.update(iv);
                     contentMac = mac.doFinal(contentCiphertext);
                     
                     //
