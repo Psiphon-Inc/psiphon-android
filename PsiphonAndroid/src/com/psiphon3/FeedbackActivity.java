@@ -93,6 +93,10 @@ public class FeedbackActivity extends Activity
                 content.append("  VERSION.RELEASE: ").append(Build.VERSION.RELEASE).append("\n");
                 content.append("  VERSION.SDK_INT: ").append(Build.VERSION.SDK_INT).append("\n");
                 content.append("isRooted: ").append(Utils.isRooted()).append("\n");
+                content.append("psiphonEmbeddedValues:\n");
+                content.append("  PROPAGATION_CHANNEL_ID: ").append(EmbeddedValues.PROPAGATION_CHANNEL_ID).append("\n");
+                content.append("  SPONSOR_ID: ").append(EmbeddedValues.SPONSOR_ID).append("\n");
+                content.append("  CLIENT_VERSION: ").append(EmbeddedValues.CLIENT_VERSION).append("\n");
                 content.append("\n");
                 
                 content.append("--- # Server Response Check\n\n");
