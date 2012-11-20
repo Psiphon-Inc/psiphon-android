@@ -170,12 +170,14 @@ public class FeedbackActivity extends Activity
                 boolean attachOkay = false;
                 try
                 {
+                	int KEY_LENGTH = 128;
+                	
                     //
                     // Encrypt the cleartext content
                     //
                     
                     KeyGenerator encryptionKeygen = KeyGenerator.getInstance("AES");
-                    encryptionKeygen.init(128);
+                    encryptionKeygen.init(KEY_LENGTH);
                     SecretKey encryptionKey = encryptionKeygen.generateKey();
                     
                     SecureRandom rng = new SecureRandom();
@@ -197,7 +199,7 @@ public class FeedbackActivity extends Activity
                     //
                     
                     KeyGenerator macKeygen = KeyGenerator.getInstance("AES");
-                    macKeygen.init(128);
+                    macKeygen.init(KEY_LENGTH);
                     SecretKey macKey = macKeygen.generateKey();
                     Mac mac = Mac.getInstance("HmacSHA256");
                     mac.init(macKey);
