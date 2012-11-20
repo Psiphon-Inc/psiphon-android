@@ -263,10 +263,28 @@ public class Utils {
         static public ILogInfoProvider logInfoProvider;
         static public ILogger logger;
         
+        /**
+         * Used to indicate the sensitivity level of the log. This will affect
+         * log handling in some situations (like sending as diagnostic info).
+         * "Sensitive" refers to info that might identify the user or their 
+         * activities.
+         */
         public enum Sensitivity
         {
+        	/**
+        	 * The log does not contain sensitive information.
+        	 */
             NOT_SENSITIVE,
+            
+            /**
+             * The log message itself is sensitive information.
+             */
             SENSITIVE_LOG,
+            
+            /**
+             * The format arguments to the log messages are sensitive, but the 
+             * log message itself is not. 
+             */
             SENSITIVE_FORMAT_ARGS
         }
         
