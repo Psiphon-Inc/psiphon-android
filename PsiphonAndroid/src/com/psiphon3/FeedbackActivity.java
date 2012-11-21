@@ -50,6 +50,7 @@ import com.psiphon3.Utils.Base64;
 import com.psiphon3.Utils.MyLog;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.MailTo;
 import android.net.Uri;
@@ -296,7 +297,15 @@ public class FeedbackActivity extends Activity
                         intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(attachmentFile));
                     }
                     
-                    startActivity(intent);
+                    try
+                    {
+                        startActivity(intent);
+                    }
+                    catch (ActivityNotFoundException e)
+                    {
+                        // Do nothing
+                    }
+                    
                     return true;
                 }
                 else if (url.contains(feedbackUrl))
