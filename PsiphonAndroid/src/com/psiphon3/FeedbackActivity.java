@@ -107,6 +107,7 @@ public class FeedbackActivity extends Activity
                     content.append("- ipAddress: \"").append(entry.ipAddress).append("\"\n");
                     content.append("  responded: ").append(entry.responded).append("\n");
                     content.append("  responseTime: ").append(entry.responseTime).append("\n");
+                    content.append("  timestamp: ").append(entry.timestamp).append("\n");
                 }
                 content.append("\n");
 
@@ -163,6 +164,7 @@ public class FeedbackActivity extends Activity
                     
                     content.append("- id: ").append(entry.idName).append("\n");
                     content.append("  timestamp: ").append(entry.timestamp).append("\n");
+                    content.append("  priority: ").append(entry.priority).append("\n");
                     content.append("  formatArgs: ").append(formatArgs).append("\n");
                     content.append("  throwable: ").append(throwable).append("\n");
                 }
