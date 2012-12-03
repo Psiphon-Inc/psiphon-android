@@ -398,6 +398,7 @@ public class PsiphonData
         String ipAddress;
         boolean responded;
         long responseTime;
+        String timestamp;
     }
     
     static private ArrayList<ServerResponseCheck> m_serverResponses = new ArrayList<ServerResponseCheck>();
@@ -411,6 +412,7 @@ public class PsiphonData
         entry.ipAddress = ipAddress;
         entry.responded = responded;
         entry.responseTime = responseTime;
+        entry.timestamp = Utils.getISO8601String();
         
         synchronized(m_serverResponses) 
         {
