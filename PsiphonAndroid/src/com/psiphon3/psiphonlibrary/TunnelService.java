@@ -17,7 +17,7 @@
  *
  */
 
-package com.psiphon3;
+package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -36,10 +36,13 @@ import android.os.IBinder;
 import ch.ethz.ssh2.*;
 import ch.ethz.ssh2.Connection.IStopSignalPending;
 
-import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
-import com.psiphon3.TransparentProxyConfig.PsiphonTransparentProxyException;
-import com.psiphon3.UpgradeManager;
-import com.psiphon3.Utils.MyLog;
+import com.psiphon3.R.drawable;
+import com.psiphon3.R.string;
+import com.psiphon3.R;
+import com.psiphon3.psiphonlibrary.UpgradeManager;
+import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
+import com.psiphon3.psiphonlibrary.TransparentProxyConfig.PsiphonTransparentProxyException;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.stericson.RootTools.RootTools;
 
 public class TunnelService extends Service implements Utils.MyLog.ILogger, IStopSignalPending

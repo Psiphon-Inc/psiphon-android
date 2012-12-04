@@ -44,10 +44,15 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
-import com.psiphon3.PsiphonData.StatusEntry;
-import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
-import com.psiphon3.Utils.Base64;
-import com.psiphon3.Utils.MyLog;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.PsiphonConstants;
+import com.psiphon3.psiphonlibrary.PsiphonData;
+import com.psiphon3.psiphonlibrary.ServerInterface;
+import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
+import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
+import com.psiphon3.psiphonlibrary.Utils.Base64;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
@@ -104,9 +109,9 @@ public class FeedbackActivity extends Activity
                 ArrayList<PsiphonData.ServerResponseCheck> serverResponseChecks = PsiphonData.cloneServerResponseChecks();
                 for (PsiphonData.ServerResponseCheck entry : serverResponseChecks)
                 {
-                    content.append("- ipAddress: \"").append(entry.ipAddress).append("\"\n");
-                    content.append("  responded: ").append(entry.responded).append("\n");
-                    content.append("  responseTime: ").append(entry.responseTime).append("\n");
+                    content.append("- ipAddress: \"").append(entry.ipAddress()).append("\"\n");
+                    content.append("  responded: ").append(entry.responded()).append("\n");
+                    content.append("  responseTime: ").append(entry.responseTime()).append("\n");
                 }
                 content.append("\n");
 
@@ -126,22 +131,22 @@ public class FeedbackActivity extends Activity
                 for (StatusEntry entry : history)
                 {
                     // Don't send any sensitive logs
-                    if (entry.sensitivity == MyLog.Sensitivity.SENSITIVE_LOG)
+                    if (entry.sensitivity() == MyLog.Sensitivity.SENSITIVE_LOG)
                     {
                         continue;
                     }
                     
                     StringBuilder formatArgs = new StringBuilder();
-                    if (entry.formatArgs != null && entry.formatArgs.length > 0
+                    if (entry.formatArgs() != null && entry.formatArgs().length > 0
                         // Don't send any sensitive format args
-                        && entry.sensitivity != MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS)
+                        && entry.sensitivity() != MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS)
                     {
                         formatArgs.append("[");
-                        for (int i = 0; i < entry.formatArgs.length; i++)
+                        for (int i = 0; i < entry.formatArgs().length; i++)
                         {
-                            String arg = entry.formatArgs[i].toString();
+                            String arg = entry.formatArgs()[i].toString();
                             formatArgs.append("\"").append(arg).append("\"");
-                            if (i < entry.formatArgs.length-1)
+                            if (i < entry.formatArgs().length-1)
                             {
                                 formatArgs.append(", ");
                             }
@@ -150,19 +155,19 @@ public class FeedbackActivity extends Activity
                     }
                     
                     StringBuilder throwable = new StringBuilder();
-                    if (entry.throwable != null)
+                    if (entry.throwable() != null)
                     {
-                        throwable.append("\n    message: \"").append(entry.throwable.toString()).append("\"");
+                        throwable.append("\n    message: \"").append(entry.throwable().toString()).append("\"");
                         throwable.append("\n    stack: ");
-                        for (StackTraceElement element : entry.throwable.getStackTrace())
+                        for (StackTraceElement element : entry.throwable().getStackTrace())
                         {
                             throwable.append("\n      - \"").append(element).append("\"");
                         }
                     }
                     
                     
-                    content.append("- id: ").append(entry.idName).append("\n");
-                    content.append("  timestamp: ").append(entry.timestamp).append("\n");
+                    content.append("- id: ").append(entry.idName()).append("\n");
+                    content.append("  timestamp: ").append(entry.timestamp()).append("\n");
                     content.append("  formatArgs: ").append(formatArgs).append("\n");
                     content.append("  throwable: ").append(throwable).append("\n");
                 }

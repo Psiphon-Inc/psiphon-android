@@ -17,7 +17,7 @@
  *
  */
 
-package com.psiphon3;
+package com.psiphon3.psiphonlibrary;
 
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -32,8 +32,10 @@ import java.security.spec.X509EncodedKeySpec;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.psiphon3.Utils.Base64;
-import com.psiphon3.Utils.MyLog;
+import com.psiphon3.R;
+import com.psiphon3.R.string;
+import com.psiphon3.psiphonlibrary.Utils.Base64;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
 public class ServerEntryAuth

@@ -1,4 +1,4 @@
-package com.psiphon3;
+package com.psiphon3.psiphonlibrary;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -18,7 +18,7 @@ import java.util.Random;
 import java.util.TimeZone;
 import java.io.IOException;
 
-import com.psiphon3.PsiphonData.StatusEntry;
+import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
 
 import android.app.Activity;
 import android.content.Context;
@@ -318,11 +318,11 @@ public class Utils {
             for (StatusEntry logEntry : history)
             {
                 MyLog.println(
-                        logEntry.id, 
-                        logEntry.sensitivity, 
-                        logEntry.formatArgs, 
-                        logEntry.throwable, 
-                        logEntry.priority);
+                        logEntry.id(), 
+                        logEntry.sensitivity(), 
+                        logEntry.formatArgs(), 
+                        logEntry.throwable(), 
+                        logEntry.priority());
             }
         }
         
@@ -347,22 +347,22 @@ public class Utils {
             MyLog.d(msg);
         }
 
-        static void e(int stringResID, Sensitivity sensitivity, Object... formatArgs)
+        static public void e(int stringResID, Sensitivity sensitivity, Object... formatArgs)
         {
             MyLog.println(stringResID, sensitivity, formatArgs, null, Log.ERROR);
         }
 
-        static void e(int stringResID, Sensitivity sensitivity, Throwable throwable)
+        static public void e(int stringResID, Sensitivity sensitivity, Throwable throwable)
         {
             MyLog.println(stringResID, sensitivity, null, throwable, Log.ERROR);
         }
         
-        static void w(int stringResID, Sensitivity sensitivity, Object... formatArgs)
+        static public void w(int stringResID, Sensitivity sensitivity, Object... formatArgs)
         {
             MyLog.println(stringResID, sensitivity, formatArgs, null, Log.WARN);
         }
 
-        static void w(int stringResID, Sensitivity sensitivity, Throwable throwable)
+        static public void w(int stringResID, Sensitivity sensitivity, Throwable throwable)
         {
             MyLog.println(stringResID, sensitivity, null, throwable, Log.WARN);
         }

@@ -34,8 +34,8 @@ import org.apache.http.message.BasicLineParser;
 
 import android.util.Log;
 
-import com.psiphon3.PsiphonData;
-import com.psiphon3.PsiphonConstants;
+import com.psiphon3.psiphonlibrary.PsiphonConstants;
+import com.psiphon3.psiphonlibrary.PsiphonData;
 
 public class PsiphonStreamForwarder extends Thread
 {

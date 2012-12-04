@@ -17,9 +17,12 @@
  *
  */
 
-package com.psiphon3;
+package com.psiphon3.psiphonlibrary;
 
 import java.util.List;
+
+import com.psiphon3.FeedbackActivity;
+import com.psiphon3.StatusActivity;
 
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningTaskInfo;

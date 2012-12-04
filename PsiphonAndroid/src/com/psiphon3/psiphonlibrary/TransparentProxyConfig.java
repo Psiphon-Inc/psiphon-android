@@ -17,7 +17,7 @@
  *
  */
 
-package com.psiphon3;
+package com.psiphon3.psiphonlibrary;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -27,6 +27,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.zip.ZipInputStream;
 
+import com.psiphon3.R;
+import com.psiphon3.R.string;
 import com.stericson.RootTools.Command;
 import com.stericson.RootTools.RootTools;
 

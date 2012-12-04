@@ -17,7 +17,7 @@
  *
  */
 
-package com.psiphon3;
+package com.psiphon3.psiphonlibrary;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 
 import android.util.Pair;
 
-import com.psiphon3.Utils.MyLog;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 public class PsiphonData
 {
@@ -319,13 +319,48 @@ public class PsiphonData
 
     static public class StatusEntry
     {
-        String timestamp;
-        int id;
-        String idName;
-        Object[] formatArgs;
-        Throwable throwable;
-        int priority;
-        MyLog.Sensitivity sensitivity;
+        private String timestamp;
+        private int id;
+        private String idName;
+        private Object[] formatArgs;
+        private Throwable throwable;
+        private int priority;
+        private MyLog.Sensitivity sensitivity;
+        
+        public String timestamp()
+        {
+        	return timestamp;
+        }
+        
+        public int id()
+        {
+        	return id;
+        }
+        
+        public String idName()
+        {
+        	return idName;
+        }
+        
+        public Object[] formatArgs()
+        {
+        	return formatArgs;
+        }
+        
+        public Throwable throwable()
+        {
+        	return throwable;
+        }
+        
+        public int priority()
+        {
+        	return priority;
+        }
+        
+        public MyLog.Sensitivity sensitivity()
+        {
+        	return sensitivity;
+        }
     }
     
     static private ArrayList<StatusEntry> m_statusHistory = new ArrayList<StatusEntry>();
@@ -395,9 +430,24 @@ public class PsiphonData
 
     static public class ServerResponseCheck
     {
-        String ipAddress;
-        boolean responded;
-        long responseTime;
+        private String ipAddress;
+        private boolean responded;
+        private long responseTime;
+        
+        public String ipAddress()
+        {
+        	return ipAddress;
+        }
+        
+        public boolean responded()
+        {
+        	return responded;
+        }
+        
+        public long responseTime()
+        {
+        	return responseTime;
+        }
     }
     
     static private ArrayList<ServerResponseCheck> m_serverResponses = new ArrayList<ServerResponseCheck>();

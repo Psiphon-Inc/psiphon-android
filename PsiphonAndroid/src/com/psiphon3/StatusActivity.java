@@ -44,9 +44,15 @@ import android.widget.ScrollView;
 import android.widget.TableLayout;
 import android.widget.TextView;
 
-import com.psiphon3.UpgradeManager;
-import com.psiphon3.UpgradeManager.UpgradeInstaller;
-import com.psiphon3.Utils.MyLog;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.Events;
+import com.psiphon3.psiphonlibrary.PsiphonConstants;
+import com.psiphon3.psiphonlibrary.PsiphonData;
+import com.psiphon3.psiphonlibrary.TunnelService;
+import com.psiphon3.psiphonlibrary.UpgradeManager;
+import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.psiphonlibrary.UpgradeManager.UpgradeInstaller;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
 public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
