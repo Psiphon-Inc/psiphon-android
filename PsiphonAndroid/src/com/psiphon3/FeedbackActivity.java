@@ -386,6 +386,7 @@ public class FeedbackActivity extends Activity
 
                 ServerInterface serverInterface = new ServerInterface(activity);
                 serverInterface.start();
+                serverInterface.setCurrentServerEntry();
 
                 String formData;
                 try

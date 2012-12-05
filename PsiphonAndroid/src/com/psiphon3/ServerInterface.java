@@ -310,6 +310,11 @@ public class ServerInterface
     
     synchronized ServerEntry getCurrentServerEntry()
     {
+        if (this.currentServerEntry == null)
+        {
+            return null;
+        }
+        
         return this.currentServerEntry.clone();
     }
     
