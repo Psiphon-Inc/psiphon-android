@@ -163,7 +163,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 			assert(false);    			
     	}
 
-        // TODO: what if m_eventsInterface is null?
+        // TODO: default intent if m_eventsInterface is null?
+        assert(m_eventsInterface != null);
         PendingIntent invokeActivityIntent = 
                 PendingIntent.getActivity(
                     this,
