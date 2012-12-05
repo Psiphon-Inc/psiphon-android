@@ -35,7 +35,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.psiphon3.R;
-import com.psiphon3.R.string;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 

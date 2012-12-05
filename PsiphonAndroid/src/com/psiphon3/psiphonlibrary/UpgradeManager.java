@@ -25,7 +25,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import com.psiphon3.R;
-import com.psiphon3.R.string;
 import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 

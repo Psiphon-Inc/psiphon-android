@@ -36,8 +36,6 @@ import android.os.IBinder;
 import ch.ethz.ssh2.*;
 import ch.ethz.ssh2.Connection.IStopSignalPending;
 
-import com.psiphon3.R.drawable;
-import com.psiphon3.R.string;
 import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.UpgradeManager;
 import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
@@ -60,6 +58,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     private UpgradeManager.UpgradeDownloader m_upgradeDownloader;
     private ServerListReorder m_serverListReorder = null;
     private boolean m_destroyed = false;
+    private Events m_eventsInterface = null;
 
     enum Signal
     {
@@ -68,19 +67,19 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     };
     private BlockingQueue<Signal> m_signalQueue;
 
-    
     public class LocalBinder extends Binder
     {
-        TunnelService getService()
+        public TunnelService getService()
         {
             return TunnelService.this;
         }
     }
+    private final IBinder m_binder = new LocalBinder();
     
     @Override
     public IBinder onBind(Intent intent)
     {
-        return new LocalBinder();
+        return m_binder;
     }
 
     @Override
@@ -163,20 +162,21 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 		default:
 			assert(false);    			
     	}
-    	
+
+        // TODO: what if m_eventsInterface is null?
         PendingIntent invokeActivityIntent = 
                 PendingIntent.getActivity(
                     this,
                     0,
-                    Events.pendingSignalNotification(this),
+                    m_eventsInterface.pendingSignalNotification(this),
                     PendingIntent.FLAG_UPDATE_CURRENT);
-
-	    Notification notification =
+	
+        Notification notification =
 	            new Notification(
 	            		iconID,
 		                getText(R.string.app_name),
 		                System.currentTimeMillis());
-	
+
 	    notification.setLatestEventInfo(
 	        this,
 	        getText(R.string.app_name),
@@ -199,7 +199,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             String message,
             int messageClass)
     {
-        Events.appendStatusMessage(this, message, messageClass);
+        if (m_eventsInterface != null)
+        {
+            m_eventsInterface.appendStatusMessage(this, message, messageClass);
+        }
     }
         
     class PsiphonServerHostKeyVerifier implements ServerHostKeyVerifier
@@ -551,7 +554,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 m_interface.doHandshakeRequest();
                 PsiphonData.getPsiphonData().setTunnelSessionID(m_interface.getCurrentServerSessionID());
 
-                Events.signalHandshakeSuccess(this);
+                if (m_eventsInterface != null)
+                {
+                    m_eventsInterface.signalHandshakeSuccess(this);
+                }
             } 
             catch (PsiphonServerInterfaceException requestException)
             {
@@ -714,7 +720,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 // will also restart the tunnel, be sure not to do
                 // it when a stop is signaled.
                 
-                Events.signalUnexpectedDisconnect(this);
+	            if (m_eventsInterface != null)
+	            {
+	                m_eventsInterface.signalUnexpectedDisconnect(this);
+	            }
             }
         }
         
@@ -843,5 +852,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         
         m_signalQueue = null;
         m_tunnelThread = null;
+    }
+    
+    public void setEventsInterface(Events eventsInterface)
+    {
+    	m_eventsInterface = eventsInterface;
     }
 }

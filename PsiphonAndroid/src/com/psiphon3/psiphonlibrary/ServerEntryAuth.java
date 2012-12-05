@@ -33,7 +33,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.psiphon3.R;
-import com.psiphon3.R.string;
 import com.psiphon3.psiphonlibrary.Utils.Base64;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 

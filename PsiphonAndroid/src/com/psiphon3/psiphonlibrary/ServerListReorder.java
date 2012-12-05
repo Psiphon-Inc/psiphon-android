@@ -38,7 +38,6 @@ import android.os.Build;
 import android.os.SystemClock;
 
 import com.psiphon3.R;
-import com.psiphon3.R.string;
 import com.psiphon3.psiphonlibrary.ServerInterface.ServerEntry;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 

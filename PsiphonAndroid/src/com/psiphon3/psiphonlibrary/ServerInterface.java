@@ -77,7 +77,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.psiphon3.R;
-import com.psiphon3.R.string;
 import com.psiphon3.psiphonlibrary.ServerEntryAuth.ServerEntryAuthException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
