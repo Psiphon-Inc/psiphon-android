@@ -129,6 +129,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     		m_tunnelService = binder.getService();
     		m_boundToTunnelService = true;
     		m_tunnelService.setEventsInterface(m_eventsInterface);
+    		startService(new Intent(StatusActivity.this, TunnelService.class));
     	}
     	
     	@Override
@@ -142,7 +143,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     {
     	Intent intent = new Intent(context, TunnelService.class);
     	bindService(intent, m_tunnelServiceConnection, Context.BIND_AUTO_CREATE);
-    	startService(intent);
     }
     
     private void stopTunnelService(Context context)
