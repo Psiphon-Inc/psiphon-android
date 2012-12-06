@@ -37,7 +37,6 @@ import ch.ethz.ssh2.*;
 import ch.ethz.ssh2.Connection.IStopSignalPending;
 
 import com.psiphon3.R;
-import com.psiphon3.psiphonlibrary.UpgradeManager;
 import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.TransparentProxyConfig.PsiphonTransparentProxyException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -55,7 +54,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     private boolean m_firstStart = true;
     private Thread m_tunnelThread;
     private ServerInterface m_interface;
-    private UpgradeManager.UpgradeDownloader m_upgradeDownloader;
+    private UpgradeDownloader m_upgradeDownloader = null;
     private ServerListReorder m_serverListReorder = null;
     private boolean m_destroyed = false;
     private Events m_eventsInterface = null;
@@ -67,6 +66,20 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     };
     private BlockingQueue<Signal> m_signalQueue;
 
+    static public interface UpgradeDownloader
+    {
+        /**
+         * Begin downloading the upgrade from the server. Download is done in a
+         * separate thread. 
+         */
+        public void start();
+
+        /**
+         * Stop an on-going upgrade download.
+         */
+        public void stop();
+    }
+    
     public class LocalBinder extends Binder
     {
         public TunnelService getService()
@@ -87,18 +100,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     {        
         if (m_firstStart)
         {
-            // TODO: put this stuff in onCreate instead?
-
-            MyLog.logger = this;
-            m_interface = new ServerInterface(this);
-            m_upgradeDownloader = new UpgradeManager.UpgradeDownloader(this, m_interface);
             doForeground();
             MyLog.v(R.string.client_version, MyLog.Sensitivity.NOT_SENSITIVE, EmbeddedValues.CLIENT_VERSION);
             startTunnel();
-            
-            m_serverListReorder = new ServerListReorder(m_interface);
             m_serverListReorder.Start();
-            
             m_firstStart = false;
         }
         return android.app.Service.START_STICKY;
@@ -107,6 +112,9 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     @Override
     public void onCreate()
     {
+        MyLog.logger = this;
+        m_interface = new ServerInterface(this);
+        m_serverListReorder = new ServerListReorder(m_interface);
     }
 
     @Override
@@ -586,7 +594,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             
             checkSignals(0);
 
-            if (m_interface.isUpgradeAvailable())
+            if (m_interface.isUpgradeAvailable() && m_upgradeDownloader != null)
             {
                 m_upgradeDownloader.start();
             }
@@ -707,7 +715,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 MyLog.v(R.string.ssh_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
             }
             
-            m_upgradeDownloader.stop();
+            if (m_upgradeDownloader != null)
+            {
+                m_upgradeDownloader.stop();
+            }
 
             if (!runAgain)
             {
@@ -858,5 +869,15 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     public void setEventsInterface(Events eventsInterface)
     {
     	m_eventsInterface = eventsInterface;
+    }
+    
+    public void setUpgradeDownloader(UpgradeDownloader downloader)
+    {
+    	m_upgradeDownloader = downloader;
+    }
+    
+    public ServerInterface getServerInterface()
+    {
+    	return m_interface;
     }
 }

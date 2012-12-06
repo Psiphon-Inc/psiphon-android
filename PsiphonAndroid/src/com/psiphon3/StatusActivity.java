@@ -47,14 +47,13 @@ import android.widget.ScrollView;
 import android.widget.TableLayout;
 import android.widget.TextView;
 
+import com.psiphon3.UpgradeManager.UpgradeInstaller;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.TunnelService.LocalBinder;
-import com.psiphon3.psiphonlibrary.UpgradeManager;
 import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.psiphonlibrary.UpgradeManager.UpgradeInstaller;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
@@ -129,6 +128,8 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     		m_tunnelService = binder.getService();
     		m_boundToTunnelService = true;
     		m_tunnelService.setEventsInterface(m_eventsInterface);
+    		m_tunnelService.setUpgradeDownloader(
+    				new UpgradeManager.UpgradeDownloader(m_tunnelService, m_tunnelService.getServerInterface()));
     		startService(new Intent(StatusActivity.this, TunnelService.class));
     	}
     	

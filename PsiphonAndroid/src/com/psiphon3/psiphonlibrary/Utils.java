@@ -367,22 +367,22 @@ public class Utils {
             MyLog.println(stringResID, sensitivity, null, throwable, Log.WARN);
         }
         
-        static void i(int stringResID, Sensitivity sensitivity, Object... formatArgs)
+        static public void i(int stringResID, Sensitivity sensitivity, Object... formatArgs)
         {
             MyLog.println(stringResID, sensitivity, formatArgs, null, Log.INFO);
         }
 
-        static void i(int stringResID, Sensitivity sensitivity, Throwable throwable)
+        static public void i(int stringResID, Sensitivity sensitivity, Throwable throwable)
         {
             MyLog.println(stringResID, sensitivity, null, throwable, Log.INFO);
         }
         
-        static void v(int stringResID, Sensitivity sensitivity, Object... formatArgs)
+        static public void v(int stringResID, Sensitivity sensitivity, Object... formatArgs)
         {
             MyLog.println(stringResID, sensitivity, formatArgs, null, Log.VERBOSE);
         }
 
-        static void v(int stringResID, Sensitivity sensitivity, Throwable throwable)
+        static public void v(int stringResID, Sensitivity sensitivity, Throwable throwable)
         {
             MyLog.println(stringResID, sensitivity, null, throwable, Log.VERBOSE);
         }

@@ -17,7 +17,7 @@
  *
  */
 
-package com.psiphon3.psiphonlibrary;
+package com.psiphon3;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -25,6 +25,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import com.psiphon3.R;
+import com.psiphon3.psiphonlibrary.ServerInterface;
+import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
@@ -254,7 +256,7 @@ public interface UpgradeManager
                             }})
                 .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
-                        // User declied the prompt.
+                        // User declined the prompt.
                         upgradeListener.upgradeNotStarted();
                     }})
                 .setOnCancelListener(new DialogInterface.OnCancelListener() {
@@ -282,9 +284,9 @@ public interface UpgradeManager
     }
 
     /**
-     * Used to download upgradees from the server.
+     * Used to download upgrades from the server.
      */
-    static public class UpgradeDownloader
+    static public class UpgradeDownloader implements TunnelService.UpgradeDownloader
     {
         private Context context;
         private ServerInterface serverInterface;
