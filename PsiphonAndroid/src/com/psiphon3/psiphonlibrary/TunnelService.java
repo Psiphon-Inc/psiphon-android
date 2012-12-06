@@ -171,13 +171,17 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 			assert(false);    			
     	}
 
-        // TODO: default intent if m_eventsInterface is null?
+        // TODO: default intent if m_eventsInterface is null or returns a null pendingSignalNotification Intent?
+        // NOTE that setLatestEventInfo requires a PendingIntent.  And that calls to notify (ie from setState below)
+        // require a contentView which is set by setLatestEventInfo.
         assert(m_eventsInterface != null);
+        Intent activityIntent = m_eventsInterface.pendingSignalNotification(this);
+        assert(activityIntent != null);
         PendingIntent invokeActivityIntent = 
                 PendingIntent.getActivity(
                     this,
                     0,
-                    m_eventsInterface.pendingSignalNotification(this),
+                    activityIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT);
 	
         Notification notification =
