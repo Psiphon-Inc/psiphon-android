@@ -296,7 +296,7 @@ public class ServerInterface
         }
     } 
 
-    synchronized ServerEntry setCurrentServerEntry()
+    public synchronized ServerEntry setCurrentServerEntry()
     {
         // Saves selected currentServerEntry for future reference (e.g., used by getRequestURL calls)
         
@@ -311,6 +311,11 @@ public class ServerInterface
     
     synchronized ServerEntry getCurrentServerEntry()
     {
+        if (this.currentServerEntry == null)
+        {
+            return null;
+        }
+        
         return this.currentServerEntry.clone();
     }
     

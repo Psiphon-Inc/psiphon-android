@@ -406,19 +406,49 @@ public class PsiphonData
         }
     }
 
-    static private ArrayList<String> m_diagnosticHistory = new ArrayList<String>();
-
-    static public void addDiagnosticEntry(String entry)
+    /*
+     * Diagnostic history support
+     */
+    
+    static public class DiagnosticEntry extends Object
     {
+        private String timestamp;
+        private String msg;
+        private Object data;
+
+        public String timestamp()
+        {
+        	return timestamp;
+        }
+        
+        public String msg()
+        {
+        	return msg;
+        }
+        
+        public Object data()
+        {
+        	return data;
+        }
+    }
+        
+    static private List<DiagnosticEntry> m_diagnosticHistory = new ArrayList<DiagnosticEntry>();
+
+    static public void addDiagnosticEntry(String msg, Object data)
+    {
+    	DiagnosticEntry entry = new DiagnosticEntry();
+    	entry.timestamp = Utils.getISO8601String();
+    	entry.msg = msg;
+    	entry.data = data;
         m_diagnosticHistory.add(entry);
     }
     
-    static public ArrayList<String> cloneDiagnosticHistory()
+    static public List<DiagnosticEntry> cloneDiagnosticHistory()
     {
-        ArrayList<String> copy;
+    	List<DiagnosticEntry> copy;
         synchronized(m_diagnosticHistory) 
         {
-            copy = new ArrayList<String>(m_diagnosticHistory);
+        	copy = new ArrayList<DiagnosticEntry>(m_diagnosticHistory);
         }
         return copy;
     }
@@ -432,6 +462,7 @@ public class PsiphonData
         private String ipAddress;
         private boolean responded;
         private long responseTime;
+        private String timestamp;
         
         public String ipAddress()
         {
@@ -447,6 +478,11 @@ public class PsiphonData
         {
         	return responseTime;
         }
+        
+        public String timestamp()
+        {
+        	return timestamp;
+        }
     }
     
     static private ArrayList<ServerResponseCheck> m_serverResponses = new ArrayList<ServerResponseCheck>();
@@ -460,6 +496,7 @@ public class PsiphonData
         entry.ipAddress = ipAddress;
         entry.responded = responded;
         entry.responseTime = responseTime;
+        entry.timestamp = Utils.getISO8601String();
         
         synchronized(m_serverResponses) 
         {

@@ -20,6 +20,8 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -427,6 +429,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             checkSignals(0);
 
             MyLog.v(R.string.ssh_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
+            
+            Map<String, String> diagnosticData = new HashMap<String, String>();
+            diagnosticData.put("ipAddress", entry.ipAddress);
+            MyLog.g("ConnectingServer", diagnosticData);
+            
             conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
             Monitor monitor = new Monitor(m_signalQueue);
             conn.connect(

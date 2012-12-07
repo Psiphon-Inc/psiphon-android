@@ -35,14 +35,22 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.X509EncodedKeySpec;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+
+import org.yaml.snakeyaml.Yaml;
 
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
@@ -84,94 +92,132 @@ public class FeedbackActivity extends Activity
             private File createEmailAttachment()
             {
                 // Our attachment is YAML, which is then encrypted, and the 
-                // encryption elements stored in JSON.                
+                // encryption elements stored in JSON.
                 
-                StringBuilder content = new StringBuilder();
-
-                content.append("--- # System Info\n\n");
-                content.append("Build:\n");
-                content.append("  BRAND: ").append(Build.BRAND).append("\n");
-                content.append("  CPU_ABI: ").append(Build.CPU_ABI).append("\n");
-                content.append("  MANUFACTURER: ").append(Build.MANUFACTURER).append("\n");
-                content.append("  MODEL: ").append(Build.MODEL).append("\n");
-                content.append("  TAGS: ").append(Build.TAGS).append("\n");
-                content.append("  VERSION.CODENAME: ").append(Build.VERSION.CODENAME).append("\n");
-                content.append("  VERSION.RELEASE: ").append(Build.VERSION.RELEASE).append("\n");
-                content.append("  VERSION.SDK_INT: ").append(Build.VERSION.SDK_INT).append("\n");
-                content.append("isRooted: ").append(Utils.isRooted()).append("\n");
-                content.append("psiphonEmbeddedValues:\n");
-                content.append("  PROPAGATION_CHANNEL_ID: ").append(EmbeddedValues.PROPAGATION_CHANNEL_ID).append("\n");
-                content.append("  SPONSOR_ID: ").append(EmbeddedValues.SPONSOR_ID).append("\n");
-                content.append("  CLIENT_VERSION: ").append(EmbeddedValues.CLIENT_VERSION).append("\n");
-                content.append("\n");
+                SimpleDateFormat dateParser = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
                 
-                content.append("--- # Server Response Check\n\n");
-                ArrayList<PsiphonData.ServerResponseCheck> serverResponseChecks = PsiphonData.cloneServerResponseChecks();
-                for (PsiphonData.ServerResponseCheck entry : serverResponseChecks)
+                String diagnosticYaml;
+                try
                 {
-                    content.append("- ipAddress: \"").append(entry.ipAddress()).append("\"\n");
-                    content.append("  responded: ").append(entry.responded()).append("\n");
-                    content.append("  responseTime: ").append(entry.responseTime()).append("\n");
-                }
-                content.append("\n");
-
-                ArrayList<String> diagnosticHistory = PsiphonData.cloneDiagnosticHistory();
-                if (!diagnosticHistory.isEmpty())
-                {
-                    content.append("--- # Diagnostic History\n\n");
-                    for (String entry : diagnosticHistory)
+                    /*
+                     * System Information
+                     */
+                    
+                    Map<String, Object> sysInfo = new HashMap<String, Object>();
+                    Map<String, Object> sysInfo_Build = new HashMap<String, Object>();
+                    sysInfo.put("Build", sysInfo_Build);
+                    sysInfo_Build.put("BRAND", Build.BRAND);
+                    sysInfo_Build.put("CPU_ABI", Build.CPU_ABI);
+                    sysInfo_Build.put("MANUFACTURER", Build.MANUFACTURER);
+                    sysInfo_Build.put("MODEL", Build.MODEL);
+                    sysInfo_Build.put("TAGS", Build.TAGS);
+                    sysInfo_Build.put("VERSION.CODENAME", Build.VERSION.CODENAME);
+                    sysInfo_Build.put("VERSION.RELEASE", Build.VERSION.RELEASE);
+                    sysInfo_Build.put("VERSION.SDK_INT", Build.VERSION.SDK_INT);
+                    sysInfo.put("isRooted", Utils.isRooted());
+                    Map<String, Object> sysInfo_psiphonEmbeddedValues = new HashMap<String, Object>();
+                    sysInfo.put("psiphonEmbeddedValues", sysInfo_psiphonEmbeddedValues);
+                    sysInfo_psiphonEmbeddedValues.put("PROPAGATION_CHANNEL_ID", EmbeddedValues.PROPAGATION_CHANNEL_ID);
+                    sysInfo_psiphonEmbeddedValues.put("SPONSOR_ID", EmbeddedValues.SPONSOR_ID);
+                    sysInfo_psiphonEmbeddedValues.put("CLIENT_VERSION", EmbeddedValues.CLIENT_VERSION);
+                    
+                    /*
+                     * Server Response Check
+                     */
+                    
+                    List<Object> serverResponseChecks = new ArrayList<Object>();
+                    for (PsiphonData.ServerResponseCheck item : PsiphonData.cloneServerResponseChecks())
                     {
-                        content.append("- \"").append(entry).append("\"\n");
+                        Map<String, Object> entry = new HashMap<String, Object>();
+                        entry.put("ipAddress", item.ipAddress());
+                        entry.put("responded", item.responded());
+                        entry.put("responseTime", item.responseTime());
+                        entry.put("timestamp", dateParser.parse(item.timestamp()));
+                        
+                        serverResponseChecks.add(entry);
                     }
-                    content.append("\n");
-                }
-
-                content.append("--- # Status History\n\n");
-                ArrayList<StatusEntry> history = PsiphonData.cloneStatusHistory();
-                for (StatusEntry entry : history)
-                {
-                    // Don't send any sensitive logs
-                    if (entry.sensitivity() == MyLog.Sensitivity.SENSITIVE_LOG)
+    
+                    /*
+                     * Diagnostic History
+                     */
+                    
+                    List<Object> diagnosticHistory = new ArrayList<Object>();
+    
+                    for (PsiphonData.DiagnosticEntry item : PsiphonData.cloneDiagnosticHistory())
                     {
-                        continue;
+                        Map<String, Object> entry = new HashMap<String, Object>();
+                        entry.put("timestamp", dateParser.parse(item.timestamp()));
+                        entry.put("msg", item.msg());
+                        entry.put("data", item.data());
+                        
+                        diagnosticHistory.add(entry);
                     }
                     
-                    StringBuilder formatArgs = new StringBuilder();
-                    if (entry.formatArgs() != null && entry.formatArgs().length > 0
-                        // Don't send any sensitive format args
-                        && entry.sensitivity() != MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS)
+                    /* 
+                     * Status History
+                     */
+                    
+                    List<Object> statusHistory = new ArrayList<Object>();
+                    
+                    for (StatusEntry internalEntry : PsiphonData.cloneStatusHistory())
                     {
-                        formatArgs.append("[");
-                        for (int i = 0; i < entry.formatArgs().length; i++)
+                        // Don't send any sensitive logs
+                        if (internalEntry.sensitivity() == MyLog.Sensitivity.SENSITIVE_LOG)
                         {
-                            String arg = entry.formatArgs()[i].toString();
-                            formatArgs.append("\"").append(arg).append("\"");
-                            if (i < entry.formatArgs().length-1)
+                            continue;
+                        }
+                        
+                        Map<String, Object> statusEntry = new HashMap<String, Object>();
+                        statusHistory.add(statusEntry);
+                        
+                        statusEntry.put("id", internalEntry.idName());
+                        statusEntry.put("timestamp", dateParser.parse(internalEntry.timestamp()));
+                        statusEntry.put("priority", internalEntry.priority());
+                        statusEntry.put("formatArgs", null); 
+                        statusEntry.put("throwable", null); 
+                        
+                        if (internalEntry.formatArgs() != null && internalEntry.formatArgs().length > 0
+                            // Don't send any sensitive format args
+                            && internalEntry.sensitivity() != MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS)
+                        {
+                            statusEntry.put("formatArgs", Arrays.asList(internalEntry.formatArgs()));
+                        }
+    
+                        if (internalEntry.throwable() != null)
+                        {
+                            Map<String, Object> throwable = new HashMap<String, Object>();
+                            statusEntry.put("throwable", throwable);
+                            
+                            throwable.put("message", internalEntry.throwable().toString());
+                            
+                            List<String> stack = new ArrayList<String>();
+                            throwable.put("stack", stack);
+                            
+                            for (StackTraceElement element : internalEntry.throwable().getStackTrace())
                             {
-                                formatArgs.append(", ");
+                                stack.add(element.toString());
                             }
                         }
-                        formatArgs.append("]");
                     }
                     
-                    StringBuilder throwable = new StringBuilder();
-                    if (entry.throwable() != null)
-                    {
-                        throwable.append("\n    message: \"").append(entry.throwable().toString()).append("\"");
-                        throwable.append("\n    stack: ");
-                        for (StackTraceElement element : entry.throwable().getStackTrace())
-                        {
-                            throwable.append("\n      - \"").append(element).append("\"");
-                        }
-                    }
+                    /*
+                     * YAML-ify the diagnostic info
+                     */
                     
-                    
-                    content.append("- id: ").append(entry.idName()).append("\n");
-                    content.append("  timestamp: ").append(entry.timestamp()).append("\n");
-                    content.append("  formatArgs: ").append(formatArgs).append("\n");
-                    content.append("  throwable: ").append(throwable).append("\n");
+                    List<Object> diagnosticObjects = new ArrayList<Object>();
+                    diagnosticObjects.add(sysInfo);
+                    diagnosticObjects.add(serverResponseChecks);
+                    diagnosticObjects.add(diagnosticHistory);
+                    diagnosticObjects.add(statusHistory);
+                    Yaml yaml = new Yaml();
+                    diagnosticYaml = yaml.dumpAll(diagnosticObjects.iterator());
                 }
-                content.append("\n");
+                catch (ParseException e)
+                {
+                    // Shouldn't happen. Our date formats should be consistent.
+                    assert(false);
+                    return null;
+                }
                 
                 // Encrypt the file contents
                 byte[] contentCiphertext = null, iv = null, 
@@ -198,7 +244,7 @@ public class FeedbackActivity extends Activity
                     Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
                     aesCipher.init(Cipher.ENCRYPT_MODE, encryptionKey, ivParamSpec);
                     
-                    contentCiphertext = aesCipher.doFinal(content.toString().getBytes("UTF-8"));
+                    contentCiphertext = aesCipher.doFinal(diagnosticYaml.getBytes("UTF-8"));
                     
                     // Get the IV. (I don't know if it can be different from the
                     // one generated above, but retrieving it here seems safest.)
@@ -345,6 +391,7 @@ public class FeedbackActivity extends Activity
 
                 ServerInterface serverInterface = new ServerInterface(activity);
                 serverInterface.start();
+                serverInterface.setCurrentServerEntry();
 
                 String formData;
                 try
