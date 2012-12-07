@@ -148,14 +148,19 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     
     private void stopTunnelService(Context context)
     {
-    	if (m_boundToTunnelService)
-    	{
-    		unbindService(m_tunnelServiceConnection);
-    		m_boundToTunnelService = false;
-    	}
-    	stopService(new Intent(context, TunnelService.class));
+        unbindTunnelService();
+        stopService(new Intent(context, TunnelService.class));
     }
 
+    private void unbindTunnelService()
+    {
+        if (m_boundToTunnelService)
+        {
+            unbindService(m_tunnelServiceConnection);
+            m_boundToTunnelService = false;
+        }
+    }
+    
     @Override
     protected void onResume()
     {
@@ -260,6 +265,8 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     protected void onPause()
     {
         super.onPause();
+        
+        unbindTunnelService();
         
         PsiphonData.getPsiphonData().setStatusActivityForeground(false);
     }
