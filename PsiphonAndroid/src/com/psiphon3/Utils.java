@@ -341,9 +341,10 @@ public class Utils {
          * except it will also be included in the feedback diagnostic attachment.
          * @param msg The message to log.
          */
-        static void g(String msg)
+        static void g(String msg, Object data)
         {
-            PsiphonData.addDiagnosticEntry(msg);
+            PsiphonData.addDiagnosticEntry(msg, data);
+            // We're not logging the `data` at all. In the future we may want to.
             MyLog.d(msg);
         }
 
