@@ -17,7 +17,7 @@
  *
  */
 
-package com.psiphon3;
+package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
 import java.net.Inet6Address;
@@ -37,8 +37,9 @@ import java.util.concurrent.TimeUnit;
 import android.os.Build;
 import android.os.SystemClock;
 
-import com.psiphon3.ServerInterface.ServerEntry;
-import com.psiphon3.Utils.MyLog;
+import com.psiphon3.R;
+import com.psiphon3.psiphonlibrary.ServerInterface.ServerEntry;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 public class ServerListReorder
 {

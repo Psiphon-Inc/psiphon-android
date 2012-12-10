@@ -24,14 +24,17 @@ import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences.Editor;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -44,9 +47,14 @@ import android.widget.ScrollView;
 import android.widget.TableLayout;
 import android.widget.TextView;
 
-import com.psiphon3.UpgradeManager;
 import com.psiphon3.UpgradeManager.UpgradeInstaller;
-import com.psiphon3.Utils.MyLog;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.PsiphonConstants;
+import com.psiphon3.psiphonlibrary.PsiphonData;
+import com.psiphon3.psiphonlibrary.TunnelService;
+import com.psiphon3.psiphonlibrary.TunnelService.LocalBinder;
+import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
 public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
@@ -107,6 +115,52 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         MyLog.restoreLogHistory();
     }
     
+    private TunnelService m_tunnelService = null;
+    private boolean m_boundToTunnelService = false;
+    private final Events m_eventsInterface = new Events();
+    
+    private ServiceConnection m_tunnelServiceConnection = new ServiceConnection()
+    {
+    	@Override
+    	public void onServiceConnected(ComponentName className, IBinder service)
+    	{
+    		LocalBinder binder = (LocalBinder) service;
+    		m_tunnelService = binder.getService();
+    		m_boundToTunnelService = true;
+    		m_tunnelService.setEventsInterface(m_eventsInterface);
+    		m_tunnelService.setUpgradeDownloader(
+    				new UpgradeManager.UpgradeDownloader(m_tunnelService, m_tunnelService.getServerInterface()));
+    		startService(new Intent(StatusActivity.this, TunnelService.class));
+    	}
+    	
+    	@Override
+    	public void onServiceDisconnected(ComponentName arg0)
+    	{
+    		m_boundToTunnelService = false;
+    	}
+    };
+
+    private void startTunnelService(Context context)
+    {
+    	Intent intent = new Intent(context, TunnelService.class);
+    	bindService(intent, m_tunnelServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+    
+    private void stopTunnelService(Context context)
+    {
+        unbindTunnelService();
+        stopService(new Intent(context, TunnelService.class));
+    }
+
+    private void unbindTunnelService()
+    {
+        if (m_boundToTunnelService)
+        {
+            unbindService(m_tunnelServiceConnection);
+            m_boundToTunnelService = false;
+        }
+    }
+    
     @Override
     protected void onResume()
     {
@@ -154,7 +208,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                                         public void onClick(DialogInterface dialog, int whichButton) {
                                             // Persist the "on" setting
                                             updateWholeDevicePreference(true);
-                                            startService(new Intent(context, TunnelService.class));
+                                            startTunnelService(context);
                                         }})
                             .setNegativeButton(R.string.StatusActivity_WholeDeviceTunnelNegativeButton,
                                         new DialogInterface.OnClickListener() {
@@ -162,13 +216,13 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                                                 // Turn off and persist the "off" setting
                                                 m_tunnelWholeDeviceToggle.setChecked(false);
                                                 updateWholeDevicePreference(false);
-                                                startService(new Intent(context, TunnelService.class));
+                                                startTunnelService(context);
                                             }})
                             .setOnCancelListener(
                                     new DialogInterface.OnCancelListener() {
                                         public void onCancel(DialogInterface dialog) {
                                             // Don't change or persist preference (this prompt may reappear)
-                                            startService(new Intent(context, TunnelService.class));
+                                            startTunnelService(context);
                                         }})
                             .show();
                         m_tunnelWholeDevicePromptShown = true;
@@ -185,7 +239,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                 {
                     // No prompt, just start the tunnel (if not already running)
                     
-                    startService(new Intent(context, TunnelService.class));                    
+                    startTunnelService(context);                    
                 }
 
                 // Handle the intent that resumed that activity
@@ -195,6 +249,9 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         
         if (!isServiceRunning())
         {
+            // UpgradeInstaller.doUpgrade() is always called regardless of whether or not
+            // an upgrade needs to be performed.  If there is no upgrade available it will
+            // simply call upgradeListener.upgradeNotStarted()
             UpgradeInstaller upgrader = new UpgradeManager.UpgradeInstaller(this);
             upgrader.doUpgrade(upgradeListener);
         }
@@ -207,7 +264,9 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     @Override
     protected void onPause()
     {
-        super.onResume();
+        super.onPause();
+        
+        unbindTunnelService();
         
         PsiphonData.getPsiphonData().setStatusActivityForeground(false);
     }
@@ -259,8 +318,8 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         updateWholeDevicePreference(tunnelWholeDevicePreference);
         
         // TODO: don't need to stop/start tunnel to change this preference
-        stopService(new Intent(this, TunnelService.class));
-        startService(new Intent(this, TunnelService.class));
+        stopTunnelService(this);
+        startTunnelService(this);
     }
     
     protected void updateWholeDevicePreference(boolean tunnelWholeDevicePreference)
@@ -299,7 +358,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         // This command doesn't necessarily kill the process, but
         // it stops the service and hides the app.
         
-        stopService(new Intent(this, TunnelService.class));
+        stopTunnelService(this);
         this.moveTaskToBack(true);
     }
     

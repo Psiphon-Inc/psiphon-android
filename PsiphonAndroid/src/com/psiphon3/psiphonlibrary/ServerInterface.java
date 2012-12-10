@@ -17,7 +17,7 @@
  *
  */
 
-package com.psiphon3;
+package com.psiphon3.psiphonlibrary;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -76,8 +76,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.psiphon3.ServerEntryAuth.ServerEntryAuthException;
-import com.psiphon3.Utils.MyLog;
+import com.psiphon3.R;
+import com.psiphon3.psiphonlibrary.ServerEntryAuth.ServerEntryAuthException;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.content.Context;
 import android.os.SystemClock;
@@ -185,7 +186,7 @@ public class ServerInterface
      * false when {@link#start()} is called. */
     private boolean stopped = false;
 
-    ServerInterface(Context context)
+    public ServerInterface(Context context)
     {
         this.ownerContext = context;
 
@@ -295,7 +296,7 @@ public class ServerInterface
         }
     } 
 
-    synchronized ServerEntry setCurrentServerEntry()
+    public synchronized ServerEntry setCurrentServerEntry()
     {
         // Saves selected currentServerEntry for future reference (e.g., used by getRequestURL calls)
         

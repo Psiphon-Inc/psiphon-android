@@ -17,7 +17,7 @@
  *
  */
 
-package com.psiphon3;
+package com.psiphon3.psiphonlibrary;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -34,7 +34,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import com.psiphon3.Utils.MyLog;
+import com.psiphon3.R;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
 public class DnsProxy

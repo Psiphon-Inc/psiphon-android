@@ -17,25 +17,19 @@
  *
  */
 
-package com.psiphon3;
+package com.psiphon3.psiphonlibrary;
 
-public interface EmbeddedValues
+import android.content.Context;
+import android.content.Intent;
+
+
+public interface Events
 {
-    final String PROPAGATION_CHANNEL_ID = "";
-    
-    final String SPONSOR_ID = "";
-    
-    final String CLIENT_VERSION = "2";
-    
-    final String EMBEDDED_SERVER_LIST = "";
-
-    final String REMOTE_SERVER_LIST_URL =
-        "https://s3.amazonaws.com/invalid_bucket_name/server_entries";
-
-    final String REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY = "";
-    
-    final String FEEDBACK_ENCRYPTION_PUBLIC_KEY = "";
-
-    // NOTE: Info link may be opened when not tunneled
-    final String INFO_LINK_URL = "https://sites.google.com/a/psiphon3.com/psiphon3/";
+	public void appendStatusMessage(Context context, String message, int messageClass);
+	
+	public void signalHandshakeSuccess(Context context);
+	
+	public void signalUnexpectedDisconnect(Context context);
+	
+	Intent pendingSignalNotification(Context context);
 }
