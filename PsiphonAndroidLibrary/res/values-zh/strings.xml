@@ -1,13 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
   <string name="app_name">Psiphon 3</string>
-  <string name="about">关于Psiphon 3</string>
-  <string name="banner_desc">赞助商标志; 单击访问赞助商主页</string>
-  <string name="start_desc">连接到Psiphon; 单击以连接</string>
-  <string name="message_image_success_desc">图标表示成功消息</string>
-  <string name="message_image_error_desc">图标表示错误消息</string>
-  <string name="message_image_debug_desc">图标表示调试消息</string>
-  <string name="message_image_warning_desc">图标表示一条警告消息</string>
   <string name="psiphon_service_notification_id">Psiphon服务通知</string>
   <string name="psiphon_service_notification_message">正在运行Psiphon 3...</string>
   <string name="ssh_connecting">SSH连接...</string>

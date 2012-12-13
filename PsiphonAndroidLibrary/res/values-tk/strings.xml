@@ -1,13 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
   <string name="app_name">Psiphon 3</string>
-  <string name="about">Psiphon 3 hakynda</string>
-  <string name="banner_desc">hemaýatkär mahabaty; hemaýatkäriň baş sahypasyna girmek üçin basyň</string>
-  <string name="start_desc">Psiphon-a birikdir; birikmek üçin basyň</string>
-  <string name="message_image_success_desc">üstünlik habaryny görkezýän kiçi belgi</string>
-  <string name="message_image_error_desc">säwlik habaryny görkezýän kiçi belgi</string>
-  <string name="message_image_debug_desc">säwlik çözmek habaryny görkezýän kiçi belgi</string>
-  <string name="message_image_warning_desc">duýduryş habaryny görkezýän kiçi belgi</string>
   <string name="psiphon_service_notification_id">Psiphon hyzmat habarnamasy</string>
   <string name="psiphon_service_notification_message">Psiphon 3 işleýär...</string>
   <string name="ssh_connecting">SSH birikdirilýär</string>

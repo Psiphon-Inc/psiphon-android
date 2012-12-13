@@ -1,13 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
   <string name="app_name">Psiphon 3</string>
-  <string name="about">Acerca de Psiphon 3</string>
-  <string name="banner_desc">anuncio de patrocinador; haga click para visitar la página inicial del patrocinador</string>
-  <string name="start_desc">conectarse a Psiphon; haga click para conectarse</string>
-  <string name="message_image_success_desc">ícono que indica un mensaje exitoso</string>
-  <string name="message_image_error_desc">ícono que indica un mensaje de error</string>
-  <string name="message_image_debug_desc">ícono que indica un mensaje de depuración</string>
-  <string name="message_image_warning_desc">ícono que indica un mensaje de advertencia</string>
   <string name="psiphon_service_notification_id">notificación de Servicio de Psiphon</string>
   <string name="psiphon_service_notification_message">Psiphon 3 está ejecutando...</string>
   <string name="ssh_connecting">SSH conectando...</string>

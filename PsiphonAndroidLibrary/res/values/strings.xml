@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Psiphon 3</string>
-    <string name="about">About Psiphon 3</string>
-    <string name="banner_desc">sponsor banner; click to visit sponsor home page</string>
-    <string name="start_desc">connect to Psiphon; click to connect</string>
-    <string name="message_image_success_desc">icon indicating a success message</string>
-    <string name="message_image_error_desc">icon indicating an error message</string>
-    <string name="message_image_debug_desc">icon indicating a debug message</string>
-    <string name="message_image_warning_desc">icon indicating a warning message</string>
     <string name="ssh_connecting">SSH connecting…</string>
     <string name="ssh_connected">SSH connected</string>
     <string name="ssh_connection_failed">SSH connection failed</string>

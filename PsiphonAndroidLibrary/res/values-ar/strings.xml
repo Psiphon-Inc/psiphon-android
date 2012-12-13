@@ -1,13 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
   <string name="app_name">برنامج Psiphon 3</string>
-  <string name="about">حول برنامج Psiphon 3</string>
-  <string name="banner_desc">شعار الشركة الراعية؛ انقر لزيارة الصفحة الرئيسية للشركة الراعية</string>
-  <string name="start_desc">الاتصال ببرنامج Psiphon؛ انقر للاتصال</string>
-  <string name="message_image_success_desc">أيقونة تشير إلى رسالة نجاح</string>
-  <string name="message_image_error_desc">أيقونة تشير إلى رسالة خطأ</string>
-  <string name="message_image_debug_desc">أيقونة تشير إلى رسالة تصحيح الخطأ</string>
-  <string name="message_image_warning_desc">أيقونة تشير إلى رسالة تحذير</string>
   <string name="psiphon_service_notification_id">إعلام خدمة Psiphon</string>
   <string name="psiphon_service_notification_message">جاري تشغيل برنامج Psiphon 3...</string>
   <string name="ssh_connecting">جاري اتصال بروتوكول القشرة الآمنة (SSH)...</string>
