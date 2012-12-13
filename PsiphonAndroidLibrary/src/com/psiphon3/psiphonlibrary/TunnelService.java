@@ -38,7 +38,7 @@ import android.os.IBinder;
 import ch.ethz.ssh2.*;
 import ch.ethz.ssh2.Connection.IStopSignalPending;
 
-import com.psiphon3.R;
+import com.psiphon3.psiphonlibrary.R;
 import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.TransparentProxyConfig.PsiphonTransparentProxyException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;

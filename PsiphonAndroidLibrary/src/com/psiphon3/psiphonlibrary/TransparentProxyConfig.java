@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.ZipInputStream;
 
-import com.psiphon3.R;
+import com.psiphon3.psiphonlibrary.R;
 import com.stericson.RootTools.Command;
 import com.stericson.RootTools.RootTools;
 

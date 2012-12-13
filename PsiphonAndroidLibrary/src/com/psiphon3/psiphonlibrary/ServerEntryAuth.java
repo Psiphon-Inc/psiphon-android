@@ -32,7 +32,7 @@ import java.security.spec.X509EncodedKeySpec;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.psiphon3.R;
+import com.psiphon3.psiphonlibrary.R;
 import com.psiphon3.psiphonlibrary.Utils.Base64;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
