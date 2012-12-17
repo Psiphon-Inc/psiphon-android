@@ -8,8 +8,6 @@
   <string name="message_image_error_desc">biểu tượng cho biết thông báo thất bại</string>
   <string name="message_image_debug_desc">biểu tượng cho biết thông báo xử lý lỗi</string>
   <string name="message_image_warning_desc">biểu tượng cho biết thông báo cảnh báo</string>
-  <string name="psiphon_service_notification_id">Thông Báo Dịch Vụ Psiphon</string>
-  <string name="psiphon_service_notification_message">Psiphon 3 đang chạy</string>
   <string name="exit">Thoát</string>
   <string name="open_browser">Mở Trình Duyệt</string>
   <string name="browser_task_label">Trình Duyệt Psiphon</string>
@@ -21,9 +19,6 @@
   <string name="UpgradeManager.UpgradeFileNotFound">Không tìm thấy tập tin nâng cấp</string>
   <string name="UpgradeManager.UpgradePromptTitle">Nâng Cấp Psiphon</string>
   <string name="UpgradeManager.UpgradePromptMessage">Một tập tin nâng cấp cho Psiphon 3 đã sẵn sàng để cài đặt. Bạn nên cho phép tiến hành nâng cấp vào lúc này.\n\nSau khi nâng cấp, bạn sẽ phải mở lại Psiphon 3.\n\nNâng cấp ngay?</string>
-  <string name="starting_tunnel">Đang bắt đầu định hướng...</string>
-  <string name="stopping_tunnel">Đang dừng định hướng...</string>
-  <string name="stopped_tunnel">Đã dừng định hướng</string>
   <string name="feedback">Thông tin phản hồi</string>
   <string name="FeedbackActivity.DefaultText">Nếu bạn có bất kỳ nhận xét cụ thể nào, muốn biết thêm thông tin về các trang web không hoạt động, hoặc mẫu đơn này không có tác dụng với bạn, vui lòng gửi thư điện tử đến &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">Cám ơn bạn đã gửi thông tin phản hồi</string>

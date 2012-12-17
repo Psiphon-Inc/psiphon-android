@@ -8,8 +8,6 @@
   <string name="message_image_error_desc">иконка сообщения об ошибке</string>
   <string name="message_image_debug_desc">иконка сообщения отладки</string>
   <string name="message_image_warning_desc">иконка предупреждающего сообщения</string>
-  <string name="psiphon_service_notification_id">Сообщения сервиса Psiphon </string>
-  <string name="psiphon_service_notification_message">Psiphon 3 запущен...</string>
   <string name="exit">Закрыть</string>
   <string name="open_browser">Открыть браузер</string>
   <string name="browser_task_label">Psiphon Browser</string>
@@ -21,9 +19,6 @@
   <string name="UpgradeManager.UpgradeFileNotFound">Апгрейд файл не найден</string>
   <string name="UpgradeManager.UpgradePromptTitle">Апгрейд Psiphon </string>
   <string name="UpgradeManager.UpgradePromptMessage">Апгрейд Psiphon 3 готов к установке. Мы настоятельно рекомендуем немедленную установку этого апгрейда. n\nПерезапустите Psiphon 3 после установки.\n\nУстановить апгрейд сейчас?</string>
-  <string name="starting_tunnel">Запуск тоннеля...</string>
-  <string name="stopping_tunnel">Остановка тоннеля...</string>
-  <string name="stopped_tunnel">Тоннель остановлен</string>
   <string name="feedback">Отзыв</string>
   <string name="FeedbackActivity.DefaultText">Если у вас есть какие-либо особые  комментарии, дополнительная информация о сайтах, которые не загружаются или эта форма не работает для вас, пишите нам на &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">Спасибо за ваш отзыв</string>

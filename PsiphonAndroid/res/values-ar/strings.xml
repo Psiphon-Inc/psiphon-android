@@ -8,8 +8,6 @@
   <string name="message_image_error_desc">أيقونة تشير إلى رسالة خطأ</string>
   <string name="message_image_debug_desc">أيقونة تشير إلى رسالة تصحيح الخطأ</string>
   <string name="message_image_warning_desc">أيقونة تشير إلى رسالة تحذير</string>
-  <string name="psiphon_service_notification_id">إعلام خدمة Psiphon</string>
-  <string name="psiphon_service_notification_message">جاري تشغيل برنامج Psiphon 3...</string>
   <string name="exit">خروج</string>
   <string name="open_browser">فتح المتصفح</string>
   <string name="browser_task_label">متصفح برنامج Psiphon 3</string>
@@ -21,9 +19,6 @@
   <string name="UpgradeManager.UpgradeFileNotFound">لم يتم العثور على ملف التحديث</string>
   <string name="UpgradeManager.UpgradePromptTitle">تحديث برنامج Psiphon</string>
   <string name="UpgradeManager.UpgradePromptMessage">تحديث برنامج Psiphon 3 جاهز للتثبيت. من المستحسن السماح بمتابعة التحديث في هذا الوقت.\n\nبعد التحديث، سيتوجب عليك تشغيل برنامج Psiphon 3 مرة أخرى.\n\nالتحديث الآن؟</string>
-  <string name="starting_tunnel">جاري بدء تشغيل النفق...</string>
-  <string name="stopping_tunnel">جاري توقف النفق عن العمل...</string>
-  <string name="stopped_tunnel">توقف النفق عن العمل</string>
   <string name="feedback">ردود.</string>
   <string name="FeedbackActivity.DefaultText">ذا كانت لديك آية نعليقات محدده٫ آو معلومات آخرى حول مواقع لا تعمل٫ أو إذا كانت هذه الاستماره لا تعمل٫ يرجى أرسال رساله إلى :\n l &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">نشكرك على إرسال الرد.</string>

@@ -19,9 +19,6 @@
     <string name="UpgradeManager.UpgradeFileNotFound">Upgrade file not found</string>
     <string name="UpgradeManager.UpgradePromptTitle">Psiphon Upgrade</string>
     <string name="UpgradeManager.UpgradePromptMessage">An upgrade for Psiphon 3 is ready to be installed. It is strongly recommended that you allow the upgrade to proceed at this time.\n\nAfter upgrading, you will have to launch Psiphon 3 again.\n\nUpgrade now?</string>
-    <string name="starting_tunnel">Starting tunnel…</string>
-    <string name="stopping_tunnel">Stopping tunnel…</string>
-    <string name="stopped_tunnel">Stopped tunnel</string>
     <string name="feedback">Feedback</string>
     <string name="FeedbackActivity.DefaultText">If you have any specific comments, further information about web sites that do not work, or if this form is not working for you, please email &lt;a href=&quot;mailto:feedback@psiphon.ca&quot;&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
     <string name="FeedbackActivity.Success">Thank you for submitting your feedback</string>
@@ -29,33 +26,11 @@
     <string name="FeedbackActivity.SubmitFeedbackFailed">Failed to submit feedback</string>
     <string name="FeedbackActivity.InvalidURLParameters">Invalid URL Parameters in feedback form submission</string>
     <string name="FeedbackActivity.GetHTMLContentFailed">Failed to get feedback page content</string>
-    <string name="socks_ports_failed">Failed to start SOCKS proxy: no available ports found</string>
-    <string name="http_proxy_ports_failed">Failed to start HTTP proxy: no available ports found</string>
-    <string name="socks_port_in_use">Port %d is already in use by another app.  Cannot continue.</string>
-    <string name="transparent_proxy_running">Transparent proxy running on port %d</string>
-    <string name="transparent_proxy_ports_failed">Failed to start transparent proxy: no available ports found</string>
-    <string name="transparent_proxy_command_failed">Transparent proxy configuration command failed: %s</string>
-    <string name="transparent_proxy_stopped">Transparent proxy stopped</string>
-    <string name="dns_proxy_running">DNS proxy running on port %d</string>
-    <string name="dns_proxy_ports_failed">Failed to start DNS proxy: no available ports found</string>
-    <string name="dns_proxy_stopped">DNS proxy stopped</string>
     <string name="tunnel_whole_device_toggle">Tunnel Whole Device (requires root)</string>
-    <string name="dns_proxy_failed">Failed to start DNS proxy</string>
-    <string name="transparent_proxy_failed">Failed to start transparent proxy: %s</string>
-    <string name="iptables_binary_not_found">Cannot find iptables implementation required for transparent proxy</string>
     <string name="StatusActivity.WholeDeviceTunnelPromptTitle">Tunnel the whole device?</string>
     <string name="StatusActivity.WholeDeviceTunnelPromptMessage">The whole device tunnel option is available for your device.\n\nWith this option, all of your Internet traffic for all apps including all browsers will be tunneled through Psiphon.\n\nAlternatively, you can choose to tunnel only the bundled Psiphon browser which will leave all other apps going directly through your standard Internet connection.</string>
     <string name="StatusActivity.WholeDeviceTunnelPositiveButton">Tunnel Whole Device</string>
     <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Use Psiphon Browser Only</string>
-    <string name="root_access_denied">Root access denied</string>
-    <string name="psiphon_stopped">Psiphon 3 is stopped</string>
-    <string name="psiphon_running_whole_device">Psiphon 3 is running in whole device mode</string>
-    <string name="psiphon_running_browser_only">Psiphon 3 is running in browser-only mode</string>
-    <string name="waiting_for_network_connectivity">Waiting for network connectivity…</string>
-    <string name="checking_for_root_access">Checking for root access…</string>
-    <string name="psiphon_service_notification_message_connecting">Psiphon 3 is connecting…</string>
-    <string name="psiphon_service_notification_id">Psiphon Service Notification</string>
     <string name="FeedbackActivity.AttachmentWriteFailed">Failed to create or write feedback attachment file</string>
     <string name="FeedbackActivity.EncryptedFailed">Failed to encrypt feedback diagnostic information. This information will not be attached to the feedback email.</string>
-    <string name="preferred_servers">Preferred servers: %d</string>
 </resources>

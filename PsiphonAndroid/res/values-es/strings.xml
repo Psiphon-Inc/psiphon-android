@@ -8,8 +8,6 @@
   <string name="message_image_error_desc">ícono que indica un mensaje de error</string>
   <string name="message_image_debug_desc">ícono que indica un mensaje de depuración</string>
   <string name="message_image_warning_desc">ícono que indica un mensaje de advertencia</string>
-  <string name="psiphon_service_notification_id">notificación de Servicio de Psiphon</string>
-  <string name="psiphon_service_notification_message">Psiphon 3 está ejecutando...</string>
   <string name="exit">Salir</string>
   <string name="open_browser">Abrir navegador</string>
   <string name="browser_task_label">Navegador Psiphon</string>
@@ -21,9 +19,6 @@
   <string name="UpgradeManager.UpgradeFileNotFound">No se encontró el archivo de actualización</string>
   <string name="UpgradeManager.UpgradePromptTitle">Actualización de Psiphon</string>
   <string name="UpgradeManager.UpgradePromptMessage">Hay una actualización de Psiphon 3 lista para ser instalada. Es recomendable que permita que se realice la actualización en este momento. Después de la actualización, tendrá que iniciar Psiphon 3 nuevamente. ¿Actualizar ahora?</string>
-  <string name="starting_tunnel">Iniciando túnel...</string>
-  <string name="stopping_tunnel">Deteniendo túnel...</string>
-  <string name="stopped_tunnel">Túnel detenido</string>
   <string name="feedback">Comentarios</string>
   <string name="FeedbackActivity.DefaultText">Si usted tiene comentarios específicos, mayor información de sitios que no funcionan, o si esta forma no está funcionando para usted por favor mande un mensaje a &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">Gracias por enviar sus comentarios</string>
