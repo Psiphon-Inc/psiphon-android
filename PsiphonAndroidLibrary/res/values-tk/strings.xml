@@ -2,7 +2,7 @@
 <resources>
   <string name="app_name">Psiphon 3</string>
   <string name="psiphon_service_notification_id">Psiphon hyzmat habarnamasy</string>
-  <string name="psiphon_service_notification_message">Psiphon 3 işleýär...</string>
+  <string name="psiphon_service_notification_message_connecting">Psiphon 3 işleýär...</string>
   <string name="ssh_connecting">SSH birikdirilýär</string>
   <string name="ssh_connected">SSH birikdirildi</string>
   <string name="ssh_connection_failed">SSH birikdirmek şowsuz</string>
@@ -41,5 +41,4 @@
   <string name="stopped_tunnel">Ötük durzuldy</string>
   <string name="ServerInterface.StopRequested">Duruzmak soraldy</string>
   <string name="ServerInterface.HTTPSRequestFailed">HTTPS islegi säwlik bilen şowsuz:</string>
-  <string name="feedback">Seslenme</string>
 </resources>

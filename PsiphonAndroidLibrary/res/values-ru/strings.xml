@@ -2,7 +2,7 @@
 <resources>
   <string name="app_name">Psiphon 3</string>
   <string name="psiphon_service_notification_id">Сообщения сервиса Psiphon </string>
-  <string name="psiphon_service_notification_message">Psiphon 3 запущен...</string>
+  <string name="psiphon_service_notification_message_connecting">Psiphon 3 запущен...</string>
   <string name="ssh_connecting">Идет соединение SSH...</string>
   <string name="ssh_connected">Успешное соединение SSH</string>
   <string name="ssh_connection_failed">Ошибка соединения SSH</string>
@@ -41,5 +41,4 @@
   <string name="stopped_tunnel">Тоннель остановлен</string>
   <string name="ServerInterface.StopRequested">Получен сигмнал остановки</string>
   <string name="ServerInterface.HTTPSRequestFailed">Ошибка HTTPS запроса: </string>
-  <string name="feedback">Отзыв</string>
 </resources>

@@ -2,7 +2,7 @@
 <resources>
   <string name="app_name">سایفون ۳</string>
   <string name="psiphon_service_notification_id">اطلاع سرویس سایفون </string>
-  <string name="psiphon_service_notification_message">سایفون در حال اجراست</string>
+  <string name="psiphon_service_notification_message_connecting">سایفون در حال اجراست</string>
   <string name="ssh_connecting">...در حال وصل اس اس اچ</string>
   <string name="ssh_connected">اس اس اچ وصل شد </string>
   <string name="ssh_connection_failed">وصل به اس اس اچ امکان پذیر نبود </string>
@@ -39,7 +39,6 @@
   <string name="stopped_tunnel">اجرای تونل ایستاد </string>
   <string name="ServerInterface.StopRequested">درخواست توقف</string>
   <string name="ServerInterface.HTTPSRequestFailed">درخواست اچ تی تی پی اس به دلیل خطا نا موفق بود  </string>
-  <string name="feedback">نظر </string>
   <string name="socks_ports_failed">شروع پراکسی ساکس نا موفق بود: هیچ پورتی در دسترس نیست </string>
   <string name="http_proxy_ports_failed">شروع پراکسی اچ تی تی پی نا موفق بود: هیچ پورتی در دسترس نیست </string>
   <string name="socks_port_in_use">پورت %d در حال استفاده یک برنامه دیگر است. ادامه امکان پذیر نیست.</string>
@@ -50,7 +49,6 @@
   <string name="dns_proxy_running">پراکسی دی ان اس بر روی پورت %d در حال اجراست</string>
   <string name="dns_proxy_ports_failed">شروع پراکسی دی ان اس  نا موفق بود: هیچ پورتی در دسترس نیست </string>
   <string name="dns_proxy_stopped">پراکسی دی ان اس  متوقف شد </string>
-  <string name="tunnel_whole_device_toggle">تمام موبایل را تونل کن (requires root)</string>
   <string name="dns_proxy_failed">شروع پراکسی دی ان اس  نا موفق بود</string>
   <string name="transparent_proxy_failed">شروع پراکسی شفاف نا موفق بود: %s</string>
   <string name="iptables_binary_not_found">آی‌‌‌پی‌تیبلز نیاز برای اجرای پراکسی شفاف پیدا نمیشود </string>

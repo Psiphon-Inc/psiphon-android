@@ -40,7 +40,6 @@
     <string name="stopped_tunnel">Stopped tunnel</string>
     <string name="ServerInterface.StopRequested">Stop requested</string>
     <string name="ServerInterface.HTTPSRequestFailed">HTTPS request failed with error: </string>
-    <string name="feedback">Feedback</string>
     <string name="socks_ports_failed">Failed to start SOCKS proxy: no available ports found</string>
     <string name="http_proxy_ports_failed">Failed to start HTTP proxy: no available ports found</string>
     <string name="socks_port_in_use">Port %d is already in use by another app.  Cannot continue.</string>
@@ -51,7 +50,6 @@
     <string name="dns_proxy_running">DNS proxy running on port %d</string>
     <string name="dns_proxy_ports_failed">Failed to start DNS proxy: no available ports found</string>
     <string name="dns_proxy_stopped">DNS proxy stopped</string>
-    <string name="tunnel_whole_device_toggle">Tunnel Whole Device (requires root)</string>
     <string name="dns_proxy_failed">Failed to start DNS proxy</string>
     <string name="transparent_proxy_failed">Failed to start transparent proxy: %s</string>
     <string name="iptables_binary_not_found">Cannot find iptables implementation required for transparent proxy</string>

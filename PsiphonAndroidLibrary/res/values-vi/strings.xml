@@ -2,7 +2,7 @@
 <resources>
   <string name="app_name">Psiphon 3</string>
   <string name="psiphon_service_notification_id">Thông Báo Dịch Vụ Psiphon</string>
-  <string name="psiphon_service_notification_message">Psiphon 3 đang chạy</string>
+  <string name="psiphon_service_notification_message_connecting">Psiphon 3 đang chạy</string>
   <string name="ssh_connecting">SSH đang kết nối...</string>
   <string name="ssh_connected">SSH đã kết nối</string>
   <string name="ssh_connection_failed">Kết nối SSH thất bại</string>
@@ -41,5 +41,4 @@
   <string name="stopped_tunnel">Đã dừng định hướng</string>
   <string name="ServerInterface.StopRequested">Đã yêu cầu dừng</string>
   <string name="ServerInterface.HTTPSRequestFailed">Yêu cầu HTTPS thất bại, có lỗi:</string>
-  <string name="feedback">Thông tin phản hồi</string>
 </resources>

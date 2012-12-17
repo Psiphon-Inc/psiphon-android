@@ -2,7 +2,7 @@
 <resources>
   <string name="app_name">برنامج Psiphon 3</string>
   <string name="psiphon_service_notification_id">إعلام خدمة Psiphon</string>
-  <string name="psiphon_service_notification_message">جاري تشغيل برنامج Psiphon 3...</string>
+  <string name="psiphon_service_notification_message_connecting">جاري تشغيل برنامج Psiphon 3...</string>
   <string name="ssh_connecting">جاري اتصال بروتوكول القشرة الآمنة (SSH)...</string>
   <string name="ssh_connected">تم اتصال بروتوكول القشرة الآمنة (SSH)</string>
   <string name="ssh_connection_failed">فشل اتصال بروتوكول القشرة الآمنة (SSH)</string>
@@ -41,5 +41,4 @@
   <string name="stopped_tunnel">توقف النفق عن العمل</string>
   <string name="ServerInterface.StopRequested">تم طلب التوقف</string>
   <string name="ServerInterface.HTTPSRequestFailed">فشل طلب HTTPS مع إصدار الخطأ: </string>
-  <string name="feedback">ردود.</string>
 </resources>
