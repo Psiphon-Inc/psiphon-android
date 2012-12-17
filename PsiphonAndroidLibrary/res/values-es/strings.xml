@@ -29,9 +29,6 @@
   <string name="PsiphonAndroidService.HandshakeRequestFailed">Solicitud de diálogo inicial (handshake) fallida.</string>
   <string name="PsiphonAndroidService.ConnectedRequestFailed">Solicitud de conexión fallida.</string>
   <string name="ssh_disconnected_unexpectedly">SSH se desconectó inesperadamente</string>
-  <string name="exit">Salir</string>
-  <string name="open_browser">Abrir navegador</string>
-  <string name="browser_task_label">Navegador Psiphon</string>
   <string name="client_version">Versión del Cliente %s</string>
   <string name="no_server_entries">No hay servidores para conectarse</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">Incapaz de obtener la información de paquete de esta aplicación</string>

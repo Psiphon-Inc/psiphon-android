@@ -29,9 +29,6 @@
   <string name="PsiphonAndroidService.HandshakeRequestFailed">Ошибка запроса инициализации(handshake request).</string>
   <string name="PsiphonAndroidService.ConnectedRequestFailed">Ошибка запроса постинициализации(connected request).</string>
   <string name="ssh_disconnected_unexpectedly">Неожиданный обрыв соединения SSH </string>
-  <string name="exit">Закрыть</string>
-  <string name="open_browser">Открыть браузер</string>
-  <string name="browser_task_label">Psiphon Browser</string>
   <string name="client_version">Версия клиента %s</string>
   <string name="no_server_entries">Список серверов для соединения отсутствует</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">Ошибка чтения package info данного приложения</string>

@@ -29,9 +29,6 @@
   <string name="PsiphonAndroidService.HandshakeRequestFailed">Yêu cầu hanshake thất bại.</string>
   <string name="PsiphonAndroidService.ConnectedRequestFailed">Yêu cầu kết nối thất bại.</string>
   <string name="ssh_disconnected_unexpectedly">SSH ngắt kết nối bất ngờ</string>
-  <string name="exit">Thoát</string>
-  <string name="open_browser">Mở Trình Duyệt</string>
-  <string name="browser_task_label">Trình Duyệt Psiphon</string>
   <string name="client_version">Phiên Bản Client %s</string>
   <string name="no_server_entries">Không có máy chủ để kết nối</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">Không thể truy xuất thông tin gói cho ứng dụng hiện tại</string>

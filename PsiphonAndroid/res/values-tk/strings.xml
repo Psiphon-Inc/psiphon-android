@@ -13,7 +13,6 @@
   <string name="exit">Çykyş</string>
   <string name="open_browser">Brauzeri aç</string>
   <string name="browser_task_label">Psiphon brauzeri</string>
-  <string name="client_version">Müşderi wersiýasy %s</string>
   <string name="no_server_entries">Birikmek üçin serwer ýok</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">Häzirki amaly programma üçin toplum maglumatlaryny alyp bolanok</string>
   <string name="UpgradeManager.UpgradeFileWriteFailed">Beýgeldiş faýlyny ýazmak şowsuz</string>

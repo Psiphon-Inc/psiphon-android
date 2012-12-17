@@ -27,9 +27,6 @@
   <string name="PsiphonAndroidService.HandshakeRequestFailed">درخواست ارتباط نا موفق بود </string>
   <string name="PsiphonAndroidService.ConnectedRequestFailed">درخواست متصل نا موفق بود </string>
   <string name="ssh_disconnected_unexpectedly">اس اس اچ غیر منتظره قطع شد </string>
-  <string name="exit">خروج</string>
-  <string name="open_browser">مرورگر </string>
-  <string name="browser_task_label">مرورگر سایفون</string>
   <string name="client_version">نسخه کارخواه %s</string>
   <string name="no_server_entries">هیچ سروری برای ارتباط موجود نیست</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">بازیابی اطلاعات بسته برای برنامه جاری امکان پذیر نیست  </string>

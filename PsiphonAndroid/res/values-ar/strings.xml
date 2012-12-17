@@ -13,7 +13,6 @@
   <string name="exit">خروج</string>
   <string name="open_browser">فتح المتصفح</string>
   <string name="browser_task_label">متصفح برنامج Psiphon 3</string>
-  <string name="client_version">إصدار العميل %s</string>
   <string name="no_server_entries">لا توجد مخدمات كي يتم الاتصال بها</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">يتعذر استرجاع معلومات الحزمة للتطبيق الحالي</string>
   <string name="UpgradeManager.UpgradeFileWriteFailed">فشل كتابة ملف التحديث</string>

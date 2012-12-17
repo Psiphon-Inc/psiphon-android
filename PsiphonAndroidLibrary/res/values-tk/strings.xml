@@ -29,9 +29,6 @@
   <string name="PsiphonAndroidService.HandshakeRequestFailed">Tassyklaýyş islegi şowsuz.</string>
   <string name="PsiphonAndroidService.ConnectedRequestFailed">Birikme islegi şowsuz.</string>
   <string name="ssh_disconnected_unexpectedly">SSH birikmesi birdenkä kesildi</string>
-  <string name="exit">Çykyş</string>
-  <string name="open_browser">Brauzeri aç</string>
-  <string name="browser_task_label">Psiphon brauzeri</string>
   <string name="client_version">Müşderi wersiýasy %s</string>
   <string name="no_server_entries">Birikmek üçin serwer ýok</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">Häzirki amaly programma üçin toplum maglumatlaryny alyp bolanok</string>
