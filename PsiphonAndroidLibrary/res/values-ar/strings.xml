@@ -31,29 +31,15 @@
   <string name="ssh_disconnected_unexpectedly">تم قطع اتصال بروتوكل القشرة الآمنة (SSH) بشكل غير متوقع</string>
   <string name="client_version">إصدار العميل %s</string>
   <string name="no_server_entries">لا توجد مخدمات كي يتم الاتصال بها</string>
-  <string name="UpgradeManager.CanNotRetrievePackageInfo">يتعذر استرجاع معلومات الحزمة للتطبيق الحالي</string>
-  <string name="UpgradeManager.UpgradeFileWriteFailed">فشل كتابة ملف التحديث</string>
-  <string name="UpgradeManager.UpgradeDownloadFailed">فشل تنزيل التحديث</string>
-  <string name="UpgradeManager.UpgradeDownloaded">تم تنزيل التحديث. سيتم تثبيته عند بدء تشغيل التطبيق في المرة المقبلة.</string>
-  <string name="UpgradeManager.CannotExtractUpgradePackageInfo">فشل التحديث. تعذر استخراج معلومات الحزمة من ملف التحديث.</string>
-  <string name="UpgradeManager.UpgradeFileNotFound">لم يتم العثور على ملف التحديث</string>
   <string name="ServerInterface.InvalidRemoteServerList">قائمة المخدم البعيد غير صالحة</string>
   <string name="TunnelService.FetchRemoteServerListFailed">فشل إحضار قائمة المخدم البعيد</string>
   <string name="ServerEntryAuth.WrongPublicKey">تم توقيع مدخل المخدم البعيد باستخدام مفتاح عام مختلف</string>
   <string name="ServerEntryAuth.InvalidSignature">توقيع غير صالح بمدخل المخدم البعيد</string>
   <string name="ServerEntryAuth.FailedToParseRemoteServerEntry">فشل توزيع مدخل المخدم البعيد</string>
-  <string name="UpgradeManager.UpgradePromptTitle">تحديث برنامج Psiphon</string>
-  <string name="UpgradeManager.UpgradePromptMessage">تحديث برنامج Psiphon 3 جاهز للتثبيت. من المستحسن السماح بمتابعة التحديث في هذا الوقت.\n\nبعد التحديث، سيتوجب عليك تشغيل برنامج Psiphon 3 مرة أخرى.\n\nالتحديث الآن؟</string>
   <string name="starting_tunnel">جاري بدء تشغيل النفق...</string>
   <string name="stopping_tunnel">جاري توقف النفق عن العمل...</string>
   <string name="stopped_tunnel">توقف النفق عن العمل</string>
   <string name="ServerInterface.StopRequested">تم طلب التوقف</string>
   <string name="ServerInterface.HTTPSRequestFailed">فشل طلب HTTPS مع إصدار الخطأ: </string>
   <string name="feedback">ردود.</string>
-  <string name="FeedbackActivity.DefaultText">ذا كانت لديك آية نعليقات محدده٫ آو معلومات آخرى حول مواقع لا تعمل٫ أو إذا كانت هذه الاستماره لا تعمل٫ يرجى أرسال رساله إلى :\n l &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
-  <string name="FeedbackActivity.Success">نشكرك على إرسال الرد.</string>
-  <string name="FeedbackActivity.Failure">فشل الارسال. يرجى معاودة المحاوله.</string>
-  <string name="FeedbackActivity.SubmitFeedbackFailed">فشل في إرسال الرد.</string>
-  <string name="FeedbackActivity.InvalidURLParameters">باراميترات خاظئه في استمارة الرد.</string>
-  <string name="FeedbackActivity.GetHTMLContentFailed">فشل في الحصول على مضمون صفحة الرد.</string>
 </resources>

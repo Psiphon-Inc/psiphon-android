@@ -13,7 +13,6 @@
   <string name="exit">Salir</string>
   <string name="open_browser">Abrir navegador</string>
   <string name="browser_task_label">Navegador Psiphon</string>
-  <string name="no_server_entries">No hay servidores para conectarse</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">Incapaz de obtener la información de paquete de esta aplicación</string>
   <string name="UpgradeManager.UpgradeFileWriteFailed">No pudo escribir archivo de actualización.</string>
   <string name="UpgradeManager.UpgradeDownloadFailed">Descarga de actualización fallida.</string>

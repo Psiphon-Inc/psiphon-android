@@ -13,7 +13,6 @@
   <string name="exit">出口</string>
   <string name="open_browser">打开浏览器</string>
   <string name="browser_task_label">Psiphon浏览器</string>
-  <string name="no_server_entries">没有连接到服务器</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">无法检索当前应用程序的报信息</string>
   <string name="UpgradeManager.UpgradeFileWriteFailed">未能写入升级文件</string>
   <string name="UpgradeManager.UpgradeDownloadFailed">升级下载失败</string>
