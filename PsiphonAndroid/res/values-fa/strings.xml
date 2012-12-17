@@ -19,18 +19,11 @@
   <string name="UpgradeManager.UpgradeDownloaded">به روز رسانی دریافت شده است و در شروع بعد برنامه نصب خواهد شد. </string>
   <string name="UpgradeManager.CannotExtractUpgradePackageInfo">به روز رسانی شکست خورد. بازکردن اطلاعات بسته از فایل ارتقا نا موفق بود.</string>
   <string name="UpgradeManager.UpgradeFileNotFound">فایل ارتقا پیدا نشد</string>
-  <string name="ServerInterface.InvalidRemoteServerList">لیست سرور نا معتبر </string>
-  <string name="TunnelService.FetchRemoteServerListFailed">گرفتن لیست سرور نا موفق بود</string>
-  <string name="ServerEntryAuth.WrongPublicKey">نوشته سرور با رمز نگاری کلید عمومی دیگری امضا شده</string>
-  <string name="ServerEntryAuth.InvalidSignature">امضای نامعتبر در نوشته ی سرور </string>
-  <string name="ServerEntryAuth.FailedToParseRemoteServerEntry">تجزیه نوشته سرور ما موفق بود</string>
   <string name="UpgradeManager.UpgradePromptTitle">به روز رسانی سایفون</string>
   <string name="UpgradeManager.UpgradePromptMessage">به روز رسانی سایفون آماده برای نصب است. پیشنهاد میشود که شما هرچه زودتراجازه ارتقا بدهید. بعد از ارتقا، شما باید دوباره سایفون ۳ را اجرا کنید. ارتقا؟  </string>
   <string name="starting_tunnel">...شروع تونل</string>
   <string name="stopping_tunnel">...توقف تونل</string>
   <string name="stopped_tunnel">اجرای تونل ایستاد </string>
-  <string name="ServerInterface.StopRequested">درخواست توقف</string>
-  <string name="ServerInterface.HTTPSRequestFailed">درخواست اچ تی تی پی اس به دلیل خطا نا موفق بود  </string>
   <string name="feedback">نظر </string>
   <string name="FeedbackActivity.DefaultText">اگر نظر خاصی دارید، اطلاعات بیشتر در مورد سایت های که کار نمیکنند یا این فرم برای شما کار نمیکند، لطفآ ایمیل بزنید به &lt;a href=&quot;mailto:feedback@psiphon.ca&quot;&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">از اینکه نظرتون رو با ما در میان گذاشتید سپاسگزاریم</string>

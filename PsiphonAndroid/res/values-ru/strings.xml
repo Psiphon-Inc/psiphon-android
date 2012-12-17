@@ -19,18 +19,11 @@
   <string name="UpgradeManager.UpgradeDownloaded">Апгрейд скачан и будет инсталлирован при следующем запуске приложения</string>
   <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Ошибка чтения package info апгрейда</string>
   <string name="UpgradeManager.UpgradeFileNotFound">Апгрейд файл не найден</string>
-  <string name="ServerInterface.InvalidRemoteServerList">Некорректный список remote server list</string>
-  <string name="TunnelService.FetchRemoteServerListFailed">Ошибка получения списка remote server list</string>
-  <string name="ServerEntryAuth.WrongPublicKey">Неверный публичный ключ в подписи remote server entry</string>
-  <string name="ServerEntryAuth.InvalidSignature">Неверная подпись remote server entry</string>
-  <string name="ServerEntryAuth.FailedToParseRemoteServerEntry">Ошибка разбора(парсинга)remote server entry</string>
   <string name="UpgradeManager.UpgradePromptTitle">Апгрейд Psiphon </string>
   <string name="UpgradeManager.UpgradePromptMessage">Апгрейд Psiphon 3 готов к установке. Мы настоятельно рекомендуем немедленную установку этого апгрейда. n\nПерезапустите Psiphon 3 после установки.\n\nУстановить апгрейд сейчас?</string>
   <string name="starting_tunnel">Запуск тоннеля...</string>
   <string name="stopping_tunnel">Остановка тоннеля...</string>
   <string name="stopped_tunnel">Тоннель остановлен</string>
-  <string name="ServerInterface.StopRequested">Получен сигмнал остановки</string>
-  <string name="ServerInterface.HTTPSRequestFailed">Ошибка HTTPS запроса: </string>
   <string name="feedback">Отзыв</string>
   <string name="FeedbackActivity.DefaultText">Если у вас есть какие-либо особые  комментарии, дополнительная информация о сайтах, которые не загружаются или эта форма не работает для вас, пишите нам на &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">Спасибо за ваш отзыв</string>

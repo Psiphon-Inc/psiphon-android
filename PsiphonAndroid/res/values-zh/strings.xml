@@ -19,18 +19,11 @@
   <string name="UpgradeManager.UpgradeDownloaded">升级下载。将安装下一次启动应用程序.</string>
   <string name="UpgradeManager.CannotExtractUpgradePackageInfo">升级失败。无法从升级文件提取报信息.</string>
   <string name="UpgradeManager.UpgradeFileNotFound">升级文件未找到</string>
-  <string name="ServerInterface.InvalidRemoteServerList">无效的远程服务器列表</string>
-  <string name="TunnelService.FetchRemoteServerListFailed">读取远程服务器列表失败</string>
-  <string name="ServerEntryAuth.WrongPublicKey">远程服务器条目用不同的公共蜜月的签名</string>
-  <string name="ServerEntryAuth.InvalidSignature">无效签名对远程服务器条目</string>
-  <string name="ServerEntryAuth.FailedToParseRemoteServerEntry">未能解析远程服务器条目</string>
   <string name="UpgradeManager.UpgradePromptTitle">Psiphon升级</string>
   <string name="UpgradeManager.UpgradePromptMessage">Psiphon 3的升级是准备好安装。强烈建议您允许在此时进行升级。\n\n升级完成后，您将不得不再次启动Psiphon 3.\n\n现在升级?</string>
   <string name="starting_tunnel">启动隧道...</string>
   <string name="stopping_tunnel">停止隧道...</string>
   <string name="stopped_tunnel">隧道已停止</string>
-  <string name="ServerInterface.StopRequested">停止请求</string>
-  <string name="ServerInterface.HTTPSRequestFailed">HTTPS请求失败与出现错误: </string>
   <string name="feedback">反馈</string>
   <string name="FeedbackActivity.DefaultText">如果你有任何具体反馈，有任何网站不工作的资料，或要是这个表单不能使用，请发邮件 &lt;a href=&quot;mailto:feedback@psiphon.ca&quot;&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">感谢你提交你的反馈意见。</string>
