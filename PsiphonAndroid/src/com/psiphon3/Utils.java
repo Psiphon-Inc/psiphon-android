@@ -271,9 +271,9 @@ public class Utils {
          */
         public enum Sensitivity
         {
-        	/**
-        	 * The log does not contain sensitive information.
-        	 */
+            /**
+             * The log does not contain sensitive information.
+             */
             NOT_SENSITIVE,
             
             /**
@@ -322,7 +322,8 @@ public class Utils {
                         logEntry.sensitivity, 
                         logEntry.formatArgs, 
                         logEntry.throwable, 
-                        logEntry.priority);
+                        logEntry.priority,
+                        logEntry.timestamp);
             }
         }
         
@@ -341,9 +342,10 @@ public class Utils {
          * except it will also be included in the feedback diagnostic attachment.
          * @param msg The message to log.
          */
-        static void g(String msg)
+        static void g(String msg, Object data)
         {
-            PsiphonData.addDiagnosticEntry(msg);
+            PsiphonData.addDiagnosticEntry(msg, data);
+            // We're not logging the `data` at all. In the future we may want to.
             MyLog.d(msg);
         }
 
@@ -386,7 +388,7 @@ public class Utils {
         {
             MyLog.println(stringResID, sensitivity, null, throwable, Log.VERBOSE);
         }
-        
+
         private static void println(
                 int stringResID, 
                 Sensitivity sensitivity, 
@@ -394,8 +396,25 @@ public class Utils {
                 Throwable throwable, 
                 int priority)
         {
+            println(
+                stringResID,
+                sensitivity,
+                formatArgs,
+                throwable,
+                priority,
+                Utils.getISO8601String());
+        }
+        
+        private static void println(
+                int stringResID, 
+                Sensitivity sensitivity, 
+                Object[] formatArgs, 
+                Throwable throwable, 
+                int priority,
+                String timestamp)
+        {
             PsiphonData.addStatusEntry(
-                    Utils.getISO8601String(),
+                    timestamp,
                     stringResID,
                     logInfoProvider.getResourceEntryName(stringResID), 
                     sensitivity,

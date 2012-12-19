@@ -20,7 +20,6 @@
 package com.psiphon3;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -371,20 +370,35 @@ public class PsiphonData
             m_statusHistory.clear();
         }
     }
+    
+    /*
+     * Diagnostic history support
+     */
 
-    static private ArrayList<String> m_diagnosticHistory = new ArrayList<String>();
-
-    static public void addDiagnosticEntry(String entry)
+    static public class DiagnosticEntry extends Object
     {
+        String timestamp;
+        String msg;
+        Object data;
+    }
+    
+    static private List<DiagnosticEntry> m_diagnosticHistory = new ArrayList<DiagnosticEntry>();
+
+    static public void addDiagnosticEntry(String msg, Object data)
+    {
+        DiagnosticEntry entry = new DiagnosticEntry();
+        entry.timestamp = Utils.getISO8601String();
+        entry.msg = msg;
+        entry.data = data;
         m_diagnosticHistory.add(entry);
     }
     
-    static public ArrayList<String> cloneDiagnosticHistory()
+    static public List<DiagnosticEntry> cloneDiagnosticHistory()
     {
-        ArrayList<String> copy;
+        List<DiagnosticEntry> copy;
         synchronized(m_diagnosticHistory) 
         {
-            copy = new ArrayList<String>(m_diagnosticHistory);
+            copy = new ArrayList<DiagnosticEntry>(m_diagnosticHistory);
         }
         return copy;
     }
@@ -398,6 +412,7 @@ public class PsiphonData
         String ipAddress;
         boolean responded;
         long responseTime;
+        String timestamp;
     }
     
     static private ArrayList<ServerResponseCheck> m_serverResponses = new ArrayList<ServerResponseCheck>();
@@ -411,6 +426,7 @@ public class PsiphonData
         entry.ipAddress = ipAddress;
         entry.responded = responded;
         entry.responseTime = responseTime;
+        entry.timestamp = Utils.getISO8601String();
         
         synchronized(m_serverResponses) 
         {
