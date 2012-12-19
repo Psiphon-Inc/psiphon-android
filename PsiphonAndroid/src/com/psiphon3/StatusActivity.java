@@ -41,6 +41,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.webkit.URLUtil;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.ScrollView;
@@ -346,11 +347,14 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
 
     public void onAboutClick(View v)
     {
-        // TODO: if connected, open in Psiphon browser? 
-        // Events.displayBrowser(this, Uri.parse(PsiphonConstants.INFO_LINK_URL));
+        if (URLUtil.isValidUrl(EmbeddedValues.INFO_LINK_URL))
+        {
+            // TODO: if connected, open in Psiphon browser? 
+            // Events.displayBrowser(this, Uri.parse(PsiphonConstants.INFO_LINK_URL));
 
-        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(EmbeddedValues.INFO_LINK_URL));
-        startActivity(browserIntent);
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(EmbeddedValues.INFO_LINK_URL));
+            startActivity(browserIntent);
+        }
     }
     
     public void onExitClick(View v)

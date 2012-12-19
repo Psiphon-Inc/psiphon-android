@@ -83,6 +83,7 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import android.content.Context;
 import android.os.SystemClock;
 import android.util.Pair;
+import android.webkit.URLUtil;
 
 
 public class ServerInterface
@@ -705,7 +706,7 @@ public class ServerInterface
         // so this request may be difficult to block without blocking all
         // of a valuable service.
 
-        if (0 != "".compareTo(EmbeddedValues.REMOTE_SERVER_LIST_URL))
+        if (URLUtil.isValidUrl(EmbeddedValues.REMOTE_SERVER_LIST_URL))
         {
             // After at least one failed connection attempt, and no more than once
             // per few hours (if successful), or not more than once per few minutes
