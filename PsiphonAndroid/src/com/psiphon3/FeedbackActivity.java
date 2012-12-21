@@ -95,6 +95,19 @@ public class FeedbackActivity extends Activity
                 try
                 {
                     /*
+                     * Metadata
+                     */
+                    
+                    Map<String, Object> metadata = new HashMap<String, Object>();
+                    metadata.put("platform", "android");
+                    metadata.put("version", 1);
+                    
+                    SecureRandom rnd = new SecureRandom();
+                    byte[] id = new byte[8];
+                    rnd.nextBytes(id);
+                    metadata.put("id", Utils.byteArrayToHexString(id));
+                    
+                    /*
                      * System Information
                      */
                     
@@ -106,9 +119,9 @@ public class FeedbackActivity extends Activity
                     sysInfo_Build.put("MANUFACTURER", Build.MANUFACTURER);
                     sysInfo_Build.put("MODEL", Build.MODEL);
                     sysInfo_Build.put("TAGS", Build.TAGS);
-                    sysInfo_Build.put("VERSION.CODENAME", Build.VERSION.CODENAME);
-                    sysInfo_Build.put("VERSION.RELEASE", Build.VERSION.RELEASE);
-                    sysInfo_Build.put("VERSION.SDK_INT", Build.VERSION.SDK_INT);
+                    sysInfo_Build.put("VERSION__CODENAME", Build.VERSION.CODENAME);
+                    sysInfo_Build.put("VERSION__RELEASE", Build.VERSION.RELEASE);
+                    sysInfo_Build.put("VERSION__SDK_INT", Build.VERSION.SDK_INT);
                     sysInfo.put("isRooted", Utils.isRooted());
                     Map<String, Object> sysInfo_psiphonEmbeddedValues = new HashMap<String, Object>();
                     sysInfo.put("psiphonEmbeddedValues", sysInfo_psiphonEmbeddedValues);
@@ -199,13 +212,14 @@ public class FeedbackActivity extends Activity
                      * YAML-ify the diagnostic info
                      */
                     
-                    List<Object> diagnosticObjects = new ArrayList<Object>();
-                    diagnosticObjects.add(sysInfo);
-                    diagnosticObjects.add(serverResponseChecks);
-                    diagnosticObjects.add(diagnosticHistory);
-                    diagnosticObjects.add(statusHistory);
+                    Map<String, Object> diagnosticObject = new HashMap<String, Object>();
+                    diagnosticObject.put("Metadata", metadata);
+                    diagnosticObject.put("SystemInformation", sysInfo);
+                    diagnosticObject.put("ServerResponseCheck", serverResponseChecks);
+                    diagnosticObject.put("DiagnosticHistory", diagnosticHistory);
+                    diagnosticObject.put("StatusHistory", statusHistory);
                     Yaml yaml = new Yaml();
-                    diagnosticYaml = yaml.dumpAll(diagnosticObjects.iterator());
+                    diagnosticYaml = yaml.dump(diagnosticObject);
                 }
                 catch (ParseException e)
                 {
