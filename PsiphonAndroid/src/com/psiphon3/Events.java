@@ -21,18 +21,22 @@ package com.psiphon3;
 
 import java.util.List;
 
+import com.psiphon3.FeedbackActivity;
+import com.psiphon3.StatusActivity;
+import com.psiphon3.psiphonlibrary.PsiphonData;
+import com.psiphon3.psiphonlibrary.TunnelService;
+
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningTaskInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 
 
-public class Events
+public class Events implements com.psiphon3.psiphonlibrary.Events
 {
-    static public void appendStatusMessage(Context context, String message, int messageClass)
+    public void appendStatusMessage(Context context, String message, int messageClass)
     {
         // Local broadcast to any existing status screen
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(context);
@@ -42,7 +46,7 @@ public class Events
         localBroadcastManager.sendBroadcast(intent);
     }
 
-    static public void signalHandshakeSuccess(Context context)
+    public void signalHandshakeSuccess(Context context)
     {
         // Only send this intent if the StatusActivity is
         // in the foreground. If it isn't and we sent the
@@ -63,7 +67,7 @@ public class Events
         }
     }
 
-    static public void signalUnexpectedDisconnect(Context context)
+    public void signalUnexpectedDisconnect(Context context)
     {
         // Only launch the intent if the browser is the current
         // task. We don't want to interrupt other apps; and in
@@ -93,7 +97,7 @@ public class Events
         }
     }
     
-    static public Intent pendingSignalNotification(Context context)
+    public Intent pendingSignalNotification(Context context)
     {
         Intent intent = new Intent(
                 "ACTION_VIEW",

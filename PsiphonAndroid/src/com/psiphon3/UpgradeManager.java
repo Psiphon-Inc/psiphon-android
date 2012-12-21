@@ -24,8 +24,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
-import com.psiphon3.Utils.MyLog;
+import com.psiphon3.R;
+import com.psiphon3.psiphonlibrary.ServerInterface;
+import com.psiphon3.psiphonlibrary.TunnelService;
+import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -104,7 +107,7 @@ public interface UpgradeManager
                 // "If the file exists but is a directory rather than a regular 
                 //  file, does not exist but cannot be created, or cannot be 
                 //  opened for any other reason then a FileNotFoundException is thrown."
-                MyLog.w(R.string.UpgradeManager_UpgradeFileNotFound, e);
+                MyLog.w(R.string.UpgradeManager_UpgradeFileNotFound, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return false;
             }
             
@@ -115,7 +118,7 @@ public interface UpgradeManager
             } 
             catch (IOException e)
             {
-                MyLog.w(R.string.UpgradeManager_UpgradeFileWriteFailed, e);
+                MyLog.w(R.string.UpgradeManager_UpgradeFileWriteFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return false;
             }
             
@@ -182,7 +185,7 @@ public interface UpgradeManager
             {
                 // There's probably something wrong with the upgrade file.
                 file.delete();
-                MyLog.w(R.string.UpgradeManager_CannotExtractUpgradePackageInfo);
+                MyLog.w(R.string.UpgradeManager_CannotExtractUpgradePackageInfo, MyLog.Sensitivity.NOT_SENSITIVE);
                 return false;
             }
             
@@ -198,7 +201,7 @@ public interface UpgradeManager
             {
                 // This really shouldn't happen -- we're getting info about the 
                 // current package, which clearly exists.
-                MyLog.w(R.string.UpgradeManager_CanNotRetrievePackageInfo, e);
+                MyLog.w(R.string.UpgradeManager_CanNotRetrievePackageInfo, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return false;
             }
             
@@ -253,7 +256,7 @@ public interface UpgradeManager
                             }})
                 .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
-                        // User declied the prompt.
+                        // User declined the prompt.
                         upgradeListener.upgradeNotStarted();
                     }})
                 .setOnCancelListener(new DialogInterface.OnCancelListener() {
@@ -281,9 +284,9 @@ public interface UpgradeManager
     }
 
     /**
-     * Used to download upgradees from the server.
+     * Used to download upgrades from the server.
      */
-    static public class UpgradeDownloader
+    static public class UpgradeDownloader implements TunnelService.UpgradeDownloader
     {
         private Context context;
         private ServerInterface serverInterface;
@@ -360,7 +363,7 @@ public interface UpgradeManager
                 //   client will never connect.
                 // - Fail-over exposes new server IPs to hostile networks, so we don't
                 //   like doing it in the case where we know the handshake already succeeded.
-                MyLog.w(R.string.UpgradeManager_UpgradeDownloadFailed, e);
+                MyLog.w(R.string.UpgradeManager_UpgradeDownloadFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return;
             }
             
@@ -369,7 +372,7 @@ public interface UpgradeManager
                 return;
             }
             
-            MyLog.v(R.string.UpgradeManager_UpgradeDownloaded);
+            MyLog.v(R.string.UpgradeManager_UpgradeDownloaded, MyLog.Sensitivity.NOT_SENSITIVE);
         }
     }
 }
