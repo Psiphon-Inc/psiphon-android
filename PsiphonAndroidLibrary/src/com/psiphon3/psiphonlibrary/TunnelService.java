@@ -116,7 +116,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     {
         MyLog.logger = this;
         m_interface = new ServerInterface(this);
-        m_serverListReorder = new ServerListReorder(m_interface);
+        m_serverListReorder = new ServerListReorder(m_interface, this);
     }
 
     @Override

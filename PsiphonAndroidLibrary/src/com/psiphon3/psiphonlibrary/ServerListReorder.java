@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import android.content.Context;
 import android.os.Build;
 import android.os.SystemClock;
 
@@ -50,12 +51,14 @@ public class ServerListReorder
     private final int RESPONSE_TIME_THRESHOLD_FACTOR = 2;
 
     private ServerInterface serverInterface = null;
+    private Context context = null;
     private Thread thread = null;
     boolean stopFlag = false;
     
-    ServerListReorder(ServerInterface serverInterface)
+    ServerListReorder(ServerInterface serverInterface, Context context)
     {
         this.serverInterface = serverInterface;
+        this.context = context;
     }
     
     class CheckServerWorker implements Runnable
@@ -105,6 +108,23 @@ public class ServerListReorder
     {        
         public void run()
         {
+            while (!Utils.hasNetworkConnectivity(context))
+            {
+                if (stopFlag)
+                {
+                    return;
+                }
+                try
+                {
+                    // Sleep 1 second before checking again
+                    Thread.sleep(1000);
+                }
+                catch (InterruptedException e)
+                {
+                    return;
+                }
+            }
+            
             // Adapted from Psiphon Windows client module server_list_reordering.cpp; see comments there.
             // Revision: https://bitbucket.org/psiphon/psiphon-circumvention-system/src/881d32d09e3a/Client/psiclient/server_list_reordering.cpp
 

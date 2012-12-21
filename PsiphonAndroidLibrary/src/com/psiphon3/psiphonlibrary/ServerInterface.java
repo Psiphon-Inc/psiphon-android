@@ -718,6 +718,30 @@ public class ServerInterface
                 return;
             }
 
+            boolean printedWaitingMessage = false;
+            while (!Utils.hasNetworkConnectivity(ownerContext))
+            {
+                if (!printedWaitingMessage)
+                {
+                    MyLog.v(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);
+                    printedWaitingMessage = true;
+                }
+
+                if (stopped)
+                {
+                    return;
+                }
+                try
+                {
+                    // Sleep 1 second before checking again
+                    Thread.sleep(1000);
+                }
+                catch (InterruptedException e)
+                {
+                    return;
+                }
+            }
+            
             PsiphonData.getPsiphonData().setNextFetchRemoteServerList(
                     SystemClock.elapsedRealtime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_UNSUCCESSFUL_REMOTE_SERVER_LIST_FETCH);
             
