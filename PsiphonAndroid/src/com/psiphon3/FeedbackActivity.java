@@ -52,10 +52,15 @@ import javax.crypto.spec.IvParameterSpec;
 
 import org.yaml.snakeyaml.Yaml;
 
-import com.psiphon3.PsiphonData.StatusEntry;
-import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
-import com.psiphon3.Utils.Base64;
-import com.psiphon3.Utils.MyLog;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.PsiphonConstants;
+import com.psiphon3.psiphonlibrary.PsiphonData;
+import com.psiphon3.psiphonlibrary.ServerInterface;
+import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
+import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
+import com.psiphon3.psiphonlibrary.Utils.Base64;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
@@ -124,10 +129,10 @@ public class FeedbackActivity extends Activity
                     for (PsiphonData.ServerResponseCheck item : PsiphonData.cloneServerResponseChecks())
                     {
                         Map<String, Object> entry = new HashMap<String, Object>();
-                        entry.put("ipAddress", item.ipAddress);
-                        entry.put("responded", item.responded);
-                        entry.put("responseTime", item.responseTime);
-                        entry.put("timestamp", dateParser.parse(item.timestamp));
+                        entry.put("ipAddress", item.ipAddress());
+                        entry.put("responded", item.responded());
+                        entry.put("responseTime", item.responseTime());
+                        entry.put("timestamp", dateParser.parse(item.timestamp()));
                         
                         serverResponseChecks.add(entry);
                     }
@@ -141,9 +146,9 @@ public class FeedbackActivity extends Activity
                     for (PsiphonData.DiagnosticEntry item : PsiphonData.cloneDiagnosticHistory())
                     {
                         Map<String, Object> entry = new HashMap<String, Object>();
-                        entry.put("timestamp", dateParser.parse(item.timestamp));
-                        entry.put("msg", item.msg);
-                        entry.put("data", item.data);
+                        entry.put("timestamp", dateParser.parse(item.timestamp()));
+                        entry.put("msg", item.msg());
+                        entry.put("data", item.data());
                         
                         diagnosticHistory.add(entry);
                     }
@@ -157,7 +162,7 @@ public class FeedbackActivity extends Activity
                     for (StatusEntry internalEntry : PsiphonData.cloneStatusHistory())
                     {
                         // Don't send any sensitive logs
-                        if (internalEntry.sensitivity == MyLog.Sensitivity.SENSITIVE_LOG)
+                        if (internalEntry.sensitivity() == MyLog.Sensitivity.SENSITIVE_LOG)
                         {
                             continue;
                         }
@@ -165,30 +170,30 @@ public class FeedbackActivity extends Activity
                         Map<String, Object> statusEntry = new HashMap<String, Object>();
                         statusHistory.add(statusEntry);
                         
-                        statusEntry.put("id", internalEntry.idName);
-                        statusEntry.put("timestamp", dateParser.parse(internalEntry.timestamp));
-                        statusEntry.put("priority", internalEntry.priority);
+                        statusEntry.put("id", internalEntry.idName());
+                        statusEntry.put("timestamp", dateParser.parse(internalEntry.timestamp()));
+                        statusEntry.put("priority", internalEntry.priority());
                         statusEntry.put("formatArgs", null); 
                         statusEntry.put("throwable", null); 
                         
-                        if (internalEntry.formatArgs != null && internalEntry.formatArgs.length > 0
+                        if (internalEntry.formatArgs() != null && internalEntry.formatArgs().length > 0
                             // Don't send any sensitive format args
-                            && internalEntry.sensitivity != MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS)
+                            && internalEntry.sensitivity() != MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS)
                         {
-                            statusEntry.put("formatArgs", Arrays.asList(internalEntry.formatArgs));
+                            statusEntry.put("formatArgs", Arrays.asList(internalEntry.formatArgs()));
                         }
     
-                        if (internalEntry.throwable != null)
+                        if (internalEntry.throwable() != null)
                         {
                             Map<String, Object> throwable = new HashMap<String, Object>();
                             statusEntry.put("throwable", throwable);
                             
-                            throwable.put("message", internalEntry.throwable.toString());
+                            throwable.put("message", internalEntry.throwable().toString());
                             
                             List<String> stack = new ArrayList<String>();
                             throwable.put("stack", stack);
                             
-                            for (StackTraceElement element : internalEntry.throwable.getStackTrace())
+                            for (StackTraceElement element : internalEntry.throwable().getStackTrace())
                             {
                                 stack.add(element.toString());
                             }
