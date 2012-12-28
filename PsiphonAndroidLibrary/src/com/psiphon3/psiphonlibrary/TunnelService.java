@@ -775,9 +775,12 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             catch (TunnelServiceStop e)
             {
                 // Stop has been requested, so get out of the retry loop.
-            	setState(State.DISCONNECTED);
+                setState(State.DISCONNECTED);
                 break;
             }
+            
+            // Provide visual feedback (notification icon) that we are no longer connected
+            setState(State.CONNECTING);
             
             try
             {
