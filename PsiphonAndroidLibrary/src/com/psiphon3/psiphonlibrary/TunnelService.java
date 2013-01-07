@@ -105,7 +105,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             doForeground();
             MyLog.v(R.string.client_version, MyLog.Sensitivity.NOT_SENSITIVE, EmbeddedValues.CLIENT_VERSION);
             startTunnel();
-            m_serverListReorder.Start();
             m_firstStart = false;
         }
         return android.app.Service.START_STICKY;
@@ -125,7 +124,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         // TODO: ServerListReorder lifetime on Android isn't the same as on Windows
         if (m_serverListReorder != null)
         {
-            m_serverListReorder.Stop();
+            m_serverListReorder.Abort();
             m_serverListReorder = null;
         }
         
@@ -761,6 +760,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     		MyLog.e(R.string.no_server_entries, MyLog.Sensitivity.NOT_SENSITIVE);
     		return;
     	}
+    	
+    	m_serverListReorder.Run();
     	
         while (runTunnelOnce())
         {

@@ -45,9 +45,10 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 public class ServerListReorder
 {
     private final int NUM_THREADS = 10;
-    private final int SHUTDOWN_POLL_MILLISECONDS = 100;
+    private final int SHUTDOWN_POLL_MILLISECONDS = 50;
+    private final int RESULTS_POLL_MILLISECONDS = 250;
     private final int SHUTDOWN_TIMEOUT_MILLISECONDS = 1000;
-    private final int MAX_WORK_TIME_MILLISECONDS = 5000;
+    private final int MAX_WORK_TIME_MILLISECONDS = 20000;
     private final int RESPONSE_TIME_THRESHOLD_FACTOR = 2;
 
     private ServerInterface serverInterface = null;
@@ -108,11 +109,20 @@ public class ServerListReorder
     {        
         public void run()
         {
+            // Run until we have results (> 0) or abort requested.
+            // Each run restarts from scratch: any pending responses
+            // after MAX_WORK_TIME_MILLISECONDS are aborted and a new
+            // queue of candidates is assembled.
+            while(!stopFlag && !runOnce());
+        }
+        
+        private boolean runOnce()
+        {
             while (!Utils.hasNetworkConnectivity(context))
             {
                 if (stopFlag)
                 {
-                    return;
+                    return false;
                 }
                 try
                 {
@@ -121,7 +131,7 @@ public class ServerListReorder
                 }
                 catch (InterruptedException e)
                 {
-                    return;
+                    return false;
                 }
             }
             
@@ -158,6 +168,12 @@ public class ServerListReorder
             {
                 // Wait for either all tasks to complete, an abort request, or the
                 // maximum work time.
+
+                // ...now, we also stop when we get some results. We check for
+                // results in 250ms. time periods, which based on observed real
+                // world data will contain clusters of multiple results (good for load
+                // balancing). This early exit allows us to wait for some results
+                // before starting the tunnel for the first time.
                 
                 for (int wait = 0;
                      !threadPool.awaitTermination(0, TimeUnit.MILLISECONDS) &&
@@ -165,6 +181,22 @@ public class ServerListReorder
                      wait <= MAX_WORK_TIME_MILLISECONDS;
                      wait += SHUTDOWN_POLL_MILLISECONDS)
                 {
+                    // Periodic 250ms. (RESULTS_POLL_MILLISECONDS) has-results check
+                    // Note: assumes RESULTS_POLL_MILLISECONDS is a multiple of SHUTDOWN_POLL_MILLISECONDS
+                    if (wait > 0 && (wait % RESULTS_POLL_MILLISECONDS) == 0)
+                    {
+                        int resultCount = 0;
+                        for (CheckServerWorker worker : workers)
+                        {
+                            resultCount += worker.responded ? 1 : 0;
+                        }
+                        if (resultCount > 0)
+                        {
+                            // Use the results we have so far
+                            break;
+                        }
+                    }
+
                     Thread.sleep(SHUTDOWN_POLL_MILLISECONDS);
                 }
 
@@ -224,6 +256,8 @@ public class ServerListReorder
         
                 MyLog.v(R.string.preferred_servers, MyLog.Sensitivity.NOT_SENSITIVE, respondingServers.size());
             }
+            
+            return (respondingServers.size() > 0);
         }
     }
 
@@ -248,9 +282,9 @@ public class ServerListReorder
         return false;
     }
 
-    public void Start()
+    public void Run()
     {
-        Stop();
+        Abort();
         
         // Android 2.2 bug workaround
         // See http://code.google.com/p/android/issues/detail?id=9431
@@ -262,9 +296,19 @@ public class ServerListReorder
 
         this.thread = new Thread(new ReorderServerList());
         this.thread.start();
+        try
+        {
+            this.thread.join();
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+        }
+        this.thread = null;
+        this.stopFlag = false;
     }
     
-    public void Stop()
+    public void Abort()
     {
         if (this.thread != null)
         {
