@@ -286,21 +286,26 @@ public class ServerListReorder
                 ServerEntry firstEntry = respondingServers.get(0);
                 for (CheckServerWorker worker : workers)
                 {
-                	if (worker.responded && worker.entry.ipAddress.equals(firstEntry.ipAddress))
+                	if (worker.responded)
                 	{
-            			// TODO: getters with mutex
-                		firstEntrySocket = worker.channel.socket();
-                		firstEntryIpAddress = worker.entry.ipAddress;
-                	}
-                	else
-                	{
-                		try
+                		assert(worker.channel != null);
+
+                		if (worker.entry.ipAddress.equals(firstEntry.ipAddress))
                 		{
-							worker.channel.close();
-						}
-                		catch (IOException e)
-                		{
-						}
+	            			// TODO: getters with mutex
+	                		firstEntrySocket = worker.channel.socket();
+	                		firstEntryIpAddress = worker.entry.ipAddress;
+                		}
+	                	else
+	                	{
+	                		try
+	                		{
+								worker.channel.close();
+							}
+	                		catch (IOException e)
+	                		{
+							}
+	                	}
                 	}
                 }
             }
