@@ -83,13 +83,13 @@ public class ServerListReorder
 
             try
             {
-                SocketChannel channel = SocketChannel.open();
-                channel.configureBlocking(false);
-                channel.connect(new InetSocketAddress(
+                this.channel = SocketChannel.open();
+                this.channel.configureBlocking(false);
+                this.channel.connect(new InetSocketAddress(
                                         this.entry.ipAddress,
                                         this.entry.getPreferredReachablityTestPort()));
                 Selector selector = Selector.open();
-                channel.register(selector, SelectionKey.OP_CONNECT);
+                this.channel.register(selector, SelectionKey.OP_CONNECT);
                 
                 while (selector.select(SHUTDOWN_POLL_MILLISECONDS) == 0)
                 {
@@ -99,17 +99,15 @@ public class ServerListReorder
                     }
                 }
                 
-                this.responded = channel.finishConnect();
+                this.responded = this.channel.finishConnect();
+                
+                selector.close();
+            	this.channel.configureBlocking(true);
                 
                 if (!this.responded)
                 {
-                	channel.close();
-                	channel = null;
-                }
-                else
-                {
-                	channel.configureBlocking(true);
-                	// Keeping socket open...
+                	this.channel.close();
+                	this.channel = null;
                 }
             }
             catch (IOException e)
