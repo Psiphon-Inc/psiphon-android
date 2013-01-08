@@ -20,6 +20,7 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -329,8 +330,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         // It's also included with the SSH login, for GeoIP region lookup on the server-side
         m_interface.generateNewCurrentClientSessionID();
         
-        ServerInterface.ServerEntry entry = m_interface.setCurrentServerEntry();
-
         boolean runAgain = true;
         boolean unexpectedDisconnect = false;
         Connection conn = null;
@@ -338,43 +337,18 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         TransparentProxyPortForwarder transparentProxy = null;
         DnsProxy dnsProxy = null;
         boolean cleanupTransparentProxyRouting = false;
+        Socket socket = null;
         
         try
         {
+            ServerInterface.ServerEntry entry = m_interface.setCurrentServerEntry();
             if (entry == null)
             {
                 MyLog.e(R.string.no_server_entries, MyLog.Sensitivity.NOT_SENSITIVE);
                 runAgain = false;
                 return runAgain;
             }
-            else if (!entry.hasCapabilities(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
-            {
-            	// This server hasn't failed, per se, but it doesn't satisfy our
-            	// required capabilities, so we're moving it to the bottom of the list.
-            	m_interface.markCurrentServerFailed();
-            	
-            	// Don't need to set state to 
-            	
-            	// We're returning true to run again. We're assuming that the calling
-            	// function knows that there's at least one server to try. We're 
-            	// not logging anything, as the user doesn't need to know what's
-            	// going on under the hood at this point.
-            	runAgain = true;
-            	return runAgain;
-            }
-        	
-            // Wait for network connectivity before proceeding
 
-            MyLog.v(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);
-
-            while (!Utils.hasNetworkConnectivity(this))
-            {
-            	setState(State.DISCONNECTED);
-                // Sleep 1 second before checking again
-                checkSignals(1);
-            }
-            setState(State.CONNECTING);
-            
             boolean tunnelWholeDevice = PsiphonData.getPsiphonData().getTunnelWholeDevice();
             
             if (tunnelWholeDevice)
@@ -424,10 +398,23 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                     checkSignals(0);
                 }
             }
-
+            
             checkSignals(0);
 
             MyLog.v(R.string.ssh_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
+
+            m_serverListReorder.Run();
+            socket = m_serverListReorder.firstEntrySocket;
+            String ipAddress = m_serverListReorder.firstEntryIpAddress;
+            if (socket == null)
+            {
+                return runAgain;
+            }
+            entry = m_interface.setCurrentServerEntry();
+            // TODO: can this happen? handle gracefully 
+            assert(entry.ipAddress.equals(ipAddress));
+        	            
+            checkSignals(0);
             
             Map<String, String> diagnosticData = new HashMap<String, String>();
             diagnosticData.put("ipAddress", entry.ipAddress);
@@ -436,6 +423,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
             Monitor monitor = new Monitor(m_signalQueue);
             conn.connect(
+            		socket,
                     new PsiphonServerHostKeyVerifier(entry.sshHostKey),
                     0,
                     PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS,
@@ -747,6 +735,17 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 	                m_eventsInterface.signalUnexpectedDisconnect(this);
 	            }
             }
+            
+            if (socket != null)
+            {
+            	try
+            	{
+					socket.close();
+				}
+            	catch (IOException e)
+            	{
+				}
+            }
         }
         
         return runAgain;
@@ -760,8 +759,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     		MyLog.e(R.string.no_server_entries, MyLog.Sensitivity.NOT_SENSITIVE);
     		return;
     	}
-    	
-    	m_serverListReorder.Run();
     	
         while (runTunnelOnce())
         {

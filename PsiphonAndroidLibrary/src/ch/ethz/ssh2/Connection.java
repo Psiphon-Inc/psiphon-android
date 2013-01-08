@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.security.SecureRandom;
 import java.util.Vector;
@@ -556,7 +557,7 @@ public class Connection
 	 */
 	public synchronized ConnectionInfo connect() throws IOException
 	{
-		return connect(null, 0, 0, null);
+		return connect(null, null, 0, 0, null);
 	}
 
 	/**
@@ -567,7 +568,7 @@ public class Connection
 	 */
 	public synchronized ConnectionInfo connect(ServerHostKeyVerifier verifier) throws IOException
 	{
-		return connect(verifier, 0, 0, null);
+		return connect(null, verifier, 0, 0, null);
 	}
 
     // PSIPHON: monitor and cancel connection if signaled
@@ -649,6 +650,7 @@ public class Connection
 	 *            not return a proper HTTP response, then a normal IOException is thrown instead.        
 	 */
 	public synchronized ConnectionInfo connect(
+	   Socket existingSocket,
        ServerHostKeyVerifier verifier,
        int connectTimeout,
        int kexTimeout,
@@ -773,7 +775,7 @@ public class Connection
 			
 			try
 			{
-				tm.initialize(this.obfuscationKeyword, cryptoWishList, verifier, dhgexpara, connectTimeout, getOrCreateSecureRND(), proxyData);
+				tm.initialize(existingSocket, this.obfuscationKeyword, cryptoWishList, verifier, dhgexpara, connectTimeout, getOrCreateSecureRND(), proxyData);
 			}
 			catch (SocketTimeoutException se)
 			{

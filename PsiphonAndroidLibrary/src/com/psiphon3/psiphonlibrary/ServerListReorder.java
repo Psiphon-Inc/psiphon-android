@@ -24,6 +24,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
+import java.net.Socket;
 import java.net.SocketException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -49,12 +50,14 @@ public class ServerListReorder
     private final int RESULTS_POLL_MILLISECONDS = 250;
     private final int SHUTDOWN_TIMEOUT_MILLISECONDS = 1000;
     private final int MAX_WORK_TIME_MILLISECONDS = 20000;
-    private final int RESPONSE_TIME_THRESHOLD_FACTOR = 2;
 
     private ServerInterface serverInterface = null;
     private Context context = null;
     private Thread thread = null;
-    boolean stopFlag = false;
+    private boolean stopFlag = false;
+
+    public Socket firstEntrySocket = null;
+    public String firstEntryIpAddress = null;
     
     ServerListReorder(ServerInterface serverInterface, Context context)
     {
@@ -67,6 +70,7 @@ public class ServerListReorder
         ServerEntry entry = null;
         boolean responded = false;
         long responseTime = -1;
+        SocketChannel channel = null;
 
         CheckServerWorker(ServerEntry entry)
         {
@@ -97,7 +101,16 @@ public class ServerListReorder
                 
                 this.responded = channel.finishConnect();
                 
-                channel.close();
+                if (!this.responded)
+                {
+                	channel.close();
+                	channel = null;
+                }
+                else
+                {
+                	channel.configureBlocking(true);
+                	// Keeping socket open...
+                }
             }
             catch (IOException e)
             {
@@ -120,8 +133,15 @@ public class ServerListReorder
         
         private boolean runOnce()
         {
+            boolean printedWaitingMessage = false;
             while (!Utils.hasNetworkConnectivity(context))
             {
+                if (!printedWaitingMessage)
+                {
+                    MyLog.v(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);
+                    printedWaitingMessage = true;
+                }
+
                 if (stopFlag)
                 {
                     return false;
@@ -238,7 +258,10 @@ public class ServerListReorder
         
             for (CheckServerWorker worker : workers)
             {
-                if (worker.responded && worker.responseTime <= fastestResponseTime*RESPONSE_TIME_THRESHOLD_FACTOR)
+            	// NOTE: used to filter by worker.responseTime <= fastestResponseTime*RESPONSE_TIME_THRESHOLD_FACTOR,
+            	// to only consider the "fast" responders for random selection. Now that we exit the process
+            	// early in 250ms. time period chunks, we should consider all responders to be within the "fast" threshold.
+                if (worker.responded)
                 {
                     respondingServers.add(worker.entry);
                 }
@@ -258,6 +281,28 @@ public class ServerListReorder
                 serverInterface.moveEntriesToFront(respondingServers);
         
                 MyLog.v(R.string.preferred_servers, MyLog.Sensitivity.NOT_SENSITIVE, respondingServers.size());
+
+                // Keep open (and return) the socket to the new #1 server; close the others.
+                ServerEntry firstEntry = respondingServers.get(0);
+                for (CheckServerWorker worker : workers)
+                {
+                	if (worker.responded && worker.entry.ipAddress.equals(firstEntry.ipAddress))
+                	{
+            			// TODO: getters with mutex
+                		firstEntrySocket = worker.channel.socket();
+                		firstEntryIpAddress = worker.entry.ipAddress;
+                	}
+                	else
+                	{
+                		try
+                		{
+							worker.channel.close();
+						}
+                		catch (IOException e)
+                		{
+						}
+                	}
+                }
             }
             
             return (respondingServers.size() > 0);
