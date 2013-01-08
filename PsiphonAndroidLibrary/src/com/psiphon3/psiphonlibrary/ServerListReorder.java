@@ -96,6 +96,8 @@ public class ServerListReorder
                 }
                 
                 this.responded = channel.finishConnect();
+                
+                channel.close();
             }
             catch (IOException e)
             {
@@ -156,7 +158,8 @@ public class ServerListReorder
         
             for (ServerEntry entry : serverEntries)
             {
-                if (-1 != entry.getPreferredReachablityTestPort())
+                if (-1 != entry.getPreferredReachablityTestPort() &&
+                		entry.hasCapabilities(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
                 {
                     CheckServerWorker worker = new CheckServerWorker(entry);
                     threadPool.submit(worker);
