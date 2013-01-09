@@ -129,7 +129,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             m_serverListReorder = null;
         }
         
-    	m_destroyed = true;
+        m_destroyed = true;
 
         stopTunnel();
     }
@@ -141,37 +141,37 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     
     private Notification createNotification()
     {
-    	int contentTextID = -1;
-    	int iconID = -1;
-    	
-    	switch (getState())
-    	{
-    	case CONNECTING:
-    		contentTextID = R.string.psiphon_service_notification_message_connecting;
-    		iconID = R.drawable.notification_icon_connecting;
-    		break;
-    		
-    	case CONNECTED:
-    		if (PsiphonData.getPsiphonData().getTunnelWholeDevice())
-    		{
-	    		contentTextID = R.string.psiphon_running_whole_device;
-    		}
-    		else
-    		{
-    			contentTextID = R.string.psiphon_running_browser_only;
-    		}
-    		
-    		iconID = R.drawable.notification_icon_connected;
-    		break;
-    		
-    	case DISCONNECTED:
-    		contentTextID = R.string.psiphon_stopped;
-    		iconID = R.drawable.notification_icon_disconnected;
-    		break;
-    	
-		default:
-			assert(false);    			
-    	}
+        int contentTextID = -1;
+        int iconID = -1;
+        
+        switch (getState())
+        {
+        case CONNECTING:
+            contentTextID = R.string.psiphon_service_notification_message_connecting;
+            iconID = R.drawable.notification_icon_connecting;
+            break;
+            
+        case CONNECTED:
+            if (PsiphonData.getPsiphonData().getTunnelWholeDevice())
+            {
+                contentTextID = R.string.psiphon_running_whole_device;
+            }
+            else
+            {
+                contentTextID = R.string.psiphon_running_browser_only;
+            }
+            
+            iconID = R.drawable.notification_icon_connected;
+            break;
+            
+        case DISCONNECTED:
+            contentTextID = R.string.psiphon_stopped;
+            iconID = R.drawable.notification_icon_disconnected;
+            break;
+        
+        default:
+            assert(false);                
+        }
 
         // TODO: default intent if m_eventsInterface is null or returns a null pendingSignalNotification Intent?
         // NOTE that setLatestEventInfo requires a PendingIntent.  And that calls to notify (ie from setState below)
@@ -185,20 +185,20 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                     0,
                     activityIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT);
-	
+    
         Notification notification =
-	            new Notification(
-	            		iconID,
-		                getText(R.string.app_name),
-		                System.currentTimeMillis());
+                new Notification(
+                        iconID,
+                        getText(R.string.app_name),
+                        System.currentTimeMillis());
 
-	    notification.setLatestEventInfo(
-	        this,
-	        getText(R.string.app_name),
-	        getText(contentTextID),
-	        invokeActivityIntent); 
-    	
-    	return notification;
+        notification.setLatestEventInfo(
+            this,
+            getText(R.string.app_name),
+            getText(contentTextID),
+            invokeActivityIntent); 
+        
+        return notification;
     }
 
     /**
@@ -246,11 +246,11 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         
         if (!this.m_destroyed)
         {
-        	String ns = Context.NOTIFICATION_SERVICE;
-        	NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);
+            String ns = Context.NOTIFICATION_SERVICE;
+            NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);
             mNotificationManager.notify(
-            		R.string.psiphon_service_notification_id, 
-            		createNotification());
+                    R.string.psiphon_service_notification_id, 
+                    createNotification());
         }
     }
     
@@ -319,8 +319,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     
     private boolean runTunnelOnce()
     {
-    	setState(State.CONNECTING);
-    	
+        setState(State.CONNECTING);
+        
         PsiphonData.getPsiphonData().setTunnelRelayProtocol("");
         PsiphonData.getPsiphonData().setTunnelSessionID("");
 
@@ -413,7 +413,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             entry = m_interface.setCurrentServerEntry();
             // TODO: can this happen? handle gracefully 
             assert(entry.ipAddress.equals(ipAddress));
-        	            
+                        
             checkSignals(0);
             
             Map<String, String> diagnosticData = new HashMap<String, String>();
@@ -423,7 +423,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
             Monitor monitor = new Monitor(m_signalQueue);
             conn.connect(
-            		socket,
+                    socket,
                     new PsiphonServerHostKeyVerifier(entry.sshHostKey),
                     0,
                     PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS,
@@ -720,7 +720,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 
             if (!runAgain)
             {
-            	setState(State.DISCONNECTED);
+                setState(State.DISCONNECTED);
             }
             
             if (unexpectedDisconnect && !isStopSignalPending())
@@ -730,21 +730,21 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 // will also restart the tunnel, be sure not to do
                 // it when a stop is signaled.
                 
-	            if (m_eventsInterface != null)
-	            {
-	                m_eventsInterface.signalUnexpectedDisconnect(this);
-	            }
+                if (m_eventsInterface != null)
+                {
+                    m_eventsInterface.signalUnexpectedDisconnect(this);
+                }
             }
             
             if (socket != null)
             {
-            	try
-            	{
-					socket.close();
-				}
-            	catch (IOException e)
-            	{
-				}
+                try
+                {
+                    socket.close();
+                }
+                catch (IOException e)
+                {
+                }
             }
         }
         
@@ -753,13 +753,13 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     
     private void runTunnel() throws InterruptedException
     {
-    	if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
-    	{
-    		setState(State.DISCONNECTED);
-    		MyLog.e(R.string.no_server_entries, MyLog.Sensitivity.NOT_SENSITIVE);
-    		return;
-    	}
-    	
+        if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
+        {
+            setState(State.DISCONNECTED);
+            MyLog.e(R.string.no_server_entries, MyLog.Sensitivity.NOT_SENSITIVE);
+            return;
+        }
+        
         while (runTunnelOnce())
         {
             try
@@ -773,7 +773,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             catch (TunnelServiceStop e)
             {
                 // Stop has been requested, so get out of the retry loop.
-            	setState(State.DISCONNECTED);
+                setState(State.DISCONNECTED);
                 break;
             }
             
@@ -804,7 +804,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             }
             catch (InterruptedException ie)
             {
-            	setState(State.DISCONNECTED);
+                setState(State.DISCONNECTED);
                 break;
             }
         }
@@ -881,16 +881,16 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     
     public void setEventsInterface(Events eventsInterface)
     {
-    	m_eventsInterface = eventsInterface;
+        m_eventsInterface = eventsInterface;
     }
     
     public void setUpgradeDownloader(UpgradeDownloader downloader)
     {
-    	m_upgradeDownloader = downloader;
+        m_upgradeDownloader = downloader;
     }
     
     public ServerInterface getServerInterface()
     {
-    	return m_interface;
+        return m_interface;
     }
 }

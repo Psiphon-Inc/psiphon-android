@@ -102,12 +102,12 @@ public class ServerListReorder
                 this.responded = this.channel.finishConnect();
                 
                 selector.close();
-            	this.channel.configureBlocking(true);
+                this.channel.configureBlocking(true);
                 
                 if (!this.responded)
                 {
-                	this.channel.close();
-                	this.channel = null;
+                    this.channel.close();
+                    this.channel = null;
                 }
             }
             catch (IOException e)
@@ -163,7 +163,7 @@ public class ServerListReorder
 
             // Unlike the Windows implementation, we're using a proper thread pool.
             // We still prioritize the first few servers (first enqueued into the
-            // work queue) along with a randomly prioritized sampling some servers
+            // work queue) along with a randomly prioritized list of servers
             // from deeper in the list. Assumes the default Executors.newFixedThreadPool
             // priority is FIFO.
             
@@ -177,7 +177,7 @@ public class ServerListReorder
             for (ServerEntry entry : serverEntries)
             {
                 if (-1 != entry.getPreferredReachablityTestPort() &&
-                		entry.hasCapabilities(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
+                        entry.hasCapabilities(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
                 {
                     CheckServerWorker worker = new CheckServerWorker(entry);
                     threadPool.submit(worker);
@@ -214,6 +214,7 @@ public class ServerListReorder
                         if (resultCount > 0)
                         {
                             // Use the results we have so far
+                        	stopFlag = true;
                             break;
                         }
                     }
@@ -229,36 +230,26 @@ public class ServerListReorder
                 Thread.currentThread().interrupt();
             }
             
-            // Build a list of all servers that responded within the threshold
-            // time (+100%) of the best server. Using the best server as a base
-            // is intended to factor out local network conditions, local cpu
-            // conditions (e.g., SSL overhead) etc. We randomly shuffle the
-            // resulting list for some client-side load balancing. Any server
-            // that meets the threshold is considered equally qualified for
-            // any position towards the top of the list.
-        
-            long fastestResponseTime = Long.MAX_VALUE;
-        
             for (CheckServerWorker worker : workers)
             {
                 PsiphonData.addServerResponseCheck(worker.entry.ipAddress, worker.responded, worker.responseTime);
                 MyLog.d(
                     String.format("server: %s, responded: %s, response time: %d",
                             worker.entry.ipAddress, worker.responded ? "Yes" : "No", worker.responseTime));
-        
-                if (worker.responded && worker.responseTime < fastestResponseTime)
-                {
-                    fastestResponseTime = worker.responseTime;
-                }
             }
+        
+            // Build a list of all servers that responded. We randomly shuffle the
+            // resulting list for some client-side load balancing. Any server
+            // that responded within the last RESULTS_POLL_MILLISECONDS is considered
+            // equally qualified for any position towards the top of the list.
         
             ArrayList<ServerEntry> respondingServers = new ArrayList<ServerEntry>();
         
             for (CheckServerWorker worker : workers)
             {
-            	// NOTE: used to filter by worker.responseTime <= fastestResponseTime*RESPONSE_TIME_THRESHOLD_FACTOR,
-            	// to only consider the "fast" responders for random selection. Now that we exit the process
-            	// early in 250ms. time period chunks, we should consider all responders to be within the "fast" threshold.
+                // NOTE: used to filter by worker.responseTime <= fastestResponseTime*RESPONSE_TIME_THRESHOLD_FACTOR,
+                // to only consider the "fast" responders for random selection. Now that we exit the process
+                // early in 250ms. time period chunks, we should consider all responders to be within the "fast" threshold.
                 if (worker.responded)
                 {
                     respondingServers.add(worker.entry);
@@ -284,27 +275,27 @@ public class ServerListReorder
                 ServerEntry firstEntry = respondingServers.get(0);
                 for (CheckServerWorker worker : workers)
                 {
-                	if (worker.responded)
-                	{
-                		assert(worker.channel != null);
+                    if (worker.responded)
+                    {
+                        assert(worker.channel != null);
 
-                		if (worker.entry.ipAddress.equals(firstEntry.ipAddress))
-                		{
-	            			// TODO: getters with mutex
-	                		firstEntrySocket = worker.channel.socket();
-	                		firstEntryIpAddress = worker.entry.ipAddress;
-                		}
-	                	else
-	                	{
-	                		try
-	                		{
-								worker.channel.close();
-							}
-	                		catch (IOException e)
-	                		{
-							}
-	                	}
-                	}
+                        if (worker.entry.ipAddress.equals(firstEntry.ipAddress))
+                        {
+                            // TODO: getters with mutex?
+                            firstEntrySocket = worker.channel.socket();
+                            firstEntryIpAddress = worker.entry.ipAddress;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                worker.channel.close();
+                            }
+                            catch (IOException e)
+                            {
+                            }
+                        }
+                    }
                 }
             }
             
