@@ -189,7 +189,9 @@ public class FeedbackActivity extends Activity
                      */
                     
                     List<Object> diagnosticObjects = new ArrayList<Object>();
+                    // NOTE: the maildecryptor expects these yaml documents in this order.
                     diagnosticObjects.add(sysInfo);
+                    diagnosticObjects.add(new ArrayList<Object>());	// was serverResponseChecks
                     diagnosticObjects.add(diagnosticHistory);
                     diagnosticObjects.add(statusHistory);
                     Yaml yaml = new Yaml();
