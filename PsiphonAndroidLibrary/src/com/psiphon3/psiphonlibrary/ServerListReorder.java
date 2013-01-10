@@ -47,7 +47,7 @@ public class ServerListReorder
 {
     private final int NUM_THREADS = 10;
     private final int SHUTDOWN_POLL_MILLISECONDS = 50;
-    private final int RESULTS_POLL_MILLISECONDS = 250;
+    private final int RESULTS_POLL_MILLISECONDS = 100;
     private final int SHUTDOWN_TIMEOUT_MILLISECONDS = 1000;
     private final int MAX_WORK_TIME_MILLISECONDS = 20000;
 
@@ -191,7 +191,7 @@ public class ServerListReorder
                 // maximum work time.
 
                 // ...now, we also stop when we get some results. We check for
-                // results in 250ms. time periods, which based on observed real
+                // results in 100ms. time periods, which based on observed real
                 // world data will contain clusters of multiple results (good for load
                 // balancing). This early exit allows us to wait for some results
                 // before starting the tunnel for the first time.
@@ -202,7 +202,7 @@ public class ServerListReorder
                      wait <= MAX_WORK_TIME_MILLISECONDS;
                      wait += SHUTDOWN_POLL_MILLISECONDS)
                 {
-                    // Periodic 250ms. (RESULTS_POLL_MILLISECONDS) has-results check
+                    // Periodic 100ms. (RESULTS_POLL_MILLISECONDS) has-results check
                     // Note: assumes RESULTS_POLL_MILLISECONDS is a multiple of SHUTDOWN_POLL_MILLISECONDS
                     if (wait > 0 && (wait % RESULTS_POLL_MILLISECONDS) == 0)
                     {
@@ -249,7 +249,7 @@ public class ServerListReorder
             {
                 // NOTE: used to filter by worker.responseTime <= fastestResponseTime*RESPONSE_TIME_THRESHOLD_FACTOR,
                 // to only consider the "fast" responders for random selection. Now that we exit the process
-                // early in 250ms. time period chunks, we should consider all responders to be within the "fast" threshold.
+                // early in 100ms. time period chunks, we should consider all responders to be within the "fast" threshold.
                 if (worker.responded)
                 {
                     respondingServers.add(worker.entry);
