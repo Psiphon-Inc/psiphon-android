@@ -214,7 +214,7 @@ public class ServerListReorder
                         if (resultCount > 0)
                         {
                             // Use the results we have so far
-                        	stopFlag = true;
+                            stopFlag = true;
                             break;
                         }
                     }

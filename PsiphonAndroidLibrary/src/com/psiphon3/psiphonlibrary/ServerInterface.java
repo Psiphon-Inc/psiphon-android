@@ -215,7 +215,7 @@ public class ServerInterface
                 for (int i = 0; i < jsonServerEntries.length(); i++)
                 {
                     // NOTE: No shuffling, as we're restoring a previously arranged list
-                    addServerEntry(jsonServerEntries.getString(i), false);
+                    appendServerEntry(jsonServerEntries.getString(i));
                 }
             }
             catch (FileNotFoundException e)
@@ -334,15 +334,15 @@ public class ServerInterface
 
     synchronized boolean serverWithCapabilitiesExists(List<String> capabilities)
     {
-    	for (ServerEntry entry: this.serverEntries)
-    	{
-    		if (entry.hasCapabilities(capabilities))
-    		{
-    			return true;
-    		}
-    	}
-    	
-    	return false;
+        for (ServerEntry entry: this.serverEntries)
+        {
+            if (entry.hasCapabilities(capabilities))
+            {
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     synchronized void markCurrentServerFailed()
@@ -1183,26 +1183,24 @@ public class ServerInterface
     }
 
     private void shuffleAndAddServerEntries(
-    		String[] encodedServerEntries,
-    		boolean isEmbedded)
+            String[] encodedServerEntries,
+            boolean isEmbedded)
         throws JSONException
     {
-    	// Shuffling assists in load balancing when there
-    	// are multiple embedded/discovery servers at once
+        // Shuffling assists in load balancing when there
+        // are multiple embedded/discovery servers at once
         
-    	List<String> encodedEntryList = Arrays.asList(encodedServerEntries);
+        List<String> encodedEntryList = Arrays.asList(encodedServerEntries);
         // NOTE: this changes the order of the input array, encodedServerEntries
-    	Collections.shuffle(encodedEntryList);
-    	for (String entry : encodedEntryList)
-    	{
-    		addServerEntry(entry, isEmbedded);
-    	}
+        Collections.shuffle(encodedEntryList);
+        for (String entry : encodedEntryList)
+        {
+            insertServerEntry(entry, isEmbedded);
+        }
     }
     
-    private void addServerEntry(
-            String encodedServerEntry,
-            boolean isEmbedded) 
-        throws JSONException
+    private ServerEntry decodeServerEntry(String encodedServerEntry)
+            throws JSONException
     {
         String serverEntry = new String(Utils.hexStringToByteArray(encodedServerEntry));
 
@@ -1230,21 +1228,52 @@ public class ServerInterface
         newEntry.capabilities = new ArrayList<String>(); 
         if (obj.has("capabilities"))
         {
-	        JSONArray caps = obj.getJSONArray("capabilities");
-	        for (int i = 0; i < caps.length(); i++)
-	        {
-	        	newEntry.capabilities.add(caps.getString(i));
-	        }
+            JSONArray caps = obj.getJSONArray("capabilities");
+            for (int i = 0; i < caps.length(); i++)
+            {
+                newEntry.capabilities.add(caps.getString(i));
+            }
         }
         else
         {
-        	// At the time of introduction of the server capabilities feature
-        	// these are the default capabilities possessed by all servers.
-        	newEntry.capabilities.add("OSSH");
-        	newEntry.capabilities.add("SSH");
-        	newEntry.capabilities.add("VPN");
-        	newEntry.capabilities.add("handshake");
+            // At the time of introduction of the server capabilities feature
+            // these are the default capabilities possessed by all servers.
+            newEntry.capabilities.add("OSSH");
+            newEntry.capabilities.add("SSH");
+            newEntry.capabilities.add("VPN");
+            newEntry.capabilities.add("handshake");
         }
+        
+        return newEntry;
+    }
+    
+    private void appendServerEntry(String encodedServerEntry) 
+        throws JSONException
+    {
+        // Simply append server entry at end
+        
+        ServerEntry newEntry = decodeServerEntry(encodedServerEntry);
+
+        // Check if there's already an entry for this server
+        for (int i = 0; i < this.serverEntries.size(); i++)
+        {
+            if (0 == newEntry.ipAddress.compareTo(serverEntries.get(i).ipAddress))
+            {
+                // This shouldn't be used on an existing list
+                assert(false);
+                break;
+            }
+        }
+        
+        this.serverEntries.add(newEntry);
+    }
+
+    private void insertServerEntry(String encodedServerEntry, boolean isEmbedded)
+        throws JSONException
+    {
+        // Insert server entry according to embedded/discovery priority logic
+
+        ServerEntry newEntry = decodeServerEntry(encodedServerEntry);
 
         // Check if there's already an entry for this server
         int existingIndex = -1;
@@ -1366,8 +1395,8 @@ public class ServerInterface
      */
     public synchronized void doPeriodicWork(boolean finalCall)
     {
-    	PsiphonData.Stats stats = PsiphonData.getPsiphonData().getStats();
-    	
+        PsiphonData.Stats stats = PsiphonData.getPsiphonData().getStats();
+        
         long now = SystemClock.uptimeMillis();
         
         // On the very first call, this.lastStatusSendTimeMS will be 0, but we
