@@ -234,13 +234,11 @@ public class ServerListReorder
             
             for (CheckServerWorker worker : workers)
             {
-                PsiphonData.addServerResponseCheck(worker.entry.ipAddress, worker.responded, worker.responseTime);
-                
                 Map<String, String> diagnosticData = new HashMap<String, String>();
                 diagnosticData.put("ipAddress", worker.entry.ipAddress);
                 diagnosticData.put("responded", worker.responded ? "Yes" : "No");
                 diagnosticData.put("responseTime", Long.toString(worker.responseTime));
-                MyLog.g("Server Response Check: ", diagnosticData);
+                MyLog.g("ServerResponseCheck", diagnosticData);
                 
                 MyLog.d(
                     String.format("server: %s, responded: %s, response time: %d",

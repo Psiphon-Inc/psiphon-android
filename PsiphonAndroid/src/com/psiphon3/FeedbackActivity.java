@@ -122,22 +122,6 @@ public class FeedbackActivity extends Activity
                     sysInfo_psiphonEmbeddedValues.put("CLIENT_VERSION", EmbeddedValues.CLIENT_VERSION);
                     
                     /*
-                     * Server Response Check
-                     */
-                    
-                    List<Object> serverResponseChecks = new ArrayList<Object>();
-                    for (PsiphonData.ServerResponseCheck item : PsiphonData.cloneServerResponseChecks())
-                    {
-                        Map<String, Object> entry = new HashMap<String, Object>();
-                        entry.put("ipAddress", item.ipAddress());
-                        entry.put("responded", item.responded());
-                        entry.put("responseTime", item.responseTime());
-                        entry.put("timestamp", dateParser.parse(item.timestamp()));
-                        
-                        serverResponseChecks.add(entry);
-                    }
-    
-                    /*
                      * Diagnostic History
                      */
                     
@@ -206,7 +190,6 @@ public class FeedbackActivity extends Activity
                     
                     List<Object> diagnosticObjects = new ArrayList<Object>();
                     diagnosticObjects.add(sysInfo);
-                    diagnosticObjects.add(serverResponseChecks);
                     diagnosticObjects.add(diagnosticHistory);
                     diagnosticObjects.add(statusHistory);
                     Yaml yaml = new Yaml();
