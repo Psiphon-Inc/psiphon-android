@@ -160,6 +160,13 @@ public class ServerListReorder
 
             ArrayList<ServerEntry> serverEntries = serverInterface.getServerEntries();
             ArrayList<CheckServerWorker> workers = new ArrayList<CheckServerWorker>();
+            
+            // Remember the original first entry
+            ServerEntry originalFirstEntry = null;
+            if (serverEntries.size() > 0)
+            {
+                originalFirstEntry = serverEntries.get(0);
+            }
 
             // Unlike the Windows implementation, we're using a proper thread pool.
             // We still prioritize the first few servers (first enqueued into the
@@ -257,6 +264,25 @@ public class ServerListReorder
             }
         
             Collections.shuffle(respondingServers);
+            
+            // If the original first entry is a faster responder, keep it as the first entry.
+            // This is to increase the chance that users have a "consistent" outbound IP address,
+            // while also taking performance and load balancing into consideration (this is
+            // a fast responder; and it ended up as the first entry randomly).
+            if (originalFirstEntry != null)
+            {
+                for (int i = 0; i < respondingServers.size(); i++)
+                {
+                    if (respondingServers.get(i).ipAddress.equals(originalFirstEntry.ipAddress))
+                    {
+                        if (i != 0)
+                        {
+                            respondingServers.add(0, respondingServers.remove(i));
+                        }
+                        break;
+                    }
+                }
+            }
         
             // Merge back into server entry list. MoveEntriesToFront will move
             // these servers to the top of the list in the order submitted. Any
