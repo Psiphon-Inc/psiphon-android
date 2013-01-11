@@ -777,6 +777,9 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 break;
             }
             
+            // Provide visual feedback (notification icon) that we are no longer connected
+            setState(State.CONNECTING);
+            
             try
             {
                 m_interface.start();
