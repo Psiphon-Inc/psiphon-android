@@ -751,6 +751,10 @@ public class ServerInterface
             
             try
             {
+                // TODO: failure is logged by the caller; right now the caller can't log
+                // the attempt since the caller doesn't know that/when a fetch will happen.
+                MyLog.v(R.string.fetch_remote_server_list, MyLog.Sensitivity.NOT_SENSITIVE);
+                
                 byte[] response = makeDirectWebRequest(EmbeddedValues.REMOTE_SERVER_LIST_URL);
     
                 PsiphonData.getPsiphonData().setNextFetchRemoteServerList(
