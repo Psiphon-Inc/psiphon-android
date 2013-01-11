@@ -124,7 +124,7 @@ public class TransportManager
 
 	String hostname;
 	int port;
-	final Socket sock = new Socket();
+	Socket sock = new Socket();
 
 	Object connectionSemaphore = new Object();
 
@@ -337,10 +337,17 @@ public class TransportManager
 		}
 	}
 
-	private void establishConnection(ProxyData proxyData, int connectTimeout) throws IOException
+	private void establishConnection(Socket existingSocket, ProxyData proxyData, int connectTimeout) throws IOException
 	{
 		/* See the comment for createInetAddress() */
 
+		if (existingSocket != null)
+		{
+			sock = existingSocket;
+			sock.setSoTimeout(0);
+			return;
+		}
+		
 		if (proxyData == null)
 		{
             InetAddress addr = createInetAddress(hostname);
@@ -456,12 +463,12 @@ public class TransportManager
 		throw new IOException("Unsupported ProxyData");
 	}
 
-	public void initialize(String obfuscatedKeyword, CryptoWishList cwl, ServerHostKeyVerifier verifier, DHGexParameters dhgex,
+	public void initialize(Socket existingSocket, String obfuscatedKeyword, CryptoWishList cwl, ServerHostKeyVerifier verifier, DHGexParameters dhgex,
 			int connectTimeout, SecureRandom rnd, ProxyData proxyData) throws IOException
 	{
 		/* First, establish the TCP connection to the SSH-2 server */
 
-		establishConnection(proxyData, connectTimeout);
+		establishConnection(existingSocket, proxyData, connectTimeout);
 
 		// PSIPHON: Send obfuscated SSH seed message
 		
