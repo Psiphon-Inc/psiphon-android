@@ -129,8 +129,16 @@ public class ServerSelector
             // Each run restarts from scratch: any pending responses
             // after MAX_WORK_TIME_MILLISECONDS are aborted and a new
             // queue of candidates is assembled.
-            while(!stopFlag && !runOnce())
+            while (!stopFlag)
             {
+                MyLog.v(R.string.selecting_server, MyLog.Sensitivity.NOT_SENSITIVE);
+                
+                if (runOnce())
+                {
+                    // We have a server
+                    break;
+                }
+
                 // After failing to establish a TCP connection, perform the same
                 // steps as we do when an SSH connection fails:
                 // throttle a bit, and fetch remote servers (if not fetched recently).

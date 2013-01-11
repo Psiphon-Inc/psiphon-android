@@ -401,8 +401,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             
             checkSignals(0);
 
-            MyLog.v(R.string.ssh_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
-
             m_serverSelector.Run();
             socket = m_serverSelector.firstEntrySocket;
             String ipAddress = m_serverSelector.firstEntryIpAddress;
@@ -416,6 +414,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                         
             checkSignals(0);
             
+            MyLog.v(R.string.ssh_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
+
             Map<String, String> diagnosticData = new HashMap<String, String>();
             diagnosticData.put("ipAddress", entry.ipAddress);
             MyLog.g("ConnectingServer", diagnosticData);

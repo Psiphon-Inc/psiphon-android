@@ -62,4 +62,5 @@
     <string name="psiphon_service_notification_message_connecting">Psiphon 3 is connecting…</string>
     <string name="psiphon_service_notification_id">Psiphon Service Notification</string>
     <string name="preferred_servers">Preferred servers: %d</string>
+    <string name="selecting_server">Selecting server...</string>
 </resources>
