@@ -58,7 +58,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     private Thread m_tunnelThread;
     private ServerInterface m_interface;
     private UpgradeDownloader m_upgradeDownloader = null;
-    private ServerListReorder m_serverListReorder = null;
+    private ServerSelector m_serverSelector = null;
     private boolean m_destroyed = false;
     private Events m_eventsInterface = null;
 
@@ -116,17 +116,17 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
     {
         MyLog.logger = this;
         m_interface = new ServerInterface(this);
-        m_serverListReorder = new ServerListReorder(m_interface, this);
+        m_serverSelector = new ServerSelector(m_interface, this);
     }
 
     @Override
     public void onDestroy()
     {
         // TODO: ServerListReorder lifetime on Android isn't the same as on Windows
-        if (m_serverListReorder != null)
+        if (m_serverSelector != null)
         {
-            m_serverListReorder.Abort();
-            m_serverListReorder = null;
+            m_serverSelector.Abort();
+            m_serverSelector = null;
         }
         
         m_destroyed = true;
@@ -403,9 +403,9 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
 
             MyLog.v(R.string.ssh_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
 
-            m_serverListReorder.Run();
-            socket = m_serverListReorder.firstEntrySocket;
-            String ipAddress = m_serverListReorder.firstEntryIpAddress;
+            m_serverSelector.Run();
+            socket = m_serverSelector.firstEntrySocket;
+            String ipAddress = m_serverSelector.firstEntryIpAddress;
             if (socket == null)
             {
                 return runAgain;

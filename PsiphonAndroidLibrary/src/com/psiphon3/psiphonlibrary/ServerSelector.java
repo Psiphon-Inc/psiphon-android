@@ -46,7 +46,7 @@ import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceExcepti
 import com.psiphon3.psiphonlibrary.ServerInterface.ServerEntry;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
-public class ServerListReorder
+public class ServerSelector
 {
     private final int NUM_THREADS = 10;
     private final int SHUTDOWN_POLL_MILLISECONDS = 50;
@@ -62,7 +62,7 @@ public class ServerListReorder
     public Socket firstEntrySocket = null;
     public String firstEntryIpAddress = null;
     
-    ServerListReorder(ServerInterface serverInterface, Context context)
+    ServerSelector(ServerInterface serverInterface, Context context)
     {
         this.serverInterface = serverInterface;
         this.context = context;
@@ -136,7 +136,7 @@ public class ServerListReorder
                 // throttle a bit, and fetch remote servers (if not fetched recently).
                 try
                 {
-                    ServerListReorder.this.serverInterface.fetchRemoteServerList();
+                    ServerSelector.this.serverInterface.fetchRemoteServerList();
                 }
                 catch (PsiphonServerInterfaceException requestException)
                 {
