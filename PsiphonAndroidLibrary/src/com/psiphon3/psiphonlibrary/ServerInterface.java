@@ -717,7 +717,11 @@ public class ServerInterface
             {
                 return;
             }
-
+            
+            // TODO: move to makeDirectWebRequest? All non-tunneled requests
+            // could/should check and wait for network connectivity. However, in this
+            // case we want the network connectivity check to happen before the 
+            // setNextFetchRemoteServerList value is calculated.
             boolean printedWaitingMessage = false;
             while (!Utils.hasNetworkConnectivity(ownerContext))
             {

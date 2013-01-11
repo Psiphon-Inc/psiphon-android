@@ -779,11 +779,6 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             
             try
             {
-                // TODO: move to background thread...?
-                // NOTE that fetchRemoteServerList() prints a "Waiting for connectivity" message
-                // similar to runTunnelOnce(). If fetchRemoteServerList() is backgrounded, that
-                // message printing should be removed to avoid both functions printing the same
-                // message.
                 m_interface.start();
                 m_interface.fetchRemoteServerList();
             }

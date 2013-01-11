@@ -42,6 +42,7 @@ import android.os.Build;
 import android.os.SystemClock;
 
 import com.psiphon3.psiphonlibrary.R;
+import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.ServerInterface.ServerEntry;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
@@ -120,7 +121,7 @@ public class ServerListReorder
         }
     }
     
-    class ReorderServerList implements Runnable
+    class Coordinator implements Runnable
     {        
         public void run()
         {
@@ -128,7 +129,32 @@ public class ServerListReorder
             // Each run restarts from scratch: any pending responses
             // after MAX_WORK_TIME_MILLISECONDS are aborted and a new
             // queue of candidates is assembled.
-            while(!stopFlag && !runOnce());
+            while(!stopFlag && !runOnce())
+            {
+                // After failing to establish a TCP connection, perform the same
+                // steps as we do when an SSH connection fails:
+                // throttle a bit, and fetch remote servers (if not fetched recently).
+                try
+                {
+                    ServerListReorder.this.serverInterface.fetchRemoteServerList();
+                }
+                catch (PsiphonServerInterfaceException requestException)
+                {
+                    MyLog.w(R.string.TunnelService_FetchRemoteServerListFailed, MyLog.Sensitivity.NOT_SENSITIVE, requestException);
+                }
+
+                // 1-2 second delay before retrying
+                // (same as Windows client, see comment in ConnectionManager.cpp)
+                try
+                {
+                    Thread.sleep(1000 + (long)(Math.random()*1000.0));
+                }
+                catch (InterruptedException ie)
+                {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
         }
         
         private boolean runOnce()
@@ -369,7 +395,7 @@ public class ServerListReorder
             System.setProperty("java.net.preferIPv6Addresses", "false");
         }
 
-        this.thread = new Thread(new ReorderServerList());
+        this.thread = new Thread(new Coordinator());
         this.thread.start();
         try
         {
