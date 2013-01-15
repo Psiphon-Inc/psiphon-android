@@ -62,6 +62,7 @@ import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceExcepti
 import com.psiphon3.psiphonlibrary.Utils.Base64;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -79,6 +80,7 @@ public class FeedbackActivity extends Activity
 
     private WebView webView;
 
+    @SuppressLint("SetJavaScriptEnabled")
     public void onCreate(Bundle savedInstanceState)
     {
         final Activity activity = this;
@@ -89,6 +91,7 @@ public class FeedbackActivity extends Activity
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new WebViewClient()
         {
+            @SuppressLint("SimpleDateFormat")
             private File createEmailAttachment()
             {
                 // Our attachment is YAML, which is then encrypted, and the
@@ -105,7 +108,7 @@ public class FeedbackActivity extends Activity
 
                     Map<String, Object> metadata = new HashMap<String, Object>();
                     metadata.put("platform", "android");
-                    metadata.put("version", 1);
+                    metadata.put("version", 2);
 
                     SecureRandom rnd = new SecureRandom();
                     byte[] id = new byte[8];
@@ -129,7 +132,7 @@ public class FeedbackActivity extends Activity
                     sysInfo_Build.put("VERSION__SDK_INT", Build.VERSION.SDK_INT);
                     sysInfo.put("isRooted", Utils.isRooted());
                     Map<String, Object> sysInfo_psiphonEmbeddedValues = new HashMap<String, Object>();
-                    sysInfo.put("psiphonEmbeddedValues", sysInfo_psiphonEmbeddedValues);
+                    sysInfo.put("PsiphonInfo", sysInfo_psiphonEmbeddedValues);
                     sysInfo_psiphonEmbeddedValues.put("PROPAGATION_CHANNEL_ID", EmbeddedValues.PROPAGATION_CHANNEL_ID);
                     sysInfo_psiphonEmbeddedValues.put("SPONSOR_ID", EmbeddedValues.SPONSOR_ID);
                     sysInfo_psiphonEmbeddedValues.put("CLIENT_VERSION", EmbeddedValues.CLIENT_VERSION);
@@ -204,7 +207,6 @@ public class FeedbackActivity extends Activity
                     Map<String, Object> diagnosticObject = new HashMap<String, Object>();
                     diagnosticObject.put("Metadata", metadata);
                     diagnosticObject.put("SystemInformation", sysInfo);
-                    diagnosticObject.put("ServerResponseCheck", new ArrayList<Object>());  // TEMP
                     diagnosticObject.put("DiagnosticHistory", diagnosticHistory);
                     diagnosticObject.put("StatusHistory", statusHistory);
 
