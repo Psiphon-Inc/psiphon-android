@@ -275,9 +275,9 @@ public class ServerSelector
             
             for (CheckServerWorker worker : workers)
             {
-                Map<String, String> diagnosticData = new HashMap<String, String>();
+                Map<String, Object> diagnosticData = new HashMap<String, Object>();
                 diagnosticData.put("ipAddress", worker.entry.ipAddress);
-                diagnosticData.put("responded", worker.responded ? "Yes" : "No");
+                diagnosticData.put("responded", worker.responded);
                 diagnosticData.put("responseTime", Long.toString(worker.responseTime));
                 MyLog.g("ServerResponseCheck", diagnosticData);
                 
