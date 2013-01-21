@@ -118,11 +118,11 @@ public class CustomWebView extends WebView {
 		}
 		*/
 		
-	   int port = Controller.getInstance().getPreferences().getInt("localProxyPort", 0);   
-	   if(port > 0)
-	   {
-	       ProxySettings.setLocalProxy(mContext, port );
-	   }
+        int port = Controller.getInstance().getPreferences().getInt("localProxyPort", 0);   
+        if (port > 0)
+        {
+            ProxySettings.setLocalProxy(mContext, port);
+        }
 				
 		// Technical settings
 		settings.setSupportMultipleWindows(true);						
@@ -169,6 +169,14 @@ public class CustomWebView extends WebView {
 	
 	@Override
 	public void loadUrl(String url) {
+
+        // Repeat proxy configuration -- fixes HTC Sense bug
+        int port = Controller.getInstance().getPreferences().getInt("localProxyPort", 0);   
+        if (port > 0)
+        {
+            ProxySettings.setLocalProxy(mContext, port);
+        }
+
         WebSettings settings = getSettings();
         if(UrlUtils.checkInDesktopViewUrlList(mContext, url) )
         {

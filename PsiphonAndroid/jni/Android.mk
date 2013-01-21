@@ -1,2 +1,0 @@
-include ../polipo/Android.mk
-
