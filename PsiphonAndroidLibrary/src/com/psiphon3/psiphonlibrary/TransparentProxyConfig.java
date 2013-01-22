@@ -58,16 +58,10 @@ public class TransparentProxyConfig
     
     static int SHELL_COMMAND_TIMEOUT = 2000; // 2 seconds 
 
-    public static void setupTransparentProxyRouting(Context context)
-            throws PsiphonTransparentProxyException
+    private static String[] setupTransparentProxyRoutingCommands(
+            String ipTablesPath, int psiphonUid, boolean useRedirect)
     {
-        // Ensure any dangling Psiphon configuration has been removed.
-        teardownTransparentProxyRouting(context);
-
-        String ipTablesPath = getIpTables(context);
-        int psiphonUid = context.getApplicationInfo().uid;
-        
-        String[] commands = new String[]
+        return new String[]
         {
             // Create a user-defined chain to hold the Psiphon rules
             ipTablesPath + " -t nat -N psiphon",
@@ -77,14 +71,14 @@ public class TransparentProxyConfig
                 " -t nat -A psiphon -p udp -m owner ! --uid-owner " +
                 psiphonUid + " -m udp --dport " +
                 PsiphonConstants.STANDARD_DNS_PORT +
-                " -j REDIRECT --to-ports " +
+                (useRedirect ? " -j REDIRECT --to-ports " : " -j DNAT --to-destination 127.0.0.1:") +
                 PsiphonData.getPsiphonData().getDnsProxyPort(),
 
             // Forward TCP DNS through transparent proxy (including the Psiphon DNS proxy requests)
             ipTablesPath +
                 " -t nat -A psiphon -p tcp -m tcp --syn --dport " +
                 PsiphonConstants.STANDARD_DNS_PORT +
-                " -j REDIRECT --to-ports " +
+                (useRedirect ? " -j REDIRECT --to-ports " : " -j DNAT --to-destination 127.0.0.1:") +
                 PsiphonData.getPsiphonData().getTransparentProxyPort(),
 
             // Exclude LAN ranges from remaining rules (return to parent chain)
@@ -94,19 +88,41 @@ public class TransparentProxyConfig
                 
             // Forward all TCP connections, except for Psiphon, through the transparent proxy.
             // Localhost is excepted (as are LAN ranges, which match the ACCEPT rules above)
-            // TODO: test for REDIRECT support and use DNAT when unsupported?
                 
             ipTablesPath +
                 " -t nat -A psiphon -p tcp  ! -d 127.0.0.1 -m owner ! --uid-owner " +
                 psiphonUid +
-                " -m tcp --syn -j REDIRECT --to-ports " +
+                (useRedirect ? " -m tcp --syn -j REDIRECT --to-ports " :
+                    " -m tcp --syn -j DNAT --to-destination 127.0.0.1:") +
                 PsiphonData.getPsiphonData().getTransparentProxyPort(),
             
             // Insert the Psiphon rules at the start of the OUTPUT chain
             ipTablesPath + " -t nat -I OUTPUT -j psiphon"
         };
+    }
+
+    public static void setupTransparentProxyRouting(Context context)
+            throws PsiphonTransparentProxyException
+    {
+        // Ensure any dangling Psiphon configuration has been removed.
+        teardownTransparentProxyRouting(context);
         
-        doShellCommands(context, commands);
+        String ipTablesPath = getIpTables(context);
+        int psiphonUid = context.getApplicationInfo().uid;
+
+        // First attempt to use the REDIRECT jump target.  If any exception occurs,
+        // use DNAT instead.
+        
+        try
+        {
+            doShellCommands(context,
+                    setupTransparentProxyRoutingCommands(ipTablesPath, psiphonUid, true));
+        }
+        catch (PsiphonTransparentProxyException e)
+        {
+            doShellCommands(context,
+                    setupTransparentProxyRoutingCommands(ipTablesPath, psiphonUid, false));
+        }
     }
 
     public static void teardownTransparentProxyRouting(Context context)
