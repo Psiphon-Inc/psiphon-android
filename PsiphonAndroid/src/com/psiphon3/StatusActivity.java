@@ -33,6 +33,7 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences.Editor;
 import android.graphics.Typeface;
 import android.net.Uri;
+import android.net.VpnService;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -86,16 +87,21 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
         m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
 
-        // "Tunnel Whole Device" option is only available on rooted
-        // devices and defaults to true on rooted devices.
+        // Transparent proxy-based "Tunnel Whole Device" option is only available on rooted devices and
+        // defaults to true on rooted devices.
+        // On Android 4+, we offer "Whole Device" via the VpnService facility, which does not require root.
+        // We prefer VpnService when available, even when the device is rooted.
         boolean isRooted = Utils.isRooted();
-        m_tunnelWholeDeviceToggle.setEnabled(isRooted);
-        boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, isRooted);        
+        boolean hasVpnService = Utils.hasVpnService();
+        boolean canWholeDevice = isRooted || hasVpnService;
+
+        m_tunnelWholeDeviceToggle.setEnabled(canWholeDevice);
+        boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, canWholeDevice);
         m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
         // Use PsiphonData to communicate the setting to the TunnelService so it doesn't need to
         // repeat the isRooted check. The preference is retained even if the device becomes "unrooted"
         // and that's why setTunnelWholeDevice != tunnelWholeDevicePreference.
-        PsiphonData.getPsiphonData().setTunnelWholeDevice(isRooted && tunnelWholeDevicePreference);
+        PsiphonData.getPsiphonData().setTunnelWholeDevice(canWholeDevice && tunnelWholeDevicePreference);
         
         // Note that this must come after the above lines, or else the activity
         // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
@@ -141,13 +147,48 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     	}
     };
 
+    private void startTunnel(Context context)
+    {
+        // VpnService: need to display OS user warning. If whole device option is
+        // selected and we expect to use VpnService, so the prompt here in the UI
+        // before starting the service.
+        
+        boolean waitingForPrompt = false;
+        
+        if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService())
+        {
+            Intent intent = VpnService.prepare(this);
+            if (intent != null)
+            {
+                waitingForPrompt = true;
+                startActivityForResult(intent, 0);
+                // startTunnelService will be called in onActivityResult
+            }   
+        }
+        if (!waitingForPrompt)
+        {
+            startTunnelService(this);
+        }
+    }
+    
+    @Override
+    protected void onActivityResult(int request, int result, Intent data)
+    {
+        // TODO: handle result != RESULT_OK (cancel)
+        // TODO: check that this is the result for VpnService.prepare
+        if (result == RESULT_OK)
+        {
+            startTunnelService(this);
+        }
+    }
+    
     private void startTunnelService(Context context)
     {
     	Intent intent = new Intent(context, TunnelService.class);
     	bindService(intent, m_tunnelServiceConnection, Context.BIND_AUTO_CREATE);
     }
     
-    private void stopTunnelService(Context context)
+    private void stopTunnel(Context context)
     {
         unbindTunnelService();
         stopService(new Intent(context, TunnelService.class));
@@ -209,7 +250,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                                         public void onClick(DialogInterface dialog, int whichButton) {
                                             // Persist the "on" setting
                                             updateWholeDevicePreference(true);
-                                            startTunnelService(context);
+                                            startTunnel(context);
                                         }})
                             .setNegativeButton(R.string.StatusActivity_WholeDeviceTunnelNegativeButton,
                                         new DialogInterface.OnClickListener() {
@@ -217,13 +258,13 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                                                 // Turn off and persist the "off" setting
                                                 m_tunnelWholeDeviceToggle.setChecked(false);
                                                 updateWholeDevicePreference(false);
-                                                startTunnelService(context);
+                                                startTunnel(context);
                                             }})
                             .setOnCancelListener(
                                     new DialogInterface.OnCancelListener() {
                                         public void onCancel(DialogInterface dialog) {
                                             // Don't change or persist preference (this prompt may reappear)
-                                            startTunnelService(context);
+                                            startTunnel(context);
                                         }})
                             .show();
                         m_tunnelWholeDevicePromptShown = true;
@@ -240,7 +281,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                 {
                     // No prompt, just start the tunnel (if not already running)
                     
-                    startTunnelService(context);                    
+                    startTunnel(context);                    
                 }
 
                 // Handle the intent that resumed that activity
@@ -319,8 +360,8 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         updateWholeDevicePreference(tunnelWholeDevicePreference);
         
         // TODO: don't need to stop/start tunnel to change this preference
-        stopTunnelService(this);
-        startTunnelService(this);
+        stopTunnel(this);
+        startTunnel(this);
     }
     
     protected void updateWholeDevicePreference(boolean tunnelWholeDevicePreference)
@@ -362,7 +403,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         // This command doesn't necessarily kill the process, but
         // it stops the service and hides the app.
         
-        stopTunnelService(this);
+        stopTunnel(this);
         this.moveTaskToBack(true);
     }
     

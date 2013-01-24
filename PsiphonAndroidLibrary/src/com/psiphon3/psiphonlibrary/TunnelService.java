@@ -19,8 +19,11 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -33,8 +36,10 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.net.VpnService;
 import android.os.Binder;
 import android.os.IBinder;
+import android.os.ParcelFileDescriptor;
 
 import ch.ethz.ssh2.*;
 import ch.ethz.ssh2.Connection.IStopSignalPending;
@@ -45,7 +50,7 @@ import com.psiphon3.psiphonlibrary.TransparentProxyConfig.PsiphonTransparentProx
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.stericson.RootTools.RootTools;
 
-public class TunnelService extends Service implements Utils.MyLog.ILogger, IStopSignalPending
+public class TunnelService extends VpnService implements Utils.MyLog.ILogger, IStopSignalPending
 {
     enum State
     {
@@ -338,6 +343,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
         DnsProxy dnsProxy = null;
         boolean cleanupTransparentProxyRouting = false;
         Socket socket = null;
+        ParcelFileDescriptor vpnFileDescriptor = null;
         
         try
         {
@@ -350,8 +356,10 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             }
 
             boolean tunnelWholeDevice = PsiphonData.getPsiphonData().getTunnelWholeDevice();
+            boolean runVpnService = tunnelWholeDevice && Utils.hasVpnService();
+            String tunnelWholeDeviceDNSServer = "8.8.8.8"; // TEMP. TODO: get remote address/port from Psiphon server
             
-            if (tunnelWholeDevice)
+            if (tunnelWholeDevice && !runVpnService)
             {
                 // Check for required root access *before* establishing the SSH connection
                 
@@ -494,8 +502,8 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
             MyLog.v(R.string.http_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getHttpProxyPort());
             
             // Start transparent proxy, DNS proxy, and iptables config
-                        
-            if (tunnelWholeDevice)
+            
+            if (tunnelWholeDevice && !runVpnService)
             {
                 // TODO: findAvailablePort is only effective for TCP services
                 int port = Utils.findAvailablePort(PsiphonConstants.DNS_PROXY_PORT, 10);
@@ -508,7 +516,7 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 PsiphonData.getPsiphonData().setDnsProxyPort(port);
     
                 dnsProxy = new DnsProxy(
-                                "8.8.8.8", // TEMP. TODO: get remote address/port from Psiphon server
+                                tunnelWholeDeviceDNSServer,
                                 53,
                                 PsiphonData.getPsiphonData().getDnsProxyPort());
     
@@ -546,6 +554,65 @@ public class TunnelService extends Service implements Utils.MyLog.ILogger, IStop
                 }
                 
                 MyLog.v(R.string.transparent_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getTransparentProxyPort());
+            }
+            
+            // Run as Android OS VPN
+            
+            // In-progress TODOs
+            // =================
+            //
+            // - VpnService.prepare() isn't in the library
+            // - VpnService subclassing
+            // - dynamic private address assignment (?)
+            // - 
+            
+            if (tunnelWholeDevice && runVpnService)
+            {
+                protect(socket);
+                
+                // Private IP address
+                String privateAddress = "10.0.0.1";
+                
+                String builderErrorMessage = null;
+                vpnFileDescriptor = null;
+                try
+                {
+                    VpnService.Builder builder = new VpnService.Builder();
+                    vpnFileDescriptor = builder
+                            .setSession(getString(R.string.app_name))
+                            .addAddress(privateAddress, 32) 
+                            .addDnsServer(tunnelWholeDeviceDNSServer)
+                            .establish();
+                    if (vpnFileDescriptor == null)
+                    {
+                        // as per http://developer.android.com/reference/android/net/VpnService.Builder.html#establish%28%29
+                        builderErrorMessage = "application is not prepared or revoked";
+                    }
+                }
+                catch(IllegalArgumentException e)
+                {
+                    builderErrorMessage = e.getMessage();
+                }
+                catch(IllegalStateException e)
+                {
+                    builderErrorMessage = e.getMessage();                    
+                }
+                catch(SecurityException e)
+                {
+                    builderErrorMessage = e.getMessage();                    
+                }
+                if (vpnFileDescriptor == null)
+                {
+                    // If we can't configure the Android OS VPN, abort
+                    MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE, builderErrorMessage);
+                    runAgain = false;
+                    return runAgain;
+                }
+                
+                // TODO:
+                // vpnFileDescriptor.detachFD();
+                // Fd2Socks.run(fd)
+                // etc.
             }
             
             // Don't signal unexpected disconnect until we've started
