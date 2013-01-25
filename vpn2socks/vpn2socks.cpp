@@ -602,7 +602,7 @@ public:
                 &(virtualDeviceAddress.s_addr),
                 &(netmask.s_addr),
                 &(gateway.s_addr),
-                NULL,
+                this,
                 initNetifCallback,
                 ip_input))
         {
@@ -903,12 +903,9 @@ static extern "C" err_t netifOutputCallback(struct netif* netif, struct pbuf* p,
 {
     // Handle data sent through the TCP stack, which flows through netif.
 
-    // TODO: is there a user "arg" so we don't need to use this global?
+    Vpn2Socks* vpn2Socks = (Vpn2Socks*)netif->state;
 
-    if (0 != gVpn2Socks)
-    {
-        gVpn2Socks->writeIpPacket(p);
-    }
+    vpn2Socks->writeIpPacket(p);
 
     return ERR_OK;
 }
@@ -972,7 +969,7 @@ static extern "C" err_t tcpClientReceiveCallback(void* arg, struct tcp_pcb* pcb,
 
         removeClient(tcpClient);
         tcpClient = 0;
-        return ERR_OK;
+        return ERR_ABRT;
     }
     
     if (!tcpClient->bufferTcpDataForSocksWrite(p))
@@ -999,5 +996,8 @@ static err_t tcpClientSentCallback(void* arg, struct tcp_pcb* tpcb, u16_t len)
     {
         removeClient(tcpClient);
         tcpClient = 0;
+        return ERR_ABRT;
     }
+
+    return ERR_OK;
 }
