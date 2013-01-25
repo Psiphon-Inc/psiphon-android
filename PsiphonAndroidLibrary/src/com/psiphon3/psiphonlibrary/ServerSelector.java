@@ -278,7 +278,7 @@ public class ServerSelector
                 Map<String, Object> diagnosticData = new HashMap<String, Object>();
                 diagnosticData.put("ipAddress", worker.entry.ipAddress);
                 diagnosticData.put("responded", worker.responded);
-                diagnosticData.put("responseTime", Long.toString(worker.responseTime));
+                diagnosticData.put("responseTime", worker.responseTime);
                 MyLog.g("ServerResponseCheck", diagnosticData);
                 
                 MyLog.d(
