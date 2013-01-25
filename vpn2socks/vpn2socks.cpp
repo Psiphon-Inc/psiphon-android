@@ -54,7 +54,7 @@
 In-progress TODOs
 =================
 
-- finish cleanup code (Fd2Socks.reset())
+- finish cleanup code (Vpn2Socks.reset())
 - don't call simply when epoll_wait returns; use time-elapsed logic
 - DNS
   -- intercept and parse UDP packets
@@ -79,21 +79,21 @@ In-progress TODOs
 #include "StreamDataBuffer.h"
 
 
-static Fd2Socks* gFd2Socks = 0;
+static Vpn2Socks* gVpn2Socks = 0;
 
 
-JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_fd2socks_signalStop(
+JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_vpn2socks_signalStop(
     JNIEnv* env)
 {
-    if (0 != gFd2Socks)
+    if (0 != gVpn2Socks)
     {
-        gFd2Socks->signalStop();
+        gVpn2Socks->signalStop();
     }
     return 0;
 }
 
 
-JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_fd2socks_run(
+JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_vpn2socks_run(
     JNIEnv* env,
     jint vpnIpPacketFileDescriptor,
     jstring vpnIpAddress,
@@ -101,21 +101,21 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_fd2socks_run(
     jstring socksServerIpAddress,
     jint socksServerPort)
 {
-    Fd2Socks fd2Socks;
-    gFd2Socks = &fd2Socks;
+    Vpn2Socks vpn2Socks;
+    gVpn2Socks = &vpn2Socks;
 
     const char* vpnIpAddressStr = env->GetStringUTFChars(vpnIpAddress, 0);
     const char* vpnNetMaskStr = env->GetStringUTFChars(vpnNetMask, 0);
     const char* socksServerIpAddressStr = env->GetStringUTFChars(socksServerIpAddress, 0);
 
-    bool result = fd2Socks.run(
+    bool result = vpn2Socks.run(
             vpnIpAddressStr,
             vpnNetMaskStr,
             vpnIpPacketFileDescriptor,
             socksServerIpAddressStr
             socksServerPort);
 
-    gFd2Socks = 0;
+    gVpn2Socks = 0;
 
     env->ReleaseStringUTFChars(vpnIpAddressStr, vpnIpAddress, 0);
     env->ReleaseStringUTFChars(vpnNetMaskStr, vpnNetMask, 0);
@@ -127,9 +127,9 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_fd2socks_run(
 
 static void log(const char* message)
 {
-    if (0 != gFd2Socks)
+    if (0 != gVpn2Socks)
     {
-        gFd2Socks->log(message);
+        gVpn2Socks->log(message);
     }
 }
 
@@ -151,7 +151,7 @@ class TcpClientProxy
 {
 protected:
 
-    Fd2Socks* mFd2Socks;
+    Vpn2Socks* mVpn2Socks;
     struct tcp_pcb* mLwipState;
     socket mSocksSocket;
     struct epoll_event mSocksEpollEvent;
@@ -161,9 +161,9 @@ protected:
 
 public:
 
-    TcpClientProxy(Fd2Socks* fd2Socks)
+    TcpClientProxy(Vpn2Socks* vpn2Socks)
     {
-        mFd2Socks = fd2Socks;
+        mVpn2Socks = vpn2Socks;
         mLwipState = 0;
         mSocksSocket = NULL;
         memset(&mSocksEpollEvent, 0, sizeof(mSocksEpollEvent));
@@ -186,7 +186,7 @@ public:
 
         if (0 != mSocksEpollEvent.data.ptr)
         {
-            epoll_ctr(mFd2Socks->mEpollFacility, EPOLL_CTL_DEL, mSocksSocket, 0);
+            epoll_ctr(mVpn2Socks->mEpollFacility, EPOLL_CTL_DEL, mSocksSocket, 0);
         }
 
         if (0 != mSocksSocket)
@@ -219,27 +219,27 @@ public:
         struct protoent* protocol = getprotobyname("tcp");
         if (!protocol)
         {
-            log("fd2socks TcpClientProxy init: getprotobyname failed");
+            log("vpn2socks TcpClientProxy init: getprotobyname failed");
             return false;
         }
 
         if (-1 == (mSocksSocket = socket(AF_INET, SOCK_STREAM, protocol->p_proto))
         {
-            log("fd2socks TcpClientProxy init: socket failed %d", errno);
+            log("vpn2socks TcpClientProxy init: socket failed %d", errno);
             return false;
         }
 
         if (-1 == (fcntl(mSocksSocket, F_SETFL, O_NONBLOCK))
         {
-            log("fd2socks TcpClientProxy init: fcntl failed %d", errno);
+            log("vpn2socks TcpClientProxy init: fcntl failed %d", errno);
             return false;
         }
 
-        if (-1 == (connect(mSocksSocket, &(mFd2Socks->mSocksAddress), sizeof(mFd2Socks->mSocksAddress)))
+        if (-1 == (connect(mSocksSocket, &(mVpn2Socks->mSocksAddress), sizeof(mVpn2Socks->mSocksAddress)))
         {
             if (errno != EINPROGRESS)
             {
-                log("fd2socks TcpClientProxy init: connect failed %d", errno);
+                log("vpn2socks TcpClientProxy init: connect failed %d", errno);
                 return false;
             }
         }
@@ -249,9 +249,9 @@ public:
         mSocksEpollEvent.events = EPOLLIN | EPOLLPRI | EPOLLOUT | EPOLLERR | EPOLLHUP;
         mSocksEpollEvent.data.ptr = tcpClient;
 
-        if (-1 == epoll_ctl(mFd2Socks->epollFacility, EPOLL_CTL_ADD, mSocksSocket, mSocksEpollEvent))
+        if (-1 == epoll_ctl(mVpn2Socks->epollFacility, EPOLL_CTL_ADD, mSocksSocket, mSocksEpollEvent))
         {
-            log("fd2socks TcpClientProxy init: epoll_ctl failed %d", errno);
+            log("vpn2socks TcpClientProxy init: epoll_ctl failed %d", errno);
             return false;
         }
 
@@ -272,7 +272,7 @@ public:
             !memcpy(mSocketSendBuffer.getWriteData(), socksConnectRequest, sizeof(socksConnectRequest)) ||
             !mSocketSendBuffer.commitWrite(sizeof(socksConnectRequest)))
         {
-            log("fd2socks TcpClientProxy init: buffer SOCKS request header failed %d", errno);
+            log("vpn2socks TcpClientProxy init: buffer SOCKS request header failed %d", errno);
             return false;
         }
 
@@ -296,7 +296,7 @@ public:
                     break;
                 }
 
-                log("fd2socks readSocksData: read failed %d", errno);
+                log("vpn2socks readSocksData: read failed %d", errno);
                 return false;
             }
             else if (readCount == 0)
@@ -327,7 +327,7 @@ public:
             uint8_t status = mSocksReceiveBuffer.getReadData()[1];
             if (0x5a != status)
             {
-                log("fd2socks readSocksData: unexpected SOCKS status %d", (int)status);
+                log("vpn2socks readSocksData: unexpected SOCKS status %d", (int)status);
                 return false;
             }
 
@@ -361,7 +361,7 @@ public:
                 }
 
                 // TODO: kill client
-                log("fd2socks writeTcpData: tcp_write failed %d", err);
+                log("vpn2socks writeTcpData: tcp_write failed %d", err);
                 return false;
             }
 
@@ -378,7 +378,7 @@ public:
             if (ERR_OK != err)
             {
                 // TODO: kill client
-                log("fd2socks writeTcpData: tcp_output failed %d", err);
+                log("vpn2socks writeTcpData: tcp_output failed %d", err);
                 return false;
             }
         }
@@ -400,7 +400,7 @@ public:
 
         if (p->tot_len != pbuf_copy_partial(p, mSocketSendBuffer.getWriteData(), p->tot_len, 0))
         {
-            log("fd2socks bufferTcpDataForSocksWrite: pbuf_copy_partial failed %d");
+            log("vpn2socks bufferTcpDataForSocksWrite: pbuf_copy_partial failed %d");
             return false;
         }
 
@@ -432,7 +432,7 @@ public:
                     break;
                 }
 
-                log("fd2socks writeSocksData: write failed %d", errno);
+                log("vpn2socks writeSocksData: write failed %d", errno);
                 return false;
             }
 
@@ -450,7 +450,7 @@ public:
 };
 
 
-class Fd2Socks
+class Vpn2Socks
 {
 protected:
 
@@ -468,12 +468,12 @@ protected:
     (void*)(const char*) mLogger;
 
 public:
-    Fd2Socks()
+    Vpn2Socks()
     {
         init();
     }
 
-    virtual ~Fd2Socks()
+    virtual ~Vpn2Socks()
     {
         reset();
     }
@@ -527,7 +527,7 @@ public:
         if (!mIpPacketReadBuffer.init(IP_PACKET_MTU) ||
             !mIpPacketWriteBuffer.init(IP_PACKET_MTU))
         {
-            log("fd2socks run: Buffer init failed");
+            log("vpn2socks run: Buffer init failed");
             return false;
         }
 
@@ -536,7 +536,7 @@ public:
         memset(&mSocksAddress, 0, sizeof(mSocksAddress));
         if (1 != inet_pton(AF_INET, socksServerIpAddressStr, &mSocksAddress.sin_addr))
         {
-            log("fd2socks run: inet_pton failed");
+            log("vpn2socks run: inet_pton failed");
             return false;
         }
         mSocksAddress.sin_family = AF_INET;
@@ -553,7 +553,7 @@ public:
         if (1 != inet_pton(AF_INET, vpnIpAddress, &virtualDeviceAddress) ||
             1 != inet_pton(AF_INET, vpnNetMask, &netMask))
         {
-            log("fd2socks run: inet_pton failed");
+            log("vpn2socks run: inet_pton failed");
             return false;
         }
 
@@ -568,7 +568,7 @@ public:
                 initNetifCallback,
                 ip_input))
         {
-            log("fd2socks run: netif_add failed");
+            log("vpn2socks run: netif_add failed");
             return false;
         }
         
@@ -584,7 +584,7 @@ public:
 
         if (!(mLocalListener = tcp_new()))
         {
-            log("fd2socks run: tcp_new failed");
+            log("vpn2socks run: tcp_new failed");
             return false;
         }
 
@@ -592,13 +592,13 @@ public:
         
         if (ERR_OK != tcp_bind_to_netif(mLocalListener, "xx0"))
         {
-            log("fd2socks run: tcp_bind_to_netif failed");
+            log("vpn2socks run: tcp_bind_to_netif failed");
             return false;
         }
 
         if (!(mLocalListener = tcp_listen(mLocalListener)))
         {
-            log("fd2socks run: tcp_new failed");
+            log("vpn2socks run: tcp_new failed");
             return false;
         }
         
@@ -609,19 +609,19 @@ public:
 
         if (-1 == (mEpollFacility = epoll_create1(0))
         {
-            log("fd2socks run: epoll_create1 failed %d", errno);
+            log("vpn2socks run: epoll_create1 failed %d", errno);
             return false;
         }
 
         if (NULL == (mEvents = malloc(MAX_EPOLL_EVENTS*sizeof(struct epoll_event))))
         {
-            log("fd2socks run: malloc failed");
+            log("vpn2socks run: malloc failed");
             return false;
         }
 
         if (-1 == (fcntl(mIpPacketFileDescriptor, F_SETFL, O_NONBLOCK))
         {
-            log("fd2socks run: fcntl failed %d", errno);
+            log("vpn2socks run: fcntl failed %d", errno);
             return false;
         }
 
@@ -630,7 +630,7 @@ public:
 
         if (-1 == epoll_ctl(mEpollFacility, EPOLL_CTL_ADD, mIpPacketFileDescriptor, &mIpPacketEpollEvent)
         {
-            log("fd2socks run: epoll_ctl failed %d", errno);
+            log("vpn2socks run: epoll_ctl failed %d", errno);
             return false;
         }
 
@@ -644,7 +644,7 @@ public:
 
             if (-1 == (eventCount = epoll_wait(mEpollFacility, mEvents, MAX_EPOLL_EVENTS, TCP_TMR_INTERVAL))
             {
-                log("fd2socks run: epoll_wait failed %d", errno);
+                log("vpn2socks run: epoll_wait failed %d", errno);
                 return false;
             }
 
@@ -762,7 +762,7 @@ public:
                     return true;
                 }
 
-                log("fd2socks readIpPacket: read failed %d", errno);
+                log("vpn2socks readIpPacket: read failed %d", errno);
                 return false;
             }
             else if (readCount == 0)
@@ -787,20 +787,20 @@ public:
                     struct pbuf *p = pbuf_alloc(PBUF_RAW, readCount, PBUF_POOL);
                     if (!p)
                     {
-                        log("fd2socks readIpPacket: pbuf_alloc failed");
+                        log("vpn2socks readIpPacket: pbuf_alloc failed");
                         return false;
                     }
         
                     if (ERR_OK != pbuf_take(p, packet, readCount))
                     {
-                        log("fd2socks readIpPacket: pbuf_take failed");
+                        log("vpn2socks readIpPacket: pbuf_take failed");
                         pbuf_free(p);
                         return false;                    
                     }
         
                     if (ERR_OK != netif.input(p, &netif))
                     {
-                        log("fd2socks readIpPacket: netif.input failed");
+                        log("vpn2socks readIpPacket: netif.input failed");
                         pbuf_free(p);
                         return false;                    
                     }
@@ -834,7 +834,7 @@ public:
 
         if (p->tot_len != pbuf_copy_partial(p, mIpPacketWriteBuffer.getWriteData(), p->tot_len, 0))
         {
-            log("fd2socks bufferIpPacketForWrite: pbuf_copy_partial failed %d");
+            log("vpn2socks bufferIpPacketForWrite: pbuf_copy_partial failed %d");
             ipPacketWriteBuffer.clear();
             return;
         }
@@ -862,7 +862,7 @@ public:
                     break;
                 }
 
-                log("fd2socks writeIpPacket: write failed %d", errno);
+                log("vpn2socks writeIpPacket: write failed %d", errno);
                 return false;
             }
 
@@ -870,7 +870,7 @@ public:
 
             if (ipPacketWriteBuffer.getReadAvailable() != writeCount)
             {
-                log("fd2socks writeIpPacket: unexpected write count");
+                log("vpn2socks writeIpPacket: unexpected write count");
                 return false;
             }
 
@@ -893,9 +893,9 @@ static extern "C" err_t netifOutputCallback(struct netif* netif, struct pbuf* p,
 
     // TODO: is there a user "arg" so we don't need to use this global?
 
-    if (0 != gFd2Socks)
+    if (0 != gVpn2Socks)
     {
-        gFd2Socks->bufferIpPacketForWrite(p);
+        gVpn2Socks->bufferIpPacketForWrite(p);
     }
 
     return ERR_OK;
@@ -903,7 +903,7 @@ static extern "C" err_t netifOutputCallback(struct netif* netif, struct pbuf* p,
 
 static extern "C" err_t acceptCallback(void* arg, struct tcp_pcb* newPcb, err_t err)
 {
-    Fd2Socks* fd2Socks = (Fd2Socks*)arg;
+    Vpn2Socks* vpn2Socks = (Vpn2Socks*)arg;
 
     tcp_accepted(localListener);
 
@@ -911,21 +911,21 @@ static extern "C" err_t acceptCallback(void* arg, struct tcp_pcb* newPcb, err_t 
 
     // TODO: lwip frees newPcb on error?
 
-    if (0 == (tcpClient = new TcpClient(fd2Socks)))
+    if (0 == (tcpClient = new TcpClient(vpn2Socks)))
     {
-        log("fd2socks acceptCallback: new failed");
+        log("vpn2socks acceptCallback: new failed");
         return -1;
     }
 
     if (!tcpClient.init(newPcb))
     {
-        log("fd2socks acceptCallback: init failed");
+        log("vpn2socks acceptCallback: init failed");
         delete tcpClient;
         tcpClient = 0;
         return -1;
     }
 
-    fd2Socks.addClient(tcpClient);
+    vpn2Socks.addClient(tcpClient);
 
     return ERR_OK;
 }
@@ -934,7 +934,7 @@ static extern "C" void tcpClientErrorCallback(void* arg, err_t err)
 {
     TcpClient* tcpClient = (TcpClient*)arg;
     
-    log("fd2socks tcpClientErrorCallback: error %d", (int) err);
+    log("vpn2socks tcpClientErrorCallback: error %d", (int) err);
 
     removeClient(tcpClient);
     tcpClient = 0;
@@ -965,7 +965,7 @@ static extern "C" err_t tcpClientReceiveCallback(void* arg, struct tcp_pcb* pcb,
     
     if (!tcpClient->bufferTcpDataForSocksWrite(p))
     {
-        log("fd2socks tcpClientReceiveCallback: bufferSocksDataForWrite failed");
+        log("vpn2socks tcpClientReceiveCallback: bufferSocksDataForWrite failed");
         return ERR_MEM;
     }
 
