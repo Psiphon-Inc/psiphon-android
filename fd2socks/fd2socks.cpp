@@ -60,7 +60,6 @@ In-progress TODOs
   -- intercept and parse UDP packets
   -- resend packets destinated to port 53 to local (proxied) DNS server
   -- listen for datagrams from DNS server and feed back into IP fd
-- circular buffer implementation
 
 - verify that local socket connections (stream and datagram) don't need protect() from VPN
 - need real write buffer for VPN fd?
@@ -77,6 +76,7 @@ In-progress TODOs
 #include <lwip/netif.h>
 #include <lwip/tcp.h>
 #include "jni.h"
+#include "StreamDataBuffer.h"
 
 
 static Fd2Socks* gFd2Socks = 0;
@@ -134,7 +134,7 @@ static void log(const char* message)
 }
 
 
-const static size_t IP_PACKET_MTU = 1500;
+const static size_t IP_PACKET_MTU = 65536;
 const static size_t SOCKS_BUFFER_SIZE = 8192;
 const static int MAX_EPOLL_EVENTS = 100;
 
@@ -147,107 +147,6 @@ static extern "C" err_t tcpClientSentCallback(void* arg, struct tcp_pcb* tpcb, u
 static extern "C" void tcpClientErrorCallback(void* arg, err_t err);
 
 
-/*
-class Buffer
-{
-protected:
-    ...
-
-public:
-    Buffer()
-    {
-        ...
-    }
-
-    virtual ~Buffer()
-    {
-        ...
-    }
-
-    bool init(size_t capacity)
-    {
-        ...
-    }
-
-    void clear()
-    {
-
-    }
-
-    size_t getCapacity()
-    {
-        ...
-    }
-
-    size_t getRemainingCapacity()
-    {
-        ...
-    }
-
-    bool hasData()
-    {
-        return getDataSize() > 0;
-    }
-
-    size_t getDataSize()
-    {
-        ...
-    }
-
-    const uint8_t* getData()
-    {
-        ...
-    }
-
-    uint8_t* allocateData(size_t size)
-    {
-        ...
-    }
-
-    bool appendData(const uint8_t* data, size_t size)
-    {
-        ...
-    }
-
-    void trimData(size_t size)
-    {
-        ...
-    }
-
-    void trimDataFromEnd(size_t size)
-    {
-        ...
-    }
-
-    size_t getContiguousWriteBufferSize()
-    {
-        ...
-    }
-
-    uint8_t* getContiguousWriteBuffer()
-    {
-        ...
-    }
-
-    void commitWrite(size_t size)
-    {
-        ...
-    }
-
-    size_t getContiguousReadBufferSize()
-    {
-        ...
-    }
-
-    uint8_t* getContiguousReadBuffer()
-    {
-        ...
-    }
-
-};
-*/
-
-
 class TcpClientProxy
 {
 protected:
@@ -257,8 +156,8 @@ protected:
     socket mSocksSocket;
     struct epoll_event mSocksEpollEvent;
     bool receievedSocksServerResponse;
-    struct Buffer mSocksSendBuffer;
-    struct Buffer mSocksReceiveBuffer;
+    StreamDataBuffer mSocksSendBuffer;
+    StreamDataBuffer mSocksReceiveBuffer;
 
 public:
 
@@ -269,8 +168,6 @@ public:
         mSocksSocket = NULL;
         memset(&mSocksEpollEvent, 0, sizeof(mSocksEpollEvent));
         receievedSocksServerResponse = false;
-        mSocksSendBuffer.init(SOCKS_BUFFER_SIZE);
-        mSocksReceiveBuffer.init(SOCKS_BUFFER_SIZE);
     }
 
     virtual ~TcpClientProxy()
@@ -300,6 +197,13 @@ public:
 
     bool init(struct tcp_pcb* newPcb)
     {
+        if (!mSocksSendBuffer.init(SOCKS_BUFFER_SIZE) ||
+            !mSocksReceiveBuffer.init(SOCKS_BUFFER_SIZE))
+        {
+            log("TcpClientProxy init: Buffer init failed");
+            return false;
+        }
+
         mLwipState = newPcb;
 
         tcp_arg(mLwipState, this);
@@ -315,19 +219,19 @@ public:
         struct protoent* protocol = getprotobyname("tcp");
         if (!protocol)
         {
-            log("fd2socks TcpClient init: getprotobyname failed");
+            log("fd2socks TcpClientProxy init: getprotobyname failed");
             return false;
         }
 
         if (-1 == (mSocksSocket = socket(AF_INET, SOCK_STREAM, protocol->p_proto))
         {
-            log("fd2socks TcpClient init: socket failed %d", errno);
+            log("fd2socks TcpClientProxy init: socket failed %d", errno);
             return false;
         }
 
         if (-1 == (fcntl(mSocksSocket, F_SETFL, O_NONBLOCK))
         {
-            log("fd2socks TcpClient init: fcntl failed %d", errno);
+            log("fd2socks TcpClientProxy init: fcntl failed %d", errno);
             return false;
         }
 
@@ -335,7 +239,7 @@ public:
         {
             if (errno != EINPROGRESS)
             {
-                log("fd2socks TcpClient init: connect failed %d", errno);
+                log("fd2socks TcpClientProxy init: connect failed %d", errno);
                 return false;
             }
         }
@@ -347,7 +251,7 @@ public:
 
         if (-1 == epoll_ctl(mFd2Socks->epollFacility, EPOLL_CTL_ADD, mSocksSocket, mSocksEpollEvent))
         {
-            log("fd2socks TcpClient init: epoll_ctl failed %d", errno);
+            log("fd2socks TcpClientProxy init: epoll_ctl failed %d", errno);
             return false;
         }
 
@@ -364,9 +268,11 @@ public:
         memcpy(socksConnectRequest + 4, &destinationIpAddress, 4);
         socksConnectRequest[8] = 0x00;
 
-        if (!mSocketSendBuffer.appendData(mSocketSendBuffer, socksConnectRequest, sizeof(socksConnectRequest)))
+        if (mSocketSendBuffer.getWriteCapacity() < sizeof(socksConnectRequest) ||
+            !memcpy(mSocketSendBuffer.getWriteData(), socksConnectRequest, sizeof(socksConnectRequest)) ||
+            !mSocketSendBuffer.commitWrite(sizeof(socksConnectRequest)))
         {
-            log("fd2socks TcpClient init: epoll_ctl failed %d", errno);
+            log("fd2socks TcpClientProxy init: buffer SOCKS request header failed %d", errno);
             return false;
         }
 
@@ -377,13 +283,13 @@ public:
     {
         // Read data from the SOCKS server.
 
-        while (mSocksReceiveBuffer.getRemainingCapacity() > 0)
+        while (mSocksReceiveBuffer.getWriteCapacity() > 0)
         {
-            size_t len = mSocksReceiveBuffer.getContiguousWriteBufferSize();
-            uint8_t* data = mSocksReceiveBuffer.getContiguousWriteBuffer();
-
             ssize_t readCount;
-            if (-1 == (readCount = read(mSocksSocket, data, len))
+            if (-1 == (readCount = read(
+                                    mSocksSocket,
+                                    mSocksReceiveBuffer.getWriteData(),
+                                    mSocksReceiveBuffer.getWriteCapacity()))
             {
                 if (EGAIN == errno)
                 {
@@ -411,14 +317,14 @@ public:
 
             size_t expectedResponseSize = 8;
 
-            if (mSocksReceiveBuffer.getContiguousReadBufferSize() < expectedResponseSize)
+            if (mSocksReceiveBuffer.getReadAvailable() < expectedResponseSize)
             {
                 // Wait for more bytes.
                 return true;
             }
 
             // Check that the status byte contains the "granted" value.
-            uint8_t status = mSocksReceiveBuffer.getContiguousReadBuffer()[1];
+            uint8_t status = mSocksReceiveBuffer.getReadData()[1];
             if (0x5a != status)
             {
                 log("fd2socks readSocksData: unexpected SOCKS status %d", (int)status);
@@ -437,13 +343,13 @@ public:
         // Relay read data through the TCP stack back to the original client.
 
         boolean needTcpOutput = false;
-        while (mSocksReceiveBuffer.hasData())
+        while (mSocksReceiveBuffer.getReadAvailable() > 0)
         {
             size_t capacity = tcp_sndbuf(mLwipState);
-            size_t dataSize = mSocksReceiveBuffer.getContiguousReadBufferSize();
+            size_t dataSize = mSocksReceiveBuffer.getReadAvailable();
             size_t len = (capacity < dataSize ? capacity : dataSize);
 
-            err_t err = tcp_write(mLwipState, mSocksReceiveBuffer.getContiguousReadBuffer(), len, TCP_WRITE_FLAG_COPY);
+            err_t err = tcp_write(mLwipState, mSocksReceiveBuffer.getReadData(), len, TCP_WRITE_FLAG_COPY);
 
             if (ERR_OK != err)
             {
@@ -484,23 +390,21 @@ public:
     {
         // Write data received from the TCP stack through to the SOCKS relay.
 
-        if (mSocketSendBuffer.getRemainingCapacity() < p->total_len)
+        bool writeAlreadyPending = (mSocketSendBuffer.getReadAvailable() > 0);
+
+        if (mSocketSendBuffer.getWriteCapacity() < p->total_len)
         {
             // Too much data.
             return false;
         }
 
-        bool writeAlreadyPending = mSocketSendBuffer.hasData();
-
-        uint8_t* data = mSocketSendBuffer.allocateData(p->total_len);
-        **** what if alloc fails?
-
-        if (p->tot_len != pbuf_copy_partial(p, data, p->tot_len, 0))
+        if (p->tot_len != pbuf_copy_partial(p, mSocketSendBuffer.getWriteData(), p->tot_len, 0))
         {
             log("fd2socks bufferTcpDataForSocksWrite: pbuf_copy_partial failed %d");
-            mSocketSendBuffer.trimDataFromEnd(p->tot_len);
             return false;
         }
+
+        mSocketSendBuffer.commitWrite(p->tot_len);
 
         if (!writeAlreadyPending)
         {
@@ -514,14 +418,14 @@ public:
 
     bool writeSocksData()
     {
-        while (mSocketSendBuffer.hasData())
+        while (mSocketSendBuffer.getReadAvailable() > 0)
         {
             ssize_t writeCount;
 
             if (-1 == (writeCount = write(
                                         mSocksSocket,
-                                        mSocketSendBuffer.getData(),
-                                        mSocketSendBuffer.getDataSize()))
+                                        mSocketSendBuffer.getReadData(),
+                                        mSocketSendBuffer.getReadAvailable()))
             {
                 if (errno == EAGAIN || errno == EWOULDBLOCK)
                 {
@@ -538,7 +442,7 @@ public:
 
             tcp_recved(mLwipState, writeCount);
 
-            mSocketSendBuffer.trimData(writeCount);
+            mSocketSendBuffer.commitRead(writeCount);
         }
 
         return true;
@@ -558,7 +462,8 @@ protected:
     struct epoll_event* mEvents;
     int mIpPacketFileDescriptor;
     struct epoll_event mIpPacketEpollEvent;
-    struct Buffer mIpPacketSendBuffer;
+    StreamDataBuffer mIpPacketReadBuffer;
+    StreamDataBuffer mIpPacketWriteBuffer;
     std::vector<TcpClient*> mClients;
     (void*)(const char*) mLogger;
 
@@ -585,7 +490,6 @@ public:
         eMvents = 0;
         mIpPacketFileDescriptor = 0;
         memset(&mIpPacketEpollEvent, 0, sizeof(mIpPacketEpollEvent);
-        mipPacketSendBuffer.init(IP_PACKET_MTU);
         mLogger = 0;        
     }
 
@@ -595,7 +499,7 @@ public:
 
         // TODO: close ip packet fd (http://developer.android.com/reference/android/net/VpnService.Builder.html#establish%28%29)
         //       netif_remove?
-        //       free ipPacketSendBuffer, close epoll facility
+        //       close epoll facility
 
         init();
     }
@@ -620,6 +524,13 @@ public:
         const char* socksServerIpAddressStr,
         int socksServerPort)
     {
+        if (!mIpPacketReadBuffer.init(IP_PACKET_MTU) ||
+            !mIpPacketWriteBuffer.init(IP_PACKET_MTU))
+        {
+            log("fd2socks run: Buffer init failed");
+            return false;
+        }
+
         mIpPacketFileDescriptor = vpnIpPacketFileDescriptor;
 
         memset(&mSocksAddress, 0, sizeof(mSocksAddress));
@@ -720,12 +631,6 @@ public:
         if (-1 == epoll_ctl(mEpollFacility, EPOLL_CTL_ADD, mIpPacketFileDescriptor, &mIpPacketEpollEvent)
         {
             log("fd2socks run: epoll_ctl failed %d", errno);
-            return false;
-        }
-
-        if (!mIpPacketSendBuffer.init(IP_PACKET_MTU))
-        {
-            log("fd2socks run: Buffer init failed");
             return false;
         }
 
@@ -841,12 +746,16 @@ public:
         // http://developer.android.com/reference/android/net/VpnService.Builder.html#establish%28%29
         // "Each read retrieves an outgoing packet which was routed to the interface."
 
-        uint8_t packet[IP_PACKET_MTU];
-        ssize_t readCount;
-
         while (1)
         {
-            if (-1 == (readCount = read(mIpPacketFileDescriptor, packet, sizeof(packet)))
+            mPacketReadBuffer.clear();
+            uint8_t* packet = mPacketReadBuffer.getWriteData();
+            ssize_t readCount;
+
+            if (-1 == (readCount = read(
+                                    mIpPacketFileDescriptor,
+                                    packet,
+                                    mPacketReadBuffer.getWriteCapacity()))
             {
                 if (EGAIN == errno)
                 {
@@ -911,42 +820,42 @@ public:
         // "Each write injects an incoming packet just like it was received from the interface."
         // We do use a write buffer, but it only stores one packet. If it's busy, we drop the packet.
 
-        if (mIpPacketSendBuffer.hasData())
+        if (mIpPacketWriteBuffer.getReadAvailable() > 0)
         {
             // Buffer is busy: drop the packet.
             return;
         }
 
-        if (mIpPacketSendBuffer.getCapacity() < p->total_len)
+        if (mIpPacketWriteBuffer.getWriteCapacity() < p->total_len)
         {
             // Too much data: drop the packet.
             return;
         }
 
-        uint8_t* buffer = mIpPacketSendBuffer.allocateSpace(p->total_len);
-
-        if (p->tot_len != pbuf_copy_partial(p, buffer, p->tot_len, 0))
+        if (p->tot_len != pbuf_copy_partial(p, mIpPacketWriteBuffer.getWriteData(), p->tot_len, 0))
         {
             log("fd2socks bufferIpPacketForWrite: pbuf_copy_partial failed %d");
-            ipPacketSendBuffer.clear();
+            ipPacketWriteBuffer.clear();
             return;
         }
 
-        // The main epoll loop may complete this write.
+        mIpPacketWriteBuffer.commitWrite(p->tot_len);
+
+        // The main epoll loop may perform this write.
         // If the write fails, we drop the packet.
         writeIpPacket();
     }
 
     bool writeIpPacket()
     {
-        while (mIpPacketSendBuffer.hasData())
+        if (ipPacketWriteBuffer.getReadAvailable() > 0)
         {
             ssize_t writeCount;
 
             if (-1 == (writeCount = write(
                                         mIpPacketFileDescriptor,
-                                        mIpPacketSendBuffer.getData(),
-                                        mIpPacketSendBuffer.getDataSize()))
+                                        ipPacketWriteBuffer.getReadData(),
+                                        ipPacketWriteBuffer.getReadAvailable()))
             {
                 if (errno == EAGAIN || errno == EWOULDBLOCK)
                 {
@@ -956,7 +865,16 @@ public:
                 log("fd2socks writeIpPacket: write failed %d", errno);
                 return false;
             }
-            mIpPacketSendBuffer.trimData(writeCount);
+
+            // Packet write should be all-or-nothing, as per the Android spec.
+
+            if (ipPacketWriteBuffer.getReadAvailable() != writeCount)
+            {
+                log("fd2socks writeIpPacket: unexpected write count");
+                return false;
+            }
+
+            ipPacketWriteBuffer.clear();
         }
 
         return true;
