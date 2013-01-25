@@ -120,6 +120,7 @@ public class TransparentProxyConfig
         }
         catch (PsiphonTransparentProxyException e)
         {
+            teardownTransparentProxyRouting(context);
             doShellCommands(context,
                     setupTransparentProxyRoutingCommands(ipTablesPath, psiphonUid, false));
         }
