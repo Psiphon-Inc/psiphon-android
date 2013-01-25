@@ -17,8 +17,10 @@
  *
  */
 
-// With snippets from:
-// http://code.google.com/p/badvpn/source/browse/trunk/tun2socks/tun2socks.c
+// With code from:
+// - http://code.google.com/p/badvpn/source/browse/trunk/tun2socks/tun2socks.c
+// - also using the tun2socks lwip customizations ("pretend" flag)
+
 /**
  * @file tun2socks.c
  * @author Ambroz Bizjak <ambrop7@gmail.com>
@@ -48,13 +50,25 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+
+vpn2socks
+=========
+
+This module relays IP traffic from the Android VpnService file descriptor
+through local Psiphon proxies.
+
+TCP connections are relayed through the Psiphon SOCKS proxy. DNS UDP traffic
+is relayed through the Psiphon DNS server. Other UDP and IP traffic is
+dropped.
+
+*/
 
 /*
 
 In-progress TODOs
 =================
 
-- finish cleanup code (Vpn2Socks.reset())
 - don't call simply when epoll_wait returns; use time-elapsed logic
 - DNS
   -- intercept and parse UDP packets
@@ -64,7 +78,6 @@ In-progress TODOs
 - verify that local socket connections (stream and datagram) don't need protect() from VPN
 - need real write buffer for VPN fd?
 - decide if need to flush or drop relayed TCP data when either side closes connection
-- documentation
 
 */
 
@@ -115,6 +128,7 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_vpn2socks_run(
             socksServerIpAddressStr
             socksServerPort);
 
+    vpn2Socks.reset();
     gVpn2Socks = 0;
 
     env->ReleaseStringUTFChars(vpnIpAddressStr, vpnIpAddress, 0);
@@ -457,13 +471,13 @@ protected:
     int mSignalStopFlag;
     struct sockaddr mSocksAddress;
     struct netif mNetif;
+    bool mNetifAdded;
     struct tcp_pcb* mLocalListener;
     int mEpollFacility;
     struct epoll_event* mEvents;
     int mIpPacketFileDescriptor;
     struct epoll_event mIpPacketEpollEvent;
-    StreamDataBuffer mIpPacketReadBuffer;
-    StreamDataBuffer mIpPacketWriteBuffer;
+    StreamDataBuffer mIpPacketBuffer;
     std::vector<TcpClient*> mClients;
     (void*)(const char*) mLogger;
 
@@ -485,9 +499,10 @@ public:
         mSignalStopFlag = 0;
         memset(&mSocksAddress, 0, sizeof(mSocksAddress);
         memset(&mNetif, 0, sizeof(mNetif));
+        mNetifAdded = false;
         mLocalListener = 0;
         mEpollFacility = 0;
-        eMvents = 0;
+        mEvents = 0;
         mIpPacketFileDescriptor = 0;
         memset(&mIpPacketEpollEvent, 0, sizeof(mIpPacketEpollEvent);
         mLogger = 0;        
@@ -497,9 +512,33 @@ public:
     {
         removeClients();
 
-        // TODO: close ip packet fd (http://developer.android.com/reference/android/net/VpnService.Builder.html#establish%28%29)
-        //       netif_remove?
-        //       close epoll facility
+        if (0 != mLocalListener)
+        {
+            tcp_accept(mLocalListener, NULL);
+            tcp_close(mLocalListener);
+        }
+
+        if (mNetifAdded)
+        {
+            netif_remove(&mNetif);
+        }
+
+        if (0 != mEpollFacility)
+        {
+            close(mEpollFacility);
+        }
+
+        if (0 != mEvents)
+        {
+            delete[] mEvents;
+        }
+
+        if (0 != mIpPacketFileDescriptor)
+        {
+            // We close the VPN file descriptor as per:
+            // http://developer.android.com/reference/android/net/VpnService.Builder.html#establish%28%29
+            close(mIpPacketFileDescriptor);
+        }
 
         init();
     }
@@ -524,8 +563,7 @@ public:
         const char* socksServerIpAddressStr,
         int socksServerPort)
     {
-        if (!mIpPacketReadBuffer.init(IP_PACKET_MTU) ||
-            !mIpPacketWriteBuffer.init(IP_PACKET_MTU))
+        if (!mIpPacketBuffer.init(IP_PACKET_MTU))
         {
             log("vpn2socks run: Buffer init failed");
             return false;
@@ -571,6 +609,8 @@ public:
             log("vpn2socks run: netif_add failed");
             return false;
         }
+
+        mNetifAdded = true;
         
         netif_set_up(&mNetif);
         netif_set_default(&mNetif);
@@ -613,9 +653,9 @@ public:
             return false;
         }
 
-        if (NULL == (mEvents = malloc(MAX_EPOLL_EVENTS*sizeof(struct epoll_event))))
+        if (0 == (mEvents = new struct epoll_event[MAX_EPOLL_EVENTS]))
         {
-            log("vpn2socks run: malloc failed");
+            log("vpn2socks run: allocate events failed");
             return false;
         }
 
@@ -625,7 +665,7 @@ public:
             return false;
         }
 
-        mIpPacketEpollEvent.events = EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP;
+        mIpPacketEpollEvent.events = EPOLLIN | EPOLLERR | EPOLLHUP;
         mIpPacketEpollEvent.data.ptr = NULL;
 
         if (-1 == epoll_ctl(mEpollFacility, EPOLL_CTL_ADD, mIpPacketFileDescriptor, &mIpPacketEpollEvent)
@@ -658,11 +698,6 @@ public:
 
                 if (fd == mIpPacketFileDescriptor)
                 {
-                    // Note that once the VPN file descriptor is closed, everything
-                    // is immediately shutdown. We don't wait to flush bytes sent
-                    // to the SOCKS proxy.
-                    // TODO: flush these bytes?
-
                     if ((mEvents[i].events & EPOLLERR) || (mEvents[i].events & EPOLLHUP))
                     {
                         mSignalStopFlag = 1;
@@ -674,14 +709,6 @@ public:
                         {
                             mSignalStopFlag = 1;
                             break;
-                        }
-                    }
-                    else if (mEvents[i].events & EPOLLOUT)
-                    {
-                        if (!writeIpPacket())
-                        {
-                            mSignalStopFlag = 1;
-                            break;                        
                         }
                     }
                 }
@@ -742,20 +769,27 @@ public:
 
     bool readIpPacket()
     {
-        // We're taking this literally and not buffering for packets split across reads:
+        // Write IP packet from VPN file descriptor. Pass TCP packets into virtual interface.
+        // DNS UDP packets are handled explicitly. Other packet types are silently dropped.
+
+        // We're not buffering for packets split across reads:
         // http://developer.android.com/reference/android/net/VpnService.Builder.html#establish%28%29
         // "Each read retrieves an outgoing packet which was routed to the interface."
+        //
+        // This is also how tun devices work (one read is one packet), and the Android VpnService file
+        // descriptor acts as a tun device.
+        // http://www.freebsd.org/cgi/man.cgi?query=tun&sektion=4
 
         while (1)
         {
-            mPacketReadBuffer.clear();
-            uint8_t* packet = mPacketReadBuffer.getWriteData();
+            mIpPacketBuffer.clear();
+            uint8_t* packet = mIpPacketBuffer.getWriteData();
             ssize_t readCount;
 
             if (-1 == (readCount = read(
                                     mIpPacketFileDescriptor,
                                     packet,
-                                    mPacketReadBuffer.getWriteCapacity()))
+                                    mIpPacketBuffer.getWriteCapacity()))
             {
                 if (EGAIN == errno)
                 {
@@ -811,70 +845,48 @@ public:
         return true;
     }
 
-    void bufferIpPacketForWrite(struct pbuf* p)
+    bool writeIpPacket(struct pbuf* p)
     {
         // Write IP packet from virtual interface to VPN file descriptor.
 
-        // We're taking this literally and not buffering for multiple packets within a write:
-        // http://developer.android.com/reference/android/net/VpnService.Builder.html#establish%28%29
-        // "Each write injects an incoming packet just like it was received from the interface."
-        // We do use a write buffer, but it only stores one packet. If it's busy, we drop the packet.
+        // We're not buffering for multiple packets within a write. As with
+        // tun-device-type reads, a write is exactly one packet (see references
+        // in readIpPacket); and writes will not block.
 
-        if (mIpPacketWriteBuffer.getReadAvailable() > 0)
-        {
-            // Buffer is busy: drop the packet.
-            return;
-        }
+        mIpPacketBuffer.clear();
 
-        if (mIpPacketWriteBuffer.getWriteCapacity() < p->total_len)
+        if (mIpPacketBuffer.getWriteCapacity() < p->total_len)
         {
             // Too much data: drop the packet.
-            return;
+            return false;
         }
 
-        if (p->tot_len != pbuf_copy_partial(p, mIpPacketWriteBuffer.getWriteData(), p->tot_len, 0))
+        if (p->tot_len != pbuf_copy_partial(p, mIpPacketBuffer.getWriteData(), p->tot_len, 0))
         {
             log("vpn2socks bufferIpPacketForWrite: pbuf_copy_partial failed %d");
-            ipPacketWriteBuffer.clear();
-            return;
+            return false;
         }
 
-        mIpPacketWriteBuffer.commitWrite(p->tot_len);
+        mIpPacketBuffer.commitWrite(p->tot_len);
 
-        // The main epoll loop may perform this write.
-        // If the write fails, we drop the packet.
-        writeIpPacket();
-    }
-
-    bool writeIpPacket()
-    {
-        if (ipPacketWriteBuffer.getReadAvailable() > 0)
+        ssize_t writeCount;
+        if (-1 == (writeCount = write(
+                                    mIpPacketFileDescriptor,
+                                    mIpPacketBuffer.getReadData(),
+                                    mIpPacketBuffer.getReadAvailable()))
         {
-            ssize_t writeCount;
+            // Note: EAGAIN/EWOULDBLOCK are not expected.
 
-            if (-1 == (writeCount = write(
-                                        mIpPacketFileDescriptor,
-                                        ipPacketWriteBuffer.getReadData(),
-                                        ipPacketWriteBuffer.getReadAvailable()))
-            {
-                if (errno == EAGAIN || errno == EWOULDBLOCK)
-                {
-                    break;
-                }
+            log("vpn2socks writeIpPacket: write failed %d", errno);
+            return false;
+        }
 
-                log("vpn2socks writeIpPacket: write failed %d", errno);
-                return false;
-            }
+        // Packet write should be all-or-nothing, as per the Android/tun spec.
 
-            // Packet write should be all-or-nothing, as per the Android spec.
-
-            if (ipPacketWriteBuffer.getReadAvailable() != writeCount)
-            {
-                log("vpn2socks writeIpPacket: unexpected write count");
-                return false;
-            }
-
-            ipPacketWriteBuffer.clear();
+        if (mIpPacketBuffer.getReadAvailable() != writeCount)
+        {
+            log("vpn2socks writeIpPacket: unexpected write count");
+            return false;
         }
 
         return true;
@@ -895,7 +907,7 @@ static extern "C" err_t netifOutputCallback(struct netif* netif, struct pbuf* p,
 
     if (0 != gVpn2Socks)
     {
-        gVpn2Socks->bufferIpPacketForWrite(p);
+        gVpn2Socks->writeIpPacket(p);
     }
 
     return ERR_OK;
