@@ -111,6 +111,8 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_vpn2socks_run(
     jint vpnIpPacketFileDescriptor,
     jstring vpnIpAddress,
     jstring vpnNetMask,
+    jstring dnsServerIpAddress,
+    jint dnsServerPort,
     jstring socksServerIpAddress,
     jint socksServerPort)
 {
@@ -119,13 +121,16 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_vpn2socks_run(
 
     const char* vpnIpAddressStr = env->GetStringUTFChars(vpnIpAddress, 0);
     const char* vpnNetMaskStr = env->GetStringUTFChars(vpnNetMask, 0);
+    const char* dnsServerIpAddressStr = env->GetStringUTFChars(dnsServerIpAddress, 0);
     const char* socksServerIpAddressStr = env->GetStringUTFChars(socksServerIpAddress, 0);
 
     bool result = vpn2Socks.run(
             vpnIpAddressStr,
             vpnNetMaskStr,
             vpnIpPacketFileDescriptor,
-            socksServerIpAddressStr
+            dnsServerIpAddressStr,
+            dnsServerPort,
+            socksServerIpAddressStr,
             socksServerPort);
 
     vpn2Socks.reset();
@@ -134,6 +139,7 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_vpn2socks_run(
     env->ReleaseStringUTFChars(vpnIpAddressStr, vpnIpAddress, 0);
     env->ReleaseStringUTFChars(vpnNetMaskStr, vpnNetMask, 0);
     env->ReleaseStringUTFChars(socksServerIpAddressStr, socksServerIpAddress, 0);
+    env->ReleaseStringUTFChars(dnsServerIpAddressStr, dnsServerIpAddress, 0);
 
     return result ? 1 : 0;
 }
@@ -469,12 +475,15 @@ class Vpn2Socks
 protected:
 
     int mSignalStopFlag;
+    struct sockaddr mDnsAddress;
     struct sockaddr mSocksAddress;
     struct netif mNetif;
     bool mNetifAdded;
     struct tcp_pcb* mLocalListener;
     int mEpollFacility;
     struct epoll_event* mEvents;
+    socket mDnsSocket;
+    struct epoll_event mDnsEpollEvent;
     int mIpPacketFileDescriptor;
     struct epoll_event mIpPacketEpollEvent;
     StreamDataBuffer mIpPacketBuffer;
@@ -497,12 +506,15 @@ public:
         lwip_init();
 
         mSignalStopFlag = 0;
+        memset(&mDnsAddress, 0, sizeof(mDnsAddress);
         memset(&mSocksAddress, 0, sizeof(mSocksAddress);
         memset(&mNetif, 0, sizeof(mNetif));
         mNetifAdded = false;
         mLocalListener = 0;
         mEpollFacility = 0;
         mEvents = 0;
+        mDnsSocket = 0;
+        memset(&mDnsEpollEvent, 0, sizeof(mDnsEpollEvent);
         mIpPacketFileDescriptor = 0;
         memset(&mIpPacketEpollEvent, 0, sizeof(mIpPacketEpollEvent);
         mLogger = 0;        
@@ -533,6 +545,11 @@ public:
             delete[] mEvents;
         }
 
+        if (0 != mDnsSocket)
+        {
+            close(mDnsSocket);
+        }
+
         if (0 != mIpPacketFileDescriptor)
         {
             // We close the VPN file descriptor as per:
@@ -560,6 +577,8 @@ public:
         const char* vpnIpAddress,
         const char* vpnNetMask,
         int vpnIpPacketFileDescriptor,
+        const char* dnsServerIpAddressStr,
+        int dnsServerPort,
         const char* socksServerIpAddressStr,
         int socksServerPort)
     {
@@ -570,6 +589,15 @@ public:
         }
 
         mIpPacketFileDescriptor = vpnIpPacketFileDescriptor;
+
+        memset(&mDnsAddress, 0, sizeof(mDnsAddress));
+        if (1 != inet_pton(AF_INET, dnsServerIpAddressStr, &mDnsAddress.sin_addr))
+        {
+            log("vpn2socks run: inet_pton failed");
+            return false;
+        }
+        mDnsAddress.sin_family = AF_INET;
+        mDnsAddress.sin_port = htons(dnsServerPort);
 
         memset(&mSocksAddress, 0, sizeof(mSocksAddress));
         if (1 != inet_pton(AF_INET, socksServerIpAddressStr, &mSocksAddress.sin_addr))
@@ -616,7 +644,7 @@ public:
         netif_set_default(&mNetif);
         netif_set_pretend_tcp(&mNetif, 1);
 
-        // To proxy outbound TCP, use the lwip "pretend" flag,
+        // To proxy outbound TCP, use the lwip/tun2socks "pretend" flag,
         // which redirects the traffic destination to the virtual
         // interface. We run a local listener which accepts TCP
         // connections and we relay the traffic to the intended
@@ -674,6 +702,10 @@ public:
             return false;
         }
 
+        // DNS socket used to relay DNS UDP packets to DNS proxy.
+
+        ...
+
         // Main event loop. We move packets to and from the VPN IP packet stream
         // and to and from the SOCKS connections. We also need to periodically
         // invoke an lwip function and check for a stop signal.
@@ -698,7 +730,13 @@ public:
 
                 if (fd == mIpPacketFileDescriptor)
                 {
-                    if ((mEvents[i].events & EPOLLERR) || (mEvents[i].events & EPOLLHUP))
+                    if (mEvents[i].events & EPOLLERR)
+                    {
+                        log("vpn2socks run: epoll_wait mIpPacketFileDescriptor error");
+                        mSignalStopFlag = 1;
+                        break;
+                    }
+                    else if (mEvents[i].events & EPOLLHUP)
                     {
                         mSignalStopFlag = 1;
                         break;
@@ -712,13 +750,50 @@ public:
                         }
                     }
                 }
+                else if (fd == mDnsSocket)
+                {
+                    if (mEvents[i].events & EPOLLERR)
+                    {
+                        log("vpn2socks run: epoll_wait mDnsSocket error");
+                        mSignalStopFlag = 1;
+                        break;
+                    }
+                    else if (mEvents[i].events & EPOLLHUP)
+                    {
+                        mSignalStopFlag = 1;
+                        break;
+                    }
+                    else if (mEvents[i].events & EPOLLIN)
+                    {
+                        if (!tcpClient->readSocksData())
+                        {
+                            mSignalStopFlag = 1;
+                            break;
+                        }
+                    }
+                    else if (mEvents[i].events & EPOLLOUT)
+                    {
+                        if (!tcpClient->writeSocksData())
+                        {
+                            mSignalStopFlag = 1;
+                            break;
+                        }
+                    }
+                }
                 else
                 {
                     TcpClient* tcpClient = (TcpClient*)mEvents[i].data.ptr;
 
-                    if ((mEvents[i].events & EPOLLERR) || (mEvents[i].events & EPOLLHUP))
+                    if (mEvents[i].events & EPOLLERR)
                     {
-                        // flush and close: tcpClient
+                        log("vpn2socks run: epoll_wait tcpClient error");
+                        removeClient(tcpClient);
+                        tcpClient = 0;
+                    }
+                    else if (mEvents[i].events & EPOLLHUP)
+                    {
+                        removeClient(tcpClient);
+                        tcpClient = 0;
                     }
                     else if (mEvents[i].events & EPOLLIN)
                     {
