@@ -205,11 +205,15 @@ public class FeedbackActivity extends Activity
                      */
 
                     Map<String, Object> diagnosticObject = new HashMap<String, Object>();
+                    Map<String, Object> diagnosticInfo = new HashMap<String, Object>();
+                    
+                    diagnosticInfo.put("SystemInformation", sysInfo);
+                    diagnosticInfo.put("DiagnosticHistory", diagnosticHistory);
+                    diagnosticInfo.put("StatusHistory", statusHistory);
+                    
                     diagnosticObject.put("Metadata", metadata);
-                    diagnosticObject.put("SystemInformation", sysInfo);
-                    diagnosticObject.put("DiagnosticHistory", diagnosticHistory);
-                    diagnosticObject.put("StatusHistory", statusHistory);
-
+                    diagnosticObject.put("DiagnosticInfo", diagnosticInfo);
+                    
                     Yaml yaml = new Yaml();
                     diagnosticYaml = yaml.dump(diagnosticObject);
                 }
