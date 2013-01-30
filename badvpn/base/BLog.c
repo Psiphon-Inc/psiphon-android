@@ -68,3 +68,23 @@ void BLog_InitStderr (void)
 {
     BLog_Init(stderr_log, stdout_stderr_free);
 }
+
+// ==== PSIPHON ====
+
+void PsiphonLog(const char *level, const char *channel, const char *msg);
+
+static void psiphon_log (int channel, int level, const char *msg)
+{
+    PsiphonLog(level_names[level], blog_global.channels[channel].name, msg);
+}
+
+static void psiphon_free (void)
+{
+}
+
+void BLog_InitPsiphon (void)
+{
+    BLog_Init(psiphon_log, psiphon_free);
+}
+
+// ==== PSIPHON ====

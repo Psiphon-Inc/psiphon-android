@@ -64,5 +64,12 @@
     <string name="preferred_servers">Preferred servers: %d</string>
     <string name="selecting_server">Selecting server...</string>
     <string name="fetch_remote_server_list">Fetching remote server list...</string>
-    <string name="vpn_service_failed">VPN setup failed</string>
+    <string name="vpn_service_failed">VPN service failed</string>
+    <string name="vpn_service_running">VPN service running</string>
+    <string name="vpn_service_stopped">VPN service stopped</string>
+    <string name="vpn_service_revoked">VPN service revoked</string>
+    <string name="tun2socks_error">tun2socks: %s</string>
+    <string name="tun2socks_failed">VPN to SOCKS failed</string>
+    <string name="tun2socks_running">VPN to SOCKS running</string>
+    <string name="tun2socks_stopped">VPN to SOCKS stopped</string>
 </resources>

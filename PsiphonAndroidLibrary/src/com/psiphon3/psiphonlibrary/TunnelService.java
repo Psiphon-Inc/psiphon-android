@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Psiphon Inc.
+ * Copyright (c) 2013, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -343,7 +343,7 @@ public class TunnelService extends VpnService implements Utils.MyLog.ILogger, IS
         DnsProxy dnsProxy = null;
         boolean cleanupTransparentProxyRouting = false;
         Socket socket = null;
-        ParcelFileDescriptor vpnFileDescriptor = null;
+        Tun2Socks tun2Socks = null;
         
         try
         {
@@ -558,32 +558,22 @@ public class TunnelService extends VpnService implements Utils.MyLog.ILogger, IS
             
             // Run as Android OS VPN
             
-            // In-progress TODOs
-            // =================
-            //
-            // - VpnService.prepare() isn't in the library
-            // - VpnService subclassing
-            // - dynamic private address assignment (?)
-            // - 
-            
             if (tunnelWholeDevice && runVpnService)
             {
                 protect(socket);
                 
-                // Private IP address
-                String privateAddress = "10.0.0.1";
-                
                 String builderErrorMessage = null;
-                vpnFileDescriptor = null;
+                ParcelFileDescriptor vpnInterfaceFileDescriptor = null;
                 try
                 {
                     VpnService.Builder builder = new VpnService.Builder();
-                    vpnFileDescriptor = builder
+                    vpnInterfaceFileDescriptor = builder
                             .setSession(getString(R.string.app_name))
-                            .addAddress(privateAddress, 32) 
+                            .setMtu(PsiphonConstants.VPN_INTERFACE_MTU)
+                            .addAddress(PsiphonConstants.VPN_INTERFACE_NETWORK_ADDRESS, 32)                            
                             .addDnsServer(tunnelWholeDeviceDNSServer)
                             .establish();
-                    if (vpnFileDescriptor == null)
+                    if (vpnInterfaceFileDescriptor == null)
                     {
                         // as per http://developer.android.com/reference/android/net/VpnService.Builder.html#establish%28%29
                         builderErrorMessage = "application is not prepared or revoked";
@@ -601,7 +591,7 @@ public class TunnelService extends VpnService implements Utils.MyLog.ILogger, IS
                 {
                     builderErrorMessage = e.getMessage();                    
                 }
-                if (vpnFileDescriptor == null)
+                if (vpnInterfaceFileDescriptor == null)
                 {
                     // If we can't configure the Android OS VPN, abort
                     MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE, builderErrorMessage);
@@ -609,10 +599,23 @@ public class TunnelService extends VpnService implements Utils.MyLog.ILogger, IS
                     return runAgain;
                 }
                 
-                // TODO:
-                // vpnFileDescriptor.detachFD();
-                // Fd2Socks.run(fd)
-                // etc.
+                MyLog.e(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
+
+                String socksServerAddress = "127.0.0.1:" + Integer.toString(PsiphonData.getPsiphonData().getSocksPort());
+                String udpgwServerAddress = entry.ipAddress + ":" + Integer.toString(PsiphonConstants.UDPGW_SERVER_PORT);
+                
+                tun2Socks = new Tun2Socks();
+                tun2Socks.Start(
+                        vpnInterfaceFileDescriptor,
+                        PsiphonConstants.VPN_INTERFACE_MTU,
+                        PsiphonConstants.VPN_INTERFACE_NETWORK_ADDRESS,
+                        PsiphonConstants.VPN_INTERFACE_NETMASK,
+                        socksServerAddress,
+                        udpgwServerAddress);
+                
+                // TODO: detect and report: tun2Socks.Start failed; tun2socks run() unexpected exit
+
+                MyLog.e(R.string.tun2socks_running, MyLog.Sensitivity.NOT_SENSITIVE);
             }
             
             // Don't signal unexpected disconnect until we've started
@@ -758,6 +761,12 @@ public class TunnelService extends VpnService implements Utils.MyLog.ILogger, IS
                     // Ignore
                 }
                 MyLog.v(R.string.transparent_proxy_stopped, MyLog.Sensitivity.NOT_SENSITIVE);                
+            }
+            
+            if (tun2Socks != null)
+            {
+                tun2Socks.Stop();
+                MyLog.v(R.string.tun2socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);                
             }
             
             if (socks != null)
@@ -942,6 +951,13 @@ public class TunnelService extends VpnService implements Utils.MyLog.ILogger, IS
         
         m_signalQueue = null;
         m_tunnelThread = null;
+    }
+    
+    public void onRevoke()
+    {
+        MyLog.v(R.string.vpn_service_revoked, MyLog.Sensitivity.NOT_SENSITIVE);
+
+        stopTunnel();
     }
     
     public void setEventsInterface(Events eventsInterface)
