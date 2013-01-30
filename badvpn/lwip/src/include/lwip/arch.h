@@ -32,6 +32,10 @@
 #ifndef __LWIP_ARCH_H__
 #define __LWIP_ARCH_H__
 
+/*
+
+PSIPHON: temporary fix for compiler warnings
+
 #ifndef LITTLE_ENDIAN
 #define LITTLE_ENDIAN 1234
 #endif
@@ -39,6 +43,8 @@
 #ifndef BIG_ENDIAN
 #define BIG_ENDIAN 4321
 #endif
+
+*/
 
 #include "arch/cc.h"
 

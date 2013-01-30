@@ -469,8 +469,6 @@ fail1:
 fail0:
     return 0;
     
-    #endif
-    
 success:
     // init output
     PacketRecvInterface_Init(&o->output, o->frame_mtu, (PacketRecvInterface_handler_recv)output_handler_recv, o, BReactor_PendingGroup(o->reactor));
