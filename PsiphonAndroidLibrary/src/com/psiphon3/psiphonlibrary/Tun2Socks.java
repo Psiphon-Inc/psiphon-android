@@ -79,7 +79,7 @@ public class Tun2Socks implements Runnable
     public void run()
     {
         runTun2Socks(
-                mVpnInterfaceFileDescriptor.detachFd(),
+        		mVpnInterfaceFileDescriptor.detachFd(),
                 mVpnInterfaceMTU,
                 mVpnIpAddress,
                 mVpnNetMask,
@@ -87,7 +87,7 @@ public class Tun2Socks implements Runnable
                 mUdpgwServerAddress);
     }
     
-    static public void logTun2Socks(
+    public static void logTun2Socks(
             String level,
             String channel,
             String msg)
@@ -96,7 +96,7 @@ public class Tun2Socks implements Runnable
         MyLog.e(R.string.tun2socks_error, MyLog.Sensitivity.NOT_SENSITIVE, logMsg);
     }
 
-    private native int runTun2Socks(
+    private native static int runTun2Socks(
             int vpnInterfaceFileDescriptor,
             int vpnInterfaceMTU,
             String vpnIpAddress,
@@ -104,7 +104,7 @@ public class Tun2Socks implements Runnable
             String socksServerAddress,
             String udpgwServerAddress);
 
-    private native void terminateTun2Socks();
+    private native static void terminateTun2Socks();
     
     static
     {

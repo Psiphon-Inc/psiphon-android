@@ -265,6 +265,7 @@ void PsiphonLog(const char *levelStr, const char *channelStr, const char *msgStr
 
 JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_runTun2Socks(
     JNIEnv* env,
+    jclass cls,
     jint vpnInterfaceFileDescriptor,
     jint vpnInterfaceMTU,
     jstring vpnIpAddress,
@@ -272,12 +273,12 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_runTun2Socks(
     jstring socksServerAddress,
     jstring udpgwServerAddress)
 {
+    g_env = env;
+
     const char* vpnIpAddressStr = (*env)->GetStringUTFChars(env, vpnIpAddress, 0);
     const char* vpnNetMaskStr = (*env)->GetStringUTFChars(env, vpnNetMask, 0);
     const char* socksServerAddressStr = (*env)->GetStringUTFChars(env, socksServerAddress, 0);
     const char* udpgwServerAddressStr = (*env)->GetStringUTFChars(env, udpgwServerAddress, 0);
-
-    g_env = env;
 
     init_arguments("Psiphon tun2socks");
 
@@ -294,12 +295,12 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_runTun2Socks(
 
     run();
 
-    g_env = 0;
-
     (*env)->ReleaseStringUTFChars(env, vpnIpAddress, vpnIpAddressStr);
     (*env)->ReleaseStringUTFChars(env, vpnNetMask, vpnNetMaskStr);
     (*env)->ReleaseStringUTFChars(env, socksServerAddress, socksServerAddressStr);
     (*env)->ReleaseStringUTFChars(env, udpgwServerAddress, udpgwServerAddressStr);
+
+    g_env = 0;
 
     // TODO: return success/error
 
@@ -307,6 +308,7 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_runTun2Socks(
 }
 
 JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_terminateTun2Socks(
+    jclass cls,
     JNIEnv* env)
 {
     terminate();
