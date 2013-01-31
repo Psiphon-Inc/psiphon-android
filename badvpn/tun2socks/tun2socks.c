@@ -258,6 +258,8 @@ void PsiphonLog(const char *levelStr, const char *channelStr, const char *msgStr
     jmethodID logMethod = (*g_env)->GetStaticMethodID(g_env, cls, "logTun2Socks", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
     (*g_env)->CallStaticVoidMethod(g_env, cls, logMethod, level, channel, msg);
 
+    (*g_env)->DeleteLocalRef(g_env, cls);
+    
     (*g_env)->DeleteLocalRef(g_env, level);
     (*g_env)->DeleteLocalRef(g_env, channel);
     (*g_env)->DeleteLocalRef(g_env, msg);
