@@ -570,7 +570,8 @@ public class TunnelService extends VpnService implements Utils.MyLog.ILogger, IS
                     vpnInterfaceFileDescriptor = builder
                             .setSession(getString(R.string.app_name))
                             .setMtu(PsiphonConstants.VPN_INTERFACE_MTU)
-                            .addAddress(PsiphonConstants.VPN_INTERFACE_NETWORK_ADDRESS, 32)                            
+                            .addAddress(PsiphonConstants.VPN_INTERFACE_NETWORK_ADDRESS, 32)
+                            .addRoute("0.0.0.0", 0)
                             .addDnsServer(tunnelWholeDeviceDNSServer)
                             .establish();
                     if (vpnInterfaceFileDescriptor == null)
