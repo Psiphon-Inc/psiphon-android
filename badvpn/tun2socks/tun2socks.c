@@ -255,7 +255,7 @@ void PsiphonLog(const char *levelStr, const char *channelStr, const char *msgStr
     jstring msg = (*g_env)->NewStringUTF(g_env, msgStr);
 
     jclass cls = (*g_env)->FindClass(g_env, "com/psiphon3/psiphonlibrary/Tun2Socks");
-    jmethodID logMethod = (*g_env)->GetMethodID(g_env, cls, "logTun2Socks", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+    jmethodID logMethod = (*g_env)->GetStaticMethodID(g_env, cls, "logTun2Socks", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
     (*g_env)->CallStaticVoidMethod(g_env, cls, logMethod, level, channel, msg);
 
     (*g_env)->DeleteLocalRef(g_env, level);
@@ -288,6 +288,7 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_runTun2Socks(
     options.tun_fd = vpnInterfaceFileDescriptor;
     options.tun_mtu = vpnInterfaceMTU;
     options.set_signal = 0;
+    options.loglevel = 1;
 
     BLog_InitPsiphon();
 

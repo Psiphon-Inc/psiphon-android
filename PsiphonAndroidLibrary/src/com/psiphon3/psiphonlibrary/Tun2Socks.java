@@ -87,7 +87,7 @@ public class Tun2Socks implements Runnable
                 mUdpgwServerAddress);
     }
     
-    static void logTun2Socks(
+    static public void logTun2Socks(
             String level,
             String channel,
             String msg)
