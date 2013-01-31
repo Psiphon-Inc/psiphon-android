@@ -64,7 +64,7 @@
     <string name="preferred_servers">Preferred servers: %d</string>
     <string name="selecting_server">Selecting server...</string>
     <string name="fetch_remote_server_list">Fetching remote server list...</string>
-    <string name="vpn_service_failed">VPN service failed</string>
+    <string name="vpn_service_failed">VPN service failed: %s</string>
     <string name="vpn_service_running">VPN service running</string>
     <string name="vpn_service_stopped">VPN service stopped</string>
     <string name="vpn_service_revoked">VPN service revoked</string>
