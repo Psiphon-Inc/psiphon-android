@@ -70,6 +70,7 @@ void BLog_InitStderr (void)
 }
 
 // ==== PSIPHON ====
+#ifdef PSIPHON
 
 void PsiphonLog(const char *level, const char *channel, const char *msg);
 
@@ -87,4 +88,5 @@ void BLog_InitPsiphon (void)
     BLog_Init(psiphon_log, psiphon_free);
 }
 
+#endif
 // ==== PSIPHON ====
