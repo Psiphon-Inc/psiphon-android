@@ -603,7 +603,7 @@ public class TunnelService extends VpnService implements Utils.MyLog.ILogger, IS
                 MyLog.e(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
 
                 String socksServerAddress = "127.0.0.1:" + Integer.toString(PsiphonData.getPsiphonData().getSocksPort());
-                String udpgwServerAddress = entry.ipAddress + ":" + Integer.toString(PsiphonConstants.UDPGW_SERVER_PORT);
+                String udpgwServerAddress = "127.0.0.1:" + Integer.toString(PsiphonConstants.UDPGW_SERVER_PORT);
                 
                 tun2Socks = new Tun2Socks();
                 tun2Socks.Start(
