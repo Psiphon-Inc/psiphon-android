@@ -964,13 +964,6 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
         m_tunnelThread = null;
     }
     
-    public void onRevoke()
-    {
-        MyLog.v(R.string.vpn_service_revoked, MyLog.Sensitivity.NOT_SENSITIVE);
-
-        stopTunnel();
-    }
-    
     public void setEventsInterface(Events eventsInterface)
     {
         m_eventsInterface = eventsInterface;

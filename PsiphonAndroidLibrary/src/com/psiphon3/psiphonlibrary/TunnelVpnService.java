@@ -19,6 +19,8 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
+
 import android.annotation.TargetApi;
 import android.content.Intent;
 import android.net.VpnService;
@@ -64,6 +66,14 @@ public class TunnelVpnService extends VpnService
         m_Core.onDestroy();
     }
 
+    @Override
+    public void onRevoke()
+    {
+        MyLog.v(R.string.vpn_service_revoked, MyLog.Sensitivity.NOT_SENSITIVE);
+
+        m_Core.stopTunnel();
+    }
+    
     public void setEventsInterface(Events eventsInterface)
     {
         m_Core.setEventsInterface(eventsInterface);
