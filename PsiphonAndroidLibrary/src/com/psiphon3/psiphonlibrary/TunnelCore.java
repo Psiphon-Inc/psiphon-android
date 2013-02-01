@@ -331,7 +331,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
         DnsProxy dnsProxy = null;
         boolean cleanupTransparentProxyRouting = false;
         Socket socket = null;
-        Tun2Socks tun2Socks = null;
+        boolean cleanupTun2Socks = false;
         
         try
         {
@@ -567,8 +567,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 String socksServerAddress = "127.0.0.1:" + Integer.toString(PsiphonData.getPsiphonData().getSocksPort());
                 String udpgwServerAddress = "127.0.0.1:" + Integer.toString(PsiphonConstants.UDPGW_SERVER_PORT);
                 
-                tun2Socks = new Tun2Socks();
-                tun2Socks.Start(
+                Tun2Socks.Start(
                         vpnInterfaceFileDescriptor,
                         PsiphonConstants.VPN_INTERFACE_MTU,
                         PsiphonConstants.VPN_INTERFACE_NETWORK_ADDRESS,
@@ -726,9 +725,9 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 MyLog.v(R.string.transparent_proxy_stopped, MyLog.Sensitivity.NOT_SENSITIVE);                
             }
             
-            if (tun2Socks != null)
+            if (cleanupTun2Socks)
             {
-                tun2Socks.Stop();
+                Tun2Socks.Stop();
                 MyLog.v(R.string.tun2socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);                
             }
             

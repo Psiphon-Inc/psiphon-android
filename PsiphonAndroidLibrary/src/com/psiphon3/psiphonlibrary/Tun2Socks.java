@@ -21,23 +21,26 @@ package com.psiphon3.psiphonlibrary;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
+import android.annotation.TargetApi;
+import android.os.Build;
 import android.os.ParcelFileDescriptor;
 
-public class Tun2Socks implements Runnable
+@TargetApi(Build.VERSION_CODES.HONEYCOMB_MR1)
+public class Tun2Socks
 {
-    private Thread mThread;
-    private ParcelFileDescriptor mVpnInterfaceFileDescriptor;
-    private int mVpnInterfaceMTU;
-    private String mVpnIpAddress;
-    private String mVpnNetMask;
-    private String mSocksServerAddress;
-    private String mUdpgwServerAddress;
+    private static Thread mThread;
+    private static ParcelFileDescriptor mVpnInterfaceFileDescriptor;
+    private static int mVpnInterfaceMTU;
+    private static String mVpnIpAddress;
+    private static String mVpnNetMask;
+    private static String mSocksServerAddress;
+    private static String mUdpgwServerAddress;
     
     // Note: this class isn't a singleton, but you can't run more
     // than one instance due to the use of global state (the lwip
     // module, etc.) in the native code.
     
-    public void Start(
+    public static synchronized void Start(
             ParcelFileDescriptor vpnInterfaceFileDescriptor,
             int vpnInterfaceMTU,
             String vpnIpAddress,
@@ -54,11 +57,24 @@ public class Tun2Socks implements Runnable
         mSocksServerAddress = socksServerAddress;
         mUdpgwServerAddress = udpgwServerAddress;
 
-        mThread = new Thread(this);
+        mThread = new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                runTun2Socks(
+                        mVpnInterfaceFileDescriptor.detachFd(),
+                        mVpnInterfaceMTU,
+                        mVpnIpAddress,
+                        mVpnNetMask,
+                        mSocksServerAddress,
+                        mUdpgwServerAddress);
+            }            
+        });
         mThread.start();
     }
     
-    public void Stop()
+    public static synchronized void Stop()
     {
         if (mThread != null)
         {
@@ -74,19 +90,7 @@ public class Tun2Socks implements Runnable
             mThread = null;
         }
     }
-    
-    @Override
-    public void run()
-    {
-        runTun2Socks(
-        		mVpnInterfaceFileDescriptor.detachFd(),
-                mVpnInterfaceMTU,
-                mVpnIpAddress,
-                mVpnNetMask,
-                mSocksServerAddress,
-                mUdpgwServerAddress);
-    }
-    
+        
     public static void logTun2Socks(
             String level,
             String channel,
