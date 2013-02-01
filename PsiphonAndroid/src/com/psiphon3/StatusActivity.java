@@ -19,6 +19,7 @@
 
 package com.psiphon3;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
@@ -34,6 +35,7 @@ import android.content.SharedPreferences.Editor;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.net.VpnService;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -54,7 +56,7 @@ import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.TunnelService;
-import com.psiphon3.psiphonlibrary.TunnelService.LocalBinder;
+import com.psiphon3.psiphonlibrary.TunnelVpnService;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
@@ -73,7 +75,55 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     private CheckBox m_tunnelWholeDeviceToggle;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private LocalBroadcastManager m_localBroadcastManager;
+    private final Events m_eventsInterface = new Events();
     
+    private boolean m_boundToTunnelService = false;
+    private ServiceConnection m_tunnelServiceConnection = new ServiceConnection()
+    {
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder service)
+        {
+            TunnelService.LocalBinder binder = (TunnelService.LocalBinder) service;
+            TunnelService tunnelService = binder.getService();
+            m_boundToTunnelService = true;
+            tunnelService.setEventsInterface(m_eventsInterface);
+            tunnelService.setUpgradeDownloader(
+                    new UpgradeManager.UpgradeDownloader(StatusActivity.this, tunnelService.getServerInterface()));
+            startService(new Intent(StatusActivity.this, TunnelService.class));
+        }
+        
+        @Override
+        public void onServiceDisconnected(ComponentName arg0)
+        {
+            m_boundToTunnelService = false;
+        }
+    };
+
+    private boolean m_boundToTunnelVpnService = false;
+    private ServiceConnection m_tunnelVpnServiceConnection = new ServiceConnection()
+    {
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder service)
+        {
+            // VpnService backwards compatibility: this has sufficient lazy class loading
+            // as onServiceConnected is only called on bind.
+
+            TunnelVpnService.LocalBinder binder = (TunnelVpnService.LocalBinder) service;
+            TunnelVpnService tunnelVpnService = binder.getService();
+            m_boundToTunnelVpnService = true;
+            tunnelVpnService.setEventsInterface(m_eventsInterface);
+            tunnelVpnService.setUpgradeDownloader(
+                    new UpgradeManager.UpgradeDownloader(StatusActivity.this, tunnelVpnService.getServerInterface()));
+            startService(new Intent(StatusActivity.this, TunnelVpnService.class));
+        }
+        
+        @Override
+        public void onServiceDisconnected(ComponentName arg0)
+        {
+            m_boundToTunnelVpnService = false;
+        }
+    };
+
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
@@ -121,88 +171,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         m_messagesTableLayout.removeAllViews();
         MyLog.restoreLogHistory();
     }
-    
-    private TunnelService m_tunnelService = null;
-    private boolean m_boundToTunnelService = false;
-    private final Events m_eventsInterface = new Events();
-    
-    private ServiceConnection m_tunnelServiceConnection = new ServiceConnection()
-    {
-    	@Override
-    	public void onServiceConnected(ComponentName className, IBinder service)
-    	{
-    		LocalBinder binder = (LocalBinder) service;
-    		m_tunnelService = binder.getService();
-    		m_boundToTunnelService = true;
-    		m_tunnelService.setEventsInterface(m_eventsInterface);
-    		m_tunnelService.setUpgradeDownloader(
-    				new UpgradeManager.UpgradeDownloader(m_tunnelService, m_tunnelService.getServerInterface()));
-    		startService(new Intent(StatusActivity.this, TunnelService.class));
-    	}
-    	
-    	@Override
-    	public void onServiceDisconnected(ComponentName arg0)
-    	{
-    		m_boundToTunnelService = false;
-    	}
-    };
 
-    private void startTunnel(Context context)
-    {
-        // VpnService: need to display OS user warning. If whole device option is
-        // selected and we expect to use VpnService, so the prompt here in the UI
-        // before starting the service.
-        
-        boolean waitingForPrompt = false;
-        
-        if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService())
-        {
-            Intent intent = VpnService.prepare(this);
-            if (intent != null)
-            {
-                waitingForPrompt = true;
-                startActivityForResult(intent, 0);
-                // startTunnelService will be called in onActivityResult
-            }   
-        }
-        if (!waitingForPrompt)
-        {
-            startTunnelService(this);
-        }
-    }
-    
-    @Override
-    protected void onActivityResult(int request, int result, Intent data)
-    {
-        // TODO: handle result != RESULT_OK (cancel)
-        // TODO: check that this is the result for VpnService.prepare
-        if (result == RESULT_OK)
-        {
-            startTunnelService(this);
-        }
-    }
-    
-    private void startTunnelService(Context context)
-    {
-    	Intent intent = new Intent(context, TunnelService.class);
-    	bindService(intent, m_tunnelServiceConnection, Context.BIND_AUTO_CREATE);
-    }
-    
-    private void stopTunnel(Context context)
-    {
-        unbindTunnelService();
-        stopService(new Intent(context, TunnelService.class));
-    }
-
-    private void unbindTunnelService()
-    {
-        if (m_boundToTunnelService)
-        {
-            unbindService(m_tunnelServiceConnection);
-            m_boundToTunnelService = false;
-        }
-    }
-    
     @Override
     protected void onResume()
     {
@@ -405,6 +374,118 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         
         stopTunnel(this);
         this.moveTaskToBack(true);
+    }
+    
+    private void startTunnel(Context context)
+    {
+        boolean waitingForPrompt = false;
+        
+        if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService())
+        {
+            // VpnService backwards compatibility: for lazy class loading the VpnService
+            // class reference has to be in another function (doVpnPrepare), not just
+            // in a conditional branch.
+            waitingForPrompt = doVpnPrepare();
+        }
+        if (!waitingForPrompt)
+        {
+            startService(this);
+        }
+    }
+    
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+    private boolean doVpnPrepare()
+    {
+        // VpnService: need to display OS user warning. If whole device option is
+        // selected and we expect to use VpnService, so the prompt here in the UI
+        // before starting the service.
+        
+        Intent intent = VpnService.prepare(this);
+        if (intent != null)
+        {
+            startActivityForResult(intent, 0);
+            // startTunnelService will be called in onActivityResult
+            return true;
+        }
+        
+        return false;
+    }
+    
+    @Override
+    protected void onActivityResult(int request, int result, Intent data)
+    {
+        // TODO: handle result != RESULT_OK (cancel)
+        // TODO: check that this is the result for VpnService.prepare
+        if (result == RESULT_OK)
+        {
+            startService(this);
+        }
+    }
+    
+    private void startService(Context context)
+    {
+        // TODO: onResume calls this and when there was only one kind of service
+        // it was safe to call through to bindService, which would start that
+        // service if it was not already running. Now we have two types of services,
+        // can we rely on blindly rebinding? What if the getTunnelWholeDevice()
+        // value changed, can we end up with two running services? For now,
+        // we have some asserts.
+        
+        if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService())
+        {
+            assert(m_boundToTunnelService == false);
+            
+            // VpnService backwards compatibility: doStartTunnelVpnService is a wrapper
+            // function so we don't reference the undefined class when this function
+            // is loaded.
+            doStartTunnelVpnService(context);
+        }
+        else
+        {
+            assert(m_boundToTunnelVpnService == false);
+
+            Intent intent = new Intent(context, TunnelService.class);
+            bindService(intent, m_tunnelServiceConnection, Context.BIND_AUTO_CREATE);
+        }
+    }
+    
+    private void doStartTunnelVpnService(Context context)
+    {
+        Intent intent = new Intent(context, TunnelVpnService.class);
+        bindService(intent, m_tunnelVpnServiceConnection, Context.BIND_AUTO_CREATE);        
+    }
+    
+    private void stopTunnel(Context context)
+    {
+        unbindTunnelService();
+        if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService())
+        {
+            doStopVpnTunnel(context);
+        }
+        else
+        {
+            stopService(new Intent(context, TunnelService.class));
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+    private void doStopVpnTunnel(Context context)
+    {
+        stopService(new Intent(context, TunnelVpnService.class));            
+    }
+    
+    private void unbindTunnelService()
+    {
+        if (m_boundToTunnelService)
+        {
+            unbindService(m_tunnelServiceConnection);
+            m_boundToTunnelService = false;
+        }
+        if (m_boundToTunnelVpnService)
+        {
+            unbindService(m_tunnelVpnServiceConnection);
+            m_boundToTunnelVpnService = false;
+        }
     }
     
     public class AddMessageReceiver extends BroadcastReceiver

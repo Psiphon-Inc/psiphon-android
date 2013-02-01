@@ -19,20 +19,23 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import android.app.Service;
+import android.annotation.TargetApi;
 import android.content.Intent;
+import android.net.VpnService;
 import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
 
-public class TunnelService extends Service
+@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+public class TunnelVpnService extends VpnService
 {
     private TunnelCore m_Core = new TunnelCore(this);
 
     public class LocalBinder extends Binder
     {
-        public TunnelService getService()
+        public TunnelVpnService getService()
         {
-            return TunnelService.this;
+            return TunnelVpnService.this;
         }
     }
     private final IBinder m_binder = new LocalBinder();
@@ -66,13 +69,18 @@ public class TunnelService extends Service
         m_Core.setEventsInterface(eventsInterface);
     }
     
+    public void setUpgradeDownloader(TunnelCore.UpgradeDownloader downloader)
+    {
+        m_Core.setUpgradeDownloader(downloader);
+    }
+    
     public ServerInterface getServerInterface()
     {
         return m_Core.getServerInterface();
     }
     
-    public void setUpgradeDownloader(TunnelCore.UpgradeDownloader downloader)
+    public VpnService.Builder newBuilder()
     {
-        m_Core.setUpgradeDownloader(downloader);
+        return new VpnService.Builder();
     }
 }
