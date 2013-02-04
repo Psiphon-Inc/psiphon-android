@@ -1,8 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
   <string name="app_name">Psiphon 3</string>
-  <string name="psiphon_service_notification_id">Psiphon服务通知</string>
-  <string name="psiphon_service_notification_message_connecting">正在运行Psiphon 3...</string>
   <string name="ssh_connecting">SSH连接...</string>
   <string name="ssh_connected">SSH连接成功</string>
   <string name="ssh_connection_failed">SSH连接失败</string>
@@ -24,6 +22,9 @@
   <string name="ServerInterface.FailedToParseStoredServerEntries">未能解析存储的服务器条目.</string>
   <string name="ServerInterface.FailedToParseEmbeddedServerEntries">未能解析嵌入式的服务器条目.</string>
   <string name="ServerInterface.FailedToParseHandshake">未能解析握手.</string>
+  <string name="ServerInterface.FailedToStoreLastConnected">存储失败了上次连接时间。</string>
+  <string name="ServerInterface.FailedToParseLastConnected">上次连接的响应时间未能解析JSON。</string>
+  <string name="ServerInterface.FailedToReadLastConnected">读取失败了上次连接时间。</string>
   <string name="PsiphonAndroidService.HandshakeRequestFailed">握手请求失败.</string>
   <string name="PsiphonAndroidService.ConnectedRequestFailed">连接请求失败.</string>
   <string name="ssh_disconnected_unexpectedly">SSH意外断开连接</string>
@@ -58,4 +59,9 @@
   <string name="psiphon_running_browser_only">赛风运行在只浏览器的模式</string>
   <string name="waiting_for_network_connectivity">等待网络连接...</string>
   <string name="checking_for_root_access">检查的植根访问权限...</string>
+  <string name="psiphon_service_notification_message_connecting">正在运行Psiphon 3...</string>
+  <string name="psiphon_service_notification_id">Psiphon服务通知</string>
+  <string name="preferred_servers">首选的服务器：%d</string>
+  <string name="selecting_server">选择服务器。。。</string>
+  <string name="fetch_remote_server_list">正在获取远程服务器列表。。。</string>
 </resources>

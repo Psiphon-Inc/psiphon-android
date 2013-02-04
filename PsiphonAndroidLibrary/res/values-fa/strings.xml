@@ -1,8 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
   <string name="app_name">سایفون ۳</string>
-  <string name="psiphon_service_notification_id">اطلاع سرویس سایفون </string>
-  <string name="psiphon_service_notification_message_connecting">سایفون در حال اجراست</string>
   <string name="ssh_connecting">...در حال وصل اس اس اچ</string>
   <string name="ssh_connected">اس اس اچ وصل شد </string>
   <string name="ssh_connection_failed">وصل به اس اس اچ امکان پذیر نبود </string>
@@ -24,6 +22,9 @@
   <string name="ServerInterface.FailedToParseStoredServerEntries">تجزیه نوشته های ذخیره سرور نا موفق بود</string>
   <string name="ServerInterface.FailedToParseEmbeddedServerEntries">تجزیه نوشته های جاسازی شده سرور نا موفق بود</string>
   <string name="ServerInterface.FailedToParseHandshake">تجزیه ی ارتباط نا موفق بود </string>
+  <string name="ServerInterface.FailedToStoreLastConnected">ذخیره آخرین اتصال امکان پذیر نبود</string>
+  <string name="ServerInterface.FailedToParseLastConnected">پاسخ  تجزیه زمان اتصال  آخرین JSON امکان پذیر نبود</string>
+  <string name="ServerInterface.FailedToReadLastConnected">خواندن آخرین زمان اتصال امکان پذیر نبود</string>
   <string name="PsiphonAndroidService.HandshakeRequestFailed">درخواست ارتباط نا موفق بود </string>
   <string name="PsiphonAndroidService.ConnectedRequestFailed">درخواست متصل نا موفق بود </string>
   <string name="ssh_disconnected_unexpectedly">اس اس اچ غیر منتظره قطع شد </string>
@@ -58,4 +59,9 @@
   <string name="psiphon_running_browser_only">فقط مرورگر سایفون در حال اجراست</string>
   <string name="waiting_for_network_connectivity"> ...انتظار برای اتصال به شبکه </string>
   <string name="checking_for_root_access">... چک کردن برای دسترسی به روت </string>
+  <string name="psiphon_service_notification_message_connecting">سایفون در حال اجراست</string>
+  <string name="psiphon_service_notification_id">اطلاع سرویس سایفون </string>
+  <string name="preferred_servers">سرورهای مورد ترجیح:  d%</string>
+  <string name="selecting_server">انتخاب سرور...</string>
+  <string name="fetch_remote_server_list">گرفتن لیست سرورهای ریموت... </string>
 </resources>

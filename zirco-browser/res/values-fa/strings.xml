@@ -421,7 +421,12 @@
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">در صورت انتخاب، پنجره ها وقتی در دسترس بودند، باز گردانده میشوند </string>
   <!--0.4.3-->
   <string name="VideoLoading">در حال بارگذاری ویدیو\u2026</string>
+  <string name="PreferencesActivity.DesktopViewCategoryTitle">تنظیمات نمایش دسکتاپ </string>
+  <string name="PreferencesActivity.DesktopViewListPreferenceTitle">لیست حالت دسکتاپ</string>
+  <string name="PreferencesActivity.DesktopViewListPreferenceSummary">سایت های این لیست توسط برنامه عامل کاربردسکتاپ باز میشوند. نسخه وبسایت های مخصوص دسکتاپ.</string>
+  <string name="DesktopViewListActivity.Title">مرورگر سایفون - لیست وبسایت های نمایی دسکتاپ </string>
   <string name="DesktopViewListActivity.ListEmpty">لیست خالی است</string>
   <string name="DesktopViewListActivity.AddMessage">افزودن  وب سایت</string>
   <string name="DesktopViewListActivity.ClearMessage">پاک  تمام سایت ها</string>
+  <string name="Main.MenuFeedback">نظر یا پیشنهاد  </string>
 </resources>

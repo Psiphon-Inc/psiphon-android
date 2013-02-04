@@ -421,6 +421,10 @@
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">Восстанавливать вкладки при следующем запуске приложения</string>
   <!--0.4.3-->
   <string name="VideoLoading">Загрузка видео\u2026</string>
+  <string name="PreferencesActivity.DesktopViewCategoryTitle">Настройки полноформатного просмотра</string>
+  <string name="PreferencesActivity.DesktopViewListPreferenceTitle">Список сайтов загружаемых в режиме десктоп</string>
+  <string name="PreferencesActivity.DesktopViewListPreferenceSummary">Веб сайты из этого списка будут загружены в десктоп режиме</string>
+  <string name="DesktopViewListActivity.Title">Psiphon Browser - Список сайтов загружаемых в режиме десктоп</string>
   <string name="DesktopViewListActivity.ListEmpty">Список пуст.</string>
   <string name="DesktopViewListActivity.AddMessage">Добавить сайт</string>
   <string name="DesktopViewListActivity.ClearMessage">Удалить все сайты</string>
