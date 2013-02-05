@@ -45,7 +45,16 @@ public class TunnelVpnService extends VpnService
     @Override
     public IBinder onBind(Intent intent)
     {
-        return m_binder;
+    	// Need to use super class behavior in specified cases:
+    	// http://developer.android.com/reference/android/net/VpnService.html#onBind%28android.content.Intent%29
+    	
+    	String action = intent.getAction();
+    	if (action != null && action.equals(SERVICE_INTERFACE))
+    	{
+        	return super.onBind(intent);
+    	}
+    	
+		return m_binder;
     }
 
     @Override
@@ -69,7 +78,7 @@ public class TunnelVpnService extends VpnService
     @Override
     public void onRevoke()
     {
-        MyLog.v(R.string.vpn_service_revoked, MyLog.Sensitivity.NOT_SENSITIVE);
+        MyLog.w(R.string.vpn_service_revoked, MyLog.Sensitivity.NOT_SENSITIVE);
 
         m_Core.stopTunnel();
     }

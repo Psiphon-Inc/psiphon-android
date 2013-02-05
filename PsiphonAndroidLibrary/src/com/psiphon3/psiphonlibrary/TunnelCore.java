@@ -567,6 +567,8 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 String socksServerAddress = "127.0.0.1:" + Integer.toString(PsiphonData.getPsiphonData().getSocksPort());
                 String udpgwServerAddress = "127.0.0.1:" + Integer.toString(PsiphonConstants.UDPGW_SERVER_PORT);
                 
+                cleanupTun2Socks = true;
+                
                 Tun2Socks.Start(
                         this,
                         vpnInterfaceFileDescriptor,
