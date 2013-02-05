@@ -29,6 +29,7 @@ import android.os.ParcelFileDescriptor;
 public class Tun2Socks
 {
     private static Thread mThread;
+    private static TunnelCore mTunnelCore;
     private static ParcelFileDescriptor mVpnInterfaceFileDescriptor;
     private static int mVpnInterfaceMTU;
     private static String mVpnIpAddress;
@@ -41,6 +42,7 @@ public class Tun2Socks
     // module, etc.) in the native code.
     
     public static synchronized void Start(
+            TunnelCore tunnelCore,
             ParcelFileDescriptor vpnInterfaceFileDescriptor,
             int vpnInterfaceMTU,
             String vpnIpAddress,
@@ -48,6 +50,10 @@ public class Tun2Socks
             String socksServerAddress,
             String udpgwServerAddress)
     {
+        // TODO: will be cleaner if/when TunnelCore is a singleton
+        assert(mTunnelCore == null);
+        mTunnelCore = tunnelCore;
+        
         Stop();
 
         mVpnInterfaceFileDescriptor = vpnInterfaceFileDescriptor;
@@ -69,7 +75,15 @@ public class Tun2Socks
                         mVpnNetMask,
                         mSocksServerAddress,
                         mUdpgwServerAddress);
-            }            
+            	
+                // Unexpected error condition (Stop not signaled)
+                if (mTunnelCore != null)
+                {
+                	MyLog.w(R.string.tun2socks_failed, MyLog.Sensitivity.NOT_SENSITIVE);
+                    
+                    mTunnelCore.stopTunnel();
+                }
+            }
         });
         mThread.start();
     }
@@ -78,6 +92,7 @@ public class Tun2Socks
     {
         if (mThread != null)
         {
+            mTunnelCore = null;
             terminateTun2Socks();
             try
             {

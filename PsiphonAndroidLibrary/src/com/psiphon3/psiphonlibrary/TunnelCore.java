@@ -562,12 +562,13 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                     return runAgain;
                 }
                 
-                MyLog.e(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
+                MyLog.v(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
 
                 String socksServerAddress = "127.0.0.1:" + Integer.toString(PsiphonData.getPsiphonData().getSocksPort());
                 String udpgwServerAddress = "127.0.0.1:" + Integer.toString(PsiphonConstants.UDPGW_SERVER_PORT);
                 
                 Tun2Socks.Start(
+                        this,
                         vpnInterfaceFileDescriptor,
                         PsiphonConstants.VPN_INTERFACE_MTU,
                         PsiphonConstants.VPN_INTERFACE_NETWORK_ADDRESS,
@@ -577,7 +578,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 
                 // TODO: detect and report: tun2Socks.Start failed; tun2socks run() unexpected exit
 
-                MyLog.e(R.string.tun2socks_running, MyLog.Sensitivity.NOT_SENSITIVE);
+                MyLog.v(R.string.tun2socks_running, MyLog.Sensitivity.NOT_SENSITIVE);
             }
             
             // Don't signal unexpected disconnect until we've started
