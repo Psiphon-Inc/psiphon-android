@@ -81,6 +81,7 @@ public class TunnelVpnService extends VpnService
         MyLog.w(R.string.vpn_service_revoked, MyLog.Sensitivity.NOT_SENSITIVE);
 
         m_Core.stopTunnel();
+        stopSelf();
     }
     
     public void setEventsInterface(Events eventsInterface)

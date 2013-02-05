@@ -93,6 +93,15 @@
         android:weightSum="4.0">
 
         <Button
+            android:id="@+id/toggleButton"
+            android:onClick="onToggleClick"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:text="@string/start"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:layout_weight="1.05" />
+
+        <Button
             android:id="@+id/openBrowserButton"
             android:onClick="onOpenBrowserClick"
             android:layout_width="fill_parent"
@@ -118,15 +127,6 @@
             android:text="@string/about"
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:layout_weight="1.0" />
-        
-        <Button
-            android:id="@+id/exitButton"
-            android:onClick="onExitClick"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:text="@string/exit"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:layout_weight="1.05" />
         
     </LinearLayout>
 

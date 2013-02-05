@@ -45,6 +45,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.webkit.URLUtil;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.ScrollView;
@@ -69,14 +70,21 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     public static final String ADD_MESSAGE_CLASS = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_CLASS";
     public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
     public static final String UNEXPECTED_DISCONNECT = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT";
+    public static final String TUNNEL_STARTING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STARTING";
+    public static final String TUNNEL_STOPPING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STOPPING";
+
     public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
+    
+    private static final int VPN_PREPARE = 100;
     
     private TableLayout m_messagesTableLayout;
     private ScrollView m_messagesScrollView;
+    private Button m_toggleButton;
     private CheckBox m_tunnelWholeDeviceToggle;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private LocalBroadcastManager m_localBroadcastManager;
     private final Events m_eventsInterface = new Events();
+    private static boolean m_firstRun = true;
     
     private boolean m_boundToTunnelService = false;
     private ServiceConnection m_tunnelServiceConnection = new ServiceConnection()
@@ -136,6 +144,8 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         
         m_messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
         m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
+        m_toggleButton = (Button)findViewById(R.id.toggleButton);
+        initToggleText();
         m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
 
         // Transparent proxy-based "Tunnel Whole Device" option is only available on rooted devices and
@@ -167,10 +177,25 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                 new AddMessageReceiver(),
                 new IntentFilter(ADD_MESSAGE));
         
+        m_localBroadcastManager.registerReceiver(
+                new TunnelStartingReceiver(),
+                new IntentFilter(TUNNEL_STARTING));
+
+        m_localBroadcastManager.registerReceiver(
+                new TunnelStoppingReceiver(),
+                new IntentFilter(TUNNEL_STOPPING));
+        
         // Restore messages previously posted by the service.
         // Note that this must come *after* this activity registers to receive ADD_MESSAGE intents.
         m_messagesTableLayout.removeAllViews();
         MyLog.restoreLogHistory();
+        
+        // Auto-start on app first run
+        if (m_firstRun)
+        {
+        	m_firstRun = false;
+        	startUp();
+        }
     }
 
     @Override
@@ -179,7 +204,152 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         super.onResume();
         
         PsiphonData.getPsiphonData().setStatusActivityForeground(true);
+    }
+    
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
         
+        unbindTunnelService();
+        
+        PsiphonData.getPsiphonData().setStatusActivityForeground(false);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent)
+    {
+        super.onNewIntent(intent);
+            
+        // If the app is already foreground (so onNewIntent is being called), 
+        // the incoming intent is not automatically set as the activity's intent
+        // (i.e., the intent returned by getIntent()). We want this behaviour, 
+        // so we'll set it explicitly. 
+        setIntent(intent);
+
+        // Handle explicit intent that is received when activity is already running
+        HandleCurrentIntent();
+    }
+
+    protected void HandleCurrentIntent()
+    {
+        Intent intent = getIntent();
+        
+        if (intent == null || intent.getAction() == null)
+        {
+            return;
+        }
+
+        if (0 == intent.getAction().compareTo(HANDSHAKE_SUCCESS))
+        {
+            Events.displayBrowser(this);
+            
+            // We only want to respond to the HANDSHAKE_SUCCESS action once,
+            // so we need to clear it (by setting it to a non-special intent).
+            setIntent(new Intent(
+                            "ACTION_VIEW",
+                            null,
+                            this,
+                            this.getClass()));
+        }
+        
+        // No explicit action for UNEXPECTED_DISCONNECT, just show the activity
+    }
+    
+    public void onToggleClick(View v)
+    {
+    	// TODO: use TunnelStartingReceiver/TunnelStoppingReceiver to track state?
+    	if (!isServiceRunning())
+    	{
+    		startUp();
+    	}
+    	else
+    	{
+            stopTunnel(this);
+    	}
+    }
+
+    private void initToggleText()
+    {
+    	// Only use this in onCreate. For updating the text when the activity
+    	// is showing and the service is stopping, it's more reliable to
+    	// use TunnelStoppingReceiver.
+    	m_toggleButton.setText(isServiceRunning() ? getText(R.string.stop) : getText(R.string.start));
+    }
+    
+    public class TunnelStartingReceiver extends BroadcastReceiver
+    {
+        @Override
+        public void onReceive(Context context, Intent intent)
+        {
+        	m_toggleButton.setText(getText(R.string.stop));
+        }
+    }
+
+    public class TunnelStoppingReceiver extends BroadcastReceiver
+    {
+        @Override
+        public void onReceive(Context context, Intent intent)
+        {
+        	m_toggleButton.setText(getText(R.string.start));
+        }
+    }
+    
+    public void onTunnelWholeDeviceToggle(View v)
+    {
+    	boolean restart = false;
+
+    	if (isServiceRunning())
+        {
+	        stopTunnel(this);
+	        restart = true;
+        }
+
+        boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
+        updateWholeDevicePreference(tunnelWholeDevicePreference);
+        
+        if (restart)
+        {
+	        startTunnel(this);
+        }
+    }
+    
+    protected void updateWholeDevicePreference(boolean tunnelWholeDevicePreference)
+    {
+        // No isRooted check: the user can specify whatever preference they
+        // wish. Also, CheckBox enabling should cover this (but isn't required to).
+        Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+        editor.putBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, tunnelWholeDevicePreference);
+        editor.commit();
+        
+        PsiphonData.getPsiphonData().setTunnelWholeDevice(tunnelWholeDevicePreference);
+    }
+    
+    public void onOpenBrowserClick(View v)
+    {
+        Events.displayBrowser(this);       
+    }
+    
+    public void onFeedbackClick(View v)
+    {
+        Intent feedbackIntent = new Intent(this, FeedbackActivity.class);
+        startActivity(feedbackIntent);
+    }
+
+    public void onAboutClick(View v)
+    {
+        if (URLUtil.isValidUrl(EmbeddedValues.INFO_LINK_URL))
+        {
+            // TODO: if connected, open in Psiphon browser? 
+            // Events.displayBrowser(this, Uri.parse(PsiphonConstants.INFO_LINK_URL));
+
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(EmbeddedValues.INFO_LINK_URL));
+            startActivity(browserIntent);
+        }
+    }
+    
+    private void startUp()
+    {
         final Context context = this;
 
         UpgradeInstaller.IUpgradeListener upgradeListener = new UpgradeInstaller.IUpgradeListener()
@@ -270,111 +440,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         else
         {
             upgradeListener.upgradeNotStarted();
-        }
-    }
-    
-    @Override
-    protected void onPause()
-    {
-        super.onPause();
-        
-        unbindTunnelService();
-        
-        PsiphonData.getPsiphonData().setStatusActivityForeground(false);
-    }
-
-    @Override
-    protected void onNewIntent(Intent intent)
-    {
-        super.onNewIntent(intent);
-            
-        // If the app is already foreground (so onNewIntent is being called), 
-        // the incoming intent is not automatically set as the activity's intent
-        // (i.e., the intent returned by getIntent()). We want this behaviour, 
-        // so we'll set it explicitly. 
-        setIntent(intent);
-
-        // Handle explicit intent that is received when activity is already running
-        HandleCurrentIntent();
-    }
-
-    protected void HandleCurrentIntent()
-    {
-        Intent intent = getIntent();
-        
-        if (intent == null || intent.getAction() == null)
-        {
-            return;
-        }
-
-        if (0 == intent.getAction().compareTo(HANDSHAKE_SUCCESS))
-        {
-            Events.displayBrowser(this);
-            
-            // We only want to respond to the HANDSHAKE_SUCCESS action once,
-            // so we need to clear it (by setting it to a non-special intent).
-            setIntent(new Intent(
-                            "ACTION_VIEW",
-                            null,
-                            this,
-                            this.getClass()));
-        }
-        
-        // No explicit action for UNEXPECTED_DISCONNECT, just show the activity
-    }
-    
-    public void onTunnelWholeDeviceToggle(View v)
-    {
-        boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
-        
-        updateWholeDevicePreference(tunnelWholeDevicePreference);
-        
-        // TODO: don't need to stop/start tunnel to change this preference
-        stopTunnel(this);
-        startTunnel(this);
-    }
-    
-    protected void updateWholeDevicePreference(boolean tunnelWholeDevicePreference)
-    {
-        // No isRooted check: the user can specify whatever preference they
-        // wish. Also, CheckBox enabling should cover this (but isn't required to).
-        Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-        editor.putBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, tunnelWholeDevicePreference);
-        editor.commit();
-        
-        PsiphonData.getPsiphonData().setTunnelWholeDevice(tunnelWholeDevicePreference);
-    }
-    
-    public void onOpenBrowserClick(View v)
-    {
-        Events.displayBrowser(this);       
-    }
-    
-    public void onFeedbackClick(View v)
-    {
-        Intent feedbackIntent = new Intent(this, FeedbackActivity.class);
-        startActivity(feedbackIntent);
-    }
-
-    public void onAboutClick(View v)
-    {
-        if (URLUtil.isValidUrl(EmbeddedValues.INFO_LINK_URL))
-        {
-            // TODO: if connected, open in Psiphon browser? 
-            // Events.displayBrowser(this, Uri.parse(PsiphonConstants.INFO_LINK_URL));
-
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(EmbeddedValues.INFO_LINK_URL));
-            startActivity(browserIntent);
-        }
-    }
-    
-    public void onExitClick(View v)
-    {
-        // This command doesn't necessarily kill the process, but
-        // it stops the service and hides the app.
-        
-        stopTunnel(this);
-        this.moveTaskToBack(true);
+        }    	
     }
     
     private void startTunnel(Context context)
@@ -404,7 +470,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         Intent intent = VpnService.prepare(this);
         if (intent != null)
         {
-            startActivityForResult(intent, 0);
+            startActivityForResult(intent, VPN_PREPARE);
             // startTunnelService will be called in onActivityResult
             return true;
         }
@@ -415,9 +481,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     @Override
     protected void onActivityResult(int request, int result, Intent data)
     {
-        // TODO: handle result != RESULT_OK (cancel)
-        // TODO: check that this is the result for VpnService.prepare
-        if (result == RESULT_OK)
+        if (request == VPN_PREPARE && result == RESULT_OK)
         {
             startService(this);
         }
@@ -570,7 +634,8 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
         {
-            if (TunnelService.class.getName().equals(service.service.getClassName()))
+            if (TunnelService.class.getName().equals(service.service.getClassName())
+            		|| TunnelVpnService.class.getName().equals(service.service.getClassName()))
             {
                 return true;
             }

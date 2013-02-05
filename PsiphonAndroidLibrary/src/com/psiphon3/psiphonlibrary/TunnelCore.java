@@ -901,6 +901,11 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     {
         stopTunnel();
 
+        if (m_eventsInterface != null)
+        {
+            m_eventsInterface.signalTunnelStarting(m_parentService);
+        }
+
         MyLog.v(R.string.starting_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
         setState(State.CONNECTING);
@@ -931,6 +936,11 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     {
         if (m_tunnelThread != null)
         {
+            if (m_eventsInterface != null)
+            {
+                m_eventsInterface.signalTunnelStopping(m_parentService);
+            }
+
             try
             {
                 MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
