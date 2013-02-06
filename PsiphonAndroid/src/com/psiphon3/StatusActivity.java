@@ -146,6 +146,18 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
         initToggleText();
+
+        /*
+        // Draw attention to the new Start/Stop command
+        // http://stackoverflow.com/questions/4852281/android-how-to-make-a-button-flashing
+        final Animation animation = new AlphaAnimation(1, 0);
+        animation.setDuration(500);
+        animation.setInterpolator(new LinearInterpolator());
+        animation.setRepeatCount(2);
+        animation.setRepeatMode(Animation.REVERSE);
+        m_toggleButton.startAnimation(animation);
+        */
+
         m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
 
         // Transparent proxy-based "Tunnel Whole Device" option is only available on rooted devices and
@@ -202,6 +214,9 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     protected void onResume()
     {
         super.onResume();
+        
+        // Scroll down to display log messages posted while activity was not foreground
+        postScrollToBottom();
         
         PsiphonData.getPsiphonData().setStatusActivityForeground(true);
     }
@@ -542,7 +557,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         // the VPN is via the OS notification UI.
         Tun2Socks.Stop();
 
-        stopService(new Intent(context, TunnelVpnService.class));            
+        stopService(new Intent(context, TunnelVpnService.class));
     }
     
     private void unbindTunnelService()
@@ -613,6 +628,11 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         
         // Wait until the messages list is updated before attempting to scroll 
         // to the bottom.
+        postScrollToBottom();
+    }
+    
+    private void postScrollToBottom()
+    {
         m_messagesScrollView.post(
             new Runnable()
             {
@@ -621,7 +641,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                 {
                     m_messagesScrollView.fullScroll(View.FOCUS_DOWN);
                 }
-            });
+            });    	
     }
     
     /**
