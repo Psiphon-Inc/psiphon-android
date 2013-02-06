@@ -301,7 +301,7 @@ static void connection_recv (BConnection *o)
             return;
         }
         
-        BLog(BLOG_ERROR, "recv failed");
+        BLog(BLOG_WARNING, "recv failed");
         connection_report_error(o);
         return;
     }
