@@ -79,9 +79,9 @@ public class Tun2Socks
                 // Unexpected error condition (Stop not signaled)
                 if (mTunnelCore != null)
                 {
-                	MyLog.w(R.string.tun2socks_failed, MyLog.Sensitivity.NOT_SENSITIVE);
+                	MyLog.e(R.string.tun2socks_failed, MyLog.Sensitivity.NOT_SENSITIVE);
                     
-                    mTunnelCore.stopTunnel();
+                    mTunnelCore.signalUnexpectedDisconnect();
                 }
             }
         });

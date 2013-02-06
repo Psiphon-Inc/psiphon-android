@@ -67,7 +67,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
 
     enum Signal
     {
-        STOP_SERVICE,
+        STOP_TUNNEL,
         UNEXPECTED_DISCONNECT
     };
     private BlockingQueue<Signal> m_signalQueue;
@@ -115,13 +115,6 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     // Implementation of android.app.Service.onDestroy
     public void onDestroy()
     {
-        // TODO: ServerListReorder lifetime on Android isn't the same as on Windows
-        if (m_serverSelector != null)
-        {
-            m_serverSelector.Abort();
-            m_serverSelector = null;
-        }
-        
         m_destroyed = true;
 
         stopTunnel();
@@ -263,7 +256,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     
             // 'Add' will do nothing if there's already a pending signal.
             // This is ok: the pending signal is either UNEXPECTED_DISCONNECT
-            // or STOP_SERVICE, and both will result in a tear down.
+            // or STOP_TUNNEL, and both will result in a tear down.
             m_signalQueue.add(Signal.UNEXPECTED_DISCONNECT);
         }
     }
@@ -278,18 +271,18 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
         }
     }
     
-    private static class TunnelVpnServiceStop extends Exception
+    private static class TunnelVpnTunnelStop extends Exception
     {
         private static final long serialVersionUID = 1L;
         
-        public TunnelVpnServiceStop()
+        public TunnelVpnTunnelStop()
         {
             super();
         }
     }
     
     private void checkSignals(int waitTimeSeconds)
-            throws InterruptedException, TunnelVpnServiceUnexpectedDisconnect, TunnelVpnServiceStop
+            throws InterruptedException, TunnelVpnServiceUnexpectedDisconnect, TunnelVpnTunnelStop
     {
         Signal signal = m_signalQueue.poll(waitTimeSeconds, TimeUnit.SECONDS);
         
@@ -297,8 +290,8 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
         {
             switch (signal)
             {
-            case STOP_SERVICE:
-                throw new TunnelVpnServiceStop();
+            case STOP_TUNNEL:
+                throw new TunnelVpnTunnelStop();
             case UNEXPECTED_DISCONNECT:
                 throw new TunnelVpnServiceUnexpectedDisconnect();
             }
@@ -307,7 +300,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     
     public boolean isStopSignalPending()
     {
-        return m_signalQueue.peek() == Signal.STOP_SERVICE;
+        return m_signalQueue.peek() == Signal.STOP_TUNNEL;
     }
     
     private boolean runTunnelOnce()
@@ -398,6 +391,9 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
             checkSignals(0);
 
             m_serverSelector.Run();
+
+            checkSignals(0);
+            
             socket = m_serverSelector.firstEntrySocket;
             String ipAddress = m_serverSelector.firstEntryIpAddress;
             if (socket == null)
@@ -679,7 +675,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
             unexpectedDisconnect = true;
             runAgain = true;
         }
-        catch (TunnelVpnServiceStop e)
+        catch (TunnelVpnTunnelStop e)
         {
             unexpectedDisconnect = false;
             runAgain = false;
@@ -859,7 +855,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
             {
                 // Continue with the retry loop
             } 
-            catch (TunnelVpnServiceStop e)
+            catch (TunnelVpnTunnelStop e)
             {
                 // Stop has been requested, so get out of the retry loop.
                 setState(State.DISCONNECTED);
@@ -932,6 +928,20 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
         m_tunnelThread.start();
     }
     
+    public void signalUnexpectedDisconnect()
+    {
+        // Override STOP_TUNNEL; TODO: race condition?
+        m_signalQueue.clear();
+        m_signalQueue.offer(Signal.UNEXPECTED_DISCONNECT);
+    }
+    
+    public void signalStopTunnel()
+    {
+        // Override UNEXPECTED_DISCONNECT; TODO: race condition?
+        m_signalQueue.clear();
+        m_signalQueue.offer(Signal.STOP_TUNNEL);
+    }
+    
     public void stopTunnel()
     {
         if (m_tunnelThread != null)
@@ -941,13 +951,18 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 m_eventsInterface.signalTunnelStopping(m_parentService);
             }
 
+            // TODO: ServerListReorder lifetime on Android isn't the same as on Windows
+            if (m_serverSelector != null)
+            {
+                m_serverSelector.Abort();
+                m_serverSelector = null;
+            }
+            
             try
             {
                 MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
                 
-                // Override UNEXPECTED_DISCONNECT; TODO: race condition?
-                m_signalQueue.clear();
-                m_signalQueue.offer(Signal.STOP_SERVICE);
+                signalStopTunnel();
 
                 // Tell the ServerInterface to stop (e.g., kill requests).
 
