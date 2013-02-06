@@ -170,7 +170,13 @@ netif_add(struct netif *netif, ip_addr_t *ipaddr, ip_addr_t *netmask,
 
   /* remember netif specific state information data */
   netif->state = state;
+#ifdef PSIPHON
+  /* tun2socks as a library, with a multi-run lifetime,
+     may invoke this multiple times */
+  netif->num = netifnum;
+#else
   netif->num = netifnum++;
+#endif /* PSIPHON */
   netif->input = input;
 #if LWIP_NETIF_HWADDRHINT
   netif->addr_hint = NULL;
