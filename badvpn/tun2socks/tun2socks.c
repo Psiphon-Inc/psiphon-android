@@ -531,7 +531,7 @@ void run()
         netif_remove(&netif);
     }
 
-    // PSIPHON
+    // ==== PSIPHON ====
     // The existing tun2socks cleanup sometimes leaves some TCP connections
     // in the TIME_WAIT state. With regular tun2socks, these will be cleaned up
     // by process termination. Since we re-init tun2socks within one process,
@@ -540,7 +540,14 @@ void run()
     // both sources of tunneled packets (VPN fd and SOCKS sockets), there should
     // be no need to keep these TCP connections in TIME_WAIT between tun2socks
     // invocations.
+    // After further testing, we found at least one TCP connection left in the
+    // active list (with state SYN_RCVD). Now we're aborting the active list
+    // as well, and the bound list for good measure.
+    tcp_remove(tcp_bound_pcbs);
+    tcp_remove(tcp_active_pcbs);
     tcp_remove(tcp_tw_pcbs);
+    // ==== PSIPHON ====
+
 
     BReactor_RemoveTimer(&ss, &tcp_timer);
     BFree(device_write_buf);
