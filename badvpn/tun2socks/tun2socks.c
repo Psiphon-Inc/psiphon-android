@@ -317,6 +317,21 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_terminateTun2S
     return 0;
 }
 
+// from tcp_helper.c
+/** Remove all pcbs on the given list. */
+static void tcp_remove(struct tcp_pcb* pcb_list)
+{
+    struct tcp_pcb *pcb = pcb_list;
+    struct tcp_pcb *pcb2;
+
+    while(pcb != NULL)
+    {
+        pcb2 = pcb;
+        pcb = pcb->next;
+        tcp_abort(pcb2);
+    }
+}
+
 //==== PSIPHON ====
 
 #else
@@ -515,7 +530,18 @@ void run()
     if (have_netif) {
         netif_remove(&netif);
     }
-    
+
+    // PSIPHON
+    // The existing tun2socks cleanup sometimes leaves some TCP connections
+    // in the TIME_WAIT state. With regular tun2socks, these will be cleaned up
+    // by process termination. Since we re-init tun2socks within one process,
+    // and tcp_bind_to_netif requires no TCP connections bound to the network
+    // interface, we need to explicitly clean these up. Since we're also closing
+    // both sources of tunneled packets (VPN fd and SOCKS sockets), there should
+    // be no need to keep these TCP connections in TIME_WAIT between tun2socks
+    // invocations.
+    tcp_remove(tcp_tw_pcbs);
+
     BReactor_RemoveTimer(&ss, &tcp_timer);
     BFree(device_write_buf);
 fail5:
