@@ -66,12 +66,14 @@ public class TunnelVpnService extends VpnService
     @Override
     public void onCreate()
     {
+    	PsiphonData.getPsiphonData().setCurrentTunnelCore(m_Core);
         m_Core.onCreate();
     }
 
     @Override
     public void onDestroy()
     {
+    	PsiphonData.getPsiphonData().setCurrentTunnelCore(null);
         m_Core.onDestroy();
     }
 

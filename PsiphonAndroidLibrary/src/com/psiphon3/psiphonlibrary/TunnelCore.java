@@ -935,11 +935,23 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
         m_signalQueue.offer(Signal.UNEXPECTED_DISCONNECT);
     }
     
-    public void signalStopTunnel()
+    public void stopVpnServiceHelper()
     {
-        // Override UNEXPECTED_DISCONNECT; TODO: race condition?
-        m_signalQueue.clear();
-        m_signalQueue.offer(Signal.STOP_TUNNEL);
+    	// A hack to stop the VpnService, which doesn't respond to normal
+    	// stopService() calls.
+
+        // Stopping tun2socks will close the VPN interface fd, which
+        // in turn stops the VpnService. Without closing the fd, the
+        // stopService call has no effect and the only way to stop
+        // the VPN is via the OS notification UI.
+        Tun2Socks.Stop();
+
+        // Sometimes we're in the state where there's no fd, and the
+        // service still isn't responding to external stopService() calls.
+        // For example, when stuck in the waiting-for-connectivity check
+        // in ServerSelector.
+        m_parentService.stopForeground(true);
+        m_parentService.stopSelf();
     }
     
     public void stopTunnel()
@@ -958,33 +970,35 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 m_serverSelector = null;
             }
             
+            // Override UNEXPECTED_DISCONNECT; TODO: race condition?
+            m_signalQueue.clear();
+            m_signalQueue.offer(Signal.STOP_TUNNEL);
+
+            MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+            
+            // Tell the ServerInterface to stop (e.g., kill requests).
+
+            // Currently, all requests are run in the context of the
+            // tunnel thread; m_interface.outstandingRequests is not
+            // a work queue, it's just a way for another thread to
+            // reference the requests and invoke .abort(). Any
+            // request that should not abort when the tunnel thread
+            // should shut down should be omitted from the
+            // outstandingRequests list.
+
+            m_interface.stop();
+            
             try
             {
-                MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
-                
-                signalStopTunnel();
-
-                // Tell the ServerInterface to stop (e.g., kill requests).
-
-                // Currently, all requests are run in the context of the
-                // tunnel thread; m_interface.outstandingRequests is not
-                // a work queue, it's just a way for another thread to
-                // reference the requests and invoke .abort(). Any
-                // request that should not abort when the tunnel thread
-                // should shut down should be omitted from the
-                // outstandingRequests list.
-
-                m_interface.stop();
-                
                 m_tunnelThread.join();
-
-                MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
-                MyLog.e(R.string.psiphon_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
             }
             catch (InterruptedException e)
             {
                 Thread.currentThread().interrupt();
             }
+
+            MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+            MyLog.e(R.string.psiphon_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
         }
         
         m_signalQueue = null;

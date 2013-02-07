@@ -56,7 +56,7 @@ import com.psiphon3.UpgradeManager.UpgradeInstaller;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.PsiphonData;
-import com.psiphon3.psiphonlibrary.Tun2Socks;
+import com.psiphon3.psiphonlibrary.TunnelCore;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.TunnelVpnService;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -550,14 +550,15 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
 
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     private void doStopVpnTunnel(Context context)
-    {
-        // Stopping tun2socks will close the VPN interface fd, which
-        // in turn stops the VpnService. Without closing the fd, the
-        // stopService call has no effect and the only way to stop
-        // the VPN is via the OS notification UI.
-        Tun2Socks.Stop();
-
-        stopService(new Intent(context, TunnelVpnService.class));
+    {    	
+    	TunnelCore currentTunnelCore = PsiphonData.getPsiphonData().getCurrentTunnelCore();
+    	
+    	if (currentTunnelCore != null)
+    	{
+    		// See comments in stopVpnServiceHelper about stopService.
+    		currentTunnelCore.stopVpnServiceHelper();
+	        stopService(new Intent(context, TunnelVpnService.class));
+    	}
     }
     
     private void unbindTunnelService()
