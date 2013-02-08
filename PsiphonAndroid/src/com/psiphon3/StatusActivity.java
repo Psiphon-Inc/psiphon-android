@@ -548,7 +548,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     private void doStopVpnTunnel(Context context)
     {    	
     	TunnelCore currentTunnelCore = PsiphonData.getPsiphonData().getCurrentTunnelCore();
@@ -655,13 +654,18 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
         {
-            if (TunnelService.class.getName().equals(service.service.getClassName())
-            		|| TunnelVpnService.class.getName().equals(service.service.getClassName()))
+            if (TunnelService.class.getName().equals(service.service.getClassName()) ||
+            		(Utils.hasVpnService() && isVpnService(service.service.getClassName())))
             {
                 return true;
             }
         }
         return false;
+    }
+    
+    private boolean isVpnService(String className)
+    {
+        return TunnelVpnService.class.getName().equals(className);
     }
 
     /**
