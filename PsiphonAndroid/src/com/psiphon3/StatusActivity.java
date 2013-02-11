@@ -24,6 +24,7 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.ActivityManager.RunningServiceInfo;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -485,7 +486,32 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         Intent intent = VpnService.prepare(this);
         if (intent != null)
         {
-            startActivityForResult(intent, VPN_PREPARE);
+            // Catching ActivityNotFoundException as per:
+            // http://code.google.com/p/ics-openvpn/source/browse/src/de/blinkt/openvpn/LaunchVPN.java?spec=svn2a81c206204193b14ac0766386980acdc65bee60&name=v0.5.23&r=2a81c206204193b14ac0766386980acdc65bee60#376
+            //
+            // TODO: can we disable the mode before we reach this this failure point with
+            // resolveActivity()? We'll need the intent from prepare() or we'll have to mimic it.
+            // http://developer.android.com/reference/android/content/pm/PackageManager.html#resolveActivity%28android.content.Intent,%20int%29
+            
+            try
+            {
+                startActivityForResult(intent, VPN_PREPARE);
+            }
+            catch (ActivityNotFoundException e)
+            {
+                MyLog.e(R.string.tunnel_whole_device_exception, MyLog.Sensitivity.NOT_SENSITIVE);
+                if (MyLog.logger == null)
+                {
+                    // Usually the TunnelCore instance is the 'logger', but at this point there may be no service/TunnelCore
+                    addMessage(getString(R.string.tunnel_whole_device_exception), MESSAGE_CLASS_ERROR);
+                }
+                m_tunnelWholeDeviceToggle.setChecked(false);
+                m_tunnelWholeDeviceToggle.setEnabled(false);
+                updateWholeDevicePreference(false);
+
+                // drop through to "waiting for prompt" case: we can't start the activity so onActivityResult won't be called
+            }
+
             // startTunnelService will be called in onActivityResult
             return true;
         }

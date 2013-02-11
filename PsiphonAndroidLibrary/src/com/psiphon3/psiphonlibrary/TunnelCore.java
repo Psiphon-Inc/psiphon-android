@@ -118,6 +118,8 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
         m_destroyed = true;
 
         stopTunnel();
+
+        MyLog.logger = null;
     }
 
     private void doForeground()
