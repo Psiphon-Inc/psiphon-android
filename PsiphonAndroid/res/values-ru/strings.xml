@@ -26,4 +26,11 @@
   <string name="FeedbackActivity.SubmitFeedbackFailed">Ошибка при отсылке отзыва.</string>
   <string name="FeedbackActivity.InvalidURLParameters">Неверные параметры в URL при отсылке формы отзыва</string>
   <string name="FeedbackActivity.GetHTMLContentFailed">Форма отзыва не загружается</string>
+  <string name="tunnel_whole_device_toggle">Туннелирование всех интернет соединений(требует права root)</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptTitle">Туннелировать интернет соединение для всех приложений?</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptMessage">Ваше устройство поддерживает туннелирование всех интернет соединений.\n\nПри выборе этой опции интернет трафик всех приложений, включая браузеры будет тунеллирован через сервер Psiphon.\n\nВ противном случае выбор тунеллирования только для браузера Psiphon оставит интернет соединение для других приложений без изменений.</string>
+  <string name="StatusActivity.WholeDeviceTunnelPositiveButton">Туннелировать все интернет соединения</string>
+  <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Туннелировать только браузер Psiphon</string>
+  <string name="FeedbackActivity.AttachmentWriteFailed">Ошибка создания или записи файла с диагностическими данными</string>
+  <string name="FeedbackActivity.EncryptedFailed">Ошибка шифрования диагностических данных. Диагностические данные не будут прикреплены к отзыву</string>
 </resources>
