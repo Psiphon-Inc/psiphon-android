@@ -1,0 +1,31 @@
+add_library(flow
+    PacketPassFairQueue.c
+    PacketPassPriorityQueue.c
+    PacketPassConnector.c
+    PacketRecvConnector.c
+    StreamRecvConnector.c
+    PacketRecvBlocker.c
+    PacketPassNotifier.c
+    PacketBuffer.c
+    SinglePacketBuffer.c
+    PacketCopier.c
+    PacketStreamSender.c
+    PacketProtoEncoder.c
+    PacketProtoDecoder.c
+    PacketProtoFlow.c
+    SinglePacketSender.c
+    BufferWriter.c
+    PacketPassInterface.c
+    PacketRecvInterface.c
+    StreamPassInterface.c
+    StreamRecvInterface.c
+    RouteBuffer.c
+    PacketRouter.c
+    LineBuffer.c
+    SingleStreamSender.c
+    SingleStreamReceiver.c
+    StreamPacketSender.c
+    StreamPassConnector.c
+    PacketPassFifoQueue.c
+)
+target_link_libraries(flow base)

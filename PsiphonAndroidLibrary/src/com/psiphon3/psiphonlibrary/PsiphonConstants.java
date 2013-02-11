@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Psiphon Inc.
+ * Copyright (c) 2013, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -65,4 +65,12 @@ public class PsiphonConstants
     public final static ArrayList<String> REQUIRED_CAPABILITIES_FOR_TUNNEL = new ArrayList<String>(){{ add(PsiphonConstants.RELAY_PROTOCOL); }};
     
     public final static String FEEDBACK_ATTACHMENT_FILENAME = "psiphon-android-feedback.txt";
+
+    public final static String VPN_INTERFACE_NETWORK_ADDRESS = "10.0.0.1";
+    
+    public final static String VPN_INTERFACE_NETMASK = "255.255.255.0";
+    
+    public final static int VPN_INTERFACE_MTU = 1500;
+
+    public final static int UDPGW_SERVER_PORT = 7300;
 }
