@@ -26,11 +26,13 @@
     <string name="FeedbackActivity.SubmitFeedbackFailed">Failed to submit feedback</string>
     <string name="FeedbackActivity.InvalidURLParameters">Invalid URL Parameters in feedback form submission</string>
     <string name="FeedbackActivity.GetHTMLContentFailed">Failed to get feedback page content</string>
-    <string name="tunnel_whole_device_toggle">Tunnel Whole Device (requires root)</string>
+    <string name="tunnel_whole_device_toggle">Tunnel Whole Device (requires root or Android 4.0+)</string>
     <string name="StatusActivity.WholeDeviceTunnelPromptTitle">Tunnel the whole device?</string>
     <string name="StatusActivity.WholeDeviceTunnelPromptMessage">The whole device tunnel option is available for your device.\n\nWith this option, all of your Internet traffic for all apps including all browsers will be tunneled through Psiphon.\n\nAlternatively, you can choose to tunnel only the bundled Psiphon browser which will leave all other apps going directly through your standard Internet connection.</string>
     <string name="StatusActivity.WholeDeviceTunnelPositiveButton">Tunnel Whole Device</string>
     <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Use Psiphon Browser Only</string>
     <string name="FeedbackActivity.AttachmentWriteFailed">Failed to create or write feedback attachment file</string>
     <string name="FeedbackActivity.EncryptedFailed">Failed to encrypt feedback diagnostic information. This information will not be attached to the feedback email.</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
 </resources>

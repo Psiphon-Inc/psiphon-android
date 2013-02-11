@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Psiphon Inc.
+ * Copyright (c) 2013, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -26,10 +26,11 @@ import java.io.IOException;
 
 import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.ServerInterface;
-import com.psiphon3.psiphonlibrary.TunnelService;
+import com.psiphon3.psiphonlibrary.TunnelCore;
 import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -92,6 +93,7 @@ public interface UpgradeManager
             return Uri.fromFile(file);
         }
         
+        @SuppressLint("WorldReadableFiles") // Making the APK world readable so Installer component can access it
         public boolean write(byte[] data)
         {
             FileOutputStream fos;
@@ -286,7 +288,7 @@ public interface UpgradeManager
     /**
      * Used to download upgrades from the server.
      */
-    static public class UpgradeDownloader implements TunnelService.UpgradeDownloader
+    static public class UpgradeDownloader implements TunnelCore.UpgradeDownloader
     {
         private Context context;
         private ServerInterface serverInterface;

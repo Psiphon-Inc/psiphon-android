@@ -63,6 +63,7 @@ public class PsiphonData
     private int m_dnsProxyPort;
     private int m_transparentProxyPort;
     private boolean m_tunnelWholeDevice;
+    private TunnelCore m_currentTunnelCore;
 
     public Object serverEntryFileLock = new Object(); // Used as an intrinsic lock
         
@@ -194,6 +195,18 @@ public class PsiphonData
     public synchronized boolean getTunnelWholeDevice()
     {
         return m_tunnelWholeDevice;
+    }
+
+    public synchronized void setCurrentTunnelCore(TunnelCore tunnelCore)
+    {
+    	// TODO: make TunnelCore a singleton; then get rid of this hack.
+    	
+        m_currentTunnelCore = tunnelCore;
+    }
+
+    public synchronized TunnelCore getCurrentTunnelCore()
+    {
+        return m_currentTunnelCore;
     }
 
     public class Stats

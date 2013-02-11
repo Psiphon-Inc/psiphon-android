@@ -31,5 +31,9 @@ public interface Events
 	
 	public void signalUnexpectedDisconnect(Context context);
 	
+	public void signalTunnelStarting(Context context);
+
+	public void signalTunnelStopping(Context context);
+	
 	Intent pendingSignalNotification(Context context);
 }
