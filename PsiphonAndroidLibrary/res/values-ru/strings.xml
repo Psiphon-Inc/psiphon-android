@@ -64,4 +64,12 @@
   <string name="preferred_servers">Предпочитаемые сервера: %d</string>
   <string name="selecting_server">Выбор сервера...</string>
   <string name="fetch_remote_server_list">Получение списка удаленных серверов...</string>
+  <string name="vpn_service_failed">Ошибка сервиса VPN: %s</string>
+  <string name="vpn_service_running">VPN сервис запущен</string>
+  <string name="vpn_service_stopped">VPN сервис остановлен</string>
+  <string name="vpn_service_revoked">VPN сервис удален</string>
+  <string name="tun2socks_error">tun2socks: %s</string>
+  <string name="tun2socks_failed">Ошибка VPN to SOCKS</string>
+  <string name="tun2socks_running">VPN to SOCKS запущен</string>
+  <string name="tun2socks_stopped">VPN to SOCKS остановлен</string>
 </resources>
