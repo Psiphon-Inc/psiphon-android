@@ -64,4 +64,12 @@
   <string name="preferred_servers">首选的服务器：%d</string>
   <string name="selecting_server">选择服务器。。。</string>
   <string name="fetch_remote_server_list">正在获取远程服务器列表。。。</string>
+  <string name="vpn_service_failed">VPN服务失败：%s</string>
+  <string name="vpn_service_running">VPN服务正在运行</string>
+  <string name="vpn_service_stopped">VPN服务已停止</string>
+  <string name="vpn_service_revoked">VPN服务撤销</string>
+  <string name="tun2socks_error">tun2socks: %s</string>
+  <string name="tun2socks_failed">VPN至SOCKS已失败</string>
+  <string name="tun2socks_running">VPN至SOCKS正在运行</string>
+  <string name="tun2socks_stopped">VPN至SOCKS已停止</string>
 </resources>
