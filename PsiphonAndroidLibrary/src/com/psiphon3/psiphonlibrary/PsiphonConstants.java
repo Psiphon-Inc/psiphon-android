@@ -66,8 +66,6 @@ public class PsiphonConstants
     
     public final static String FEEDBACK_ATTACHMENT_FILENAME = "psiphon-android-feedback.txt";
 
-    public final static String VPN_INTERFACE_NETWORK_ADDRESS = "10.0.0.1";
-    
     public final static String VPN_INTERFACE_NETMASK = "255.255.255.0";
     
     public final static int VPN_INTERFACE_MTU = 1500;

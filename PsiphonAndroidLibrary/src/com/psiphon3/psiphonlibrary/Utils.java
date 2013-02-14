@@ -2,21 +2,28 @@ package com.psiphon3.psiphonlibrary;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.IllegalFormatException;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
 import java.io.IOException;
+
+import org.apache.http.conn.util.InetAddressUtils;
 
 import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
 
@@ -618,5 +625,63 @@ public class Utils {
                 (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
         return networkInfo != null && networkInfo.isConnected();
+    }
+
+    public static String selectPrivateAddress()
+    {
+        // Select one of 10.0.0.1, 172.16.0.1, or 192.168.0.1 depending on
+        // which private address range isn't in use.
+
+        final String CANDIDATE_10_SLASH_8 = "10.0.0.1";
+        final String CANDIDATE_172_16_SLASH_12 = "172.16.0.1";
+        final String CANDIDATE_192_168_SLASH_16 = "192.168.0.1";
+        
+        ArrayList<String> candidates = new ArrayList<String>();
+        candidates.add(CANDIDATE_10_SLASH_8);
+        candidates.add(CANDIDATE_172_16_SLASH_12);
+        candidates.add(CANDIDATE_192_168_SLASH_16);
+        
+        List<NetworkInterface> netInterfaces;
+        try
+        {
+            netInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+        }
+        catch (SocketException e)
+        {
+            return null;
+        }
+
+        for (NetworkInterface netInterface : netInterfaces)
+        {
+            for (InetAddress inetAddress : Collections.list(netInterface.getInetAddresses()))
+            {
+                String ipAddress = inetAddress.getHostAddress();
+                if (InetAddressUtils.isIPv4Address(ipAddress))
+                {
+                    if (ipAddress.startsWith("10."))
+                    {
+                        candidates.remove(CANDIDATE_10_SLASH_8);
+                    }
+                    else if (
+                        ipAddress.length() >= 6 &&
+                        ipAddress.substring(0, 6).compareTo("172.16") >= 0 && 
+                        ipAddress.substring(0, 6).compareTo("172.31") <= 0)
+                    {
+                        candidates.remove(CANDIDATE_172_16_SLASH_12);
+                    }
+                    else if (ipAddress.startsWith("192.168"))
+                    {
+                        candidates.remove(CANDIDATE_192_168_SLASH_16);
+                    }
+                }
+            }
+        }
+        
+        if (candidates.size() > 0)
+        {
+            return candidates.get(0);
+        }
+        
+        return null;
     }
 }
