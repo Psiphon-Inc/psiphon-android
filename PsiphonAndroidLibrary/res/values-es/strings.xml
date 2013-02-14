@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <string name="app_name">Psiphon 3</string>
+  <string name="ssh_connecting">SSH conectando...</string>
+  <string name="ssh_connected">SSH conectado</string>
+  <string name="ssh_connection_failed">la conexión SSH falló</string>
+  <string name="ssh_authenticating">SSH autenticando...</string>
+  <string name="ssh_authentication_failed">la autenticación SSH falló</string>
+  <string name="ssh_authenticated">SSH autenticado</string>
+  <string name="socks_starting">SOCKS iniciando...</string>
+  <string name="socks_running">SOCKS ejecutando %d</string>
+  <string name="socks_stopped">SOCKS detenido</string>
+  <string name="ssh_stopped">SSH detenido</string>
+  <string name="error_message">Ocurrió un error:</string>
+  <string name="http_proxy_starting">Proxy HTTP iniciando...</string>
+  <string name="http_proxy_running">Proxy HTTP ejecutando %d</string>
+  <string name="http_proxy_stopped">Proxy HTTP detenido</string>
+  <string name="http_proxy_stopped_unexpectedly">el Proxy HTTP se detuvo inesperadamente</string>
+  <string name="ServerInterface.FailedToCreateServerEntries">No pudo crear entradas de servidor para almacenar.</string>
+  <string name="ServerInterface.FailedToStoreServerEntries">No pudo almacenar las entradas de servidor.</string>
+  <string name="ServerInterface.FailedToReadStoredServerEntries">No pudo leer las entradas almacenadas en el servidor.</string>
+  <string name="ServerInterface.FailedToParseStoredServerEntries">No pudo analizar las entradas almacenadas en el servidor.</string>
+  <string name="ServerInterface.FailedToParseEmbeddedServerEntries">No pudo almacenar las entradas grabadas en el servidor.</string>
+  <string name="ServerInterface.FailedToParseHandshake">No pudo analizar diálogo inicial (handshake).</string>
+  <string name="ServerInterface.FailedToStoreLastConnected">No pudo almacenar el último tiempo de conexión.</string>
+  <string name="ServerInterface.FailedToReadLastConnected">No pudo leer el último tiempo de conexión.</string>
+  <string name="PsiphonAndroidService.HandshakeRequestFailed">Solicitud de diálogo inicial (handshake) fallida.</string>
+  <string name="PsiphonAndroidService.ConnectedRequestFailed">Solicitud de conexión fallida.</string>
+  <string name="ssh_disconnected_unexpectedly">SSH se desconectó inesperadamente</string>
+  <string name="client_version">Versión del Cliente %s</string>
+  <string name="no_server_entries">No hay servidores para conectarse</string>
+  <string name="ServerInterface.InvalidRemoteServerList">Lista de servidores remotos no válida</string>
+  <string name="TunnelService.FetchRemoteServerListFailed">Obtención de lista de servidores remotos fallida</string>
+  <string name="ServerEntryAuth.WrongPublicKey">Entrada en servidor remoto firmada con una clave pública diferente.</string>
+  <string name="ServerEntryAuth.InvalidSignature">Firma no válida en entrada del servidor remoto</string>
+  <string name="ServerEntryAuth.FailedToParseRemoteServerEntry">Análisis fallido de entrada en servidor remoto</string>
+  <string name="starting_tunnel">Iniciando túnel...</string>
+  <string name="stopping_tunnel">Deteniendo túnel...</string>
+  <string name="stopped_tunnel">Túnel detenido</string>
+  <string name="ServerInterface.StopRequested">Alto solicitado</string>
+  <string name="ServerInterface.HTTPSRequestFailed">La solicitud HTTPS falló con error:</string>
+  <string name="psiphon_service_notification_message_connecting">Psiphon 3 está ejecutando...</string>
+  <string name="psiphon_service_notification_id">notificación de Servicio de Psiphon</string>
+</resources>

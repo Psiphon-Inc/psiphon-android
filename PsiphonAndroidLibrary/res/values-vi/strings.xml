@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <string name="app_name">Psiphon 3</string>
+  <string name="ssh_connecting">SSH đang kết nối...</string>
+  <string name="ssh_connected">SSH đã kết nối</string>
+  <string name="ssh_connection_failed">Kết nối SSH thất bại</string>
+  <string name="ssh_authenticating">SSH đang xác thực...</string>
+  <string name="ssh_authentication_failed">Xác thực SSH thất bại</string>
+  <string name="ssh_authenticated">Đã xác thực SSH</string>
+  <string name="socks_starting">SOCKS đang khởi động...</string>
+  <string name="socks_running">SOCKS đang chạy %d</string>
+  <string name="socks_stopped">Đã dừng SOCKS</string>
+  <string name="ssh_stopped">Đã dừng SSH</string>
+  <string name="error_message">Có lỗi xuất hiện:</string>
+  <string name="http_proxy_starting">Proxy HTTP đang khởi động...</string>
+  <string name="http_proxy_running">Proxy HTTP đang chạy %d</string>
+  <string name="http_proxy_stopped">Đã dừng proxy HTTP</string>
+  <string name="http_proxy_stopped_unexpectedly">Đã dừng proxy HTTP bất ngờ</string>
+  <string name="ServerInterface.FailedToCreateServerEntries">Không thể tạo mục nhập máy chủ để lưu.</string>
+  <string name="ServerInterface.FailedToStoreServerEntries">Không thể lưu mục nhập máy chủ.</string>
+  <string name="ServerInterface.FailedToReadStoredServerEntries">Không thể đọc mục nhập máy chủ đã lưu.</string>
+  <string name="ServerInterface.FailedToParseStoredServerEntries">Không thể phân tách các mục nhập máy chủ đã lưu.</string>
+  <string name="ServerInterface.FailedToParseEmbeddedServerEntries">Không thể phân tách các mục nhập máy chủ đã nhúng.</string>
+  <string name="ServerInterface.FailedToParseHandshake">Không thể phân tách handshake.</string>
+  <string name="ServerInterface.FailedToStoreLastConnected">Không thể lưu thời gian đã kết nối lần cuối.</string>
+  <string name="ServerInterface.FailedToReadLastConnected">Không thể đọc thời gian đã kết nối lần cuối.</string>
+  <string name="PsiphonAndroidService.HandshakeRequestFailed">Yêu cầu hanshake thất bại.</string>
+  <string name="PsiphonAndroidService.ConnectedRequestFailed">Yêu cầu kết nối thất bại.</string>
+  <string name="ssh_disconnected_unexpectedly">SSH ngắt kết nối bất ngờ</string>
+  <string name="client_version">Phiên Bản Client %s</string>
+  <string name="no_server_entries">Không có máy chủ để kết nối</string>
+  <string name="ServerInterface.InvalidRemoteServerList">Danh sách máy chủ từ xa không hợp lệ</string>
+  <string name="TunnelService.FetchRemoteServerListFailed">Lấy danh sách máy chủ từ xa thất bại</string>
+  <string name="ServerEntryAuth.WrongPublicKey">Mục nhập máy chủ từ xa có chữ ký bằng mã công khai khác</string>
+  <string name="ServerEntryAuth.InvalidSignature">Chữ ký không hợp lệ trên mục nhập máy chủ từ xa</string>
+  <string name="ServerEntryAuth.FailedToParseRemoteServerEntry">Không thể phân tách mục nhập máy chủ từ xa</string>
+  <string name="starting_tunnel">Đang bắt đầu định hướng...</string>
+  <string name="stopping_tunnel">Đang dừng định hướng...</string>
+  <string name="stopped_tunnel">Đã dừng định hướng</string>
+  <string name="ServerInterface.StopRequested">Đã yêu cầu dừng</string>
+  <string name="ServerInterface.HTTPSRequestFailed">Yêu cầu HTTPS thất bại, có lỗi:</string>
+  <string name="psiphon_service_notification_message_connecting">Psiphon 3 đang chạy</string>
+  <string name="psiphon_service_notification_id">Thông Báo Dịch Vụ Psiphon</string>
+</resources>

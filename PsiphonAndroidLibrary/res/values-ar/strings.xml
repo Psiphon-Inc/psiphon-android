@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <string name="app_name">برنامج Psiphon 3</string>
+  <string name="ssh_connecting">جاري اتصال بروتوكول القشرة الآمنة (SSH)...</string>
+  <string name="ssh_connected">تم اتصال بروتوكول القشرة الآمنة (SSH)</string>
+  <string name="ssh_connection_failed">فشل اتصال بروتوكول القشرة الآمنة (SSH)</string>
+  <string name="ssh_authenticating">تتم الآن مصادقة بروتوكول القشرة الآمنة (SSH)...</string>
+  <string name="ssh_authentication_failed">فشل مصادقة بروتوكول القشرة الآمنة (SSH)</string>
+  <string name="ssh_authenticated">تمت مصادقة بروتوكول القشرة الآمنة (SSH)</string>
+  <string name="socks_starting">جاري بدء تشغيل بروتوكول SOCKS...</string>
+  <string name="socks_running">بروتوكول SOCKS قيد التشغيل %d</string>
+  <string name="socks_stopped">توقف بروتوكول SOCKS عن العمل</string>
+  <string name="ssh_stopped">توقف بروتوكول القشرة الآمنة (SSH) عن العمل</string>
+  <string name="error_message">حدث خطأ: </string>
+  <string name="http_proxy_starting">جاري بدء تشغيل وكيل HTTP...</string>
+  <string name="http_proxy_running">وكيل HTTP قيد التشغيل %d</string>
+  <string name="http_proxy_stopped">توقف وكيل HTTP عن العمل</string>
+  <string name="http_proxy_stopped_unexpectedly">توقف وكيل HTTP عن العمل بشكل غير متوقع</string>
+  <string name="ServerInterface.FailedToCreateServerEntries">فشل إنشاء مدخلات المخدم للتخزين.</string>
+  <string name="ServerInterface.FailedToStoreServerEntries">فشل تخزين مدخلات المخدم.</string>
+  <string name="ServerInterface.FailedToReadStoredServerEntries">فشل قراءة مدخلات المخدم المخزنة.</string>
+  <string name="ServerInterface.FailedToParseStoredServerEntries">فشل توزيع مدخلات المخدم المخزنة.</string>
+  <string name="ServerInterface.FailedToParseEmbeddedServerEntries">فشل توزيع مدخلات المخدم المُضمنة.</string>
+  <string name="ServerInterface.FailedToParseHandshake">فشل توزيع تأكيد الاتصال.</string>
+  <string name="ServerInterface.FailedToStoreLastConnected">فشل في تسجيل وقت الاتصال الأخير.</string>
+  <string name="ServerInterface.FailedToReadLastConnected">فشل في قراءة وقت الاتصال الأخير.</string>
+  <string name="PsiphonAndroidService.HandshakeRequestFailed">فشل طلب تأكيد الاتصال.</string>
+  <string name="PsiphonAndroidService.ConnectedRequestFailed">فشل طلب متصل.</string>
+  <string name="ssh_disconnected_unexpectedly">تم قطع اتصال بروتوكل القشرة الآمنة (SSH) بشكل غير متوقع</string>
+  <string name="client_version">إصدار العميل %s</string>
+  <string name="no_server_entries">لا توجد مخدمات كي يتم الاتصال بها</string>
+  <string name="ServerInterface.InvalidRemoteServerList">قائمة المخدم البعيد غير صالحة</string>
+  <string name="TunnelService.FetchRemoteServerListFailed">فشل إحضار قائمة المخدم البعيد</string>
+  <string name="ServerEntryAuth.WrongPublicKey">تم توقيع مدخل المخدم البعيد باستخدام مفتاح عام مختلف</string>
+  <string name="ServerEntryAuth.InvalidSignature">توقيع غير صالح بمدخل المخدم البعيد</string>
+  <string name="ServerEntryAuth.FailedToParseRemoteServerEntry">فشل توزيع مدخل المخدم البعيد</string>
+  <string name="starting_tunnel">جاري بدء تشغيل النفق...</string>
+  <string name="stopping_tunnel">جاري توقف النفق عن العمل...</string>
+  <string name="stopped_tunnel">توقف النفق عن العمل</string>
+  <string name="ServerInterface.StopRequested">تم طلب التوقف</string>
+  <string name="ServerInterface.HTTPSRequestFailed">فشل طلب HTTPS مع إصدار الخطأ: </string>
+  <string name="psiphon_service_notification_message_connecting">جاري تشغيل برنامج Psiphon 3...</string>
+  <string name="psiphon_service_notification_id">إعلام خدمة Psiphon</string>
+</resources>

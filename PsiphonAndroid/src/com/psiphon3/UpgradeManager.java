@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Psiphon Inc.
+ * Copyright (c) 2013, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,9 +24,13 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import com.psiphon3.ServerInterface.PsiphonServerInterfaceException;
-import com.psiphon3.Utils.MyLog;
+import com.psiphon3.R;
+import com.psiphon3.psiphonlibrary.ServerInterface;
+import com.psiphon3.psiphonlibrary.TunnelCore;
+import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -35,6 +39,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
+import android.view.KeyEvent;
 
 /**
  * Contains logic relating to downloading and applying upgrades.
@@ -88,6 +93,7 @@ public interface UpgradeManager
             return Uri.fromFile(file);
         }
         
+        @SuppressLint("WorldReadableFiles") // Making the APK world readable so Installer component can access it
         public boolean write(byte[] data)
         {
             FileOutputStream fos;
@@ -103,7 +109,7 @@ public interface UpgradeManager
                 // "If the file exists but is a directory rather than a regular 
                 //  file, does not exist but cannot be created, or cannot be 
                 //  opened for any other reason then a FileNotFoundException is thrown."
-                MyLog.e(R.string.UpgradeManager_UpgradeFileNotFound, e);
+                MyLog.w(R.string.UpgradeManager_UpgradeFileNotFound, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return false;
             }
             
@@ -114,7 +120,7 @@ public interface UpgradeManager
             } 
             catch (IOException e)
             {
-                MyLog.e(R.string.UpgradeManager_UpgradeFileWriteFailed, e);
+                MyLog.w(R.string.UpgradeManager_UpgradeFileWriteFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return false;
             }
             
@@ -181,7 +187,7 @@ public interface UpgradeManager
             {
                 // There's probably something wrong with the upgrade file.
                 file.delete();
-                MyLog.e(R.string.UpgradeManager_CannotExtractUpgradePackageInfo);
+                MyLog.w(R.string.UpgradeManager_CannotExtractUpgradePackageInfo, MyLog.Sensitivity.NOT_SENSITIVE);
                 return false;
             }
             
@@ -197,7 +203,7 @@ public interface UpgradeManager
             {
                 // This really shouldn't happen -- we're getting info about the 
                 // current package, which clearly exists.
-                MyLog.e(R.string.UpgradeManager_CanNotRetrievePackageInfo, e);
+                MyLog.w(R.string.UpgradeManager_CanNotRetrievePackageInfo, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return false;
             }
             
@@ -244,9 +250,15 @@ public interface UpgradeManager
             new AlertDialog.Builder(this.context)
                 .setTitle(R.string.UpgradeManager_UpgradePromptTitle)
                 .setMessage(R.string.UpgradeManager_UpgradePromptMessage)
+                .setOnKeyListener(
+                        new DialogInterface.OnKeyListener() {
+                            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                                // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
+                                return keyCode == KeyEvent.KEYCODE_SEARCH;
+                            }})
                 .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
-                        // User declied the prompt.
+                        // User declined the prompt.
                         upgradeListener.upgradeNotStarted();
                     }})
                 .setOnCancelListener(new DialogInterface.OnCancelListener() {
@@ -274,9 +286,9 @@ public interface UpgradeManager
     }
 
     /**
-     * Used to download upgradees from the server.
+     * Used to download upgrades from the server.
      */
-    static public class UpgradeDownloader
+    static public class UpgradeDownloader implements TunnelCore.UpgradeDownloader
     {
         private Context context;
         private ServerInterface serverInterface;
@@ -321,6 +333,7 @@ public interface UpgradeManager
                 } 
                 catch (InterruptedException e)
                 {
+                    Thread.currentThread().interrupt();
                 }
             }
             this.thread = null;
@@ -352,7 +365,7 @@ public interface UpgradeManager
                 //   client will never connect.
                 // - Fail-over exposes new server IPs to hostile networks, so we don't
                 //   like doing it in the case where we know the handshake already succeeded.
-                MyLog.w(R.string.UpgradeManager_UpgradeDownloadFailed, e);
+                MyLog.w(R.string.UpgradeManager_UpgradeDownloadFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return;
             }
             
@@ -361,7 +374,7 @@ public interface UpgradeManager
                 return;
             }
             
-            MyLog.i(R.string.UpgradeManager_UpgradeDownloaded);
+            MyLog.v(R.string.UpgradeManager_UpgradeDownloaded, MyLog.Sensitivity.NOT_SENSITIVE);
         }
     }
 }
