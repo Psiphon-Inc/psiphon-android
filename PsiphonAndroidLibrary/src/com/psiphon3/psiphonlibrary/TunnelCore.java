@@ -49,7 +49,7 @@ import com.stericson.RootTools.RootTools;
 
 public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
 {
-    enum State
+    public enum State
     {
         DISCONNECTED,
         CONNECTING,

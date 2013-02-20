@@ -1,23 +1,14 @@
 package com.psiphon3.psiphonproxiedwebapp;
 
-// TODO:
-// - put splash toast into common code
-// - detect if Psiphon is running ..?
-// - handle tunnel restarts (show splash screen? retain webview location/state)
-// - move tunnel start/stop to onCreate/onDestroy
-
 import org.zirco.utils.ProxySettings;
 
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -40,6 +31,7 @@ import com.psiphon3.psiphonlibrary.Events;
 
 public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Events
 {
+    private boolean m_loadedWebView = false;
     private WebView m_webView;
     private TextView m_textView;
     private boolean m_splashScreenCancelled = false;
@@ -117,6 +109,21 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
         m_webView.setWebViewClient(new CustomWebViewClient());
         WebSettings webSettings = m_webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
+        
+        m_tunnelCore = new TunnelCore(this, null);
+        m_tunnelCore.setEventsInterface(this);
+        m_tunnelCore.onCreate();
+        m_tunnelCore.startTunnel();
+    }
+    
+    @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+
+        m_tunnelCore.stopTunnel();
+        m_tunnelCore.onDestroy();
+        m_tunnelCore = null;
     }
 
     @Override
@@ -131,12 +138,10 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
     {
         super.onResume();
 
-        showSplashScreen();
-        
-        m_tunnelCore = new TunnelCore(this, null);
-        m_tunnelCore.setEventsInterface(this);
-        m_tunnelCore.onCreate();
-        m_tunnelCore.startTunnel();
+        if (m_tunnelCore.getState() != TunnelCore.State.CONNECTED)
+        {
+            showSplashScreen();
+        }
     }
         
     @Override
@@ -144,10 +149,6 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
     {
         super.onPause();
         
-        m_tunnelCore.stopTunnel();
-        m_tunnelCore.onDestroy();
-        m_tunnelCore = null;
-
         dismissSplashScreen();        
     }
 
@@ -166,7 +167,6 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
     @Override
     public int getAndroidLogPriorityEquivalent(int priority)
     {
-        // TODO: ?
         return 0;
     }
 
@@ -207,7 +207,7 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
     }
 
     private String getHomePage()
-    {
+    {        
         // Only supports one home page
         for (String homePage : PsiphonData.getPsiphonData().getHomePages())
         {
@@ -220,23 +220,50 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
     @Override
     public void signalHandshakeSuccess(Context context)
     {
-        String homePage = getHomePage();
-        if (homePage != null)
-        {
-            dismissSplashScreen();
+        final Context finalContext = this;
+        
+        m_handler.post(
+            new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    String homePage = getHomePage();
+                    if (homePage != null)
+                    {
+                        dismissSplashScreen();
 
-            ProxySettings.setLocalProxy(
-                    this,
-                    PsiphonData.getPsiphonData().getHttpProxyPort());
+                        ProxySettings.setLocalProxy(
+                                finalContext,
+                                PsiphonData.getPsiphonData().getHttpProxyPort());
 
-            m_webView.loadUrl(homePage);
-        }
+                        if (!m_loadedWebView)
+                        {
+                            // Only load the WebView once. So if we get an unexpected
+                            // disconnect and reconnect, the WebView retains its state.
+                            // Note this means we ignore changes to the home page during
+                            // this session.
+                            
+                            m_webView.loadUrl(homePage);
+                            m_loadedWebView = true;
+                        }
+                    }
+                }            
+            });
     }
 
     @Override
     public void signalUnexpectedDisconnect(Context context)
     {
-        showSplashScreen();
+        m_handler.post(
+            new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    showSplashScreen();
+                }            
+            });
     }
 
     @Override
