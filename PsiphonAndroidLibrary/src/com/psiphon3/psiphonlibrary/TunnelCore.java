@@ -553,8 +553,17 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 doVpnProtect(socket);
                 
                 ParcelFileDescriptor vpnInterfaceFileDescriptor = null;
+                
+                String privateIpAddress = Utils.selectPrivateAddress();
+                
+                if (privateIpAddress == null)
+                {
+                    MyLog.v(R.string.vpn_service_no_private_address_available, MyLog.Sensitivity.NOT_SENSITIVE);
+                    runAgain = false;
+                    return runAgain;
+                }
 
-                if (null == (vpnInterfaceFileDescriptor = doVpnBuilder(tunnelWholeDeviceDNSServer)))
+                if (null == (vpnInterfaceFileDescriptor = doVpnBuilder(privateIpAddress, tunnelWholeDeviceDNSServer)))
                 {
                     runAgain = false;
                     return runAgain;
@@ -571,7 +580,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                         this,
                         vpnInterfaceFileDescriptor,
                         PsiphonConstants.VPN_INTERFACE_MTU,
-                        PsiphonConstants.VPN_INTERFACE_NETWORK_ADDRESS,
+                        privateIpAddress,
                         PsiphonConstants.VPN_INTERFACE_NETMASK,
                         socksServerAddress,
                         udpgwServerAddress);
@@ -797,7 +806,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     }
     
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    private ParcelFileDescriptor doVpnBuilder(String tunnelWholeDeviceDNSServer)
+    private ParcelFileDescriptor doVpnBuilder(String privateIpAddress, String tunnelWholeDeviceDNSServer)
     {
         ParcelFileDescriptor vpnInterfaceFileDescriptor = null;
         String builderErrorMessage = null;
@@ -807,7 +816,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
             vpnInterfaceFileDescriptor = builder
                     .setSession(m_parentService.getString(R.string.app_name))
                     .setMtu(PsiphonConstants.VPN_INTERFACE_MTU)
-                    .addAddress(PsiphonConstants.VPN_INTERFACE_NETWORK_ADDRESS, 32)
+                    .addAddress(privateIpAddress, 32)
                     .addRoute("0.0.0.0", 0)
                     .addDnsServer(tunnelWholeDeviceDNSServer)
                     .establish();
