@@ -17,6 +17,7 @@ import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.webkit.HttpAuthHandler;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -24,6 +25,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.TunnelCore;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -92,6 +94,12 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
         {
             // Always open links in the proxied WebView
             return false;
+        }
+
+        @Override
+        public void onReceivedHttpAuthRequest(WebView view, final HttpAuthHandler handler, final String host, final String realm)
+        {
+            handler.proceed(EmbeddedValues.PROXIED_WEB_APP_HTTP_AUTH_USERNAME, EmbeddedValues.PROXIED_WEB_APP_HTTP_AUTH_PASSWORD);
         }
     }
     
@@ -207,7 +215,7 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
     }
 
     private String getHomePage()
-    {        
+    {
         // Only supports one home page
         for (String homePage : PsiphonData.getPsiphonData().getHomePages())
         {

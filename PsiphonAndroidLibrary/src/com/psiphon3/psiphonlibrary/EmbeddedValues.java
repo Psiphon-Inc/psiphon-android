@@ -38,4 +38,8 @@ public interface EmbeddedValues
 
     // NOTE: Info link may be opened when not tunneled
     final String INFO_LINK_URL = "https://sites.google.com/a/psiphon3.com/psiphon3/";
+
+    final String PROXIED_WEB_APP_HTTP_AUTH_USERNAME = "";
+
+    final String PROXIED_WEB_APP_HTTP_AUTH_PASSWORD = "";
 }
