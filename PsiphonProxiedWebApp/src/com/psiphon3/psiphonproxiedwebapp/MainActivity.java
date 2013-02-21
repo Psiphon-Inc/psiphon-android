@@ -117,6 +117,7 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
         m_webView.setWebViewClient(new CustomWebViewClient());
         WebSettings webSettings = m_webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
         
         m_tunnelCore = new TunnelCore(this, null);
         m_tunnelCore.setUseGenericLogMessages(true);
