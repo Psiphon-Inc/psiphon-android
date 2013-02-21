@@ -7,6 +7,15 @@
     android:orientation="vertical"
     android:padding="8dp" >
 
+<!--[[[cog
+import cog
+import utils
+# Replace the splash_image
+utils.replace_files(buildname,
+                    {'../drawable/splash_image.png': 'drawable/splash_image.png'})
+]]]-->
+<!--[[[end]]]-->
+
     <ImageView
         android:id="@+id/splash_screen_image"
         android:layout_width="wrap_content"

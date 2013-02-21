@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+<!--[[[cog
+import cog
+import utils
+cog.outl('<string name="app_name">%s</string>' % utils.get_string(buildname, 'app_name'))
+]]]-->
     <string name="app_name">PsiphonProxiedWebApp</string>
+<!--[[[end]]]-->
+
     <string name="hello_world">Hello world!</string>
     <string name="menu_settings">Settings</string>
 

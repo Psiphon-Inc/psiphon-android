@@ -1,4 +1,11 @@
+/*[[[cog
+import cog
+import utils
+packagename = utils.get_string(buildname, 'package')
+cog.outl('package %s;' % packagename)
+]]]*/
 package com.psiphon3.psiphonproxiedwebapp;
+//[[[end]]]
 
 import org.zirco.utils.ProxySettings;
 
@@ -39,7 +46,7 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
     private boolean m_splashScreenCancelled = false;
     private Handler m_handler = new Handler();
     private TunnelCore m_tunnelCore;
-    
+
     // Infinite toast
     private void showSplashScreen()
     {
@@ -48,7 +55,7 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
         LayoutInflater inflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View layout = inflater.inflate(R.layout.splash_screen, (ViewGroup)findViewById(R.id.splash_screen));
         m_textView = (TextView)layout.findViewById(R.id.splash_screen_text);
-        
+
         // Set background to match (0,0) splash image pixel color
         ImageView imageView = (ImageView)layout.findViewById(R.id.splash_screen_image);
         Bitmap bitmap = ((BitmapDrawable)imageView.getDrawable()).getBitmap();
@@ -75,18 +82,18 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
                 catch (Exception e)
                 {
                 }
-                
+
                 m_textView = null;
             }
         };
         t.start();
     }
-    
+
     private void dismissSplashScreen()
     {
         m_splashScreenCancelled = true;
     }
-    
+
     private class CustomWebViewClient extends WebViewClient
     {
         @Override
@@ -102,15 +109,15 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
             handler.proceed(EmbeddedValues.PROXIED_WEB_APP_HTTP_AUTH_USERNAME, EmbeddedValues.PROXIED_WEB_APP_HTTP_AUTH_PASSWORD);
         }
     }
-    
+
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        
+
         MyLog.logInfoProvider = this;
-        
+
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
         m_webView = (WebView)findViewById(R.id.webView);
@@ -118,14 +125,14 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
         WebSettings webSettings = m_webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
-        
+
         m_tunnelCore = new TunnelCore(this, null);
         m_tunnelCore.setUseGenericLogMessages(true);
         m_tunnelCore.setEventsInterface(this);
         m_tunnelCore.onCreate();
         m_tunnelCore.startTunnel();
     }
-    
+
     @Override
     protected void onDestroy()
     {
@@ -153,13 +160,13 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
             showSplashScreen();
         }
     }
-        
+
     @Override
     protected void onPause()
     {
         super.onPause();
-        
-        dismissSplashScreen();        
+
+        dismissSplashScreen();
     }
 
     @Override
@@ -173,7 +180,7 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
 
         return super.onKeyDown(keyCode, event);
     }
-    
+
     @Override
     public int getAndroidLogPriorityEquivalent(int priority)
     {
@@ -187,7 +194,7 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
         {
             return getString(stringResID);
         }
-        
+
         return getString(stringResID, formatArgs);
     }
 
@@ -212,7 +219,7 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
                     {
                         m_textView.setText(finalMessage);
                     }
-                }            
+                }
             });
     }
 
@@ -226,12 +233,12 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
 
         return null;
     }
-    
+
     @Override
     public void signalHandshakeSuccess(Context context)
     {
         final Context finalContext = this;
-        
+
         m_handler.post(
             new Runnable()
             {
@@ -253,12 +260,12 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
                             // disconnect and reconnect, the WebView retains its state.
                             // Note this means we ignore changes to the home page during
                             // this session.
-                            
+
                             m_webView.loadUrl(homePage);
                             m_loadedWebView = true;
                         }
                     }
-                }            
+                }
             });
     }
 
@@ -272,7 +279,7 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
                 public void run()
                 {
                     showSplashScreen();
-                }            
+                }
             });
     }
 
