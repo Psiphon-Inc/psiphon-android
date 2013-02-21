@@ -1,12 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--[[[cog
-import cog
-import utils
-import re
+import cog, utils, re, os, shutil
 # Change the package name
+old_packagename = re.search(r'package="([^"]*)"', cog.previous).group(1)
+old_packagepath = os.path.join('src', *old_packagename.split('.'))
+
 packagename = utils.get_string(buildname, 'package')
+packagepath = os.path.join('src', *packagename.split('.'))
 cog.out(re.sub(r'package="[^"]*"', 'package="%s"' % packagename, cog.previous))
+
+# We also need to rename the src directory to the new package name
+old = os.path.join(os.path.dirname(cog.inFile), old_packagepath)
+new = os.path.join(os.path.dirname(cog.inFile), packagepath)
+# Rename will choke if the directory already exists, so remove it first
+shutil.rmtree(new, ignore_errors=True)
+os.renames(old, new)
 ]]]-->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.psiphon3.psiphonproxiedwebapp"
@@ -23,8 +32,7 @@ cog.out(re.sub(r'package="[^"]*"', 'package="%s"' % packagename, cog.previous))
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
 
 <!--[[[cog
-import cog
-import utils
+import cog, utils
 # Replace the launcher images
 utils.replace_files(buildname,
     {
@@ -43,9 +51,7 @@ utils.replace_files(buildname,
         android:theme="@style/AppTheme" >
 
 <!--[[[cog
-import cog
-import utils
-import re
+import cog, utils, re
 # Change the package name
 packagename = utils.get_string(buildname, 'package')
 cog.out(re.sub(r'android:name="[^"]*(\.[^.]+)"', 'android:name="%s\\1"' % packagename, cog.previous))
