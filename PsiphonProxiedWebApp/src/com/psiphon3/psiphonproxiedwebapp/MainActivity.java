@@ -119,6 +119,7 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
         webSettings.setJavaScriptEnabled(true);
         
         m_tunnelCore = new TunnelCore(this, null);
+        m_tunnelCore.setUseGenericLogMessages(true);
         m_tunnelCore.setEventsInterface(this);
         m_tunnelCore.onCreate();
         m_tunnelCore.startTunnel();

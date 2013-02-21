@@ -65,6 +65,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     private ServerSelector m_serverSelector = null;
     private boolean m_destroyed = false;
     private Events m_eventsInterface = null;
+    private boolean m_useGenericLogMessages = false;
 
     enum Signal
     {
@@ -623,7 +624,14 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 throw new IOException();
             }
             
-            MyLog.i(tunnelWholeDevice ? R.string.psiphon_running_whole_device : R.string.psiphon_running_browser_only, MyLog.Sensitivity.NOT_SENSITIVE);
+            if (m_useGenericLogMessages)
+            {
+                MyLog.i(R.string.psiphon_running_generic, MyLog.Sensitivity.NOT_SENSITIVE);                
+            }
+            else
+            {
+                MyLog.i(tunnelWholeDevice ? R.string.psiphon_running_whole_device : R.string.psiphon_running_browser_only, MyLog.Sensitivity.NOT_SENSITIVE);
+            }
 
             checkSignals(0);
 
@@ -1043,5 +1051,10 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     public ServerInterface getServerInterface()
     {
         return m_interface;
+    }
+    
+    public void setUseGenericLogMessages(boolean useGenericLogMessages)
+    {
+        m_useGenericLogMessages = useGenericLogMessages;
     }
 }

@@ -72,4 +72,5 @@
     <string name="tun2socks_failed">VPN to SOCKS failed</string>
     <string name="tun2socks_running">VPN to SOCKS running</string>
     <string name="tun2socks_stopped">VPN to SOCKS stopped</string>
+    <string name="psiphon_running_generic">Running...</string>
 </resources>
