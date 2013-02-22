@@ -9,7 +9,4 @@ cog.outl('<string name="app_name">%s</string>' % utils.get_string(buildname, 'ap
     <string name="app_name">PsiphonProxiedWebApp</string>
 <!--[[[end]]]-->
 
-    <string name="hello_world">Hello world!</string>
-    <string name="menu_settings">Settings</string>
-
 </resources>
