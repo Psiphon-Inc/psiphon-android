@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2013, Psiphon Inc.
+ * All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 /*[[[cog
 import cog
 import utils
@@ -6,8 +25,6 @@ cog.outl('package %s;' % packagename)
 ]]]*/
 package com.psiphon3.psiphonproxiedwebapp;
 //[[[end]]]
-
-import org.zirco.utils.ProxySettings;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -37,6 +54,7 @@ import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.TunnelCore;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.psiphonlibrary.Events;
+import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 
 public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Events
 {
@@ -250,7 +268,7 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
                     {
                         dismissSplashScreen();
 
-                        ProxySettings.setLocalProxy(
+                        WebViewProxySettings.setLocalProxy(
                                 finalContext,
                                 PsiphonData.getPsiphonData().getHttpProxyPort());
 
