@@ -4,7 +4,7 @@
 <!--[[[cog
 import cog
 import utils
-cog.outl('<string name="app_name">%s</string>' % utils.get_string(buildname, 'app_name'))
+cog.outl('<string name="app_name">%s</string>' % utils.get_string(buildname, 'app_name').encode('utf8'))
 ]]]-->
     <string name="app_name">PsiphonProxiedWebApp</string>
 <!--[[[end]]]-->
