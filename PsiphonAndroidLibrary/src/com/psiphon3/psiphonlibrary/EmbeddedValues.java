@@ -27,7 +27,7 @@ import utils
 cog.outl('final String PROPAGATION_CHANNEL_ID = "%s";' % utils.get_embedded_value(buildname, 'PROPAGATION_CHANNEL_ID'))
 cog.outl('final String SPONSOR_ID = "%s";' % utils.get_embedded_value(buildname, 'SPONSOR_ID'))
 cog.outl('final String CLIENT_VERSION = "%s";' % utils.get_embedded_value(buildname, 'CLIENT_VERSION'))
-cog.outl('final String EMBEDDED_SERVER_LIST = "%s";' % utils.get_embedded_value(buildname, 'EMBEDDED_SERVER_LIST'))
+utils.outl_escaped('final String EMBEDDED_SERVER_LIST = "%s";' % utils.get_embedded_value(buildname, 'EMBEDDED_SERVER_LIST'))
 cog.outl('final String REMOTE_SERVER_LIST_URL = "%s";' % utils.get_embedded_value(buildname, 'REMOTE_SERVER_LIST_URL'))
 cog.outl('final String REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY = "%s";' % utils.get_embedded_value(buildname, 'REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY'))
 cog.outl('final String FEEDBACK_ENCRYPTION_PUBLIC_KEY = "%s";' % utils.get_embedded_value(buildname, 'FEEDBACK_ENCRYPTION_PUBLIC_KEY'))
