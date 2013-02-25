@@ -61,14 +61,21 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
     private boolean m_loadedWebView = false;
     private WebView m_webView;
     private TextView m_textView;
-    private boolean m_splashScreenCancelled = false;
+    private boolean m_showSplashScreen = false;
     private Handler m_handler = new Handler();
     private TunnelCore m_tunnelCore;
 
     // Infinite toast
     private void showSplashScreen()
     {
-        m_splashScreenCancelled = false;
+        // The text view does not appear to update if this function is invoked
+        // while the splash screen is already showing
+        if (m_showSplashScreen)
+        {
+            return;
+        }
+
+        m_showSplashScreen = true;
 
         LayoutInflater inflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View layout = inflater.inflate(R.layout.splash_screen, (ViewGroup)findViewById(R.id.splash_screen));
@@ -91,7 +98,7 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
             {
                 try
                 {
-                    while (!m_splashScreenCancelled)
+                    while (m_showSplashScreen)
                     {
                         splashScreen.show();
                         sleep(1850);
@@ -109,7 +116,7 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
 
     private void dismissSplashScreen()
     {
-        m_splashScreenCancelled = true;
+        m_showSplashScreen = false;
     }
 
     private class CustomWebViewClient extends WebViewClient
