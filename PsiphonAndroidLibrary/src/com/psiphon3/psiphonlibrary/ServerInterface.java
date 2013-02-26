@@ -1174,11 +1174,29 @@ public class ServerInterface
         {
             throw new PsiphonServerInterfaceException(e);
         }
+        catch (IllegalArgumentException e)
+        {
+            /* In some cases we have found the http client.execute method to throw a IllegalArgumentException after
+               the tunnel has gone away: 
+                E/AndroidRuntime(25874): FATAL EXCEPTION: Thread-2193
+                E/AndroidRuntime(25874): java.lang.IllegalArgumentException: Socket is closed.
+                E/AndroidRuntime(25874):        at org.apache.http.conn.ssl.SSLSocketFactory.isSecure(SSLSocketFactory.java:360)
+                E/AndroidRuntime(25874):        at org.apache.http.impl.conn.DefaultClientConnectionOperator.updateSecureConnection(DefaultClientConnectionOperator.java:
+                237)
+                E/AndroidRuntime(25874):        at org.apache.http.impl.conn.AbstractPoolEntry.layerProtocol(AbstractPoolEntry.java:302)
+                E/AndroidRuntime(25874):        at org.apache.http.impl.conn.AbstractPooledConnAdapter.layerProtocol(AbstractPooledConnAdapter.java:146)
+                E/AndroidRuntime(25874):        at org.apache.http.impl.client.DefaultRequestDirector.establishRoute(DefaultRequestDirector.java:654)
+                E/AndroidRuntime(25874):        at org.apache.http.impl.client.DefaultRequestDirector.execute(DefaultRequestDirector.java:370)
+                E/AndroidRuntime(25874):        at org.apache.http.impl.client.AbstractHttpClient.execute(AbstractHttpClient.java:555)
+                E/AndroidRuntime(25874):        at org.apache.http.impl.client.AbstractHttpClient.execute(AbstractHttpClient.java:487)
+                E/AndroidRuntime(25874):        at org.apache.http.impl.client.AbstractHttpClient.execute(AbstractHttpClient.java:465)
+            */
+            throw new PsiphonServerInterfaceException(e);
+        }
         catch (NullPointerException e)
         {
-            /*
-              In some cases we have found the http client.execute method to throw a NullPointerException after
-              the tunnel has gone away: 
+            /* In some cases we have found the http client.execute method to throw a NullPointerException after
+               the tunnel has gone away: 
                 E/AndroidRuntime(23042): FATAL EXCEPTION: Thread-2246
                 E/AndroidRuntime(23042): java.lang.NullPointerException
                 E/AndroidRuntime(23042):        at org.apache.http.impl.conn.AbstractPoolEntry.layerProtocol(AbstractPoolEntry.java:305)
