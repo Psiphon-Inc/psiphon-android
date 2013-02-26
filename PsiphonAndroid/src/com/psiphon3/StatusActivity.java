@@ -505,11 +505,25 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                     // Usually the TunnelCore instance is the 'logger', but at this point there may be no service/TunnelCore
                     addMessage(getString(R.string.tunnel_whole_device_exception), MESSAGE_CLASS_ERROR);
                 }
+                
+                // VpnService is broken. For rooted devices, proceed with starting Whole Device in root mode.
+                
+                if (Utils.isRooted())
+                {
+                    PsiphonData.getPsiphonData().setVpnServiceUnavailable(true);
+
+                    // false = not waiting for prompt, so service will be started immediately
+                    return false;
+                }
+
+                // For non-rooted devices, turn off the option and abort.
+                
                 m_tunnelWholeDeviceToggle.setChecked(false);
                 m_tunnelWholeDeviceToggle.setEnabled(false);
                 updateWholeDevicePreference(false);
 
-                // drop through to "waiting for prompt" case: we can't start the activity so onActivityResult won't be called
+                // true = waiting for prompt, although we can't start the activity so onActivityResult won't be called
+                return true;
             }
 
             // startTunnelService will be called in onActivityResult

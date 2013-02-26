@@ -550,10 +550,6 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 // functions so we don't reference the undefined VpnServer class when this function
                 // is loaded.
 
-                doVpnProtect(socket);
-                
-                ParcelFileDescriptor vpnInterfaceFileDescriptor = null;
-                
                 String privateIpAddress = Utils.selectPrivateAddress();
                 
                 if (privateIpAddress == null)
@@ -563,9 +559,19 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                     return runAgain;
                 }
 
-                if (null == (vpnInterfaceFileDescriptor = doVpnBuilder(privateIpAddress, tunnelWholeDeviceDNSServer)))
+                ParcelFileDescriptor vpnInterfaceFileDescriptor = null;
+                
+                if (!doVpnProtect(socket)
+                    || null == (vpnInterfaceFileDescriptor = doVpnBuilder(privateIpAddress, tunnelWholeDeviceDNSServer)))
                 {
                     runAgain = false;
+                    if (Utils.isRooted())
+                    {
+                        // VpnService appears to be broken. Try root mode instead.
+                        // TODO: don't fail over to root mode in the not-really-broken revoked edge condition case (e.g., establish() returns null)?
+                        PsiphonData.getPsiphonData().setVpnServiceUnavailable(true);
+                        runAgain = true;
+                    }
                     return runAgain;
                 }
                 
@@ -800,9 +806,14 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     }
     
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    private void doVpnProtect(Socket socket)
+    private boolean doVpnProtect(Socket socket)
     {
-        ((TunnelVpnService)m_parentService).protect(socket);
+        if (!((TunnelVpnService)m_parentService).protect(socket))
+        {
+            MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE, "protect socket failed");
+            return false;
+        }
+        return true;
     }
     
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)

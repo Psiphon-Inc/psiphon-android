@@ -63,6 +63,7 @@ public class PsiphonData
     private int m_dnsProxyPort;
     private int m_transparentProxyPort;
     private boolean m_tunnelWholeDevice;
+    private boolean m_vpnServiceUnavailable;
     private TunnelCore m_currentTunnelCore;
 
     public Object serverEntryFileLock = new Object(); // Used as an intrinsic lock
@@ -74,6 +75,7 @@ public class PsiphonData
         m_nextFetchRemoteServerList = -1;
         m_statusActivityForeground = false;
         m_tunnelWholeDevice = false;
+        m_vpnServiceUnavailable = false;
     }
 
     public synchronized void setHomePages(ArrayList<String> homePages)
@@ -195,6 +197,16 @@ public class PsiphonData
     public synchronized boolean getTunnelWholeDevice()
     {
         return m_tunnelWholeDevice;
+    }
+
+    public synchronized void setVpnServiceUnavailable(boolean vpnServiceUnavailable)
+    {
+        m_vpnServiceUnavailable = vpnServiceUnavailable;
+    }
+
+    public synchronized boolean getVpnServiceUnavailable()
+    {
+        return m_vpnServiceUnavailable;
     }
 
     public synchronized void setCurrentTunnelCore(TunnelCore tunnelCore)
