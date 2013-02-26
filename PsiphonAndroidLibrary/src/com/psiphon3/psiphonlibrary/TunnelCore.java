@@ -49,12 +49,13 @@ import com.stericson.RootTools.RootTools;
 
 public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
 {
-    enum State
+    public enum State
     {
         DISCONNECTED,
         CONNECTING,
         CONNECTED
     }
+    private Context m_parentContext = null;
     private Service m_parentService = null;
     private State m_state = State.DISCONNECTED;
     private boolean m_firstStart = true;
@@ -64,6 +65,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     private ServerSelector m_serverSelector = null;
     private boolean m_destroyed = false;
     private Events m_eventsInterface = null;
+    private boolean m_useGenericLogMessages = false;
 
     enum Signal
     {
@@ -86,8 +88,9 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
         public void stop();
     }
     
-    TunnelCore(Service parentService)
+    public TunnelCore(Context parentContext, Service parentService)
     {
+        m_parentContext = parentContext;
         m_parentService = parentService;
     }
     
@@ -108,8 +111,8 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     public void onCreate()
     {
         MyLog.logger = this;
-        m_interface = new ServerInterface(m_parentService);
-        m_serverSelector = new ServerSelector(m_interface, m_parentService);
+        m_interface = new ServerInterface(m_parentContext);
+        m_serverSelector = new ServerSelector(m_interface, m_parentContext);
     }
 
     // Implementation of android.app.Service.onDestroy
@@ -124,11 +127,23 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
 
     private void doForeground()
     {
+        if (m_parentService == null)
+        {
+            // Only works with a Service
+            return;
+        }
+
         m_parentService.startForeground(R.string.psiphon_service_notification_id, this.createNotification());
     }
     
     private Notification createNotification()
     {
+        if (m_parentService == null)
+        {
+            // Only works with a Service
+            return null;
+        }
+
         int contentTextID = -1;
         int iconID = -1;
         
@@ -204,7 +219,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     {
         if (m_eventsInterface != null)
         {
-            m_eventsInterface.appendStatusMessage(m_parentService, message, messageClass);
+            m_eventsInterface.appendStatusMessage(m_parentContext, message, messageClass);
         }
     }
         
@@ -232,7 +247,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     {
         m_state = newState;
         
-        if (!this.m_destroyed)
+        if (!this.m_destroyed && m_parentService != null)
         {
             String ns = Context.NOTIFICATION_SERVICE;
             NotificationManager mNotificationManager =
@@ -528,7 +543,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     
                 try
                 {
-                    TransparentProxyConfig.setupTransparentProxyRouting(m_parentService);
+                    TransparentProxyConfig.setupTransparentProxyRouting(m_parentContext);
                     cleanupTransparentProxyRouting = true;
                 }
                 catch (PsiphonTransparentProxyException e)
@@ -611,7 +626,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
 
                 if (m_eventsInterface != null)
                 {
-                    m_eventsInterface.signalHandshakeSuccess(m_parentService);
+                    m_eventsInterface.signalHandshakeSuccess(m_parentContext);
                 }
             } 
             catch (PsiphonServerInterfaceException requestException)
@@ -624,7 +639,14 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 throw new IOException();
             }
             
-            MyLog.i(tunnelWholeDevice ? R.string.psiphon_running_whole_device : R.string.psiphon_running_browser_only, MyLog.Sensitivity.NOT_SENSITIVE);
+            if (m_useGenericLogMessages)
+            {
+                MyLog.i(R.string.psiphon_running_generic, MyLog.Sensitivity.NOT_SENSITIVE);                
+            }
+            else
+            {
+                MyLog.i(tunnelWholeDevice ? R.string.psiphon_running_whole_device : R.string.psiphon_running_browser_only, MyLog.Sensitivity.NOT_SENSITIVE);
+            }
 
             checkSignals(0);
 
@@ -715,7 +737,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
             {
                 try
                 {
-                    TransparentProxyConfig.teardownTransparentProxyRouting(m_parentService);
+                    TransparentProxyConfig.teardownTransparentProxyRouting(m_parentContext);
                 }
                 catch (PsiphonTransparentProxyException e)
                 {
@@ -786,7 +808,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 
                 if (m_eventsInterface != null)
                 {
-                    m_eventsInterface.signalUnexpectedDisconnect(m_parentService);
+                    m_eventsInterface.signalUnexpectedDisconnect(m_parentContext);
                 }
             }
             
@@ -808,6 +830,9 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     private boolean doVpnProtect(Socket socket)
     {
+        // *Must* have a parent service for this mode
+        assert (m_parentService != null);
+
         if (!((TunnelVpnService)m_parentService).protect(socket))
         {
             MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE, "protect socket failed");
@@ -819,6 +844,9 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     private ParcelFileDescriptor doVpnBuilder(String privateIpAddress, String tunnelWholeDeviceDNSServer)
     {
+        // *Must* have a parent service for this mode
+        assert (m_parentService != null);
+
         ParcelFileDescriptor vpnInterfaceFileDescriptor = null;
         String builderErrorMessage = null;
         try
@@ -921,7 +949,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
 
         if (m_eventsInterface != null)
         {
-            m_eventsInterface.signalTunnelStarting(m_parentService);
+            m_eventsInterface.signalTunnelStarting(m_parentContext);
         }
 
         MyLog.v(R.string.starting_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
@@ -959,8 +987,11 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     
     public void stopVpnServiceHelper()
     {
-    	// A hack to stop the VpnService, which doesn't respond to normal
-    	// stopService() calls.
+        // *Must* have a parent service for this mode
+        assert (m_parentService != null);
+
+        // A hack to stop the VpnService, which doesn't respond to normal
+        // stopService() calls.
 
         // Stopping tun2socks will close the VPN interface fd, which
         // in turn stops the VpnService. Without closing the fd, the
@@ -982,7 +1013,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
         {
             if (m_eventsInterface != null)
             {
-                m_eventsInterface.signalTunnelStopping(m_parentService);
+                m_eventsInterface.signalTunnelStopping(m_parentContext);
             }
 
             // TODO: ServerListReorder lifetime on Android isn't the same as on Windows
@@ -1040,5 +1071,10 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     public ServerInterface getServerInterface()
     {
         return m_interface;
+    }
+    
+    public void setUseGenericLogMessages(boolean useGenericLogMessages)
+    {
+        m_useGenericLogMessages = useGenericLogMessages;
     }
 }
