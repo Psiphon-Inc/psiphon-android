@@ -151,7 +151,7 @@ void connector_handler (BSocksClient* o, int is_error)
     
     // check connection result
     if (is_error) {
-        BLog(BLOG_ERROR, "connection failed");
+        BLog(BLOG_WARNING, "connection failed");
         goto fail0;
     }
     

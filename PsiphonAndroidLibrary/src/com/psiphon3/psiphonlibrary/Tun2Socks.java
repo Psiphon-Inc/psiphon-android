@@ -112,7 +112,14 @@ public class Tun2Socks
             String msg)
     {
         String logMsg = level + "(" + channel + "): " + msg;
-        MyLog.e(R.string.tun2socks_error, MyLog.Sensitivity.NOT_SENSITIVE, logMsg);
+        if (0 == level.compareTo("ERROR"))
+        {
+            MyLog.e(R.string.tun2socks_error, MyLog.Sensitivity.NOT_SENSITIVE, logMsg);
+        }
+        else
+        {
+            MyLog.g(logMsg, null);
+        }
     }
 
     private native static int runTun2Socks(

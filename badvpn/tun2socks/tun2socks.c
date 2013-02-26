@@ -291,7 +291,7 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_runTun2Socks(
     options.tun_fd = vpnInterfaceFileDescriptor;
     options.tun_mtu = vpnInterfaceMTU;
     options.set_signal = 0;
-    options.loglevel = 1;
+    options.loglevel = 2;
 
     BLog_InitPsiphon();
 
