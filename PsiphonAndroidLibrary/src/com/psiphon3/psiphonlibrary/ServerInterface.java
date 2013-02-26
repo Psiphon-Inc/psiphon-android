@@ -1174,6 +1174,23 @@ public class ServerInterface
         {
             throw new PsiphonServerInterfaceException(e);
         }
+        catch (NullPointerException e)
+        {
+            /*
+              In some cases we have found the http client.execute method to throw a NullPointerException after
+              the tunnel has gone away: 
+                E/AndroidRuntime(23042): FATAL EXCEPTION: Thread-2246
+                E/AndroidRuntime(23042): java.lang.NullPointerException
+                E/AndroidRuntime(23042):        at org.apache.http.impl.conn.AbstractPoolEntry.layerProtocol(AbstractPoolEntry.java:305)
+                E/AndroidRuntime(23042):        at org.apache.http.impl.conn.AbstractPooledConnAdapter.layerProtocol(AbstractPooledConnAdapter.java:146)
+                E/AndroidRuntime(23042):        at org.apache.http.impl.client.DefaultRequestDirector.establishRoute(DefaultRequestDirector.java:654)
+                E/AndroidRuntime(23042):        at org.apache.http.impl.client.DefaultRequestDirector.execute(DefaultRequestDirector.java:370)
+                E/AndroidRuntime(23042):        at org.apache.http.impl.client.AbstractHttpClient.execute(AbstractHttpClient.java:555)
+                E/AndroidRuntime(23042):        at org.apache.http.impl.client.AbstractHttpClient.execute(AbstractHttpClient.java:487)
+                E/AndroidRuntime(23042):        at org.apache.http.impl.client.AbstractHttpClient.execute(AbstractHttpClient.java:465)
+            */
+            throw new PsiphonServerInterfaceException(e);
+        }
         finally
         {
             if (request != null && canAbort)
