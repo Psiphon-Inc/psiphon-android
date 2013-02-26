@@ -339,7 +339,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
             }
 
             boolean tunnelWholeDevice = PsiphonData.getPsiphonData().getTunnelWholeDevice();
-            boolean runVpnService = tunnelWholeDevice && Utils.hasVpnService();
+            boolean runVpnService = tunnelWholeDevice && Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
             String tunnelWholeDeviceDNSServer = "8.8.8.8"; // TEMP. TODO: get remote address/port from Psiphon server
             
             if (tunnelWholeDevice && !runVpnService)

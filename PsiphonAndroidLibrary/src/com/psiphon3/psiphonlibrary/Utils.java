@@ -557,12 +557,6 @@ public class Utils {
     
     public static boolean hasVpnService()
     {
-        if (PsiphonData.getPsiphonData().getVpnServiceUnavailable())
-        {
-            // We've already tried to use VpnService and it appears to be broken
-            return false;
-        }
-
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH;
     }
     

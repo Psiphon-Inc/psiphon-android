@@ -166,8 +166,8 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         // On Android 4+, we offer "Whole Device" via the VpnService facility, which does not require root.
         // We prefer VpnService when available, even when the device is rooted.
         boolean isRooted = Utils.isRooted();
-        boolean hasVpnService = Utils.hasVpnService();
-        boolean canWholeDevice = isRooted || hasVpnService;
+        boolean canRunVpnService = Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
+        boolean canWholeDevice = isRooted || canRunVpnService;
 
         m_tunnelWholeDeviceToggle.setEnabled(canWholeDevice);
         boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, canWholeDevice);
@@ -495,7 +495,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             
             try
             {
-                startActivityForResult(intent, VPN_PREPARE);
+                startActivityForResult(intent, VPN_PREPARE);                
             }
             catch (ActivityNotFoundException e)
             {
@@ -614,6 +614,30 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         }
     }
     
+    /**
+     * Determine if the Psiphon local service is currently running.
+     * @see <a href="http://stackoverflow.com/a/5921190/729729">From StackOverflow answer: "android: check if a service is running"</a>
+     * @return True if the service is already running, false otherwise.
+     */
+    private boolean isServiceRunning()
+    {
+        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
+        {
+            if (TunnelService.class.getName().equals(service.service.getClassName()) ||
+                    (Utils.hasVpnService() && isVpnService(service.service.getClassName())))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private boolean isVpnService(String className)
+    {
+        return TunnelVpnService.class.getName().equals(className);
+    }
+
     public class AddMessageReceiver extends BroadcastReceiver
     {
         @Override
@@ -684,30 +708,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             });    	
     }
     
-    /**
-     * Determine if the Psiphon local service is currently running.
-     * @see <a href="http://stackoverflow.com/a/5921190/729729">From StackOverflow answer: "android: check if a service is running"</a>
-     * @return True if the service is already running, false otherwise.
-     */
-    private boolean isServiceRunning()
-    {
-        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
-        {
-            if (TunnelService.class.getName().equals(service.service.getClassName()) ||
-            		(Utils.hasVpnService() && isVpnService(service.service.getClassName())))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    private boolean isVpnService(String className)
-    {
-        return TunnelVpnService.class.getName().equals(className);
-    }
-
     /**
      * Utils.MyLog.ILogInfoProvider implementation
      * For Android priority values, see <a href="http://developer.android.com/reference/android/util/Log.html">http://developer.android.com/reference/android/util/Log.html</a>
