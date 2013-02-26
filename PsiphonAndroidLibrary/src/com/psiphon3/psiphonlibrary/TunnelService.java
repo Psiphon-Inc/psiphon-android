@@ -26,7 +26,7 @@ import android.os.IBinder;
 
 public class TunnelService extends Service
 {
-    private TunnelCore m_Core = new TunnelCore(this);
+    private TunnelCore m_Core = new TunnelCore(this, this);
 
     public class LocalBinder extends Binder
     {

@@ -31,7 +31,7 @@ import android.os.IBinder;
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class TunnelVpnService extends VpnService
 {
-    private TunnelCore m_Core = new TunnelCore(this);
+    private TunnelCore m_Core = new TunnelCore(this, this);
 
     public class LocalBinder extends Binder
     {
@@ -45,16 +45,16 @@ public class TunnelVpnService extends VpnService
     @Override
     public IBinder onBind(Intent intent)
     {
-    	// Need to use super class behavior in specified cases:
-    	// http://developer.android.com/reference/android/net/VpnService.html#onBind%28android.content.Intent%29
-    	
-    	String action = intent.getAction();
-    	if (action != null && action.equals(SERVICE_INTERFACE))
-    	{
-        	return super.onBind(intent);
-    	}
-    	
-		return m_binder;
+        // Need to use super class behavior in specified cases:
+        // http://developer.android.com/reference/android/net/VpnService.html#onBind%28android.content.Intent%29
+        
+        String action = intent.getAction();
+        if (action != null && action.equals(SERVICE_INTERFACE))
+        {
+            return super.onBind(intent);
+        }
+        
+        return m_binder;
     }
 
     @Override
@@ -66,14 +66,14 @@ public class TunnelVpnService extends VpnService
     @Override
     public void onCreate()
     {
-    	PsiphonData.getPsiphonData().setCurrentTunnelCore(m_Core);
+        PsiphonData.getPsiphonData().setCurrentTunnelCore(m_Core);
         m_Core.onCreate();
     }
 
     @Override
     public void onDestroy()
     {
-    	PsiphonData.getPsiphonData().setCurrentTunnelCore(null);
+        PsiphonData.getPsiphonData().setCurrentTunnelCore(null);
         m_Core.onDestroy();
     }
 
