@@ -58,6 +58,8 @@ public class PsiphonData
     private String m_clientSessionID;
     private String m_tunnelSessionID;
     private String m_tunnelRelayProtocol;
+    private int m_defaultSocksPort = PsiphonConstants.SOCKS_PORT;
+    private int m_defaultHttpProxyPort = PsiphonConstants.HTTP_PROXY_PORT;
     private int m_socksPort;
     private int m_httpProxyPort;
     private int m_dnsProxyPort;
@@ -149,6 +151,26 @@ public class PsiphonData
         return m_tunnelRelayProtocol;
     }
     
+    public synchronized void setDefaultHttpProxyPort(int defaultHttpProxyPort)
+    {
+        m_defaultHttpProxyPort = defaultHttpProxyPort;
+    }
+
+    public synchronized int getDefaultHttpProxyPort()
+    {
+        return m_defaultHttpProxyPort;
+    }
+
+    public synchronized void setDefaultSocksPort(int defaultSocksPort)
+    {
+        m_defaultSocksPort = defaultSocksPort;
+    }
+
+    public synchronized int getDefaultSocksPort()
+    {
+        return m_defaultSocksPort;
+    }
+
     public synchronized void setHttpProxyPort(int httpProxyPort)
     {
         m_httpProxyPort = httpProxyPort;
