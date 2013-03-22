@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SecureRandom;
 
+import ch.ethz.ssh2.compression.ICompressor;
 import ch.ethz.ssh2.crypto.cipher.BlockCipher;
 import ch.ethz.ssh2.crypto.cipher.CipherInputStream;
 import ch.ethz.ssh2.crypto.cipher.CipherOutputStream;
@@ -13,6 +14,12 @@ import ch.ethz.ssh2.crypto.cipher.NullCipher;
 import ch.ethz.ssh2.crypto.digest.MAC;
 import ch.ethz.ssh2.log.Logger;
 import ch.ethz.ssh2.packets.Packets;
+
+/*
+ * Compression implementation from:
+ * ConnectBot: simple, powerful, open-source SSH client for Android
+ * Copyright 2007 Kenny Root, Jeffrey Sharkey
+ */
 
 /**
  * TransportConnection.
@@ -49,6 +56,18 @@ public class TransportConnection
 	byte[] recv_mac_buffer_cmp;
 
 	int recv_padd_blocksize = 8;
+
+	ICompressor recv_comp = null;
+	
+	ICompressor send_comp = null;
+	
+	boolean can_recv_compress = false;
+
+	boolean can_send_compress = false;
+
+	byte[] recv_comp_buffer;
+	
+	byte[] send_comp_buffer;
 
 	/* won't change */
 
@@ -101,7 +120,35 @@ public class TransportConnection
 			send_padd_blocksize = 8;
 	}
 
-	public void sendMessage(byte[] message) throws IOException
+	public void changeRecvCompression(ICompressor comp)
+	{
+		recv_comp = comp;
+		
+		if (comp != null)
+		{
+			recv_comp_buffer = new byte[comp.getBufferSize()];
+			can_recv_compress |= recv_comp.canCompressPreauth();
+		}
+	}
+
+	public void changeSendCompression(ICompressor comp)
+	{
+		send_comp = comp;
+		
+		if (comp != null)
+		{
+			send_comp_buffer = new byte[comp.getBufferSize()];
+			can_send_compress |= send_comp.canCompressPreauth();
+		}
+	}
+
+    public void startCompression()
+    {
+        can_recv_compress = true;
+        can_send_compress = true;
+    }
+
+    public void sendMessage(byte[] message) throws IOException
 	{
 		sendMessage(message, 0, message.length, 0);
 	}
@@ -123,6 +170,16 @@ public class TransportConnection
 			padd = 4;
 		else if (padd > 64)
 			padd = 64;
+
+		if (send_comp != null && can_send_compress)
+		{
+			if (send_comp_buffer.length < message.length + 1024)
+			{
+				send_comp_buffer = new byte[message.length + 1024];
+			}
+			len = send_comp.compress(message, off, len, send_comp_buffer);
+			message = send_comp_buffer;
+		}
 
 		int packet_len = 5 + len + padd; /* Minimum allowed padding is 4 */
 
@@ -278,6 +335,23 @@ public class TransportConnection
 					+ " bytes payload");
 		}
 
-		return payload_length;
+		if (recv_comp != null && can_recv_compress)
+		{
+			int[] uncomp_len = new int[] { payload_length };
+			buffer = recv_comp.uncompress(buffer, off, uncomp_len);
+			
+			if (buffer == null)
+			{
+				throw new IOException("Error while inflating remote data");
+			}
+			else
+			{
+				return uncomp_len[0];
+			}
+		}
+		else 
+		{
+			return payload_length;
+		}
 	}
 }
