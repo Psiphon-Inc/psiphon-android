@@ -335,12 +335,12 @@ public class Utils {
             }
         }
         
-        static void d(String msg)
+        static public void d(String msg)
         {
             MyLog.println(msg, null, Log.DEBUG);
         }
 
-        static void d(String msg, Throwable throwable)
+        static public void d(String msg, Throwable throwable)
         {
             MyLog.println(msg, throwable, Log.DEBUG);
         }
@@ -350,7 +350,7 @@ public class Utils {
          * except it will also be included in the feedback diagnostic attachment.
          * @param msg The message to log.
          */
-        static void g(String msg, Object data)
+        static public void g(String msg, Object data)
         {
             PsiphonData.addDiagnosticEntry(msg, data);
             // We're not logging the `data` at all. In the future we may want to.
