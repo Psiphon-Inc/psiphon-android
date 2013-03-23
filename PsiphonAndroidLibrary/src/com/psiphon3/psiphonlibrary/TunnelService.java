@@ -68,7 +68,7 @@ public class TunnelService extends Service
     {
         m_Core.setEventsInterface(eventsInterface);
     }
-
+    
     public void setUpgradeDownloader(TunnelCore.UpgradeDownloader downloader)
     {
         m_Core.setUpgradeDownloader(downloader);

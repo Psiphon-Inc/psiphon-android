@@ -524,7 +524,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
             }
 
             MyLog.v(R.string.http_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getHttpProxyPort());
-            
+
             // Start transparent proxy, DNS proxy, and iptables config
             
             if (tunnelWholeDevice && !runVpnService)
