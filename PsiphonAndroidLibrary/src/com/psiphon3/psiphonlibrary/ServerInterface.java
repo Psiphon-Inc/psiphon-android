@@ -254,6 +254,7 @@ public class ServerInterface
     {
         this.stopped = false;
         this.currentServerEntry = null;
+        resetPeriodicWork();
     }
 
     /**
@@ -1433,9 +1434,20 @@ public class ServerInterface
     private final int DEFAULT_SEND_MAX_ENTRIES = 1000;
     private int sendMaxEntries = DEFAULT_SEND_MAX_ENTRIES;
 
-    // TEMP!
-    private final long STATS_DISPLAY_INTERVAL_MS = 30*1000; // 30 sec.
+    private final long STATS_DISPLAY_INTERVAL_MS = 60*60*1000; // 1 hour
+    private final long MIN_STATS_DISPLAY_INTERVAL_MS = 30*1000; // 30 sec.
+    private final long STATS_DISPLAY_SIZE_THRESHOLD = 4*1024*1024; // 4 MiB
     private long lastStatsDisplayTimeMS = 0;
+    private long lastStatsDisplayTotalBytes = 0;
+
+    private synchronized void resetPeriodicWork()
+    {
+        this.statsSendInterval = this.DEFAULT_STATS_SEND_INTERVAL_MS;
+        this.lastStatusSendTimeMS = 0;
+        this.sendMaxEntries = this.DEFAULT_SEND_MAX_ENTRIES;
+        this.lastStatsDisplayTimeMS = 0;
+        this.lastStatsDisplayTotalBytes = 0;
+    }
     
     /**
      * Call to let the interface to any periodic work or checks that it needs to.
@@ -1452,19 +1464,31 @@ public class ServerInterface
         {
             if (this.lastStatsDisplayTimeMS == 0) this.lastStatsDisplayTimeMS = now; 
             if (now < this.lastStatsDisplayTimeMS) this.lastStatsDisplayTimeMS = 0;
-            if (this.lastStatsDisplayTimeMS + this.STATS_DISPLAY_INTERVAL_MS < now)
+            
+            if (finalCall
+                || this.lastStatsDisplayTimeMS + this.MIN_STATS_DISPLAY_INTERVAL_MS < now)
             {
                 PsiphonData.DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
                 
-                MyLog.v(
-                    R.string.data_transfer_stats,
-                    MyLog.Sensitivity.NOT_SENSITIVE,
-                    Utils.byteCountToDisplaySize(dataTransferStats.getBytesReceived(), false),
-                    dataTransferStats.getBytesReceivedCompressionRatio(),
-                    Utils.byteCountToDisplaySize(dataTransferStats.getBytesSent(), false),
-                    dataTransferStats.getBytesSentCompressionRatio());
-
-                this.lastStatsDisplayTimeMS = now;
+                long bytesSent = dataTransferStats.getBytesSent();
+                long bytesReceived = dataTransferStats.getBytesSent();
+                double compressionRatio = dataTransferStats.getCompressionRatio();
+                long totalBytes = bytesSent + bytesReceived;
+                
+                if (finalCall
+                    || (totalBytes > this.lastStatsDisplayTotalBytes && this.lastStatsDisplayTimeMS + this.STATS_DISPLAY_INTERVAL_MS < now)
+                    || (this.lastStatsDisplayTotalBytes + this.STATS_DISPLAY_SIZE_THRESHOLD < totalBytes)) 
+                {                
+                    MyLog.v(
+                        R.string.data_transfer_stats,
+                        MyLog.Sensitivity.NOT_SENSITIVE,
+                        Utils.byteCountToDisplaySize(bytesSent, false),
+                        Utils.byteCountToDisplaySize(bytesReceived, false),
+                        compressionRatio);
+    
+                    this.lastStatsDisplayTimeMS = now;
+                    this.lastStatsDisplayTotalBytes = totalBytes;
+                }
             }
         }
         

@@ -423,21 +423,17 @@ public class PsiphonData
             return this.m_bytesSent;
         }
         
-        public synchronized double getBytesSentCompressionRatio()
+        public synchronized double getCompressionRatio()
         {
-            if (this.m_uncompressedBytesSent == 0) return 0.0;
-            return 100.0*(1.0-(double)this.m_bytesSent/(double)this.m_uncompressedBytesSent);
+            long totalBytes = this.m_bytesSent + this.m_bytesReceived;
+            long totalUncompressedBytes = this.m_uncompressedBytesSent + this.m_uncompressedBytesReceived;
+            if (totalUncompressedBytes == 0) return 0.0;
+            return 100.0*(1.0-(double)totalBytes/(double)totalUncompressedBytes);
         }
         
         public synchronized long getBytesReceived()
         {
             return this.m_bytesReceived;
-        }
-        
-        public synchronized double getBytesReceivedCompressionRatio()
-        {
-            if (this.m_uncompressedBytesReceived == 0) return 0.0;
-            return 100.0*(1.0-(double)this.m_bytesReceived/(double)this.m_uncompressedBytesReceived);
         }
         
         public synchronized void clear()
