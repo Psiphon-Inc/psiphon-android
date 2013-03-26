@@ -80,8 +80,8 @@ public class PsiphonStreamForwarder extends Thread
     {
         try
         {
-        	PsiphonData.ReportedStats reportedStats = PsiphonData.getPsiphonData().getReportedStats();
-        	
+            PsiphonData.ReportedStats reportedStats = PsiphonData.getPsiphonData().getReportedStats();
+            
             while (true)
             {
                 int len = is.read(buffer);
@@ -94,7 +94,7 @@ public class PsiphonStreamForwarder extends Thread
                 // to sibling thread
                 if (reportedStats != null)
                 {
-                	doStats(reportedStats, len);
+                    doStats(reportedStats, len);
                 }
 
                 os.write(buffer, 0, len);
@@ -239,11 +239,11 @@ public class PsiphonStreamForwarder extends Thread
 
         if (this.isHttpRequester)
         {
-        	reportedStats.addBytesSent(bytes_read);
+            reportedStats.addBytesSent(bytes_read);
         }
         else
         {
-        	reportedStats.addBytesReceived(bytes_read);
+            reportedStats.addBytesReceived(bytes_read);
         }
 
         // Page views stats
@@ -472,7 +472,7 @@ public class PsiphonStreamForwarder extends Thread
                                     && (contentType.contains("text/html")
                                         || contentType.contains("application/xhtml+xml")))
                                 {
-                                	reportedStats.upsertPageView("http://"+requestHost+requestURI);
+                                    reportedStats.upsertPageView("http://"+requestHost+requestURI);
                                 }
                             }
     

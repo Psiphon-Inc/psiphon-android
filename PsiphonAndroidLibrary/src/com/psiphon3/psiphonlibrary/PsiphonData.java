@@ -68,6 +68,8 @@ public class PsiphonData
     private TunnelCore m_currentTunnelCore;
     private ReportedStats m_reportedStats;
     private boolean m_enableReportedStats;
+    private DataTransferStats m_dataTransferStats;
+    private boolean m_displayDataTransferStats;
 
     public Object serverEntryFileLock = new Object(); // Used as an intrinsic lock
         
@@ -80,6 +82,8 @@ public class PsiphonData
         m_vpnServiceUnavailable = false;
         m_reportedStats = new ReportedStats();
         m_enableReportedStats = true;
+        m_dataTransferStats = new DataTransferStats();
+        m_displayDataTransferStats = false;
     }
 
     public synchronized void setHomePages(ArrayList<String> homePages)
@@ -230,8 +234,8 @@ public class PsiphonData
 
     public synchronized void setCurrentTunnelCore(TunnelCore tunnelCore)
     {
-    	// TODO: make TunnelCore a singleton; then get rid of this hack.
-    	
+        // TODO: make TunnelCore a singleton; then get rid of this hack.
+        
         m_currentTunnelCore = tunnelCore;
     }
 
@@ -252,10 +256,10 @@ public class PsiphonData
 
     public synchronized ReportedStats getReportedStats()
     {
-    	if (!m_enableReportedStats)
-    	{
-    		return null;
-    	}
+        if (!m_enableReportedStats)
+        {
+            return null;
+        }
         return m_reportedStats;
     }
 
@@ -283,17 +287,17 @@ public class PsiphonData
     
         public synchronized void addBytesSent(int byteCount)
         {
-        	this.m_bytesTransferred += byteCount;
+            this.m_bytesTransferred += byteCount;
         }
     
         public synchronized void addBytesReceived(int byteCount)
         {
-        	this.m_bytesTransferred += byteCount;
+            this.m_bytesTransferred += byteCount;
         }
         
         public synchronized void upsertPageView(String entry)
         {
-        	String storeEntry = "(OTHER)";
+            String storeEntry = "(OTHER)";
             
             if (this.m_pageViewRegexes != null)
             {
@@ -320,7 +324,7 @@ public class PsiphonData
         
         public synchronized void upsertHttpsRequest(String entry)
         {
-        	// TODO: This is identical code to the function above, because we don't
+            // TODO: This is identical code to the function above, because we don't
             // yet know what a HTTPS "entry" looks like, because we haven't implemented
             // HTTPS response parsing yet.
             
@@ -375,6 +379,76 @@ public class PsiphonData
         }
     }
     
+    public synchronized void setDisplayDataTransferStats(boolean displayDataTransferStats)
+    {
+        m_displayDataTransferStats = displayDataTransferStats;
+    }
+
+    public synchronized boolean getDisplayDataTransferStats()
+    {
+        return m_displayDataTransferStats;
+    }
+
+    public synchronized DataTransferStats getDataTransferStats()
+    {
+        return m_dataTransferStats;
+    }
+
+    public class DataTransferStats
+    {
+        private long m_bytesSent;
+        private long m_uncompressedBytesSent;
+        private long m_bytesReceived;
+        private long m_uncompressedBytesReceived;
+
+        DataTransferStats()
+        {
+            clear();
+        }
+        
+        public synchronized void addBytesSent(int bytes, int uncompressedBytes)
+        {
+            this.m_bytesSent += bytes;
+            this.m_uncompressedBytesSent += uncompressedBytes;
+        }
+    
+        public synchronized void addBytesReceived(int bytes, int uncompressedBytes)
+        {
+            this.m_bytesReceived += bytes;
+            this.m_uncompressedBytesReceived += uncompressedBytes;
+        }
+        
+        public synchronized long getBytesSent()
+        {
+            return this.m_bytesSent;
+        }
+        
+        public synchronized double getBytesSentCompressionRatio()
+        {
+            if (this.m_uncompressedBytesSent == 0) return 0.0;
+            return 100.0*(1.0-(double)this.m_bytesSent/(double)this.m_uncompressedBytesSent);
+        }
+        
+        public synchronized long getBytesReceived()
+        {
+            return this.m_bytesReceived;
+        }
+        
+        public synchronized double getBytesReceivedCompressionRatio()
+        {
+            if (this.m_uncompressedBytesReceived == 0) return 0.0;
+            return 100.0*(1.0-(double)this.m_bytesReceived/(double)this.m_uncompressedBytesReceived);
+        }
+        
+        public synchronized void clear()
+        {
+            this.m_bytesSent = 0;
+            this.m_uncompressedBytesSent = 0;
+            this.m_bytesReceived = 0;
+            this.m_uncompressedBytesReceived = 0;
+        }
+    }
+    
     /*
      * Status Message History support
      */
@@ -391,37 +465,37 @@ public class PsiphonData
         
         public String timestamp()
         {
-        	return timestamp;
+            return timestamp;
         }
         
         public int id()
         {
-        	return id;
+            return id;
         }
         
         public String idName()
         {
-        	return idName;
+            return idName;
         }
         
         public Object[] formatArgs()
         {
-        	return formatArgs;
+            return formatArgs;
         }
         
         public Throwable throwable()
         {
-        	return throwable;
+            return throwable;
         }
         
         public int priority()
         {
-        	return priority;
+            return priority;
         }
         
         public MyLog.Sensitivity sensitivity()
         {
-        	return sensitivity;
+            return sensitivity;
         }
     }
     
@@ -429,12 +503,12 @@ public class PsiphonData
     
     static public void addStatusEntry(
             String timestamp,
-    		int id, 
-    		String idName, 
-    		MyLog.Sensitivity sensitivity, 
-    		Object[] formatArgs, 
-    		Throwable throwable, 
-    		int priority)
+            int id, 
+            String idName, 
+            MyLog.Sensitivity sensitivity, 
+            Object[] formatArgs, 
+            Throwable throwable, 
+            int priority)
     {
         StatusEntry entry = new StatusEntry();
         entry.timestamp = timestamp;
@@ -481,17 +555,17 @@ public class PsiphonData
 
         public String timestamp()
         {
-        	return timestamp;
+            return timestamp;
         }
         
         public String msg()
         {
-        	return msg;
+            return msg;
         }
         
         public Object data()
         {
-        	return data;
+            return data;
         }
     }
         
@@ -499,19 +573,19 @@ public class PsiphonData
 
     static public void addDiagnosticEntry(String msg, Object data)
     {
-    	DiagnosticEntry entry = new DiagnosticEntry();
-    	entry.timestamp = Utils.getISO8601String();
-    	entry.msg = msg;
-    	entry.data = data;
+        DiagnosticEntry entry = new DiagnosticEntry();
+        entry.timestamp = Utils.getISO8601String();
+        entry.msg = msg;
+        entry.data = data;
         m_diagnosticHistory.add(entry);
     }
     
     static public List<DiagnosticEntry> cloneDiagnosticHistory()
     {
-    	List<DiagnosticEntry> copy;
+        List<DiagnosticEntry> copy;
         synchronized(m_diagnosticHistory) 
         {
-        	copy = new ArrayList<DiagnosticEntry>(m_diagnosticHistory);
+            copy = new ArrayList<DiagnosticEntry>(m_diagnosticHistory);
         }
         return copy;
     }

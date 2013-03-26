@@ -468,7 +468,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 runAgain = false;
                 return runAgain;
             }
-
+            
             MyLog.v(R.string.ssh_authenticating, MyLog.Sensitivity.NOT_SENSITIVE);
             boolean isAuthenticated = conn.authenticateWithPassword(entry.sshUsername, authParams.toString());
             if (isAuthenticated == false)
