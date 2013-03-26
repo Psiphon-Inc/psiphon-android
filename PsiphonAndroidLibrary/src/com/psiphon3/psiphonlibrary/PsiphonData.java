@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Psiphon Inc.
+ * Copyright (c) 2013, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -52,7 +52,6 @@ public class PsiphonData
     }
 
     private ArrayList<String> m_homePages;
-    private Stats m_stats;
     private long m_nextFetchRemoteServerList;
     private boolean m_statusActivityForeground;
     private String m_clientSessionID;
@@ -67,17 +66,20 @@ public class PsiphonData
     private boolean m_tunnelWholeDevice;
     private boolean m_vpnServiceUnavailable;
     private TunnelCore m_currentTunnelCore;
+    private ReportedStats m_reportedStats;
+    private boolean m_enableReportedStats;
 
     public Object serverEntryFileLock = new Object(); // Used as an intrinsic lock
         
     private PsiphonData()
     {
         m_homePages = new ArrayList<String>();
-        m_stats = new Stats();
         m_nextFetchRemoteServerList = -1;
         m_statusActivityForeground = false;
         m_tunnelWholeDevice = false;
         m_vpnServiceUnavailable = false;
+        m_reportedStats = new ReportedStats();
+        m_enableReportedStats = true;
     }
 
     public synchronized void setHomePages(ArrayList<String> homePages)
@@ -94,11 +96,6 @@ public class PsiphonData
         ArrayList<String> homePages = new ArrayList<String>();
         homePages.addAll(m_homePages);
         return homePages;
-    }
-
-    public synchronized Stats getStats()
-    {
-        return m_stats;
     }
 
     public synchronized long getNextFetchRemoteServerList()
@@ -243,7 +240,26 @@ public class PsiphonData
         return m_currentTunnelCore;
     }
 
-    public class Stats
+    public synchronized void setEnableReportedStats(boolean enableReportedStats)
+    {
+        m_enableReportedStats = enableReportedStats;
+    }
+
+    public synchronized boolean getEnableReportedStats()
+    {
+        return m_enableReportedStats;
+    }
+
+    public synchronized ReportedStats getReportedStats()
+    {
+    	if (!m_enableReportedStats)
+    	{
+    		return null;
+    	}
+        return m_reportedStats;
+    }
+
+    public class ReportedStats
     {
         private Integer m_bytesTransferred = 0;
         private Map<String, Integer> m_pageViewEntries;
@@ -251,33 +267,33 @@ public class PsiphonData
         private List<Pair<Pattern, String>> m_pageViewRegexes;
         private List<Pair<Pattern, String>> m_httpsRequestRegexes;
             
-        Stats()
+        ReportedStats()
         {
-            m_pageViewEntries = new HashMap<String, Integer>();
-            m_httpsRequestEntries = new HashMap<String, Integer>();
+            this.m_pageViewEntries = new HashMap<String, Integer>();
+            this.m_httpsRequestEntries = new HashMap<String, Integer>();
         }
     
         public synchronized void setRegexes(
                 List<Pair<Pattern, String>> pageViewRegexes,
                 List<Pair<Pattern, String>> httpsRequestRegexes)
         {
-            m_stats.m_pageViewRegexes = pageViewRegexes;
-            m_stats.m_httpsRequestRegexes = httpsRequestRegexes;
+            this.m_pageViewRegexes = pageViewRegexes;
+            this.m_httpsRequestRegexes = httpsRequestRegexes;
         }
     
         public synchronized void addBytesSent(int byteCount)
         {
-            this.m_bytesTransferred += byteCount;
+        	this.m_bytesTransferred += byteCount;
         }
     
         public synchronized void addBytesReceived(int byteCount)
         {
-            this.m_bytesTransferred += byteCount;
+        	this.m_bytesTransferred += byteCount;
         }
         
         public synchronized void upsertPageView(String entry)
         {
-            String storeEntry = "(OTHER)";
+        	String storeEntry = "(OTHER)";
             
             if (this.m_pageViewRegexes != null)
             {
@@ -304,7 +320,7 @@ public class PsiphonData
         
         public synchronized void upsertHttpsRequest(String entry)
         {
-            // TODO: This is identical code to the function above, because we don't
+        	// TODO: This is identical code to the function above, because we don't
             // yet know what a HTTPS "entry" looks like, because we haven't implemented
             // HTTPS response parsing yet.
             
