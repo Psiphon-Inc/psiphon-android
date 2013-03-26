@@ -97,132 +97,122 @@ public class FeedbackActivity extends Activity
                 // Our attachment is YAML, which is then encrypted, and the
                 // encryption elements stored in JSON.
 
-                SimpleDateFormat dateParser = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-
                 String diagnosticYaml;
-                try
+
+                /*
+                 * Metadata
+                 */
+
+                Map<String, Object> metadata = new HashMap<String, Object>();
+                metadata.put("platform", "android");
+                metadata.put("version", 2);
+
+                SecureRandom rnd = new SecureRandom();
+                byte[] id = new byte[8];
+                rnd.nextBytes(id);
+                metadata.put("id", Utils.byteArrayToHexString(id));
+
+                /*
+                 * System Information
+                 */
+
+                Map<String, Object> sysInfo = new HashMap<String, Object>();
+                Map<String, Object> sysInfo_Build = new HashMap<String, Object>();
+                sysInfo.put("Build", sysInfo_Build);
+                sysInfo_Build.put("BRAND", Build.BRAND);
+                sysInfo_Build.put("CPU_ABI", Build.CPU_ABI);
+                sysInfo_Build.put("MANUFACTURER", Build.MANUFACTURER);
+                sysInfo_Build.put("MODEL", Build.MODEL);
+                sysInfo_Build.put("TAGS", Build.TAGS);
+                sysInfo_Build.put("VERSION__CODENAME", Build.VERSION.CODENAME);
+                sysInfo_Build.put("VERSION__RELEASE", Build.VERSION.RELEASE);
+                sysInfo_Build.put("VERSION__SDK_INT", Build.VERSION.SDK_INT);
+                sysInfo.put("isRooted", Utils.isRooted());
+                Map<String, Object> sysInfo_psiphonEmbeddedValues = new HashMap<String, Object>();
+                sysInfo.put("PsiphonInfo", sysInfo_psiphonEmbeddedValues);
+                sysInfo_psiphonEmbeddedValues.put("PROPAGATION_CHANNEL_ID", EmbeddedValues.PROPAGATION_CHANNEL_ID);
+                sysInfo_psiphonEmbeddedValues.put("SPONSOR_ID", EmbeddedValues.SPONSOR_ID);
+                sysInfo_psiphonEmbeddedValues.put("CLIENT_VERSION", EmbeddedValues.CLIENT_VERSION);
+
+                /*
+                 * Diagnostic History
+                 */
+
+                List<Object> diagnosticHistory = new ArrayList<Object>();
+
+                for (PsiphonData.DiagnosticEntry item : PsiphonData.cloneDiagnosticHistory())
                 {
-                    /*
-                     * Metadata
-                     */
+                    Map<String, Object> entry = new HashMap<String, Object>();
+                    entry.put("timestamp", item.timestamp());
+                    entry.put("msg", item.msg());
+                    entry.put("data", item.data());
 
-                    Map<String, Object> metadata = new HashMap<String, Object>();
-                    metadata.put("platform", "android");
-                    metadata.put("version", 2);
+                    diagnosticHistory.add(entry);
+                }
 
-                    SecureRandom rnd = new SecureRandom();
-                    byte[] id = new byte[8];
-                    rnd.nextBytes(id);
-                    metadata.put("id", Utils.byteArrayToHexString(id));
+                /*
+                 * Status History
+                 */
 
-                    /*
-                     * System Information
-                     */
+                List<Object> statusHistory = new ArrayList<Object>();
 
-                    Map<String, Object> sysInfo = new HashMap<String, Object>();
-                    Map<String, Object> sysInfo_Build = new HashMap<String, Object>();
-                    sysInfo.put("Build", sysInfo_Build);
-                    sysInfo_Build.put("BRAND", Build.BRAND);
-                    sysInfo_Build.put("CPU_ABI", Build.CPU_ABI);
-                    sysInfo_Build.put("MANUFACTURER", Build.MANUFACTURER);
-                    sysInfo_Build.put("MODEL", Build.MODEL);
-                    sysInfo_Build.put("TAGS", Build.TAGS);
-                    sysInfo_Build.put("VERSION__CODENAME", Build.VERSION.CODENAME);
-                    sysInfo_Build.put("VERSION__RELEASE", Build.VERSION.RELEASE);
-                    sysInfo_Build.put("VERSION__SDK_INT", Build.VERSION.SDK_INT);
-                    sysInfo.put("isRooted", Utils.isRooted());
-                    Map<String, Object> sysInfo_psiphonEmbeddedValues = new HashMap<String, Object>();
-                    sysInfo.put("PsiphonInfo", sysInfo_psiphonEmbeddedValues);
-                    sysInfo_psiphonEmbeddedValues.put("PROPAGATION_CHANNEL_ID", EmbeddedValues.PROPAGATION_CHANNEL_ID);
-                    sysInfo_psiphonEmbeddedValues.put("SPONSOR_ID", EmbeddedValues.SPONSOR_ID);
-                    sysInfo_psiphonEmbeddedValues.put("CLIENT_VERSION", EmbeddedValues.CLIENT_VERSION);
-
-                    /*
-                     * Diagnostic History
-                     */
-
-                    List<Object> diagnosticHistory = new ArrayList<Object>();
-
-                    for (PsiphonData.DiagnosticEntry item : PsiphonData.cloneDiagnosticHistory())
+                for (StatusEntry internalEntry : PsiphonData.cloneStatusHistory())
+                {
+                    // Don't send any sensitive logs
+                    if (internalEntry.sensitivity() == MyLog.Sensitivity.SENSITIVE_LOG)
                     {
-                        Map<String, Object> entry = new HashMap<String, Object>();
-                        entry.put("timestamp", dateParser.parse(item.timestamp()));
-                        entry.put("msg", item.msg());
-                        entry.put("data", item.data());
-
-                        diagnosticHistory.add(entry);
+                        continue;
                     }
 
-                    /*
-                     * Status History
-                     */
+                    Map<String, Object> statusEntry = new HashMap<String, Object>();
+                    statusHistory.add(statusEntry);
 
-                    List<Object> statusHistory = new ArrayList<Object>();
+                    statusEntry.put("id", internalEntry.idName());
+                    statusEntry.put("timestamp", internalEntry.timestamp());
+                    statusEntry.put("priority", internalEntry.priority());
+                    statusEntry.put("formatArgs", null);
+                    statusEntry.put("throwable", null);
 
-                    for (StatusEntry internalEntry : PsiphonData.cloneStatusHistory())
+                    if (internalEntry.formatArgs() != null && internalEntry.formatArgs().length > 0
+                        // Don't send any sensitive format args
+                        && internalEntry.sensitivity() != MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS)
                     {
-                        // Don't send any sensitive logs
-                        if (internalEntry.sensitivity() == MyLog.Sensitivity.SENSITIVE_LOG)
-                        {
-                            continue;
-                        }
-
-                        Map<String, Object> statusEntry = new HashMap<String, Object>();
-                        statusHistory.add(statusEntry);
-
-                        statusEntry.put("id", internalEntry.idName());
-                        statusEntry.put("timestamp", dateParser.parse(internalEntry.timestamp()));
-                        statusEntry.put("priority", internalEntry.priority());
-                        statusEntry.put("formatArgs", null);
-                        statusEntry.put("throwable", null);
-
-                        if (internalEntry.formatArgs() != null && internalEntry.formatArgs().length > 0
-                            // Don't send any sensitive format args
-                            && internalEntry.sensitivity() != MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS)
-                        {
-                            statusEntry.put("formatArgs", Arrays.asList(internalEntry.formatArgs()));
-                        }
-
-                        if (internalEntry.throwable() != null)
-                        {
-                            Map<String, Object> throwable = new HashMap<String, Object>();
-                            statusEntry.put("throwable", throwable);
-
-                            throwable.put("message", internalEntry.throwable().toString());
-
-                            List<String> stack = new ArrayList<String>();
-                            throwable.put("stack", stack);
-
-                            for (StackTraceElement element : internalEntry.throwable().getStackTrace())
-                            {
-                                stack.add(element.toString());
-                            }
-                        }
+                        statusEntry.put("formatArgs", Arrays.asList(internalEntry.formatArgs()));
                     }
 
-                    /*
-                     * YAML-ify the diagnostic info
-                     */
+                    if (internalEntry.throwable() != null)
+                    {
+                        Map<String, Object> throwable = new HashMap<String, Object>();
+                        statusEntry.put("throwable", throwable);
 
-                    Map<String, Object> diagnosticObject = new HashMap<String, Object>();
-                    Map<String, Object> diagnosticInfo = new HashMap<String, Object>();
-                    
-                    diagnosticInfo.put("SystemInformation", sysInfo);
-                    diagnosticInfo.put("DiagnosticHistory", diagnosticHistory);
-                    diagnosticInfo.put("StatusHistory", statusHistory);
-                    
-                    diagnosticObject.put("Metadata", metadata);
-                    diagnosticObject.put("DiagnosticInfo", diagnosticInfo);
-                    
-                    Yaml yaml = new Yaml();
-                    diagnosticYaml = yaml.dump(diagnosticObject);
+                        throwable.put("message", internalEntry.throwable().toString());
+
+                        List<String> stack = new ArrayList<String>();
+                        throwable.put("stack", stack);
+
+                        for (StackTraceElement element : internalEntry.throwable().getStackTrace())
+                        {
+                            stack.add(element.toString());
+                        }
+                    }
                 }
-                catch (ParseException e)
-                {
-                    // Shouldn't happen. Our date formats should be consistent.
-                    assert(false);
-                    return null;
-                }
+
+                /*
+                 * YAML-ify the diagnostic info
+                 */
+
+                Map<String, Object> diagnosticObject = new HashMap<String, Object>();
+                Map<String, Object> diagnosticInfo = new HashMap<String, Object>();
+                
+                diagnosticInfo.put("SystemInformation", sysInfo);
+                diagnosticInfo.put("DiagnosticHistory", diagnosticHistory);
+                diagnosticInfo.put("StatusHistory", statusHistory);
+                
+                diagnosticObject.put("Metadata", metadata);
+                diagnosticObject.put("DiagnosticInfo", diagnosticInfo);
+                
+                Yaml yaml = new Yaml();
+                diagnosticYaml = yaml.dump(diagnosticObject);
 
                 // Encrypt the file contents
                 byte[] contentCiphertext = null, iv = null,

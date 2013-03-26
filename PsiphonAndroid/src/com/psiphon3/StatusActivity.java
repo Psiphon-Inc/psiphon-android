@@ -68,6 +68,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
 {
     public static final String ADD_MESSAGE = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE";
     public static final String ADD_MESSAGE_TEXT = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TEXT";
+    public static final String ADD_MESSAGE_TIMESTAMP = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TIMESTAMP";
     public static final String ADD_MESSAGE_CLASS = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_CLASS";
     public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
     public static final String UNEXPECTED_DISCONNECT = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT";
@@ -503,7 +504,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                 if (MyLog.logger == null)
                 {
                     // Usually the TunnelCore instance is the 'logger', but at this point there may be no service/TunnelCore
-                    addMessage(getString(R.string.tunnel_whole_device_exception), MESSAGE_CLASS_ERROR);
+                    addMessage(getString(R.string.tunnel_whole_device_exception), Log.ERROR);
                 }
                 
                 // VpnService is broken. For rooted devices, proceed with starting Whole Device in root mode.
@@ -644,16 +645,10 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         public void onReceive(Context context, Intent intent)
         {
             String message = intent.getStringExtra(ADD_MESSAGE_TEXT);
-            int messageClass = intent.getIntExtra(ADD_MESSAGE_CLASS, MESSAGE_CLASS_INFO);
+            int messageClass = intent.getIntExtra(ADD_MESSAGE_CLASS, Log.INFO);
             addMessage(message, messageClass);
         }
     }
-    
-    public static final int MESSAGE_CLASS_VERBOSE = 0;
-    public static final int MESSAGE_CLASS_INFO = 1;
-    public static final int MESSAGE_CLASS_WARNING = 2;
-    public static final int MESSAGE_CLASS_ERROR = 3;
-    public static final int MESSAGE_CLASS_DEBUG = 4;
     
     public void addMessage(String message, int messageClass)
     {
@@ -662,10 +657,10 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
 
         switch (messageClass)
         {
-        case MESSAGE_CLASS_INFO:
+        case Log.INFO:
             messageClassImageRes = android.R.drawable.presence_online;
             break;
-        case MESSAGE_CLASS_ERROR:
+        case Log.ERROR:
             messageClassImageRes = android.R.drawable.presence_busy;
             break;
         default:
@@ -673,7 +668,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             boldText = false;
             break;
         }
-        
         
         LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View rowView = inflater.inflate(R.layout.message_row, null);
@@ -708,28 +702,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             });    	
     }
     
-    /**
-     * Utils.MyLog.ILogInfoProvider implementation
-     * For Android priority values, see <a href="http://developer.android.com/reference/android/util/Log.html">http://developer.android.com/reference/android/util/Log.html</a>
-     */
-    @Override
-    public int getAndroidLogPriorityEquivalent(int priority)
-    {
-        switch (priority)
-        {
-        case Log.ERROR:
-            return StatusActivity.MESSAGE_CLASS_ERROR;
-        case Log.WARN:
-            return StatusActivity.MESSAGE_CLASS_WARNING;
-        case Log.INFO:
-            return StatusActivity.MESSAGE_CLASS_INFO;
-        case Log.DEBUG:
-            return StatusActivity.MESSAGE_CLASS_DEBUG;
-        default:
-            return StatusActivity.MESSAGE_CLASS_VERBOSE;
-        }
-    }
-
     @Override
     public String getResourceString(int stringResID, Object[] formatArgs)
     {

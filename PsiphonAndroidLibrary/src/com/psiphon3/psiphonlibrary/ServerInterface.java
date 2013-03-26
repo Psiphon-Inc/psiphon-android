@@ -1471,7 +1471,7 @@ public class ServerInterface
                 PsiphonData.DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
                 
                 long bytesSent = dataTransferStats.getBytesSent();
-                long bytesReceived = dataTransferStats.getBytesSent();
+                long bytesReceived = dataTransferStats.getBytesReceived();
                 double compressionRatio = dataTransferStats.getCompressionRatio();
                 long totalBytes = bytesSent + bytesReceived;
                 

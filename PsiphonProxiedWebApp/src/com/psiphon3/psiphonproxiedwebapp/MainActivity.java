@@ -26,6 +26,8 @@ cog.outl('package %s;' % packagename)
 package com.psiphon3.psiphonproxiedwebapp;
 //[[[end]]]
 
+import java.util.Date;
+
 import android.os.Bundle;
 import android.os.Handler;
 import android.annotation.SuppressLint;
@@ -210,12 +212,6 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
     }
 
     @Override
-    public int getAndroidLogPriorityEquivalent(int priority)
-    {
-        return 0;
-    }
-
-    @Override
     public String getResourceString(int stringResID, Object[] formatArgs)
     {
         if (formatArgs == null || formatArgs.length == 0)
@@ -233,7 +229,7 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
     }
 
     @Override
-    public void appendStatusMessage(Context context, String message, int messageClass)
+    public void appendStatusMessage(Context context, Date timestamp, String message, int messageClass)
     {
         final String finalMessage = message;
 

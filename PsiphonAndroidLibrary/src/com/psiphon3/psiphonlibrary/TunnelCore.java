@@ -22,6 +22,7 @@ package com.psiphon3.psiphonlibrary;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -216,18 +217,19 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
      * Utils.MyLog.ILogger implementation
      */
     @Override
-    public void log(int priority, String message)
+    public void log(Date timestamp, int priority, String message)
     {
-        sendMessage(message, priority);
+        sendMessage(timestamp, message, priority);
     }
     
     private synchronized void sendMessage(
+            Date timestamp,
             String message,
             int messageClass)
     {
         if (m_eventsInterface != null)
         {
-            m_eventsInterface.appendStatusMessage(m_parentContext, message, messageClass);
+            m_eventsInterface.appendStatusMessage(m_parentContext, timestamp, message, messageClass);
         }
     }
         

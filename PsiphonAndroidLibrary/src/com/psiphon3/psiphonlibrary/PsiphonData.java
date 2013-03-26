@@ -20,6 +20,7 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -451,7 +452,7 @@ public class PsiphonData
 
     static public class StatusEntry
     {
-        private String timestamp;
+        private Date timestamp;
         private int id;
         private String idName;
         private Object[] formatArgs;
@@ -459,7 +460,7 @@ public class PsiphonData
         private int priority;
         private MyLog.Sensitivity sensitivity;
         
-        public String timestamp()
+        public Date timestamp()
         {
             return timestamp;
         }
@@ -498,7 +499,7 @@ public class PsiphonData
     static private ArrayList<StatusEntry> m_statusHistory = new ArrayList<StatusEntry>();
     
     static public void addStatusEntry(
-            String timestamp,
+            Date timestamp,
             int id, 
             String idName, 
             MyLog.Sensitivity sensitivity, 
@@ -545,11 +546,11 @@ public class PsiphonData
     
     static public class DiagnosticEntry extends Object
     {
-        private String timestamp;
+        private Date timestamp;
         private String msg;
         private Object data;
 
-        public String timestamp()
+        public Date timestamp()
         {
             return timestamp;
         }
@@ -567,10 +568,10 @@ public class PsiphonData
         
     static private List<DiagnosticEntry> m_diagnosticHistory = new ArrayList<DiagnosticEntry>();
 
-    static public void addDiagnosticEntry(String msg, Object data)
+    static public void addDiagnosticEntry(Date timestamp, String msg, Object data)
     {
         DiagnosticEntry entry = new DiagnosticEntry();
-        entry.timestamp = Utils.getISO8601String();
+        entry.timestamp = timestamp;
         entry.msg = msg;
         entry.data = data;
         m_diagnosticHistory.add(entry);

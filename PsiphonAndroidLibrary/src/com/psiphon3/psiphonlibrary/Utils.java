@@ -39,7 +39,8 @@ import android.os.Build;
 import android.util.Log;
 
 
-public class Utils {
+public class Utils
+{
 
     private static SecureRandom s_secureRandom = new SecureRandom();
     static byte[] generateSecureRandomBytes(int byteCount)
@@ -259,13 +260,12 @@ public class Utils {
         static public interface ILogInfoProvider
         {
             public String getResourceString(int stringResID, Object[] formatArgs);
-            public int getAndroidLogPriorityEquivalent(int priority);
             public String getResourceEntryName(int stringResID);
         }
         
         static public interface ILogger
         {
-            public void log(int priority, String message);
+            public void log(Date timestamp, int priority, String message);
         }
         
         static public ILogInfoProvider logInfoProvider;
@@ -337,12 +337,12 @@ public class Utils {
         
         static public void d(String msg)
         {
-            MyLog.println(msg, null, Log.DEBUG);
+            MyLog.println(new Date(), msg, null, Log.DEBUG);
         }
 
         static public void d(String msg, Throwable throwable)
         {
-            MyLog.println(msg, throwable, Log.DEBUG);
+            MyLog.println(new Date(), msg, throwable, Log.DEBUG);
         }
 
         /**
@@ -352,7 +352,7 @@ public class Utils {
          */
         static public void g(String msg, Object data)
         {
-            PsiphonData.addDiagnosticEntry(msg, data);
+            PsiphonData.addDiagnosticEntry(new Date(), msg, data);
             // We're not logging the `data` at all. In the future we may want to.
             MyLog.d(msg);
         }
@@ -410,7 +410,7 @@ public class Utils {
                 formatArgs,
                 throwable,
                 priority,
-                Utils.getISO8601String());
+                new Date());
         }
 
         private static void println(
@@ -419,7 +419,7 @@ public class Utils {
                 Object[] formatArgs, 
                 Throwable throwable, 
                 int priority,
-                String timestamp)
+                Date timestamp)
         {
             PsiphonData.addStatusEntry(
                     timestamp,
@@ -430,10 +430,10 @@ public class Utils {
                     throwable, 
                     priority);
             
-            println(MyLog.myGetResString(stringResID, formatArgs), throwable, priority);
+            println(timestamp, MyLog.myGetResString(stringResID, formatArgs), throwable, priority);
         }
         
-        private static void println(String msg, Throwable throwable, int priority)
+        private static void println(Date timestamp, String msg, Throwable throwable, int priority)
         {
             // If we're not running in debug mode, don't log debug messages at all.
             // (This may be redundant with the logic below, but it'll save us if
@@ -456,7 +456,7 @@ public class Utils {
                     loggerMsg = loggerMsg + (stackTraceLines.length > 0 ? "\n" + stackTraceLines[0] : ""); 
                 }
                 
-                logger.log(logInfoProvider.getAndroidLogPriorityEquivalent(priority), loggerMsg);
+                logger.log(timestamp, priority, loggerMsg);
             }
             
             // Do not log to LogCat at all if we're not running in debug mode.
@@ -560,13 +560,25 @@ public class Utils {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH;
     }
     
-    public static String getISO8601String()
+    public static String getLocalTimeString(Date date)
+    {
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.US);
+        String dateStr = sdf.format(date);
+        return dateStr;
+    }
+
+    public static String getISO8601String(Date date)
     {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String date = sdf.format(new Date());
-        date += "Z";
-        return date;
+        String dateStr = sdf.format(date);
+        dateStr += "Z";
+        return dateStr;
+    }
+
+    public static String getISO8601String()
+    {
+        return getISO8601String(new Date());
     }
 
     public static boolean isPortAvailable(int port)
