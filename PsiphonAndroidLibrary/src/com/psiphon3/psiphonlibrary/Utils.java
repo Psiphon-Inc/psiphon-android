@@ -43,7 +43,7 @@ public class Utils
 {
 
     private static SecureRandom s_secureRandom = new SecureRandom();
-    static byte[] generateSecureRandomBytes(int byteCount)
+    public static byte[] generateSecureRandomBytes(int byteCount)
     {
         byte bytes[] = new byte[byteCount];
         s_secureRandom.nextBytes(bytes);
@@ -51,7 +51,7 @@ public class Utils
     }
 
     private static Random s_insecureRandom = new Random();
-    static byte[] generateInsecureRandomBytes(int byteCount)
+    public static byte[] generateInsecureRandomBytes(int byteCount)
     {
         byte bytes[] = new byte[byteCount];
         s_insecureRandom.nextBytes(bytes);
