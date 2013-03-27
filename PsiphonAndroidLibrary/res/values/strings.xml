@@ -54,12 +54,12 @@
     <string name="transparent_proxy_failed">Failed to start transparent proxy: %s</string>
     <string name="iptables_binary_not_found">Cannot find iptables implementation required for transparent proxy</string>
     <string name="root_access_denied">Root access denied</string>
-    <string name="psiphon_stopped">Psiphon 3 is stopped</string>
-    <string name="psiphon_running_whole_device">Psiphon 3 is running in whole device mode</string>
-    <string name="psiphon_running_browser_only">Psiphon 3 is running in browser-only mode</string>
+    <string name="psiphon_stopped">Stopped</string>
+    <string name="psiphon_running_whole_device">Running in whole device mode</string>
+    <string name="psiphon_running_browser_only">Running in browser-only mode</string>
     <string name="waiting_for_network_connectivity">Waiting for network connectivity…</string>
     <string name="checking_for_root_access">Checking for root access…</string>
-    <string name="psiphon_service_notification_message_connecting">Psiphon 3 is connecting…</string>
+    <string name="psiphon_service_notification_message_connecting">Connecting…</string>
     <string name="psiphon_service_notification_id">Psiphon Service Notification</string>
     <string name="preferred_servers">Preferred servers: %d</string>
     <string name="selecting_server">Selecting server...</string>

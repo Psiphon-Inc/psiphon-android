@@ -71,6 +71,10 @@ public class PsiphonData
     private boolean m_enableReportedStats;
     private DataTransferStats m_dataTransferStats;
     private boolean m_displayDataTransferStats;
+    
+    public int m_notificationIconConnecting = 0;
+    public int m_notificationIconConnected = 0;
+    public int m_notificationIconDisconnected = 0;
 
     public Object serverEntryFileLock = new Object(); // Used as an intrinsic lock
         
@@ -243,6 +247,31 @@ public class PsiphonData
     public synchronized TunnelCore getCurrentTunnelCore()
     {
         return m_currentTunnelCore;
+    }
+
+    public synchronized void setNotificationIcons(
+            int connecting, 
+            int connected, 
+            int disconnected)
+    {
+        m_notificationIconConnecting = connecting;
+        m_notificationIconConnected = connected;
+        m_notificationIconDisconnected = disconnected;
+    }
+    
+    public synchronized int getNotificationIconConnecting()
+    {
+        return m_notificationIconConnecting;
+    }
+
+    public synchronized int getNotificationIconConnected()
+    {
+        return m_notificationIconConnected;
+    }
+
+    public synchronized int getNotificationIconDisconnected()
+    {
+        return m_notificationIconDisconnected;
     }
 
     public synchronized void setEnableReportedStats(boolean enableReportedStats)

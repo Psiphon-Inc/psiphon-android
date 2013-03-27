@@ -160,7 +160,10 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
         {
         case CONNECTING:
             contentTextID = R.string.psiphon_service_notification_message_connecting;
-            iconID = R.drawable.notification_icon_connecting;
+            iconID = PsiphonData.getPsiphonData().getNotificationIconConnecting();
+            if (iconID == 0) {
+                iconID = R.drawable.notification_icon_connecting;
+            }
             break;
             
         case CONNECTED:
@@ -173,12 +176,18 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 contentTextID = R.string.psiphon_running_browser_only;
             }
             
-            iconID = R.drawable.notification_icon_connected;
+            iconID = PsiphonData.getPsiphonData().getNotificationIconConnected();
+            if (iconID == 0) {
+                iconID = R.drawable.notification_icon_connected;
+            }
             break;
             
         case DISCONNECTED:
             contentTextID = R.string.psiphon_stopped;
-            iconID = R.drawable.notification_icon_disconnected;
+            iconID = PsiphonData.getPsiphonData().getNotificationIconDisconnected();
+            if (iconID == 0) {
+                iconID = R.drawable.notification_icon_disconnected;
+            }
             break;
         
         default:
