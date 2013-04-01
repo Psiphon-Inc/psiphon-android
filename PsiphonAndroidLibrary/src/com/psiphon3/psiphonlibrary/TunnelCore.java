@@ -20,7 +20,11 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -620,6 +624,44 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
             
             checkSignals(0);
 
+            // Certain Android devices silently fail to route through the VpnService tun device. 
+            // Test connecting to a service available only through the tunnel. Stop when the check fails.
+            if (tunnelWholeDevice)
+            {
+                boolean success = false;
+                try
+                {
+                    SocketChannel channel = SocketChannel.open();
+                    channel.configureBlocking(false);
+                    channel.connect(new InetSocketAddress(entry.ipAddress, PsiphonConstants.CHECK_TUNNEL_SERVER_PORT));
+                    Selector selector = Selector.open();
+                    channel.register(selector, SelectionKey.OP_CONNECT);                    
+                    for (int i = 0;
+                         i < PsiphonConstants.CHECK_TUNNEL_TIMEOUT_MILLISECONDS && selector.select(100) == 0;
+                         i += 100)
+                    {
+                        checkSignals(0);
+                    }
+                    success = channel.finishConnect();                    
+                    selector.close();
+                    channel.close();
+                }
+                catch (IOException e)
+                {
+                }
+
+                if (!success)
+                {
+                    MyLog.w(R.string.check_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE);
+                    
+                    // Stop entirely. If this test fails, there's something wrong with routing.
+                    runAgain = false;
+                    return runAgain;
+                }
+            }
+            
+            checkSignals(0);
+
             try
             {
                 m_interface.doHandshakeRequest();
@@ -638,24 +680,6 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 // a session ID, home page, etc. We don't expect it's likely that the handshake
                 // will fail if the tunnel is successfully established.
                 throw new IOException();
-            }
-            
-            checkSignals(0);
-
-            if (tunnelWholeDevice)
-            {
-                try
-                {
-                    m_interface.doCheckTunnelRequest();
-                } 
-                catch (PsiphonServerInterfaceException requestException)
-                {
-                    MyLog.w(R.string.check_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, requestException);
-                    
-                    // Stop entirely. If this test fails, there's something wrong with routing.
-                    runAgain = false;
-                    return runAgain;
-                }
             }
             
             if (m_useGenericLogMessages)
