@@ -696,7 +696,7 @@ public class ServerInterface
     synchronized public void doCheckTunnelRequest() 
         throws PsiphonServerInterfaceException
     {
-        String url = getRequestURL(PsiphonConstants.CHECK_TUNNEL_WEB_SERVER_PORT, "check_tunnel", null);
+        String url = getRequestURL("check_tunnel", null);
         makeDirectWebRequest(url);
     }
 
