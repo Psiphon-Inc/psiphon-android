@@ -640,6 +640,24 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 throw new IOException();
             }
             
+            checkSignals(0);
+
+            if (tunnelWholeDevice)
+            {
+                try
+                {
+                    m_interface.doCheckTunnelRequest();
+                } 
+                catch (PsiphonServerInterfaceException requestException)
+                {
+                    MyLog.w(R.string.check_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, requestException);
+                    
+                    // Stop entirely. If this test fails, there's something wrong with routing.
+                    runAgain = false;
+                    return runAgain;
+                }
+            }
+            
             if (m_useGenericLogMessages)
             {
                 MyLog.i(R.string.psiphon_running_generic, MyLog.Sensitivity.NOT_SENSITIVE);                

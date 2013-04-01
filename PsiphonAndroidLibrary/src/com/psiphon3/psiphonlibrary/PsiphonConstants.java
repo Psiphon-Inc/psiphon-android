@@ -47,6 +47,8 @@ public class PsiphonConstants
 
     public final static int DEFAULT_WEB_SERVER_PORT = 443;
     
+    public final static int CHECK_TUNNEL_WEB_SERVER_PORT = 7999;
+    
     public final static int SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS = 20000;
     
     public final static String RELAY_PROTOCOL = "OSSH";

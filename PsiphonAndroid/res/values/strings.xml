@@ -35,5 +35,5 @@
     <string name="FeedbackActivity.EncryptedFailed">Failed to encrypt feedback diagnostic information. This information will not be attached to the feedback email.</string>
     <string name="start">Start</string>
     <string name="stop">Stop</string>
-    <string name="tunnel_whole_device_exception">Your device does not support the non-root whole device tunnel option</string>
+    <string name="tunnel_whole_device_exception">Your device does not support the non-root whole device tunnel option.</string>
 </resources>

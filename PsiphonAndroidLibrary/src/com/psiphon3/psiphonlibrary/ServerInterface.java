@@ -693,6 +693,13 @@ public class ServerInterface
         makePsiphonRequestWithFailover(urls, additionalHeaders, requestBody);
     }
 
+    synchronized public void doCheckTunnelRequest() 
+        throws PsiphonServerInterfaceException
+    {
+        String url = getRequestURL(PsiphonConstants.CHECK_TUNNEL_WEB_SERVER_PORT, "check_tunnel", null);
+        makeDirectWebRequest(url);
+    }
+
     synchronized public void fetchRemoteServerList()
         throws PsiphonServerInterfaceException
     {
@@ -796,7 +803,7 @@ public class ServerInterface
             String path,
             List<Pair<String,String>> extraParams)
     {
-        return getRequestURL(true, path, extraParams);
+        return getRequestURL(-1, path, extraParams);
     }
 
     /**
@@ -804,8 +811,8 @@ public class ServerInterface
      * supplies are: client_session_id, propagation_channel_id, sponsor_id, 
      * client_version, server_secret.
      * Any additional parameters must be provided in extraParams.
-     * @param useServerEntryWebServerPort  true: use server entry port 
-     *              false: use standard HTTPS port 443
+     * @param webServerPort  -1: use server entry port 
+     *              other value: use specified value
      * @param path  The path for the request; this is typically the name of the 
      *              request command; e.g. "connected". Do not use a leading slash.
      * @param extraParams  Additional parameters that should be included in the 
@@ -816,7 +823,7 @@ public class ServerInterface
      * @return  The full URL for the request.
      */
     private String getRequestURL(
-                    boolean useServerEntryWebServerPort,
+                    int webServerPort,
                     String path,
                     List<Pair<String,String>> extraParams)
     {
@@ -833,9 +840,7 @@ public class ServerInterface
         }
         
         url.append("https://").append(serverEntry.ipAddress)
-           .append(":").append(useServerEntryWebServerPort ?
-                   serverEntry.webServerPort :
-                   PsiphonConstants.DEFAULT_WEB_SERVER_PORT)
+           .append(":").append(webServerPort == -1 ? serverEntry.webServerPort : webServerPort)
            .append("/").append(path)
            .append("?client_session_id=").append(Utils.urlEncode(clientSessionID))
            .append("&server_secret=").append(Utils.urlEncode(serverEntry.webServerSecret))
@@ -865,7 +870,7 @@ public class ServerInterface
     {
         String urls[] = new String[2];
         urls[0] = getRequestURL(path, extraParams);
-        urls[1] = getRequestURL(false, path, extraParams);
+        urls[1] = getRequestURL(PsiphonConstants.DEFAULT_WEB_SERVER_PORT, path, extraParams);
         return urls;
     }
 
