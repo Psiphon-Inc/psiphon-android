@@ -257,18 +257,12 @@ public class Utils
      */
     static public class MyLog
     {
-        static public interface ILogInfoProvider
-        {
-            public String getResourceString(int stringResID, Object[] formatArgs);
-            public String getResourceEntryName(int stringResID);
-        }
-        
         static public interface ILogger
         {
             public void log(Date timestamp, int priority, String message);
+            public String getResourceString(int stringResID, Object[] formatArgs);
         }
         
-        static public ILogInfoProvider logInfoProvider;
         static public ILogger logger;
         
         /**
@@ -298,20 +292,28 @@ public class Utils
         
         /**
          * Safely wraps the string resource extraction function. If an error 
-         * occurs with the format specifiers, the raw string will be returned.
+         * occurs with the format specifiers (as can happen in a bad translation),
+         * the raw string will be returned.
          * @param stringResID The string resource ID.
          * @param formatArgs The format arguments. May be empty (non-existent).
          * @return The requested string, possibly formatted.
          */
         static private String myGetResString(int stringResID, Object[] formatArgs)
         {
+            // The logger *should* always be available when this function is 
+            // called, but we don't want to crash if it's not.
+            if (logger == null) {
+                assert(false);
+                return "";
+            }
+            
             try
             {
-                return logInfoProvider.getResourceString(stringResID, formatArgs);
+                return logger.getResourceString(stringResID, formatArgs);
             }
             catch (IllegalFormatException e)
             {
-                return logInfoProvider.getResourceString(stringResID, null);
+                return logger.getResourceString(stringResID, null);
             }
         }
         
@@ -424,7 +426,6 @@ public class Utils
             PsiphonData.addStatusEntry(
                     timestamp,
                     stringResID,
-                    logInfoProvider.getResourceEntryName(stringResID), 
                     sensitivity,
                     formatArgs, 
                     throwable, 

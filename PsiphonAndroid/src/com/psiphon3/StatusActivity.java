@@ -19,6 +19,8 @@
 
 package com.psiphon3;
 
+import java.util.Date;
+
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -64,7 +66,7 @@ import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
-public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
+public class StatusActivity extends Activity implements MyLog.ILogger
 {
     public static final String ADD_MESSAGE = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE";
     public static final String ADD_MESSAGE_TEXT = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TEXT";
@@ -140,7 +142,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     {
         super.onCreate(savedInstanceState);
         
-        MyLog.logInfoProvider = this;
+        MyLog.logger = this;
 
         setContentView(R.layout.main);
         
@@ -212,6 +214,14 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         }
     }
 
+    @Override
+    public void onDestroy()
+    {
+        super.onDestroy();
+        
+        MyLog.logger = null;
+    }
+    
     @Override
     protected void onResume()
     {
@@ -702,6 +712,13 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             });    	
     }
     
+    /*
+     * MyLog.ILogger implementation
+     */
+    
+    /**
+     * @see com.psiphon3.psiphonlibrary.Utils.MyLog.ILogger#getResourceString(int, java.lang.Object[])
+     */
     @Override
     public String getResourceString(int stringResID, Object[] formatArgs)
     {
@@ -713,9 +730,12 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         return getString(stringResID, formatArgs);
     }
 
+    /**
+     * @see com.psiphon3.psiphonlibrary.Utils.MyLog.ILogger#log(java.util.Date, int, java.lang.String)
+     */
     @Override
-    public String getResourceEntryName(int stringResID)
+    public void log(Date timestamp, int priority, String message)
     {
-        return getResources().getResourceEntryName(stringResID);
-    }
+        m_eventsInterface.appendStatusMessage(this, timestamp, message, priority);
+    }    
 }

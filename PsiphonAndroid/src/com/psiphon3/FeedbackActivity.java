@@ -165,7 +165,8 @@ public class FeedbackActivity extends Activity
                     Map<String, Object> statusEntry = new HashMap<String, Object>();
                     statusHistory.add(statusEntry);
 
-                    statusEntry.put("id", internalEntry.idName());
+                    String idName = getResources().getResourceEntryName(internalEntry.id());
+                    statusEntry.put("id", idName);
                     statusEntry.put("timestamp", internalEntry.timestamp());
                     statusEntry.put("priority", internalEntry.priority());
                     statusEntry.put("formatArgs", null);

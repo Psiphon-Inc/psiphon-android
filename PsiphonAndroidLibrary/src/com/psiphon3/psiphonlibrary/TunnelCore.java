@@ -22,7 +22,6 @@ package com.psiphon3.psiphonlibrary;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +53,7 @@ import com.psiphon3.psiphonlibrary.TransparentProxyConfig.PsiphonTransparentProx
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.stericson.RootTools.RootTools;
 
-public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
+public class TunnelCore implements IStopSignalPending
 {
     public enum State
     {
@@ -119,7 +118,6 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     // Implementation of android.app.Service.onCreate
     public void onCreate()
     {
-        MyLog.logger = this;
         m_interface = new ServerInterface(m_parentContext);
         m_serverSelector = new ServerSelector(m_interface, m_parentContext);
     }
@@ -130,8 +128,6 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
         m_destroyed = true;
 
         stopTunnel();
-
-        MyLog.logger = null;
     }
 
     private void doForeground()
@@ -222,26 +218,6 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
         return notification;
     }
 
-    /**
-     * Utils.MyLog.ILogger implementation
-     */
-    @Override
-    public void log(Date timestamp, int priority, String message)
-    {
-        sendMessage(timestamp, message, priority);
-    }
-    
-    private synchronized void sendMessage(
-            Date timestamp,
-            String message,
-            int messageClass)
-    {
-        if (m_eventsInterface != null)
-        {
-            m_eventsInterface.appendStatusMessage(m_parentContext, timestamp, message, messageClass);
-        }
-    }
-        
     class PsiphonServerHostKeyVerifier implements ServerHostKeyVerifier
     {
         private String m_expectedHostKey;

@@ -483,7 +483,6 @@ public class PsiphonData
     {
         private Date timestamp;
         private int id;
-        private String idName;
         private Object[] formatArgs;
         private Throwable throwable;
         private int priority;
@@ -497,11 +496,6 @@ public class PsiphonData
         public int id()
         {
             return id;
-        }
-        
-        public String idName()
-        {
-            return idName;
         }
         
         public Object[] formatArgs()
@@ -530,7 +524,6 @@ public class PsiphonData
     static public void addStatusEntry(
             Date timestamp,
             int id, 
-            String idName, 
             MyLog.Sensitivity sensitivity, 
             Object[] formatArgs, 
             Throwable throwable, 
@@ -539,7 +532,6 @@ public class PsiphonData
         StatusEntry entry = new StatusEntry();
         entry.timestamp = timestamp;
         entry.id = id;
-        entry.idName = idName;
         entry.sensitivity = sensitivity;
         entry.formatArgs = formatArgs;
         entry.throwable = throwable;
