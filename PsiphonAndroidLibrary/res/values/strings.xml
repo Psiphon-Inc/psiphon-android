@@ -75,4 +75,5 @@
     <string name="vpn_service_no_private_address_available">No private address available for VPN service</string>
     <string name="psiphon_running_generic">Running...</string>
     <string name="data_transfer_stats">sent %1$s  received %2$s  %3$.2f%% compressed</string>
+    <string name="check_tunnel_failed">Check tunnel failed. Your device may not support the whole device tunnel option.</string>
 </resources>

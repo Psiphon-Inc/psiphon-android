@@ -20,7 +20,11 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -630,6 +634,44 @@ public class TunnelCore implements IStopSignalPending
             
             checkSignals(0);
 
+            // Certain Android devices silently fail to route through the VpnService tun device. 
+            // Test connecting to a service available only through the tunnel. Stop when the check fails.
+            if (tunnelWholeDevice)
+            {
+                boolean success = false;
+                try
+                {
+                    SocketChannel channel = SocketChannel.open();
+                    channel.configureBlocking(false);
+                    channel.connect(new InetSocketAddress(entry.ipAddress, PsiphonConstants.CHECK_TUNNEL_SERVER_PORT));
+                    Selector selector = Selector.open();
+                    channel.register(selector, SelectionKey.OP_CONNECT);                    
+                    for (int i = 0;
+                         i < PsiphonConstants.CHECK_TUNNEL_TIMEOUT_MILLISECONDS && selector.select(100) == 0;
+                         i += 100)
+                    {
+                        checkSignals(0);
+                    }
+                    success = channel.finishConnect();                    
+                    selector.close();
+                    channel.close();
+                }
+                catch (IOException e)
+                {
+                }
+
+                if (!success)
+                {
+                    MyLog.w(R.string.check_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE);
+                    
+                    // Stop entirely. If this test fails, there's something wrong with routing.
+                    runAgain = false;
+                    return runAgain;
+                }
+            }
+            
+            checkSignals(0);
+
             try
             {
                 m_interface.doHandshakeRequest();
@@ -977,11 +1019,35 @@ public class TunnelCore implements IStopSignalPending
                 {
                     try
                     {
-                        runTunnel();
+                        try
+                        {
+                            runTunnel();
+                        }
+                        catch (InterruptedException e)
+                        {
+                            Thread.currentThread().interrupt();
+                        }
+    
+                        if (m_eventsInterface != null)
+                        {
+                            m_eventsInterface.signalTunnelStopping(m_parentContext);
+                        }
+                        
+                        if (m_parentService != null)
+                        {
+                            // If the tunnel is stopping itself (e.g., due to a fatal error
+                            // where we don't try-next-server), then the service should stop itself.
+                            m_parentService.stopForeground(true);
+                            m_parentService.stopSelf();
+                        }
+    
+                        MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+                        MyLog.e(R.string.psiphon_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
                     }
-                    catch (InterruptedException e)
+                    finally
                     {
-                        Thread.currentThread().interrupt();
+                        m_signalQueue = null;
+                        m_tunnelThread = null;
                     }
                 }
             });
@@ -992,8 +1058,11 @@ public class TunnelCore implements IStopSignalPending
     public void signalUnexpectedDisconnect()
     {
         // Override STOP_TUNNEL; TODO: race condition?
-        m_signalQueue.clear();
-        m_signalQueue.offer(Signal.UNEXPECTED_DISCONNECT);
+        if (m_signalQueue != null)
+        {
+            m_signalQueue.clear();
+            m_signalQueue.offer(Signal.UNEXPECTED_DISCONNECT);
+        }
     }
     
     public void stopVpnServiceHelper()
@@ -1022,23 +1091,18 @@ public class TunnelCore implements IStopSignalPending
     {
         if (m_tunnelThread != null)
         {
-            if (m_eventsInterface != null)
-            {
-                m_eventsInterface.signalTunnelStopping(m_parentContext);
-            }
+            MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
-            // TODO: ServerListReorder lifetime on Android isn't the same as on Windows
-            if (m_serverSelector != null)
-            {
-                m_serverSelector.Abort();
-                m_serverSelector = null;
-            }
+            // Wake up/interrupt the tunnel thread
             
             // Override UNEXPECTED_DISCONNECT; TODO: race condition?
             m_signalQueue.clear();
             m_signalQueue.offer(Signal.STOP_TUNNEL);
-
-            MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+            
+            if (m_serverSelector != null)
+            {
+                m_serverSelector.Abort();
+            }
             
             // Tell the ServerInterface to stop (e.g., kill requests).
 
@@ -1060,13 +1124,7 @@ public class TunnelCore implements IStopSignalPending
             {
                 Thread.currentThread().interrupt();
             }
-
-            MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
-            MyLog.e(R.string.psiphon_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
         }
-        
-        m_signalQueue = null;
-        m_tunnelThread = null;
     }
     
     public void setEventsInterface(Events eventsInterface)

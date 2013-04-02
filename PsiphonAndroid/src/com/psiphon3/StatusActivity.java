@@ -207,8 +207,8 @@ public class StatusActivity
         // Auto-start on app first run
         if (m_firstRun)
         {
-        	m_firstRun = false;
-        	startUp();
+            m_firstRun = false;
+            startUp();
         }
     }
 
@@ -275,23 +275,23 @@ public class StatusActivity
     
     public void onToggleClick(View v)
     {
-    	// TODO: use TunnelStartingReceiver/TunnelStoppingReceiver to track state?
-    	if (!isServiceRunning())
-    	{
-    		startUp();
-    	}
-    	else
-    	{
+        // TODO: use TunnelStartingReceiver/TunnelStoppingReceiver to track state?
+        if (!isServiceRunning())
+        {
+            startUp();
+        }
+        else
+        {
             stopTunnel(this);
-    	}
+        }
     }
 
     private void initToggleText()
     {
-    	// Only use this in onCreate. For updating the text when the activity
-    	// is showing and the service is stopping, it's more reliable to
-    	// use TunnelStoppingReceiver.
-    	m_toggleButton.setText(isServiceRunning() ? getText(R.string.stop) : getText(R.string.start));
+        // Only use this in onCreate. For updating the text when the activity
+        // is showing and the service is stopping, it's more reliable to
+        // use TunnelStoppingReceiver.
+        m_toggleButton.setText(isServiceRunning() ? getText(R.string.stop) : getText(R.string.start));
     }
     
     public class TunnelStartingReceiver extends BroadcastReceiver
@@ -299,7 +299,7 @@ public class StatusActivity
         @Override
         public void onReceive(Context context, Intent intent)
         {
-        	m_toggleButton.setText(getText(R.string.stop));
+            m_toggleButton.setText(getText(R.string.stop));
         }
     }
 
@@ -308,18 +308,20 @@ public class StatusActivity
         @Override
         public void onReceive(Context context, Intent intent)
         {
-        	m_toggleButton.setText(getText(R.string.start));
+            // When the tunnel self-stops, we also need to unbind to ensure the service is destroyed
+            unbindTunnelService();
+            m_toggleButton.setText(getText(R.string.start));
         }
     }
     
     public void onTunnelWholeDeviceToggle(View v)
     {
-    	boolean restart = false;
+        boolean restart = false;
 
-    	if (isServiceRunning())
+        if (isServiceRunning())
         {
-	        stopTunnel(this);
-	        restart = true;
+            stopTunnel(this);
+            restart = true;
         }
 
         boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
@@ -327,7 +329,7 @@ public class StatusActivity
         
         if (restart)
         {
-	        startTunnel(this);
+            startTunnel(this);
         }
     }
     
@@ -457,7 +459,7 @@ public class StatusActivity
         else
         {
             upgradeListener.upgradeNotStarted();
-        }    	
+        }        
     }
     
     private void startTunnel(Context context)
@@ -585,15 +587,15 @@ public class StatusActivity
     }
 
     private void doStopVpnTunnel(Context context)
-    {    	
-    	TunnelCore currentTunnelCore = PsiphonData.getPsiphonData().getCurrentTunnelCore();
-    	
-    	if (currentTunnelCore != null)
-    	{
-    		// See comments in stopVpnServiceHelper about stopService.
-    		currentTunnelCore.stopVpnServiceHelper();
-	        stopService(new Intent(context, TunnelVpnService.class));
-    	}
+    {        
+        TunnelCore currentTunnelCore = PsiphonData.getPsiphonData().getCurrentTunnelCore();
+        
+        if (currentTunnelCore != null)
+        {
+            // See comments in stopVpnServiceHelper about stopService.
+            currentTunnelCore.stopVpnServiceHelper();
+            stopService(new Intent(context, TunnelVpnService.class));
+        }
     }
     
     private void unbindTunnelService()
@@ -694,7 +696,7 @@ public class StatusActivity
                 {
                     m_messagesScrollView.fullScroll(View.FOCUS_DOWN);
                 }
-            });    	
+            });
     }
     
     /*
