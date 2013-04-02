@@ -22,7 +22,6 @@ package com.psiphon3;
 import java.util.Date;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.ActivityManager.RunningServiceInfo;
@@ -66,7 +65,8 @@ import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
-public class StatusActivity extends Activity implements MyLog.ILogger
+public class StatusActivity 
+    extends com.psiphon3.psiphonlibrary.MainActivityBase
 {
     public static final String ADD_MESSAGE = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE";
     public static final String ADD_MESSAGE_TEXT = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TEXT";
@@ -138,12 +138,10 @@ public class StatusActivity extends Activity implements MyLog.ILogger
     };
 
     @Override
-    public void onCreate(Bundle savedInstanceState)
+    protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         
-        MyLog.logger = this;
-
         setContentView(R.layout.main);
         
         m_messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
@@ -214,14 +212,6 @@ public class StatusActivity extends Activity implements MyLog.ILogger
         }
     }
 
-    @Override
-    public void onDestroy()
-    {
-        super.onDestroy();
-        
-        MyLog.logger = null;
-    }
-    
     @Override
     protected void onResume()
     {
@@ -716,20 +706,6 @@ public class StatusActivity extends Activity implements MyLog.ILogger
      * MyLog.ILogger implementation
      */
     
-    /**
-     * @see com.psiphon3.psiphonlibrary.Utils.MyLog.ILogger#getResourceString(int, java.lang.Object[])
-     */
-    @Override
-    public String getResourceString(int stringResID, Object[] formatArgs)
-    {
-        if (formatArgs == null || formatArgs.length == 0)
-        {
-            return getString(stringResID);
-        }
-        
-        return getString(stringResID, formatArgs);
-    }
-
     /**
      * @see com.psiphon3.psiphonlibrary.Utils.MyLog.ILogger#log(java.util.Date, int, java.lang.String)
      */
