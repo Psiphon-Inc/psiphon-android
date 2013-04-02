@@ -1009,11 +1009,35 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 {
                     try
                     {
-                        runTunnel();
+                        try
+                        {
+                            runTunnel();
+                        }
+                        catch (InterruptedException e)
+                        {
+                            Thread.currentThread().interrupt();
+                        }
+    
+                        if (m_eventsInterface != null)
+                        {
+                            m_eventsInterface.signalTunnelStopping(m_parentContext);
+                        }
+                        
+                        if (m_parentService != null)
+                        {
+                            // If the tunnel is stopping itself (e.g., due to a fatal error
+                            // where we don't try-next-server), then the service should stop itself.
+                            m_parentService.stopForeground(true);
+                            m_parentService.stopSelf();
+                        }
+    
+                        MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+                        MyLog.e(R.string.psiphon_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
                     }
-                    catch (InterruptedException e)
+                    finally
                     {
-                        Thread.currentThread().interrupt();
+                        m_signalQueue = null;
+                        m_tunnelThread = null;
                     }
                 }
             });
@@ -1024,8 +1048,11 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     public void signalUnexpectedDisconnect()
     {
         // Override STOP_TUNNEL; TODO: race condition?
-        m_signalQueue.clear();
-        m_signalQueue.offer(Signal.UNEXPECTED_DISCONNECT);
+        if (m_signalQueue != null)
+        {
+            m_signalQueue.clear();
+            m_signalQueue.offer(Signal.UNEXPECTED_DISCONNECT);
+        }
     }
     
     public void stopVpnServiceHelper()
@@ -1054,23 +1081,18 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     {
         if (m_tunnelThread != null)
         {
-            if (m_eventsInterface != null)
-            {
-                m_eventsInterface.signalTunnelStopping(m_parentContext);
-            }
+            MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
-            // TODO: ServerListReorder lifetime on Android isn't the same as on Windows
-            if (m_serverSelector != null)
-            {
-                m_serverSelector.Abort();
-                m_serverSelector = null;
-            }
+            // Wake up/interrupt the tunnel thread
             
             // Override UNEXPECTED_DISCONNECT; TODO: race condition?
             m_signalQueue.clear();
             m_signalQueue.offer(Signal.STOP_TUNNEL);
-
-            MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+            
+            if (m_serverSelector != null)
+            {
+                m_serverSelector.Abort();
+            }
             
             // Tell the ServerInterface to stop (e.g., kill requests).
 
@@ -1092,13 +1114,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
             {
                 Thread.currentThread().interrupt();
             }
-
-            MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
-            MyLog.e(R.string.psiphon_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
         }
-        
-        m_signalQueue = null;
-        m_tunnelThread = null;
     }
     
     public void setEventsInterface(Events eventsInterface)
