@@ -26,10 +26,11 @@ cog.outl('package %s;' % packagename)
 package com.psiphon3.psiphonproxiedwebapp;
 //[[[end]]]
 
+import java.util.Date;
+
 import android.os.Bundle;
 import android.os.Handler;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -53,11 +54,12 @@ import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.TunnelCore;
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.psiphonlibrary.Events;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 
-public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Events
+public class MainActivity 
+    extends com.psiphon3.psiphonlibrary.MainActivityBase 
+    implements Events
 {
     private boolean m_loadedWebView = false;
     private WebView m_webView;
@@ -142,8 +144,6 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
     {
         super.onCreate(savedInstanceState);
 
-        MyLog.logInfoProvider = this;
-
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
         m_webView = (WebView)findViewById(R.id.webView);
@@ -209,31 +209,28 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
         return super.onKeyDown(keyCode, event);
     }
 
+    /*
+     * MyLog.ILogger implementation
+     */
+
+    /**
+     * @see com.psiphon3.psiphonlibrary.Utils.MyLog.ILogger#log(java.util.Date, int, java.lang.String)
+     */
     @Override
-    public int getAndroidLogPriorityEquivalent(int priority)
+    public void log(Date timestamp, int priority, String message)
     {
-        return 0;
-    }
-
+        this.appendStatusMessage(this, timestamp, message, priority);
+    }    
+    
+    /*
+     * Events implementation
+     */
+    
+    /*
+     * @see com.psiphon3.psiphonlibrary.Events#appendStatusMessage(android.content.Context, java.util.Date, java.lang.String, int)
+     */
     @Override
-    public String getResourceString(int stringResID, Object[] formatArgs)
-    {
-        if (formatArgs == null || formatArgs.length == 0)
-        {
-            return getString(stringResID);
-        }
-
-        return getString(stringResID, formatArgs);
-    }
-
-    @Override
-    public String getResourceEntryName(int stringResID)
-    {
-        return getResources().getResourceEntryName(stringResID);
-    }
-
-    @Override
-    public void appendStatusMessage(Context context, String message, int messageClass)
+    public void appendStatusMessage(Context context, Date timestamp, String message, int messageClass)
     {
         final String finalMessage = message;
 
