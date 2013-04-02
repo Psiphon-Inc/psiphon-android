@@ -2,6 +2,7 @@ package com.psiphon3.psiphonlibrary;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -263,7 +264,11 @@ public class Utils
             public String getResourceString(int stringResID, Object[] formatArgs);
         }
         
-        static public ILogger logger;
+        // It is expected that the logger implementation will be an Activity, so
+        // we're only going to hold a weak reference to it -- we don't want to
+        // interfere with it being destroyed in low memory situations. This class
+        // can cope with the logger going away and being re-set later on.
+        static private WeakReference<ILogger> logger = new WeakReference<ILogger>(null);
         
         /**
          * Used to indicate the sensitivity level of the log. This will affect
@@ -290,6 +295,16 @@ public class Utils
             SENSITIVE_FORMAT_ARGS
         }
         
+        static public void setLogger(ILogger logger)
+        {
+            MyLog.logger = new WeakReference<ILogger>(logger);
+        }
+        
+        static public void unsetLogger()
+        {
+            MyLog.logger.clear();
+        }
+        
         /**
          * Safely wraps the string resource extraction function. If an error 
          * occurs with the format specifiers (as can happen in a bad translation),
@@ -302,18 +317,18 @@ public class Utils
         {
             // The logger *should* always be available when this function is 
             // called, but we don't want to crash if it's not.
-            if (logger == null) {
+            if (logger.get() == null) {
                 assert(false);
                 return "";
             }
             
             try
             {
-                return logger.getResourceString(stringResID, formatArgs);
+                return logger.get().getResourceString(stringResID, formatArgs);
             }
             catch (IllegalFormatException e)
             {
-                return logger.getResourceString(stringResID, null);
+                return logger.get().getResourceString(stringResID, null);
             }
         }
         
@@ -446,7 +461,7 @@ public class Utils
             
             // If the external logger has been set, use it.
             // But don't put debug messages to the external logger.
-            if (logger != null && priority != Log.DEBUG)
+            if (logger.get() != null && priority != Log.DEBUG)
             {
                 String loggerMsg = msg;
                 
@@ -457,7 +472,7 @@ public class Utils
                     loggerMsg = loggerMsg + (stackTraceLines.length > 0 ? "\n" + stackTraceLines[0] : ""); 
                 }
                 
-                logger.log(timestamp, priority, loggerMsg);
+                logger.get().log(timestamp, priority, loggerMsg);
             }
             
             // Do not log to LogCat at all if we're not running in debug mode.

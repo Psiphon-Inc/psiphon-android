@@ -501,11 +501,6 @@ public class StatusActivity
             catch (ActivityNotFoundException e)
             {
                 MyLog.e(R.string.tunnel_whole_device_exception, MyLog.Sensitivity.NOT_SENSITIVE);
-                if (MyLog.logger == null)
-                {
-                    // Usually the TunnelCore instance is the 'logger', but at this point there may be no service/TunnelCore
-                    addMessage(getString(R.string.tunnel_whole_device_exception), Log.ERROR);
-                }
                 
                 // VpnService is broken. For rooted devices, proceed with starting Whole Device in root mode.
                 

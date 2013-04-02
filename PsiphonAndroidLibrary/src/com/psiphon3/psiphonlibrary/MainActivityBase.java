@@ -14,7 +14,7 @@ public abstract class MainActivityBase
     {
         super.onCreate(savedInstanceState);
         
-        MyLog.logger = this;
+        MyLog.setLogger(this);
     }
     
     @Override
@@ -22,7 +22,7 @@ public abstract class MainActivityBase
     {
         super.onDestroy();
 
-        MyLog.logger = null;
+        MyLog.unsetLogger();
     }
     
     /*
