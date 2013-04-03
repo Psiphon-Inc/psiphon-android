@@ -25,12 +25,17 @@ import java.net.Socket;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.annotation.TargetApi;
 import android.app.Notification;
@@ -42,6 +47,7 @@ import android.content.Intent;
 import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
+import android.util.Pair;
 
 import ch.ethz.ssh2.*;
 import ch.ethz.ssh2.Connection.IStopSignalPending;
@@ -52,7 +58,7 @@ import com.psiphon3.psiphonlibrary.TransparentProxyConfig.PsiphonTransparentProx
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.stericson.RootTools.RootTools;
 
-public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
+public class TunnelCore implements IStopSignalPending
 {
     public enum State
     {
@@ -71,6 +77,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     private boolean m_destroyed = false;
     private Events m_eventsInterface = null;
     private boolean m_useGenericLogMessages = false;
+    private List<Pair<String,String>> m_extraAuthParams = new ArrayList<Pair<String,String>>();    
 
 
     enum Signal
@@ -116,7 +123,6 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     // Implementation of android.app.Service.onCreate
     public void onCreate()
     {
-        MyLog.logger = this;
         m_interface = new ServerInterface(m_parentContext);
         m_serverSelector = new ServerSelector(m_interface, m_parentContext);
     }
@@ -127,8 +133,6 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
         m_destroyed = true;
 
         stopTunnel();
-
-        MyLog.logger = null;
     }
 
     private void doForeground()
@@ -157,7 +161,10 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
         {
         case CONNECTING:
             contentTextID = R.string.psiphon_service_notification_message_connecting;
-            iconID = R.drawable.notification_icon_connecting;
+            iconID = PsiphonData.getPsiphonData().getNotificationIconConnecting();
+            if (iconID == 0) {
+                iconID = R.drawable.notification_icon_connecting;
+            }
             break;
             
         case CONNECTED:
@@ -170,12 +177,18 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 contentTextID = R.string.psiphon_running_browser_only;
             }
             
-            iconID = R.drawable.notification_icon_connected;
+            iconID = PsiphonData.getPsiphonData().getNotificationIconConnected();
+            if (iconID == 0) {
+                iconID = R.drawable.notification_icon_connected;
+            }
             break;
             
         case DISCONNECTED:
             contentTextID = R.string.psiphon_stopped;
-            iconID = R.drawable.notification_icon_disconnected;
+            iconID = PsiphonData.getPsiphonData().getNotificationIconDisconnected();
+            if (iconID == 0) {
+                iconID = R.drawable.notification_icon_disconnected;
+            }
             break;
         
         default:
@@ -210,25 +223,6 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
         return notification;
     }
 
-    /**
-     * Utils.MyLog.ILogger implementation
-     */
-    @Override
-    public void log(int priority, String message)
-    {
-        sendMessage(message, priority);
-    }
-    
-    private synchronized void sendMessage(
-            String message,
-            int messageClass)
-    {
-        if (m_eventsInterface != null)
-        {
-            m_eventsInterface.appendStatusMessage(m_parentContext, message, messageClass);
-        }
-    }
-        
     class PsiphonServerHostKeyVerifier implements ServerHostKeyVerifier
     {
         private String m_expectedHostKey;
@@ -447,12 +441,28 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
 
             checkSignals(0);
 
-            // Client transmits its session ID prepended to the SSH password; the server
-            // uses this to associate the tunnel with web requests -- for GeoIP region stats
-            String sshPassword = m_interface.getCurrentClientSessionID() + entry.sshPassword;
+            // Send auth params as JSON-encoded string in SSH password field            
+            // Client session ID is used to associate the tunnel with web requests -- for GeoIP region stats
 
+            JSONObject authParams = new JSONObject();
+            try
+            {
+                authParams.put("SessionId", m_interface.getCurrentClientSessionID());
+                authParams.put("SshPassword", entry.sshPassword);
+                for (Pair<String,String> extraAuthParam : m_extraAuthParams)
+                {
+                    authParams.put(extraAuthParam.first, extraAuthParam.second);
+                }
+            }
+            catch (JSONException e)
+            {
+                // Out of memory?
+                runAgain = false;
+                return runAgain;
+            }
+            
             MyLog.v(R.string.ssh_authenticating, MyLog.Sensitivity.NOT_SENSITIVE);
-            boolean isAuthenticated = conn.authenticateWithPassword(entry.sshUsername, sshPassword);
+            boolean isAuthenticated = conn.authenticateWithPassword(entry.sshUsername, authParams.toString());
             if (isAuthenticated == false)
             {
                 MyLog.e(R.string.ssh_authentication_failed, MyLog.Sensitivity.NOT_SENSITIVE);
@@ -507,7 +517,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
             }
 
             MyLog.v(R.string.http_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getHttpProxyPort());
-            
+
             // Start transparent proxy, DNS proxy, and iptables config
             
             if (tunnelWholeDevice && !runVpnService)
@@ -1162,5 +1172,15 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     public void setUseGenericLogMessages(boolean useGenericLogMessages)
     {
         m_useGenericLogMessages = useGenericLogMessages;
+    }
+    
+    public void setExtraAuthParams(List<Pair<String,String>> extraAuthParams)
+    {
+        m_extraAuthParams.clear();
+
+        for (Pair<String,String> extraAuthParam : extraAuthParams)
+        {
+            m_extraAuthParams.add(Pair.create(extraAuthParam.first, extraAuthParam.second));
+        }
     }
 }

@@ -19,8 +19,9 @@
 
 package com.psiphon3;
 
+import java.util.Date;
+
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.ActivityManager.RunningServiceInfo;
@@ -64,10 +65,12 @@ import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
-public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
+public class StatusActivity 
+    extends com.psiphon3.psiphonlibrary.MainActivityBase
 {
     public static final String ADD_MESSAGE = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE";
     public static final String ADD_MESSAGE_TEXT = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TEXT";
+    public static final String ADD_MESSAGE_TIMESTAMP = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TIMESTAMP";
     public static final String ADD_MESSAGE_CLASS = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_CLASS";
     public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
     public static final String UNEXPECTED_DISCONNECT = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT";
@@ -135,12 +138,10 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     };
 
     @Override
-    public void onCreate(Bundle savedInstanceState)
+    protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         
-        MyLog.logInfoProvider = this;
-
         setContentView(R.layout.main);
         
         m_messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
@@ -502,11 +503,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             catch (ActivityNotFoundException e)
             {
                 MyLog.e(R.string.tunnel_whole_device_exception, MyLog.Sensitivity.NOT_SENSITIVE);
-                if (MyLog.logger == null)
-                {
-                    // Usually the TunnelCore instance is the 'logger', but at this point there may be no service/TunnelCore
-                    addMessage(getString(R.string.tunnel_whole_device_exception), MESSAGE_CLASS_ERROR);
-                }
                 
                 // VpnService is broken. For rooted devices, proceed with starting Whole Device in root mode.
                 
@@ -646,16 +642,10 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         public void onReceive(Context context, Intent intent)
         {
             String message = intent.getStringExtra(ADD_MESSAGE_TEXT);
-            int messageClass = intent.getIntExtra(ADD_MESSAGE_CLASS, MESSAGE_CLASS_INFO);
+            int messageClass = intent.getIntExtra(ADD_MESSAGE_CLASS, Log.INFO);
             addMessage(message, messageClass);
         }
     }
-    
-    public static final int MESSAGE_CLASS_VERBOSE = 0;
-    public static final int MESSAGE_CLASS_INFO = 1;
-    public static final int MESSAGE_CLASS_WARNING = 2;
-    public static final int MESSAGE_CLASS_ERROR = 3;
-    public static final int MESSAGE_CLASS_DEBUG = 4;
     
     public void addMessage(String message, int messageClass)
     {
@@ -664,10 +654,10 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
 
         switch (messageClass)
         {
-        case MESSAGE_CLASS_INFO:
+        case Log.INFO:
             messageClassImageRes = android.R.drawable.presence_online;
             break;
-        case MESSAGE_CLASS_ERROR:
+        case Log.ERROR:
             messageClassImageRes = android.R.drawable.presence_busy;
             break;
         default:
@@ -675,7 +665,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             boldText = false;
             break;
         }
-        
         
         LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View rowView = inflater.inflate(R.layout.message_row, null);
@@ -710,42 +699,16 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             });
     }
     
+    /*
+     * MyLog.ILogger implementation
+     */
+    
     /**
-     * Utils.MyLog.ILogInfoProvider implementation
-     * For Android priority values, see <a href="http://developer.android.com/reference/android/util/Log.html">http://developer.android.com/reference/android/util/Log.html</a>
+     * @see com.psiphon3.psiphonlibrary.Utils.MyLog.ILogger#log(java.util.Date, int, java.lang.String)
      */
     @Override
-    public int getAndroidLogPriorityEquivalent(int priority)
+    public void log(Date timestamp, int priority, String message)
     {
-        switch (priority)
-        {
-        case Log.ERROR:
-            return StatusActivity.MESSAGE_CLASS_ERROR;
-        case Log.WARN:
-            return StatusActivity.MESSAGE_CLASS_WARNING;
-        case Log.INFO:
-            return StatusActivity.MESSAGE_CLASS_INFO;
-        case Log.DEBUG:
-            return StatusActivity.MESSAGE_CLASS_DEBUG;
-        default:
-            return StatusActivity.MESSAGE_CLASS_VERBOSE;
-        }
-    }
-
-    @Override
-    public String getResourceString(int stringResID, Object[] formatArgs)
-    {
-        if (formatArgs == null || formatArgs.length == 0)
-        {
-            return getString(stringResID);
-        }
-        
-        return getString(stringResID, formatArgs);
-    }
-
-    @Override
-    public String getResourceEntryName(int stringResID)
-    {
-        return getResources().getResourceEntryName(stringResID);
-    }
+        m_eventsInterface.appendStatusMessage(this, timestamp, message, priority);
+    }    
 }
