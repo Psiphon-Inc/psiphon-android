@@ -27,6 +27,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -626,15 +627,26 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
 
             // Certain Android devices silently fail to route through the VpnService tun device. 
             // Test connecting to a service available only through the tunnel. Stop when the check fails.
+
+            // NOTE: this test succeeds due to the tun2socks accept on localhost, which confirms that
+            // the connection was tunneled, and fails due to direct connect because the selected
+            // service is firewalled.
+            // TODO: A more advanced implementation would have tun2socks recognize this test and (a)
+            // not attempt a SOCKS port forward; (b) respond with a verifiable byte stream.
+            
             if (tunnelWholeDevice)
             {
                 boolean success = false;
+                SocketChannel channel = null;
+                Selector selector = null;
                 try
                 {
-                    SocketChannel channel = SocketChannel.open();
+                    channel = SocketChannel.open();
                     channel.configureBlocking(false);
-                    channel.connect(new InetSocketAddress(entry.ipAddress, PsiphonConstants.CHECK_TUNNEL_SERVER_PORT));
-                    Selector selector = Selector.open();
+                    // Select a random port to be slightly less fingerprintable in the untunneled (failure) case.
+                    int port = Utils.insecureRandRange(PsiphonConstants.CHECK_TUNNEL_SERVER_FIRST_PORT, PsiphonConstants.CHECK_TUNNEL_SERVER_LAST_PORT);
+                    channel.connect(new InetSocketAddress(entry.ipAddress, port));
+                    selector = Selector.open();
                     channel.register(selector, SelectionKey.OP_CONNECT);                    
                     for (int i = 0;
                          i < PsiphonConstants.CHECK_TUNNEL_TIMEOUT_MILLISECONDS && selector.select(100) == 0;
@@ -643,11 +655,26 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                         checkSignals(0);
                     }
                     success = channel.finishConnect();                    
-                    selector.close();
-                    channel.close();
                 }
-                catch (IOException e)
+                catch (IOException e) {}
+                finally
                 {
+                    if (selector != null)
+                    {
+                        try
+                        {
+                            selector.close();
+                        }
+                        catch (IOException e) {}
+                    }
+                    if (channel != null)
+                    {
+                        try
+                        {
+                            channel.close();
+                        }
+                        catch (IOException e) {}                        
+                    }
                 }
 
                 if (!success)

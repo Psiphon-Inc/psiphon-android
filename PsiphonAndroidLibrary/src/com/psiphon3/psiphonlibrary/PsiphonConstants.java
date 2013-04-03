@@ -47,7 +47,9 @@ public class PsiphonConstants
 
     public final static int DEFAULT_WEB_SERVER_PORT = 443;
     
-    public final static int CHECK_TUNNEL_SERVER_PORT = 7999;
+    public final static int CHECK_TUNNEL_SERVER_FIRST_PORT = 9001;
+    
+    public final static int CHECK_TUNNEL_SERVER_LAST_PORT = 10000;
     
     public final static int CHECK_TUNNEL_TIMEOUT_MILLISECONDS = 5000;
     

@@ -57,6 +57,12 @@ public class Utils {
         return bytes;
     }
 
+    public static int insecureRandRange(int min, int max)
+    {
+        // Returns [min, max]; e.g., inclusive of both min and max.
+        return min + (int)(Math.random() * ((max - min) + 1));
+    }
+    
     // from:
     // http://stackoverflow.com/questions/140131/convert-a-string-representation-of-a-hex-dump-to-a-byte-array-using-java
     public static byte[] hexStringToByteArray(String s) {
