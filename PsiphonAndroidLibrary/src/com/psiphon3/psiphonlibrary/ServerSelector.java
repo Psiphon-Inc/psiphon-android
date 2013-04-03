@@ -104,7 +104,6 @@ public class ServerSelector
                 }
                 
                 this.responded = this.channel.finishConnect();
-                this.channel.configureBlocking(true);
             }
             catch (IOException e) {}
             finally
@@ -127,6 +126,14 @@ public class ServerSelector
                         }
                         catch (IOException e) {}
                         this.channel = null;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            this.channel.configureBlocking(true);
+                        }
+                        catch (IOException e) {}
                     }
                 }
             }
