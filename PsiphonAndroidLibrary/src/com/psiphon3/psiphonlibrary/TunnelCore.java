@@ -632,7 +632,9 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
             // the connection was tunneled, and fails due to direct connect because the selected
             // service is firewalled.
             // TODO: A more advanced implementation would have tun2socks recognize this test and (a)
-            // not attempt a SOCKS port forward; (b) respond with a verifiable byte stream.
+            // not attempt a SOCKS port forward; (b) respond with a verifiable byte stream. This byte
+            // stream must be a random nonce known to TunnelCore and tun2socks but not known to any
+            // external party that could respond, yielding a false positive. 
             
             if (tunnelWholeDevice)
             {
