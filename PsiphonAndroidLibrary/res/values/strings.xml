@@ -76,4 +76,6 @@
     <string name="psiphon_running_generic">Running...</string>
     <string name="data_transfer_stats">sent %1$s  received %2$s  %3$.2f%% compressed</string>
     <string name="check_tunnel_failed">Check tunnel failed. Your device may not support the whole device tunnel option.</string>
+    <string name="Diagnostics.AttachmentWriteFailed">Failed to create or write feedback diagnostics file</string>
+    <string name="Diagnostics.EncryptedFailed">Failed to encrypt feedback diagnostic information. This information will not be attached to the feedback email.</string>
 </resources>
