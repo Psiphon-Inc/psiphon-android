@@ -646,7 +646,7 @@ public class TunnelCore implements IStopSignalPending
             // stream must be a random nonce known to TunnelCore and tun2socks but not known to any
             // external party that could respond, yielding a false positive. 
             
-            if (tunnelWholeDevice)
+            if (tunnelWholeDevice && runVpnService)
             {
                 boolean success = false;
                 SocketChannel channel = null;
