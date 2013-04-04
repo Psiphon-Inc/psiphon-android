@@ -2,6 +2,7 @@ package com.psiphon3.psiphonlibrary;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -39,10 +40,11 @@ import android.os.Build;
 import android.util.Log;
 
 
-public class Utils {
+public class Utils
+{
 
     private static SecureRandom s_secureRandom = new SecureRandom();
-    static byte[] generateSecureRandomBytes(int byteCount)
+    public static byte[] generateSecureRandomBytes(int byteCount)
     {
         byte bytes[] = new byte[byteCount];
         s_secureRandom.nextBytes(bytes);
@@ -50,7 +52,7 @@ public class Utils {
     }
 
     private static Random s_insecureRandom = new Random();
-    static byte[] generateInsecureRandomBytes(int byteCount)
+    public static byte[] generateInsecureRandomBytes(int byteCount)
     {
         byte bytes[] = new byte[byteCount];
         s_insecureRandom.nextBytes(bytes);
@@ -262,20 +264,17 @@ public class Utils {
      */
     static public class MyLog
     {
-        static public interface ILogInfoProvider
-        {
-            public String getResourceString(int stringResID, Object[] formatArgs);
-            public int getAndroidLogPriorityEquivalent(int priority);
-            public String getResourceEntryName(int stringResID);
-        }
-        
         static public interface ILogger
         {
-            public void log(int priority, String message);
+            public void log(Date timestamp, int priority, String message);
+            public String getResourceString(int stringResID, Object[] formatArgs);
         }
         
-        static public ILogInfoProvider logInfoProvider;
-        static public ILogger logger;
+        // It is expected that the logger implementation will be an Activity, so
+        // we're only going to hold a weak reference to it -- we don't want to
+        // interfere with it being destroyed in low memory situations. This class
+        // can cope with the logger going away and being re-set later on.
+        static private WeakReference<ILogger> logger = new WeakReference<ILogger>(null);
         
         /**
          * Used to indicate the sensitivity level of the log. This will affect
@@ -302,22 +301,40 @@ public class Utils {
             SENSITIVE_FORMAT_ARGS
         }
         
+        static public void setLogger(ILogger logger)
+        {
+            MyLog.logger = new WeakReference<ILogger>(logger);
+        }
+        
+        static public void unsetLogger()
+        {
+            MyLog.logger.clear();
+        }
+        
         /**
          * Safely wraps the string resource extraction function. If an error 
-         * occurs with the format specifiers, the raw string will be returned.
+         * occurs with the format specifiers (as can happen in a bad translation),
+         * the raw string will be returned.
          * @param stringResID The string resource ID.
          * @param formatArgs The format arguments. May be empty (non-existent).
          * @return The requested string, possibly formatted.
          */
         static private String myGetResString(int stringResID, Object[] formatArgs)
         {
+            // The logger *should* always be available when this function is 
+            // called, but we don't want to crash if it's not.
+            if (logger.get() == null) {
+                assert(false);
+                return "";
+            }
+            
             try
             {
-                return logInfoProvider.getResourceString(stringResID, formatArgs);
+                return logger.get().getResourceString(stringResID, formatArgs);
             }
             catch (IllegalFormatException e)
             {
-                return logInfoProvider.getResourceString(stringResID, null);
+                return logger.get().getResourceString(stringResID, null);
             }
         }
         
@@ -341,14 +358,14 @@ public class Utils {
             }
         }
         
-        static void d(String msg)
+        static public void d(String msg)
         {
-            MyLog.println(msg, null, Log.DEBUG);
+            MyLog.println(new Date(), msg, null, Log.DEBUG);
         }
 
-        static void d(String msg, Throwable throwable)
+        static public void d(String msg, Throwable throwable)
         {
-            MyLog.println(msg, throwable, Log.DEBUG);
+            MyLog.println(new Date(), msg, throwable, Log.DEBUG);
         }
 
         /**
@@ -356,9 +373,9 @@ public class Utils {
          * except it will also be included in the feedback diagnostic attachment.
          * @param msg The message to log.
          */
-        static void g(String msg, Object data)
+        static public void g(String msg, Object data)
         {
-            PsiphonData.addDiagnosticEntry(msg, data);
+            PsiphonData.addDiagnosticEntry(new Date(), msg, data);
             // We're not logging the `data` at all. In the future we may want to.
             MyLog.d(msg);
         }
@@ -416,7 +433,7 @@ public class Utils {
                 formatArgs,
                 throwable,
                 priority,
-                Utils.getISO8601String());
+                new Date());
         }
 
         private static void println(
@@ -425,21 +442,20 @@ public class Utils {
                 Object[] formatArgs, 
                 Throwable throwable, 
                 int priority,
-                String timestamp)
+                Date timestamp)
         {
             PsiphonData.addStatusEntry(
                     timestamp,
                     stringResID,
-                    logInfoProvider.getResourceEntryName(stringResID), 
                     sensitivity,
                     formatArgs, 
                     throwable, 
                     priority);
             
-            println(MyLog.myGetResString(stringResID, formatArgs), throwable, priority);
+            println(timestamp, MyLog.myGetResString(stringResID, formatArgs), throwable, priority);
         }
         
-        private static void println(String msg, Throwable throwable, int priority)
+        private static void println(Date timestamp, String msg, Throwable throwable, int priority)
         {
             // If we're not running in debug mode, don't log debug messages at all.
             // (This may be redundant with the logic below, but it'll save us if
@@ -451,7 +467,7 @@ public class Utils {
             
             // If the external logger has been set, use it.
             // But don't put debug messages to the external logger.
-            if (logger != null && priority != Log.DEBUG)
+            if (logger.get() != null && priority != Log.DEBUG)
             {
                 String loggerMsg = msg;
                 
@@ -462,7 +478,7 @@ public class Utils {
                     loggerMsg = loggerMsg + (stackTraceLines.length > 0 ? "\n" + stackTraceLines[0] : ""); 
                 }
                 
-                logger.log(logInfoProvider.getAndroidLogPriorityEquivalent(priority), loggerMsg);
+                logger.get().log(timestamp, priority, loggerMsg);
             }
             
             // Do not log to LogCat at all if we're not running in debug mode.
@@ -566,13 +582,25 @@ public class Utils {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH;
     }
     
-    public static String getISO8601String()
+    public static String getLocalTimeString(Date date)
+    {
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.US);
+        String dateStr = sdf.format(date);
+        return dateStr;
+    }
+
+    public static String getISO8601String(Date date)
     {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String date = sdf.format(new Date());
-        date += "Z";
-        return date;
+        String dateStr = sdf.format(date);
+        dateStr += "Z";
+        return dateStr;
+    }
+
+    public static String getISO8601String()
+    {
+        return getISO8601String(new Date());
     }
 
     public static boolean isPortAvailable(int port)
@@ -689,5 +717,15 @@ public class Utils {
         }
         
         return null;
+    }
+    
+    public static String byteCountToDisplaySize(long bytes, boolean si)
+    {
+        // http://stackoverflow.com/questions/3758606/how-to-convert-byte-size-into-human-readable-format-in-java/3758880#3758880
+        int unit = si ? 1000 : 1024;
+        if (bytes < unit) return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(unit));
+        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (si ? "" : "i");
+        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
     }
 }

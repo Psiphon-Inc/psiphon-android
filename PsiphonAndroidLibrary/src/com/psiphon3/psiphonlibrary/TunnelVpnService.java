@@ -19,6 +19,8 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.util.List;
+
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.annotation.TargetApi;
@@ -27,6 +29,7 @@ import android.net.VpnService;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
+import android.util.Pair;
 
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class TunnelVpnService extends VpnService
@@ -101,6 +104,11 @@ public class TunnelVpnService extends VpnService
         return m_Core.getServerInterface();
     }
     
+    public void setExtraAuthParams(List<Pair<String,String>> extraAuthParams)
+    {
+        m_Core.setExtraAuthParams(extraAuthParams);
+    }
+
     public VpnService.Builder newBuilder()
     {
         return new VpnService.Builder();

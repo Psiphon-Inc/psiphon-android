@@ -19,13 +19,15 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.util.Date;
+
 import android.content.Context;
 import android.content.Intent;
 
 
 public interface Events
 {
-	public void appendStatusMessage(Context context, String message, int messageClass);
+	public void appendStatusMessage(Context context, Date timestamp, String message, int messageClass);
 	
 	public void signalHandshakeSuccess(Context context);
 	
