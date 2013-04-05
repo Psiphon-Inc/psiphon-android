@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -355,7 +354,8 @@ public class TunnelCore implements IStopSignalPending
 
             boolean tunnelWholeDevice = PsiphonData.getPsiphonData().getTunnelWholeDevice();
             boolean runVpnService = tunnelWholeDevice && Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
-            String tunnelWholeDeviceDNSServer = "8.8.8.8"; // TEMP. TODO: get remote address/port from Psiphon server
+            // TODO: get remote address/port from Psiphon server
+            String tunnelWholeDeviceDNSServer = "8.8.8.8";
             
             if (tunnelWholeDevice && !runVpnService)
             {
@@ -1048,36 +1048,28 @@ public class TunnelCore implements IStopSignalPending
                 {
                     try
                     {
-                        try
-                        {
-                            runTunnel();
-                        }
-                        catch (InterruptedException e)
-                        {
-                            Thread.currentThread().interrupt();
-                        }
-    
-                        if (m_eventsInterface != null)
-                        {
-                            m_eventsInterface.signalTunnelStopping(m_parentContext);
-                        }
-                        
-                        if (m_parentService != null)
-                        {
-                            // If the tunnel is stopping itself (e.g., due to a fatal error
-                            // where we don't try-next-server), then the service should stop itself.
-                            m_parentService.stopForeground(true);
-                            m_parentService.stopSelf();
-                        }
-    
-                        MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
-                        MyLog.e(R.string.psiphon_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
+                        runTunnel();
                     }
-                    finally
+                    catch (InterruptedException e)
                     {
-                        m_signalQueue = null;
-                        m_tunnelThread = null;
+                        Thread.currentThread().interrupt();
                     }
+
+                    if (m_eventsInterface != null)
+                    {
+                        m_eventsInterface.signalTunnelStopping(m_parentContext);
+                    }
+                    
+                    if (m_parentService != null)
+                    {
+                        // If the tunnel is stopping itself (e.g., due to a fatal error
+                        // where we don't try-next-server), then the service should stop itself.
+                        m_parentService.stopForeground(true);
+                        m_parentService.stopSelf();
+                    }
+
+                    MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+                    MyLog.e(R.string.psiphon_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
                 }
             });
 
@@ -1120,13 +1112,19 @@ public class TunnelCore implements IStopSignalPending
     {
         if (m_tunnelThread != null)
         {
-            MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+            if (m_tunnelThread.isAlive())
+            {
+                MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+            }
 
             // Wake up/interrupt the tunnel thread
             
             // Override UNEXPECTED_DISCONNECT; TODO: race condition?
-            m_signalQueue.clear();
-            m_signalQueue.offer(Signal.STOP_TUNNEL);
+            if (m_signalQueue != null)
+            {
+                m_signalQueue.clear();
+                m_signalQueue.offer(Signal.STOP_TUNNEL);
+            }
             
             if (m_serverSelector != null)
             {
@@ -1153,6 +1151,9 @@ public class TunnelCore implements IStopSignalPending
             {
                 Thread.currentThread().interrupt();
             }
+            
+            m_tunnelThread = null;
+            m_signalQueue = null;
         }
     }
     
