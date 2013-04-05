@@ -260,7 +260,7 @@ public class Utils
     {
         static public interface ILogger
         {
-            public void log(Date timestamp, int priority, String message);
+            public void statusEntryAdded();
             public String getResourceString(int stringResID, Object[] formatArgs);
         }
         
@@ -337,8 +337,8 @@ public class Utils
             // We need to clear out the history and restore a copy, because the
             // act of restoring will rebuild the history.
             
-            ArrayList<StatusEntry> history = PsiphonData.cloneStatusHistory();
-            PsiphonData.clearStatusHistory();
+            ArrayList<StatusEntry> history = PsiphonData.getPsiphonData().cloneStatusHistory();
+            PsiphonData.getPsiphonData().clearStatusHistory();
             
             for (StatusEntry logEntry : history)
             {
@@ -348,18 +348,30 @@ public class Utils
                         logEntry.formatArgs(), 
                         logEntry.throwable(), 
                         logEntry.priority(),
-                        logEntry.timestamp());
+                        logEntry.timestamp(),
+                        true);
             }
+            
+            // Now that we're done restoring, update the UI.
+            if (logger.get() != null)
+            {
+                logger.get().statusEntryAdded();
+            }
+            
+            MyLog.d("Log history restored");
         }
         
+        // TODO: Add sensitivity to debug logs
         static public void d(String msg)
         {
-            MyLog.println(new Date(), msg, null, Log.DEBUG);
+            Object[] formatArgs = { msg };
+            MyLog.println(R.string.debug_message, Sensitivity.NOT_SENSITIVE, formatArgs, null, Log.DEBUG);
         }
 
         static public void d(String msg, Throwable throwable)
         {
-            MyLog.println(new Date(), msg, throwable, Log.DEBUG);
+            Object[] formatArgs = { msg };
+            MyLog.println(R.string.debug_message, Sensitivity.NOT_SENSITIVE, formatArgs, throwable, Log.DEBUG);
         }
 
         /**
@@ -427,7 +439,8 @@ public class Utils
                 formatArgs,
                 throwable,
                 priority,
-                new Date());
+                new Date(),
+                false);
         }
 
         private static void println(
@@ -436,9 +449,10 @@ public class Utils
                 Object[] formatArgs, 
                 Throwable throwable, 
                 int priority,
-                Date timestamp)
+                Date timestamp,
+                boolean restoring)
         {
-            PsiphonData.addStatusEntry(
+            PsiphonData.getPsiphonData().addStatusEntry(
                     timestamp,
                     stringResID,
                     sensitivity,
@@ -446,19 +460,14 @@ public class Utils
                     throwable, 
                     priority);
             
-            println(timestamp, MyLog.myGetResString(stringResID, formatArgs), throwable, priority);
-        }
-        
-        private static void println(Date timestamp, String msg, Throwable throwable, int priority)
-        {
-            // If we're not running in debug mode, don't log debug messages at all.
-            // (This may be redundant with the logic below, but it'll save us if
-            // the log below changes.)
-            if (!PsiphonConstants.DEBUG && priority == Log.DEBUG)
+            // If we're not restoring, and a logger has been set, let it know
+            // that status entries have been added.
+            if (!restoring && logger.get() != null)
             {
-                return;
+                logger.get().statusEntryAdded();
             }
             
+            /*
             // If the external logger has been set, use it.
             // But don't put debug messages to the external logger.
             if (logger.get() != null && priority != Log.DEBUG)
@@ -474,21 +483,21 @@ public class Utils
                 
                 logger.get().log(timestamp, priority, loggerMsg);
             }
+            */
             
-            // Do not log to LogCat at all if we're not running in debug mode.
-
-            if (!PsiphonConstants.DEBUG)
+            // Log to LogCat only if we're in debug mode and not restoring.
+            if (PsiphonConstants.DEBUG && !restoring)
             {
-                return;
+                String msg = MyLog.myGetResString(stringResID, formatArgs);
+                
+                // Log to LogCat
+                // Note that this is basically identical to how Log.e, etc., are implemented.
+                if (throwable != null)
+                {
+                    msg = msg + '\n' + Log.getStackTraceString(throwable);
+                }
+                Log.println(priority, PsiphonConstants.TAG, msg);
             }
-                        
-            // Log to LogCat
-            // Note that this is basically identical to how Log.e, etc., are implemented.
-            if (throwable != null)
-            {
-                msg = msg + '\n' + Log.getStackTraceString(throwable);
-            }
-            Log.println(priority, PsiphonConstants.TAG, msg);
         }
     }
 

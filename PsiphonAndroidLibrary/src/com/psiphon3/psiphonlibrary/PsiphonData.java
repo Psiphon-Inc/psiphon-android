@@ -519,9 +519,9 @@ public class PsiphonData
         }
     }
     
-    static private ArrayList<StatusEntry> m_statusHistory = new ArrayList<StatusEntry>();
+    private ArrayList<StatusEntry> m_statusHistory = new ArrayList<StatusEntry>();
     
-    static public void addStatusEntry(
+    public void addStatusEntry(
             Date timestamp,
             int id, 
             MyLog.Sensitivity sensitivity, 
@@ -543,7 +543,7 @@ public class PsiphonData
         }
     }
     
-    static public ArrayList<StatusEntry> cloneStatusHistory()
+    public ArrayList<StatusEntry> cloneStatusHistory()
     {
         ArrayList<StatusEntry> copy;
         synchronized(m_statusHistory) 
@@ -553,11 +553,24 @@ public class PsiphonData
         return copy;
     }
     
-    static public void clearStatusHistory()
+    public void clearStatusHistory()
     {
         synchronized(m_statusHistory) 
         {        
             m_statusHistory.clear();
+        }
+    }
+    
+    // Returns null if index is out of bounds.
+    public StatusEntry getStatusEntry(int index) 
+    {
+        synchronized(m_statusHistory) 
+        {        
+            if (index >= m_statusHistory.size())
+            {
+                return null;
+            }
+            return m_statusHistory.get(index);
         }
     }
 

@@ -58,7 +58,7 @@ import com.psiphon3.psiphonlibrary.Events;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 
 public class MainActivity 
-    extends com.psiphon3.psiphonlibrary.MainActivityBase 
+    extends com.psiphon3.psiphonlibrary.MainBase.Activity 
     implements Events
 {
     private boolean m_loadedWebView = false;

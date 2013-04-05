@@ -154,7 +154,7 @@ public class FeedbackActivity extends Activity
 
                 List<Object> statusHistory = new ArrayList<Object>();
 
-                for (StatusEntry internalEntry : PsiphonData.cloneStatusHistory())
+                for (StatusEntry internalEntry : PsiphonData.getPsiphonData().cloneStatusHistory())
                 {
                     // Don't send any sensitive logs
                     if (internalEntry.sensitivity() == MyLog.Sensitivity.SENSITIVE_LOG)

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- * Copyright (c) 2012, Psiphon Inc.
+ * Copyright (c) 2013, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,12 +20,9 @@
  -->
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/viewMain"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
     android:orientation="vertical" 
-    android:scrollbarAlwaysDrawVerticalTrack="false" 
-    android:weightSum="1.0">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:id="@+id/linearLayout1"
@@ -48,21 +45,12 @@
         android:layout_height="0dp"
         android:orientation="vertical"
         android:layout_weight="1.0">
-
-        <ScrollView
-            android:id="@+id/messagesScrollView"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent" >
-
-            <TableLayout
-                android:id="@+id/messagesTableLayout"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:stretchColumns="1"
-                android:shrinkColumns="1">
-            </TableLayout>
-        </ScrollView>
-
+        
+        <ListView android:id="@+id/statusList"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:divider="#000000"
+                  android:drawSelectorOnTop="false"/>
     </LinearLayout>
 
     <LinearLayout
