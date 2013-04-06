@@ -325,6 +325,7 @@ public class TunnelCore implements IStopSignalPending
         
         PsiphonData.getPsiphonData().setTunnelRelayProtocol("");
         PsiphonData.getPsiphonData().setTunnelSessionID("");
+        PsiphonData.getPsiphonData().getDataTransferStats().reset();
 
         m_interface.start();
         

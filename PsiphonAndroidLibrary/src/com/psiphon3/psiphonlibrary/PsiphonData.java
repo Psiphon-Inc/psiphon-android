@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import android.os.SystemClock;
 import android.util.Pair;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -426,52 +427,194 @@ public class PsiphonData
 
     public class DataTransferStats
     {
-        private long m_bytesSent;
-        private long m_uncompressedBytesSent;
-        private long m_bytesReceived;
-        private long m_uncompressedBytesReceived;
+        private long m_startTime;
 
+        private long m_totalBytesSent;
+        private long m_totalUncompressedBytesSent;
+        private long m_totalBytesReceived;
+        private long m_totalUncompressedBytesReceived;
+
+        public final static long SLOW_BUCKET_PERIOD_MILLISECONDS = 5*60*1000; 
+        public final static long FAST_BUCKET_PERIOD_MILLISECONDS = 1000;
+        public final static int MAX_BUCKETS = 24*60/5;
+        
+        private class Bucket
+        {
+            public long m_bytesSent = 0;
+            public long m_bytesReceived = 0;
+        }
+        
+        private ArrayList<Bucket> m_slowBuckets;
+        private long m_slowBucketsLastStartTime;
+        private ArrayList<Bucket> m_fastBuckets;
+        private long m_fastBucketsLastStartTime;
+        
         DataTransferStats()
         {
-            clear();
+            reset();
+        }
+        
+        public synchronized void reset()
+        {
+            long now = SystemClock.elapsedRealtime();
+            this.m_startTime = now;
+            this.m_totalBytesSent = 0;
+            this.m_totalUncompressedBytesSent = 0;
+            this.m_totalBytesReceived = 0;
+            this.m_totalUncompressedBytesReceived = 0;
+            this.m_slowBucketsLastStartTime = bucketStartTime(now, SLOW_BUCKET_PERIOD_MILLISECONDS);
+            this.m_slowBuckets = newBuckets();
+            this.m_fastBucketsLastStartTime = bucketStartTime(now, FAST_BUCKET_PERIOD_MILLISECONDS);
+            this.m_fastBuckets = newBuckets();
         }
         
         public synchronized void addBytesSent(int bytes, int uncompressedBytes)
         {
-            this.m_bytesSent += bytes;
-            this.m_uncompressedBytesSent += uncompressedBytes;
+            this.m_totalBytesSent += bytes;
+            this.m_totalUncompressedBytesSent += uncompressedBytes;
+            
+            manageBuckets();
+            addSentToBuckets(bytes);
         }
     
         public synchronized void addBytesReceived(int bytes, int uncompressedBytes)
         {
-            this.m_bytesReceived += bytes;
-            this.m_uncompressedBytesReceived += uncompressedBytes;
+            this.m_totalBytesReceived += bytes;
+            this.m_totalUncompressedBytesReceived += uncompressedBytes;
+
+            manageBuckets();
+            addReceivedToBuckets(bytes);
         }
         
-        public synchronized long getBytesSent()
+        private long bucketStartTime(long now, long period)
         {
-            return this.m_bytesSent;
+            return period*(now/period);
         }
         
-        public synchronized double getCompressionRatio()
+        private ArrayList<Bucket> newBuckets()
         {
-            long totalBytes = this.m_bytesSent + this.m_bytesReceived;
-            long totalUncompressedBytes = this.m_uncompressedBytesSent + this.m_uncompressedBytesReceived;
-            if (totalUncompressedBytes == 0) return 0.0;
-            return 100.0*(1.0-(double)totalBytes/(double)totalUncompressedBytes);
+            ArrayList<Bucket> buckets = new ArrayList<Bucket>();
+            for (int i = 0; i < MAX_BUCKETS; i++)
+            {
+                buckets.add(new Bucket());
+            }
+            return buckets;
         }
         
-        public synchronized long getBytesReceived()
+        private void shiftBuckets(long diff, long period, ArrayList<Bucket> buckets)
         {
-            return this.m_bytesReceived;
+            for (int i = 0; i < diff/period + 1; i++)
+            {
+                buckets.add(buckets.size(), new Bucket());
+                if (buckets.size() >= MAX_BUCKETS)
+                {
+                    buckets.remove(0);
+                }
+            }            
         }
         
-        public synchronized void clear()
+        private void manageBuckets()
         {
-            this.m_bytesSent = 0;
-            this.m_uncompressedBytesSent = 0;
-            this.m_bytesReceived = 0;
-            this.m_uncompressedBytesReceived = 0;
+            long now = SystemClock.elapsedRealtime();
+
+            long diff = now - this.m_slowBucketsLastStartTime;            
+            if (diff >= SLOW_BUCKET_PERIOD_MILLISECONDS)
+            {
+                shiftBuckets(diff, SLOW_BUCKET_PERIOD_MILLISECONDS, m_slowBuckets);
+                this.m_slowBucketsLastStartTime = bucketStartTime(now, SLOW_BUCKET_PERIOD_MILLISECONDS);
+            }
+
+            diff = now - this.m_fastBucketsLastStartTime;            
+            if (diff >= FAST_BUCKET_PERIOD_MILLISECONDS)
+            {
+                shiftBuckets(diff, FAST_BUCKET_PERIOD_MILLISECONDS, m_fastBuckets);
+                this.m_fastBucketsLastStartTime = bucketStartTime(now, FAST_BUCKET_PERIOD_MILLISECONDS);
+            }
+        }
+        
+        private ArrayList<Long> getSentSeries(ArrayList<Bucket> buckets)
+        {
+            ArrayList<Long> series = new ArrayList<Long>();
+            for (int i = 0; i < buckets.size(); i++)
+            {
+                series.add(buckets.get(i).m_bytesSent);
+            }
+            return series;
+        }
+        
+        private ArrayList<Long> getReceivedSeries(ArrayList<Bucket> buckets)
+        {
+            ArrayList<Long> series = new ArrayList<Long>();
+            for (int i = 0; i < buckets.size(); i++)
+            {
+                series.add(buckets.get(i).m_bytesReceived);
+            }
+            return series;
+        }
+        
+        private void addSentToBuckets(int bytes)
+        {
+            this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesReceived += bytes;
+            this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesReceived += bytes;
+        }
+        
+        private void addReceivedToBuckets(int bytes)
+        {
+            this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesSent += bytes;
+            this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesSent += bytes;
+        }
+        
+        public synchronized long getElapsedTime()
+        {
+            long now = SystemClock.elapsedRealtime();
+            
+            return now - this.m_startTime;
+        }
+    
+        public synchronized long getTotalBytesSent()
+        {
+            return this.m_totalBytesSent;
+        }
+        
+        public synchronized double getTotalSentCompressionRatio()
+        {
+            if (this.m_totalUncompressedBytesSent == 0) return 0.0;
+            return 100.0*(1.0-(double)this.m_totalBytesSent/(double)this.m_totalUncompressedBytesSent);
+        }
+        
+        public synchronized long getTotalBytesReceived()
+        {
+            return this.m_totalBytesReceived;
+        }
+        
+        public synchronized double getTotalReceivedCompressionRatio()
+        {
+            if (this.m_totalUncompressedBytesReceived == 0) return 0.0;
+            return 100.0*(1.0-(double)this.m_totalBytesReceived/(double)this.m_totalUncompressedBytesReceived);
+        }
+        
+        public synchronized ArrayList<Long> getSlowSentSeries()
+        {
+            manageBuckets();
+            return getSentSeries(this.m_slowBuckets);
+        }
+        
+        public synchronized ArrayList<Long> getSlowReceivedSeries()
+        {
+            manageBuckets();
+            return getReceivedSeries(this.m_slowBuckets);
+        }
+        
+        public synchronized ArrayList<Long> getFastSentSeries()
+        {
+            manageBuckets();
+            return getSentSeries(this.m_fastBuckets);
+        }
+        
+        public synchronized ArrayList<Long> getFastReceivedSeries()
+        {
+            manageBuckets();
+            return getReceivedSeries(this.m_fastBuckets);
         }
     }
     

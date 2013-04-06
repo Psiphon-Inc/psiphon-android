@@ -22,12 +22,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 
 import org.apache.http.conn.util.InetAddressUtils;
 
 import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
@@ -727,5 +729,15 @@ public class Utils
         int exp = (int) (Math.log(bytes) / Math.log(unit));
         String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (si ? "" : "i");
         return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+    }
+
+    @TargetApi(Build.VERSION_CODES.GINGERBREAD)
+    public static String elapsedTimeToDisplay(long elapsedTimeMilliseconds)
+    {
+        // http://stackoverflow.com/questions/6710094/how-to-format-an-elapsed-time-interval-in-hhmmss-sss-format-in-java/6710604#6710604
+        final long hours = TimeUnit.MILLISECONDS.toHours(elapsedTimeMilliseconds);
+        final long minutes = TimeUnit.MILLISECONDS.toMinutes(elapsedTimeMilliseconds - TimeUnit.HOURS.toMillis(hours));
+        final long seconds = TimeUnit.MILLISECONDS.toSeconds(elapsedTimeMilliseconds - TimeUnit.HOURS.toMillis(hours) - TimeUnit.MINUTES.toMillis(minutes));
+        return String.format("%02dh %02dm %02ds", hours, minutes, seconds);
     }
 }

@@ -1432,19 +1432,11 @@ public class ServerInterface
     private final int DEFAULT_SEND_MAX_ENTRIES = 1000;
     private int sendMaxEntries = DEFAULT_SEND_MAX_ENTRIES;
 
-    private final long STATS_DISPLAY_INTERVAL_MS = 60*60*1000; // 1 hour
-    private final long MIN_STATS_DISPLAY_INTERVAL_MS = 30*1000; // 30 sec.
-    private final long STATS_DISPLAY_SIZE_THRESHOLD = 4*1024*1024; // 4 MiB
-    private long lastStatsDisplayTimeMS = 0;
-    private long lastStatsDisplayTotalBytes = 0;
-
     private synchronized void resetPeriodicWork()
     {
         this.statsSendInterval = this.DEFAULT_STATS_SEND_INTERVAL_MS;
         this.lastStatusSendTimeMS = 0;
         this.sendMaxEntries = this.DEFAULT_SEND_MAX_ENTRIES;
-        this.lastStatsDisplayTimeMS = 0;
-        this.lastStatsDisplayTotalBytes = 0;
     }
     
     /**
@@ -1458,36 +1450,32 @@ public class ServerInterface
     {
         long now = SystemClock.uptimeMillis();
         
-        if (PsiphonData.getPsiphonData().getDisplayDataTransferStats())
+        if (finalCall && PsiphonData.getPsiphonData().getDisplayDataTransferStats())
         {
-            if (this.lastStatsDisplayTimeMS == 0) this.lastStatsDisplayTimeMS = now; 
-            if (now < this.lastStatsDisplayTimeMS) this.lastStatsDisplayTimeMS = 0;
+            PsiphonData.DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
             
-            if (finalCall
-                || this.lastStatsDisplayTimeMS + this.MIN_STATS_DISPLAY_INTERVAL_MS < now)
-            {
-                PsiphonData.DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
+            long totalBytesSent = dataTransferStats.getTotalBytesSent();
+            double totalSentCompressionRatio = dataTransferStats.getTotalSentCompressionRatio();
+            long totalBytesReceived = dataTransferStats.getTotalBytesReceived();
+            double totalReceivedCompressionRatio = dataTransferStats.getTotalReceivedCompressionRatio();
+            long elapsedTime = dataTransferStats.getElapsedTime();
                 
-                long bytesSent = dataTransferStats.getBytesSent();
-                long bytesReceived = dataTransferStats.getBytesReceived();
-                double compressionRatio = dataTransferStats.getCompressionRatio();
-                long totalBytes = bytesSent + bytesReceived;
-                
-                if (finalCall
-                    || (totalBytes > this.lastStatsDisplayTotalBytes && this.lastStatsDisplayTimeMS + this.STATS_DISPLAY_INTERVAL_MS < now)
-                    || (this.lastStatsDisplayTotalBytes + this.STATS_DISPLAY_SIZE_THRESHOLD < totalBytes)) 
-                {                
-                    MyLog.v(
-                        R.string.data_transfer_stats,
-                        MyLog.Sensitivity.NOT_SENSITIVE,
-                        Utils.byteCountToDisplaySize(bytesSent, false),
-                        Utils.byteCountToDisplaySize(bytesReceived, false),
-                        compressionRatio);
-    
-                    this.lastStatsDisplayTimeMS = now;
-                    this.lastStatsDisplayTotalBytes = totalBytes;
-                }
-            }
+            MyLog.v(
+                    R.string.data_transfer_total_bytes_sent,
+                    MyLog.Sensitivity.NOT_SENSITIVE,
+                    Utils.byteCountToDisplaySize(totalBytesSent, false),
+                    totalSentCompressionRatio);
+        
+            MyLog.v(
+                    R.string.data_transfer_total_bytes_received,
+                    MyLog.Sensitivity.NOT_SENSITIVE,
+                    Utils.byteCountToDisplaySize(totalBytesReceived, false),
+                    totalReceivedCompressionRatio);
+        
+            MyLog.v(
+                    R.string.data_transfer_total_elapsed_time,
+                    MyLog.Sensitivity.NOT_SENSITIVE,
+                    Utils.elapsedTimeToDisplay(elapsedTime));        
         }
         
         PsiphonData.ReportedStats reportedStats = PsiphonData.getPsiphonData().getReportedStats();
