@@ -561,19 +561,32 @@ public class PsiphonData
         }
     }
     
-    // Returns null if index is out of bounds.
+    /** 
+     * @param index
+     * @return Returns item at `index`. Negative indexes count from the end of 
+     * the array. If `index` is out of bounds, null is returned.
+     */
     public StatusEntry getStatusEntry(int index) 
     {
         synchronized(m_statusHistory) 
-        {        
-            if (index >= m_statusHistory.size())
+        {   
+            if (index < 0) 
+            {
+                // index is negative, so this is subtracting...
+                index = m_statusHistory.size() + index;
+                // Note that index is still negative if the array is empty or if
+                // the negative value was too large.
+            }
+            
+            if (index >= m_statusHistory.size() || index < 0)
             {
                 return null;
             }
+            
             return m_statusHistory.get(index);
         }
     }
-
+    
     /*
      * Diagnostic history support
      */

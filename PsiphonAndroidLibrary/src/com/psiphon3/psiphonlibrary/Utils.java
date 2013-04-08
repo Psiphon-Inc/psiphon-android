@@ -467,24 +467,6 @@ public class Utils
                 logger.get().statusEntryAdded();
             }
             
-            /*
-            // If the external logger has been set, use it.
-            // But don't put debug messages to the external logger.
-            if (logger.get() != null && priority != Log.DEBUG)
-            {
-                String loggerMsg = msg;
-                
-                if (throwable != null)
-                {
-                    // Just report the first line of the stack trace
-                    String[] stackTraceLines = Log.getStackTraceString(throwable).split("\n");
-                    loggerMsg = loggerMsg + (stackTraceLines.length > 0 ? "\n" + stackTraceLines[0] : ""); 
-                }
-                
-                logger.get().log(timestamp, priority, loggerMsg);
-            }
-            */
-            
             // Log to LogCat only if we're in debug mode and not restoring.
             if (PsiphonConstants.DEBUG && !restoring)
             {
