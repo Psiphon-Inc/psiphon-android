@@ -184,6 +184,8 @@ public class StatusList {
             m_listview.setAdapter(m_adapter);
             
             m_intentReceiver = new StatusListIntentReceiver(context, this);
+            
+            scrollListViewToBottom();
         }
         
         public void notifyStatusAdded() {
@@ -220,6 +222,14 @@ public class StatusList {
             m_adapter.addAll(newEntries);
         }
         
-        
+        private void scrollListViewToBottom() {
+            m_listview.post(new Runnable() {
+                @Override
+                public void run() {
+                    // Select the last row so it will scroll into view...
+                    m_listview.setSelection(m_adapter.getCount() - 1);
+                }
+            });
+        }
     }
 }
