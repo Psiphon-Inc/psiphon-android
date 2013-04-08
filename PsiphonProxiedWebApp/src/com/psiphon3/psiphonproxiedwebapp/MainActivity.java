@@ -26,8 +26,6 @@ cog.outl('package %s;' % packagename)
 package com.psiphon3.psiphonproxiedwebapp;
 //[[[end]]]
 
-import java.util.Date;
-
 import android.os.Bundle;
 import android.os.Handler;
 import android.annotation.SuppressLint;
@@ -35,6 +33,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -55,10 +54,12 @@ import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.TunnelCore;
 import com.psiphon3.psiphonlibrary.Events;
+import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 public class MainActivity 
-    extends com.psiphon3.psiphonlibrary.MainActivityBase 
+    extends com.psiphon3.psiphonlibrary.MainBase.Activity 
     implements Events
 {
     private boolean m_loadedWebView = false;
@@ -152,6 +153,11 @@ public class MainActivity
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
 
+        PsiphonConstants.DEBUG = Utils.isDebugMode(this);
+        
+        // Restore messages previously posted by the service.
+        MyLog.restoreLogHistory();
+        
         PsiphonData.getPsiphonData().setDefaultSocksPort(PsiphonConstants.SOCKS_PORT + 10);
         PsiphonData.getPsiphonData().setDefaultHttpProxyPort(PsiphonConstants.HTTP_PROXY_PORT + 10);
         m_tunnelCore = new TunnelCore(this, null);
@@ -214,25 +220,30 @@ public class MainActivity
      */
 
     /**
-     * @see com.psiphon3.psiphonlibrary.Utils.MyLog.ILogger#log(java.util.Date, int, java.lang.String)
+     * @see com.psiphon3.psiphonlibrary.Utils.MyLog.ILogger#statusEntryAdded()
      */
     @Override
-    public void log(Date timestamp, int priority, String message)
+    public void statusEntryAdded()
     {
-        this.appendStatusMessage(this, timestamp, message, priority);
-    }    
-    
-    /*
-     * Events implementation
-     */
-    
-    /*
-     * @see com.psiphon3.psiphonlibrary.Events#appendStatusMessage(android.content.Context, java.util.Date, java.lang.String, int)
-     */
-    @Override
-    public void appendStatusMessage(Context context, Date timestamp, String message, int messageClass)
-    {
-        final String finalMessage = message;
+        // Find the last non-debug status entry.
+        PsiphonData.StatusEntry entry = null;
+        int index = -1;
+        while (true) {
+            entry = PsiphonData.getPsiphonData().getStatusEntry(index);
+            if (entry == null) 
+            {
+                // No status entry.
+                return;
+            }
+            
+            index -= 1;
+            
+            if (entry.priority() != Log.DEBUG) {
+                break;
+            }
+        }
+        
+        final String finalMessage = getString(entry.id(), entry.formatArgs());
 
         m_handler.post(
             new Runnable()
@@ -247,7 +258,11 @@ public class MainActivity
                 }
             });
     }
-
+    
+    /*
+     * Events implementation
+     */
+    
     private String getHomePage()
     {
         // Only supports one home page

@@ -680,9 +680,9 @@ public class PsiphonData
         }
     }
     
-    static private ArrayList<StatusEntry> m_statusHistory = new ArrayList<StatusEntry>();
+    private ArrayList<StatusEntry> m_statusHistory = new ArrayList<StatusEntry>();
     
-    static public void addStatusEntry(
+    public void addStatusEntry(
             Date timestamp,
             int id, 
             MyLog.Sensitivity sensitivity, 
@@ -704,7 +704,7 @@ public class PsiphonData
         }
     }
     
-    static public ArrayList<StatusEntry> cloneStatusHistory()
+    public ArrayList<StatusEntry> cloneStatusHistory()
     {
         ArrayList<StatusEntry> copy;
         synchronized(m_statusHistory) 
@@ -714,14 +714,40 @@ public class PsiphonData
         return copy;
     }
     
-    static public void clearStatusHistory()
+    public void clearStatusHistory()
     {
         synchronized(m_statusHistory) 
         {        
             m_statusHistory.clear();
         }
     }
-
+    
+    /** 
+     * @param index
+     * @return Returns item at `index`. Negative indexes count from the end of 
+     * the array. If `index` is out of bounds, null is returned.
+     */
+    public StatusEntry getStatusEntry(int index) 
+    {
+        synchronized(m_statusHistory) 
+        {   
+            if (index < 0) 
+            {
+                // index is negative, so this is subtracting...
+                index = m_statusHistory.size() + index;
+                // Note that index is still negative if the array is empty or if
+                // the negative value was too large.
+            }
+            
+            if (index >= m_statusHistory.size() || index < 0)
+            {
+                return null;
+            }
+            
+            return m_statusHistory.get(index);
+        }
+    }
+    
     /*
      * Diagnostic history support
      */
