@@ -334,31 +334,11 @@ public class Utils
         
         static public void restoreLogHistory()
         {
-            // We need to clear out the history and restore a copy, because the
-            // act of restoring will rebuild the history.
-            
-            ArrayList<StatusEntry> history = PsiphonData.getPsiphonData().cloneStatusHistory();
-            PsiphonData.getPsiphonData().clearStatusHistory();
-            
-            for (StatusEntry logEntry : history)
-            {
-                MyLog.println(
-                        logEntry.id(), 
-                        logEntry.sensitivity(), 
-                        logEntry.formatArgs(), 
-                        logEntry.throwable(), 
-                        logEntry.priority(),
-                        logEntry.timestamp(),
-                        true);
-            }
-            
-            // Now that we're done restoring, update the UI.
+            // Trigger the UI to refresh its status display
             if (logger.get() != null)
             {
                 logger.get().statusEntryAdded();
             }
-            
-            MyLog.d("Log history restored");
         }
         
         // TODO: Add sensitivity to debug logs

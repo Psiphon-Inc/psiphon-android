@@ -56,6 +56,7 @@ import com.psiphon3.psiphonlibrary.TunnelCore;
 import com.psiphon3.psiphonlibrary.Events;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 public class MainActivity 
     extends com.psiphon3.psiphonlibrary.MainBase.Activity 
@@ -153,6 +154,9 @@ public class MainActivity
         webSettings.setDomStorageEnabled(true);
 
         PsiphonConstants.DEBUG = Utils.isDebugMode(this);
+        
+        // Restore messages previously posted by the service.
+        MyLog.restoreLogHistory();
         
         PsiphonData.getPsiphonData().setDefaultSocksPort(PsiphonConstants.SOCKS_PORT + 10);
         PsiphonData.getPsiphonData().setDefaultHttpProxyPort(PsiphonConstants.HTTP_PROXY_PORT + 10);
