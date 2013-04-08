@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Psiphon Inc.
+ * Copyright (c) 2013, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,23 +19,19 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import java.util.Date;
-
 import android.content.Context;
 import android.content.Intent;
 
 
 public interface Events
 {
-	public void appendStatusMessage(Context context, Date timestamp, String message, int messageClass);
-	
-	public void signalHandshakeSuccess(Context context);
-	
-	public void signalUnexpectedDisconnect(Context context);
-	
-	public void signalTunnelStarting(Context context);
+    public void signalHandshakeSuccess(Context context);
+    
+    public void signalUnexpectedDisconnect(Context context);
+    
+    public void signalTunnelStarting(Context context);
 
-	public void signalTunnelStopping(Context context);
-	
-	Intent pendingSignalNotification(Context context);
+    public void signalTunnelStopping(Context context);
+    
+    Intent pendingSignalNotification(Context context);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Psiphon Inc.
+ * Copyright (c) 2013, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,6 @@
 
 package com.psiphon3;
 
-import java.util.Date;
 import java.util.List;
 
 import com.psiphon3.FeedbackActivity;
@@ -37,17 +36,6 @@ import android.support.v4.content.LocalBroadcastManager;
 
 public class Events implements com.psiphon3.psiphonlibrary.Events
 {
-    public void appendStatusMessage(Context context, Date timestamp, String message, int messageClass)
-    {
-        // Local broadcast to any existing status screen
-        LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(context);
-        Intent intent = new Intent(StatusActivity.ADD_MESSAGE);
-        intent.putExtra(StatusActivity.ADD_MESSAGE_TEXT, message);
-        intent.putExtra(StatusActivity.ADD_MESSAGE_TIMESTAMP, timestamp.getTime());
-        intent.putExtra(StatusActivity.ADD_MESSAGE_CLASS, messageClass);
-        localBroadcastManager.sendBroadcast(intent);
-    }
-
     public void signalHandshakeSuccess(Context context)
     {
         // Only send this intent if the StatusActivity is
