@@ -73,7 +73,8 @@ public class StatusList {
             m_imageError = res.getDrawable(android.R.drawable.presence_busy);  
         }
 
-        @Override public View getView(int position, View convertView, ViewGroup parent) {
+        @Override 
+        public View getView(int position, View convertView, ViewGroup parent) {
             View rowView = null;
 
             if (convertView == null) {

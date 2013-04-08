@@ -26,16 +26,6 @@ import android.os.Bundle;
 
 public abstract class MainBase
 {
-    public static String getResourceString(Context context, int stringResID, Object[] formatArgs)
-    {
-        if (formatArgs == null || formatArgs.length == 0)
-        {
-            return context.getString(stringResID);
-        }
-        
-        return context.getString(stringResID, formatArgs);
-    }
-    
     public static abstract class Activity 
         extends android.app.Activity
         implements MyLog.ILogger
@@ -60,47 +50,10 @@ public abstract class MainBase
          * Partial MyLog.ILogger implementation
          */
         
-        /**
-         * @see com.psiphon3.psiphonlibrary.Utils.MyLog.ILogger#getResourceString(int, java.lang.Object[])
-         */
         @Override
-        public String getResourceString(int stringResID, Object[] formatArgs)
+        public Context getContext()
         {
-            return MainBase.getResourceString(this, stringResID, formatArgs);
-        }
-    }
-    
-    public static abstract class ListActivity
-    extends android.app.ListActivity
-    implements MyLog.ILogger
-    {
-        @Override
-        protected void onCreate(Bundle savedInstanceState)
-        {
-            super.onCreate(savedInstanceState);
-            
-            MyLog.setLogger(this);
-        }
-        
-        @Override
-        protected void onDestroy()
-        {
-            super.onDestroy();
-    
-            MyLog.unsetLogger();
-        }
-        
-        /*
-         * Partial MyLog.ILogger implementation
-         */
-        
-        /**
-         * @see com.psiphon3.psiphonlibrary.Utils.MyLog.ILogger#getResourceString(int, java.lang.Object[])
-         */
-        @Override
-        public String getResourceString(int stringResID, Object[] formatArgs)
-        {
-            return MainBase.getResourceString(this, stringResID, formatArgs);
+            return this;
         }
     }
 }

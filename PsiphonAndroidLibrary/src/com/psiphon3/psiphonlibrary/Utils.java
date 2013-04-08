@@ -267,7 +267,7 @@ public class Utils
         static public interface ILogger
         {
             public void statusEntryAdded();
-            public String getResourceString(int stringResID, Object[] formatArgs);
+            public Context getContext();
         }
         
         // It is expected that the logger implementation will be an Activity, so
@@ -309,33 +309,6 @@ public class Utils
         static public void unsetLogger()
         {
             MyLog.logger.clear();
-        }
-        
-        /**
-         * Safely wraps the string resource extraction function. If an error 
-         * occurs with the format specifiers (as can happen in a bad translation),
-         * the raw string will be returned.
-         * @param stringResID The string resource ID.
-         * @param formatArgs The format arguments. May be empty (non-existent).
-         * @return The requested string, possibly formatted.
-         */
-        static private String myGetResString(int stringResID, Object[] formatArgs)
-        {
-            // The logger *should* always be available when this function is 
-            // called, but we don't want to crash if it's not.
-            if (logger.get() == null) {
-                assert(false);
-                return "";
-            }
-            
-            try
-            {
-                return logger.get().getResourceString(stringResID, formatArgs);
-            }
-            catch (IllegalFormatException e)
-            {
-                return logger.get().getResourceString(stringResID, null);
-            }
         }
         
         static public void restoreLogHistory()
@@ -425,8 +398,7 @@ public class Utils
                 formatArgs,
                 throwable,
                 priority,
-                new Date(),
-                false);
+                new Date());
         }
 
         private static void println(
@@ -435,8 +407,7 @@ public class Utils
                 Object[] formatArgs, 
                 Throwable throwable, 
                 int priority,
-                Date timestamp,
-                boolean restoring)
+                Date timestamp)
         {
             PsiphonData.getPsiphonData().addStatusEntry(
                     timestamp,
@@ -448,15 +419,19 @@ public class Utils
             
             // If we're not restoring, and a logger has been set, let it know
             // that status entries have been added.
-            if (!restoring && logger.get() != null)
+            if (logger.get() != null)
             {
                 logger.get().statusEntryAdded();
             }
             
             // Log to LogCat only if we're in debug mode and not restoring.
-            if (PsiphonConstants.DEBUG && !restoring)
+            if (PsiphonConstants.DEBUG)
             {
-                String msg = MyLog.myGetResString(stringResID, formatArgs);
+                String msg = "";
+                if (logger.get() != null)
+                {
+                    msg = Utils.safeGetResourceString(logger.get().getContext(), stringResID, formatArgs);
+                }
                 
                 // Log to LogCat
                 // Note that this is basically identical to how Log.e, etc., are implemented.
@@ -469,6 +444,32 @@ public class Utils
         }
     }
 
+    /**
+     * Safely wraps the string resource extraction function. If an error 
+     * occurs with the format specifiers (as can happen in a bad translation),
+     * the raw string will be returned.
+     * @param context The context providing the resource lookup.
+     * @param stringID The string resource ID.
+     * @param formatArgs The format arguments. May be empty or null.
+     * @return The requested string, possibly formatted.
+     */
+    static private String safeGetResourceString(Context context, int stringID, Object[] formatArgs)
+    {
+        if (context == null) {
+            assert(false);
+            return "";
+        }
+        
+        try
+        {
+            return context.getString(stringID, formatArgs);
+        }
+        catch (IllegalFormatException e)
+        {
+            return context.getString(stringID);
+        }
+    }
+    
     // From:
     // http://abhinavasblog.blogspot.ca/2011/06/check-for-debuggable-flag-in-android.html
     /*
