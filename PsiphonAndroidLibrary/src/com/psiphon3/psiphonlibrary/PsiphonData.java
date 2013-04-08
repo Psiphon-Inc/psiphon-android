@@ -427,6 +427,7 @@ public class PsiphonData
 
     public class DataTransferStats
     {
+        private boolean m_isConnected;
         private long m_startTime;
 
         private long m_totalBytesSent;
@@ -451,10 +452,22 @@ public class PsiphonData
         
         DataTransferStats()
         {
+            stop();
+        }
+        
+        public synchronized void start()
+        {
+            this.m_isConnected = true;
+            reset();
+        }
+
+        public synchronized void stop()
+        {
+            this.m_isConnected = false;
             reset();
         }
         
-        public synchronized void reset()
+        private void reset()
         {
             long now = SystemClock.elapsedRealtime();
             this.m_startTime = now;
@@ -467,7 +480,7 @@ public class PsiphonData
             this.m_fastBucketsLastStartTime = bucketStartTime(now, FAST_BUCKET_PERIOD_MILLISECONDS);
             this.m_fastBuckets = newBuckets();
         }
-        
+
         public synchronized void addBytesSent(int bytes, int uncompressedBytes)
         {
             this.m_totalBytesSent += bytes;
@@ -562,6 +575,11 @@ public class PsiphonData
         {
             this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesSent += bytes;
             this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesSent += bytes;
+        }
+        
+        public synchronized boolean isConnected()
+        {
+            return this.m_isConnected;
         }
         
         public synchronized long getElapsedTime()

@@ -325,7 +325,6 @@ public class TunnelCore implements IStopSignalPending
         
         PsiphonData.getPsiphonData().setTunnelRelayProtocol("");
         PsiphonData.getPsiphonData().setTunnelSessionID("");
-        PsiphonData.getPsiphonData().getDataTransferStats().reset();
 
         m_interface.start();
         
@@ -426,6 +425,9 @@ public class TunnelCore implements IStopSignalPending
             
             MyLog.v(R.string.ssh_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
 
+            // At this point we need counters for SSH traffic
+            PsiphonData.getPsiphonData().getDataTransferStats().start();
+            
             Map<String, String> diagnosticData = new HashMap<String, String>();
             diagnosticData.put("ipAddress", entry.ipAddress);
             MyLog.g("ConnectingServer", diagnosticData);
@@ -864,7 +866,7 @@ public class TunnelCore implements IStopSignalPending
                 }
                 MyLog.v(R.string.socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
             }
-
+            
             if (conn != null)
             {
                 conn.clearConnectionMonitors();
@@ -872,6 +874,8 @@ public class TunnelCore implements IStopSignalPending
                 MyLog.v(R.string.ssh_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
             }
             
+            PsiphonData.getPsiphonData().getDataTransferStats().stop();
+
             if (m_upgradeDownloader != null)
             {
                 m_upgradeDownloader.stop();
