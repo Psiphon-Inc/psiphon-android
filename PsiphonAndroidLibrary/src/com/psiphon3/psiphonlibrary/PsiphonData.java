@@ -432,8 +432,10 @@ public class PsiphonData
 
         private long m_totalBytesSent;
         private long m_totalUncompressedBytesSent;
+        private long m_totalOverheadBytesSent;
         private long m_totalBytesReceived;
         private long m_totalUncompressedBytesReceived;
+        private long m_totalOverheadBytesReceived;
 
         public final static long SLOW_BUCKET_PERIOD_MILLISECONDS = 5*60*1000; 
         public final static long FAST_BUCKET_PERIOD_MILLISECONDS = 1000;
@@ -473,27 +475,31 @@ public class PsiphonData
             this.m_startTime = now;
             this.m_totalBytesSent = 0;
             this.m_totalUncompressedBytesSent = 0;
+            this.m_totalOverheadBytesSent = 0;
             this.m_totalBytesReceived = 0;
             this.m_totalUncompressedBytesReceived = 0;
+            this.m_totalOverheadBytesReceived = 0;
             this.m_slowBucketsLastStartTime = bucketStartTime(now, SLOW_BUCKET_PERIOD_MILLISECONDS);
             this.m_slowBuckets = newBuckets();
             this.m_fastBucketsLastStartTime = bucketStartTime(now, FAST_BUCKET_PERIOD_MILLISECONDS);
             this.m_fastBuckets = newBuckets();
         }
 
-        public synchronized void addBytesSent(int bytes, int uncompressedBytes)
+        public synchronized void addBytesSent(int bytes, int uncompressedBytes, int overheadBytes)
         {
             this.m_totalBytesSent += bytes;
             this.m_totalUncompressedBytesSent += uncompressedBytes;
+            this.m_totalOverheadBytesSent += overheadBytes;
             
             manageBuckets();
             addSentToBuckets(bytes);
         }
     
-        public synchronized void addBytesReceived(int bytes, int uncompressedBytes)
+        public synchronized void addBytesReceived(int bytes, int uncompressedBytes, int overheadBytes)
         {
             this.m_totalBytesReceived += bytes;
             this.m_totalUncompressedBytesReceived += uncompressedBytes;
+            this.m_totalOverheadBytesReceived += overheadBytes;
 
             manageBuckets();
             addReceivedToBuckets(bytes);
@@ -594,6 +600,11 @@ public class PsiphonData
             return this.m_totalBytesSent;
         }
         
+        public synchronized long getTotalOverheadBytesSent()
+        {
+            return this.m_totalOverheadBytesSent;
+        }
+        
         public synchronized double getTotalSentCompressionRatio()
         {
             if (this.m_totalUncompressedBytesSent == 0) return 0.0;
@@ -603,6 +614,11 @@ public class PsiphonData
         public synchronized long getTotalBytesReceived()
         {
             return this.m_totalBytesReceived;
+        }
+        
+        public synchronized long getTotalOverheadBytesReceived()
+        {
+            return this.m_totalOverheadBytesReceived;
         }
         
         public synchronized double getTotalReceivedCompressionRatio()

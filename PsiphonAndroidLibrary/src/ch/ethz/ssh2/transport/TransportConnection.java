@@ -171,6 +171,9 @@ public class TransportConnection
 
     public void sendMessage(byte[] message, int off, int len, int padd) throws IOException
     {
+        int bytes = 0;
+        int overhead_bytes = 0;
+        
         if (padd < 4)
             padd = 4;
         else if (padd > 64)
@@ -190,8 +193,6 @@ public class TransportConnection
             message = send_comp_buffer;
         }
         
-        this.dataTransferStats.addBytesSent(bytesSent, uncompressedBytesSent);
-
         int packet_len = 5 + len + padd; /* Minimum allowed padding is 4 */
 
         int slack = packet_len % send_padd_blocksize;
@@ -245,6 +246,8 @@ public class TransportConnection
         cos.write(send_packet_header_buffer, 0, 5);
         cos.write(message, off, len);
         cos.write(send_padding_buffer, 0, padd_len);
+        
+        overhead_bytes += 5 + padd_len;
 
         if (send_mac != null)
         {
@@ -255,10 +258,14 @@ public class TransportConnection
 
             send_mac.getMac(send_mac_buffer, 0);
             cos.writePlain(send_mac_buffer, 0, send_mac_buffer.length);
+            
+            overhead_bytes += send_mac_buffer.length;
         }
 
         cos.flush();
 
+        this.dataTransferStats.addBytesSent(bytesSent, uncompressedBytesSent, overhead_bytes);
+        
         if (log.isEnabled())
         {
             log.log(90, "Sent " + Packets.getMessageName(message[off] & 0xff) + " " + len + " bytes payload");
@@ -294,9 +301,13 @@ public class TransportConnection
 
     public int receiveMessage(byte buffer[], int off, int len) throws IOException
     {
+        int bytes = 0;
+        int overhead_bytes = 0;
+        
         if (recv_packet_header_present == false)
         {
-            cis.read(recv_packet_header_buffer, 0, 5);
+            bytes = cis.read(recv_packet_header_buffer, 0, 5);
+            overhead_bytes += bytes;
         }
         else
             recv_packet_header_present = false;
@@ -319,11 +330,14 @@ public class TransportConnection
             throw new IOException("Receive buffer too small (" + len + ", need " + payload_length + ")");
 
         cis.read(buffer, off, payload_length);
-        cis.read(recv_padding_buffer, 0, padding_length);
+        
+        bytes = cis.read(recv_padding_buffer, 0, padding_length);
+        overhead_bytes += bytes;
 
         if (recv_mac != null)
         {
-            cis.readPlain(recv_mac_buffer, 0, recv_mac_buffer.length);
+            bytes = cis.readPlain(recv_mac_buffer, 0, recv_mac_buffer.length);
+            overhead_bytes += bytes;
 
             recv_mac.initMac(recv_seq_number);
             recv_mac.update(recv_packet_header_buffer, 0, 5);
@@ -357,14 +371,14 @@ public class TransportConnection
             }
             else
             {
-                this.dataTransferStats.addBytesReceived(payload_length, uncomp_len[0]);
+                this.dataTransferStats.addBytesReceived(payload_length, uncomp_len[0], overhead_bytes);
 
                 return uncomp_len[0];
             }
         }
         else 
         {
-            this.dataTransferStats.addBytesReceived(payload_length, payload_length);
+            this.dataTransferStats.addBytesReceived(payload_length, payload_length, overhead_bytes);
 
             return payload_length;
         }
