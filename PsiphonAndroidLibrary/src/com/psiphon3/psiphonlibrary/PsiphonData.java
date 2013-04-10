@@ -600,11 +600,16 @@ public class PsiphonData
             return this.m_totalBytesSent;
         }
         
+        public synchronized long getTotalUncompressedBytesSent()
+        {
+            return this.m_totalUncompressedBytesSent;
+        }
+
         public synchronized long getTotalOverheadBytesSent()
         {
             return this.m_totalOverheadBytesSent;
         }
-        
+
         public synchronized double getTotalSentCompressionRatio()
         {
             if (this.m_totalUncompressedBytesSent == 0) return 0.0;
@@ -621,6 +626,11 @@ public class PsiphonData
             return this.m_totalOverheadBytesReceived;
         }
         
+        public synchronized long getTotalUncompressedBytesReceived()
+        {
+            return this.m_totalUncompressedBytesReceived;
+        }
+
         public synchronized double getTotalReceivedCompressionRatio()
         {
             if (this.m_totalUncompressedBytesReceived == 0) return 0.0;
