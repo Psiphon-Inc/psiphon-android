@@ -106,7 +106,7 @@ public class Diagnostics
             for (PsiphonData.DiagnosticEntry item : PsiphonData.cloneDiagnosticHistory())
             {
                 JSONObject entry = new JSONObject();
-                entry.put("timestamp", Utils.getISO8601String(item.timestamp()));
+                entry.put("timestamp!!timestamp", Utils.getISO8601String(item.timestamp()));
                 entry.put("msg", item.msg());
                 entry.put("data", item.data());
                 diagnosticHistory.put(entry);
@@ -131,7 +131,7 @@ public class Diagnostics
     
                 String idName = context.getResources().getResourceEntryName(internalEntry.id());
                 statusEntry.put("id", idName);
-                statusEntry.put("timestamp", Utils.getISO8601String(internalEntry.timestamp()));
+                statusEntry.put("timestamp!!timestamp", Utils.getISO8601String(internalEntry.timestamp()));
                 statusEntry.put("priority", internalEntry.priority());
                 statusEntry.put("formatArgs", null);
                 statusEntry.put("throwable", null);
