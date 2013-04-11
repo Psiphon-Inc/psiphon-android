@@ -45,6 +45,7 @@ import org.yaml.snakeyaml.Yaml;
 import android.content.Context;
 import android.os.Build;
 import android.os.Environment;
+import android.util.Log;
 
 import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
 import com.psiphon3.psiphonlibrary.Utils.Base64;
@@ -118,8 +119,9 @@ public class Diagnostics
 
         for (StatusEntry internalEntry : PsiphonData.getPsiphonData().cloneStatusHistory())
         {
-            // Don't send any sensitive logs
-            if (internalEntry.sensitivity() == MyLog.Sensitivity.SENSITIVE_LOG)
+            // Don't send any sensitive logs or debug logs
+            if (internalEntry.sensitivity() == MyLog.Sensitivity.SENSITIVE_LOG
+                || internalEntry.priority() == Log.DEBUG)
             {
                 continue;
             }
