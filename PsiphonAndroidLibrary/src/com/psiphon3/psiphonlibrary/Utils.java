@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 
 import org.apache.http.conn.util.InetAddressUtils;
+import org.json.JSONObject;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -338,7 +339,7 @@ public class Utils
          * except it will also be included in the feedback diagnostic attachment.
          * @param msg The message to log.
          */
-        static public void g(String msg, Object data)
+        static public void g(String msg, JSONObject data)
         {
             PsiphonData.addDiagnosticEntry(new Date(), msg, data);
             // We're not logging the `data` at all. In the future we may want to.

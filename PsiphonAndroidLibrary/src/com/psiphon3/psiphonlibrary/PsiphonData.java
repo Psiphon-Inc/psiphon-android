@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.json.JSONObject;
+
 import android.os.SystemClock;
 import android.util.Pair;
 
@@ -782,7 +784,7 @@ public class PsiphonData
     {
         private Date timestamp;
         private String msg;
-        private Object data;
+        private JSONObject data;
 
         public Date timestamp()
         {
@@ -794,7 +796,7 @@ public class PsiphonData
             return msg;
         }
         
-        public Object data()
+        public JSONObject data()
         {
             return data;
         }
@@ -802,7 +804,7 @@ public class PsiphonData
         
     static private List<DiagnosticEntry> m_diagnosticHistory = new ArrayList<DiagnosticEntry>();
 
-    static public void addDiagnosticEntry(Date timestamp, String msg, Object data)
+    static public void addDiagnosticEntry(Date timestamp, String msg, JSONObject data)
     {
         DiagnosticEntry entry = new DiagnosticEntry();
         entry.timestamp = timestamp;

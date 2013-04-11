@@ -28,11 +28,6 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -40,7 +35,9 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
-import org.yaml.snakeyaml.Yaml;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.content.Context;
 import android.os.Build;
@@ -55,127 +52,142 @@ public class Diagnostics
 {
     static public File createEmailAttachment(Context context)
     {
-        // Our attachment is YAML, which is then encrypted, and the
+        // Our attachment is JSON, which is then encrypted, and the
         // encryption elements stored in JSON.
-
-        String diagnosticYaml;
-
-        /*
-         * Metadata
-         */
-
-        Map<String, Object> metadata = new HashMap<String, Object>();
-        metadata.put("platform", "android");
-        metadata.put("version", 2);
-
-        SecureRandom rnd = new SecureRandom();
-        byte[] id = new byte[8];
-        rnd.nextBytes(id);
-        metadata.put("id", Utils.byteArrayToHexString(id));
-
-        /*
-         * System Information
-         */
-
-        Map<String, Object> sysInfo = new HashMap<String, Object>();
-        Map<String, Object> sysInfo_Build = new HashMap<String, Object>();
-        sysInfo.put("Build", sysInfo_Build);
-        sysInfo_Build.put("BRAND", Build.BRAND);
-        sysInfo_Build.put("CPU_ABI", Build.CPU_ABI);
-        sysInfo_Build.put("MANUFACTURER", Build.MANUFACTURER);
-        sysInfo_Build.put("MODEL", Build.MODEL);
-        sysInfo_Build.put("TAGS", Build.TAGS);
-        sysInfo_Build.put("VERSION__CODENAME", Build.VERSION.CODENAME);
-        sysInfo_Build.put("VERSION__RELEASE", Build.VERSION.RELEASE);
-        sysInfo_Build.put("VERSION__SDK_INT", Build.VERSION.SDK_INT);
-        sysInfo.put("isRooted", Utils.isRooted());
-        Map<String, Object> sysInfo_psiphonEmbeddedValues = new HashMap<String, Object>();
-        sysInfo.put("PsiphonInfo", sysInfo_psiphonEmbeddedValues);
-        sysInfo_psiphonEmbeddedValues.put("PROPAGATION_CHANNEL_ID", EmbeddedValues.PROPAGATION_CHANNEL_ID);
-        sysInfo_psiphonEmbeddedValues.put("SPONSOR_ID", EmbeddedValues.SPONSOR_ID);
-        sysInfo_psiphonEmbeddedValues.put("CLIENT_VERSION", EmbeddedValues.CLIENT_VERSION);
-
-        /*
-         * Diagnostic History
-         */
-
-        List<Object> diagnosticHistory = new ArrayList<Object>();
-
-        for (PsiphonData.DiagnosticEntry item : PsiphonData.cloneDiagnosticHistory())
+        
+        String diagnosticJSON = null;
+        
+        try
         {
-            Map<String, Object> entry = new HashMap<String, Object>();
-            entry.put("timestamp", item.timestamp());
-            entry.put("msg", item.msg());
-            entry.put("data", item.data());
-
-            diagnosticHistory.add(entry);
-        }
-
-        /*
-         * Status History
-         */
-
-        List<Object> statusHistory = new ArrayList<Object>();
-
-        for (StatusEntry internalEntry : PsiphonData.getPsiphonData().cloneStatusHistory())
-        {
-            // Don't send any sensitive logs or debug logs
-            if (internalEntry.sensitivity() == MyLog.Sensitivity.SENSITIVE_LOG
-                || internalEntry.priority() == Log.DEBUG)
+            /*
+             * Metadata
+             */
+            
+            JSONObject metadata = new JSONObject();
+    
+            metadata.put("platform", "android");
+            metadata.put("version", 2);
+    
+            SecureRandom rnd = new SecureRandom();
+            byte[] id = new byte[8];
+            rnd.nextBytes(id);
+            metadata.put("id", Utils.byteArrayToHexString(id));
+    
+            /*
+             * System Information
+             */
+    
+            JSONObject sysInfo_Build = new JSONObject();
+            sysInfo_Build.put("BRAND", Build.BRAND);
+            sysInfo_Build.put("CPU_ABI", Build.CPU_ABI);
+            sysInfo_Build.put("MANUFACTURER", Build.MANUFACTURER);
+            sysInfo_Build.put("MODEL", Build.MODEL);
+            sysInfo_Build.put("TAGS", Build.TAGS);
+            sysInfo_Build.put("VERSION__CODENAME", Build.VERSION.CODENAME);
+            sysInfo_Build.put("VERSION__RELEASE", Build.VERSION.RELEASE);
+            sysInfo_Build.put("VERSION__SDK_INT", Build.VERSION.SDK_INT);
+    
+            JSONObject sysInfo_psiphonEmbeddedValues = new JSONObject();
+            sysInfo_psiphonEmbeddedValues.put("PROPAGATION_CHANNEL_ID", EmbeddedValues.PROPAGATION_CHANNEL_ID);
+            sysInfo_psiphonEmbeddedValues.put("SPONSOR_ID", EmbeddedValues.SPONSOR_ID);
+            sysInfo_psiphonEmbeddedValues.put("CLIENT_VERSION", EmbeddedValues.CLIENT_VERSION);
+    
+            JSONObject sysInfo = new JSONObject();
+            sysInfo.put("isRooted", Utils.isRooted());
+            sysInfo.put("Build", sysInfo_Build);
+            sysInfo.put("PsiphonInfo", sysInfo_psiphonEmbeddedValues);
+    
+            /*
+             * Diagnostic History
+             */
+    
+            JSONArray diagnosticHistory = new JSONArray();
+    
+            for (PsiphonData.DiagnosticEntry item : PsiphonData.cloneDiagnosticHistory())
             {
-                continue;
+                JSONObject entry = new JSONObject();
+                entry.put("timestamp", Utils.getISO8601String(item.timestamp()));
+                entry.put("msg", item.msg());
+                entry.put("data", item.data());
+                diagnosticHistory.put(entry);
             }
+    
+            /*
+             * Status History
+             */
 
-            Map<String, Object> statusEntry = new HashMap<String, Object>();
-            statusHistory.add(statusEntry);
-
-            String idName = context.getResources().getResourceEntryName(internalEntry.id());
-            statusEntry.put("id", idName);
-            statusEntry.put("timestamp", internalEntry.timestamp());
-            statusEntry.put("priority", internalEntry.priority());
-            statusEntry.put("formatArgs", null);
-            statusEntry.put("throwable", null);
-
-            if (internalEntry.formatArgs() != null && internalEntry.formatArgs().length > 0
-                // Don't send any sensitive format args
-                && internalEntry.sensitivity() != MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS)
+            JSONArray statusHistory = new JSONArray();
+    
+            for (StatusEntry internalEntry : PsiphonData.getPsiphonData().cloneStatusHistory())
             {
-                statusEntry.put("formatArgs", Arrays.asList(internalEntry.formatArgs()));
-            }
-
-            if (internalEntry.throwable() != null)
-            {
-                Map<String, Object> throwable = new HashMap<String, Object>();
-                statusEntry.put("throwable", throwable);
-
-                throwable.put("message", internalEntry.throwable().toString());
-
-                List<String> stack = new ArrayList<String>();
-                throwable.put("stack", stack);
-
-                for (StackTraceElement element : internalEntry.throwable().getStackTrace())
+                // Don't send any sensitive logs or debug logs
+                if (internalEntry.sensitivity() == MyLog.Sensitivity.SENSITIVE_LOG
+                    || internalEntry.priority() == Log.DEBUG)
                 {
-                    stack.add(element.toString());
+                    continue;
                 }
+    
+                JSONObject statusEntry = new JSONObject();
+    
+                String idName = context.getResources().getResourceEntryName(internalEntry.id());
+                statusEntry.put("id", idName);
+                statusEntry.put("timestamp", Utils.getISO8601String(internalEntry.timestamp()));
+                statusEntry.put("priority", internalEntry.priority());
+                statusEntry.put("formatArgs", null);
+                statusEntry.put("throwable", null);
+    
+                if (internalEntry.formatArgs() != null && internalEntry.formatArgs().length > 0
+                    // Don't send any sensitive format args
+                    && internalEntry.sensitivity() != MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS)
+                {
+                    JSONArray formatArgs = new JSONArray();
+                    for (Object o : internalEntry.formatArgs())
+                    {
+                        formatArgs.put(o);
+                    }
+                    statusEntry.put("formatArgs", formatArgs);
+                }
+    
+                if (internalEntry.throwable() != null)
+                {
+                    JSONObject throwable = new JSONObject();
+    
+                    throwable.put("message", internalEntry.throwable().toString());
+    
+                    JSONArray stack = new JSONArray();
+                    for (StackTraceElement element : internalEntry.throwable().getStackTrace())
+                    {
+                        stack.put(element.toString());
+                    }
+                    throwable.put("stack", stack);
+
+                    statusEntry.put("throwable", throwable);
+                }
+
+                statusHistory.put(statusEntry);
             }
+    
+            /*
+             * JSON-ify the diagnostic info
+             */
+            
+            JSONObject diagnosticInfo = new JSONObject();
+            diagnosticInfo.put("SystemInformation", sysInfo);
+            diagnosticInfo.put("DiagnosticHistory", diagnosticHistory);
+            diagnosticInfo.put("StatusHistory", statusHistory);
+
+            JSONObject diagnosticObject = new JSONObject();
+            diagnosticObject.put("Metadata", metadata);
+            diagnosticObject.put("DiagnosticInfo", diagnosticInfo);
+            
+            diagnosticJSON = diagnosticObject.toString();
         }
-
-        /*
-         * YAML-ify the diagnostic info
-         */
-
-        Map<String, Object> diagnosticObject = new HashMap<String, Object>();
-        Map<String, Object> diagnosticInfo = new HashMap<String, Object>();
+        catch (JSONException e)
+        {
+            throw new RuntimeException(e);
+        }
         
-        diagnosticInfo.put("SystemInformation", sysInfo);
-        diagnosticInfo.put("DiagnosticHistory", diagnosticHistory);
-        diagnosticInfo.put("StatusHistory", statusHistory);
-        
-        diagnosticObject.put("Metadata", metadata);
-        diagnosticObject.put("DiagnosticInfo", diagnosticInfo);
-        
-        Yaml yaml = new Yaml();
-        diagnosticYaml = yaml.dump(diagnosticObject);
+        assert(diagnosticJSON != null);
 
         // Encrypt the file contents
         byte[] contentCiphertext = null, iv = null,
@@ -202,7 +214,7 @@ public class Diagnostics
             Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             aesCipher.init(Cipher.ENCRYPT_MODE, encryptionKey, ivParamSpec);
 
-            contentCiphertext = aesCipher.doFinal(diagnosticYaml.getBytes("UTF-8"));
+            contentCiphertext = aesCipher.doFinal(diagnosticJSON.getBytes("UTF-8"));
 
             // Get the IV. (I don't know if it can be different from the
             // one generated above, but retrieving it here seems safest.)

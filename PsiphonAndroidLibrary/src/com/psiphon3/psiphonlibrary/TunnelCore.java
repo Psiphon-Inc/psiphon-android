@@ -26,9 +26,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -428,8 +426,15 @@ public class TunnelCore implements IStopSignalPending
             // At this point we need counters for SSH traffic
             PsiphonData.getPsiphonData().getDataTransferStats().start();
             
-            Map<String, String> diagnosticData = new HashMap<String, String>();
-            diagnosticData.put("ipAddress", entry.ipAddress);
+            JSONObject diagnosticData = new JSONObject();
+            try 
+            {
+                diagnosticData.put("ipAddress", entry.ipAddress);
+            } 
+            catch (JSONException e) 
+            {
+                throw new RuntimeException(e);
+            }
             MyLog.g("ConnectingServer", diagnosticData);
             
             conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);

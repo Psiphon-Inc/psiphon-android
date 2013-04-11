@@ -31,11 +31,12 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.content.Context;
 import android.os.Build;
@@ -296,10 +297,17 @@ public class ServerSelector
             
             for (CheckServerWorker worker : workers)
             {
-                Map<String, Object> diagnosticData = new HashMap<String, Object>();
-                diagnosticData.put("ipAddress", worker.entry.ipAddress);
-                diagnosticData.put("responded", worker.responded);
-                diagnosticData.put("responseTime", worker.responseTime);
+                JSONObject diagnosticData = new JSONObject();
+                try 
+                {
+                    diagnosticData.put("ipAddress", worker.entry.ipAddress);
+                    diagnosticData.put("responded", worker.responded);
+                    diagnosticData.put("responseTime", worker.responseTime);
+                } 
+                catch (JSONException e) 
+                {
+                    throw new RuntimeException(e);
+                }
                 MyLog.g("ServerResponseCheck", diagnosticData);
                 
                 MyLog.d(
