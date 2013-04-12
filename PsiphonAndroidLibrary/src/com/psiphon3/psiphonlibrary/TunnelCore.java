@@ -603,14 +603,8 @@ public class TunnelCore implements IStopSignalPending
                 if (!doVpnProtect(socket)
                     || null == (vpnInterfaceFileDescriptor = doVpnBuilder(privateIpAddress, tunnelWholeDeviceDNSServer)))
                 {
-                    runAgain = false;
-                    if (Utils.isRooted())
-                    {
-                        // VpnService appears to be broken. Try root mode instead.
-                        // TODO: don't fail over to root mode in the not-really-broken revoked edge condition case (e.g., establish() returns null)?
-                        PsiphonData.getPsiphonData().setVpnServiceUnavailable(true);
-                        runAgain = true;
-                    }
+                    // TODO: don't fail over to root mode in the not-really-broken revoked edge condition case (e.g., establish() returns null)?
+                    runAgain = failOverToRootWholeDeviceMode();
                     return runAgain;
                 }
                 
@@ -701,8 +695,9 @@ public class TunnelCore implements IStopSignalPending
                 {
                     MyLog.w(R.string.check_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE);
                     
-                    // Stop entirely. If this test fails, there's something wrong with routing.
-                    runAgain = false;
+                    // If this test fails, there's something wrong with routing. Fail over to
+                    // the other whole device mode if possible or stop the tunnel.
+                    runAgain = failOverToRootWholeDeviceMode();
                     return runAgain;
                 }
             }
@@ -918,7 +913,7 @@ public class TunnelCore implements IStopSignalPending
         
         return runAgain;
     }
-    
+   
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     private boolean doVpnProtect(Socket socket)
     {
@@ -977,7 +972,19 @@ public class TunnelCore implements IStopSignalPending
         
         return vpnInterfaceFileDescriptor;
     }
-    
+
+    private boolean failOverToRootWholeDeviceMode()
+    {
+        if (Utils.isRooted())
+        {
+            // VpnService appears to be broken, but we can try root mode instead.
+            PsiphonData.getPsiphonData().setVpnServiceUnavailable(true);
+            return true;
+        }
+        
+        return false;
+    }
+
     private void runTunnel() throws InterruptedException
     {
         if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
