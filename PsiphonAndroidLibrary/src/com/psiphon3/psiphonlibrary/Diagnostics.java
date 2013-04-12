@@ -107,8 +107,8 @@ public class Diagnostics
             {
                 JSONObject entry = new JSONObject();
                 entry.put("timestamp!!timestamp", Utils.getISO8601String(item.timestamp()));
-                entry.put("msg", item.msg());
-                entry.put("data", item.data());
+                entry.put("msg", item.msg() == null ? JSONObject.NULL : item.msg());
+                entry.put("data", item.data() == null ? JSONObject.NULL : item.data());
                 diagnosticHistory.put(entry);
             }
     
@@ -133,8 +133,8 @@ public class Diagnostics
                 statusEntry.put("id", idName);
                 statusEntry.put("timestamp!!timestamp", Utils.getISO8601String(internalEntry.timestamp()));
                 statusEntry.put("priority", internalEntry.priority());
-                statusEntry.put("formatArgs", null);
-                statusEntry.put("throwable", null);
+                statusEntry.put("formatArgs", JSONObject.NULL);
+                statusEntry.put("throwable", JSONObject.NULL);
     
                 if (internalEntry.formatArgs() != null && internalEntry.formatArgs().length > 0
                     // Don't send any sensitive format args
