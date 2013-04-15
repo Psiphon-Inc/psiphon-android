@@ -7,6 +7,8 @@ import java.security.SecureRandom;
 import ch.ethz.ssh2.ConnectionInfo;
 import ch.ethz.ssh2.DHGexParameters;
 import ch.ethz.ssh2.ServerHostKeyVerifier;
+import ch.ethz.ssh2.compression.CompressionFactory;
+import ch.ethz.ssh2.compression.ICompressor;
 import ch.ethz.ssh2.crypto.CryptoWishList;
 import ch.ethz.ssh2.crypto.KeyMaterial;
 import ch.ethz.ssh2.crypto.cipher.BlockCipher;
@@ -31,6 +33,12 @@ import ch.ethz.ssh2.signature.DSASignature;
 import ch.ethz.ssh2.signature.RSAPublicKey;
 import ch.ethz.ssh2.signature.RSASHA1Verify;
 import ch.ethz.ssh2.signature.RSASignature;
+
+/*
+ * Compression implementation from:
+ * ConnectBot: simple, powerful, open-source SSH client for Android
+ * Copyright 2007 Kenny Root, Jeffrey Sharkey
+ */
 
 /**
  * KexManager.
@@ -293,6 +301,7 @@ public class KexManager
 
 		BlockCipher cbc;
 		MAC mac;
+		ICompressor comp;
 
 		try
 		{
@@ -301,6 +310,7 @@ public class KexManager
 
 			mac = new MAC(kxs.np.mac_algo_client_to_server, km.integrity_key_client_to_server);
 
+			comp = CompressionFactory.createCompressor(kxs.np.comp_algo_client_to_server);
 		}
 		catch (IllegalArgumentException e1)
 		{
@@ -308,6 +318,7 @@ public class KexManager
 		}
 
 		tm.changeSendCipher(cbc, mac);
+		tm.changeSendCompression(comp);
 		tm.kexFinished();
 	}
 
@@ -474,6 +485,7 @@ public class KexManager
 
 			BlockCipher cbc;
 			MAC mac;
+			ICompressor comp;
 
 			try
 			{
@@ -482,6 +494,7 @@ public class KexManager
 
 				mac = new MAC(kxs.np.mac_algo_server_to_client, km.integrity_key_server_to_client);
 
+				comp = CompressionFactory.createCompressor(kxs.np.comp_algo_server_to_client);
 			}
 			catch (IllegalArgumentException e1)
 			{
@@ -489,6 +502,7 @@ public class KexManager
 			}
 
 			tm.changeRecvCipher(cbc, mac);
+			tm.changeRecvCompression(comp);
 
 			ConnectionInfo sci = new ConnectionInfo();
 

@@ -74,4 +74,5 @@
     <string name="tun2socks_stopped">VPN to SOCKS stopped</string>
     <string name="vpn_service_no_private_address_available">No private address available for VPN service</string>
     <string name="psiphon_running_generic">Running...</string>
+    <string name="check_tunnel_failed">Check tunnel failed. Your device may not support the whole device tunnel option.</string>
 </resources>

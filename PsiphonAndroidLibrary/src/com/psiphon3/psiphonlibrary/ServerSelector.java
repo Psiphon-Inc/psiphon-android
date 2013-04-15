@@ -83,6 +83,7 @@ public class ServerSelector
         public void run()
         {
             long startTime = SystemClock.elapsedRealtime();
+            Selector selector = null;
 
             try
             {
@@ -91,7 +92,7 @@ public class ServerSelector
                 this.channel.connect(new InetSocketAddress(
                                         this.entry.ipAddress,
                                         this.entry.getPreferredReachablityTestPort()));
-                Selector selector = Selector.open();
+                selector = Selector.open();
                 this.channel.register(selector, SelectionKey.OP_CONNECT);
                 
                 while (selector.select(SHUTDOWN_POLL_MILLISECONDS) == 0)
@@ -103,18 +104,38 @@ public class ServerSelector
                 }
                 
                 this.responded = this.channel.finishConnect();
-                
-                selector.close();
-                this.channel.configureBlocking(true);
-                
-                if (!this.responded)
-                {
-                    this.channel.close();
-                    this.channel = null;
-                }
             }
-            catch (IOException e)
+            catch (IOException e) {}
+            finally
             {
+                if (selector != null)
+                {
+                    try
+                    {
+                        selector.close();
+                    }
+                    catch (IOException e) {}
+                }
+                if (this.channel != null)
+                {
+                    if (!this.responded)
+                    {
+                        try
+                        {
+                            this.channel.close();
+                        }
+                        catch (IOException e) {}
+                        this.channel = null;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            this.channel.configureBlocking(true);
+                        }
+                        catch (IOException e) {}
+                    }
+                }
             }
             
             this.responseTime = SystemClock.elapsedRealtime() - startTime;
@@ -358,9 +379,7 @@ public class ServerSelector
                             {
                                 worker.channel.close();
                             }
-                            catch (IOException e)
-                            {
-                            }
+                            catch (IOException e) {}
                         }
                     }
                 }

@@ -18,6 +18,7 @@ import ch.ethz.ssh2.HTTPProxyData;
 import ch.ethz.ssh2.HTTPProxyException;
 import ch.ethz.ssh2.ProxyData;
 import ch.ethz.ssh2.ServerHostKeyVerifier;
+import ch.ethz.ssh2.compression.ICompressor;
 import ch.ethz.ssh2.crypto.Base64;
 import ch.ethz.ssh2.crypto.CryptoWishList;
 import ch.ethz.ssh2.crypto.ObfuscatedSSH;
@@ -44,6 +45,12 @@ import ch.ethz.ssh2.util.Tokenizer;
  * 
  * btw: having stdout and stderr on the same channel, with a shared window, is
  * also a VERY good idea... =(
+ */
+
+/*
+ * Compression implementation from:
+ * ConnectBot: simple, powerful, open-source SSH client for Android
+ * Copyright 2007 Kenny Root, Jeffrey Sharkey
  */
 
 /**
@@ -625,6 +632,21 @@ public class TransportManager
 		tc.changeSendCipher(bc, mac);
 	}
 
+	public void changeRecvCompression(ICompressor comp)
+	{
+		tc.changeRecvCompression(comp);
+	}
+
+	public void changeSendCompression(ICompressor comp)
+	{
+		tc.changeSendCompression(comp);
+	}
+
+	public void startCompression()
+	{
+		tc.startCompression();
+	}
+
 	public void sendAsynchronousMessage(byte[] msg) throws IOException
 	{
 		synchronized (asynchronousQueue)
@@ -803,6 +825,11 @@ public class TransportManager
 			{
 				km.handleMessage(msg, msglen);
 				continue;
+			}
+
+			if (type == Packets.SSH_MSG_USERAUTH_SUCCESS)
+			{
+				tc.startCompression();
 			}
 
 			MessageHandler mh = null;

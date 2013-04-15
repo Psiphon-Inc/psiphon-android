@@ -20,9 +20,14 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -66,6 +71,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     private boolean m_destroyed = false;
     private Events m_eventsInterface = null;
     private boolean m_useGenericLogMessages = false;
+
 
     enum Signal
     {
@@ -469,7 +475,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
             }
             else
             {
-                int port = Utils.findAvailablePort(PsiphonConstants.SOCKS_PORT, 10);
+                int port = Utils.findAvailablePort(PsiphonData.getPsiphonData().getDefaultSocksPort(), 10);
                 if (port == 0)
                 {
                     MyLog.e(R.string.socks_ports_failed, MyLog.Sensitivity.NOT_SENSITIVE);
@@ -616,6 +622,72 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
             
             setState(State.CONNECTED);
             PsiphonData.getPsiphonData().setTunnelRelayProtocol(PsiphonConstants.RELAY_PROTOCOL);
+            
+            checkSignals(0);
+
+            // Certain Android devices silently fail to route through the VpnService tun device. 
+            // Test connecting to a service available only through the tunnel. Stop when the check fails.
+
+            // NOTE: this test succeeds due to the tun2socks accept on localhost, which confirms that
+            // the connection was tunneled, and fails due to direct connect because the selected
+            // service is firewalled.
+            // TODO: A more advanced implementation would have tun2socks recognize this test and (a)
+            // not attempt a SOCKS port forward; (b) respond with a verifiable byte stream. This byte
+            // stream must be a random nonce known to TunnelCore and tun2socks but not known to any
+            // external party that could respond, yielding a false positive. 
+            
+            if (tunnelWholeDevice && runVpnService)
+            {
+                boolean success = false;
+                SocketChannel channel = null;
+                Selector selector = null;
+                try
+                {
+                    channel = SocketChannel.open();
+                    channel.configureBlocking(false);
+                    // Select a random port to be slightly less fingerprintable in the untunneled (failure) case.
+                    int port = Utils.insecureRandRange(PsiphonConstants.CHECK_TUNNEL_SERVER_FIRST_PORT, PsiphonConstants.CHECK_TUNNEL_SERVER_LAST_PORT);
+                    channel.connect(new InetSocketAddress(entry.ipAddress, port));
+                    selector = Selector.open();
+                    channel.register(selector, SelectionKey.OP_CONNECT);                    
+                    for (int i = 0;
+                         i < PsiphonConstants.CHECK_TUNNEL_TIMEOUT_MILLISECONDS && selector.select(100) == 0;
+                         i += 100)
+                    {
+                        checkSignals(0);
+                    }
+                    success = channel.finishConnect();                    
+                }
+                catch (IOException e) {}
+                finally
+                {
+                    if (selector != null)
+                    {
+                        try
+                        {
+                            selector.close();
+                        }
+                        catch (IOException e) {}
+                    }
+                    if (channel != null)
+                    {
+                        try
+                        {
+                            channel.close();
+                        }
+                        catch (IOException e) {}                        
+                    }
+                }
+
+                if (!success)
+                {
+                    MyLog.w(R.string.check_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE);
+                    
+                    // Stop entirely. If this test fails, there's something wrong with routing.
+                    runAgain = false;
+                    return runAgain;
+                }
+            }
             
             checkSignals(0);
 
@@ -966,11 +1038,35 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
                 {
                     try
                     {
-                        runTunnel();
+                        try
+                        {
+                            runTunnel();
+                        }
+                        catch (InterruptedException e)
+                        {
+                            Thread.currentThread().interrupt();
+                        }
+    
+                        if (m_eventsInterface != null)
+                        {
+                            m_eventsInterface.signalTunnelStopping(m_parentContext);
+                        }
+                        
+                        if (m_parentService != null)
+                        {
+                            // If the tunnel is stopping itself (e.g., due to a fatal error
+                            // where we don't try-next-server), then the service should stop itself.
+                            m_parentService.stopForeground(true);
+                            m_parentService.stopSelf();
+                        }
+    
+                        MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+                        MyLog.e(R.string.psiphon_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
                     }
-                    catch (InterruptedException e)
+                    finally
                     {
-                        Thread.currentThread().interrupt();
+                        m_signalQueue = null;
+                        m_tunnelThread = null;
                     }
                 }
             });
@@ -981,8 +1077,11 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     public void signalUnexpectedDisconnect()
     {
         // Override STOP_TUNNEL; TODO: race condition?
-        m_signalQueue.clear();
-        m_signalQueue.offer(Signal.UNEXPECTED_DISCONNECT);
+        if (m_signalQueue != null)
+        {
+            m_signalQueue.clear();
+            m_signalQueue.offer(Signal.UNEXPECTED_DISCONNECT);
+        }
     }
     
     public void stopVpnServiceHelper()
@@ -1011,23 +1110,18 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
     {
         if (m_tunnelThread != null)
         {
-            if (m_eventsInterface != null)
-            {
-                m_eventsInterface.signalTunnelStopping(m_parentContext);
-            }
+            MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
-            // TODO: ServerListReorder lifetime on Android isn't the same as on Windows
-            if (m_serverSelector != null)
-            {
-                m_serverSelector.Abort();
-                m_serverSelector = null;
-            }
+            // Wake up/interrupt the tunnel thread
             
             // Override UNEXPECTED_DISCONNECT; TODO: race condition?
             m_signalQueue.clear();
             m_signalQueue.offer(Signal.STOP_TUNNEL);
-
-            MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+            
+            if (m_serverSelector != null)
+            {
+                m_serverSelector.Abort();
+            }
             
             // Tell the ServerInterface to stop (e.g., kill requests).
 
@@ -1049,13 +1143,7 @@ public class TunnelCore implements Utils.MyLog.ILogger, IStopSignalPending
             {
                 Thread.currentThread().interrupt();
             }
-
-            MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
-            MyLog.e(R.string.psiphon_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
         }
-        
-        m_signalQueue = null;
-        m_tunnelThread = null;
     }
     
     public void setEventsInterface(Events eventsInterface)
