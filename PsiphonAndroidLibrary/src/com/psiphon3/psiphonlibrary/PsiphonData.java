@@ -615,7 +615,7 @@ public class PsiphonData
         public synchronized double getTotalSentCompressionRatio()
         {
             if (this.m_totalUncompressedBytesSent == 0) return 0.0;
-            return 100.0*(1.0-(double)this.m_totalBytesSent/(double)this.m_totalUncompressedBytesSent);
+            return 100.0*(1.0-(double)(this.m_totalBytesSent + this.m_totalOverheadBytesSent)/(double)this.m_totalUncompressedBytesSent);
         }
         
         public synchronized long getTotalBytesReceived()
@@ -636,7 +636,7 @@ public class PsiphonData
         public synchronized double getTotalReceivedCompressionRatio()
         {
             if (this.m_totalUncompressedBytesReceived == 0) return 0.0;
-            return 100.0*(1.0-(double)this.m_totalBytesReceived/(double)this.m_totalUncompressedBytesReceived);
+            return 100.0*(1.0-(double)(this.m_totalBytesReceived + this.m_totalOverheadBytesReceived)/(double)this.m_totalUncompressedBytesReceived);
         }
         
         public synchronized ArrayList<Long> getSlowSentSeries()
