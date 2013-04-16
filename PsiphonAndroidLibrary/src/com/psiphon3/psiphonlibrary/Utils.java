@@ -634,6 +634,14 @@ public class Utils
         return networkInfo != null && networkInfo.isConnected();
     }
 
+    public static String getNetworkTypeName(Context context)
+    {
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        return networkInfo == null ? "" : networkInfo.getTypeName();
+    }
+
     public static String selectPrivateAddress()
     {
         // Select one of 10.0.0.1, 172.16.0.1, or 192.168.0.1 depending on

@@ -82,6 +82,7 @@ public class Diagnostics
             sysInfo_Build.put("CPU_ABI", Build.CPU_ABI);
             sysInfo_Build.put("MANUFACTURER", Build.MANUFACTURER);
             sysInfo_Build.put("MODEL", Build.MODEL);
+            sysInfo_Build.put("DISPLAY", Build.DISPLAY);
             sysInfo_Build.put("TAGS", Build.TAGS);
             sysInfo_Build.put("VERSION__CODENAME", Build.VERSION.CODENAME);
             sysInfo_Build.put("VERSION__RELEASE", Build.VERSION.RELEASE);
@@ -94,6 +95,7 @@ public class Diagnostics
     
             JSONObject sysInfo = new JSONObject();
             sysInfo.put("isRooted", Utils.isRooted());
+            sysInfo.put("networkTypeName", Utils.getNetworkTypeName(context));
             sysInfo.put("Build", sysInfo_Build);
             sysInfo.put("PsiphonInfo", sysInfo_psiphonEmbeddedValues);
     
