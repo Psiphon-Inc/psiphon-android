@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.util.zip.ZipInputStream;
 
 import com.psiphon3.psiphonlibrary.R;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.stericson.RootTools.Command;
 import com.stericson.RootTools.RootTools;
 
@@ -212,6 +213,7 @@ public class TransparentProxyConfig
         }
         catch (IOException e)
         {
+            MyLog.e(R.string.TransparentProxyConfig_iptablesExtractFailed, MyLog.Sensitivity.NOT_SENSITIVE);
         }
         return false;
     }
