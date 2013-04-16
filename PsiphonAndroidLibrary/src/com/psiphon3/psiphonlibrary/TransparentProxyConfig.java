@@ -30,7 +30,6 @@ import com.stericson.RootTools.Command;
 import com.stericson.RootTools.RootTools;
 
 import android.content.Context;
-import android.content.res.AssetManager;
 import android.os.Build;
 
 
@@ -169,27 +168,24 @@ public class TransparentProxyConfig
     static final String IPTABLES_BUNDLED_MIPS_BINARIES_SUFFIX = "_mips.zip";
 
     static final String BUNDLED_BINARY_DATA_SUBDIRECTORY = "bundled-binaries";
-    static final String BUNDLED_BINARY_ASSET_SUBDIRECTORY = "bundled-binaries";
     static final String SYSTEM_BINARY_PATH = "/system/bin/";
     static final String SYSTEM_BINARY_ALT_PATH = "/system/xbin/";
     
-    private static String getBundledBinaryPlatformSuffix(Context context)
+    private static int getBundledIpTablesResourceForPlatform(Context context)
     {
         // NOTE: no MIPS binaries are bundled at the moment
-        if (0 == Build.CPU_ABI.compareTo("armeabi-v7a")) return IPTABLES_BUNDLED_ARM7_BINARIES_SUFFIX;
-        else if (0 == Build.CPU_ABI.compareTo("armeabi")) return IPTABLES_BUNDLED_ARM_BINARIES_SUFFIX;
-        else if (0 == Build.CPU_ABI.compareTo("x86")) return IPTABLES_BUNDLED_X86_BINARIES_SUFFIX;
-        else if (0 == Build.CPU_ABI.compareTo("mips")) return IPTABLES_BUNDLED_MIPS_BINARIES_SUFFIX;
-        return null;
+        if (0 == Build.CPU_ABI.compareTo("armeabi-v7a")) return R.raw.iptables_arm7;
+        else if (0 == Build.CPU_ABI.compareTo("armeabi")) return R.raw.iptables_arm;
+        else if (0 == Build.CPU_ABI.compareTo("x86")) return R.raw.iptables_x86;
+        else if (0 == Build.CPU_ABI.compareTo("mips")) return R.raw.iptables_mips;
+        return 0;
     }
     
-    private static boolean extractBundledBinary(Context context, String sourceAssetName, File targetFile)
+    private static boolean extractBundledIpTables(Context context, int sourceResourceId, File targetFile)
     {
         try
         {
-            AssetManager assetManager = context.getAssets();
-            InputStream zippedAsset = assetManager.open(
-                    new File(BUNDLED_BINARY_ASSET_SUBDIRECTORY, sourceAssetName).getPath());
+            InputStream zippedAsset = context.getResources().openRawResource(sourceResourceId);
             ZipInputStream zipStream = new ZipInputStream(zippedAsset);            
             zipStream.getNextEntry();
             InputStream bundledBinary = zipStream;
@@ -220,16 +216,16 @@ public class TransparentProxyConfig
         return false;
     }
     
-    private static String getBinaryPath(Context context, String binaryFilename)
+    private static String getIpTablesPath(Context context, String binaryFilename)
             throws PsiphonTransparentProxyException
     {
         File binary = null;
 
         // Try to use bundled binary
 
-        String bundledSuffix = getBundledBinaryPlatformSuffix(context);
+        int bundledIpTablesResourceId = getBundledIpTablesResourceForPlatform(context);
         
-        if (bundledSuffix != null)
+        if (bundledIpTablesResourceId != 0)
         {        
             binary = new File(
                             context.getDir(BUNDLED_BINARY_DATA_SUBDIRECTORY, Context.MODE_PRIVATE),
@@ -238,9 +234,9 @@ public class TransparentProxyConfig
             {
                 return binary.getAbsolutePath();
             }
-            else if (extractBundledBinary(
+            else if (extractBundledIpTables(
                         context,
-                        binaryFilename + bundledSuffix,
+                        bundledIpTablesResourceId,
                         binary))
             {
                 return binary.getAbsolutePath();
@@ -269,7 +265,7 @@ public class TransparentProxyConfig
     private static String getIpTables(Context context)
             throws PsiphonTransparentProxyException
     {
-        return getBinaryPath(context, IPTABLES_FILENAME);
+        return getIpTablesPath(context, IPTABLES_FILENAME);
     }
 
     private static void doShellCommands(Context context, String... commands)
