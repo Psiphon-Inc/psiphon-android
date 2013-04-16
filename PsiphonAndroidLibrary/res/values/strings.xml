@@ -62,8 +62,8 @@
     <string name="psiphon_service_notification_message_connecting">Connecting…</string>
     <string name="psiphon_service_notification_id">Psiphon Service Notification</string>
     <string name="preferred_servers">Preferred servers: %d</string>
-    <string name="selecting_server">Selecting server...</string>
-    <string name="fetch_remote_server_list">Fetching remote server list...</string>
+    <string name="selecting_server">Selecting server…</string>
+    <string name="fetch_remote_server_list">Fetching remote server list…</string>
     <string name="vpn_service_failed">VPN service failed: %s</string>
     <string name="vpn_service_running">VPN service running</string>
     <string name="vpn_service_stopped">VPN service stopped</string>
@@ -73,7 +73,7 @@
     <string name="tun2socks_running">VPN to SOCKS running</string>
     <string name="tun2socks_stopped">VPN to SOCKS stopped</string>
     <string name="vpn_service_no_private_address_available">No private address available for VPN service</string>
-    <string name="psiphon_running_generic">Running...</string>
+    <string name="psiphon_running_generic">Running…</string>
     <string name="data_transfer_total_bytes_sent">Total bytes sent: %1$s (%2$.2f%% compressed)</string>
     <string name="data_transfer_total_bytes_received">Total bytes received: %1$s (%2$.2f%% compressed)</string>
     <string name="data_transfer_total_elapsed_time">Total connection time: %s</string>
@@ -81,4 +81,5 @@
     <string name="debug_message">%s</string>
     <string name="Diagnostics.AttachmentWriteFailed">Failed to create or write feedback diagnostics file</string>
     <string name="Diagnostics.EncryptedFailed">Failed to encrypt feedback diagnostic information. This information will not be attached to the feedback email.</string>
+    <string name="TransparentProxyConfig.iptablesExtractFailed">Failed to extract iptables binary.</string>
 </resources>
