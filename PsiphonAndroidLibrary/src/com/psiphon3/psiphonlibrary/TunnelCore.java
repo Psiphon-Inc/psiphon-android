@@ -693,7 +693,7 @@ public class TunnelCore implements IStopSignalPending
 
                 if (!success)
                 {
-                    MyLog.w(R.string.check_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE);
+                    MyLog.e(R.string.check_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE);
                     
                     // If this test fails, there's something wrong with routing. Fail over to
                     // the other whole device mode if possible or stop the tunnel.
