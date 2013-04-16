@@ -22,6 +22,7 @@ package com.psiphon3.psiphonlibrary;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -29,6 +30,7 @@ import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -129,6 +131,26 @@ public class StatusList {
             
             return rowView;
         }
+        
+        public void addEntries(List<PsiphonData.StatusEntry> entries) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                addEntriesFast(entries);
+            }
+            else {
+                addEntriesSlow(entries);
+            }
+        }
+        
+        @TargetApi(Build.VERSION_CODES.HONEYCOMB) 
+        private void addEntriesFast(List<PsiphonData.StatusEntry> entries) {
+            addAll(entries);
+        }
+
+        private void addEntriesSlow(List<PsiphonData.StatusEntry> entries) {
+            for (PsiphonData.StatusEntry entry : entries) {
+                add(entry);
+            }
+        }
     }
     
     public static class StatusListIntentReceiver extends BroadcastReceiver {
@@ -220,7 +242,7 @@ public class StatusList {
                 newEntries.add(entry);
             }
             
-            m_adapter.addAll(newEntries);
+            m_adapter.addEntries(newEntries);
         }
         
         private void scrollListViewToBottom() {
