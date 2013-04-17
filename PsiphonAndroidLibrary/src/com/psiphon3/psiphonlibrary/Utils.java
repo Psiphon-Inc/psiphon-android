@@ -2,6 +2,7 @@ package com.psiphon3.psiphonlibrary;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -21,12 +22,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 
 import org.apache.http.conn.util.InetAddressUtils;
+import org.json.JSONObject;
 
-import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
-
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
@@ -39,10 +41,11 @@ import android.os.Build;
 import android.util.Log;
 
 
-public class Utils {
+public class Utils
+{
 
     private static SecureRandom s_secureRandom = new SecureRandom();
-    static byte[] generateSecureRandomBytes(int byteCount)
+    public static byte[] generateSecureRandomBytes(int byteCount)
     {
         byte bytes[] = new byte[byteCount];
         s_secureRandom.nextBytes(bytes);
@@ -50,7 +53,7 @@ public class Utils {
     }
 
     private static Random s_insecureRandom = new Random();
-    static byte[] generateInsecureRandomBytes(int byteCount)
+    public static byte[] generateInsecureRandomBytes(int byteCount)
     {
         byte bytes[] = new byte[byteCount];
         s_insecureRandom.nextBytes(bytes);
@@ -262,20 +265,17 @@ public class Utils {
      */
     static public class MyLog
     {
-        static public interface ILogInfoProvider
-        {
-            public String getResourceString(int stringResID, Object[] formatArgs);
-            public int getAndroidLogPriorityEquivalent(int priority);
-            public String getResourceEntryName(int stringResID);
-        }
-        
         static public interface ILogger
         {
-            public void log(int priority, String message);
+            public void statusEntryAdded();
+            public Context getContext();
         }
         
-        static public ILogInfoProvider logInfoProvider;
-        static public ILogger logger;
+        // It is expected that the logger implementation will be an Activity, so
+        // we're only going to hold a weak reference to it -- we don't want to
+        // interfere with it being destroyed in low memory situations. This class
+        // can cope with the logger going away and being re-set later on.
+        static private WeakReference<ILogger> logger = new WeakReference<ILogger>(null);
         
         /**
          * Used to indicate the sensitivity level of the log. This will affect
@@ -302,53 +302,36 @@ public class Utils {
             SENSITIVE_FORMAT_ARGS
         }
         
-        /**
-         * Safely wraps the string resource extraction function. If an error 
-         * occurs with the format specifiers, the raw string will be returned.
-         * @param stringResID The string resource ID.
-         * @param formatArgs The format arguments. May be empty (non-existent).
-         * @return The requested string, possibly formatted.
-         */
-        static private String myGetResString(int stringResID, Object[] formatArgs)
+        static public void setLogger(ILogger logger)
         {
-            try
-            {
-                return logInfoProvider.getResourceString(stringResID, formatArgs);
-            }
-            catch (IllegalFormatException e)
-            {
-                return logInfoProvider.getResourceString(stringResID, null);
-            }
+            MyLog.logger = new WeakReference<ILogger>(logger);
+        }
+        
+        static public void unsetLogger()
+        {
+            MyLog.logger.clear();
         }
         
         static public void restoreLogHistory()
         {
-            // We need to clear out the history and restore a copy, because the
-            // act of restoring will rebuild the history.
-            
-            ArrayList<StatusEntry> history = PsiphonData.cloneStatusHistory();
-            PsiphonData.clearStatusHistory();
-            
-            for (StatusEntry logEntry : history)
+            // Trigger the UI to refresh its status display
+            if (logger.get() != null)
             {
-                MyLog.println(
-                        logEntry.id(), 
-                        logEntry.sensitivity(), 
-                        logEntry.formatArgs(), 
-                        logEntry.throwable(), 
-                        logEntry.priority(),
-                        logEntry.timestamp());
+                logger.get().statusEntryAdded();
             }
         }
         
-        static void d(String msg)
+        // TODO: Add sensitivity to debug logs
+        static public void d(String msg)
         {
-            MyLog.println(msg, null, Log.DEBUG);
+            Object[] formatArgs = { msg };
+            MyLog.println(R.string.debug_message, Sensitivity.NOT_SENSITIVE, formatArgs, null, Log.DEBUG);
         }
 
-        static void d(String msg, Throwable throwable)
+        static public void d(String msg, Throwable throwable)
         {
-            MyLog.println(msg, throwable, Log.DEBUG);
+            Object[] formatArgs = { msg };
+            MyLog.println(R.string.debug_message, Sensitivity.NOT_SENSITIVE, formatArgs, throwable, Log.DEBUG);
         }
 
         /**
@@ -356,9 +339,9 @@ public class Utils {
          * except it will also be included in the feedback diagnostic attachment.
          * @param msg The message to log.
          */
-        static void g(String msg, Object data)
+        static public void g(String msg, JSONObject data)
         {
-            PsiphonData.addDiagnosticEntry(msg, data);
+            PsiphonData.addDiagnosticEntry(new Date(), msg, data);
             // We're not logging the `data` at all. In the future we may want to.
             MyLog.d(msg);
         }
@@ -416,7 +399,7 @@ public class Utils {
                 formatArgs,
                 throwable,
                 priority,
-                Utils.getISO8601String());
+                new Date());
         }
 
         private static void println(
@@ -425,63 +408,69 @@ public class Utils {
                 Object[] formatArgs, 
                 Throwable throwable, 
                 int priority,
-                String timestamp)
+                Date timestamp)
         {
-            PsiphonData.addStatusEntry(
+            PsiphonData.getPsiphonData().addStatusEntry(
                     timestamp,
                     stringResID,
-                    logInfoProvider.getResourceEntryName(stringResID), 
                     sensitivity,
                     formatArgs, 
                     throwable, 
                     priority);
             
-            println(MyLog.myGetResString(stringResID, formatArgs), throwable, priority);
-        }
-        
-        private static void println(String msg, Throwable throwable, int priority)
-        {
-            // If we're not running in debug mode, don't log debug messages at all.
-            // (This may be redundant with the logic below, but it'll save us if
-            // the log below changes.)
-            if (!PsiphonConstants.DEBUG && priority == Log.DEBUG)
+            // If we're not restoring, and a logger has been set, let it know
+            // that status entries have been added.
+            if (logger.get() != null)
             {
-                return;
+                logger.get().statusEntryAdded();
             }
             
-            // If the external logger has been set, use it.
-            // But don't put debug messages to the external logger.
-            if (logger != null && priority != Log.DEBUG)
+            // Log to LogCat only if we're in debug mode and not restoring.
+            if (PsiphonConstants.DEBUG)
             {
-                String loggerMsg = msg;
-                
-                if (throwable != null)
+                String msg = "";
+                if (logger.get() != null)
                 {
-                    // Just report the first line of the stack trace
-                    String[] stackTraceLines = Log.getStackTraceString(throwable).split("\n");
-                    loggerMsg = loggerMsg + (stackTraceLines.length > 0 ? "\n" + stackTraceLines[0] : ""); 
+                    msg = Utils.safeGetResourceString(logger.get().getContext(), stringResID, formatArgs);
                 }
                 
-                logger.log(logInfoProvider.getAndroidLogPriorityEquivalent(priority), loggerMsg);
+                // Log to LogCat
+                // Note that this is basically identical to how Log.e, etc., are implemented.
+                if (throwable != null)
+                {
+                    msg = msg + '\n' + Log.getStackTraceString(throwable);
+                }
+                Log.println(priority, PsiphonConstants.TAG, msg);
             }
-            
-            // Do not log to LogCat at all if we're not running in debug mode.
-
-            if (!PsiphonConstants.DEBUG)
-            {
-                return;
-            }
-                        
-            // Log to LogCat
-            // Note that this is basically identical to how Log.e, etc., are implemented.
-            if (throwable != null)
-            {
-                msg = msg + '\n' + Log.getStackTraceString(throwable);
-            }
-            Log.println(priority, PsiphonConstants.TAG, msg);
         }
     }
 
+    /**
+     * Safely wraps the string resource extraction function. If an error 
+     * occurs with the format specifiers (as can happen in a bad translation),
+     * the raw string will be returned.
+     * @param context The context providing the resource lookup.
+     * @param stringID The string resource ID.
+     * @param formatArgs The format arguments. May be empty or null.
+     * @return The requested string, possibly formatted.
+     */
+    static private String safeGetResourceString(Context context, int stringID, Object[] formatArgs)
+    {
+        if (context == null) {
+            assert(false);
+            return "";
+        }
+        
+        try
+        {
+            return context.getString(stringID, formatArgs);
+        }
+        catch (IllegalFormatException e)
+        {
+            return context.getString(stringID);
+        }
+    }
+    
     // From:
     // http://abhinavasblog.blogspot.ca/2011/06/check-for-debuggable-flag-in-android.html
     /*
@@ -566,13 +555,25 @@ public class Utils {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH;
     }
     
-    public static String getISO8601String()
+    public static String getLocalTimeString(Date date)
+    {
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.US);
+        String dateStr = sdf.format(date);
+        return dateStr;
+    }
+
+    public static String getISO8601String(Date date)
     {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String date = sdf.format(new Date());
-        date += "Z";
-        return date;
+        String dateStr = sdf.format(date);
+        dateStr += "Z";
+        return dateStr;
+    }
+
+    public static String getISO8601String()
+    {
+        return getISO8601String(new Date());
     }
 
     public static boolean isPortAvailable(int port)
@@ -633,6 +634,14 @@ public class Utils {
         return networkInfo != null && networkInfo.isConnected();
     }
 
+    public static String getNetworkTypeName(Context context)
+    {
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        return networkInfo == null ? "" : networkInfo.getTypeName();
+    }
+
     public static String selectPrivateAddress()
     {
         // Select one of 10.0.0.1, 172.16.0.1, or 192.168.0.1 depending on
@@ -689,5 +698,25 @@ public class Utils {
         }
         
         return null;
+    }
+    
+    public static String byteCountToDisplaySize(long bytes, boolean si)
+    {
+        // http://stackoverflow.com/questions/3758606/how-to-convert-byte-size-into-human-readable-format-in-java/3758880#3758880
+        int unit = si ? 1000 : 1024;
+        if (bytes < unit) return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(unit));
+        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (si ? "" : "i");
+        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+    }
+
+    @TargetApi(Build.VERSION_CODES.GINGERBREAD)
+    public static String elapsedTimeToDisplay(long elapsedTimeMilliseconds)
+    {
+        // http://stackoverflow.com/questions/6710094/how-to-format-an-elapsed-time-interval-in-hhmmss-sss-format-in-java/6710604#6710604
+        final long hours = TimeUnit.MILLISECONDS.toHours(elapsedTimeMilliseconds);
+        final long minutes = TimeUnit.MILLISECONDS.toMinutes(elapsedTimeMilliseconds - TimeUnit.HOURS.toMillis(hours));
+        final long seconds = TimeUnit.MILLISECONDS.toSeconds(elapsedTimeMilliseconds - TimeUnit.HOURS.toMillis(hours) - TimeUnit.MINUTES.toMillis(minutes));
+        return String.format("%02dh %02dm %02ds", hours, minutes, seconds);
     }
 }

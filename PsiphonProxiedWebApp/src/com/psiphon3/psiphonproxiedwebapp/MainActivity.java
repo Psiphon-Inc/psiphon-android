@@ -29,11 +29,11 @@ package com.psiphon3.psiphonproxiedwebapp;
 import android.os.Bundle;
 import android.os.Handler;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -53,11 +53,14 @@ import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.TunnelCore;
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.psiphonlibrary.Events;
+import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
-public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Events
+public class MainActivity 
+    extends com.psiphon3.psiphonlibrary.MainBase.Activity 
+    implements Events
 {
     private boolean m_loadedWebView = false;
     private WebView m_webView;
@@ -142,8 +145,6 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
     {
         super.onCreate(savedInstanceState);
 
-        MyLog.logInfoProvider = this;
-
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
         m_webView = (WebView)findViewById(R.id.webView);
@@ -152,6 +153,11 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
 
+        PsiphonConstants.DEBUG = Utils.isDebugMode(this);
+        
+        // Restore messages previously posted by the service.
+        MyLog.restoreLogHistory();
+        
         PsiphonData.getPsiphonData().setDefaultSocksPort(PsiphonConstants.SOCKS_PORT + 10);
         PsiphonData.getPsiphonData().setDefaultHttpProxyPort(PsiphonConstants.HTTP_PROXY_PORT + 10);
         m_tunnelCore = new TunnelCore(this, null);
@@ -209,33 +215,35 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
         return super.onKeyDown(keyCode, event);
     }
 
-    @Override
-    public int getAndroidLogPriorityEquivalent(int priority)
-    {
-        return 0;
-    }
+    /*
+     * MyLog.ILogger implementation
+     */
 
+    /**
+     * @see com.psiphon3.psiphonlibrary.Utils.MyLog.ILogger#statusEntryAdded()
+     */
     @Override
-    public String getResourceString(int stringResID, Object[] formatArgs)
+    public void statusEntryAdded()
     {
-        if (formatArgs == null || formatArgs.length == 0)
-        {
-            return getString(stringResID);
+        // Find the last non-debug status entry.
+        PsiphonData.StatusEntry entry = null;
+        int index = -1;
+        while (true) {
+            entry = PsiphonData.getPsiphonData().getStatusEntry(index);
+            if (entry == null) 
+            {
+                // No status entry.
+                return;
+            }
+            
+            index -= 1;
+            
+            if (entry.priority() != Log.DEBUG) {
+                break;
+            }
         }
-
-        return getString(stringResID, formatArgs);
-    }
-
-    @Override
-    public String getResourceEntryName(int stringResID)
-    {
-        return getResources().getResourceEntryName(stringResID);
-    }
-
-    @Override
-    public void appendStatusMessage(Context context, String message, int messageClass)
-    {
-        final String finalMessage = message;
+        
+        final String finalMessage = getString(entry.id(), entry.formatArgs());
 
         m_handler.post(
             new Runnable()
@@ -250,7 +258,11 @@ public class MainActivity extends Activity implements MyLog.ILogInfoProvider, Ev
                 }
             });
     }
-
+    
+    /*
+     * Events implementation
+     */
+    
     private String getHomePage()
     {
         // Only supports one home page

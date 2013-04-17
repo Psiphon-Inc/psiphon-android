@@ -254,6 +254,7 @@ public class ServerInterface
     {
         this.stopped = false;
         this.currentServerEntry = null;
+        resetPeriodicWork();
     }
 
     /**
@@ -460,7 +461,11 @@ public class ServerInterface
                     
                     // Set the regexes directly in the stats object rather than 
                     // storing them in this class.
-                    PsiphonData.getPsiphonData().getStats().setRegexes(pageViewRegexes, httpsRequestRegexes);
+                    PsiphonData.ReportedStats reportedStats = PsiphonData.getPsiphonData().getReportedStats();
+                    if (reportedStats != null)
+                    {
+                        reportedStats.setRegexes(pageViewRegexes, httpsRequestRegexes);
+                    }
 
                     JSONArray encoded_server_list = obj.getJSONArray("encoded_server_list");
                     String[] entries = new String[encoded_server_list.length()];
@@ -691,13 +696,6 @@ public class ServerInterface
 
         String urls[] = getRequestURLsWithFailover("feedback", extraParams);
         makePsiphonRequestWithFailover(urls, additionalHeaders, requestBody);
-    }
-
-    synchronized public void doCheckTunnelRequest() 
-        throws PsiphonServerInterfaceException
-    {
-        String url = getRequestURL("check_tunnel", null);
-        makeDirectWebRequest(url);
     }
 
     synchronized public void fetchRemoteServerList()
@@ -1433,6 +1431,13 @@ public class ServerInterface
     private long lastStatusSendTimeMS = 0;
     private final int DEFAULT_SEND_MAX_ENTRIES = 1000;
     private int sendMaxEntries = DEFAULT_SEND_MAX_ENTRIES;
+
+    private synchronized void resetPeriodicWork()
+    {
+        this.statsSendInterval = this.DEFAULT_STATS_SEND_INTERVAL_MS;
+        this.lastStatusSendTimeMS = 0;
+        this.sendMaxEntries = this.DEFAULT_SEND_MAX_ENTRIES;
+    }
     
     /**
      * Call to let the interface to any periodic work or checks that it needs to.
@@ -1443,50 +1448,81 @@ public class ServerInterface
      */
     public synchronized void doPeriodicWork(boolean finalCall)
     {
-        PsiphonData.Stats stats = PsiphonData.getPsiphonData().getStats();
-        
         long now = SystemClock.uptimeMillis();
         
-        // On the very first call, this.lastStatusSendTimeMS will be 0, but we
-        // don't want to send immediately. So...
-        if (this.lastStatusSendTimeMS == 0) this.lastStatusSendTimeMS = now; 
-        
-        // SystemClock.uptimeMillis() "may get reset occasionally (before it 
-        // would otherwise wrap around)".
-        if (now < this.lastStatusSendTimeMS) this.lastStatusSendTimeMS = 0;
-        
-        // If the time or size thresholds have been exceeded, or if we're being 
-        // forced to, send the stats.
-        if (finalCall
-            || (this.lastStatusSendTimeMS + this.statsSendInterval) < now
-            || stats.getCount() >= this.sendMaxEntries)
+        if (finalCall && PsiphonData.getPsiphonData().getDisplayDataTransferStats())
         {
-            MyLog.d("Sending stats"+(finalCall?" (final)":""));
+            PsiphonData.DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
             
-            try
+            long totalBytesSent = dataTransferStats.getTotalBytesSent();
+            double totalSentCompressionRatio = dataTransferStats.getTotalSentCompressionRatio();
+            long totalBytesReceived = dataTransferStats.getTotalBytesReceived();
+            double totalReceivedCompressionRatio = dataTransferStats.getTotalReceivedCompressionRatio();
+            long elapsedTime = dataTransferStats.getElapsedTime();
+                
+            MyLog.v(
+                    R.string.data_transfer_total_bytes_sent,
+                    MyLog.Sensitivity.NOT_SENSITIVE,
+                    Utils.byteCountToDisplaySize(totalBytesSent, false),
+                    totalSentCompressionRatio);
+        
+            MyLog.v(
+                    R.string.data_transfer_total_bytes_received,
+                    MyLog.Sensitivity.NOT_SENSITIVE,
+                    Utils.byteCountToDisplaySize(totalBytesReceived, false),
+                    totalReceivedCompressionRatio);
+        
+            MyLog.v(
+                    R.string.data_transfer_total_elapsed_time,
+                    MyLog.Sensitivity.NOT_SENSITIVE,
+                    Utils.elapsedTimeToDisplay(elapsedTime));        
+        }
+        
+        PsiphonData.ReportedStats reportedStats = PsiphonData.getPsiphonData().getReportedStats();
+
+        if (reportedStats != null)
+        {
+            // On the very first call, this.lastStatusSendTimeMS will be 0, but we
+            // don't want to send immediately. So...
+            if (this.lastStatusSendTimeMS == 0) this.lastStatusSendTimeMS = now; 
+            
+            // SystemClock.uptimeMillis() "may get reset occasionally (before it 
+            // would otherwise wrap around)".
+            if (now < this.lastStatusSendTimeMS) this.lastStatusSendTimeMS = 0;
+            
+            // If the time or size thresholds have been exceeded, or if we're being 
+            // forced to, send the stats.
+            if (finalCall
+                || (this.lastStatusSendTimeMS + this.statsSendInterval) < now
+                || reportedStats.getCount() >= this.sendMaxEntries)
             {
-                doStatusRequest(
-                        !finalCall, 
-                        stats.getPageViewEntries(), 
-                        stats.getHttpsRequestEntries(), 
-                        stats.getBytesTransferred());
+                MyLog.d("Sending stats"+(finalCall?" (final)":""));
                 
-                // Reset thresholds
-                this.lastStatusSendTimeMS = now;
-                this.statsSendInterval = DEFAULT_STATS_SEND_INTERVAL_MS;
-                this.sendMaxEntries = DEFAULT_SEND_MAX_ENTRIES;
-                
-                // Reset stats
-                stats.clear();
-            } 
-            catch (PsiphonServerInterfaceException e)
-            {
-                // Status request failed. This is fairly common. 
-                // We'll back off the thresholds and try again later.
-                this.statsSendInterval += DEFAULT_STATS_SEND_INTERVAL_MS;
-                this.sendMaxEntries += DEFAULT_SEND_MAX_ENTRIES;
-                
-                MyLog.d("Sending stats FAILED"+(finalCall?" (final)":""));
+                try
+                {
+                    doStatusRequest(
+                            !finalCall, 
+                            reportedStats.getPageViewEntries(), 
+                            reportedStats.getHttpsRequestEntries(), 
+                            reportedStats.getBytesTransferred());
+                    
+                    // Reset thresholds
+                    this.lastStatusSendTimeMS = now;
+                    this.statsSendInterval = DEFAULT_STATS_SEND_INTERVAL_MS;
+                    this.sendMaxEntries = DEFAULT_SEND_MAX_ENTRIES;
+                    
+                    // Reset stats
+                    reportedStats.clear();
+                } 
+                catch (PsiphonServerInterfaceException e)
+                {
+                    // Status request failed. This is fairly common. 
+                    // We'll back off the thresholds and try again later.
+                    this.statsSendInterval += DEFAULT_STATS_SEND_INTERVAL_MS;
+                    this.sendMaxEntries += DEFAULT_SEND_MAX_ENTRIES;
+                    
+                    MyLog.d("Sending stats FAILED"+(finalCall?" (final)":""));
+                }
             }
         }
     }

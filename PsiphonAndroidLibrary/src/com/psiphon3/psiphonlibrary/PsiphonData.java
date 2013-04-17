@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Psiphon Inc.
+ * Copyright (c) 2013, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,12 +20,16 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.json.JSONObject;
+
+import android.os.SystemClock;
 import android.util.Pair;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -52,7 +56,6 @@ public class PsiphonData
     }
 
     private ArrayList<String> m_homePages;
-    private Stats m_stats;
     private long m_nextFetchRemoteServerList;
     private boolean m_statusActivityForeground;
     private String m_clientSessionID;
@@ -67,17 +70,28 @@ public class PsiphonData
     private boolean m_tunnelWholeDevice;
     private boolean m_vpnServiceUnavailable;
     private TunnelCore m_currentTunnelCore;
+    private ReportedStats m_reportedStats;
+    private boolean m_enableReportedStats;
+    private DataTransferStats m_dataTransferStats;
+    private boolean m_displayDataTransferStats;
+    
+    public int m_notificationIconConnecting = 0;
+    public int m_notificationIconConnected = 0;
+    public int m_notificationIconDisconnected = 0;
 
     public Object serverEntryFileLock = new Object(); // Used as an intrinsic lock
         
     private PsiphonData()
     {
         m_homePages = new ArrayList<String>();
-        m_stats = new Stats();
         m_nextFetchRemoteServerList = -1;
         m_statusActivityForeground = false;
         m_tunnelWholeDevice = false;
         m_vpnServiceUnavailable = false;
+        m_reportedStats = new ReportedStats();
+        m_enableReportedStats = true;
+        m_dataTransferStats = new DataTransferStats();
+        m_displayDataTransferStats = false;
     }
 
     public synchronized void setHomePages(ArrayList<String> homePages)
@@ -94,11 +108,6 @@ public class PsiphonData
         ArrayList<String> homePages = new ArrayList<String>();
         homePages.addAll(m_homePages);
         return homePages;
-    }
-
-    public synchronized Stats getStats()
-    {
-        return m_stats;
     }
 
     public synchronized long getNextFetchRemoteServerList()
@@ -233,8 +242,8 @@ public class PsiphonData
 
     public synchronized void setCurrentTunnelCore(TunnelCore tunnelCore)
     {
-    	// TODO: make TunnelCore a singleton; then get rid of this hack.
-    	
+        // TODO: make TunnelCore a singleton; then get rid of this hack.
+        
         m_currentTunnelCore = tunnelCore;
     }
 
@@ -243,7 +252,51 @@ public class PsiphonData
         return m_currentTunnelCore;
     }
 
-    public class Stats
+    public synchronized void setNotificationIcons(
+            int connecting, 
+            int connected, 
+            int disconnected)
+    {
+        m_notificationIconConnecting = connecting;
+        m_notificationIconConnected = connected;
+        m_notificationIconDisconnected = disconnected;
+    }
+    
+    public synchronized int getNotificationIconConnecting()
+    {
+        return m_notificationIconConnecting;
+    }
+
+    public synchronized int getNotificationIconConnected()
+    {
+        return m_notificationIconConnected;
+    }
+
+    public synchronized int getNotificationIconDisconnected()
+    {
+        return m_notificationIconDisconnected;
+    }
+
+    public synchronized void setEnableReportedStats(boolean enableReportedStats)
+    {
+        m_enableReportedStats = enableReportedStats;
+    }
+
+    public synchronized boolean getEnableReportedStats()
+    {
+        return m_enableReportedStats;
+    }
+
+    public synchronized ReportedStats getReportedStats()
+    {
+        if (!m_enableReportedStats)
+        {
+            return null;
+        }
+        return m_reportedStats;
+    }
+
+    public class ReportedStats
     {
         private Integer m_bytesTransferred = 0;
         private Map<String, Integer> m_pageViewEntries;
@@ -251,18 +304,18 @@ public class PsiphonData
         private List<Pair<Pattern, String>> m_pageViewRegexes;
         private List<Pair<Pattern, String>> m_httpsRequestRegexes;
             
-        Stats()
+        ReportedStats()
         {
-            m_pageViewEntries = new HashMap<String, Integer>();
-            m_httpsRequestEntries = new HashMap<String, Integer>();
+            this.m_pageViewEntries = new HashMap<String, Integer>();
+            this.m_httpsRequestEntries = new HashMap<String, Integer>();
         }
     
         public synchronized void setRegexes(
                 List<Pair<Pattern, String>> pageViewRegexes,
                 List<Pair<Pattern, String>> httpsRequestRegexes)
         {
-            m_stats.m_pageViewRegexes = pageViewRegexes;
-            m_stats.m_httpsRequestRegexes = httpsRequestRegexes;
+            this.m_pageViewRegexes = pageViewRegexes;
+            this.m_httpsRequestRegexes = httpsRequestRegexes;
         }
     
         public synchronized void addBytesSent(int byteCount)
@@ -359,71 +412,315 @@ public class PsiphonData
         }
     }
     
+    public synchronized void setDisplayDataTransferStats(boolean displayDataTransferStats)
+    {
+        m_displayDataTransferStats = displayDataTransferStats;
+    }
+
+    public synchronized boolean getDisplayDataTransferStats()
+    {
+        return m_displayDataTransferStats;
+    }
+
+    public synchronized DataTransferStats getDataTransferStats()
+    {
+        return m_dataTransferStats;
+    }
+
+    public class DataTransferStats
+    {
+        private boolean m_isConnected;
+        private long m_startTime;
+
+        private long m_totalBytesSent;
+        private long m_totalUncompressedBytesSent;
+        private long m_totalOverheadBytesSent;
+        private long m_totalBytesReceived;
+        private long m_totalUncompressedBytesReceived;
+        private long m_totalOverheadBytesReceived;
+
+        public final static long SLOW_BUCKET_PERIOD_MILLISECONDS = 5*60*1000; 
+        public final static long FAST_BUCKET_PERIOD_MILLISECONDS = 1000;
+        public final static int MAX_BUCKETS = 24*60/5;
+        
+        private class Bucket
+        {
+            public long m_bytesSent = 0;
+            public long m_bytesReceived = 0;
+        }
+        
+        private ArrayList<Bucket> m_slowBuckets;
+        private long m_slowBucketsLastStartTime;
+        private ArrayList<Bucket> m_fastBuckets;
+        private long m_fastBucketsLastStartTime;
+        
+        DataTransferStats()
+        {
+            stop();
+        }
+        
+        public synchronized void start()
+        {
+            this.m_isConnected = true;
+            reset();
+        }
+
+        public synchronized void stop()
+        {
+            this.m_isConnected = false;
+            reset();
+        }
+        
+        private void reset()
+        {
+            long now = SystemClock.elapsedRealtime();
+            this.m_startTime = now;
+            this.m_totalBytesSent = 0;
+            this.m_totalUncompressedBytesSent = 0;
+            this.m_totalOverheadBytesSent = 0;
+            this.m_totalBytesReceived = 0;
+            this.m_totalUncompressedBytesReceived = 0;
+            this.m_totalOverheadBytesReceived = 0;
+            this.m_slowBucketsLastStartTime = bucketStartTime(now, SLOW_BUCKET_PERIOD_MILLISECONDS);
+            this.m_slowBuckets = newBuckets();
+            this.m_fastBucketsLastStartTime = bucketStartTime(now, FAST_BUCKET_PERIOD_MILLISECONDS);
+            this.m_fastBuckets = newBuckets();
+        }
+
+        public synchronized void addBytesSent(int bytes, int uncompressedBytes, int overheadBytes)
+        {
+            this.m_totalBytesSent += bytes;
+            this.m_totalUncompressedBytesSent += uncompressedBytes;
+            this.m_totalOverheadBytesSent += overheadBytes;
+            
+            manageBuckets();
+            addSentToBuckets(bytes);
+        }
+    
+        public synchronized void addBytesReceived(int bytes, int uncompressedBytes, int overheadBytes)
+        {
+            this.m_totalBytesReceived += bytes;
+            this.m_totalUncompressedBytesReceived += uncompressedBytes;
+            this.m_totalOverheadBytesReceived += overheadBytes;
+
+            manageBuckets();
+            addReceivedToBuckets(bytes);
+        }
+        
+        private long bucketStartTime(long now, long period)
+        {
+            return period*(now/period);
+        }
+        
+        private ArrayList<Bucket> newBuckets()
+        {
+            ArrayList<Bucket> buckets = new ArrayList<Bucket>();
+            for (int i = 0; i < MAX_BUCKETS; i++)
+            {
+                buckets.add(new Bucket());
+            }
+            return buckets;
+        }
+        
+        private void shiftBuckets(long diff, long period, ArrayList<Bucket> buckets)
+        {
+            for (int i = 0; i < diff/period + 1; i++)
+            {
+                buckets.add(buckets.size(), new Bucket());
+                if (buckets.size() >= MAX_BUCKETS)
+                {
+                    buckets.remove(0);
+                }
+            }            
+        }
+        
+        private void manageBuckets()
+        {
+            long now = SystemClock.elapsedRealtime();
+
+            long diff = now - this.m_slowBucketsLastStartTime;            
+            if (diff >= SLOW_BUCKET_PERIOD_MILLISECONDS)
+            {
+                shiftBuckets(diff, SLOW_BUCKET_PERIOD_MILLISECONDS, m_slowBuckets);
+                this.m_slowBucketsLastStartTime = bucketStartTime(now, SLOW_BUCKET_PERIOD_MILLISECONDS);
+            }
+
+            diff = now - this.m_fastBucketsLastStartTime;            
+            if (diff >= FAST_BUCKET_PERIOD_MILLISECONDS)
+            {
+                shiftBuckets(diff, FAST_BUCKET_PERIOD_MILLISECONDS, m_fastBuckets);
+                this.m_fastBucketsLastStartTime = bucketStartTime(now, FAST_BUCKET_PERIOD_MILLISECONDS);
+            }
+        }
+        
+        private ArrayList<Long> getSentSeries(ArrayList<Bucket> buckets)
+        {
+            ArrayList<Long> series = new ArrayList<Long>();
+            for (int i = 0; i < buckets.size(); i++)
+            {
+                series.add(buckets.get(i).m_bytesSent);
+            }
+            return series;
+        }
+        
+        private ArrayList<Long> getReceivedSeries(ArrayList<Bucket> buckets)
+        {
+            ArrayList<Long> series = new ArrayList<Long>();
+            for (int i = 0; i < buckets.size(); i++)
+            {
+                series.add(buckets.get(i).m_bytesReceived);
+            }
+            return series;
+        }
+        
+        private void addSentToBuckets(int bytes)
+        {
+            this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesReceived += bytes;
+            this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesReceived += bytes;
+        }
+        
+        private void addReceivedToBuckets(int bytes)
+        {
+            this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesSent += bytes;
+            this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesSent += bytes;
+        }
+        
+        public synchronized boolean isConnected()
+        {
+            return this.m_isConnected;
+        }
+        
+        public synchronized long getElapsedTime()
+        {
+            long now = SystemClock.elapsedRealtime();
+            
+            return now - this.m_startTime;
+        }
+    
+        public synchronized long getTotalBytesSent()
+        {
+            return this.m_totalBytesSent;
+        }
+        
+        public synchronized long getTotalUncompressedBytesSent()
+        {
+            return this.m_totalUncompressedBytesSent;
+        }
+
+        public synchronized long getTotalOverheadBytesSent()
+        {
+            return this.m_totalOverheadBytesSent;
+        }
+
+        public synchronized double getTotalSentCompressionRatio()
+        {
+            if (this.m_totalUncompressedBytesSent == 0) return 0.0;
+            return 100.0*(1.0-(double)(this.m_totalBytesSent + this.m_totalOverheadBytesSent)/(double)this.m_totalUncompressedBytesSent);
+        }
+        
+        public synchronized long getTotalBytesReceived()
+        {
+            return this.m_totalBytesReceived;
+        }
+        
+        public synchronized long getTotalOverheadBytesReceived()
+        {
+            return this.m_totalOverheadBytesReceived;
+        }
+        
+        public synchronized long getTotalUncompressedBytesReceived()
+        {
+            return this.m_totalUncompressedBytesReceived;
+        }
+
+        public synchronized double getTotalReceivedCompressionRatio()
+        {
+            if (this.m_totalUncompressedBytesReceived == 0) return 0.0;
+            return 100.0*(1.0-(double)(this.m_totalBytesReceived + this.m_totalOverheadBytesReceived)/(double)this.m_totalUncompressedBytesReceived);
+        }
+        
+        public synchronized ArrayList<Long> getSlowSentSeries()
+        {
+            manageBuckets();
+            return getSentSeries(this.m_slowBuckets);
+        }
+        
+        public synchronized ArrayList<Long> getSlowReceivedSeries()
+        {
+            manageBuckets();
+            return getReceivedSeries(this.m_slowBuckets);
+        }
+        
+        public synchronized ArrayList<Long> getFastSentSeries()
+        {
+            manageBuckets();
+            return getSentSeries(this.m_fastBuckets);
+        }
+        
+        public synchronized ArrayList<Long> getFastReceivedSeries()
+        {
+            manageBuckets();
+            return getReceivedSeries(this.m_fastBuckets);
+        }
+    }
+    
     /*
      * Status Message History support
      */
 
     static public class StatusEntry
     {
-        private String timestamp;
+        private Date timestamp;
         private int id;
-        private String idName;
         private Object[] formatArgs;
         private Throwable throwable;
         private int priority;
         private MyLog.Sensitivity sensitivity;
         
-        public String timestamp()
+        public Date timestamp()
         {
-        	return timestamp;
+            return timestamp;
         }
         
         public int id()
         {
-        	return id;
-        }
-        
-        public String idName()
-        {
-        	return idName;
+            return id;
         }
         
         public Object[] formatArgs()
         {
-        	return formatArgs;
+            return formatArgs;
         }
         
         public Throwable throwable()
         {
-        	return throwable;
+            return throwable;
         }
         
         public int priority()
         {
-        	return priority;
+            return priority;
         }
         
         public MyLog.Sensitivity sensitivity()
         {
-        	return sensitivity;
+            return sensitivity;
         }
     }
     
-    static private ArrayList<StatusEntry> m_statusHistory = new ArrayList<StatusEntry>();
+    private ArrayList<StatusEntry> m_statusHistory = new ArrayList<StatusEntry>();
     
-    static public void addStatusEntry(
-            String timestamp,
-    		int id, 
-    		String idName, 
-    		MyLog.Sensitivity sensitivity, 
-    		Object[] formatArgs, 
-    		Throwable throwable, 
-    		int priority)
+    public void addStatusEntry(
+            Date timestamp,
+            int id, 
+            MyLog.Sensitivity sensitivity, 
+            Object[] formatArgs, 
+            Throwable throwable, 
+            int priority)
     {
         StatusEntry entry = new StatusEntry();
         entry.timestamp = timestamp;
         entry.id = id;
-        entry.idName = idName;
         entry.sensitivity = sensitivity;
         entry.formatArgs = formatArgs;
         entry.throwable = throwable;
@@ -435,7 +732,7 @@ public class PsiphonData
         }
     }
     
-    static public ArrayList<StatusEntry> cloneStatusHistory()
+    public ArrayList<StatusEntry> cloneStatusHistory()
     {
         ArrayList<StatusEntry> copy;
         synchronized(m_statusHistory) 
@@ -445,57 +742,83 @@ public class PsiphonData
         return copy;
     }
     
-    static public void clearStatusHistory()
+    public void clearStatusHistory()
     {
         synchronized(m_statusHistory) 
         {        
             m_statusHistory.clear();
         }
     }
-
+    
+    /** 
+     * @param index
+     * @return Returns item at `index`. Negative indexes count from the end of 
+     * the array. If `index` is out of bounds, null is returned.
+     */
+    public StatusEntry getStatusEntry(int index) 
+    {
+        synchronized(m_statusHistory) 
+        {   
+            if (index < 0) 
+            {
+                // index is negative, so this is subtracting...
+                index = m_statusHistory.size() + index;
+                // Note that index is still negative if the array is empty or if
+                // the negative value was too large.
+            }
+            
+            if (index >= m_statusHistory.size() || index < 0)
+            {
+                return null;
+            }
+            
+            return m_statusHistory.get(index);
+        }
+    }
+    
     /*
      * Diagnostic history support
      */
     
     static public class DiagnosticEntry extends Object
     {
-        private String timestamp;
+        private Date timestamp;
         private String msg;
-        private Object data;
+        private JSONObject data;
 
-        public String timestamp()
+        public Date timestamp()
         {
-        	return timestamp;
+            return timestamp;
         }
         
         public String msg()
         {
-        	return msg;
+            return msg;
         }
         
-        public Object data()
+        public JSONObject data()
         {
-        	return data;
+            return data;
         }
     }
         
     static private List<DiagnosticEntry> m_diagnosticHistory = new ArrayList<DiagnosticEntry>();
 
-    static public void addDiagnosticEntry(String msg, Object data)
+    static public void addDiagnosticEntry(Date timestamp, String msg, JSONObject data)
     {
-    	DiagnosticEntry entry = new DiagnosticEntry();
-    	entry.timestamp = Utils.getISO8601String();
-    	entry.msg = msg;
-    	entry.data = data;
+        DiagnosticEntry entry = new DiagnosticEntry();
+        entry.timestamp = timestamp;
+        entry.msg = msg;
+        entry.data = data;
         m_diagnosticHistory.add(entry);
     }
     
     static public List<DiagnosticEntry> cloneDiagnosticHistory()
     {
-    	List<DiagnosticEntry> copy;
+        List<DiagnosticEntry> copy;
         synchronized(m_diagnosticHistory) 
         {
-        	copy = new ArrayList<DiagnosticEntry>(m_diagnosticHistory);
+            copy = new ArrayList<DiagnosticEntry>(m_diagnosticHistory);
         }
         return copy;
     }

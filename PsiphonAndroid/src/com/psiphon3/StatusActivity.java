@@ -20,7 +20,6 @@
 package com.psiphon3;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.ActivityManager.RunningServiceInfo;
@@ -33,7 +32,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences.Editor;
-import android.graphics.Typeface;
 import android.net.Uri;
 import android.net.VpnService;
 import android.os.Build;
@@ -41,22 +39,18 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.webkit.URLUtil;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.ImageView;
-import android.widget.ScrollView;
-import android.widget.TableLayout;
-import android.widget.TextView;
+import android.widget.ListView;
 
 import com.psiphon3.UpgradeManager.UpgradeInstaller;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.PsiphonData;
+import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.TunnelCore;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.TunnelVpnService;
@@ -64,10 +58,9 @@ import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
-public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
+public class StatusActivity 
+    extends com.psiphon3.psiphonlibrary.MainBase.Activity
 {
-    public static final String ADD_MESSAGE = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE";
-    public static final String ADD_MESSAGE_TEXT = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TEXT";
     public static final String ADD_MESSAGE_CLASS = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_CLASS";
     public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
     public static final String UNEXPECTED_DISCONNECT = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT";
@@ -78,15 +71,14 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     
     private static final int VPN_PREPARE = 100;
     
-    private TableLayout m_messagesTableLayout;
-    private ScrollView m_messagesScrollView;
+    private StatusListViewManager m_statusListManager;
     private Button m_toggleButton;
     private CheckBox m_tunnelWholeDeviceToggle;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private LocalBroadcastManager m_localBroadcastManager;
     private final Events m_eventsInterface = new Events();
     private static boolean m_firstRun = true;
-    
+        
     private boolean m_boundToTunnelService = false;
     private ServiceConnection m_tunnelServiceConnection = new ServiceConnection()
     {
@@ -135,16 +127,15 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     };
 
     @Override
-    public void onCreate(Bundle savedInstanceState)
+    protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         
-        MyLog.logInfoProvider = this;
-
         setContentView(R.layout.main);
         
-        m_messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
-        m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
+        // Set up the list view
+        m_statusListManager = new StatusListViewManager((ListView)findViewById(R.id.statusList));
+        
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
         initToggleText();
 
@@ -187,10 +178,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         m_localBroadcastManager = LocalBroadcastManager.getInstance(StatusActivity.this);
 
         m_localBroadcastManager.registerReceiver(
-                new AddMessageReceiver(),
-                new IntentFilter(ADD_MESSAGE));
-        
-        m_localBroadcastManager.registerReceiver(
                 new TunnelStartingReceiver(),
                 new IntentFilter(TUNNEL_STARTING));
 
@@ -199,8 +186,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                 new IntentFilter(TUNNEL_STOPPING));
         
         // Restore messages previously posted by the service.
-        // Note that this must come *after* this activity registers to receive ADD_MESSAGE intents.
-        m_messagesTableLayout.removeAllViews();
         MyLog.restoreLogHistory();
         
         // Auto-start on app first run
@@ -215,9 +200,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     protected void onResume()
     {
         super.onResume();
-        
-        // Scroll down to display log messages posted while activity was not foreground
-        postScrollToBottom();
         
         PsiphonData.getPsiphonData().setStatusActivityForeground(true);
     }
@@ -502,11 +484,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             catch (ActivityNotFoundException e)
             {
                 MyLog.e(R.string.tunnel_whole_device_exception, MyLog.Sensitivity.NOT_SENSITIVE);
-                if (MyLog.logger == null)
-                {
-                    // Usually the TunnelCore instance is the 'logger', but at this point there may be no service/TunnelCore
-                    addMessage(getString(R.string.tunnel_whole_device_exception), MESSAGE_CLASS_ERROR);
-                }
                 
                 // VpnService is broken. For rooted devices, proceed with starting Whole Device in root mode.
                 
@@ -640,112 +617,16 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         return TunnelVpnService.class.getName().equals(className);
     }
 
-    public class AddMessageReceiver extends BroadcastReceiver
-    {
-        @Override
-        public void onReceive(Context context, Intent intent)
-        {
-            String message = intent.getStringExtra(ADD_MESSAGE_TEXT);
-            int messageClass = intent.getIntExtra(ADD_MESSAGE_CLASS, MESSAGE_CLASS_INFO);
-            addMessage(message, messageClass);
-        }
-    }
-    
-    public static final int MESSAGE_CLASS_VERBOSE = 0;
-    public static final int MESSAGE_CLASS_INFO = 1;
-    public static final int MESSAGE_CLASS_WARNING = 2;
-    public static final int MESSAGE_CLASS_ERROR = 3;
-    public static final int MESSAGE_CLASS_DEBUG = 4;
-    
-    public void addMessage(String message, int messageClass)
-    {
-        int messageClassImageRes = -1;
-        boolean boldText = true;
+    /*
+     * MyLog.ILogger implementation
+     */
 
-        switch (messageClass)
-        {
-        case MESSAGE_CLASS_INFO:
-            messageClassImageRes = android.R.drawable.presence_online;
-            break;
-        case MESSAGE_CLASS_ERROR:
-            messageClassImageRes = android.R.drawable.presence_busy;
-            break;
-        default:
-            // No image
-            boldText = false;
-            break;
-        }
-        
-        
-        LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View rowView = inflater.inflate(R.layout.message_row, null);
-        
-        TextView textView = (TextView)rowView.findViewById(R.id.MessageRow_Text);
-        textView.setText(message);
-        textView.setTypeface(boldText ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
-        
-        ImageView imageView = (ImageView)rowView.findViewById(R.id.MessageRow_Image);
-        if (messageClassImageRes != -1)
-        {
-            imageView.setImageResource(messageClassImageRes);
-        }
-        
-        m_messagesTableLayout.addView(rowView);
-        
-        // Wait until the messages list is updated before attempting to scroll 
-        // to the bottom.
-        postScrollToBottom();
-    }
-    
-    private void postScrollToBottom()
-    {
-        m_messagesScrollView.post(
-            new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    m_messagesScrollView.fullScroll(View.FOCUS_DOWN);
-                }
-            });
-    }
-    
     /**
-     * Utils.MyLog.ILogInfoProvider implementation
-     * For Android priority values, see <a href="http://developer.android.com/reference/android/util/Log.html">http://developer.android.com/reference/android/util/Log.html</a>
+     * @see com.psiphon3.psiphonlibrary.Utils.MyLog.ILogger#statusEntryAdded()
      */
     @Override
-    public int getAndroidLogPriorityEquivalent(int priority)
+    public void statusEntryAdded()
     {
-        switch (priority)
-        {
-        case Log.ERROR:
-            return StatusActivity.MESSAGE_CLASS_ERROR;
-        case Log.WARN:
-            return StatusActivity.MESSAGE_CLASS_WARNING;
-        case Log.INFO:
-            return StatusActivity.MESSAGE_CLASS_INFO;
-        case Log.DEBUG:
-            return StatusActivity.MESSAGE_CLASS_DEBUG;
-        default:
-            return StatusActivity.MESSAGE_CLASS_VERBOSE;
-        }
-    }
-
-    @Override
-    public String getResourceString(int stringResID, Object[] formatArgs)
-    {
-        if (formatArgs == null || formatArgs.length == 0)
-        {
-            return getString(stringResID);
-        }
-        
-        return getString(stringResID, formatArgs);
-    }
-
-    @Override
-    public String getResourceEntryName(int stringResID)
-    {
-        return getResources().getResourceEntryName(stringResID);
+        m_statusListManager.notifyStatusAdded();
     }
 }
