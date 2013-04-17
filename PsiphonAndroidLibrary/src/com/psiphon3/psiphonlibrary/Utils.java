@@ -642,19 +642,32 @@ public class Utils
         return networkInfo == null ? "" : networkInfo.getTypeName();
     }
 
+    private static final String CANDIDATE_10_SLASH_8 = "10.0.0.1";
+    private static final String SUBNET_10_SLASH_8 = "10.0.0.0";
+    private static final int PREFIX_LENGTH_10_SLASH_8 = 8;
+
+    private static final String CANDIDATE_172_16_SLASH_12 = "172.16.0.1";
+    private static final String SUBNET_172_16_SLASH_12 = "172.16.0.0";
+    private static final int PREFIX_LENGTH_172_16_SLASH_12 = 12;
+
+    private static final String CANDIDATE_192_168_SLASH_16 = "192.168.0.1";        
+    private static final String SUBNET_192_168_SLASH_16 = "192.168.0.0";
+    private static final int PREFIX_LENGTH_192_168_SLASH_16 = 16;
+    
+    private static final String CANDIDATE_169_254_1_SLASH_24 = "169.254.1.1";        
+    private static final String SUBNET_169_254_1_SLASH_24 = "169.254.1.0";
+    private static final int PREFIX_LENGTH_169_254_1_SLASH_24 = 24;
+    
     public static String selectPrivateAddress()
     {
         // Select one of 10.0.0.1, 172.16.0.1, or 192.168.0.1 depending on
         // which private address range isn't in use.
 
-        final String CANDIDATE_10_SLASH_8 = "10.0.0.1";
-        final String CANDIDATE_172_16_SLASH_12 = "172.16.0.1";
-        final String CANDIDATE_192_168_SLASH_16 = "192.168.0.1";
-        
         ArrayList<String> candidates = new ArrayList<String>();
         candidates.add(CANDIDATE_10_SLASH_8);
         candidates.add(CANDIDATE_172_16_SLASH_12);
         candidates.add(CANDIDATE_192_168_SLASH_16);
+        candidates.add(CANDIDATE_169_254_1_SLASH_24);
         
         List<NetworkInterface> netInterfaces;
         try
@@ -698,6 +711,48 @@ public class Utils
         }
         
         return null;
+    }
+    
+    public static String getPrivateAddressSubnet(String privateIpAddress)
+    {
+        if (0 == privateIpAddress.compareTo(CANDIDATE_10_SLASH_8))
+        {
+            return SUBNET_10_SLASH_8;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_172_16_SLASH_12))
+        {
+            return SUBNET_172_16_SLASH_12;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_192_168_SLASH_16))
+        {
+            return SUBNET_192_168_SLASH_16;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_169_254_1_SLASH_24))
+        {
+            return SUBNET_169_254_1_SLASH_24;
+        }
+        return null;
+    }
+    
+    public static int getPrivateAddressPrefixLength(String privateIpAddress)
+    {
+        if (0 == privateIpAddress.compareTo(CANDIDATE_10_SLASH_8))
+        {
+            return PREFIX_LENGTH_10_SLASH_8;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_172_16_SLASH_12))
+        {
+            return PREFIX_LENGTH_172_16_SLASH_12;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_192_168_SLASH_16))
+        {
+            return PREFIX_LENGTH_192_168_SLASH_16;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_169_254_1_SLASH_24))
+        {
+            return PREFIX_LENGTH_169_254_1_SLASH_24;
+        }
+        return 0;        
     }
     
     public static String byteCountToDisplaySize(long bytes, boolean si)

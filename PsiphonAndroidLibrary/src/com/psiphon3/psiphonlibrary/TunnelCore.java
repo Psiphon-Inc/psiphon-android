@@ -938,12 +938,16 @@ public class TunnelCore implements IStopSignalPending
         String builderErrorMessage = null;
         try
         {
+            String subnet = Utils.getPrivateAddressSubnet(privateIpAddress);
+            int prefixLength = Utils.getPrivateAddressPrefixLength(privateIpAddress);
+            
             VpnService.Builder builder = ((TunnelVpnService)m_parentService).newBuilder();
             vpnInterfaceFileDescriptor = builder
                     .setSession(m_parentService.getString(R.string.app_name))
                     .setMtu(PsiphonConstants.VPN_INTERFACE_MTU)
-                    .addAddress(privateIpAddress, 32)
+                    .addAddress(privateIpAddress, prefixLength)
                     .addRoute("0.0.0.0", 0)
+                    .addRoute(subnet, prefixLength)
                     .addDnsServer(tunnelWholeDeviceDNSServer)
                     .establish();
             if (vpnInterfaceFileDescriptor == null)
