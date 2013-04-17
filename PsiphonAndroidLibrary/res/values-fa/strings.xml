@@ -61,7 +61,7 @@
   <string name="checking_for_root_access">... چک کردن برای دسترسی به روت </string>
   <string name="psiphon_service_notification_message_connecting">سایفون در حال اجراست</string>
   <string name="psiphon_service_notification_id">اطلاع سرویس سایفون </string>
-  <string name="preferred_servers">سرورهای مورد ترجیح:  d%</string>
+  <string name="preferred_servers">سرورهای مورد ترجیح:  %d</string>
   <string name="selecting_server">انتخاب سرور...</string>
   <string name="fetch_remote_server_list">گرفتن لیست سرورهای ریموت... </string>
   <string name="vpn_service_failed">سرویس وی پی ان نا موفق بود:%s</string>
