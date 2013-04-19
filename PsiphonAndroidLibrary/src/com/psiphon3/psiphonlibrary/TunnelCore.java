@@ -945,16 +945,12 @@ public class TunnelCore implements IStopSignalPending
             String subnet = Utils.getPrivateAddressSubnet(privateIpAddress);
             int prefixLength = Utils.getPrivateAddressPrefixLength(privateIpAddress);
 
-            // Set the locale to English (or probably any other left-to-right language).
+            // Set the locale to English (or probably any other language that
+            // uses Hindu-Arabic (aka Latin) numerals).
             // We have found that VpnService.Builder does something locale-dependent
-            // internally that causes errors when the locale is a right-to-left
-            // language (or at least Farsi or Arabic). 
-            Locale locale = new Locale("en");
-            Locale.setDefault(locale);
-            Configuration config = new Configuration();
-            config.locale = locale;
-            m_parentContext.getResources().updateConfiguration(config,
-                    m_parentContext.getResources().getDisplayMetrics());
+            // internally that causes errors when the locale uses its own numerals
+            // (i.e., Farsi and Arabic).
+            Locale.setDefault(new Locale("en"));
             
             VpnService.Builder builder = ((TunnelVpnService)m_parentService).newBuilder();
             vpnInterfaceFileDescriptor = builder
@@ -988,10 +984,6 @@ public class TunnelCore implements IStopSignalPending
         {
             // Restore the original locale.
             Locale.setDefault(prevLocale);
-            Configuration config = new Configuration();
-            config.locale = prevLocale;
-            m_parentContext.getResources().updateConfiguration(config,
-                    m_parentContext.getResources().getDisplayMetrics());
         }
         
         if (vpnInterfaceFileDescriptor == null)
