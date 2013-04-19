@@ -27,6 +27,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +42,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
@@ -934,12 +936,25 @@ public class TunnelCore implements IStopSignalPending
         // *Must* have a parent service for this mode
         assert (m_parentService != null);
 
+        Locale prevLocale = Locale.getDefault();
+        
         ParcelFileDescriptor vpnInterfaceFileDescriptor = null;
         String builderErrorMessage = null;
         try
         {
             String subnet = Utils.getPrivateAddressSubnet(privateIpAddress);
             int prefixLength = Utils.getPrivateAddressPrefixLength(privateIpAddress);
+
+            // Set the locale to English (or probably any other left-to-right language).
+            // We have found that VpnService.Builder does something locale-dependent
+            // internally that causes errors when the locale is a right-to-left
+            // language (or at least Farsi or Arabic). 
+            Locale locale = new Locale("en");
+            Locale.setDefault(locale);
+            Configuration config = new Configuration();
+            config.locale = locale;
+            m_parentContext.getResources().updateConfiguration(config,
+                    m_parentContext.getResources().getDisplayMetrics());
             
             VpnService.Builder builder = ((TunnelVpnService)m_parentService).newBuilder();
             vpnInterfaceFileDescriptor = builder
@@ -950,6 +965,7 @@ public class TunnelCore implements IStopSignalPending
                     .addRoute(subnet, prefixLength)
                     .addDnsServer(tunnelWholeDeviceDNSServer)
                     .establish();
+            
             if (vpnInterfaceFileDescriptor == null)
             {
                 // as per http://developer.android.com/reference/android/net/VpnService.Builder.html#establish%28%29
@@ -968,6 +984,16 @@ public class TunnelCore implements IStopSignalPending
         {
             builderErrorMessage = e.getMessage();                    
         }
+        finally
+        {
+            // Restore the original locale.
+            Locale.setDefault(prevLocale);
+            Configuration config = new Configuration();
+            config.locale = prevLocale;
+            m_parentContext.getResources().updateConfiguration(config,
+                    m_parentContext.getResources().getDisplayMetrics());
+        }
+        
         if (vpnInterfaceFileDescriptor == null)
         {
             // If we can't configure the Android OS VPN, abort
