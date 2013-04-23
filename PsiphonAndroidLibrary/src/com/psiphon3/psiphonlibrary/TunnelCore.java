@@ -763,6 +763,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                 m_upgradeDownloader.start();
             }
             
+            boolean hasTunnel = true;
+            
             try
             {
                 // This busy-wait-ish loop is throttled by the `checkSignals(1)`
@@ -773,12 +775,22 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                 {
                     checkSignals(1);
     
-                    m_interface.doPeriodicWork(false);
+                    m_interface.doPeriodicWork(null, true, false);
                 }
+            }
+            catch (TunnelVpnServiceUnexpectedDisconnect e)
+            {
+                // NOTE: this it re-caught in the outer try. Here we're just
+                // setting a flag which determines doPeriodicWork behavior when
+                // there's no tunnel.
+                hasTunnel = false;
+                throw e;
             }
             finally
             {
-                m_interface.doPeriodicWork(true);
+                // At this point, there may be no tunnel and we may need to protect
+                // the request socket.
+                m_interface.doPeriodicWork(cleanupTun2Socks ? this : null, hasTunnel, true);
             }
         }
         catch (IOException e)

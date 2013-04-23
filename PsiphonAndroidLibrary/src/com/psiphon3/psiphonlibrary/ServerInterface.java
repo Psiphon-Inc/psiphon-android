@@ -563,7 +563,9 @@ public class ServerInterface
      * @throws PsiphonServerInterfaceException
      */
     synchronized public void doStatusRequest(
-            boolean connected, 
+            Tun2Socks.IProtectSocket protectSocket,
+            boolean hasTunnel, 
+            boolean finalCall, 
             Map<String, Integer> pageViewEntries, 
             Map<String, Integer> httpsRequestEntries,
             Number bytesTransferred) 
@@ -614,13 +616,17 @@ public class ServerInterface
         
         List<Pair<String,String>> extraParams = new ArrayList<Pair<String,String>>();
         extraParams.add(Pair.create("session_id", this.serverSessionID));
-        extraParams.add(Pair.create("connected", connected ? "1" : "0"));
+        extraParams.add(Pair.create("connected", finalCall ? "0" : "1"));
 
         List<Pair<String,String>> additionalHeaders = new ArrayList<Pair<String,String>>();
         additionalHeaders.add(Pair.create("Content-Type", "application/json"));
         
-        if (connected)
+        // protectSocket, hasTunnel
+        if (!finalCall)
         {
+            assert(protectSocket == null);
+            assert(hasTunnel == true);
+
             String url = getRequestURL("status", extraParams);
             makeAbortableProxiedPsiphonRequest(url, additionalHeaders, requestBody);            
         }
@@ -629,9 +635,14 @@ public class ServerInterface
             // The final status request is not abortable and will fail over
             // to non-tunnel HTTPS and alternate ports. This is to maximize
             // our chance of getting stats for session duration.
+
+            // When the final call is made, we may not have a tunnel. We may
+            // also be holding VpnService tun routing open. When there's no
+            // tunnel, don't make a tunneled request. When the routing is
+            // in place, protect the (direct) request socket.
             
             String urls[] = getRequestURLsWithFailover("status", extraParams);
-            makePsiphonRequestWithFailover(urls, additionalHeaders, requestBody);
+            makePsiphonRequestWithFailover(protectSocket, hasTunnel, urls, additionalHeaders, requestBody);
         }
     }
 
@@ -695,7 +706,9 @@ public class ServerInterface
         additionalHeaders.add(Pair.create("Content-Type", "application/json"));
 
         String urls[] = getRequestURLsWithFailover("feedback", extraParams);
-        makePsiphonRequestWithFailover(urls, additionalHeaders, requestBody);
+
+        *** TODO: don't have TunnelCore reference where this function is called
+        makePsiphonRequestWithFailover(null, true, urls, additionalHeaders, requestBody);
     }
 
     synchronized public void fetchRemoteServerList(Tun2Socks.IProtectSocket protectSocket)
@@ -880,6 +893,8 @@ public class ServerInterface
     }
     
     private byte[] makePsiphonRequestWithFailover(
+            Tun2Socks.IProtectSocket protectSocket,
+            boolean hasTunnel,
             String[] urls,
             List<Pair<String,String>> additionalHeaders,
             byte[] body) 
@@ -888,41 +903,44 @@ public class ServerInterface
         // This request won't abort and will fail over to direct requests,
         // to multiple ports, when tunnel is down            
 
-        PsiphonServerInterfaceException lastError;
+        PsiphonServerInterfaceException lastError = null;
         
-        try
+        if (hasTunnel)
         {
-            // Try tunneled request on first port (first url)
-            
-            return makeProxiedPsiphonRequest(false, urls[0], additionalHeaders, body);
-        }
-        catch (PsiphonServerInterfaceException e1)
-        {
-            lastError = e1;
-
-            // NOTE: deliberately ignoring this.stopped and adding new non-abortable requests
-
-            // Try direct non-tunnel request
-
-            for (String url : urls)
+            try
             {
-                try
-                {
-                    // Psiphon web request: authenticate the web server using the embedded certificate.
-                    String psiphonServerCertificate = getCurrentServerEntry().webServerCertificate;
-
-                    return makeRequest(null, false, false, psiphonServerCertificate, url, additionalHeaders, body);
-                }
-                catch (PsiphonServerInterfaceException e2)
-                {
-                    lastError = e2;
-
-                    // Try next port/url...
-                }
+                // Try tunneled request on first port (first url)
+                
+                return makeProxiedPsiphonRequest(false, urls[0], additionalHeaders, body);
             }
-            
-            throw lastError;
+            catch (PsiphonServerInterfaceException e1)
+            {
+                lastError = e1;
+            }
         }
+
+        // NOTE: deliberately ignoring this.stopped and adding new non-abortable requests
+
+        // Try direct non-tunnel requests
+
+        for (String url : urls)
+        {
+            try
+            {
+                // Psiphon web request: authenticate the web server using the embedded certificate.
+                String psiphonServerCertificate = getCurrentServerEntry().webServerCertificate;
+
+                return makeRequest(protectSocket, false, false, psiphonServerCertificate, url, additionalHeaders, body);
+            }
+            catch (PsiphonServerInterfaceException e2)
+            {
+                lastError = e2;
+
+                // Try next port/url...
+            }
+        }
+        
+        throw lastError;
     }
     
     private byte[] makeProxiedPsiphonRequest(
@@ -1461,7 +1479,10 @@ public class ServerInterface
      * @param finalCall Should be true if this is the last call -- i.e., if a
      *                  disconnect is about to occur.
      */
-    public synchronized void doPeriodicWork(boolean finalCall)
+    public synchronized void doPeriodicWork(
+            Tun2Socks.IProtectSocket protectSocket,
+            boolean hasTunnel,
+            boolean finalCall)
     {
         long now = SystemClock.uptimeMillis();
         
@@ -1516,7 +1537,9 @@ public class ServerInterface
                 try
                 {
                     doStatusRequest(
-                            !finalCall, 
+                            protectSocket,
+                            hasTunnel,
+                            finalCall, 
                             reportedStats.getPageViewEntries(), 
                             reportedStats.getHttpsRequestEntries(), 
                             reportedStats.getBytesTransferred());
