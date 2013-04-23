@@ -320,7 +320,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         return m_signalQueue.peek() == Signal.STOP_TUNNEL;
     }
     
-    private boolean runTunnelOnce(boolean[] tun2SocksUp)
+    private boolean runTunnelOnce(boolean[] activeServices)
     {
         setState(State.CONNECTING);
         
@@ -408,7 +408,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             
             checkSignals(0);
 
-            m_serverSelector.Run(tun2SocksUp[0]);
+            m_serverSelector.Run(activeServices[ACTIVE_SERVICE_TUN2SOCKS]);
 
             checkSignals(0);
             
@@ -568,68 +568,76 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
     
                 transparentProxy = conn.createTransparentProxyForwarder(PsiphonData.getPsiphonData().getTransparentProxyPort());
     
-                try
-                {
-                    TransparentProxyConfig.setupTransparentProxyRouting(m_parentContext);
-                    cleanupTransparentProxyRouting = true;
-                }
-                catch (PsiphonTransparentProxyException e)
-                {
-                    // If we can't configure the iptables routing, abort
-                    MyLog.e(R.string.transparent_proxy_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
-                    runAgain = false;
-                    return runAgain;
-                }
-                
                 MyLog.v(R.string.transparent_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getTransparentProxyPort());
+
+                if (!activeServices[ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING])
+                {
+                    try
+                    {
+                        TransparentProxyConfig.setupTransparentProxyRouting(m_parentContext);
+                        cleanupTransparentProxyRouting = true;
+                    }
+                    catch (PsiphonTransparentProxyException e)
+                    {
+                        // If we can't configure the iptables routing, abort
+                        MyLog.e(R.string.transparent_proxy_routing_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+                        runAgain = false;
+                        return runAgain;
+                    }
+                    
+                    MyLog.v(R.string.transparent_proxy_routing_running, MyLog.Sensitivity.NOT_SENSITIVE);
+                }
             }
             
             // Run as Android OS VPN
             
             if (tunnelWholeDevice && runVpnService)
             {
-                // VpnService backwards compatibility: doVpnProtect/doVpnBuilder are wrapper
-                // functions so we don't reference the undefined VpnServer class when this function
-                // is loaded.
-
-                String privateIpAddress = Utils.selectPrivateAddress();
-                
-                if (privateIpAddress == null)
+                if (!activeServices[ACTIVE_SERVICE_TUN2SOCKS])
                 {
-                    MyLog.v(R.string.vpn_service_no_private_address_available, MyLog.Sensitivity.NOT_SENSITIVE);
-                    runAgain = false;
-                    return runAgain;
+                    // VpnService backwards compatibility: doVpnProtect/doVpnBuilder are wrapper
+                    // functions so we don't reference the undefined VpnServer class when this function
+                    // is loaded.
+    
+                    String privateIpAddress = Utils.selectPrivateAddress();
+                    
+                    if (privateIpAddress == null)
+                    {
+                        MyLog.v(R.string.vpn_service_no_private_address_available, MyLog.Sensitivity.NOT_SENSITIVE);
+                        runAgain = false;
+                        return runAgain;
+                    }
+    
+                    ParcelFileDescriptor vpnInterfaceFileDescriptor = null;
+                    
+                    if (!doVpnProtect(socket)
+                        || null == (vpnInterfaceFileDescriptor = doVpnBuilder(privateIpAddress, tunnelWholeDeviceDNSServer)))
+                    {
+                        // TODO: don't fail over to root mode in the not-really-broken revoked edge condition case (e.g., establish() returns null)?
+                        runAgain = failOverToRootWholeDeviceMode();
+                        return runAgain;
+                    }
+                    
+                    MyLog.v(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
+    
+                    String socksServerAddress = "127.0.0.1:" + Integer.toString(PsiphonData.getPsiphonData().getSocksPort());
+                    String udpgwServerAddress = "127.0.0.1:" + Integer.toString(PsiphonConstants.UDPGW_SERVER_PORT);
+                    
+                    cleanupTun2Socks = true;
+                    
+                    Tun2Socks.Start(
+                            this,
+                            vpnInterfaceFileDescriptor,
+                            PsiphonConstants.VPN_INTERFACE_MTU,
+                            privateIpAddress,
+                            PsiphonConstants.VPN_INTERFACE_NETMASK,
+                            socksServerAddress,
+                            udpgwServerAddress);
+                    
+                    // TODO: detect and report: tun2Socks.Start failed; tun2socks run() unexpected exit
+    
+                    MyLog.v(R.string.tun2socks_running, MyLog.Sensitivity.NOT_SENSITIVE);
                 }
-
-                ParcelFileDescriptor vpnInterfaceFileDescriptor = null;
-                
-                if (!doVpnProtect(socket)
-                    || null == (vpnInterfaceFileDescriptor = doVpnBuilder(privateIpAddress, tunnelWholeDeviceDNSServer)))
-                {
-                    // TODO: don't fail over to root mode in the not-really-broken revoked edge condition case (e.g., establish() returns null)?
-                    runAgain = failOverToRootWholeDeviceMode();
-                    return runAgain;
-                }
-                
-                MyLog.v(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
-
-                String socksServerAddress = "127.0.0.1:" + Integer.toString(PsiphonData.getPsiphonData().getSocksPort());
-                String udpgwServerAddress = "127.0.0.1:" + Integer.toString(PsiphonConstants.UDPGW_SERVER_PORT);
-                
-                cleanupTun2Socks = true;
-                
-                Tun2Socks.Start(
-                        this,
-                        vpnInterfaceFileDescriptor,
-                        PsiphonConstants.VPN_INTERFACE_MTU,
-                        privateIpAddress,
-                        PsiphonConstants.VPN_INTERFACE_NETMASK,
-                        socksServerAddress,
-                        udpgwServerAddress);
-                
-                // TODO: detect and report: tun2Socks.Start failed; tun2socks run() unexpected exit
-
-                MyLog.v(R.string.tun2socks_running, MyLog.Sensitivity.NOT_SENSITIVE);
             }
             
             // Don't signal unexpected disconnect until we've started
@@ -823,12 +831,22 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
             if (cleanupTransparentProxyRouting)
             {
-                try
+                if (!runAgain)
                 {
-                    TransparentProxyConfig.teardownTransparentProxyRouting(m_parentContext);
+                    // TODO: refactor: combine with cleanup in runTunnel()
+                    try
+                    {
+                        TransparentProxyConfig.teardownTransparentProxyRouting(m_parentContext);
+                        MyLog.v(R.string.transparent_proxy_routing_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
+                        activeServices[ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING] = false;
+                    }
+                    catch (PsiphonTransparentProxyException e)
+                    {
+                    }
                 }
-                catch (PsiphonTransparentProxyException e)
+                else
                 {
+                    activeServices[ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING] = true;
                 }
             }
             
@@ -853,19 +871,22 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             
             if (cleanupTun2Socks)
             {
-                if (!runAgain)
+                if (!runAgain || PsiphonData.getPsiphonData().getVpnServiceUnavailable())
                 {
-                    // TODO: is the Tun2Socks.Stop() call in runTunnel() sufficient?
+                    // NOTE: getVpnServiceUnavailable() becomes true when failing over to
+                    // iptables mode and in that case we don't leave the tun routing up.
+
+                    // TODO: refactor: combine with cleanup in runTunnel()
                     Tun2Socks.Stop();
                     MyLog.v(R.string.tun2socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
-                    tun2SocksUp[0] = false;
+                    activeServices[ACTIVE_SERVICE_TUN2SOCKS] = false;
                 }
                 else
                 {
                     // When running again (e.g., unexpected disconnect, or retry connect) we
                     // leave the VpnService tun routing up to avoid leaking traffic outside
                     // the VPN in this case.
-                    tun2SocksUp[0] = true;
+                    activeServices[ACTIVE_SERVICE_TUN2SOCKS] = true;
                 }
             }
             
@@ -1019,6 +1040,9 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         
         return false;
     }
+    
+    private static int ACTIVE_SERVICE_TUN2SOCKS = 0;
+    private static int ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING = 1;
 
     private void runTunnel() throws InterruptedException
     {
@@ -1029,9 +1053,12 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             return;
         }
         
-        boolean[] tun2SocksUp = new boolean[]{false};
+        // Active services are components runTunnelOnce leaves active on exit.
+        // We use this to keep the routing in place in whole device modes to
+        // avoid traffic leakage when failing over to another server.
+        boolean[] activeServices = new boolean[]{false, false}; // ACTIVE_SERVICE_TUN2SOCKS, ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING
         
-        while (runTunnelOnce(tun2SocksUp))
+        while (runTunnelOnce(activeServices))
         {
             try
             {
@@ -1053,7 +1080,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             try
             {
                 m_interface.start();
-                m_interface.fetchRemoteServerList(tun2SocksUp[0] ? this : null);
+                m_interface.fetchRemoteServerList(activeServices[ACTIVE_SERVICE_TUN2SOCKS] ? this : null);
             }
             catch (PsiphonServerInterfaceException requestException)
             {
@@ -1076,10 +1103,24 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             }
         }
         
-        if (tun2SocksUp[0])
+        // Clean up active services.
+        
+        if (activeServices[ACTIVE_SERVICE_TUN2SOCKS])
         {
             Tun2Socks.Stop();
             MyLog.v(R.string.tun2socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
+        }
+
+        if (activeServices[ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING])
+        {
+            try
+            {
+                TransparentProxyConfig.teardownTransparentProxyRouting(m_parentContext);
+                MyLog.v(R.string.transparent_proxy_routing_stopped, MyLog.Sensitivity.NOT_SENSITIVE);                
+            }
+            catch (PsiphonTransparentProxyException e)
+            {
+            }
         }
 
         setState(State.DISCONNECTED);
