@@ -42,7 +42,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
@@ -57,35 +56,8 @@ import com.psiphon3.psiphonlibrary.TransparentProxyConfig.PsiphonTransparentProx
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.stericson.RootTools.RootTools;
 
-public class TunnelCore implements IStopSignalPending
+public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 {
-    public enum State
-    {
-        DISCONNECTED,
-        CONNECTING,
-        CONNECTED
-    }
-    private Context m_parentContext = null;
-    private Service m_parentService = null;
-    private State m_state = State.DISCONNECTED;
-    private boolean m_firstStart = true;
-    private Thread m_tunnelThread;
-    private ServerInterface m_interface;
-    private UpgradeDownloader m_upgradeDownloader = null;
-    private ServerSelector m_serverSelector = null;
-    private boolean m_destroyed = false;
-    private Events m_eventsInterface = null;
-    private boolean m_useGenericLogMessages = false;
-    private List<Pair<String,String>> m_extraAuthParams = new ArrayList<Pair<String,String>>();    
-
-
-    enum Signal
-    {
-        STOP_TUNNEL,
-        UNEXPECTED_DISCONNECT
-    };
-    private BlockingQueue<Signal> m_signalQueue;
-
     static public interface UpgradeDownloader
     {
         /**
@@ -100,6 +72,35 @@ public class TunnelCore implements IStopSignalPending
         public void stop();
     }
     
+
+    public enum State
+    {
+        DISCONNECTED,
+        CONNECTING,
+        CONNECTED
+    }
+
+    enum Signal
+    {
+        STOP_TUNNEL,
+        UNEXPECTED_DISCONNECT
+    }
+
+    private State m_state = State.DISCONNECTED;
+    private Context m_parentContext = null;
+    private Service m_parentService = null;
+    private boolean m_firstStart = true;
+    private Thread m_tunnelThread;
+    private ServerInterface m_interface;
+    private UpgradeDownloader m_upgradeDownloader = null;
+    private ServerSelector m_serverSelector = null;
+    private boolean m_destroyed = false;
+    private Events m_eventsInterface = null;
+    private boolean m_useGenericLogMessages = false;
+    private List<Pair<String,String>> m_extraAuthParams = new ArrayList<Pair<String,String>>();
+    private BlockingQueue<Signal> m_signalQueue;
+
+
     public TunnelCore(Context parentContext, Service parentService)
     {
         m_parentContext = parentContext;
@@ -123,7 +124,7 @@ public class TunnelCore implements IStopSignalPending
     public void onCreate()
     {
         m_interface = new ServerInterface(m_parentContext);
-        m_serverSelector = new ServerSelector(m_interface, m_parentContext);
+        m_serverSelector = new ServerSelector(this, m_interface, m_parentContext);
     }
 
     // Implementation of android.app.Service.onDestroy
@@ -319,7 +320,7 @@ public class TunnelCore implements IStopSignalPending
         return m_signalQueue.peek() == Signal.STOP_TUNNEL;
     }
     
-    private boolean runTunnelOnce()
+    private boolean runTunnelOnce(boolean[] tun2SocksUp)
     {
         setState(State.CONNECTING);
         
@@ -407,7 +408,7 @@ public class TunnelCore implements IStopSignalPending
             
             checkSignals(0);
 
-            m_serverSelector.Run();
+            m_serverSelector.Run(tun2SocksUp[0]);
 
             checkSignals(0);
             
@@ -852,8 +853,20 @@ public class TunnelCore implements IStopSignalPending
             
             if (cleanupTun2Socks)
             {
-                Tun2Socks.Stop();
-                MyLog.v(R.string.tun2socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);                
+                if (!runAgain)
+                {
+                    // TODO: is the Tun2Socks.Stop() call in runTunnel() sufficient?
+                    Tun2Socks.Stop();
+                    MyLog.v(R.string.tun2socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
+                    tun2SocksUp[0] = false;
+                }
+                else
+                {
+                    // When running again (e.g., unexpected disconnect, or retry connect) we
+                    // leave the VpnService tun routing up to avoid leaking traffic outside
+                    // the VPN in this case.
+                    tun2SocksUp[0] = true;
+                }
             }
             
             if (socks != null)
@@ -917,7 +930,7 @@ public class TunnelCore implements IStopSignalPending
     }
    
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    private boolean doVpnProtect(Socket socket)
+    public boolean doVpnProtect(Socket socket)
     {
         // *Must* have a parent service for this mode
         assert (m_parentService != null);
@@ -1016,7 +1029,9 @@ public class TunnelCore implements IStopSignalPending
             return;
         }
         
-        while (runTunnelOnce())
+        boolean[] tun2SocksUp = new boolean[]{false};
+        
+        while (runTunnelOnce(tun2SocksUp))
         {
             try
             {
@@ -1029,7 +1044,6 @@ public class TunnelCore implements IStopSignalPending
             catch (TunnelVpnTunnelStop e)
             {
                 // Stop has been requested, so get out of the retry loop.
-                setState(State.DISCONNECTED);
                 break;
             }
             
@@ -1039,7 +1053,7 @@ public class TunnelCore implements IStopSignalPending
             try
             {
                 m_interface.start();
-                m_interface.fetchRemoteServerList();
+                m_interface.fetchRemoteServerList(tun2SocksUp[0] ? this : null);
             }
             catch (PsiphonServerInterfaceException requestException)
             {
@@ -1058,10 +1072,17 @@ public class TunnelCore implements IStopSignalPending
             }
             catch (InterruptedException ie)
             {
-                setState(State.DISCONNECTED);
                 break;
             }
         }
+        
+        if (tun2SocksUp[0])
+        {
+            Tun2Socks.Stop();
+            MyLog.v(R.string.tun2socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
+        }
+
+        setState(State.DISCONNECTED);
     }
     
     public void startTunnel()

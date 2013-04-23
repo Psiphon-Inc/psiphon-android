@@ -698,7 +698,7 @@ public class ServerInterface
         makePsiphonRequestWithFailover(urls, additionalHeaders, requestBody);
     }
 
-    synchronized public void fetchRemoteServerList()
+    synchronized public void fetchRemoteServerList(Tun2Socks.IProtectSocket protectSocket)
         throws PsiphonServerInterfaceException
     {
         // NOTE: Running this at the start of every session may be enabling
@@ -760,7 +760,8 @@ public class ServerInterface
                 // the attempt since the caller doesn't know that/when a fetch will happen.
                 MyLog.v(R.string.fetch_remote_server_list, MyLog.Sensitivity.NOT_SENSITIVE);
                 
-                byte[] response = makeDirectWebRequest(EmbeddedValues.REMOTE_SERVER_LIST_URL);
+                // We may need to except this connection from the VpnService tun interface
+                byte[] response = makeDirectWebRequest(protectSocket, EmbeddedValues.REMOTE_SERVER_LIST_URL);
     
                 PsiphonData.getPsiphonData().setNextFetchRemoteServerList(
                         SystemClock.elapsedRealtime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH);
@@ -910,7 +911,7 @@ public class ServerInterface
                     // Psiphon web request: authenticate the web server using the embedded certificate.
                     String psiphonServerCertificate = getCurrentServerEntry().webServerCertificate;
 
-                    return makeRequest(false, false, psiphonServerCertificate, url, additionalHeaders, body);
+                    return makeRequest(null, false, false, psiphonServerCertificate, url, additionalHeaders, body);
                 }
                 catch (PsiphonServerInterfaceException e2)
                 {
@@ -939,6 +940,7 @@ public class ServerInterface
         boolean useLocalProxy = true;
 
         return makeRequest(
+                null,
                 canAbort,
                 useLocalProxy,
                 psiphonServerCertificate,
@@ -956,10 +958,10 @@ public class ServerInterface
         return makeProxiedPsiphonRequest(true, url, additionalHeaders, body);
     }
 
-    private byte[] makeDirectWebRequest(String url)
+    private byte[] makeDirectWebRequest(Tun2Socks.IProtectSocket protectSocket, String url)
             throws PsiphonServerInterfaceException
     {
-        return makeRequest(true, false, null, url, null, null);
+        return makeRequest(protectSocket, true, false, null, url, null, null);
     }
 
     private class CustomTrustManager implements X509TrustManager
@@ -1003,11 +1005,12 @@ public class ServerInterface
 
     private class CustomSSLSocketFactory extends SSLSocketFactory
     {
+        Tun2Socks.IProtectSocket protectSocket;
         SSLContext sslContext;
         TrustManager[] trustManager;
         AbstractVerifier hostnameVerifier;
 
-        CustomSSLSocketFactory(String serverCertificate)
+        CustomSSLSocketFactory(Tun2Socks.IProtectSocket protectSocket, String serverCertificate)
                 throws KeyManagementException,
                        UnrecoverableKeyException,
                        NoSuchAlgorithmException,
@@ -1016,30 +1019,42 @@ public class ServerInterface
         {
             super(null);
 
-            trustManager = new TrustManager[] { new CustomTrustManager(serverCertificate) };
-            hostnameVerifier = new AllowAllHostnameVerifier();
-            setHostnameVerifier(hostnameVerifier);
+            this.protectSocket = protectSocket;
+            this.trustManager = new TrustManager[] { new CustomTrustManager(serverCertificate) };
+            this.hostnameVerifier = new AllowAllHostnameVerifier();
+            setHostnameVerifier(this.hostnameVerifier);
 
-            sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustManager, new SecureRandom());            
+            this.sslContext = SSLContext.getInstance("TLS");
+            this.sslContext.init(null, this.trustManager, new SecureRandom());            
         }
 
         @Override
         public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
                 throws IOException, UnknownHostException
         {
-            return sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
+            Socket sslSocket = sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
+            if (this.protectSocket != null)
+            {
+                this.protectSocket.doVpnProtect(sslSocket);
+            }
+            return sslSocket;
         }
 
         @Override
         public Socket createSocket()
                 throws IOException
         {
-            return sslContext.getSocketFactory().createSocket();
+            Socket sslSocket = this.sslContext.getSocketFactory().createSocket();
+            if (this.protectSocket != null)
+            {
+                this.protectSocket.doVpnProtect(sslSocket);
+            }
+            return sslSocket;
         }
     }
 
     private byte[] makeRequest(
+            Tun2Socks.IProtectSocket protectSocket,
             boolean canAbort,
             boolean useLocalProxy,
             String serverCertificate,
@@ -1074,7 +1089,7 @@ public class ServerInterface
             ClientConnectionManager connManager = null;
             if (serverCertificate != null)
             {
-                sslSocketFactory = new CustomSSLSocketFactory(serverCertificate);
+                sslSocketFactory = new CustomSSLSocketFactory(protectSocket, serverCertificate);
 
                 registry = new SchemeRegistry();
                 registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));

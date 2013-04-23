@@ -55,16 +55,22 @@ public class ServerSelector
     private final int SHUTDOWN_TIMEOUT_MILLISECONDS = 1000;
     private final int MAX_WORK_TIME_MILLISECONDS = 20000;
 
+    private Tun2Socks.IProtectSocket protectSocket = null;
     private ServerInterface serverInterface = null;
     private Context context = null;
+    private boolean protectSocketsRequired = false;
     private Thread thread = null;
     private boolean stopFlag = false;
 
     public Socket firstEntrySocket = null;
     public String firstEntryIpAddress = null;
     
-    ServerSelector(ServerInterface serverInterface, Context context)
+    ServerSelector(
+            Tun2Socks.IProtectSocket protectSocket,
+            ServerInterface serverInterface,
+            Context context)
     {
+        this.protectSocket = protectSocket;
         this.serverInterface = serverInterface;
         this.context = context;
     }
@@ -89,6 +95,13 @@ public class ServerSelector
             try
             {
                 this.channel = SocketChannel.open();
+                
+                if (protectSocketsRequired)
+                {
+                    // We may need to except this connection from the VpnService tun interface
+                    protectSocket.doVpnProtect(this.channel.socket());
+                }
+                
                 this.channel.configureBlocking(false);
                 this.channel.connect(new InetSocketAddress(
                                         this.entry.ipAddress,
@@ -166,7 +179,8 @@ public class ServerSelector
                 // throttle a bit, and fetch remote servers (if not fetched recently).
                 try
                 {
-                    ServerSelector.this.serverInterface.fetchRemoteServerList();
+                    ServerSelector.this.serverInterface.fetchRemoteServerList(
+                            protectSocketsRequired ? protectSocket : null);
                 }
                 catch (PsiphonServerInterfaceException requestException)
                 {
@@ -418,7 +432,7 @@ public class ServerSelector
         return false;
     }
 
-    public void Run()
+    public void Run(boolean protectSocketsRequired)
     {
         Abort();
         
@@ -429,6 +443,8 @@ public class ServerSelector
         {
             System.setProperty("java.net.preferIPv6Addresses", "false");
         }
+        
+        this.protectSocketsRequired = protectSocketsRequired;
 
         this.thread = new Thread(new Coordinator());
         this.thread.start();

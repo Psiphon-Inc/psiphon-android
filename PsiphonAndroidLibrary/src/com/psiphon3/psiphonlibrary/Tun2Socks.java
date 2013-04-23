@@ -19,6 +19,8 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.net.Socket;
+
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.annotation.TargetApi;
@@ -28,6 +30,12 @@ import android.os.ParcelFileDescriptor;
 @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR1)
 public class Tun2Socks
 {
+    public static interface IProtectSocket
+    {
+        boolean doVpnProtect(Socket socket);
+    };
+
+
     private static Thread mThread;
     private static TunnelCore mTunnelCore;
     private static ParcelFileDescriptor mVpnInterfaceFileDescriptor;
