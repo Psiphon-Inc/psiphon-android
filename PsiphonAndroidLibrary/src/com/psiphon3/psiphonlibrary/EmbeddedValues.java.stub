@@ -41,7 +41,7 @@ cog.outl('final String PROXIED_WEB_APP_HTTP_AUTH_PASSWORD = "%s";' % utils.get_e
 
     final String CLIENT_VERSION = "2";
 
-    final String EMBEDDED_SERVER_LIST = "";
+    final String EMBEDDED_SERVER_LIST[] = {""};
 
     final String REMOTE_SERVER_LIST_URL =
         "https://s3.amazonaws.com/invalid_bucket_name/server_entries";
