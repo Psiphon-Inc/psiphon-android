@@ -237,7 +237,7 @@ public class ServerInterface
         try
         {
             shuffleAndAddServerEntries(
-                EmbeddedValues.EMBEDDED_SERVER_LIST.split("\n"), true);
+                EmbeddedValues.EMBEDDED_SERVER_LIST, true);
             saveServerEntries();
         } 
         catch (JSONException e)
