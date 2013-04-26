@@ -439,6 +439,13 @@ public class PsiphonData
         private long m_totalUncompressedBytesReceived;
         private long m_totalOverheadBytesReceived;
 
+        private long m_sessionBytesSent;
+        private long m_sessionUncompressedBytesSent;
+        private long m_sessionOverheadBytesSent;
+        private long m_sessionBytesReceived;
+        private long m_sessionUncompressedBytesReceived;
+        private long m_sessionOverheadBytesReceived;
+
         public final static long SLOW_BUCKET_PERIOD_MILLISECONDS = 5*60*1000; 
         public final static long FAST_BUCKET_PERIOD_MILLISECONDS = 1000;
         public final static int MAX_BUCKETS = 24*60/5;
@@ -456,6 +463,13 @@ public class PsiphonData
         
         DataTransferStats()
         {
+            m_totalBytesSent = 0;
+            m_totalUncompressedBytesSent = 0;
+            m_totalOverheadBytesSent = 0;
+            m_totalBytesReceived = 0;
+            m_totalUncompressedBytesReceived = 0;
+            m_totalOverheadBytesReceived = 0;
+
             stop();
         }
         
@@ -475,12 +489,12 @@ public class PsiphonData
         {
             long now = SystemClock.elapsedRealtime();
             this.m_startTime = now;
-            this.m_totalBytesSent = 0;
-            this.m_totalUncompressedBytesSent = 0;
-            this.m_totalOverheadBytesSent = 0;
-            this.m_totalBytesReceived = 0;
-            this.m_totalUncompressedBytesReceived = 0;
-            this.m_totalOverheadBytesReceived = 0;
+            this.m_sessionBytesSent = 0;
+            this.m_sessionUncompressedBytesSent = 0;
+            this.m_sessionOverheadBytesSent = 0;
+            this.m_sessionBytesReceived = 0;
+            this.m_sessionUncompressedBytesReceived = 0;
+            this.m_sessionOverheadBytesReceived = 0;
             this.m_slowBucketsLastStartTime = bucketStartTime(now, SLOW_BUCKET_PERIOD_MILLISECONDS);
             this.m_slowBuckets = newBuckets();
             this.m_fastBucketsLastStartTime = bucketStartTime(now, FAST_BUCKET_PERIOD_MILLISECONDS);
@@ -493,6 +507,10 @@ public class PsiphonData
             this.m_totalUncompressedBytesSent += uncompressedBytes;
             this.m_totalOverheadBytesSent += overheadBytes;
             
+            this.m_sessionBytesSent += bytes;
+            this.m_sessionUncompressedBytesSent += uncompressedBytes;
+            this.m_sessionOverheadBytesSent += overheadBytes;
+            
             manageBuckets();
             addSentToBuckets(bytes);
         }
@@ -502,6 +520,10 @@ public class PsiphonData
             this.m_totalBytesReceived += bytes;
             this.m_totalUncompressedBytesReceived += uncompressedBytes;
             this.m_totalOverheadBytesReceived += overheadBytes;
+
+            this.m_sessionBytesReceived += bytes;
+            this.m_sessionUncompressedBytesReceived += uncompressedBytes;
+            this.m_sessionOverheadBytesReceived += overheadBytes;
 
             manageBuckets();
             addReceivedToBuckets(bytes);
@@ -639,7 +661,50 @@ public class PsiphonData
             if (this.m_totalUncompressedBytesReceived == 0) return 0.0;
             double ratio = 100.0*(1.0-(double)(this.m_totalBytesReceived + this.m_totalOverheadBytesReceived)/(double)this.m_totalUncompressedBytesReceived);
             return ratio > 0.0 ? ratio : 0.0;
+        }
+        
+        public synchronized long getSessionBytesSent()
+        {
+            return this.m_sessionBytesSent;
+        }
+        
+        public synchronized long getSessionUncompressedBytesSent()
+        {
+            return this.m_sessionUncompressedBytesSent;
+        }
 
+        public synchronized long getSessionOverheadBytesSent()
+        {
+            return this.m_sessionOverheadBytesSent;
+        }
+
+        public synchronized double getSessionSentCompressionRatio()
+        {
+            if (this.m_sessionUncompressedBytesSent == 0) return 0.0;
+            double ratio = 100.0*(1.0-(double)(this.m_sessionBytesSent + this.m_sessionOverheadBytesSent)/(double)this.m_sessionUncompressedBytesSent);
+            return ratio > 0.0 ? ratio : 0.0;
+        }
+        
+        public synchronized long getSessionBytesReceived()
+        {
+            return this.m_sessionBytesReceived;
+        }
+        
+        public synchronized long getSessionlOverheadBytesReceived()
+        {
+            return this.m_sessionOverheadBytesReceived;
+        }
+        
+        public synchronized long getSessionUncompressedBytesReceived()
+        {
+            return this.m_sessionUncompressedBytesReceived;
+        }
+
+        public synchronized double getSessionReceivedCompressionRatio()
+        {
+            if (this.m_sessionUncompressedBytesReceived == 0) return 0.0;
+            double ratio = 100.0*(1.0-(double)(this.m_sessionBytesReceived + this.m_sessionOverheadBytesReceived)/(double)this.m_sessionUncompressedBytesReceived);
+            return ratio > 0.0 ? ratio : 0.0;
         }
         
         public synchronized ArrayList<Long> getSlowSentSeries()
