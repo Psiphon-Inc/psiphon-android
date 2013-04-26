@@ -1454,26 +1454,26 @@ public class ServerInterface
         {
             PsiphonData.DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
             
-            long totalBytesSent = dataTransferStats.getTotalBytesSent();
-            double totalSentCompressionRatio = dataTransferStats.getTotalSentCompressionRatio();
-            long totalBytesReceived = dataTransferStats.getTotalBytesReceived();
-            double totalReceivedCompressionRatio = dataTransferStats.getTotalReceivedCompressionRatio();
+            long bytesSent = dataTransferStats.getSessionBytesSent();
+            double sentCompressionRatio = dataTransferStats.getSessionSentCompressionRatio();
+            long bytesReceived = dataTransferStats.getSessionBytesReceived();
+            double receivedCompressionRatio = dataTransferStats.getSessionReceivedCompressionRatio();
             long elapsedTime = dataTransferStats.getElapsedTime();
                 
             MyLog.v(
-                    R.string.data_transfer_total_bytes_sent,
+                    R.string.data_transfer_bytes_sent,
                     MyLog.Sensitivity.NOT_SENSITIVE,
-                    Utils.byteCountToDisplaySize(totalBytesSent, false),
-                    totalSentCompressionRatio);
+                    Utils.byteCountToDisplaySize(bytesSent, false),
+                    sentCompressionRatio);
         
             MyLog.v(
-                    R.string.data_transfer_total_bytes_received,
+                    R.string.data_transfer_bytes_received,
                     MyLog.Sensitivity.NOT_SENSITIVE,
-                    Utils.byteCountToDisplaySize(totalBytesReceived, false),
-                    totalReceivedCompressionRatio);
+                    Utils.byteCountToDisplaySize(bytesReceived, false),
+                    receivedCompressionRatio);
         
             MyLog.v(
-                    R.string.data_transfer_total_elapsed_time,
+                    R.string.data_transfer_elapsed_time,
                     MyLog.Sensitivity.NOT_SENSITIVE,
                     Utils.elapsedTimeToDisplay(elapsedTime));        
         }
