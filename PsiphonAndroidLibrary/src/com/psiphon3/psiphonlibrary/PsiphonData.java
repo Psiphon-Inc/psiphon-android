@@ -641,6 +641,12 @@ public class PsiphonData
             return ratio > 0.0 ? ratio : 0.0;
         }
         
+        public synchronized long getTotalSentSaved()
+        {
+            long savings = this.m_totalUncompressedBytesSent - (this.m_totalBytesSent + this.m_totalOverheadBytesSent);
+            return savings > 0 ? savings : 0;
+        }
+        
         public synchronized long getTotalBytesReceived()
         {
             return this.m_totalBytesReceived;
@@ -661,6 +667,12 @@ public class PsiphonData
             if (this.m_totalUncompressedBytesReceived == 0) return 0.0;
             double ratio = 100.0*(1.0-(double)(this.m_totalBytesReceived + this.m_totalOverheadBytesReceived)/(double)this.m_totalUncompressedBytesReceived);
             return ratio > 0.0 ? ratio : 0.0;
+        }
+        
+        public synchronized long getTotalReceivedSaved()
+        {
+            long savings = this.m_totalUncompressedBytesReceived - (this.m_totalBytesReceived + this.m_totalOverheadBytesReceived);
+            return savings > 0 ? savings : 0;
         }
         
         public synchronized long getSessionBytesSent()
@@ -685,6 +697,12 @@ public class PsiphonData
             return ratio > 0.0 ? ratio : 0.0;
         }
         
+        public synchronized long getSessionSentSaved()
+        {
+            long savings = this.m_sessionUncompressedBytesSent - (this.m_sessionBytesSent + this.m_sessionOverheadBytesSent);
+            return savings > 0 ? savings : 0;
+        }
+        
         public synchronized long getSessionBytesReceived()
         {
             return this.m_sessionBytesReceived;
@@ -707,6 +725,12 @@ public class PsiphonData
             return ratio > 0.0 ? ratio : 0.0;
         }
         
+        public synchronized long getSessionReceivedSaved()
+        {
+            long savings = this.m_sessionUncompressedBytesReceived - (this.m_sessionBytesReceived + this.m_sessionOverheadBytesReceived);
+            return savings > 0 ? savings : 0;
+        }
+
         public synchronized ArrayList<Long> getSlowSentSeries()
         {
             manageBuckets();
