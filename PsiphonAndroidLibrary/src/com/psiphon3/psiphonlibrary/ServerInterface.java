@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Psiphon Inc.
+ * Copyright (c) 2013, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,13 +28,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.Socket;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.KeyManagementException;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -46,35 +44,37 @@ import java.util.regex.Pattern;
 import java.util.Map;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.AbstractVerifier;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.SingleClientConnManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
+import ch.boye.httpclientandroidlib.HttpEntity;
+import ch.boye.httpclientandroidlib.HttpHost;
+import ch.boye.httpclientandroidlib.HttpResponse;
+import ch.boye.httpclientandroidlib.HttpStatus;
+import ch.boye.httpclientandroidlib.client.ClientProtocolException;
+import ch.boye.httpclientandroidlib.client.methods.HttpGet;
+import ch.boye.httpclientandroidlib.client.methods.HttpPost;
+import ch.boye.httpclientandroidlib.client.methods.HttpRequestBase;
+import ch.boye.httpclientandroidlib.conn.ClientConnectionManager;
+import ch.boye.httpclientandroidlib.conn.DnsResolver;
+import ch.boye.httpclientandroidlib.conn.params.ConnRoutePNames;
+import ch.boye.httpclientandroidlib.conn.scheme.PlainSocketFactory;
+import ch.boye.httpclientandroidlib.conn.scheme.Scheme;
+import ch.boye.httpclientandroidlib.conn.scheme.SchemeRegistry;
+import ch.boye.httpclientandroidlib.conn.ssl.SSLSocketFactory;
+import ch.boye.httpclientandroidlib.entity.ByteArrayEntity;
+import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
+import ch.boye.httpclientandroidlib.impl.conn.PoolingClientConnectionManager;
+import ch.boye.httpclientandroidlib.params.BasicHttpParams;
+import ch.boye.httpclientandroidlib.params.HttpConnectionParams;
+import ch.boye.httpclientandroidlib.params.HttpParams;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.xbill.DNS.Address;
+import org.xbill.DNS.PsiphonState;
 
 import com.psiphon3.psiphonlibrary.R;
 import com.psiphon3.psiphonlibrary.ServerEntryAuth.ServerEntryAuthException;
@@ -296,7 +296,12 @@ public class ServerInterface
         {
             Thread.currentThread().interrupt();
         }
-    } 
+    }
+    
+    public boolean isStopped()
+    {
+        return this.stopped;
+    }
 
     public synchronized ServerEntry setCurrentServerEntry()
     {
@@ -707,7 +712,9 @@ public class ServerInterface
 
         String urls[] = getRequestURLsWithFailover("feedback", extraParams);
 
-        *** TODO: don't have TunnelCore reference where this function is called
+        // NOTE: don't have TunnelCore reference where this function is called, so
+        // not providing an IProtectSocket or hasTunnel flag. This means the feedback
+        // will fail when stuck in an unsuccessful connecting state.
         makePsiphonRequestWithFailover(null, true, urls, additionalHeaders, requestBody);
     }
 
@@ -982,12 +989,12 @@ public class ServerInterface
         return makeRequest(protectSocket, true, false, null, url, null, null);
     }
 
-    private class CustomTrustManager implements X509TrustManager
+    private class FixedCertTrustManager implements X509TrustManager
     {
         private X509Certificate expectedServerCertificate;
         
         // TODO: pre-validate cert in addServerEntry so this won't throw?
-        CustomTrustManager(String serverCertificate) throws CertificateException
+        FixedCertTrustManager(String serverCertificate) throws CertificateException
         {
             CertificateFactory factory = CertificateFactory.getInstance("X.509");
             byte[] decodedServerCertificate = Utils.Base64.decode(serverCertificate);
@@ -1020,54 +1027,47 @@ public class ServerInterface
             return null;
         }
     }
-
-    private class CustomSSLSocketFactory extends SSLSocketFactory
+    
+    private class ProtectedDnsResolver implements DnsResolver
     {
         Tun2Socks.IProtectSocket protectSocket;
-        SSLContext sslContext;
-        TrustManager[] trustManager;
-        AbstractVerifier hostnameVerifier;
+        ServerInterface serverInterface;
 
-        CustomSSLSocketFactory(Tun2Socks.IProtectSocket protectSocket, String serverCertificate)
-                throws KeyManagementException,
-                       UnrecoverableKeyException,
-                       NoSuchAlgorithmException,
-                       KeyStoreException,
-                       CertificateException
+        ProtectedDnsResolver(Tun2Socks.IProtectSocket protectSocket, ServerInterface serverInterface)
         {
-            super(null);
+            this.protectSocket = protectSocket;
+            this.serverInterface = serverInterface;
+        }
+
+        @Override
+        public InetAddress[] resolve(String hostname) throws UnknownHostException
+        {
+            PsiphonState.getPsiphonState().setState(protectSocket, serverInterface);            
+            InetAddress[] result = Address.getAllByName(hostname);
+            PsiphonState.getPsiphonState().setState(null, null);
+            
+            return result;
+        }
+    }
+
+    private class ProtectedSSLSocketFactory extends SSLSocketFactory
+    {
+        Tun2Socks.IProtectSocket protectSocket;
+
+        ProtectedSSLSocketFactory(Tun2Socks.IProtectSocket protectSocket, SSLContext sslContext)
+        {
+            super(sslContext, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
 
             this.protectSocket = protectSocket;
-            this.trustManager = new TrustManager[] { new CustomTrustManager(serverCertificate) };
-            this.hostnameVerifier = new AllowAllHostnameVerifier();
-            setHostnameVerifier(this.hostnameVerifier);
-
-            this.sslContext = SSLContext.getInstance("TLS");
-            this.sslContext.init(null, this.trustManager, new SecureRandom());            
         }
-
+        
         @Override
-        public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
-                throws IOException, UnknownHostException
+        protected void prepareSocket(SSLSocket sslSocket)
         {
-            Socket sslSocket = sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
             if (this.protectSocket != null)
             {
                 this.protectSocket.doVpnProtect(sslSocket);
             }
-            return sslSocket;
-        }
-
-        @Override
-        public Socket createSocket()
-                throws IOException
-        {
-            Socket sslSocket = this.sslContext.getSocketFactory().createSocket();
-            if (this.protectSocket != null)
-            {
-                this.protectSocket.doVpnProtect(sslSocket);
-            }
-            return sslSocket;
         }
     }
 
@@ -1096,32 +1096,34 @@ public class ServerInterface
                 params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
             }
 
-            DefaultHttpClient client = null;
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            TrustManager[] trustManager = null;
+            ProtectedSSLSocketFactory sslSocketFactory = null;
 
-            // If a specific web server certificate is provided, expect
-            // exactly that certificate. Otherwise, accept a server
-            // certificate signed by a CA in the default trust manager.
-
-            CustomSSLSocketFactory sslSocketFactory = null;
-            SchemeRegistry registry = null;
-            ClientConnectionManager connManager = null;
             if (serverCertificate != null)
             {
-                sslSocketFactory = new CustomSSLSocketFactory(protectSocket, serverCertificate);
+                // If a specific web server certificate is provided, expect
+                // exactly that certificate.
 
-                registry = new SchemeRegistry();
-                registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-                registry.register(new Scheme("https", sslSocketFactory, 443));
-    
-                connManager = new SingleClientConnManager(params, registry);
-                
-                client = new DefaultHttpClient(connManager, params);
+                trustManager = new TrustManager[] { new FixedCertTrustManager(serverCertificate) };
+                sslContext.init(null, trustManager, new SecureRandom()); 
             }
             else
             {
-                client = new DefaultHttpClient(params);
+                // Otherwise, accept a server certificate signed by a CA in
+                // the default trust manager.
+                
+                sslContext.init(null,  null,  null);
             }
 
+            sslSocketFactory = new ProtectedSSLSocketFactory(protectSocket, sslContext);
+            SchemeRegistry registry = new SchemeRegistry();
+            registry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
+            registry.register(new Scheme("https", 443, sslSocketFactory));
+            ProtectedDnsResolver dnsResolver = new ProtectedDnsResolver(protectSocket, this);
+            ClientConnectionManager connManager = new PoolingClientConnectionManager(registry, dnsResolver);            
+            DefaultHttpClient client = new DefaultHttpClient(connManager, params);
+            
             if (body != null)
             {
                 HttpPost post = new HttpPost(url);
@@ -1194,15 +1196,7 @@ public class ServerInterface
         {
             throw new PsiphonServerInterfaceException(e);
         }
-        catch (UnrecoverableKeyException e)
-        {
-            throw new PsiphonServerInterfaceException(e);
-        }
         catch (NoSuchAlgorithmException e)
-        {
-            throw new PsiphonServerInterfaceException(e);
-        }
-        catch (KeyStoreException e)
         {
             throw new PsiphonServerInterfaceException(e);
         }

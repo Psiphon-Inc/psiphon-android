@@ -20,6 +20,7 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SelectionKey;
@@ -971,6 +972,20 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         if (!((TunnelVpnService)m_parentService).protect(socket))
         {
             MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE, "protect socket failed");
+            return false;
+        }
+        return true;
+    }
+    
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+    public boolean doVpnProtect(DatagramSocket socket)
+    {
+        // *Must* have a parent service for this mode
+        assert (m_parentService != null);
+
+        if (!((TunnelVpnService)m_parentService).protect(socket))
+        {
+            MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE, "protect datagram socket failed");
             return false;
         }
         return true;

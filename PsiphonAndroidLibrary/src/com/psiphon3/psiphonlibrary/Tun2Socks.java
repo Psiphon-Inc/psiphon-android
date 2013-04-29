@@ -19,6 +19,7 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.net.DatagramSocket;
 import java.net.Socket;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -33,6 +34,7 @@ public class Tun2Socks
     public static interface IProtectSocket
     {
         boolean doVpnProtect(Socket socket);
+        boolean doVpnProtect(DatagramSocket socket);
     };
 
 
