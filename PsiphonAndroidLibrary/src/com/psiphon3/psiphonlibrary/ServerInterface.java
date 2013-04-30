@@ -28,8 +28,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.channels.SocketChannel;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -44,7 +47,6 @@ import java.util.regex.Pattern;
 import java.util.Map;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
@@ -63,6 +65,7 @@ import ch.boye.httpclientandroidlib.conn.scheme.PlainSocketFactory;
 import ch.boye.httpclientandroidlib.conn.scheme.Scheme;
 import ch.boye.httpclientandroidlib.conn.scheme.SchemeRegistry;
 import ch.boye.httpclientandroidlib.conn.ssl.SSLSocketFactory;
+import ch.boye.httpclientandroidlib.conn.ssl.X509HostnameVerifier;
 import ch.boye.httpclientandroidlib.entity.ByteArrayEntity;
 import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
 import ch.boye.httpclientandroidlib.impl.conn.PoolingClientConnectionManager;
@@ -75,6 +78,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.xbill.DNS.Address;
 import org.xbill.DNS.PsiphonState;
+import org.xbill.DNS.SimpleResolver;
 
 import com.psiphon3.psiphonlibrary.R;
 import com.psiphon3.psiphonlibrary.ServerEntryAuth.ServerEntryAuthException;
@@ -1042,10 +1046,18 @@ public class ServerInterface
         @Override
         public InetAddress[] resolve(String hostname) throws UnknownHostException
         {
-            PsiphonState.getPsiphonState().setState(protectSocket, serverInterface);            
+            // TEMP!
+            MyLog.e(R.string.temp, MyLog.Sensitivity.NOT_SENSITIVE, "resolve: " + hostname);
+
+            PsiphonState.getPsiphonState().setState(protectSocket, serverInterface);
+            // TODO: get Android system DNS resolver address (http://stackoverflow.com/questions/3070144/how-do-you-get-the-current-dns-servers-for-android)
+            SimpleResolver.setDefaultResolver("8.8.8.8");
             InetAddress[] result = Address.getAllByName(hostname);
             PsiphonState.getPsiphonState().setState(null, null);
             
+            // TEMP!
+            MyLog.e(R.string.temp, MyLog.Sensitivity.NOT_SENSITIVE, "response: " + result[0].getHostAddress());
+
             return result;
         }
     }
@@ -1054,20 +1066,82 @@ public class ServerInterface
     {
         Tun2Socks.IProtectSocket protectSocket;
 
-        ProtectedSSLSocketFactory(Tun2Socks.IProtectSocket protectSocket, SSLContext sslContext)
+        ProtectedSSLSocketFactory(
+                Tun2Socks.IProtectSocket protectSocket,
+                SSLContext sslContext,
+                X509HostnameVerifier verifier)
         {
-            super(sslContext, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+            super(sslContext, verifier);
 
             this.protectSocket = protectSocket;
         }
+
+        // NOTE:
+        // - prepareSocket() is invoked too late to use it to protect
+        // - SocketChannel.open().socket() vs. new Socket()
         
         @Override
-        protected void prepareSocket(SSLSocket sslSocket)
+        public Socket createSocket(HttpParams params)
+                throws IOException
         {
+            Socket sslSocket = super.createSocket(params);
+            if (this.protectSocket != null) this.protectSocket.doVpnProtect(sslSocket);
+
+            // TEMP!
+            Socket s = new Socket();
             if (this.protectSocket != null)
-            {
-                this.protectSocket.doVpnProtect(sslSocket);
-            }
+                MyLog.e(R.string.temp, MyLog.Sensitivity.NOT_SENSITIVE, this.protectSocket.doVpnProtect(s) ? "protect Socket succeeded" : "protect Socket failed");
+
+            // TEMP!
+            DatagramSocket d = new DatagramSocket();
+            if (this.protectSocket != null)
+                MyLog.e(R.string.temp, MyLog.Sensitivity.NOT_SENSITIVE, this.protectSocket.doVpnProtect(d) ? "protect DatagramSocket succeeded" : "protect DatagramSocket failed");
+
+            // TEMP!
+            Socket c = SocketChannel.open().socket();
+            if (this.protectSocket != null)
+                MyLog.e(R.string.temp, MyLog.Sensitivity.NOT_SENSITIVE, this.protectSocket.doVpnProtect(c) ? "protect SocketChannel succeeded" : "protect SocketChannel failed");
+
+            //return sslSocket;
+            return c;
+        }
+
+        public Socket createLayeredSocket(Socket socket, String host, int port, HttpParams params)
+                throws IOException, UnknownHostException
+        {
+            // TEMP!
+            MyLog.e(R.string.temp, MyLog.Sensitivity.NOT_SENSITIVE, "createLayeredSocket(4)*");
+
+            Socket sslSocket = super.createLayeredSocket(socket, host, port, params);
+            if (this.protectSocket != null) this.protectSocket.doVpnProtect(sslSocket);
+            return sslSocket;
+        }
+
+        @Override
+        public Socket createSocket()
+                throws IOException
+        {
+            // Deprecated
+            assert(false);
+            return null;
+        }
+
+        @Override
+        public Socket createLayeredSocket(Socket socket, String host, int port, boolean autoClose)
+                throws IOException, UnknownHostException
+        {
+            // Deprecated
+            assert(false);
+            return null;
+        }
+
+        @Override
+        public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
+                throws IOException, UnknownHostException
+        {
+            // Deprecated
+            assert(false);
+            return null;
         }
     }
 
@@ -1107,6 +1181,10 @@ public class ServerInterface
 
                 trustManager = new TrustManager[] { new FixedCertTrustManager(serverCertificate) };
                 sslContext.init(null, trustManager, new SecureRandom()); 
+                sslSocketFactory = new ProtectedSSLSocketFactory(
+                                        protectSocket,
+                                        sslContext,
+                                        SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
             }
             else
             {
@@ -1114,9 +1192,12 @@ public class ServerInterface
                 // the default trust manager.
                 
                 sslContext.init(null,  null,  null);
+                sslSocketFactory = new ProtectedSSLSocketFactory(
+                                        protectSocket,
+                                        sslContext,
+                                        SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
             }
 
-            sslSocketFactory = new ProtectedSSLSocketFactory(protectSocket, sslContext);
             SchemeRegistry registry = new SchemeRegistry();
             registry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
             registry.register(new Scheme("https", 443, sslSocketFactory));
@@ -1554,6 +1635,11 @@ public class ServerInterface
                     this.sendMaxEntries += DEFAULT_SEND_MAX_ENTRIES;
                     
                     MyLog.d("Sending stats FAILED"+(finalCall?" (final)":""));
+                    
+                    if (finalCall)
+                    {
+                        MyLog.w(R.string.final_status_request_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+                    }
                 }
             }
         }

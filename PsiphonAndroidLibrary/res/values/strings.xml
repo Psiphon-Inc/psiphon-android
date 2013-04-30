@@ -84,4 +84,6 @@
     <string name="transparent_proxy_routing_failed">Failed to start transparent proxy routing: %s</string>
     <string name="transparent_proxy_routing_running">Transparent proxy routing running</string>
     <string name="transparent_proxy_routing_stopped">Transparent proxy routing stopped</string>
+    <string name="final_status_request_failed">Final status request failed</string>
+    <string name="temp">TEMP: %s</string>
 </resources>

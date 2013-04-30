@@ -53,10 +53,10 @@ blockUntil(SelectionKey key, long endTime) throws IOException {
 	int nkeys = 0;
 	if (timeout > 0)
 	{
-		// PSIPHON change -- interrupt when stopping
+		// PSIPHON -- interrupt when tunnel stop commanded
 	    // original: nkeys = key.selector().select(timeout);
 	    final int POLL_PERIOD_MILLISECONDS = 100;
-	    for (int i = 0; i <= endTime; i += POLL_PERIOD_MILLISECONDS)
+	    for (int i = 0; i <= timeout && nkeys == 0; i += POLL_PERIOD_MILLISECONDS)
 	    {
 	        ServerInterface serverInterface = PsiphonState.getPsiphonState().getServerInterface();
 	        if (serverInterface != null && serverInterface.isStopped())
@@ -66,7 +66,9 @@ blockUntil(SelectionKey key, long endTime) throws IOException {
 	        nkeys = key.selector().select(POLL_PERIOD_MILLISECONDS);
 	    }
 	}
-	else if (timeout == 0)
+    // PSIPHON
+    // original: else if (timeout == 0)
+	else if (timeout <= 0)
 		nkeys = key.selector().selectNow();
 	if (nkeys == 0)
 		throw new SocketTimeoutException();
