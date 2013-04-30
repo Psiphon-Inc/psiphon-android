@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,6 +31,7 @@ import java.util.regex.Pattern;
 import org.json.JSONObject;
 
 import android.os.SystemClock;
+import android.util.Log;
 import android.util.Pair;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -865,6 +867,28 @@ public class PsiphonData
             }
             
             return m_statusHistory.get(index);
+        }
+    }
+    
+    /** 
+     * @return Returns the last non-DEBUG item, or null if there is none.
+     */
+    public StatusEntry getLastStatusEntryForDisplay() 
+    {
+        synchronized(m_statusHistory) 
+        {   
+            ListIterator<StatusEntry> iterator = m_statusHistory.listIterator(m_statusHistory.size());
+            
+            while (iterator.hasPrevious())
+            {
+                StatusEntry current_item = iterator.previous();
+                if (current_item.priority() != Log.DEBUG)
+                {
+                    return current_item;
+                }
+            }
+            
+            return null;
         }
     }
     
