@@ -1049,6 +1049,9 @@ public class ServerInterface
             // TEMP!
             MyLog.e(R.string.temp, MyLog.Sensitivity.NOT_SENSITIVE, "resolve: " + hostname);
 
+            // NOTE: singleton state will be clobbered by simultaneous ServerInterface
+            // instances (e.g., feedback survey).
+            
             PsiphonState.getPsiphonState().setState(protectSocket, serverInterface);
             // TODO: get Android system DNS resolver address (http://stackoverflow.com/questions/3070144/how-do-you-get-the-current-dns-servers-for-android)
             SimpleResolver.setDefaultResolver("8.8.8.8");
