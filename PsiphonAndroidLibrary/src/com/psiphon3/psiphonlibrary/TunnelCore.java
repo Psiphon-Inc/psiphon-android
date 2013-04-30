@@ -325,6 +325,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
     {
         setState(State.CONNECTING);
         
+        MyLog.v(R.string.current_network_type, MyLog.Sensitivity.NOT_SENSITIVE, Utils.getNetworkTypeName(m_parentContext));
+        
         PsiphonData.getPsiphonData().setTunnelRelayProtocol("");
         PsiphonData.getPsiphonData().setTunnelSessionID("");
 
@@ -357,7 +359,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             boolean tunnelWholeDevice = PsiphonData.getPsiphonData().getTunnelWholeDevice();
             boolean runVpnService = tunnelWholeDevice && Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
             // TODO: get remote address/port from Psiphon server
-            String tunnelWholeDeviceDNSServer = "8.8.8.8";
+            String tunnelWholeDeviceDNSServer = PsiphonConstants.TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS;
             
             if (tunnelWholeDevice && !runVpnService)
             {
@@ -834,6 +836,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         }
         finally
         {
+            MyLog.v(R.string.current_network_type, MyLog.Sensitivity.NOT_SENSITIVE, Utils.getNetworkTypeName(m_parentContext));
+
             PsiphonData.getPsiphonData().setTunnelRelayProtocol("");
             PsiphonData.getPsiphonData().setTunnelSessionID("");
 
@@ -971,7 +975,12 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
         if (!((TunnelVpnService)m_parentService).protect(socket))
         {
-            MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE, "protect socket failed");
+            String networkTypeName = Utils.getNetworkTypeName(m_parentService);
+            if (!networkTypeName.isEmpty())
+            {
+                MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE,
+                        "protect socket failed (" + networkTypeName + ")");
+            }
             return false;
         }
         return true;
@@ -985,7 +994,12 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
         if (!((TunnelVpnService)m_parentService).protect(socket))
         {
-            MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE, "protect datagram socket failed");
+            String networkTypeName = Utils.getNetworkTypeName(m_parentService);
+            if (!networkTypeName.isEmpty())
+            {
+                MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE,
+                        "protect datagram socket failed (" + networkTypeName + ")");
+            }
             return false;
         }
         return true;

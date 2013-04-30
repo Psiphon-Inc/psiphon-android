@@ -77,4 +77,6 @@ public class PsiphonConstants
     public final static int VPN_INTERFACE_MTU = 1500;
 
     public final static int UDPGW_SERVER_PORT = 7300;
+    
+    public final static String TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS = "8.8.8.8";
 }

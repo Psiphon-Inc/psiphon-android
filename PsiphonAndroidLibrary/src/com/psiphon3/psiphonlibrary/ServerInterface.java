@@ -28,7 +28,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -1046,20 +1045,24 @@ public class ServerInterface
         @Override
         public InetAddress[] resolve(String hostname) throws UnknownHostException
         {
-            // TEMP!
-            MyLog.e(R.string.temp, MyLog.Sensitivity.NOT_SENSITIVE, "resolve: " + hostname);
-
-            // NOTE: singleton state will be clobbered by simultaneous ServerInterface
-            // instances (e.g., feedback survey).
+            // NOTE:
+            // - The purpose of this DnsResolver is to protect() sockets from the VPN tunnel routing.
+            // - Using ch.boye.httpclientandroidlib instead of org.apache.http.client.HttpClient as the Android
+            //   library is deprecated and doesn't have the DnsResolver interface.
+            // - The Psiphon singleton state will be clobbered by simultaneous ServerInterface instances, which
+            //   could result would be potential failed lookups. Currently only once instance uses the resolver.
+            //   In addition, dnsjava uses also global state internally (shared Resolver object).
+            // - dnsjava has been customized to call protect() on socket objects and to abort DNS lookups when
+            //   a tunnel stop is commanded.
             
             PsiphonState.getPsiphonState().setState(protectSocket, serverInterface);
-            // TODO: get Android system DNS resolver address (http://stackoverflow.com/questions/3070144/how-do-you-get-the-current-dns-servers-for-android)
-            SimpleResolver.setDefaultResolver("8.8.8.8");
+            // TODO: get Android system DNS resolver address
+            // - Various methods, in addition to dnsjava technique (http://stackoverflow.com/questions/3070144/how-do-you-get-the-current-dns-servers-for-android)
+            // - system properties net.dns.* reflect current active network, so DNS will be TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS
+            // - instead, we want actual DNS resolver for current *underlying* network -- WiFi or Mobile, etc.
+            SimpleResolver.setDefaultResolver(PsiphonConstants.TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS);
             InetAddress[] result = Address.getAllByName(hostname);
             PsiphonState.getPsiphonState().setState(null, null);
-            
-            // TEMP!
-            MyLog.e(R.string.temp, MyLog.Sensitivity.NOT_SENSITIVE, "response: " + result[0].getHostAddress());
 
             return result;
         }
@@ -1075,65 +1078,42 @@ public class ServerInterface
                 X509HostnameVerifier verifier)
         {
             super(sslContext, verifier);
-
+            
             this.protectSocket = protectSocket;
         }
 
         // NOTE:
-        // - prepareSocket() is invoked too late to use it to protect
-        // - SocketChannel.open().socket() vs. new Socket()
+        // - The purpose of this custom socket factory is to protect() sockets from the
+        //   VPN tunnel routing.
+        // - The SSLSocketFactory.prepareSocket() hook is invoked too late for us to make use of it.
+        // - Not well understood yet: the protect() function fails with straight Socket objects, but
+        //   succeeds with DatagramSockets and Sockets from SocketChannel. So we're constructing
+        //   channel Sockets here.
+        // - The underlying implementation of ch.boye.httpclientandroidlib.conn.ssl.SSLSocketFactory.createSocket(HttpParams) v. 1.2.2
+        //   (a) ignores HttpParams; (b) makes an SSLSocket but casts that down to a Socket when returning. As long
+        //   as these conditions hold, our implementation which doesn't call super() should be sound.
+        // - Socket.close() closes the channel: http://docs.oracle.com/javase/6/docs/api/java/net/Socket.html#close%28%29
+        // - CreateLayeredSocket not overridden: in our usage of it, this will be invoked with
+        //   the proxy set to localhost and protect() is not required.
         
         @Override
         public Socket createSocket(HttpParams params)
                 throws IOException
         {
-            Socket sslSocket = super.createSocket(params);
-            if (this.protectSocket != null) this.protectSocket.doVpnProtect(sslSocket);
-
-            // TEMP!
-            Socket s = new Socket();
+            Socket socket = SocketChannel.open().socket();
             if (this.protectSocket != null)
-                MyLog.e(R.string.temp, MyLog.Sensitivity.NOT_SENSITIVE, this.protectSocket.doVpnProtect(s) ? "protect Socket succeeded" : "protect Socket failed");
+            {
+                this.protectSocket.doVpnProtect(socket);
+            }
 
-            // TEMP!
-            DatagramSocket d = new DatagramSocket();
-            if (this.protectSocket != null)
-                MyLog.e(R.string.temp, MyLog.Sensitivity.NOT_SENSITIVE, this.protectSocket.doVpnProtect(d) ? "protect DatagramSocket succeeded" : "protect DatagramSocket failed");
-
-            // TEMP!
-            Socket c = SocketChannel.open().socket();
-            if (this.protectSocket != null)
-                MyLog.e(R.string.temp, MyLog.Sensitivity.NOT_SENSITIVE, this.protectSocket.doVpnProtect(c) ? "protect SocketChannel succeeded" : "protect SocketChannel failed");
-
-            //return sslSocket;
-            return c;
-        }
-
-        public Socket createLayeredSocket(Socket socket, String host, int port, HttpParams params)
-                throws IOException, UnknownHostException
-        {
-            // TEMP!
-            MyLog.e(R.string.temp, MyLog.Sensitivity.NOT_SENSITIVE, "createLayeredSocket(4)*");
-
-            Socket sslSocket = super.createLayeredSocket(socket, host, port, params);
-            if (this.protectSocket != null) this.protectSocket.doVpnProtect(sslSocket);
-            return sslSocket;
+            return socket;
         }
 
         @Override
         public Socket createSocket()
                 throws IOException
         {
-            // Deprecated
-            assert(false);
-            return null;
-        }
-
-        @Override
-        public Socket createLayeredSocket(Socket socket, String host, int port, boolean autoClose)
-                throws IOException, UnknownHostException
-        {
-            // Deprecated
+            // Deprecated - our code will not call this
             assert(false);
             return null;
         }
@@ -1142,7 +1122,7 @@ public class ServerInterface
         public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
                 throws IOException, UnknownHostException
         {
-            // Deprecated
+            // Deprecated - our code will not call this
             assert(false);
             return null;
         }
