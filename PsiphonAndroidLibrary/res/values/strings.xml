@@ -85,5 +85,6 @@
     <string name="transparent_proxy_routing_running">Transparent proxy routing running</string>
     <string name="transparent_proxy_routing_stopped">Transparent proxy routing stopped</string>
     <string name="final_status_request_failed">Final status request failed</string>
-    <string name="current_network_type">Current network: %s</string>    
+    <string name="current_network_type">Current network: %s</string>
+    <string name="dns_resolver">DNS resolver: %s</string>
 </resources>
