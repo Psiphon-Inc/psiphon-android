@@ -3,6 +3,8 @@ package com.psiphon3.psiphonlibrary;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -14,6 +16,7 @@ import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.IllegalFormatException;
@@ -773,5 +776,99 @@ public class Utils
         final long minutes = TimeUnit.MILLISECONDS.toMinutes(elapsedTimeMilliseconds - TimeUnit.HOURS.toMillis(hours));
         final long seconds = TimeUnit.MILLISECONDS.toSeconds(elapsedTimeMilliseconds - TimeUnit.HOURS.toMillis(hours) - TimeUnit.MINUTES.toMillis(minutes));
         return String.format("%02dh %02dm %02ds", hours, minutes, seconds);
+    }
+    
+    public static Collection<InetAddress> getActiveNetworkDnsResolvers(Context context)
+    {
+        ArrayList<InetAddress> dnsAddresses = new ArrayList<InetAddress>();
+        
+        try
+        {
+            /*
+
+            Hidden API
+
+            core/java/android/net/ConnectivityManager.java:
+
+                /** {@hide} * /
+                public LinkProperties getActiveLinkProperties() {
+                    try {
+                        return mService.getActiveLinkProperties();
+                    } catch (RemoteException e) {
+                        return null;
+                    }
+                }
+
+            services/java/com/android/server/ConnectivityService.java:
+
+
+                /*
+                 * Return LinkProperties for the active (i.e., connected) default
+                 * network interface.  It is assumed that at most one default network
+                 * is active at a time. If more than one is active, it is indeterminate
+                 * which will be returned.
+                 * @return the ip properties for the active network, or {@code null} if
+                 * none is active
+                 * /
+                @Override
+                public LinkProperties getActiveLinkProperties() {
+                    return getLinkProperties(mActiveDefaultNetwork);
+                }
+                
+                @Override
+                public LinkProperties getLinkProperties(int networkType) {
+                    enforceAccessPermission();
+                    if (isNetworkTypeValid(networkType)) {
+                        final NetworkStateTracker tracker = mNetTrackers[networkType];
+                        if (tracker != null) {
+                            return tracker.getLinkProperties();
+                        }
+                    }
+                    return null;
+                }
+
+            core/java/android/net/LinkProperties.java:
+
+                public Collection<InetAddress> getDnses() {
+                    return Collections.unmodifiableCollection(mDnses);
+                }
+
+            */
+
+            ConnectivityManager connectivityManager =
+                    (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            
+            Class<?> LinkPropertiesClass = Class.forName("android.net.LinkProperties");
+
+            Method getActiveLinkPropertiesMethod = ConnectivityManager.class.getMethod("getActiveLinkProperties", new Class []{});
+
+            Object linkProperties = getActiveLinkPropertiesMethod.invoke(connectivityManager);
+            
+            Method getDnsesMethod = LinkPropertiesClass.getMethod("getDnses", new Class []{});
+
+            Collection<?> dnses = (Collection<?>)getDnsesMethod.invoke(linkProperties);
+            
+            for (Object dns : dnses)
+            {
+                dnsAddresses.add((InetAddress)dns);
+            }
+        }
+        catch (ClassNotFoundException e)
+        {
+        }
+        catch (NoSuchMethodException e)
+        {
+        }
+        catch (IllegalArgumentException e)
+        {
+        }
+        catch (IllegalAccessException e)
+        {
+        }
+        catch (InvocationTargetException e)
+        {
+        }        
+        
+        return dnsAddresses;
     }
 }

@@ -20,6 +20,8 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SelectionKey;
@@ -34,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.xbill.DNS.ResolverConfig;
 
 import android.annotation.TargetApi;
 import android.app.Notification;
@@ -42,7 +45,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
@@ -57,35 +59,8 @@ import com.psiphon3.psiphonlibrary.TransparentProxyConfig.PsiphonTransparentProx
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.stericson.RootTools.RootTools;
 
-public class TunnelCore implements IStopSignalPending
+public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 {
-    public enum State
-    {
-        DISCONNECTED,
-        CONNECTING,
-        CONNECTED
-    }
-    private Context m_parentContext = null;
-    private Service m_parentService = null;
-    private State m_state = State.DISCONNECTED;
-    private boolean m_firstStart = true;
-    private Thread m_tunnelThread;
-    private ServerInterface m_interface;
-    private UpgradeDownloader m_upgradeDownloader = null;
-    private ServerSelector m_serverSelector = null;
-    private boolean m_destroyed = false;
-    private Events m_eventsInterface = null;
-    private boolean m_useGenericLogMessages = false;
-    private List<Pair<String,String>> m_extraAuthParams = new ArrayList<Pair<String,String>>();    
-
-
-    enum Signal
-    {
-        STOP_TUNNEL,
-        UNEXPECTED_DISCONNECT
-    };
-    private BlockingQueue<Signal> m_signalQueue;
-
     static public interface UpgradeDownloader
     {
         /**
@@ -100,6 +75,35 @@ public class TunnelCore implements IStopSignalPending
         public void stop();
     }
     
+
+    public enum State
+    {
+        DISCONNECTED,
+        CONNECTING,
+        CONNECTED
+    }
+
+    enum Signal
+    {
+        STOP_TUNNEL,
+        UNEXPECTED_DISCONNECT
+    }
+
+    private State m_state = State.DISCONNECTED;
+    private Context m_parentContext = null;
+    private Service m_parentService = null;
+    private boolean m_firstStart = true;
+    private Thread m_tunnelThread;
+    private ServerInterface m_interface;
+    private UpgradeDownloader m_upgradeDownloader = null;
+    private ServerSelector m_serverSelector = null;
+    private boolean m_destroyed = false;
+    private Events m_eventsInterface = null;
+    private boolean m_useGenericLogMessages = false;
+    private List<Pair<String,String>> m_extraAuthParams = new ArrayList<Pair<String,String>>();
+    private BlockingQueue<Signal> m_signalQueue;
+
+
     public TunnelCore(Context parentContext, Service parentService)
     {
         m_parentContext = parentContext;
@@ -123,7 +127,7 @@ public class TunnelCore implements IStopSignalPending
     public void onCreate()
     {
         m_interface = new ServerInterface(m_parentContext);
-        m_serverSelector = new ServerSelector(m_interface, m_parentContext);
+        m_serverSelector = new ServerSelector(this, m_interface, m_parentContext);
     }
 
     // Implementation of android.app.Service.onDestroy
@@ -319,9 +323,11 @@ public class TunnelCore implements IStopSignalPending
         return m_signalQueue.peek() == Signal.STOP_TUNNEL;
     }
     
-    private boolean runTunnelOnce()
+    private boolean runTunnelOnce(boolean[] activeServices)
     {
         setState(State.CONNECTING);
+        
+        MyLog.v(R.string.current_network_type, MyLog.Sensitivity.NOT_SENSITIVE, Utils.getNetworkTypeName(m_parentContext));
         
         PsiphonData.getPsiphonData().setTunnelRelayProtocol("");
         PsiphonData.getPsiphonData().setTunnelSessionID("");
@@ -355,7 +361,7 @@ public class TunnelCore implements IStopSignalPending
             boolean tunnelWholeDevice = PsiphonData.getPsiphonData().getTunnelWholeDevice();
             boolean runVpnService = tunnelWholeDevice && Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
             // TODO: get remote address/port from Psiphon server
-            String tunnelWholeDeviceDNSServer = "8.8.8.8";
+            String tunnelWholeDeviceDNSServer = PsiphonConstants.TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS;
             
             if (tunnelWholeDevice && !runVpnService)
             {
@@ -407,7 +413,7 @@ public class TunnelCore implements IStopSignalPending
             
             checkSignals(0);
 
-            m_serverSelector.Run();
+            m_serverSelector.Run(activeServices[ACTIVE_SERVICE_TUN2SOCKS]);
 
             checkSignals(0);
             
@@ -528,6 +534,22 @@ public class TunnelCore implements IStopSignalPending
 
             MyLog.v(R.string.http_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getHttpProxyPort());
 
+            // Update DNS resolver settings. These settings are used outside the tunnel
+            // and we try to use the correct resolver for the active underlying network.            
+
+            String dnsResolver;
+            ArrayList<String> dnsResolvers = new ArrayList<String>();
+            for (InetAddress activeNetworkResolver : Utils.getActiveNetworkDnsResolvers(m_parentContext))
+            {
+                dnsResolver = activeNetworkResolver.getHostAddress();
+                dnsResolvers.add(dnsResolver);
+                MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
+            }
+            dnsResolver = PsiphonConstants.TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS;
+            dnsResolvers.add(dnsResolver);
+            MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
+            ResolverConfig.refresh(dnsResolvers);
+
             // Start transparent proxy, DNS proxy, and iptables config
             
             if (tunnelWholeDevice && !runVpnService)
@@ -567,68 +589,76 @@ public class TunnelCore implements IStopSignalPending
     
                 transparentProxy = conn.createTransparentProxyForwarder(PsiphonData.getPsiphonData().getTransparentProxyPort());
     
-                try
-                {
-                    TransparentProxyConfig.setupTransparentProxyRouting(m_parentContext);
-                    cleanupTransparentProxyRouting = true;
-                }
-                catch (PsiphonTransparentProxyException e)
-                {
-                    // If we can't configure the iptables routing, abort
-                    MyLog.e(R.string.transparent_proxy_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
-                    runAgain = false;
-                    return runAgain;
-                }
-                
                 MyLog.v(R.string.transparent_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getTransparentProxyPort());
+
+                if (!activeServices[ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING])
+                {
+                    try
+                    {
+                        TransparentProxyConfig.setupTransparentProxyRouting(m_parentContext);
+                        cleanupTransparentProxyRouting = true;
+                    }
+                    catch (PsiphonTransparentProxyException e)
+                    {
+                        // If we can't configure the iptables routing, abort
+                        MyLog.e(R.string.transparent_proxy_routing_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+                        runAgain = false;
+                        return runAgain;
+                    }
+                    
+                    MyLog.v(R.string.transparent_proxy_routing_running, MyLog.Sensitivity.NOT_SENSITIVE);
+                }
             }
             
             // Run as Android OS VPN
             
             if (tunnelWholeDevice && runVpnService)
             {
-                // VpnService backwards compatibility: doVpnProtect/doVpnBuilder are wrapper
-                // functions so we don't reference the undefined VpnServer class when this function
-                // is loaded.
-
-                String privateIpAddress = Utils.selectPrivateAddress();
-                
-                if (privateIpAddress == null)
+                if (!activeServices[ACTIVE_SERVICE_TUN2SOCKS])
                 {
-                    MyLog.v(R.string.vpn_service_no_private_address_available, MyLog.Sensitivity.NOT_SENSITIVE);
-                    runAgain = false;
-                    return runAgain;
+                    // VpnService backwards compatibility: doVpnProtect/doVpnBuilder are wrapper
+                    // functions so we don't reference the undefined VpnServer class when this function
+                    // is loaded.
+    
+                    String privateIpAddress = Utils.selectPrivateAddress();
+                    
+                    if (privateIpAddress == null)
+                    {
+                        MyLog.v(R.string.vpn_service_no_private_address_available, MyLog.Sensitivity.NOT_SENSITIVE);
+                        runAgain = false;
+                        return runAgain;
+                    }
+    
+                    ParcelFileDescriptor vpnInterfaceFileDescriptor = null;
+                    
+                    if (!doVpnProtect(socket)
+                        || null == (vpnInterfaceFileDescriptor = doVpnBuilder(privateIpAddress, tunnelWholeDeviceDNSServer)))
+                    {
+                        // TODO: don't fail over to root mode in the not-really-broken revoked edge condition case (e.g., establish() returns null)?
+                        runAgain = failOverToRootWholeDeviceMode();
+                        return runAgain;
+                    }
+                    
+                    MyLog.v(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
+    
+                    String socksServerAddress = "127.0.0.1:" + Integer.toString(PsiphonData.getPsiphonData().getSocksPort());
+                    String udpgwServerAddress = "127.0.0.1:" + Integer.toString(PsiphonConstants.UDPGW_SERVER_PORT);
+                    
+                    cleanupTun2Socks = true;
+                    
+                    Tun2Socks.Start(
+                            this,
+                            vpnInterfaceFileDescriptor,
+                            PsiphonConstants.VPN_INTERFACE_MTU,
+                            privateIpAddress,
+                            PsiphonConstants.VPN_INTERFACE_NETMASK,
+                            socksServerAddress,
+                            udpgwServerAddress);
+                    
+                    // TODO: detect and report: tun2Socks.Start failed; tun2socks run() unexpected exit
+    
+                    MyLog.v(R.string.tun2socks_running, MyLog.Sensitivity.NOT_SENSITIVE);
                 }
-
-                ParcelFileDescriptor vpnInterfaceFileDescriptor = null;
-                
-                if (!doVpnProtect(socket)
-                    || null == (vpnInterfaceFileDescriptor = doVpnBuilder(privateIpAddress, tunnelWholeDeviceDNSServer)))
-                {
-                    // TODO: don't fail over to root mode in the not-really-broken revoked edge condition case (e.g., establish() returns null)?
-                    runAgain = failOverToRootWholeDeviceMode();
-                    return runAgain;
-                }
-                
-                MyLog.v(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
-
-                String socksServerAddress = "127.0.0.1:" + Integer.toString(PsiphonData.getPsiphonData().getSocksPort());
-                String udpgwServerAddress = "127.0.0.1:" + Integer.toString(PsiphonConstants.UDPGW_SERVER_PORT);
-                
-                cleanupTun2Socks = true;
-                
-                Tun2Socks.Start(
-                        this,
-                        vpnInterfaceFileDescriptor,
-                        PsiphonConstants.VPN_INTERFACE_MTU,
-                        privateIpAddress,
-                        PsiphonConstants.VPN_INTERFACE_NETMASK,
-                        socksServerAddress,
-                        udpgwServerAddress);
-                
-                // TODO: detect and report: tun2Socks.Start failed; tun2socks run() unexpected exit
-
-                MyLog.v(R.string.tun2socks_running, MyLog.Sensitivity.NOT_SENSITIVE);
             }
             
             // Don't signal unexpected disconnect until we've started
@@ -754,6 +784,8 @@ public class TunnelCore implements IStopSignalPending
                 m_upgradeDownloader.start();
             }
             
+            boolean hasTunnel = true;
+            
             try
             {
                 // This busy-wait-ish loop is throttled by the `checkSignals(1)`
@@ -764,12 +796,22 @@ public class TunnelCore implements IStopSignalPending
                 {
                     checkSignals(1);
     
-                    m_interface.doPeriodicWork(false);
+                    m_interface.doPeriodicWork(null, true, false);
                 }
+            }
+            catch (TunnelVpnServiceUnexpectedDisconnect e)
+            {
+                // NOTE: this it re-caught in the outer try. Here we're just
+                // setting a flag which determines doPeriodicWork behavior when
+                // there's no tunnel.
+                hasTunnel = false;
+                throw e;
             }
             finally
             {
-                m_interface.doPeriodicWork(true);
+                // At this point, there may be no tunnel and we may need to protect
+                // the request socket.
+                m_interface.doPeriodicWork(cleanupTun2Socks ? this : null, hasTunnel, true);
             }
         }
         catch (IOException e)
@@ -812,6 +854,11 @@ public class TunnelCore implements IStopSignalPending
         }
         finally
         {
+            if (unexpectedDisconnect)
+            {
+                MyLog.v(R.string.current_network_type, MyLog.Sensitivity.NOT_SENSITIVE, Utils.getNetworkTypeName(m_parentContext));
+            }
+
             PsiphonData.getPsiphonData().setTunnelRelayProtocol("");
             PsiphonData.getPsiphonData().setTunnelSessionID("");
 
@@ -822,12 +869,22 @@ public class TunnelCore implements IStopSignalPending
 
             if (cleanupTransparentProxyRouting)
             {
-                try
+                if (!runAgain)
                 {
-                    TransparentProxyConfig.teardownTransparentProxyRouting(m_parentContext);
+                    // TODO: refactor: combine with cleanup in runTunnel()
+                    try
+                    {
+                        TransparentProxyConfig.teardownTransparentProxyRouting(m_parentContext);
+                        MyLog.v(R.string.transparent_proxy_routing_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
+                        activeServices[ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING] = false;
+                    }
+                    catch (PsiphonTransparentProxyException e)
+                    {
+                    }
                 }
-                catch (PsiphonTransparentProxyException e)
+                else
                 {
+                    activeServices[ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING] = true;
                 }
             }
             
@@ -852,8 +909,23 @@ public class TunnelCore implements IStopSignalPending
             
             if (cleanupTun2Socks)
             {
-                Tun2Socks.Stop();
-                MyLog.v(R.string.tun2socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);                
+                if (!runAgain || PsiphonData.getPsiphonData().getVpnServiceUnavailable())
+                {
+                    // NOTE: getVpnServiceUnavailable() becomes true when failing over to
+                    // iptables mode and in that case we don't leave the tun routing up.
+
+                    // TODO: refactor: combine with cleanup in runTunnel()
+                    Tun2Socks.Stop();
+                    MyLog.v(R.string.tun2socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
+                    activeServices[ACTIVE_SERVICE_TUN2SOCKS] = false;
+                }
+                else
+                {
+                    // When running again (e.g., unexpected disconnect, or retry connect) we
+                    // leave the VpnService tun routing up to avoid leaking traffic outside
+                    // the VPN in this case.
+                    activeServices[ACTIVE_SERVICE_TUN2SOCKS] = true;
+                }
             }
             
             if (socks != null)
@@ -917,14 +989,38 @@ public class TunnelCore implements IStopSignalPending
     }
    
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    private boolean doVpnProtect(Socket socket)
+    public boolean doVpnProtect(Socket socket)
     {
         // *Must* have a parent service for this mode
         assert (m_parentService != null);
 
         if (!((TunnelVpnService)m_parentService).protect(socket))
         {
-            MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE, "protect socket failed");
+            String networkTypeName = Utils.getNetworkTypeName(m_parentService);
+            if (!networkTypeName.isEmpty())
+            {
+                MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE,
+                        "protect socket failed (" + networkTypeName + ")");
+            }
+            return false;
+        }
+        return true;
+    }
+    
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+    public boolean doVpnProtect(DatagramSocket socket)
+    {
+        // *Must* have a parent service for this mode
+        assert (m_parentService != null);
+
+        if (!((TunnelVpnService)m_parentService).protect(socket))
+        {
+            String networkTypeName = Utils.getNetworkTypeName(m_parentService);
+            if (!networkTypeName.isEmpty())
+            {
+                MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE,
+                        "protect datagram socket failed (" + networkTypeName + ")");
+            }
             return false;
         }
         return true;
@@ -1006,6 +1102,9 @@ public class TunnelCore implements IStopSignalPending
         
         return false;
     }
+    
+    private static int ACTIVE_SERVICE_TUN2SOCKS = 0;
+    private static int ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING = 1;
 
     private void runTunnel() throws InterruptedException
     {
@@ -1016,7 +1115,12 @@ public class TunnelCore implements IStopSignalPending
             return;
         }
         
-        while (runTunnelOnce())
+        // Active services are components runTunnelOnce leaves active on exit.
+        // We use this to keep the routing in place in whole device modes to
+        // avoid traffic leakage when failing over to another server.
+        boolean[] activeServices = new boolean[]{false, false}; // ACTIVE_SERVICE_TUN2SOCKS, ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING
+        
+        while (runTunnelOnce(activeServices))
         {
             try
             {
@@ -1029,7 +1133,6 @@ public class TunnelCore implements IStopSignalPending
             catch (TunnelVpnTunnelStop e)
             {
                 // Stop has been requested, so get out of the retry loop.
-                setState(State.DISCONNECTED);
                 break;
             }
             
@@ -1039,7 +1142,7 @@ public class TunnelCore implements IStopSignalPending
             try
             {
                 m_interface.start();
-                m_interface.fetchRemoteServerList();
+                m_interface.fetchRemoteServerList(activeServices[ACTIVE_SERVICE_TUN2SOCKS] ? this : null);
             }
             catch (PsiphonServerInterfaceException requestException)
             {
@@ -1058,10 +1161,31 @@ public class TunnelCore implements IStopSignalPending
             }
             catch (InterruptedException ie)
             {
-                setState(State.DISCONNECTED);
                 break;
             }
         }
+        
+        // Clean up active services.
+        
+        if (activeServices[ACTIVE_SERVICE_TUN2SOCKS])
+        {
+            Tun2Socks.Stop();
+            MyLog.v(R.string.tun2socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
+        }
+
+        if (activeServices[ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING])
+        {
+            try
+            {
+                TransparentProxyConfig.teardownTransparentProxyRouting(m_parentContext);
+                MyLog.v(R.string.transparent_proxy_routing_stopped, MyLog.Sensitivity.NOT_SENSITIVE);                
+            }
+            catch (PsiphonTransparentProxyException e)
+            {
+            }
+        }
+
+        setState(State.DISCONNECTED);
     }
     
     public void startTunnel()

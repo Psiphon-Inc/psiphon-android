@@ -51,7 +51,6 @@
     <string name="dns_proxy_ports_failed">Failed to start DNS proxy: no available ports found</string>
     <string name="dns_proxy_stopped">DNS proxy stopped</string>
     <string name="dns_proxy_failed">Failed to start DNS proxy</string>
-    <string name="transparent_proxy_failed">Failed to start transparent proxy: %s</string>
     <string name="iptables_binary_not_found">Cannot find iptables implementation required for transparent proxy</string>
     <string name="root_access_denied">Root access denied</string>
     <string name="psiphon_stopped">Stopped</string>
@@ -82,4 +81,10 @@
     <string name="Diagnostics.AttachmentWriteFailed">Failed to create or write feedback diagnostics file</string>
     <string name="Diagnostics.EncryptedFailed">Failed to encrypt feedback diagnostic information. This information will not be attached to the feedback email.</string>
     <string name="TransparentProxyConfig.iptablesExtractFailed">Failed to extract iptables binary.</string>
+    <string name="transparent_proxy_routing_failed">Failed to start transparent proxy routing: %s</string>
+    <string name="transparent_proxy_routing_running">Transparent proxy routing running</string>
+    <string name="transparent_proxy_routing_stopped">Transparent proxy routing stopped</string>
+    <string name="final_status_request_failed">Final status request failed</string>
+    <string name="current_network_type">Current network: %s</string>
+    <string name="dns_resolver">DNS resolver: %s</string>
 </resources>
