@@ -431,8 +431,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             
             MyLog.v(R.string.ssh_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
 
-            // At this point we need counters for SSH traffic
-            PsiphonData.getPsiphonData().getDataTransferStats().start();
+            // At this point we'll start counting bytes transferred for SSH traffic
+            PsiphonData.getPsiphonData().getDataTransferStats().startSession();
             
             JSONObject diagnosticData = new JSONObject();
             try 
@@ -663,6 +663,9 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             
             // Don't signal unexpected disconnect until we've started
             conn.addConnectionMonitor(monitor);
+            
+            // Start connection elapsed time
+            PsiphonData.getPsiphonData().getDataTransferStats().startConnected();
             
             setState(State.CONNECTED);
             PsiphonData.getPsiphonData().setTunnelRelayProtocol(PsiphonConstants.RELAY_PROTOCOL);

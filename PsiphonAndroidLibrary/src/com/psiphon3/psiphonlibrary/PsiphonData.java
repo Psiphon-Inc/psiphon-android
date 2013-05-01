@@ -432,7 +432,7 @@ public class PsiphonData
     public class DataTransferStats
     {
         private boolean m_isConnected;
-        private long m_startTime;
+        private long m_connectedTime;
 
         private long m_totalBytesSent;
         private long m_totalUncompressedBytesSent;
@@ -475,22 +475,27 @@ public class PsiphonData
             stop();
         }
         
-        public synchronized void start()
+        public synchronized void startSession()
+        {
+            resetBytesTransferred();
+        }
+
+        public synchronized void startConnected()
         {
             this.m_isConnected = true;
-            reset();
+            this.m_connectedTime = SystemClock.elapsedRealtime();
         }
 
         public synchronized void stop()
         {
             this.m_isConnected = false;
-            reset();
+            this.m_connectedTime = 0;
+            resetBytesTransferred();
         }
         
-        private void reset()
+        private void resetBytesTransferred()
         {
             long now = SystemClock.elapsedRealtime();
-            this.m_startTime = now;
             this.m_sessionBytesSent = 0;
             this.m_sessionUncompressedBytesSent = 0;
             this.m_sessionOverheadBytesSent = 0;
@@ -599,14 +604,14 @@ public class PsiphonData
         
         private void addSentToBuckets(int bytes)
         {
-            this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesReceived += bytes;
-            this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesReceived += bytes;
+            this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesSent += bytes;
+            this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesSent += bytes;
         }
         
         private void addReceivedToBuckets(int bytes)
         {
-            this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesSent += bytes;
-            this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesSent += bytes;
+            this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesReceived += bytes;
+            this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesReceived += bytes;
         }
         
         public synchronized boolean isConnected()
@@ -618,7 +623,7 @@ public class PsiphonData
         {
             long now = SystemClock.elapsedRealtime();
             
-            return now - this.m_startTime;
+            return now - this.m_connectedTime;
         }
     
         public synchronized long getTotalBytesSent()
