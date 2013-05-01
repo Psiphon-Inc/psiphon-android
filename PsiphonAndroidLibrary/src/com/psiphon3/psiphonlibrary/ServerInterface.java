@@ -629,7 +629,6 @@ public class ServerInterface
         List<Pair<String,String>> additionalHeaders = new ArrayList<Pair<String,String>>();
         additionalHeaders.add(Pair.create("Content-Type", "application/json"));
         
-        // protectSocket, hasTunnel
         if (!finalCall)
         {
             assert(protectSocket == null);
