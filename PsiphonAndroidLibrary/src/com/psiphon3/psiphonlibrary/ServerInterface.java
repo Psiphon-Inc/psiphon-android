@@ -1054,13 +1054,10 @@ public class ServerInterface
             //   In addition, dnsjava uses also global state internally (shared Resolver object).
             // - dnsjava has been customized to call protect() on socket objects and to abort DNS lookups when
             //   a tunnel stop is commanded.
+            // - DNS resolvers are updated in runTunnelOnce() and should be set to the correct resolvers for
+            //   the active underlying (non-VPN) network.
             
             PsiphonState.getPsiphonState().setState(protectSocket, serverInterface);
-            // TODO: get Android system DNS resolver address
-            // - Various methods, in addition to dnsjava technique (http://stackoverflow.com/questions/3070144/how-do-you-get-the-current-dns-servers-for-android)
-            // - system properties net.dns.* reflect current active network, so DNS will be TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS
-            // - instead, we want actual DNS resolver for current *underlying* network -- WiFi or Mobile, etc.
-            SimpleResolver.setDefaultResolver(PsiphonConstants.TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS);
             InetAddress[] result = Address.getAllByName(hostname);
             PsiphonState.getPsiphonState().setState(null, null);
 

@@ -4,6 +4,7 @@ package org.xbill.DNS;
 
 import java.io.*;
 import java.lang.reflect.*;
+import java.net.InetAddress;
 import java.util.*;
 
 /**
@@ -40,11 +41,13 @@ private int ndots = -1;
 private static ResolverConfig currentConfig;
 
 static {
-	refresh();
+	refresh(null);
 }
 
 public
-ResolverConfig() {
+ResolverConfig(Collection<String> dnsResolvers) {
+    // PSIPHON
+    /*
 	if (findProperty())
 		return;
 	if (findSunJVM())
@@ -67,6 +70,17 @@ ResolverConfig() {
 			findUnix();
 		}
 	}
+	*/
+    ArrayList lserver = new ArrayList(); 
+    ArrayList lsearch = new ArrayList();
+    if (dnsResolvers != null)
+    {
+        for (String dnsResolver : dnsResolvers)
+        {
+            lserver.add(dnsResolver);
+        }
+    }
+    configureFromLists(lserver, lsearch);
 }
 
 private void
@@ -499,8 +513,8 @@ getCurrentConfig() {
 
 /** Gets the current configuration */
 public static void
-refresh() {
-	ResolverConfig newConfig = new ResolverConfig();
+refresh(Collection<String> dnsResolvers) {
+	ResolverConfig newConfig = new ResolverConfig(dnsResolvers);
 	synchronized (ResolverConfig.class) {
 		currentConfig = newConfig;
 	}

@@ -21,6 +21,7 @@ package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SelectionKey;
@@ -35,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.xbill.DNS.ResolverConfig;
 
 import android.annotation.TargetApi;
 import android.app.Notification;
@@ -531,6 +533,17 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             }
 
             MyLog.v(R.string.http_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getHttpProxyPort());
+
+            // Update DNS resolver settings. These settings are used outside the tunnel
+            // and we try to use the correct resolver for the active underlying network.            
+
+            ArrayList<String> dnsResolvers = new ArrayList<String>();
+            for (InetAddress activeNetworkResolver : Utils.getActiveNetworkDnsResolvers(m_parentContext))
+            {
+                dnsResolvers.add(activeNetworkResolver.getHostAddress());
+            }
+            dnsResolvers.add(PsiphonConstants.TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS);
+            ResolverConfig.refresh(dnsResolvers);
 
             // Start transparent proxy, DNS proxy, and iptables config
             
