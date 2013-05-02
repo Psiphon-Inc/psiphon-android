@@ -920,7 +920,7 @@ public class ServerInterface
         // This request won't abort and will fail over to direct requests,
         // to multiple ports, when tunnel is down            
 
-        PsiphonServerInterfaceException lastError = null;
+        PsiphonServerInterfaceException lastError = new PsiphonServerInterfaceException();
         
         if (hasTunnel)
         {
