@@ -428,6 +428,9 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             assert(entry.ipAddress.equals(ipAddress));
                         
             checkSignals(0);
+
+            // Update resolvers (again) to match underlying network interface used for SSH tunnel            
+            Utils.updateDnsResolvers(m_parentContext);
             
             MyLog.v(R.string.ssh_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
 
@@ -533,22 +536,6 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             }
 
             MyLog.v(R.string.http_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getHttpProxyPort());
-
-            // Update DNS resolver settings. These settings are used outside the tunnel
-            // and we try to use the correct resolver for the active underlying network.            
-
-            String dnsResolver;
-            ArrayList<String> dnsResolvers = new ArrayList<String>();
-            for (InetAddress activeNetworkResolver : Utils.getActiveNetworkDnsResolvers(m_parentContext))
-            {
-                dnsResolver = activeNetworkResolver.getHostAddress();
-                dnsResolvers.add(dnsResolver);
-                MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
-            }
-            dnsResolver = PsiphonConstants.TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS;
-            dnsResolvers.add(dnsResolver);
-            MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
-            ResolverConfig.refresh(dnsResolvers);
 
             // Start transparent proxy, DNS proxy, and iptables config
             

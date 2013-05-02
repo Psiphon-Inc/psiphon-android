@@ -68,6 +68,7 @@ import ch.boye.httpclientandroidlib.conn.ssl.X509HostnameVerifier;
 import ch.boye.httpclientandroidlib.entity.ByteArrayEntity;
 import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
 import ch.boye.httpclientandroidlib.impl.conn.PoolingClientConnectionManager;
+import ch.boye.httpclientandroidlib.impl.conn.SystemDefaultDnsResolver;
 import ch.boye.httpclientandroidlib.params.BasicHttpParams;
 import ch.boye.httpclientandroidlib.params.HttpConnectionParams;
 import ch.boye.httpclientandroidlib.params.HttpParams;
@@ -772,6 +773,9 @@ public class ServerInterface
                     return;
                 }
             }
+
+            // Update resolvers to match underlying network interface
+            Utils.updateDnsResolvers(ownerContext);
             
             PsiphonData.getPsiphonData().setNextFetchRemoteServerList(
                     SystemClock.elapsedRealtime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_UNSUCCESSFUL_REMOTE_SERVER_LIST_FETCH);
@@ -1180,7 +1184,26 @@ public class ServerInterface
             SchemeRegistry registry = new SchemeRegistry();
             registry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
             registry.register(new Scheme("https", 443, sslSocketFactory));
-            ProtectedDnsResolver dnsResolver = new ProtectedDnsResolver(protectSocket, this);
+
+            DnsResolver dnsResolver;            
+            if (protectSocket != null)
+            {
+                dnsResolver = new ProtectedDnsResolver(protectSocket, this);
+            }
+            else            
+            {
+                // NOTE: It's important to use the SystemDefaultDnsResolver in this case not
+                // simply because protect() is not required, but also because the hidden API
+                // used in getActiveNetworkDnsResolvers() isn't available on Android < 4.0.
+                // So we only use the custom resolver when protectSocket is called for, which
+                // only happens on Android > 4.0 in VpnService mode, which is exactly the mode
+                // where we need the custom resolver. Other modes (browser-only and root on
+                // any version of Android) don't require a custom resolver (browser-only because
+                // DNS isn't tunneled; root because Psiphon pid DNS isn't routed through the
+                // tunnel).
+                dnsResolver = new SystemDefaultDnsResolver();
+            }
+
             ClientConnectionManager connManager = new PoolingClientConnectionManager(registry, dnsResolver);            
             DefaultHttpClient client = new DefaultHttpClient(connManager, params);
             

@@ -87,4 +87,5 @@
     <string name="final_status_request_failed">Final status request failed</string>
     <string name="current_network_type">Current network: %s</string>
     <string name="dns_resolver">DNS resolver: %s</string>
+    <string name="get_active_network_dns_resolvers_failed">Get active network DNS resolvers failed</string>
 </resources>

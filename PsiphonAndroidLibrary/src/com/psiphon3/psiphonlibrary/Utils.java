@@ -30,6 +30,7 @@ import java.io.IOException;
 
 import org.apache.http.conn.util.InetAddressUtils;
 import org.json.JSONObject;
+import org.xbill.DNS.ResolverConfig;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -787,6 +788,8 @@ public class Utils
             /*
 
             Hidden API
+            - only available in Android 4.0+
+            - no guarantee will be available beyond 4.2, or on all vendor devices 
 
             core/java/android/net/ConnectivityManager.java:
 
@@ -855,20 +858,54 @@ public class Utils
         }
         catch (ClassNotFoundException e)
         {
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
         }
         catch (NoSuchMethodException e)
         {
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
         }
         catch (IllegalArgumentException e)
         {
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
         }
         catch (IllegalAccessException e)
         {
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
         }
         catch (InvocationTargetException e)
         {
-        }        
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+        }
         
         return dnsAddresses;
+    }
+    
+    static void updateDnsResolvers(Context context)
+    {
+        // Custom DNS resolver only used in VpnService mode. Also, note
+        // that getActiveNetworkDnsResolvers uses hidden APIs available
+        // only in Android 4.0+.
+
+        if (!Utils.hasVpnService())
+        {
+            return;
+        }
+        
+        // Update DNS resolver settings. These settings are used outside the tunnel
+        // but while the VpnService tun device is still up. We try to use the correct
+        // resolver for the active underlying network.            
+
+        String dnsResolver;
+        ArrayList<String> dnsResolvers = new ArrayList<String>();
+        for (InetAddress activeNetworkResolver : Utils.getActiveNetworkDnsResolvers(context))
+        {
+            dnsResolver = activeNetworkResolver.getHostAddress();
+            dnsResolvers.add(dnsResolver);
+            MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
+        }
+        dnsResolver = PsiphonConstants.TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS;
+        dnsResolvers.add(dnsResolver);
+        MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
+        ResolverConfig.refresh(dnsResolvers);        
     }
 }

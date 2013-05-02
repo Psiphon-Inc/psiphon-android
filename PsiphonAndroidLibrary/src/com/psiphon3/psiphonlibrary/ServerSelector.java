@@ -226,6 +226,9 @@ public class ServerSelector
                     return false;
                 }
             }
+
+            // Update resolvers to match underlying network interface
+            Utils.updateDnsResolvers(context);
             
             // Adapted from Psiphon Windows client module server_list_reordering.cpp; see comments there.
             // Revision: https://bitbucket.org/psiphon/psiphon-circumvention-system/src/881d32d09e3a/Client/psiclient/server_list_reordering.cpp
