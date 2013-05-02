@@ -78,7 +78,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.xbill.DNS.Address;
 import org.xbill.DNS.PsiphonState;
-import org.xbill.DNS.SimpleResolver;
 
 import com.psiphon3.psiphonlibrary.R;
 import com.psiphon3.psiphonlibrary.ServerEntryAuth.ServerEntryAuthException;
@@ -148,6 +147,11 @@ public class ServerInterface
             }
         }
         
+        public static final String CAPABILITY_HANDSHAKE = "handshake";
+        public static final String CAPABILITY_VPN = "VPN";
+        public static final String CAPABILITY_OSSH = "OSSH";
+        public static final String CAPABILITY_SSH = "SSH";
+        
         boolean hasCapability(String capability)
         {
             return this.capabilities.contains(capability);
@@ -160,15 +164,15 @@ public class ServerInterface
 
         int getPreferredReachablityTestPort()
         {
-            if (hasCapability("OSSH"))
+            if (hasCapability(CAPABILITY_OSSH))
             {
                 return this.sshObfuscatedPort;
             }
-            else if (hasCapability("SSH"))
+            else if (hasCapability(CAPABILITY_SSH))
             {
                 return this.sshPort;
             }
-            else if (hasCapability("handshake"))
+            else if (hasCapability(CAPABILITY_HANDSHAKE))
             {
                 return this.webServerPort;
             }
@@ -934,22 +938,25 @@ public class ServerInterface
 
         // NOTE: deliberately ignoring this.stopped and adding new non-abortable requests
 
-        // Try direct non-tunnel requests
-
-        for (String url : urls)
+        if (getCurrentServerEntry().hasCapability(ServerEntry.CAPABILITY_HANDSHAKE))
         {
-            try
+            // Try direct non-tunnel requests
+    
+            for (String url : urls)
             {
-                // Psiphon web request: authenticate the web server using the embedded certificate.
-                String psiphonServerCertificate = getCurrentServerEntry().webServerCertificate;
-
-                return makeRequest(protectSocket, false, false, psiphonServerCertificate, url, additionalHeaders, body);
-            }
-            catch (PsiphonServerInterfaceException e2)
-            {
-                lastError = e2;
-
-                // Try next port/url...
+                try
+                {
+                    // Psiphon web request: authenticate the web server using the embedded certificate.
+                    String psiphonServerCertificate = getCurrentServerEntry().webServerCertificate;
+    
+                    return makeRequest(protectSocket, false, false, psiphonServerCertificate, url, additionalHeaders, body);
+                }
+                catch (PsiphonServerInterfaceException e2)
+                {
+                    lastError = e2;
+    
+                    // Try next port/url...
+                }
             }
         }
         
@@ -1394,10 +1401,10 @@ public class ServerInterface
         {
             // At the time of introduction of the server capabilities feature
             // these are the default capabilities possessed by all servers.
-            newEntry.capabilities.add("OSSH");
-            newEntry.capabilities.add("SSH");
-            newEntry.capabilities.add("VPN");
-            newEntry.capabilities.add("handshake");
+            newEntry.capabilities.add(ServerEntry.CAPABILITY_OSSH);
+            newEntry.capabilities.add(ServerEntry.CAPABILITY_SSH);
+            newEntry.capabilities.add(ServerEntry.CAPABILITY_VPN);
+            newEntry.capabilities.add(ServerEntry.CAPABILITY_HANDSHAKE);
         }
         
         return newEntry;
