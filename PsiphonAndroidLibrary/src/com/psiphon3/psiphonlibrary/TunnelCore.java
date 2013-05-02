@@ -120,7 +120,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             startTunnel();
             m_firstStart = false;
         }
-        return android.app.Service.START_STICKY;
+        return android.app.Service.START_NOT_STICKY;
     }
 
     // Implementation of android.app.Service.onCreate
