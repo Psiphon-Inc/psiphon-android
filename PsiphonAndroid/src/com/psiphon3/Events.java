@@ -36,7 +36,7 @@ import android.support.v4.content.LocalBroadcastManager;
 
 public class Events implements com.psiphon3.psiphonlibrary.Events
 {
-    public void signalHandshakeSuccess(Context context)
+    public void signalHandshakeSuccess(Context context, boolean isReconnect)
     {
         // Only send this intent if the StatusActivity is
         // in the foreground. If it isn't and we sent the
@@ -52,6 +52,7 @@ public class Events implements com.psiphon3.psiphonlibrary.Events
                     null,
                     context,
                     com.psiphon3.StatusActivity.class);
+            intent.putExtra(StatusActivity.HANDSHAKE_SUCCESS_IS_RECONNECT, isReconnect);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         }

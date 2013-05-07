@@ -323,7 +323,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         return m_signalQueue.peek() == Signal.STOP_TUNNEL;
     }
     
-    private boolean runTunnelOnce(boolean[] activeServices)
+    private boolean runTunnelOnce(boolean isReconnect, boolean[] activeServices)
     {
         setState(State.CONNECTING);
         
@@ -733,7 +733,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
                 if (m_eventsInterface != null)
                 {
-                    m_eventsInterface.signalHandshakeSuccess(m_parentContext);
+                    m_eventsInterface.signalHandshakeSuccess(m_parentContext, isReconnect);
                 }
             } 
             catch (PsiphonServerInterfaceException requestException)
@@ -1105,13 +1105,17 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             return;
         }
         
+        boolean isReconnect = false;
+        
         // Active services are components runTunnelOnce leaves active on exit.
         // We use this to keep the routing in place in whole device modes to
         // avoid traffic leakage when failing over to another server.
         boolean[] activeServices = new boolean[]{false, false}; // ACTIVE_SERVICE_TUN2SOCKS, ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING
         
-        while (runTunnelOnce(activeServices))
+        while (runTunnelOnce(isReconnect, activeServices))
         {
+            isReconnect = true;
+
             try
             {
                 checkSignals(0);

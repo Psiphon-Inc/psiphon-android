@@ -63,6 +63,7 @@ public class StatusActivity
 {
     public static final String ADD_MESSAGE_CLASS = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_CLASS";
     public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
+    public static final String HANDSHAKE_SUCCESS_IS_RECONNECT = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS_IS_RECONNECT";
     public static final String UNEXPECTED_DISCONNECT = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT";
     public static final String TUNNEL_STARTING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STARTING";
     public static final String TUNNEL_STOPPING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STOPPING";
@@ -240,7 +241,16 @@ public class StatusActivity
 
         if (0 == intent.getAction().compareTo(HANDSHAKE_SUCCESS))
         {
-            Events.displayBrowser(this);
+            // Show the home page. Always do this in browser-only mode, even
+            // after an automated reconnect -- since the status activity was
+            // brought to the front after an unexpected disconnect. In whole
+            // device mode, after an automated reconnect, we don't re-invoke
+            // the browser.
+            if (!PsiphonData.getPsiphonData().getTunnelWholeDevice()
+                || intent.getBooleanExtra(HANDSHAKE_SUCCESS_IS_RECONNECT, false))
+            {
+                Events.displayBrowser(this);
+            }
             
             // We only want to respond to the HANDSHAKE_SUCCESS action once,
             // so we need to clear it (by setting it to a non-special intent).
