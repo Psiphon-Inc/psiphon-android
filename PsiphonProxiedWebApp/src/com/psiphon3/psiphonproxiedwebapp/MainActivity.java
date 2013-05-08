@@ -275,7 +275,7 @@ public class MainActivity
     }
 
     @Override
-    public void signalHandshakeSuccess(Context context)
+    public void signalHandshakeSuccess(Context context, boolean isReconnect)
     {
         final Context finalContext = this;
 

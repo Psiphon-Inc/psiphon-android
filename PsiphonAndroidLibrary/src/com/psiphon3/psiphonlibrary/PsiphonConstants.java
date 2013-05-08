@@ -60,7 +60,7 @@ public class PsiphonConstants
     // The character restrictions are dictated by the server.
     public final static String PLATFORM = ("Android_" + Build.VERSION.RELEASE).replaceAll("[^\\w\\-\\.]", "_");
     
-    public final static int HTTPS_REQUEST_TIMEOUT = 20000;
+    public final static int HTTPS_REQUEST_TIMEOUT = 2000;
     
     public final static int SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH = 60*60*6;
             
@@ -77,4 +77,10 @@ public class PsiphonConstants
     public final static int VPN_INTERFACE_MTU = 1500;
 
     public final static int UDPGW_SERVER_PORT = 7300;
+    
+    public final static String TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS = "8.8.8.8";
+    
+    public final static long PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS = 25000;
+
+    public final static long PREEMPTIVE_RECONNECT_SOCKET_TIMEOUT_MILLISECONDS = 5000;
 }

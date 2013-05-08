@@ -51,7 +51,6 @@
     <string name="dns_proxy_ports_failed">Failed to start DNS proxy: no available ports found</string>
     <string name="dns_proxy_stopped">DNS proxy stopped</string>
     <string name="dns_proxy_failed">Failed to start DNS proxy</string>
-    <string name="transparent_proxy_failed">Failed to start transparent proxy: %s</string>
     <string name="iptables_binary_not_found">Cannot find iptables implementation required for transparent proxy</string>
     <string name="root_access_denied">Root access denied</string>
     <string name="psiphon_stopped">Stopped</string>
@@ -74,12 +73,24 @@
     <string name="tun2socks_stopped">VPN to SOCKS stopped</string>
     <string name="vpn_service_no_private_address_available">No private address available for VPN service</string>
     <string name="psiphon_running_generic">Running…</string>
-    <string name="data_transfer_total_bytes_sent">Total bytes sent: %1$s (%2$.2f%% compressed)</string>
-    <string name="data_transfer_total_bytes_received">Total bytes received: %1$s (%2$.2f%% compressed)</string>
-    <string name="data_transfer_total_elapsed_time">Total connection time: %s</string>
+    <string name="data_transfer_bytes_sent">Bytes sent: %1$s (%2$.2f%% compressed)</string>
+    <string name="data_transfer_bytes_received">Bytes received: %1$s (%2$.2f%% compressed)</string>
+    <string name="data_transfer_elapsed_time">Connection time: %s</string>
     <string name="check_tunnel_failed">Check tunnel failed. Your device may not support the whole device tunnel option.</string>
     <string name="debug_message">%s</string>
     <string name="Diagnostics.AttachmentWriteFailed">Failed to create or write feedback diagnostics file</string>
     <string name="Diagnostics.EncryptedFailed">Failed to encrypt feedback diagnostic information. This information will not be attached to the feedback email.</string>
     <string name="TransparentProxyConfig.iptablesExtractFailed">Failed to extract iptables binary.</string>
+    <string name="transparent_proxy_routing_failed">Failed to start transparent proxy routing: %s</string>
+    <string name="transparent_proxy_routing_running">Transparent proxy routing running</string>
+    <string name="transparent_proxy_routing_stopped">Transparent proxy routing stopped</string>
+    <string name="final_status_request_failed">Final status request failed</string>
+    <string name="current_network_type">Current network: %s</string>
+    <string name="dns_resolver">DNS resolver: %s</string>
+    <string name="get_active_network_dns_resolvers_failed">Get active network DNS resolvers failed</string>
+    <string name="preemptive_ssh_stopped">Preemptive SSH stopped</string>
+    <string name="premptive_socks_stopped">Preemptive SOCKS stopped</string>
+    <string name="premptive_transparent_proxy_stopped">Preemptive transparent proxy stopped</string>
+    <string name="preemptive_socket_connection_failed">Preemptive socket connection failed</string>
+    <string name="preemptive_ssh_connection_failed">Preemptive SSH connection failed</string>
 </resources>
