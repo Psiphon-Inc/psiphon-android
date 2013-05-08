@@ -21,7 +21,6 @@ package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SelectionKey;
@@ -36,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.xbill.DNS.ResolverConfig;
 
 import android.annotation.TargetApi;
 import android.app.Notification;
@@ -858,7 +856,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                     
                     if (doPremptiveReconnect)
                     {
-                        if (SystemClock.elapsedRealtime() >= preemptiveReconnectWaitUntil)
+                        long now = SystemClock.elapsedRealtime();
+                        if (now >= preemptiveReconnectWaitUntil)
                         {
                             // Retire the old connection
                             
@@ -881,27 +880,62 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                             checkSignals(0);
                             
                             // Connect directly to the same server
-                            Socket newSocket = connectSocket(
-                                            activeServices[ACTIVE_SERVICE_TUN2SOCKS],
-                                            PsiphonConstants.PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS,
-                                            entry.ipAddress,
-                                            entry.sshObfuscatedPort);
-                            if (newSocket == null)
+
+                            Socket newSocket;
+                            try
                             {
-                                // If we can't make a second connection, jump out to retry next server...
-                                return runAgain;
+                                newSocket = connectSocket(
+                                                activeServices[ACTIVE_SERVICE_TUN2SOCKS],
+                                                PsiphonConstants.PREEMPTIVE_RECONNECT_SOCKET_TIMEOUT_MILLISECONDS,
+                                                entry.ipAddress,
+                                                entry.sshObfuscatedPort);
+                            }
+                            catch (IOException e)
+                            {
+                                // Jump to retry next server if too much time has elapsed; else just retry within this loop
+                                if (SystemClock.elapsedRealtime() > preemptiveReconnectWaitUntil + PsiphonConstants.PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS)
+                                {
+                                    throw e;
+                                }
+                                newSocket = null;
                             }
 
-                            preemptiveReconnectWaitUntil = SystemClock.elapsedRealtime() + PsiphonConstants.PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS;
+                            if (newSocket == null)
+                            {
+                                MyLog.w(R.string.preemptive_socket_connection_failed, MyLog.Sensitivity.NOT_SENSITIVE);
+                                // If we can't make a second connection, retry
+                                continue;
+                            }
+
+                            long nextPreemptiveReconnectWaitUntil = SystemClock.elapsedRealtime() + PsiphonConstants.PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS;
                             
                             checkSignals(0);
                             
-                            Connection newSshConnection = establishSshConnection(newSocket, entry);
+                            Connection newSshConnection;                            
+                            try
+                            {
+                                newSshConnection = establishSshConnection(newSocket, entry);
+                            }
+                            catch (IOException e)
+                            {
+                                // Jump to retry next server if too much time has elapsed; else just retry within this loop
+                                if (SystemClock.elapsedRealtime() > preemptiveReconnectWaitUntil + PsiphonConstants.PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS)
+                                {
+                                    throw e;
+                                }
+                                newSshConnection = null;
+                            }
+
                             if (newSshConnection == null)
                             {
-                                // If we can't make a second connection, jump out to retry next server...
-                                return runAgain;
+                                newSocket.close();
+
+                                MyLog.w(R.string.preemptive_ssh_connection_failed, MyLog.Sensitivity.NOT_SENSITIVE);
+                                // If we can't make a second connection, retry
+                                continue;
                             }
+                            
+                            preemptiveReconnectWaitUntil = nextPreemptiveReconnectWaitUntil;
 
                             // ...also jump out to retry next server if either connection is unexpectedly disconnected
                             newSshConnection.addConnectionMonitor(new Monitor(m_signalQueue));
