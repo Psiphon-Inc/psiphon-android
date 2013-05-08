@@ -885,7 +885,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                             try
                             {
                                 newSocket = connectSocket(
-                                                activeServices[ACTIVE_SERVICE_TUN2SOCKS],
+                                                cleanupTun2Socks || activeServices[ACTIVE_SERVICE_TUN2SOCKS],
                                                 PsiphonConstants.PREEMPTIVE_RECONNECT_SOCKET_TIMEOUT_MILLISECONDS,
                                                 entry.ipAddress,
                                                 entry.sshObfuscatedPort);
@@ -895,6 +895,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                                 // Jump to retry next server if too much time has elapsed; else just retry within this loop
                                 if (SystemClock.elapsedRealtime() > preemptiveReconnectWaitUntil + PsiphonConstants.PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS)
                                 {
+                                    MyLog.w(R.string.preemptive_socket_connection_failed, MyLog.Sensitivity.NOT_SENSITIVE);
                                     throw e;
                                 }
                                 newSocket = null;
@@ -921,6 +922,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                                 // Jump to retry next server if too much time has elapsed; else just retry within this loop
                                 if (SystemClock.elapsedRealtime() > preemptiveReconnectWaitUntil + PsiphonConstants.PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS)
                                 {
+                                    MyLog.w(R.string.preemptive_ssh_connection_failed, MyLog.Sensitivity.NOT_SENSITIVE);
                                     throw e;
                                 }
                                 newSshConnection = null;
