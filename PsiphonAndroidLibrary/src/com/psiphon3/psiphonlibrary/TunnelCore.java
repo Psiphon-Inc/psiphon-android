@@ -48,6 +48,7 @@ import android.content.Intent;
 import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
+import android.os.SystemClock;
 import android.util.Pair;
 
 import ch.ethz.ssh2.*;
@@ -323,6 +324,115 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         return m_signalQueue.peek() == Signal.STOP_TUNNEL;
     }
     
+    private Connection establishSshConnection(Socket socket, ServerInterface.ServerEntry entry)
+            throws IOException, InterruptedException, TunnelVpnServiceUnexpectedDisconnect, TunnelVpnTunnelStop
+    {
+        MyLog.v(R.string.ssh_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
+
+        // At this point we'll start counting bytes transferred for SSH traffic
+        PsiphonData.getPsiphonData().getDataTransferStats().startSession();
+        
+        JSONObject diagnosticData = new JSONObject();
+        try 
+        {
+            diagnosticData.put("ipAddress", entry.ipAddress);
+        } 
+        catch (JSONException e) 
+        {
+            throw new RuntimeException(e);
+        }
+        MyLog.g("ConnectingServer", diagnosticData);
+        
+        Connection sshConnection = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
+        sshConnection.connect(
+                socket,
+                new PsiphonServerHostKeyVerifier(entry.sshHostKey),
+                0,
+                PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS,
+                this);
+        MyLog.v(R.string.ssh_connected, MyLog.Sensitivity.NOT_SENSITIVE);
+
+        checkSignals(0);
+
+        // Send auth params as JSON-encoded string in SSH password field            
+        // Client session ID is used to associate the tunnel with web requests -- for GeoIP region stats
+
+        JSONObject authParams = new JSONObject();
+        try
+        {
+            authParams.put("SessionId", m_interface.getCurrentClientSessionID());
+            authParams.put("SshPassword", entry.sshPassword);
+            for (Pair<String,String> extraAuthParam : m_extraAuthParams)
+            {
+                authParams.put(extraAuthParam.first, extraAuthParam.second);
+            }
+        }
+        catch (JSONException e)
+        {
+            return null;
+        }
+        
+        MyLog.v(R.string.ssh_authenticating, MyLog.Sensitivity.NOT_SENSITIVE);
+        boolean isAuthenticated = sshConnection.authenticateWithPassword(entry.sshUsername, authParams.toString());
+        if (isAuthenticated == false)
+        {
+            MyLog.e(R.string.ssh_authentication_failed, MyLog.Sensitivity.NOT_SENSITIVE);
+            return null;
+        }
+        MyLog.v(R.string.ssh_authenticated, MyLog.Sensitivity.NOT_SENSITIVE);
+        
+        return sshConnection;
+    }
+    
+    private Socket connectSocket(boolean protectSocketsRequired, long timeout, String ipAddress, int port)
+            throws IOException, InterruptedException, TunnelVpnServiceUnexpectedDisconnect, TunnelVpnTunnelStop
+    {
+        SocketChannel channel = SocketChannel.open();
+            
+        if (protectSocketsRequired)
+        {
+            // We may need to except this connection from the VpnService tun interface
+            doVpnProtect(channel.socket());
+        }
+            
+        channel.configureBlocking(false);
+        channel.connect(new InetSocketAddress(ipAddress, port));
+        Selector selector = Selector.open();
+        channel.register(selector, SelectionKey.OP_CONNECT);
+        
+        long startTime = SystemClock.elapsedRealtime();
+        
+        boolean success = true;
+        while (selector.select(100) == 0)
+        {
+            checkSignals(0);
+            
+            if (startTime + timeout <= SystemClock.elapsedRealtime())
+            {
+                success = false;
+                break;
+            }
+        }
+
+        if (success)
+        {
+            success = channel.finishConnect();
+        }
+
+        selector.close();
+
+        if (success)
+        {
+            channel.configureBlocking(true);
+            return channel.socket();
+        }
+        else
+        {
+            channel.close();
+            return null;
+        }
+    }
+    
     private boolean runTunnelOnce(boolean isReconnect, boolean[] activeServices)
     {
         setState(State.CONNECTING);
@@ -340,18 +450,20 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         
         boolean runAgain = true;
         boolean unexpectedDisconnect = false;
-        Connection conn = null;
+        boolean doPremptiveReconnect = true;
+        long preemptiveReconnectWaitUntil = 0;
+
+        Socket socket = null;
+        Connection sshConnection = null;
         DynamicPortForwarder socks = null;
         TransparentProxyPortForwarder transparentProxy = null;
         DnsProxy dnsProxy = null;
         boolean cleanupTransparentProxyRouting = false;
-        Socket socket = null;
         boolean cleanupTun2Socks = false;
         
         try
         {
-            ServerInterface.ServerEntry entry = m_interface.setCurrentServerEntry();
-            if (entry == null)
+            if (m_interface.setCurrentServerEntry() == null)
             {
                 MyLog.e(R.string.no_server_entries, MyLog.Sensitivity.NOT_SENSITIVE);
                 runAgain = false;
@@ -414,6 +526,10 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             checkSignals(0);
 
             m_serverSelector.Run(activeServices[ACTIVE_SERVICE_TUN2SOCKS]);
+            
+            // The preemptive reconnect should be started PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS after
+            // the last socket connection completed.
+            preemptiveReconnectWaitUntil = SystemClock.elapsedRealtime() + PsiphonConstants.PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS;
 
             checkSignals(0);
             
@@ -423,7 +539,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             {
                 return runAgain;
             }
-            entry = m_interface.setCurrentServerEntry();
+            ServerInterface.ServerEntry entry = m_interface.setCurrentServerEntry();
             // TODO: can this happen? handle gracefully 
             assert(entry.ipAddress.equals(ipAddress));
                         
@@ -431,63 +547,13 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
             // Update resolvers (again) to match underlying network interface used for SSH tunnel            
             Utils.updateDnsResolvers(m_parentContext);
-            
-            MyLog.v(R.string.ssh_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
 
-            // At this point we'll start counting bytes transferred for SSH traffic
-            PsiphonData.getPsiphonData().getDataTransferStats().startSession();
-            
-            JSONObject diagnosticData = new JSONObject();
-            try 
+            // Connect and authenticate to SSH server
+            // NOTE: establishSshConnection logs progress/errors
+            if ((sshConnection = establishSshConnection(socket, entry)) == null)
             {
-                diagnosticData.put("ipAddress", entry.ipAddress);
-            } 
-            catch (JSONException e) 
-            {
-                throw new RuntimeException(e);
-            }
-            MyLog.g("ConnectingServer", diagnosticData);
-            
-            conn = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
-            Monitor monitor = new Monitor(m_signalQueue);
-            conn.connect(
-                    socket,
-                    new PsiphonServerHostKeyVerifier(entry.sshHostKey),
-                    0,
-                    PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS,
-                    this);
-            MyLog.v(R.string.ssh_connected, MyLog.Sensitivity.NOT_SENSITIVE);
-
-            checkSignals(0);
-
-            // Send auth params as JSON-encoded string in SSH password field            
-            // Client session ID is used to associate the tunnel with web requests -- for GeoIP region stats
-
-            JSONObject authParams = new JSONObject();
-            try
-            {
-                authParams.put("SessionId", m_interface.getCurrentClientSessionID());
-                authParams.put("SshPassword", entry.sshPassword);
-                for (Pair<String,String> extraAuthParam : m_extraAuthParams)
-                {
-                    authParams.put(extraAuthParam.first, extraAuthParam.second);
-                }
-            }
-            catch (JSONException e)
-            {
-                // Out of memory?
-                runAgain = false;
                 return runAgain;
             }
-            
-            MyLog.v(R.string.ssh_authenticating, MyLog.Sensitivity.NOT_SENSITIVE);
-            boolean isAuthenticated = conn.authenticateWithPassword(entry.sshUsername, authParams.toString());
-            if (isAuthenticated == false)
-            {
-                MyLog.e(R.string.ssh_authentication_failed, MyLog.Sensitivity.NOT_SENSITIVE);
-                return runAgain;
-            }
-            MyLog.v(R.string.ssh_authenticated, MyLog.Sensitivity.NOT_SENSITIVE);
 
             MyLog.v(R.string.socks_starting, MyLog.Sensitivity.NOT_SENSITIVE);
 
@@ -514,7 +580,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                 PsiphonData.getPsiphonData().setSocksPort(port);
             }
 
-            socks = conn.createDynamicPortForwarder(PsiphonData.getPsiphonData().getSocksPort());
+            socks = sshConnection.createDynamicPortForwarder(PsiphonData.getPsiphonData().getSocksPort());
             MyLog.v(R.string.socks_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getSocksPort());
 
             // The HTTP proxy implementation is provided by Polipo,
@@ -574,8 +640,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                 }
                 PsiphonData.getPsiphonData().setTransparentProxyPort(port);
     
-                transparentProxy = conn.createTransparentProxyForwarder(PsiphonData.getPsiphonData().getTransparentProxyPort());
-    
+                transparentProxy = sshConnection.createTransparentProxyForwarder(PsiphonData.getPsiphonData().getTransparentProxyPort());
                 MyLog.v(R.string.transparent_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getTransparentProxyPort());
 
                 if (!activeServices[ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING])
@@ -649,7 +714,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             }
             
             // Don't signal unexpected disconnect until we've started
-            conn.addConnectionMonitor(monitor);
+            sshConnection.addConnectionMonitor(new Monitor(m_signalQueue));
             
             // Start connection elapsed time
             PsiphonData.getPsiphonData().getDataTransferStats().startConnected();
@@ -776,6 +841,9 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             
             boolean hasTunnel = true;
             
+            Socket oldSocket = null;
+            Connection oldSshConnection = null;
+            
             try
             {
                 // This busy-wait-ish loop is throttled by the `checkSignals(1)`
@@ -787,6 +855,98 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                     checkSignals(1);
     
                     m_interface.doPeriodicWork(null, true, false);
+                    
+                    if (doPremptiveReconnect)
+                    {
+                        if (SystemClock.elapsedRealtime() >= preemptiveReconnectWaitUntil)
+                        {
+                            // Retire the old connection
+                            
+                            if (oldSshConnection != null)
+                            {
+                                oldSshConnection.clearConnectionMonitors();
+                                oldSshConnection.close();
+                                oldSshConnection = null;
+                                MyLog.v(R.string.preemptive_ssh_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
+                                try
+                                {
+                                    oldSocket.close();
+                                }
+                                catch (IOException e)
+                                {
+                                }
+                                oldSocket = null;
+                            }
+                            
+                            checkSignals(0);
+                            
+                            // Connect directly to the same server
+                            Socket newSocket = connectSocket(
+                                            activeServices[ACTIVE_SERVICE_TUN2SOCKS],
+                                            PsiphonConstants.PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS,
+                                            entry.ipAddress,
+                                            entry.sshObfuscatedPort);
+                            if (newSocket == null)
+                            {
+                                // If we can't make a second connection, jump out to retry next server...
+                                return runAgain;
+                            }
+
+                            preemptiveReconnectWaitUntil = SystemClock.elapsedRealtime() + PsiphonConstants.PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS;
+                            
+                            checkSignals(0);
+                            
+                            Connection newSshConnection = establishSshConnection(newSocket, entry);
+                            if (newSshConnection == null)
+                            {
+                                // If we can't make a second connection, jump out to retry next server...
+                                return runAgain;
+                            }
+
+                            // ...also jump out to retry next server if either connection is unexpectedly disconnected
+                            newSshConnection.addConnectionMonitor(new Monitor(m_signalQueue));
+                            
+                            // Switch SOCKS/transparent proxy servers over to newer SSH connection
+                            // Existing proxied connections are owned by the old SSH connection object and will stay open
+                            // NOTE: dnsProxy isn't restarted -- it uses the current socks proxy via the transparent proxy
+
+                            // TODO: start new SOCKS/transparent proxy before closing old one? SO_REUSEADDR?
+                            try
+                            {
+                                socks.close();
+                            }
+                            catch (IOException e)
+                            {
+                            }
+                            MyLog.v(R.string.premptive_socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
+                            
+                            socks = newSshConnection.createDynamicPortForwarder(PsiphonData.getPsiphonData().getSocksPort());
+                            MyLog.v(R.string.socks_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getSocksPort());
+
+                            checkSignals(0);
+                            
+                            if (transparentProxy != null)
+                            {
+                                try
+                                {
+                                    transparentProxy.close();
+                                }
+                                catch (IOException e)
+                                {
+                                }
+                                MyLog.v(R.string.premptive_transparent_proxy_stopped, MyLog.Sensitivity.NOT_SENSITIVE);                
+
+                                transparentProxy = newSshConnection.createTransparentProxyForwarder(PsiphonData.getPsiphonData().getTransparentProxyPort());
+                                MyLog.v(R.string.transparent_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getTransparentProxyPort());
+                            }
+                            
+                            oldSocket = socket;
+                            oldSshConnection = sshConnection;
+                            
+                            socket = newSocket;
+                            sshConnection = newSshConnection;
+                        }
+                    }
                 }
             }
             catch (TunnelVpnServiceUnexpectedDisconnect e)
@@ -799,6 +959,22 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             }
             finally
             {
+                if (oldSshConnection != null)
+                {
+                    oldSshConnection.clearConnectionMonitors();
+                    oldSshConnection.close();
+                    oldSshConnection = null;
+                    MyLog.v(R.string.preemptive_ssh_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
+                    try
+                    {
+                        oldSocket.close();
+                    }
+                    catch (IOException e)
+                    {
+                    }
+                    oldSocket = null;
+                }
+
                 // At this point, there may be no tunnel and we may need to protect
                 // the request socket.
                 m_interface.doPeriodicWork(cleanupTun2Socks ? this : null, hasTunnel, true);
@@ -931,10 +1107,10 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                 MyLog.v(R.string.socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
             }
             
-            if (conn != null)
+            if (sshConnection != null)
             {
-                conn.clearConnectionMonitors();
-                conn.close();
+                sshConnection.clearConnectionMonitors();
+                sshConnection.close();
                 MyLog.v(R.string.ssh_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
             }
             

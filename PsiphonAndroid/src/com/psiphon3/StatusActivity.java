@@ -247,7 +247,7 @@ public class StatusActivity
             // device mode, after an automated reconnect, we don't re-invoke
             // the browser.
             if (!PsiphonData.getPsiphonData().getTunnelWholeDevice()
-                || intent.getBooleanExtra(HANDSHAKE_SUCCESS_IS_RECONNECT, false))
+                || !intent.getBooleanExtra(HANDSHAKE_SUCCESS_IS_RECONNECT, false))
             {
                 Events.displayBrowser(this);
             }
