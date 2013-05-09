@@ -382,6 +382,26 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         return sshConnection;
     }
     
+    private void cleanupSshConnection(Socket socket, Connection sshConnection)
+    {
+        if (sshConnection != null)
+        {
+            sshConnection.clearConnectionMonitors();
+            sshConnection.close();
+        }
+        
+        if (socket != null)
+        {
+            try
+            {
+                socket.close();
+            }
+            catch (IOException e)
+            {
+            }
+        }
+    }
+    
     private Socket connectSocket(boolean protectSocketsRequired, long timeout, String ipAddress, int port)
             throws IOException, InterruptedException, TunnelVpnServiceUnexpectedDisconnect, TunnelVpnTunnelStop
     {
@@ -841,6 +861,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             
             Socket oldSocket = null;
             Connection oldSshConnection = null;
+            Socket newSocket = null;
+            Connection newSshConnection = null;
             
             try
             {
@@ -860,28 +882,19 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                         if (now >= preemptiveReconnectWaitUntil)
                         {
                             // Retire the old connection
-                            
-                            if (oldSshConnection != null)
+
+                            if (oldSocket != null || oldSshConnection != null)
                             {
-                                oldSshConnection.clearConnectionMonitors();
-                                oldSshConnection.close();
+                                cleanupSshConnection(oldSocket, oldSshConnection);
+                                oldSocket = null;
                                 oldSshConnection = null;
                                 MyLog.v(R.string.preemptive_ssh_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
-                                try
-                                {
-                                    oldSocket.close();
-                                }
-                                catch (IOException e)
-                                {
-                                }
-                                oldSocket = null;
                             }
                             
                             checkSignals(0);
                             
                             // Connect directly to the same server
 
-                            Socket newSocket;
                             try
                             {
                                 newSocket = connectSocket(
@@ -911,7 +924,6 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                             
                             checkSignals(0);
                             
-                            Connection newSshConnection;                            
                             try
                             {
                                 newSshConnection = establishSshConnection(newSocket, entry);
@@ -979,6 +991,9 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                             
                             socket = newSocket;
                             sshConnection = newSshConnection;
+                            
+                            newSocket = null;
+                            newSshConnection = null;
                         }
                     }
                 }
@@ -993,21 +1008,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             }
             finally
             {
-                if (oldSshConnection != null)
-                {
-                    oldSshConnection.clearConnectionMonitors();
-                    oldSshConnection.close();
-                    oldSshConnection = null;
-                    MyLog.v(R.string.preemptive_ssh_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
-                    try
-                    {
-                        oldSocket.close();
-                    }
-                    catch (IOException e)
-                    {
-                    }
-                    oldSocket = null;
-                }
+                cleanupSshConnection(newSocket, newSshConnection);
+                cleanupSshConnection(oldSocket, oldSshConnection);
 
                 // At this point, there may be no tunnel and we may need to protect
                 // the request socket.
@@ -1141,13 +1143,14 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                 MyLog.v(R.string.socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
             }
             
-            if (sshConnection != null)
+            if (socket != null || sshConnection != null)
             {
-                sshConnection.clearConnectionMonitors();
-                sshConnection.close();
+                cleanupSshConnection(socket, sshConnection);
+                sshConnection = null;
+                socket = null;
                 MyLog.v(R.string.ssh_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
             }
-            
+                        
             PsiphonData.getPsiphonData().getDataTransferStats().stop();
 
             if (m_upgradeDownloader != null)
@@ -1170,17 +1173,6 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                 if (m_eventsInterface != null)
                 {
                     m_eventsInterface.signalUnexpectedDisconnect(m_parentContext);
-                }
-            }
-            
-            if (socket != null)
-            {
-                try
-                {
-                    socket.close();
-                }
-                catch (IOException e)
-                {
                 }
             }
         }
