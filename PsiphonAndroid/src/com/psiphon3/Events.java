@@ -60,6 +60,7 @@ public class Events implements com.psiphon3.psiphonlibrary.Events
 
     public void signalUnexpectedDisconnect(Context context)
     {
+        /*
         // Only launch the intent if the browser is the current
         // task. We don't want to interrupt other apps; and in
         // the case of our app (currently), only the browser needs
@@ -86,6 +87,7 @@ public class Events implements com.psiphon3.psiphonlibrary.Events
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         }
+        */
     }
     
     public void signalTunnelStarting(Context context)
