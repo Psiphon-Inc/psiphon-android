@@ -60,7 +60,9 @@ public class PsiphonConstants
     // The character restrictions are dictated by the server.
     public final static String PLATFORM = ("Android_" + Build.VERSION.RELEASE).replaceAll("[^\\w\\-\\.]", "_");
     
-    public final static int HTTPS_REQUEST_TIMEOUT = 5000;
+    public final static int HTTPS_REQUEST_SHORT_TIMEOUT = 5000;
+    
+    public final static int HTTPS_REQUEST_LONG_TIMEOUT = 20000;
     
     public final static int SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH = 60*60*6;
             

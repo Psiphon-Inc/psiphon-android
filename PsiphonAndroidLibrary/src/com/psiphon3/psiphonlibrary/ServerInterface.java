@@ -427,7 +427,7 @@ public class ServerInterface
             
             String url = getRequestURL("handshake", extraParams);
             
-            byte[] response = makeAbortableProxiedPsiphonRequest(url);
+            byte[] response = makeAbortableProxiedPsiphonRequest(PsiphonConstants.HTTPS_REQUEST_SHORT_TIMEOUT, url);
 
             final String JSON_CONFIG_PREFIX = "Config: ";
             for (String line : new String(response).split("\n"))
@@ -559,7 +559,7 @@ public class ServerInterface
         
         String url = getRequestURL("connected", extraParams);
         
-        byte[] response = makeAbortableProxiedPsiphonRequest(url);
+        byte[] response = makeAbortableProxiedPsiphonRequest(PsiphonConstants.HTTPS_REQUEST_SHORT_TIMEOUT, url);
 
         try
         {
@@ -652,7 +652,7 @@ public class ServerInterface
             assert(hasTunnel == true);
 
             String url = getRequestURL("status", extraParams);
-            makeAbortableProxiedPsiphonRequest(url, additionalHeaders, requestBody);            
+            makeAbortableProxiedPsiphonRequest(PsiphonConstants.HTTPS_REQUEST_SHORT_TIMEOUT, url, additionalHeaders, requestBody);            
         }
         else
         {
@@ -666,7 +666,7 @@ public class ServerInterface
             // in place, protect the (direct) request socket.
             
             String urls[] = getRequestURLsWithFailover("status", extraParams);
-            makePsiphonRequestWithFailover(protectSocket, hasTunnel, urls, additionalHeaders, requestBody);
+            makePsiphonRequestWithFailover(protectSocket, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, hasTunnel, urls, additionalHeaders, requestBody);
         }
     }
 
@@ -682,7 +682,7 @@ public class ServerInterface
         
         String url = getRequestURL("speed", extraParams);
         
-        makeAbortableProxiedPsiphonRequest(url);
+        makeAbortableProxiedPsiphonRequest(PsiphonConstants.HTTPS_REQUEST_SHORT_TIMEOUT, url);
     }
 
     /**
@@ -694,7 +694,7 @@ public class ServerInterface
     {
         String url = getRequestURL("download", null);
         
-        return makeAbortableProxiedPsiphonRequest(url);
+        return makeAbortableProxiedPsiphonRequest(PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, url);
     }
     
     synchronized public void doFailedRequest(String error) 
@@ -705,7 +705,7 @@ public class ServerInterface
         
         String url = getRequestURL("failed", extraParams);
         
-        makeAbortableProxiedPsiphonRequest(url);
+        makeAbortableProxiedPsiphonRequest(PsiphonConstants.HTTPS_REQUEST_SHORT_TIMEOUT, url);
     }
 
     /**
@@ -734,7 +734,7 @@ public class ServerInterface
         // NOTE: don't have TunnelCore reference where this function is called, so
         // not providing an IProtectSocket or hasTunnel flag. This means the feedback
         // will fail when stuck in an unsuccessful connecting state.
-        makePsiphonRequestWithFailover(null, true, urls, additionalHeaders, requestBody);
+        makePsiphonRequestWithFailover(null, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, true, urls, additionalHeaders, requestBody);
     }
 
     synchronized public void fetchRemoteServerList(Tun2Socks.IProtectSocket protectSocket)
@@ -803,7 +803,7 @@ public class ServerInterface
                 MyLog.v(R.string.fetch_remote_server_list, MyLog.Sensitivity.NOT_SENSITIVE);
                 
                 // We may need to except this connection from the VpnService tun interface
-                byte[] response = makeDirectWebRequest(protectSocket, EmbeddedValues.REMOTE_SERVER_LIST_URL);
+                byte[] response = makeDirectWebRequest(protectSocket, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, EmbeddedValues.REMOTE_SERVER_LIST_URL);
     
                 PsiphonData.getPsiphonData().setNextFetchRemoteServerList(
                         SystemClock.elapsedRealtime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH);
@@ -915,14 +915,15 @@ public class ServerInterface
         return urls;
     }
 
-    private byte[] makeAbortableProxiedPsiphonRequest(String url)
+    private byte[] makeAbortableProxiedPsiphonRequest(int timeout, String url)
             throws PsiphonServerInterfaceException
     {
-        return makeAbortableProxiedPsiphonRequest(url, null, null);
+        return makeAbortableProxiedPsiphonRequest(timeout, url, null, null);
     }
     
     private byte[] makePsiphonRequestWithFailover(
             Tun2Socks.IProtectSocket protectSocket,
+            int timeout,
             boolean hasTunnel,
             String[] urls,
             List<Pair<String,String>> additionalHeaders,
@@ -940,7 +941,7 @@ public class ServerInterface
             {
                 // Try tunneled request on first port (first url)
                 
-                return makeProxiedPsiphonRequest(false, urls[0], additionalHeaders, body);
+                return makeProxiedPsiphonRequest(timeout, false, urls[0], additionalHeaders, body);
             }
             catch (PsiphonServerInterfaceException e1)
             {
@@ -961,7 +962,15 @@ public class ServerInterface
                     // Psiphon web request: authenticate the web server using the embedded certificate.
                     String psiphonServerCertificate = getCurrentServerEntry().webServerCertificate;
     
-                    return makeRequest(protectSocket, false, false, psiphonServerCertificate, url, additionalHeaders, body);
+                    return makeRequest(
+                            protectSocket,
+                            timeout,
+                            false,
+                            false,
+                            psiphonServerCertificate,
+                            url,
+                            additionalHeaders,
+                            body);
                 }
                 catch (PsiphonServerInterfaceException e2)
                 {
@@ -976,6 +985,7 @@ public class ServerInterface
     }
     
     private byte[] makeProxiedPsiphonRequest(
+            int timeout,
             boolean canAbort,
             String url,
             List<Pair<String,String>> additionalHeaders,
@@ -991,6 +1001,7 @@ public class ServerInterface
 
         return makeRequest(
                 null,
+                timeout,
                 canAbort,
                 useLocalProxy,
                 psiphonServerCertificate,
@@ -999,19 +1010,20 @@ public class ServerInterface
                 body);
     }
 
-    private byte[] makeAbortableProxiedPsiphonRequest(            
+    private byte[] makeAbortableProxiedPsiphonRequest(
+            int timeout,
             String url,
             List<Pair<String,String>> additionalHeaders,
             byte[] body) 
         throws PsiphonServerInterfaceException
     {
-        return makeProxiedPsiphonRequest(true, url, additionalHeaders, body);
+        return makeProxiedPsiphonRequest(timeout, true, url, additionalHeaders, body);
     }
 
-    private byte[] makeDirectWebRequest(Tun2Socks.IProtectSocket protectSocket, String url)
+    private byte[] makeDirectWebRequest(Tun2Socks.IProtectSocket protectSocket, int timeout, String url)
             throws PsiphonServerInterfaceException
     {
-        return makeRequest(protectSocket, true, false, null, url, null, null);
+        return makeRequest(protectSocket, timeout, true, false, null, url, null, null);
     }
 
     private class FixedCertTrustManager implements X509TrustManager
@@ -1149,6 +1161,7 @@ public class ServerInterface
 
     private byte[] makeRequest(
             Tun2Socks.IProtectSocket protectSocket,
+            int timeout,
             boolean canAbort,
             boolean useLocalProxy,
             String serverCertificate,
@@ -1162,8 +1175,8 @@ public class ServerInterface
         try
         {
             HttpParams params = new BasicHttpParams();
-            HttpConnectionParams.setConnectionTimeout(params, PsiphonConstants.HTTPS_REQUEST_TIMEOUT);
-            HttpConnectionParams.setSoTimeout(params, PsiphonConstants.HTTPS_REQUEST_TIMEOUT);
+            HttpConnectionParams.setConnectionTimeout(params, timeout);
+            HttpConnectionParams.setSoTimeout(params, timeout);
             
             HttpHost httpproxy;
             if (useLocalProxy)
