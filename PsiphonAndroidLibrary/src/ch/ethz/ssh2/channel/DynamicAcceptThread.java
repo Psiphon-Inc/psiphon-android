@@ -233,15 +233,36 @@ public class DynamicAcceptThread extends Thread implements IChannelWorkerThread 
 
 		setName("DynamicAcceptThread");
 
-		ss = new ServerSocket(local_port);
+		try
+		{
+    		ss = new ServerSocket();
+            ss.setReuseAddress(true);
+            ss.bind(new InetSocketAddress(local_port));
+		}
+		catch (IOException e)
+		{
+		    ss.close();
+		    ss = null;
+		    throw e;
+		}
 	}
 
 	public DynamicAcceptThread(ChannelManager cm, InetSocketAddress localAddress)
 			throws IOException {
 		this.cm = cm;
 
-		ss = new ServerSocket();
-		ss.bind(localAddress);
+        try
+        {
+    		ss = new ServerSocket();
+    		ss.setReuseAddress(true);
+    		ss.bind(localAddress);
+        }
+        catch (IOException e)
+        {
+            ss.close();
+            ss = null;
+            throw e;
+        }
 	}
 
 	@Override
