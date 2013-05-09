@@ -1051,7 +1051,6 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                                     try
                                     {
                                         transparentProxy = newSshConnection.createTransparentProxyForwarder(PsiphonData.getPsiphonData().getTransparentProxyPort());
-                                        MyLog.v(R.string.transparent_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getTransparentProxyPort());
                                         break;
                                     }
                                     catch (IOException e)
