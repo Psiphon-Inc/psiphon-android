@@ -427,7 +427,7 @@ public class ServerInterface
             
             String url = getRequestURL("handshake", extraParams);
             
-            byte[] response = makeAbortableProxiedPsiphonRequest(PsiphonConstants.HTTPS_REQUEST_SHORT_TIMEOUT, url);
+            byte[] response = makeAbortableProxiedPsiphonRequest(PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, url);
 
             final String JSON_CONFIG_PREFIX = "Config: ";
             for (String line : new String(response).split("\n"))
