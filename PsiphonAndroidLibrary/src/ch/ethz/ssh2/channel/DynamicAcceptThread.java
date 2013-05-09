@@ -237,7 +237,7 @@ public class DynamicAcceptThread extends Thread implements IChannelWorkerThread 
 		{
     		ss = new ServerSocket();
             ss.setReuseAddress(true);
-            ss.bind(new InetSocketAddress("127.0.0.1" , local_port));
+            ss.bind(new InetSocketAddress(local_port));
 		}
 		catch (IOException e)
 		{

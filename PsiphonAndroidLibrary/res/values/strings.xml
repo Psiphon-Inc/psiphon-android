@@ -88,9 +88,6 @@
     <string name="current_network_type">Current network: %s</string>
     <string name="dns_resolver">DNS resolver: %s</string>
     <string name="get_active_network_dns_resolvers_failed">Get active network DNS resolvers failed</string>
-    <string name="preemptive_ssh_stopped">Preemptive SSH stopped</string>
-    <string name="premptive_socks_stopped">Preemptive SOCKS stopped</string>
-    <string name="premptive_transparent_proxy_stopped">Preemptive transparent proxy stopped</string>
     <string name="preemptive_socket_connection_failed">Preemptive socket connection failed</string>
     <string name="preemptive_ssh_connection_failed">Preemptive SSH connection failed</string>
     <string name="preemptive_bind_failed">Preemptive bind failed</string>

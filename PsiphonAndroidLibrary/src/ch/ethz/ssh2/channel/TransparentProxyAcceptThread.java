@@ -41,7 +41,7 @@ public class TransparentProxyAcceptThread extends Thread implements IChannelWork
         {
             this.serverSocket = new ServerSocket();
             this.serverSocket.setReuseAddress(true);
-            this.serverSocket.bind(new InetSocketAddress("127.0.0.1" , localPort));
+            this.serverSocket.bind(new InetSocketAddress(localPort));
         }
         catch (IOException e)
         {
