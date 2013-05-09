@@ -185,6 +185,7 @@ public class ServerInterface
     private ArrayList<ServerEntry> serverEntries = new ArrayList<ServerEntry>();
     private String upgradeClientVersion;
     private String serverSessionID;
+    private int preemptiveReconnectLifetime = 0;
     private ServerEntry currentServerEntry;
     
     /** Array of all outstanding/ongoing requests. Anything in this array will
@@ -401,6 +402,11 @@ public class ServerInterface
         return "";
     }
     
+    synchronized public int getPreemptiveReconnectLifetime()
+    {
+        return this.preemptiveReconnectLifetime;
+    }
+    
     /**
      * Makes the handshake request to the server. The client thereby obtains
      * session info from the server such as what homepages should be shown and
@@ -494,6 +500,12 @@ public class ServerInterface
                     
                     // We only support SSH, so this is our server session ID.
                     this.serverSessionID = obj.getString("ssh_session_id");
+                    
+                    this.preemptiveReconnectLifetime = 0;
+                    if (obj.has("preemptive_reconnect_lifetime_milliseconds"))
+                    {
+                        this.preemptiveReconnectLifetime = obj.getInt("preemptive_reconnect_lifetime_milliseconds");
+                    }
                 }
             }
         }

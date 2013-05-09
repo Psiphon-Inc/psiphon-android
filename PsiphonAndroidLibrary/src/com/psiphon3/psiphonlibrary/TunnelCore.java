@@ -483,8 +483,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         
         boolean runAgain = true;
         boolean unexpectedDisconnect = false;
-        boolean doPremptiveReconnect = true;
         long preemptiveReconnectWaitUntil = 0;
+        long preemptiveReconnectTimePeriod = 0; 
 
         Socket socket = null;
         Connection sshConnection = null;
@@ -560,9 +560,10 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
             m_serverSelector.Run(activeServices[ACTIVE_SERVICE_TUN2SOCKS]);
             
-            // The preemptive reconnect should be started PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS after
-            // the last socket connection completed.
-            preemptiveReconnectWaitUntil = SystemClock.elapsedRealtime() + PsiphonConstants.PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS;
+            // The preemptive reconnect should be started "preemptiveReconnectTimePeriod" after
+            // the last socket connection completed. But we don't know preemptiveReconnectTimePeriod yet.
+            // It will be added after the handshake.
+            preemptiveReconnectWaitUntil = SystemClock.elapsedRealtime(); // + preemptiveReconnectTimePeriod
 
             checkSignals(0);
             
@@ -828,6 +829,19 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             {
                 m_interface.doHandshakeRequest();
                 PsiphonData.getPsiphonData().setTunnelSessionID(m_interface.getCurrentServerSessionID());
+                
+                // Handshake indicates whether to use preemptive reconnect mode. Based on client region.
+                // The returned value is expected maximum connection lifetime. From that we calculate
+                // our connection cycle period.
+                
+                long preemptiveReconnectLifetime = m_interface.getPreemptiveReconnectLifetime();
+                if (preemptiveReconnectLifetime > 0)
+                {
+                    preemptiveReconnectTimePeriod = preemptiveReconnectLifetime/2 + PsiphonConstants.PREEMPTIVE_RECONNECT_LIFETIME_ADJUSTMENT_MILLISECONDS;
+                    MyLog.g("preemptiveReconnectTimePeriod " + Long.toString(preemptiveReconnectTimePeriod), null);
+                    
+                    preemptiveReconnectWaitUntil += preemptiveReconnectTimePeriod;
+                }
 
                 if (m_eventsInterface != null)
                 {
@@ -891,7 +905,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
     
                     m_interface.doPeriodicWork(null, true, false);
                     
-                    if (doPremptiveReconnect)
+                    if (preemptiveReconnectTimePeriod != 0)
                     {
                         long now = SystemClock.elapsedRealtime();
                         if (now >= preemptiveReconnectWaitUntil)
@@ -921,7 +935,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                             catch (IOException e)
                             {
                                 // Jump to retry next server if too much time has elapsed; else just retry within this loop
-                                if (SystemClock.elapsedRealtime() > preemptiveReconnectWaitUntil + PsiphonConstants.PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS)
+                                if (SystemClock.elapsedRealtime() > preemptiveReconnectWaitUntil + preemptiveReconnectTimePeriod)
                                 {
                                     MyLog.w(R.string.preemptive_socket_connection_failed, MyLog.Sensitivity.NOT_SENSITIVE);
                                     throw e;
@@ -936,7 +950,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                                 continue;
                             }
 
-                            long nextPreemptiveReconnectWaitUntil = SystemClock.elapsedRealtime() + PsiphonConstants.PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS;
+                            long nextPreemptiveReconnectWaitUntil = SystemClock.elapsedRealtime() + preemptiveReconnectTimePeriod;
                             
                             checkSignals(0);
                             
@@ -947,7 +961,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                             catch (IOException e)
                             {
                                 // Jump to retry next server if too much time has elapsed; else just retry within this loop
-                                if (SystemClock.elapsedRealtime() > preemptiveReconnectWaitUntil + PsiphonConstants.PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS)
+                                if (SystemClock.elapsedRealtime() > preemptiveReconnectWaitUntil + preemptiveReconnectTimePeriod)
                                 {
                                     MyLog.w(R.string.preemptive_ssh_connection_failed, MyLog.Sensitivity.NOT_SENSITIVE);
                                     throw e;
@@ -995,7 +1009,6 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                                 try
                                 {
                                     socks = newSshConnection.createDynamicPortForwarder(PsiphonData.getPsiphonData().getSocksPort());
-                                    MyLog.v(R.string.socks_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getSocksPort());
                                     break;
                                 }
                                 catch (IOException e)
@@ -1104,7 +1117,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             // TODO: This prints too much info -- the stack trace, but also IP
             // address (not sure if we want to obscure that or not...) 
             //MyLog.e(R.string.error_message, e);
-            MyLog.e(R.string.ssh_connection_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+            MyLog.e(R.string.ssh_connection_failed, MyLog.Sensitivity.NOT_SENSITIVE);
         }
         catch (TunnelVpnServiceUnexpectedDisconnect e)
         {

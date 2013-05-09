@@ -80,7 +80,7 @@ public class PsiphonConstants
     
     public final static String TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS = "8.8.8.8";
     
-    public final static long PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS = 25000;
+    public final static long PREEMPTIVE_RECONNECT_LIFETIME_ADJUSTMENT_MILLISECONDS = -5000;
 
     public final static long PREEMPTIVE_RECONNECT_SOCKET_TIMEOUT_MILLISECONDS = 5000;
 
