@@ -838,6 +838,10 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                 if (preemptiveReconnectLifetime > 0)
                 {
                     preemptiveReconnectTimePeriod = preemptiveReconnectLifetime/2 + PsiphonConstants.PREEMPTIVE_RECONNECT_LIFETIME_ADJUSTMENT_MILLISECONDS;
+                    if (preemptiveReconnectTimePeriod < 0)
+                    {
+                        preemptiveReconnectTimePeriod = 0;
+                    }
                     MyLog.g("preemptiveReconnectTimePeriod " + Long.toString(preemptiveReconnectTimePeriod), null);
                     
                     preemptiveReconnectWaitUntil += preemptiveReconnectTimePeriod;
