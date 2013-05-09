@@ -93,4 +93,5 @@
     <string name="premptive_transparent_proxy_stopped">Preemptive transparent proxy stopped</string>
     <string name="preemptive_socket_connection_failed">Preemptive socket connection failed</string>
     <string name="preemptive_ssh_connection_failed">Preemptive SSH connection failed</string>
+    <string name="preemptive_bind_failed">Preemptive bind failed</string>
 </resources>

@@ -83,4 +83,6 @@ public class PsiphonConstants
     public final static long PREEMPTIVE_RECONNECT_TIME_PERIOD_MILLISECONDS = 25000;
 
     public final static long PREEMPTIVE_RECONNECT_SOCKET_TIMEOUT_MILLISECONDS = 5000;
+
+    public final static long PREEMPTIVE_RECONNECT_BIND_WAIT_MILLISECONDS = 100;
 }

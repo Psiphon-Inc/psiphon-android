@@ -20,6 +20,7 @@
 package ch.ethz.ssh2.channel;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -35,7 +36,19 @@ public class TransparentProxyAcceptThread extends Thread implements IChannelWork
             throws IOException
     {
         this.channelManager = channelManager;
-        this.serverSocket = new ServerSocket(localPort);
+
+        try
+        {
+            this.serverSocket = new ServerSocket();
+            this.serverSocket.setReuseAddress(true);
+            this.serverSocket.bind(new InetSocketAddress("127.0.0.1" , localPort));
+        }
+        catch (IOException e)
+        {
+            this.serverSocket.close();
+            this.serverSocket = null;
+            throw e;
+        }
     }
 
     public void run()

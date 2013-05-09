@@ -862,7 +862,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             Socket oldSocket = null;
             Connection oldSshConnection = null;
             Socket newSocket = null;
-            Connection newSshConnection = null;
+            Connection newSshConnection = null;            
             
             try
             {
@@ -956,7 +956,10 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                             // Existing proxied connections are owned by the old SSH connection object and will stay open
                             // NOTE: dnsProxy isn't restarted -- it uses the current socks proxy via the transparent proxy
 
-                            // TODO: start new SOCKS/transparent proxy before closing old one? SO_REUSEADDR?
+                            // SO_REUSEADDR is used, but we still get EADDRINUSE if the switch over it too fast
+                            // See e.g., http://hea-www.harvard.edu/~fine/Tech/addrinuse.html
+                            // So if we get BindException, we sleep a short while and retry.
+
                             try
                             {
                                 socks.close();
@@ -966,11 +969,33 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                             }
                             MyLog.v(R.string.premptive_socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
                             
-                            socks = newSshConnection.createDynamicPortForwarder(PsiphonData.getPsiphonData().getSocksPort());
-                            MyLog.v(R.string.socks_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getSocksPort());
+                            while (SystemClock.elapsedRealtime() < preemptiveReconnectWaitUntil)
+                            {
+                                checkSignals(0);
+                                try
+                                {
+                                    socks = newSshConnection.createDynamicPortForwarder(PsiphonData.getPsiphonData().getSocksPort());
+                                    MyLog.v(R.string.socks_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getSocksPort());
+                                    break;
+                                }
+                                catch (IOException e)
+                                {
+                                    socks = null;
+                                    if (e instanceof java.net.BindException)
+                                    {
+                                        Thread.sleep(PsiphonConstants.PREEMPTIVE_RECONNECT_BIND_WAIT_MILLISECONDS);
+                                    }
+                                    else
+                                    {
+                                        throw e;
+                                    }
+                                }
+                            }
+                            if (socks == null)
+                            {
+                                MyLog.v(R.string.preemptive_bind_failed, MyLog.Sensitivity.NOT_SENSITIVE);
+                            }
 
-                            checkSignals(0);
-                            
                             if (transparentProxy != null)
                             {
                                 try
@@ -982,8 +1007,33 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                                 }
                                 MyLog.v(R.string.premptive_transparent_proxy_stopped, MyLog.Sensitivity.NOT_SENSITIVE);                
 
-                                transparentProxy = newSshConnection.createTransparentProxyForwarder(PsiphonData.getPsiphonData().getTransparentProxyPort());
-                                MyLog.v(R.string.transparent_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getTransparentProxyPort());
+                                // TODO: refactor common code
+                                while (SystemClock.elapsedRealtime() < preemptiveReconnectWaitUntil)
+                                {
+                                    checkSignals(0);
+                                    try
+                                    {
+                                        transparentProxy = newSshConnection.createTransparentProxyForwarder(PsiphonData.getPsiphonData().getTransparentProxyPort());
+                                        MyLog.v(R.string.transparent_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getTransparentProxyPort());
+                                        break;
+                                    }
+                                    catch (IOException e)
+                                    {
+                                        transparentProxy = null;
+                                        if (e instanceof java.net.BindException)
+                                        {
+                                            Thread.sleep(PsiphonConstants.PREEMPTIVE_RECONNECT_BIND_WAIT_MILLISECONDS);
+                                        }
+                                        else
+                                        {
+                                            throw e;
+                                        }
+                                    }
+                                }
+                                if (transparentProxy == null)
+                                {
+                                    MyLog.v(R.string.preemptive_bind_failed, MyLog.Sensitivity.NOT_SENSITIVE);
+                                }
                             }
                             
                             oldSocket = socket;
