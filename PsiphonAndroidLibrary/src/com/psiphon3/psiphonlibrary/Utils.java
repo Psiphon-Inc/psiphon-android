@@ -901,11 +901,13 @@ public class Utils
         {
             dnsResolver = activeNetworkResolver.getHostAddress();
             dnsResolvers.add(dnsResolver);
-            MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
+            // Disabled for now -- too noisy (not changing to Log.g since it's SENSITIVE)
+            //MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
         }
         dnsResolver = PsiphonConstants.TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS;
         dnsResolvers.add(dnsResolver);
-        MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
+        // Disabled for now -- too noisy (not changing to Log.g since it's SENSITIVE)
+        //MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
         ResolverConfig.refresh(dnsResolvers);        
     }
 }
