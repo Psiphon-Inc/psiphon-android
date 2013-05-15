@@ -37,42 +37,44 @@ import com.psiphon3.psiphonlibrary.Utils.Base64;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
-public class ServerEntryAuth
+public class AuthenticatedDataPackage
 {
-    public static class ServerEntryAuthException extends Exception
+    public static class AuthenticatedDataPackageException extends Exception
     {
         private static final long serialVersionUID = 1L;
         
-        public ServerEntryAuthException()
+        public AuthenticatedDataPackageException()
         {
             super();
         }
         
-        public ServerEntryAuthException(String message)
+        public AuthenticatedDataPackageException(String message)
         {
             super(message);
         }
 
-        public ServerEntryAuthException(String message, Throwable cause)
+        public AuthenticatedDataPackageException(String message, Throwable cause)
         {
             super(message, cause);
         }
 
-        public ServerEntryAuthException(Throwable cause)
+        public AuthenticatedDataPackageException(Throwable cause)
         {
             super(cause);
         }
     }
 
-    static public String validateAndExtractServerList(String remoteServerList)
-            throws ServerEntryAuthException
+    static public String validateAndExtractServerList(
+                String dataPackage,
+                String signaturePublicKey)
+            throws AuthenticatedDataPackageException
     {
         // Authenticate remote server list as per scheme described in
         // Psiphon/Automation/psi_ops_server_entry_auth.py
         
         try
         {
-            JSONObject obj = new JSONObject(remoteServerList);
+            JSONObject obj = new JSONObject(dataPackage);
             String data = obj.getString("data");
             String signature = obj.getString("signature");
             String signingPublicKeyDigest = obj.getString("signingPublicKeyDigest");
@@ -85,11 +87,11 @@ public class ServerEntryAuth
             if (0 != Base64.encode(publicKeyDigest).compareTo(signingPublicKeyDigest))
             {
                 // The entry is signed with a different public key than our embedded value
-                MyLog.w(R.string.ServerEntryAuth_WrongPublicKey, MyLog.Sensitivity.NOT_SENSITIVE);
-                throw new ServerEntryAuthException();
+                MyLog.w(R.string.AuthenticatedDataPackage_WrongPublicKey, MyLog.Sensitivity.NOT_SENSITIVE);
+                throw new AuthenticatedDataPackageException();
             }
 
-            byte[] publicKeyBytes = Base64.decode(EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY);
+            byte[] publicKeyBytes = Base64.decode(signaturePublicKey);
             java.security.spec.X509EncodedKeySpec spec = new X509EncodedKeySpec(publicKeyBytes);
             java.security.KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PublicKey publicKey = keyFactory.generatePublic(spec);
@@ -99,32 +101,32 @@ public class ServerEntryAuth
             verifier.update(data.getBytes());
             if (!verifier.verify(Base64.decode(signature)))
             {            
-                MyLog.w(R.string.ServerEntryAuth_InvalidSignature, MyLog.Sensitivity.NOT_SENSITIVE);
-                throw new ServerEntryAuthException();
+                MyLog.w(R.string.AuthenticatedDataPackage_InvalidSignature, MyLog.Sensitivity.NOT_SENSITIVE);
+                throw new AuthenticatedDataPackageException();
             }
             
             return data;
         }
         catch (NoSuchAlgorithmException e)
         {
-            throw new ServerEntryAuthException(e);
+            throw new AuthenticatedDataPackageException(e);
         }
         catch (InvalidKeySpecException e)
         {
-            throw new ServerEntryAuthException(e);
+            throw new AuthenticatedDataPackageException(e);
         }
         catch (InvalidKeyException e)
         {
-            throw new ServerEntryAuthException(e);
+            throw new AuthenticatedDataPackageException(e);
         }
         catch (SignatureException e)
         {
-            throw new ServerEntryAuthException(e);
+            throw new AuthenticatedDataPackageException(e);
         }
         catch (JSONException e)
         {
-            MyLog.w(R.string.ServerEntryAuth_FailedToParseRemoteServerEntry, MyLog.Sensitivity.NOT_SENSITIVE, e);
-            throw new ServerEntryAuthException(e);
+            MyLog.w(R.string.AuthenticatedDataPackage_FailedToParseRemoteServerEntry, MyLog.Sensitivity.NOT_SENSITIVE, e);
+            throw new AuthenticatedDataPackageException(e);
         }
     }
 }

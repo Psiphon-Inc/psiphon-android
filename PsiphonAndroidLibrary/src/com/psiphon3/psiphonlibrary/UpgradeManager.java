@@ -17,21 +17,26 @@
  *
  */
 
-package com.psiphon3;
+package com.psiphon3.psiphonlibrary;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import com.psiphon3.R;
+import org.json.JSONException;
+
 import com.psiphon3.psiphonlibrary.ServerInterface;
 import com.psiphon3.psiphonlibrary.TunnelCore;
+import com.psiphon3.psiphonlibrary.AuthenticatedDataPackage.AuthenticatedDataPackageException;
 import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -39,6 +44,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
+import android.os.SystemClock;
 import android.view.KeyEvent;
 
 /**
@@ -49,7 +55,7 @@ public interface UpgradeManager
     /**
      * To be used by other UpgradeManager classes only.
      */
-    static class UpgradeFile
+    static abstract class UpgradeFile
     {
         private Context context;
         
@@ -63,10 +69,7 @@ public interface UpgradeManager
             return this.context.getFileStreamPath(getFilename()).getAbsolutePath();
         }
         
-        public String getFilename()
-        {
-            return "PsiphonAndroid.apk";
-        }
+        public abstract String getFilename();
         
         public boolean exists()
         {
@@ -127,68 +130,121 @@ public interface UpgradeManager
             return true;
         }
     }
+
+    static class CompleteUpgradeFile extends UpgradeFile
+    {
+        public CompleteUpgradeFile(Context context)
+        {
+            super(context);
+        }
+        
+        public String getFilename()
+        {
+            return "PsiphonAndroid.apk";
+        }
+    }    
+
+    static class PartialUpgradeFile extends UpgradeFile implements ServerInterface.IResumableDownload
+    {
+        private int versionNumber;
+        
+        public PartialUpgradeFile(Context context, int versionNumber)
+        {
+            super(context);
+            
+            this.versionNumber = versionNumber;
+        }
+        
+        public String getFilename()
+        {
+            return "PsiphonAndroid." + Integer.toString(this.versionNumber) + ".part";
+        }
+        
+        public boolean isComplete()
+        {
+            ...complete JSON?
+        }
+
+        public boolean commit()
+        {
+            try
+            {
+                // NOTE: On Android, the OS performs its own upgrade authentication which
+                // checks that the APK is signed with the same developer key. So the
+                // additional signature check isn't strictly necessary. Although it
+                // does reduce (not prevent) the chance that a malicious process writes
+                // a fake "PsiphonAndroid.apk" -- with a different key -- which our
+                // intent would start to install.
+                
+                String hexUpgradeAPK = AuthenticatedDataPackage.validateAndExtractServerList(
+                                            EmbeddedValues.UPGRADE_SIGNATURE_PUBLIC_KEY,
+                                            new String(read()));
+                
+                byte[] upgradeAPK = Utils.hexStringToByteArray(hexUpgradeAPK);
+                
+                CompleteUpgradeFile file = new CompleteUpgradeFile(super.context);
+                file.write(upgradeAPK);
+
+                return true;
+            }
+            catch (AuthenticatedDataPackageException e)
+            {
+                MyLog.w(R.string.UpgradeManager_UpgradeVerificationFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+                return false;
+            } 
+            catch (JSONException e)
+            {
+                MyLog.w(R.string.UpgradeManager_UpgradeVerificationFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+                return false;
+            }
+        }
+
+        @Override
+        public int getResumeOffset()
+        {
+            return getSize();
+        }
+
+        @Override
+        public boolean appendData(byte[] buffer, int length)
+        {
+            return append(buffer, length);
+        }
+    }
     
     /**
      * Used for checking if an upgrade has been downloaded and installing it.
      */
     static public class UpgradeInstaller
     {
-        private Context context;
-        
-        /**
-         * Records whether an upgrade has already been attempted during this
-         * session. We want to avoid repeated upgrade attempts during a single
-         * session.
-         */
-        private static boolean s_upgradeAttempted = false;
-        
-        public UpgradeInstaller(Context context)
-        {
-            this.context = context;
-        }
-        
-        /**
-         * Check if an upgrade can be applied at this time.
-         * @return true if an upgrade is available to applied, and if there has
-         *         not already been an attempt to upgrade during this session.
-         */
-        public boolean canUpgrade()
-        {
-            return 
-                !UpgradeInstaller.s_upgradeAttempted 
-                && isUpgradeFileAvailable();            
-        }
-        
         /**
          * Check if an upgrade file is available, and if it's actually a higher
          * version.
          * @return true if upgrade file is available to be applied.
          */
-        protected boolean isUpgradeFileAvailable()
+        protected static CompleteUpgradeFile getAvailableCompleteUpgradeFile(Context context)
         {
-            UpgradeFile file = new UpgradeFile(context);
+            CompleteUpgradeFile file = new CompleteUpgradeFile(context);
 
             // Does the file exist?
             if (!file.exists())
             {
-                return false;
+                return null;
             }
             
             // Is it a higher version than the current app?
             
-            final PackageManager pm = this.context.getPackageManager();
+            final PackageManager pm = context.getPackageManager();
             
             // Info about the potential upgrade file
-            PackageInfo upgradePackageInfo = pm.getPackageArchiveInfo(
-                                                    file.getFullPath(), 
-                                                    0);
+            PackageInfo upgradePackageInfo = pm.getPackageArchiveInfo(file.getFullPath(), 0);
 
             if (upgradePackageInfo == null)
             {
                 // There's probably something wrong with the upgrade file.
                 file.delete();
                 MyLog.w(R.string.UpgradeManager_CannotExtractUpgradePackageInfo, MyLog.Sensitivity.NOT_SENSITIVE);
-                return false;
+                return null;
             }
             
             // Info about the current app
@@ -204,95 +260,79 @@ public interface UpgradeManager
                 // This really shouldn't happen -- we're getting info about the 
                 // current package, which clearly exists.
                 MyLog.w(R.string.UpgradeManager_CanNotRetrievePackageInfo, MyLog.Sensitivity.NOT_SENSITIVE, e);
-                return false;
+                return null;
             }
             
             // Does the upgrade package have a higher version?
             if (upgradePackageInfo.versionCode <= currentPackageInfo.versionCode)
             {
                 file.delete();
-                return false;
+                return null;
             }
             
-            return true;
+            return file;
         }
         
         /**
-         * This interface must be implemented to provide callbacks for doUpgrade. 
+         * Create an Android notification to launch the upgrade, if available
          */
-        public interface IUpgradeListener
+        public static void notifyUpgrade(Context context)
         {
-            public void upgradeNotStarted();
-            public void upgradeStarted();
-        }
-        
-        /**
-         * Begin the upgrade process. Note that because there's a user prompt, 
-         * this function is asynchronous. 
-         * @param upgradeListener An implementation of IUpgradeListener that is
-         *                        used as a callback for the various upgrade 
-         *                        attempt outcomes.
-         */
-        public void doUpgrade(final IUpgradeListener upgradeListener)
-        {
-            if (!canUpgrade())
+            CompleteUpgradeFile file = getAvailableCompleteUpgradeFile(context); 
+            if (file == null)
             {
-                upgradeListener.upgradeNotStarted();
                 return;
             }
             
-            // Record that we have attempted to upgrade. We don't want to retry 
-            // again this session.
-            UpgradeInstaller.s_upgradeAttempted = true;
-            
-            // Create our user prompt.
-            
-            new AlertDialog.Builder(this.context)
-                .setTitle(R.string.UpgradeManager_UpgradePromptTitle)
-                .setMessage(R.string.UpgradeManager_UpgradePromptMessage)
-                .setOnKeyListener(
-                        new DialogInterface.OnKeyListener() {
-                            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
-                                // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
-                                return keyCode == KeyEvent.KEYCODE_SEARCH;
-                            }})
-                .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        // User declined the prompt.
-                        upgradeListener.upgradeNotStarted();
-                    }})
-                .setOnCancelListener(new DialogInterface.OnCancelListener() {
-                    public void onCancel(DialogInterface dialog) {
-                        // User cancelled the prompt (i.e., hit back button).
-                        upgradeListener.upgradeNotStarted();
-                    }})
-                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        // User accepted the prompt. Begin the upgrade.
-                        
-                        UpgradeFile file = new UpgradeFile(context);
-                        
-                        Intent intent = new Intent(Intent.ACTION_VIEW);
-                        
-                        intent.setDataAndType(file.getUri(), "application/vnd.android.package-archive");
-                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                        
-                        context.startActivity(intent);
+            // This intent triggers the upgrade. It's launched if the user clicks the notification.
 
-                        upgradeListener.upgradeStarted();
-                    }})
-                .show();                
+            Intent upgradeIntent = new Intent(Intent.ACTION_VIEW);
+            
+            upgradeIntent.setDataAndType(file.getUri(), "application/vnd.android.package-archive");
+            upgradeIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        
+            PendingIntent invokeUpgradeIntent = 
+                    PendingIntent.getActivity(
+                        context,
+                        0,
+                        upgradeIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT);
+        
+            int iconID = PsiphonData.getPsiphonData().getNotificationIconUpgradeAvailable();
+            if (iconID == 0)
+            {
+                iconID = R.drawable.notification_icon_upgrade_available;
+            }
+            
+            Notification notification =
+                    new Notification(
+                            iconID,
+                            context.getText(R.string.UpgradeManager_UpgradePromptTitle),
+                            System.currentTimeMillis());
+
+            notification.setLatestEventInfo(
+                    context,
+                    context.getText(R.string.UpgradeManager_UpgradePromptTitle),
+                    context.getText(R.string.UpgradeManager_UpgradePromptMessage),
+                    invokeUpgradeIntent); 
+            
+            NotificationManager notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (notificationManager != null)
+            {
+                notificationManager.notify(R.string.UpgradeManager_UpgradeAvailableNotificationId, notification);
+            }
         }
     }
 
     /**
      * Used to download upgrades from the server.
      */
-    static public class UpgradeDownloader implements TunnelCore.UpgradeDownloader
+    static public class UpgradeDownloader
     {
         private Context context;
         private ServerInterface serverInterface;
         private Thread thread;
+        private int versionNumber;
         
         public UpgradeDownloader(Context context, ServerInterface serverInterface)
         {
@@ -304,14 +344,18 @@ public interface UpgradeManager
          * Begin downloading the upgrade from the server. Download is done in a
          * separate thread. 
          */
-        public void start()
+        public void start(int versionNumber)
         {
+            this.versionNumber = versionNumber;
             this.thread = new Thread(
                     new Runnable()
                     {
                         public void run()
                         {
-                            downloadAndSaveUpgrade();
+                            if (downloadAndSaveUpgrade())
+                            {
+                                UpgradeManager.UpgradeInstaller.notifyUpgrade(context);
+                            }
                         }
                     });
 
@@ -342,17 +386,32 @@ public interface UpgradeManager
         /**
          * Download the upgrade file and save it to private storage.
          */
-        protected synchronized void downloadAndSaveUpgrade()
+        protected boolean downloadAndSaveUpgrade()
         {
-            // Delete any existing upgrade file.
-            UpgradeFile file = new UpgradeFile(context);
-            file.delete();
+            PartialUpgradeFile file = new PartialUpgradeFile(context, this.versionNumber);
             
-            byte[] upgradeFileData = null;
+            // Check if we already have the complete file
+            
+            if (file.isComplete())
+            {
+                if (file.commit())
+                {
+                    return true;
+                }
+                else
+                {
+                    file.delete();
+                    // Start over with a fresh download...
+                }
+            }
+            
+            // TODO: delete partial downloads of older versions
+            
             try
             {
-                // Download the upgrade.
-                upgradeFileData = serverInterface.doUpgradeDownloadRequest();
+                // Download the upgrade. Partial chunks of data are written to
+                // the file and the download may be resumed.
+                serverInterface.doUpgradeDownloadRequest(file);
             }
             catch (PsiphonServerInterfaceException e)
             {
@@ -366,15 +425,14 @@ public interface UpgradeManager
                 // - Fail-over exposes new server IPs to hostile networks, so we don't
                 //   like doing it in the case where we know the handshake already succeeded.
                 MyLog.w(R.string.UpgradeManager_UpgradeDownloadFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
-                return;
-            }
-            
-            if (!file.write(upgradeFileData))
-            {
-                return;
+                return false;
             }
             
             MyLog.v(R.string.UpgradeManager_UpgradeDownloaded, MyLog.Sensitivity.NOT_SENSITIVE);
+            
+            // Commit results in a CompleteUpgradeFile.
+            
+            return file.commit();
         }
     }
 }
