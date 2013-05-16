@@ -64,10 +64,10 @@ public class AuthenticatedDataPackage
         }
     }
 
-    static public String validateAndExtractServerList(
+    static public String validateAndExtractData(
                 String dataPackage,
                 String signaturePublicKey)
-            throws AuthenticatedDataPackageException
+            throws JSONException, AuthenticatedDataPackageException
     {
         // Authenticate remote server list as per scheme described in
         // Psiphon/Automation/psi_ops_server_entry_auth.py
@@ -121,11 +121,6 @@ public class AuthenticatedDataPackage
         }
         catch (SignatureException e)
         {
-            throw new AuthenticatedDataPackageException(e);
-        }
-        catch (JSONException e)
-        {
-            MyLog.w(R.string.AuthenticatedDataPackage_FailedToParseRemoteServerEntry, MyLog.Sensitivity.NOT_SENSITIVE, e);
             throw new AuthenticatedDataPackageException(e);
         }
     }

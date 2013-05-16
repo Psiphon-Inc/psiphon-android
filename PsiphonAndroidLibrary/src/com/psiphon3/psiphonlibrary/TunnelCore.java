@@ -1377,6 +1377,9 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
     private void runTunnel() throws InterruptedException
     {
+        // Check if an upgrade has already been downloaded and is ready for install
+        UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentContext);
+        
         if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
         {
             setState(State.DISCONNECTED);

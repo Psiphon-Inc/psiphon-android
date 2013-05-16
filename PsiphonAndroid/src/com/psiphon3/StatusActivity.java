@@ -188,9 +188,6 @@ public class StatusActivity
         // Restore messages previously posted by the service.
         MyLog.restoreLogHistory();
         
-        // Check if an upgrade has already been downloaded and is ready for install
-        UpgradeManager.UpgradeInstaller.notifyUpgrade(this);
-        
         // Auto-start on app first run
         if (m_firstRun)
         {

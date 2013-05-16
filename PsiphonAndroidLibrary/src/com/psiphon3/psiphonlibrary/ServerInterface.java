@@ -814,23 +814,23 @@ public class ServerInterface
                 PsiphonData.getPsiphonData().setNextFetchRemoteServerList(
                         SystemClock.elapsedRealtime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH);
                 
-                String serverList = AuthenticatedDataPackage.validateAndExtractServerList(
+                String serverList = AuthenticatedDataPackage.validateAndExtractData(
                                         EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY,
                                         new String(response));
     
                 shuffleAndAddServerEntries(serverList.split("\n"), false);
                 saveServerEntries();
             }
-            catch (AuthenticatedDataPackageException e)
-            {
-                MyLog.w(R.string.ServerInterface_InvalidRemoteServerList, MyLog.Sensitivity.NOT_SENSITIVE, e);
-                throw new PsiphonServerInterfaceException(e);
-            } 
             catch (JSONException e)
             {
                 MyLog.w(R.string.ServerInterface_InvalidRemoteServerList, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 throw new PsiphonServerInterfaceException(e);
             }
+            catch (AuthenticatedDataPackageException e)
+            {
+                MyLog.w(R.string.ServerInterface_InvalidRemoteServerList, MyLog.Sensitivity.NOT_SENSITIVE, e);
+                throw new PsiphonServerInterfaceException(e);
+            } 
         }
     }
     
@@ -1180,7 +1180,7 @@ public class ServerInterface
     
     public interface IResumableDownload
     {
-        int getResumeOffset();
+        long getResumeOffset();
         boolean appendData(byte[] buffer, int length);
     }
 
@@ -1296,7 +1296,7 @@ public class ServerInterface
             {
                 // Add a Range header to request the resumable download starting offset
                 // E.g., header "Range:bytes=123-" requests the download to start at byte 123 of the resource
-                request.addHeader("Range", "bytes="+Integer.toString(resumableDownload.getResumeOffset()) + "-");
+                request.addHeader("Range", "bytes="+Long.toString(resumableDownload.getResumeOffset()) + "-");
             }
 
             HttpResponse response = client.execute(request);
@@ -1305,8 +1305,16 @@ public class ServerInterface
 
             if (statusCode != HttpStatus.SC_OK)
             {
-                throw new PsiphonServerInterfaceException(
-                        this.ownerContext.getString(R.string.ServerInterface_HTTPSRequestFailed) + statusCode);
+                // Special case: the resumeable download may ask for bytes past the resource
+                // range since it doesn't store the "completed download" state. In this case,
+                // the HTTP server returns 416.
+                boolean ignoreError = (resumableDownload != null && statusCode != HttpStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
+
+                if (!ignoreError)
+                {
+                    throw new PsiphonServerInterfaceException(
+                            this.ownerContext.getString(R.string.ServerInterface_HTTPSRequestFailed) + statusCode);
+                }
             }
             
             HttpEntity responseEntity = response.getEntity();

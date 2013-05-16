@@ -19,10 +19,14 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.zip.GZIPInputStream;
 
 import org.json.JSONException;
 
@@ -96,15 +100,27 @@ public interface UpgradeManager
             return Uri.fromFile(file);
         }
         
-        @SuppressLint("WorldReadableFiles") // Making the APK world readable so Installer component can access it
-        public boolean write(byte[] data)
+        public long getSize()
         {
-            FileOutputStream fos;
+            File file = new File(getFullPath());
+            return file.length();
+        }
+
+        public abstract boolean isWorldReadable();
+        
+        @SuppressLint("WorldReadableFiles")
+        public boolean write(byte[] data, int length, boolean append)
+        {
+            FileOutputStream fos = null;
             try
             {
-                fos = this.context.openFileOutput(
-                                    getFilename(), 
-                                    Context.MODE_WORLD_READABLE);
+                int mode = 0;                
+                if (isWorldReadable()) mode |= Context.MODE_WORLD_READABLE;
+                if (append) mode |= Context.MODE_APPEND;
+
+                fos = this.context.openFileOutput(getFilename(), mode); 
+
+                fos.write(data, 0, length);
             } 
             catch (FileNotFoundException e)
             {
@@ -115,16 +131,17 @@ public interface UpgradeManager
                 MyLog.w(R.string.UpgradeManager_UpgradeFileNotFound, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return false;
             }
-            
-            try
-            {
-                fos.write(data);
-                fos.close();
-            } 
             catch (IOException e)
             {
                 MyLog.w(R.string.UpgradeManager_UpgradeFileWriteFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return false;
+            }
+            finally
+            {
+                if (fos != null)
+                {
+                    try { fos.close(); } catch (IOException e) {}
+                }
             }
             
             return true;
@@ -141,6 +158,12 @@ public interface UpgradeManager
         public String getFilename()
         {
             return "PsiphonAndroid.apk";
+        }
+        
+        public boolean isWorldReadable()
+        {
+            // Making the APK world readable so Installer component can access it
+            return true;
         }
     }    
 
@@ -160,47 +183,93 @@ public interface UpgradeManager
             return "PsiphonAndroid." + Integer.toString(this.versionNumber) + ".part";
         }
         
-        public boolean isComplete()
+        
+        public boolean isWorldReadable()
         {
-            ...complete JSON?
+            return false;
         }
 
-        public boolean commit()
+        private String readAndUnzip() throws IOException, FileNotFoundException
+        {
+            FileInputStream fis = null;
+            GZIPInputStream gis = null;
+            ByteArrayOutputStream bos = null;
+
+            try
+            {
+                fis = super.context.openFileInput(getFilename());
+                gis = new GZIPInputStream(new BufferedInputStream(fis));
+                bos = new ByteArrayOutputStream();
+                byte[] chunk = new byte[4096];
+                while (gis.available() != 0)
+                {
+                    bos.write(chunk, 0, gis.read(chunk));
+                }
+                return bos.toString();
+            }
+            finally
+            {
+                if (gis != null)
+                {
+                    try { bos.close(); } catch (IOException e) {}
+                }
+                if (gis != null)
+                {
+                    try { gis.close(); } catch (IOException e) {}
+                }
+                if (fis != null)
+                {
+                    try { fis.close(); } catch (IOException e) {}
+                }
+            }
+        }
+
+        public boolean extract()
         {
             try
             {
-                // NOTE: On Android, the OS performs its own upgrade authentication which
-                // checks that the APK is signed with the same developer key. So the
-                // additional signature check isn't strictly necessary. Although it
-                // does reduce (not prevent) the chance that a malicious process writes
-                // a fake "PsiphonAndroid.apk" -- with a different key -- which our
-                // intent would start to install.
+                // NOTE: On Android, the OS also performs its own upgrade authentication which
+                // checks that the APK is signed with the same developer key. Our own
+                // additional signature check mitigates against a malicious MiM which supplies
+                // a malicious, unsigned, upgrade payload which our intent would start to install.
                 
-                String hexUpgradeAPK = AuthenticatedDataPackage.validateAndExtractServerList(
+                String authenticatedDataPackage = readAndUnzip(); 
+                
+                String hexUpgradeAPK = AuthenticatedDataPackage.validateAndExtractData(
                                             EmbeddedValues.UPGRADE_SIGNATURE_PUBLIC_KEY,
-                                            new String(read()));
+                                            authenticatedDataPackage);
                 
                 byte[] upgradeAPK = Utils.hexStringToByteArray(hexUpgradeAPK);
                 
                 CompleteUpgradeFile file = new CompleteUpgradeFile(super.context);
-                file.write(upgradeAPK);
+                file.write(upgradeAPK, upgradeAPK.length, false);
 
                 return true;
             }
-            catch (AuthenticatedDataPackageException e)
+            catch (FileNotFoundException e)
             {
-                MyLog.w(R.string.UpgradeManager_UpgradeVerificationFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
-                return false;
-            } 
-            catch (JSONException e)
-            {
-                MyLog.w(R.string.UpgradeManager_UpgradeVerificationFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+                MyLog.w(R.string.UpgradeManager_UpgradeFileNotFound, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return false;
             }
+            catch (IOException e)
+            {
+                MyLog.w(R.string.UpgradeManager_UpgradeFileReadFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+                return false;
+            }
+            catch (JSONException e)
+            {
+                MyLog.w(R.string.UpgradeManager_UpgradeFileParseFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+                return false;
+            }
+            catch (AuthenticatedDataPackageException e)
+            {
+                MyLog.w(R.string.UpgradeManager_UpgradeFileAuthenticateFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+                return false;
+            } 
         }
 
         @Override
-        public int getResumeOffset()
+        public long getResumeOffset()
         {
             return getSize();
         }
@@ -208,7 +277,7 @@ public interface UpgradeManager
         @Override
         public boolean appendData(byte[] buffer, int length)
         {
-            return append(buffer, length);
+            return write(buffer, length, true);
         }
     }
     
@@ -352,7 +421,7 @@ public interface UpgradeManager
                     {
                         public void run()
                         {
-                            if (downloadAndSaveUpgrade())
+                            if (downloadAndExtractUpgrade())
                             {
                                 UpgradeManager.UpgradeInstaller.notifyUpgrade(context);
                             }
@@ -386,26 +455,11 @@ public interface UpgradeManager
         /**
          * Download the upgrade file and save it to private storage.
          */
-        protected boolean downloadAndSaveUpgrade()
+        protected boolean downloadAndExtractUpgrade()
         {
             PartialUpgradeFile file = new PartialUpgradeFile(context, this.versionNumber);
             
-            // Check if we already have the complete file
-            
-            if (file.isComplete())
-            {
-                if (file.commit())
-                {
-                    return true;
-                }
-                else
-                {
-                    file.delete();
-                    // Start over with a fresh download...
-                }
-            }
-            
-            // TODO: delete partial downloads of older versions
+            // TODO: delete/cleanup partial downloads of older versions
             
             try
             {
@@ -431,8 +485,23 @@ public interface UpgradeManager
             MyLog.v(R.string.UpgradeManager_UpgradeDownloaded, MyLog.Sensitivity.NOT_SENSITIVE);
             
             // Commit results in a CompleteUpgradeFile.
+            // NOTE: if we fail at this point, there will be at least one more HTTP
+            // request which may return status code 416 since we already have the complete
+            // file but haven't stored the "completed download" state. We're not checking
+            // for completeness by attempting an extract, since that could result in
+            // false error messages.
             
-            return file.commit();
+            if (!file.extract())
+            {
+                // If the file isn't working and we think we have the complete file,
+                // there may be corrupt bytes. So delete it and next time we'll start over.
+                // NOTE: this means if the failure was due to not enough free space
+                // to write the extracted file... we still re-download.
+                file.delete();
+                return false;
+            }
+            
+            return true;
         }
     }
 }

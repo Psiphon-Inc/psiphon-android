@@ -100,4 +100,7 @@
     <string name="UpgradeManager.UpgradePromptTitle">Psiphon Upgrade</string>
     <string name="UpgradeManager.UpgradePromptMessage">An upgrade for Psiphon 3 is ready to be installed. It is strongly recommended that you allow the upgrade to proceed at this time.\n\nAfter upgrading, you will have to launch Psiphon 3 again.\n\nUpgrade now?</string>
     <string name="UpgradeManager.UpgradeAvailableNotificationId">Psiphon Upgrade Available Notification</string>
+    <string name="UpgradeManager.UpgradeFileReadFailed">Failed to read upgrade file</string>
+    <string name="UpgradeManager.UpgradeFileParseFailed">Failed to parse upgrade file</string>
+    <string name="UpgradeManager.UpgradeFileAuthenticateFailed">Failed to authenticate upgrade file</string>
 </resources>
