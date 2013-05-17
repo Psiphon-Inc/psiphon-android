@@ -694,12 +694,19 @@ public class ServerInterface
     synchronized public byte[] doUpgradeDownloadRequest(IResumableDownload resumableDownload) 
         throws PsiphonServerInterfaceException
     {
-        return makeAbortableProxiedPsiphonRequest(
-                    PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT,
-                    EmbeddedValues.UPGRADE_URL,
-                    null,
-                    null,
-                    resumableDownload);
+        boolean canAbort = true;
+        boolean useLocalProxy = true;
+        
+        return makeRequest(
+                null,
+                PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT,
+                canAbort,
+                useLocalProxy,
+                null,
+                EmbeddedValues.UPGRADE_URL,
+                null,
+                null,
+                resumableDownload);
     }
     
     synchronized public void doFailedRequest(String error) 
