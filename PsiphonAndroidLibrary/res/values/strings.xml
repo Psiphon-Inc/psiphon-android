@@ -35,6 +35,8 @@
     <string name="AuthenticatedDataPackage.WrongPublicKey">Authenticated data package signed with different public key</string>
     <string name="AuthenticatedDataPackage.InvalidSignature">Invalid signature on authenticated data package</string>
     <string name="AuthenticatedDataPackage.FailedToParseRemoteServerEntry">Failed to parse authenticated data package</string>
+    <string name="AuthenticatedDataPackage.InvalidEncoding">Invalid encoding for authenticated data package</string>
+    <string name="AuthenticatedDataPackage.MissingValue">Missing value in authenticated data package</string>
     <string name="starting_tunnel">Starting tunnel…</string>
     <string name="stopping_tunnel">Stopping tunnel…</string>
     <string name="stopped_tunnel">Stopped tunnel</string>
@@ -94,13 +96,12 @@
     <string name="UpgradeManager.CanNotRetrievePackageInfo">Unable to retrieve package info for current app</string>
     <string name="UpgradeManager.UpgradeFileWriteFailed">Failed to write upgrade file</string>
     <string name="UpgradeManager.UpgradeDownloadFailed">Upgrade download failed</string>
-    <string name="UpgradeManager.UpgradeDownloaded">Upgrade downloaded. Will be installed next time application starts.</string>
+    <string name="UpgradeManager.UpgradeDownloaded">Upgrade downloaded. It is strongly recommended that you allow the upgrade to proceed at this time. After upgrading, you will have to launch Psiphon 3 again.</string>
     <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Upgrade failed. Cannot extract package info from upgrade file.</string>
     <string name="UpgradeManager.UpgradeFileNotFound">Upgrade file not found</string>
     <string name="UpgradeManager.UpgradePromptTitle">Psiphon Upgrade</string>
-    <string name="UpgradeManager.UpgradePromptMessage">An upgrade for Psiphon 3 is ready to be installed. It is strongly recommended that you allow the upgrade to proceed at this time.\n\nAfter upgrading, you will have to launch Psiphon 3 again.\n\nUpgrade now?</string>
+    <string name="UpgradeManager.UpgradePromptMessage">An upgrade for Psiphon 3 is ready to be installed.</string>
     <string name="UpgradeManager.UpgradeAvailableNotificationId">Psiphon Upgrade Available Notification</string>
     <string name="UpgradeManager.UpgradeFileReadFailed">Failed to read upgrade file</string>
-    <string name="UpgradeManager.UpgradeFileParseFailed">Failed to parse upgrade file</string>
     <string name="UpgradeManager.UpgradeFileAuthenticateFailed">Failed to authenticate upgrade file</string>
 </resources>

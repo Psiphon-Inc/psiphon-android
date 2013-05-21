@@ -19,6 +19,11 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
@@ -32,6 +37,7 @@ import java.security.spec.X509EncodedKeySpec;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.google.gson.stream.JsonReader;
 import com.psiphon3.psiphonlibrary.R;
 import com.psiphon3.psiphonlibrary.Utils.Base64;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -63,28 +69,79 @@ public class AuthenticatedDataPackage
             super(cause);
         }
     }
+    
+    static public String validateAndExtractData(
+            String signaturePublicKey,
+            String dataPackage)
+        throws AuthenticatedDataPackageException
+    {
+        try
+        {
+            return validateAndExtractData(
+                    signaturePublicKey,
+                    new ByteArrayInputStream(dataPackage.getBytes("UTF-8")));
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            MyLog.w(R.string.AuthenticatedDataPackage_InvalidEncoding, MyLog.Sensitivity.NOT_SENSITIVE);
+            throw new AuthenticatedDataPackageException();
+        }
+    }
 
     static public String validateAndExtractData(
-                String dataPackage,
-                String signaturePublicKey)
-            throws JSONException, AuthenticatedDataPackageException
+            String signaturePublicKey,
+            InputStream dataPackage)
+        throws AuthenticatedDataPackageException
     {
         // Authenticate remote server list as per scheme described in
         // Psiphon/Automation/psi_ops_server_entry_auth.py
         
+        // NOTE: this function always closes the dataPackage input stream
+        
+        JsonReader jsonReader = null;
+        
         try
         {
-            JSONObject obj = new JSONObject(dataPackage);
-            String data = obj.getString("data");
-            String signature = obj.getString("signature");
-            String signingPublicKeyDigest = obj.getString("signingPublicKeyDigest");
+            jsonReader = new JsonReader(new InputStreamReader(dataPackage, "UTF-8"));
+
+            String data = null;
+            String signature = null;
+            String signingPublicKeyDigest = null;
+                        
+            jsonReader.beginObject();
+            while (jsonReader.hasNext())
+            {
+                String name = jsonReader.nextName();
+                if (name.equals("data"))
+                {
+                    data = jsonReader.nextString();
+                }
+                else if (name.equals("signature"))
+                {
+                    signature = jsonReader.nextString();
+                }
+                else if (name.equals("signingPublicKeyDigest"))
+                {
+                    signingPublicKeyDigest = jsonReader.nextString();
+                }
+                else
+                {
+                    jsonReader.skipValue();
+                }
+            }
+            jsonReader.endObject();
+
+            if (data == null || signature == null || signingPublicKeyDigest == null)
+            {
+                MyLog.w(R.string.AuthenticatedDataPackage_MissingValue, MyLog.Sensitivity.NOT_SENSITIVE);
+                throw new AuthenticatedDataPackageException();                
+            }
             
             MessageDigest sha2;
             sha2 = MessageDigest.getInstance("SHA256");
-            byte[] publicKeyDigest = sha2.digest(
-                EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY.getBytes());
+            String publicKeyDigest = Base64.encode(sha2.digest(signaturePublicKey.getBytes()));
 
-            if (0 != Base64.encode(publicKeyDigest).compareTo(signingPublicKeyDigest))
+            if (0 != publicKeyDigest.compareTo(signingPublicKeyDigest))
             {
                 // The entry is signed with a different public key than our embedded value
                 MyLog.w(R.string.AuthenticatedDataPackage_WrongPublicKey, MyLog.Sensitivity.NOT_SENSITIVE);
@@ -122,6 +179,25 @@ public class AuthenticatedDataPackage
         catch (SignatureException e)
         {
             throw new AuthenticatedDataPackageException(e);
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new AuthenticatedDataPackageException(e);
+        }
+        catch (IOException e)
+        {
+            throw new AuthenticatedDataPackageException(e);
+        }
+        finally
+        {
+            if (jsonReader != null)
+            {
+                try { jsonReader.close(); } catch (IOException e) {}
+            }            
+            if (dataPackage != null)
+            {
+                try { dataPackage.close(); } catch (IOException e) {}
+            }            
         }
     }
 }

@@ -26,6 +26,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
 import org.json.JSONException;
@@ -189,43 +190,15 @@ public interface UpgradeManager
             return false;
         }
 
-        private String readAndUnzip() throws IOException, FileNotFoundException
+        private InputStream openUnzipStream() throws IOException, FileNotFoundException
         {
-            FileInputStream fis = null;
-            GZIPInputStream gis = null;
-            ByteArrayOutputStream bos = null;
-
-            try
-            {
-                fis = super.context.openFileInput(getFilename());
-                gis = new GZIPInputStream(new BufferedInputStream(fis));
-                bos = new ByteArrayOutputStream();
-                byte[] chunk = new byte[4096];
-                while (gis.available() != 0)
-                {
-                    bos.write(chunk, 0, gis.read(chunk));
-                }
-                return bos.toString();
-            }
-            finally
-            {
-                if (bos != null)
-                {
-                    try { bos.close(); } catch (IOException e) {}
-                }
-                if (gis != null)
-                {
-                    try { gis.close(); } catch (IOException e) {}
-                }
-                if (fis != null)
-                {
-                    try { fis.close(); } catch (IOException e) {}
-                }
-            }
+            return new GZIPInputStream(new BufferedInputStream(super.context.openFileInput(getFilename())));
         }
 
         public boolean extract()
         {
+            InputStream unzipStream = null;
+
             try
             {
                 // NOTE: On Android, the OS also performs its own upgrade authentication which
@@ -233,11 +206,11 @@ public interface UpgradeManager
                 // additional signature check mitigates against a malicious MiM which supplies
                 // a malicious, unsigned, upgrade payload which our intent would start to install.
                 
-                String authenticatedDataPackage = readAndUnzip(); 
+                unzipStream = openUnzipStream();
                 
                 String hexUpgradeAPK = AuthenticatedDataPackage.validateAndExtractData(
                                             EmbeddedValues.UPGRADE_SIGNATURE_PUBLIC_KEY,
-                                            authenticatedDataPackage);
+                                            unzipStream);
                 
                 byte[] upgradeAPK = Utils.hexStringToByteArray(hexUpgradeAPK);
                 
@@ -256,16 +229,18 @@ public interface UpgradeManager
                 MyLog.w(R.string.UpgradeManager_UpgradeFileReadFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return false;
             }
-            catch (JSONException e)
-            {
-                MyLog.w(R.string.UpgradeManager_UpgradeFileParseFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
-                return false;
-            }
             catch (AuthenticatedDataPackageException e)
             {
                 MyLog.w(R.string.UpgradeManager_UpgradeFileAuthenticateFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 return false;
-            } 
+            }
+            finally
+            {
+                if (unzipStream != null)
+                {
+                    try { unzipStream.close(); } catch (IOException e) {}
+                }
+            }
         }
 
         @Override
