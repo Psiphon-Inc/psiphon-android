@@ -209,7 +209,7 @@ public interface UpgradeManager
             }
             finally
             {
-                if (gis != null)
+                if (bos != null)
                 {
                     try { bos.close(); } catch (IOException e) {}
                 }

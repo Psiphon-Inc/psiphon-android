@@ -1315,7 +1315,7 @@ public class ServerInterface
                 // Special case: the resumeable download may ask for bytes past the resource
                 // range since it doesn't store the "completed download" state. In this case,
                 // the HTTP server returns 416.
-                boolean ignoreError = (resumableDownload != null && statusCode != HttpStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
+                boolean ignoreError = (resumableDownload != null && statusCode == HttpStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
 
                 if (!ignoreError)
                 {
