@@ -208,11 +208,11 @@ public interface UpgradeManager
                 
                 unzipStream = openUnzipStream();
                 
-                String hexUpgradeAPK = AuthenticatedDataPackage.validateAndExtractData(
+                String base64UpgradeAPK = AuthenticatedDataPackage.validateAndExtractData(
                                             EmbeddedValues.UPGRADE_SIGNATURE_PUBLIC_KEY,
                                             unzipStream);
                 
-                byte[] upgradeAPK = Utils.hexStringToByteArray(hexUpgradeAPK);
+                byte[] upgradeAPK = Utils.Base64.decode(base64UpgradeAPK);
                 
                 CompleteUpgradeFile file = new CompleteUpgradeFile(super.context);
                 file.write(upgradeAPK, upgradeAPK.length, false);
