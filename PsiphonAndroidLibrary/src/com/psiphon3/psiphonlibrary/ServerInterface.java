@@ -691,9 +691,16 @@ public class ServerInterface
      * Make the 'upgrade' request. 
      * @throws PsiphonServerInterfaceException
      */
-    synchronized public byte[] doUpgradeDownloadRequest(IResumableDownload resumableDownload) 
+    public byte[] doUpgradeDownloadRequest(IResumableDownload resumableDownload) 
         throws PsiphonServerInterfaceException
     {
+        // NOTE: This call is not 'synchronized'. This allows it to run in parallel
+        // with other requests (doPeriodicWork/doStatusRequest) made by runTunnelOnce
+        // while the UpgradeDownloader is working.
+
+        // TODO: Other network requests should be changed to not hold a lock and/or
+        // have fine-grained locking
+        
         boolean canAbort = true;
         boolean useLocalProxy = true;
         
