@@ -377,6 +377,11 @@ public interface UpgradeManager
         private ServerInterface serverInterface;
         private Thread thread;
         private int versionNumber;
+        private boolean stopFlag;
+
+        private final int MAX_RETRY_ATTEMPTS = 10;
+        private final int RETRY_DELAY_MILLISECONDS = 30*1000;
+        private final int RETRY_WAIT_MILLISECONDS = 100;
         
         public UpgradeDownloader(Context context, ServerInterface serverInterface)
         {
@@ -391,14 +396,40 @@ public interface UpgradeManager
         public void start(int versionNumber)
         {
             this.versionNumber = versionNumber;
+            this.stopFlag = false;
             this.thread = new Thread(
                     new Runnable()
                     {
                         public void run()
                         {
-                            if (downloadAndExtractUpgrade())
+                            for (int attempt = 0; !stopFlag && attempt < MAX_RETRY_ATTEMPTS; attempt++)
                             {
-                                UpgradeManager.UpgradeInstaller.notifyUpgrade(context);
+                                // NOTE: depends on ServerInterface.stop(), not stopFlag, to interrupt requests in progress
+
+                                if (downloadAndExtractUpgrade())
+                                {
+                                    UpgradeManager.UpgradeInstaller.notifyUpgrade(context);
+                                    break;
+                                }
+                                
+                                // After a failure, delay a minute before trying again
+                                // TODO: synchronize with preemptive reconnect? 
+
+                                for (int wait = 0; wait < RETRY_DELAY_MILLISECONDS; wait += RETRY_WAIT_MILLISECONDS)
+                                {
+                                    try
+                                    {
+                                        Thread.sleep(RETRY_WAIT_MILLISECONDS);
+                                    }
+                                    catch (InterruptedException e)
+                                    {
+                                        Thread.currentThread().interrupt();
+                                    }
+                                    if (stopFlag)
+                                    {
+                                        break;
+                                    }
+                                }
                             }
                         }
                     });
@@ -417,6 +448,7 @@ public interface UpgradeManager
             {
                 try
                 {
+                    this.stopFlag = true;
                     this.thread.join();
                 } 
                 catch (InterruptedException e)
