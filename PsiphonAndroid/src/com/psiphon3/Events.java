@@ -19,22 +19,18 @@
 
 package com.psiphon3;
 
-import java.util.List;
-
 import com.psiphon3.FeedbackActivity;
 import com.psiphon3.StatusActivity;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.TunnelService;
 
-import android.app.ActivityManager;
-import android.app.ActivityManager.RunningTaskInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.support.v4.content.LocalBroadcastManager;
 
 
-public class Events implements com.psiphon3.psiphonlibrary.Events
+public class Events implements com.psiphon3.psiphonlibrary.IEvents
 {
     public void signalHandshakeSuccess(Context context, boolean isReconnect)
     {

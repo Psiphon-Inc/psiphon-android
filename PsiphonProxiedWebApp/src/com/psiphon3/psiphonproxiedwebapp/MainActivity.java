@@ -53,14 +53,14 @@ import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.TunnelCore;
-import com.psiphon3.psiphonlibrary.Events;
+import com.psiphon3.psiphonlibrary.IEvents;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 public class MainActivity 
     extends com.psiphon3.psiphonlibrary.MainBase.Activity 
-    implements Events
+    implements IEvents
 {
     private boolean m_loadedWebView = false;
     private WebView m_webView;

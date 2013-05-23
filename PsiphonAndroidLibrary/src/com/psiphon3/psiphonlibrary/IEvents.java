@@ -23,7 +23,7 @@ import android.content.Context;
 import android.content.Intent;
 
 
-public interface Events
+public interface IEvents
 {
     public void signalHandshakeSuccess(Context context, boolean isReconnect);
     

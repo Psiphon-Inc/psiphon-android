@@ -60,21 +60,6 @@ import com.stericson.RootTools.RootTools;
 
 public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 {
-    static public interface UpgradeDownloader
-    {
-        /**
-         * Begin downloading the upgrade from the server. Download is done in a
-         * separate thread. 
-         */
-        public void start();
-
-        /**
-         * Stop an on-going upgrade download.
-         */
-        public void stop();
-    }
-    
-
     public enum State
     {
         DISCONNECTED,
@@ -92,12 +77,12 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
     private Context m_parentContext = null;
     private Service m_parentService = null;
     private boolean m_firstStart = true;
-    private Thread m_tunnelThread;
-    private ServerInterface m_interface;
-    private UpgradeDownloader m_upgradeDownloader = null;
+    private Thread m_tunnelThread = null;
+    private ServerInterface m_interface = null;
+    private UpgradeManager.UpgradeDownloader m_upgradeDownloader = null;
     private ServerSelector m_serverSelector = null;
     private boolean m_destroyed = false;
-    private Events m_eventsInterface = null;
+    private IEvents m_eventsInterface = null;
     private boolean m_useGenericLogMessages = false;
     private List<Pair<String,String>> m_extraAuthParams = new ArrayList<Pair<String,String>>();
     private BlockingQueue<Signal> m_signalQueue;
@@ -127,6 +112,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
     {
         m_interface = new ServerInterface(m_parentContext);
         m_serverSelector = new ServerSelector(this, m_interface, m_parentContext);
+        m_upgradeDownloader = new UpgradeManager.UpgradeDownloader(m_parentContext, m_interface);
     }
 
     // Implementation of android.app.Service.onDestroy
@@ -252,11 +238,14 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         if (!this.m_destroyed && m_parentService != null)
         {
             String ns = Context.NOTIFICATION_SERVICE;
-            NotificationManager mNotificationManager =
+            NotificationManager notificationManager =
                     (NotificationManager)m_parentService.getSystemService(ns);
-            mNotificationManager.notify(
-                    R.string.psiphon_service_notification_id, 
-                    createNotification());
+            if (notificationManager != null)
+            {
+                notificationManager.notify(
+                        R.string.psiphon_service_notification_id, 
+                        createNotification());
+            }
         }
     }
     
@@ -885,9 +874,9 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             
             checkSignals(0);
 
-            if (m_interface.isUpgradeAvailable() && m_upgradeDownloader != null)
+            if (m_interface.isUpgradeAvailable() && PsiphonData.getPsiphonData().getDownloadUpgrades())
             {
-                m_upgradeDownloader.start();
+                m_upgradeDownloader.start(m_interface.getUpgradeVersion());
             }
             
             boolean hasTunnel = true;
@@ -1234,10 +1223,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                 MyLog.v(R.string.socks_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
             }
             
-            if (m_upgradeDownloader != null)
-            {
-                m_upgradeDownloader.stop();
-            }
+            m_upgradeDownloader.stop();
 
             if (socket != null || sshConnection != null)
             {
@@ -1391,6 +1377,9 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
     private void runTunnel() throws InterruptedException
     {
+        // Check if an upgrade has already been downloaded and is ready for install
+        UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentContext);
+        
         if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
         {
             setState(State.DISCONNECTED);
@@ -1607,14 +1596,9 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         }
     }
     
-    public void setEventsInterface(Events eventsInterface)
+    public void setEventsInterface(IEvents eventsInterface)
     {
         m_eventsInterface = eventsInterface;
-    }
-    
-    public void setUpgradeDownloader(UpgradeDownloader downloader)
-    {
-        m_upgradeDownloader = downloader;
     }
     
     public ServerInterface getServerInterface()
