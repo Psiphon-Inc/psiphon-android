@@ -76,10 +76,12 @@ public class PsiphonData
     private boolean m_enableReportedStats;
     private DataTransferStats m_dataTransferStats;
     private boolean m_displayDataTransferStats;
+    private boolean m_downloadUpgrades;
     
     public int m_notificationIconConnecting = 0;
     public int m_notificationIconConnected = 0;
     public int m_notificationIconDisconnected = 0;
+    public int m_notificationIconUpgradeAvailable = 0;
 
     public Object serverEntryFileLock = new Object(); // Used as an intrinsic lock
         
@@ -94,6 +96,7 @@ public class PsiphonData
         m_enableReportedStats = true;
         m_dataTransferStats = new DataTransferStats();
         m_displayDataTransferStats = false;
+        m_downloadUpgrades = false;
     }
 
     public synchronized void setHomePages(ArrayList<String> homePages)
@@ -257,11 +260,13 @@ public class PsiphonData
     public synchronized void setNotificationIcons(
             int connecting, 
             int connected, 
-            int disconnected)
+            int disconnected,
+            int upgradeAvailable)
     {
         m_notificationIconConnecting = connecting;
         m_notificationIconConnected = connected;
         m_notificationIconDisconnected = disconnected;
+        m_notificationIconUpgradeAvailable = upgradeAvailable;
     }
     
     public synchronized int getNotificationIconConnecting()
@@ -277,6 +282,11 @@ public class PsiphonData
     public synchronized int getNotificationIconDisconnected()
     {
         return m_notificationIconDisconnected;
+    }
+
+    public synchronized int getNotificationIconUpgradeAvailable()
+    {
+        return m_notificationIconUpgradeAvailable;
     }
 
     public synchronized void setEnableReportedStats(boolean enableReportedStats)
@@ -414,6 +424,16 @@ public class PsiphonData
         }
     }
     
+    public synchronized void setDownloadUpgrades(boolean downloadUpgrades)
+    {
+        m_downloadUpgrades = downloadUpgrades;
+    }
+
+    public synchronized boolean getDownloadUpgrades()
+    {
+        return m_downloadUpgrades;
+    }
+
     public synchronized void setDisplayDataTransferStats(boolean displayDataTransferStats)
     {
         m_displayDataTransferStats = displayDataTransferStats;

@@ -23,9 +23,9 @@ import android.content.Context;
 import android.content.Intent;
 
 
-public interface Events
+public interface IEvents
 {
-    public void signalHandshakeSuccess(Context context);
+    public void signalHandshakeSuccess(Context context, boolean isReconnect);
     
     public void signalUnexpectedDisconnect(Context context);
     

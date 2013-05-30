@@ -34,18 +34,18 @@ cog.outl('final String FEEDBACK_ENCRYPTION_PUBLIC_KEY = "%s";' % utils.get_embed
 cog.outl('final String INFO_LINK_URL = "%s";' % utils.get_embedded_value(buildname, 'INFO_LINK_URL'))
 cog.outl('final String PROXIED_WEB_APP_HTTP_AUTH_USERNAME = "%s";' % utils.get_embedded_value(buildname, 'PROXIED_WEB_APP_HTTP_AUTH_USERNAME'))
 cog.outl('final String PROXIED_WEB_APP_HTTP_AUTH_PASSWORD = "%s";' % utils.get_embedded_value(buildname, 'PROXIED_WEB_APP_HTTP_AUTH_PASSWORD'))
+cog.outl('final String UPGRADE_URL = "%s";' % utils.get_embedded_value(buildname, 'UPGRADE_URL'))
+cog.outl('final String UPGRADE_SIGNATURE_PUBLIC_KEY = "%s";' % utils.get_embedded_value(buildname, 'UPGRADE_SIGNATURE_PUBLIC_KEY'))
 ]]]*/
     final String PROPAGATION_CHANNEL_ID = "";
 
     final String SPONSOR_ID = "";
 
-    final String CLIENT_VERSION = "2";
+    final String CLIENT_VERSION = "1";
 
     final String EMBEDDED_SERVER_LIST[] = {""};
 
-    final String REMOTE_SERVER_LIST_URL =
-        "https://s3.amazonaws.com/invalid_bucket_name/server_entries";
-
+    final String REMOTE_SERVER_LIST_URL = "https://s3.amazonaws.com/invalid_bucket_name/server_entries";
     final String REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY = "";
 
     final String FEEDBACK_ENCRYPTION_PUBLIC_KEY = "";
@@ -56,5 +56,8 @@ cog.outl('final String PROXIED_WEB_APP_HTTP_AUTH_PASSWORD = "%s";' % utils.get_e
     final String PROXIED_WEB_APP_HTTP_AUTH_USERNAME = "";
 
     final String PROXIED_WEB_APP_HTTP_AUTH_PASSWORD = "";
+
+    final String UPGRADE_URL = "";
+    final String UPGRADE_SIGNATURE_PUBLIC_KEY = "";
 //[[[end]]]
 }

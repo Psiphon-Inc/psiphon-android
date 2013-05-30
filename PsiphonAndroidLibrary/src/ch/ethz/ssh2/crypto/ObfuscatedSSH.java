@@ -56,8 +56,13 @@ public class ObfuscatedSSH
         SecureRandom random = new SecureRandom();
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         
-        byte[] seed = new byte[OBFUSCATE_SEED_LENGTH];
-        random.nextBytes(seed);
+        //byte[] seed = new byte[OBFUSCATE_SEED_LENGTH];
+        //random.nextBytes(seed);        
+        
+        // Temporary test.
+        // TODO: Add longer seed to accommodate both randomness and prefix; add well-formed prefix; randomize prefix
+        String prefix = "GET / HTTP/1.0\r\n";
+        byte[] seed = prefix.getBytes();
         
         buffer.write(ByteBuffer.allocate(4).putInt(OBFUSCATE_MAGIC_VALUE).array());
         
