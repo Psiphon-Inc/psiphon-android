@@ -123,7 +123,6 @@ public abstract class MainBase
         protected IEvents m_eventsInterface = null;
         protected Button m_toggleButton;
         protected List<Pair<String,String>> m_extraAuthParams = new ArrayList<Pair<String,String>>();
-        protected static boolean m_firstRun = true;
         private StatusListViewManager m_statusListManager = null;
         private SharedPreferences m_preferences; 
         private ImageButton m_statusTabToggleButton;
@@ -810,7 +809,7 @@ public abstract class MainBase
          * @see <a href="http://stackoverflow.com/a/5921190/729729">From StackOverflow answer: "android: check if a service is running"</a>
          * @return True if the service is already running, false otherwise.
          */
-        private boolean isServiceRunning()
+        protected boolean isServiceRunning()
         {
             ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
             for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))

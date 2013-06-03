@@ -19,69 +19,48 @@
 
 package com.psiphon3;
 
-import android.annotation.TargetApi;
-import android.app.ActivityManager;
 import android.app.AlertDialog;
-import android.app.ActivityManager.RunningServiceInfo;
 import android.content.ActivityNotFoundException;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences.Editor;
-import android.net.Uri;
-import android.net.VpnService;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.support.v4.content.LocalBroadcastManager;
 import android.view.KeyEvent;
 import android.view.View;
-import android.webkit.URLUtil;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.ListView;
+import android.widget.TabHost;
 
-import com.psiphon3.psiphonlibrary.UpgradeManager;
-import com.psiphon3.psiphonlibrary.UpgradeManager.UpgradeInstaller;
-import com.psiphon3.psiphonlibrary.EmbeddedValues;
-import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.PsiphonData;
-import com.psiphon3.psiphonlibrary.MainBase;
-import com.psiphon3.psiphonlibrary.R;
-import com.psiphon3.psiphonlibrary.TunnelCore;
-import com.psiphon3.psiphonlibrary.TunnelService;
-import com.psiphon3.psiphonlibrary.TunnelVpnService;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
 public class StatusActivity 
-    extends com.psiphon3.psiphonlibrary.MainBase.Activity
+    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
 {
     public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
     
-    m_eventsInterface = new Events();
-    
-    private Button m_toggleButton;
+    private static boolean m_firstRun = true;
     private CheckBox m_tunnelWholeDeviceToggle;
     private boolean m_tunnelWholeDevicePromptShown = false;
-    private LocalBroadcastManager m_localBroadcastManager;
-    private static boolean m_firstRun = true;
-        
+
+    public StatusActivity()
+    {
+        m_eventsInterface = new Events();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
-        super.onCreate(savedInstanceState);
-        
         setContentView(R.layout.main);
-        
-        
+
+        m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
+
+        super.onCreate(savedInstanceState);
 
         /*
         // Draw attention to the new Start/Stop command
@@ -107,32 +86,12 @@ public class StatusActivity
         m_tunnelWholeDeviceToggle.setEnabled(canWholeDevice);
         boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, canWholeDevice);
         m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
+        
         // Use PsiphonData to communicate the setting to the TunnelService so it doesn't need to
         // repeat the isRooted check. The preference is retained even if the device becomes "unrooted"
         // and that's why setTunnelWholeDevice != tunnelWholeDevicePreference.
         PsiphonData.getPsiphonData().setTunnelWholeDevice(canWholeDevice && tunnelWholeDevicePreference);
-        
         PsiphonData.getPsiphonData().setDownloadUpgrades(true);
-        
-        // Note that this must come after the above lines, or else the activity
-        // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
-        PsiphonConstants.DEBUG = Utils.isDebugMode(this);
-
-        // Listen for new messages
-        // Using local broad cast (http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html)
-        
-        m_localBroadcastManager = LocalBroadcastManager.getInstance(StatusActivity.this);
-
-        m_localBroadcastManager.registerReceiver(
-                new TunnelStartingReceiver(),
-                new IntentFilter(TUNNEL_STARTING));
-
-        m_localBroadcastManager.registerReceiver(
-                new TunnelStoppingReceiver(),
-                new IntentFilter(TUNNEL_STOPPING));
-        
-        // Restore messages previously posted by the service.
-        MyLog.restoreLogHistory();
         
         // Auto-start on app first run
         if (m_firstRun)
@@ -196,33 +155,13 @@ public class StatusActivity
         doToggle();
     }
 
-    public class TunnelStartingReceiver extends BroadcastReceiver
-    {
-        @Override
-        public void onReceive(Context context, Intent intent)
-        {
-            m_toggleButton.setText(getText(R.string.stop));
-        }
-    }
-
-    public class TunnelStoppingReceiver extends BroadcastReceiver
-    {
-        @Override
-        public void onReceive(Context context, Intent intent)
-        {
-            // When the tunnel self-stops, we also need to unbind to ensure the service is destroyed
-            unbindTunnelService();
-            m_toggleButton.setText(getText(R.string.start));
-        }
-    }
-    
     public void onTunnelWholeDeviceToggle(View v)
     {
         boolean restart = false;
 
         if (isServiceRunning())
         {
-            stopTunnel(this);
+            doToggle();
             restart = true;
         }
 
