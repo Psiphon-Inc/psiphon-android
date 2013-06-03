@@ -33,7 +33,5 @@
   <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Туннелировать только браузер Psiphon</string>
   <string name="FeedbackActivity.AttachmentWriteFailed">Ошибка создания или записи файла с диагностическими данными</string>
   <string name="FeedbackActivity.EncryptedFailed">Ошибка шифрования диагностических данных. Диагностические данные не будут прикреплены к отзыву</string>
-  <string name="start">Старт</string>
-  <string name="stop">Стоп</string>
   <string name="tunnel_whole_device_exception">Ваше устройство не поддерживает туннелирование всех интернет соединений</string>
 </resources>

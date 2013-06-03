@@ -51,7 +51,8 @@ import com.psiphon3.psiphonlibrary.UpgradeManager.UpgradeInstaller;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.PsiphonData;
-import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
+import com.psiphon3.psiphonlibrary.MainBase;
+import com.psiphon3.psiphonlibrary.R;
 import com.psiphon3.psiphonlibrary.TunnelCore;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.TunnelVpnService;
@@ -62,68 +63,16 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 public class StatusActivity 
     extends com.psiphon3.psiphonlibrary.MainBase.Activity
 {
-    public static final String ADD_MESSAGE_CLASS = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_CLASS";
-    public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
-    public static final String HANDSHAKE_SUCCESS_IS_RECONNECT = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS_IS_RECONNECT";
-    public static final String UNEXPECTED_DISCONNECT = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT";
-    public static final String TUNNEL_STARTING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STARTING";
-    public static final String TUNNEL_STOPPING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STOPPING";
-
     public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
     
-    private static final int VPN_PREPARE = 100;
+    m_eventsInterface = new Events();
     
-    private StatusListViewManager m_statusListManager;
     private Button m_toggleButton;
     private CheckBox m_tunnelWholeDeviceToggle;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private LocalBroadcastManager m_localBroadcastManager;
-    private final Events m_eventsInterface = new Events();
     private static boolean m_firstRun = true;
         
-    private boolean m_boundToTunnelService = false;
-    private ServiceConnection m_tunnelServiceConnection = new ServiceConnection()
-    {
-        @Override
-        public void onServiceConnected(ComponentName className, IBinder service)
-        {
-            TunnelService.LocalBinder binder = (TunnelService.LocalBinder) service;
-            TunnelService tunnelService = binder.getService();
-            m_boundToTunnelService = true;
-            tunnelService.setEventsInterface(m_eventsInterface);
-            startService(new Intent(StatusActivity.this, TunnelService.class));
-        }
-        
-        @Override
-        public void onServiceDisconnected(ComponentName arg0)
-        {
-            m_boundToTunnelService = false;
-        }
-    };
-
-    private boolean m_boundToTunnelVpnService = false;
-    private ServiceConnection m_tunnelVpnServiceConnection = new ServiceConnection()
-    {
-        @Override
-        public void onServiceConnected(ComponentName className, IBinder service)
-        {
-            // VpnService backwards compatibility: this has sufficient lazy class loading
-            // as onServiceConnected is only called on bind.
-
-            TunnelVpnService.LocalBinder binder = (TunnelVpnService.LocalBinder) service;
-            TunnelVpnService tunnelVpnService = binder.getService();
-            m_boundToTunnelVpnService = true;
-            tunnelVpnService.setEventsInterface(m_eventsInterface);
-            startService(new Intent(StatusActivity.this, TunnelVpnService.class));
-        }
-        
-        @Override
-        public void onServiceDisconnected(ComponentName arg0)
-        {
-            m_boundToTunnelVpnService = false;
-        }
-    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -131,11 +80,8 @@ public class StatusActivity
         
         setContentView(R.layout.main);
         
-        // Set up the list view
-        m_statusListManager = new StatusListViewManager((ListView)findViewById(R.id.statusList));
         
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
-        initToggleText();
 
         /*
         // Draw attention to the new Start/Stop command
@@ -197,24 +143,6 @@ public class StatusActivity
     }
 
     @Override
-    protected void onResume()
-    {
-        super.onResume();
-        
-        PsiphonData.getPsiphonData().setStatusActivityForeground(true);
-    }
-    
-    @Override
-    protected void onPause()
-    {
-        super.onPause();
-        
-        unbindTunnelService();
-        
-        PsiphonData.getPsiphonData().setStatusActivityForeground(false);
-    }
-
-    @Override
     protected void onNewIntent(Intent intent)
     {
         super.onNewIntent(intent);
@@ -265,25 +193,9 @@ public class StatusActivity
     
     public void onToggleClick(View v)
     {
-        // TODO: use TunnelStartingReceiver/TunnelStoppingReceiver to track state?
-        if (!isServiceRunning())
-        {
-            startUp();
-        }
-        else
-        {
-            stopTunnel(this);
-        }
+        doToggle();
     }
 
-    private void initToggleText()
-    {
-        // Only use this in onCreate. For updating the text when the activity
-        // is showing and the service is stopping, it's more reliable to
-        // use TunnelStoppingReceiver.
-        m_toggleButton.setText(isServiceRunning() ? getText(R.string.stop) : getText(R.string.start));
-    }
-    
     public class TunnelStartingReceiver extends BroadcastReceiver
     {
         @Override
@@ -347,17 +259,11 @@ public class StatusActivity
 
     public void onAboutClick(View v)
     {
-        if (URLUtil.isValidUrl(EmbeddedValues.INFO_LINK_URL))
-        {
-            // TODO: if connected, open in Psiphon browser? 
-            // Events.displayBrowser(this, Uri.parse(PsiphonConstants.INFO_LINK_URL));
-
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(EmbeddedValues.INFO_LINK_URL));
-            startActivity(browserIntent);
-        }
+        doAbout();
     }
     
-    private void startUp()
+    @Override
+    protected void startUp()
     {        
         // If the user hasn't set a whole-device-tunnel preference, show a prompt
         // (and delay starting the tunnel service until the prompt is completed)
@@ -425,190 +331,35 @@ public class StatusActivity
         HandleCurrentIntent();
     }
     
-    private void startTunnel(Context context)
+    @Override
+    protected boolean doVpnPrepare()
     {
-        boolean waitingForPrompt = false;
-        
-        if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService())
+        try
         {
-            // VpnService backwards compatibility: for lazy class loading the VpnService
-            // class reference has to be in another function (doVpnPrepare), not just
-            // in a conditional branch.
-            waitingForPrompt = doVpnPrepare();
+            return super.doVpnPrepare();
         }
-        if (!waitingForPrompt)
+        catch (ActivityNotFoundException e)
         {
-            startService(this);
-        }
-    }
-    
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    private boolean doVpnPrepare()
-    {
-        // VpnService: need to display OS user warning. If whole device option is
-        // selected and we expect to use VpnService, so the prompt here in the UI
-        // before starting the service.
-        
-        Intent intent = VpnService.prepare(this);
-        if (intent != null)
-        {
-            // Catching ActivityNotFoundException as per:
-            // http://code.google.com/p/ics-openvpn/source/browse/src/de/blinkt/openvpn/LaunchVPN.java?spec=svn2a81c206204193b14ac0766386980acdc65bee60&name=v0.5.23&r=2a81c206204193b14ac0766386980acdc65bee60#376
-            //
-            // TODO: can we disable the mode before we reach this this failure point with
-            // resolveActivity()? We'll need the intent from prepare() or we'll have to mimic it.
-            // http://developer.android.com/reference/android/content/pm/PackageManager.html#resolveActivity%28android.content.Intent,%20int%29
+            MyLog.e(R.string.tunnel_whole_device_exception, MyLog.Sensitivity.NOT_SENSITIVE);
             
-            try
+            // VpnService is broken. For rooted devices, proceed with starting Whole Device in root mode.
+            
+            if (Utils.isRooted())
             {
-                startActivityForResult(intent, VPN_PREPARE);                
-            }
-            catch (ActivityNotFoundException e)
-            {
-                MyLog.e(R.string.tunnel_whole_device_exception, MyLog.Sensitivity.NOT_SENSITIVE);
-                
-                // VpnService is broken. For rooted devices, proceed with starting Whole Device in root mode.
-                
-                if (Utils.isRooted())
-                {
-                    PsiphonData.getPsiphonData().setVpnServiceUnavailable(true);
+                PsiphonData.getPsiphonData().setVpnServiceUnavailable(true);
 
-                    // false = not waiting for prompt, so service will be started immediately
-                    return false;
-                }
-
-                // For non-rooted devices, turn off the option and abort.
-                
-                m_tunnelWholeDeviceToggle.setChecked(false);
-                m_tunnelWholeDeviceToggle.setEnabled(false);
-                updateWholeDevicePreference(false);
-
-                // true = waiting for prompt, although we can't start the activity so onActivityResult won't be called
-                return true;
+                // false = not waiting for prompt, so service will be started immediately
+                return false;
             }
 
-            // startTunnelService will be called in onActivityResult
+            // For non-rooted devices, turn off the option and abort.
+            
+            m_tunnelWholeDeviceToggle.setChecked(false);
+            m_tunnelWholeDeviceToggle.setEnabled(false);
+            updateWholeDevicePreference(false);
+
+            // true = waiting for prompt, although we can't start the activity so onActivityResult won't be called
             return true;
         }
-        
-        return false;
-    }
-    
-    @Override
-    protected void onActivityResult(int request, int result, Intent data)
-    {
-        if (request == VPN_PREPARE && result == RESULT_OK)
-        {
-            startService(this);
-        }
-    }
-    
-    private void startService(Context context)
-    {
-        // TODO: onResume calls this and when there was only one kind of service
-        // it was safe to call through to bindService, which would start that
-        // service if it was not already running. Now we have two types of services,
-        // can we rely on blindly rebinding? What if the getTunnelWholeDevice()
-        // value changed, can we end up with two running services? For now,
-        // we have some asserts.
-        
-        if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService())
-        {
-            assert(m_boundToTunnelService == false);
-            
-            // VpnService backwards compatibility: doStartTunnelVpnService is a wrapper
-            // function so we don't reference the undefined class when this function
-            // is loaded.
-            doStartTunnelVpnService(context);
-        }
-        else
-        {
-            assert(m_boundToTunnelVpnService == false);
-
-            Intent intent = new Intent(context, TunnelService.class);
-            bindService(intent, m_tunnelServiceConnection, Context.BIND_AUTO_CREATE);
-        }
-    }
-    
-    private void doStartTunnelVpnService(Context context)
-    {
-        Intent intent = new Intent(context, TunnelVpnService.class);
-        bindService(intent, m_tunnelVpnServiceConnection, Context.BIND_AUTO_CREATE);        
-    }
-    
-    private void stopTunnel(Context context)
-    {
-        unbindTunnelService();
-        if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService())
-        {
-            doStopVpnTunnel(context);
-        }
-        else
-        {
-            stopService(new Intent(context, TunnelService.class));
-        }
-    }
-
-    private void doStopVpnTunnel(Context context)
-    {        
-        TunnelCore currentTunnelCore = PsiphonData.getPsiphonData().getCurrentTunnelCore();
-        
-        if (currentTunnelCore != null)
-        {
-            // See comments in stopVpnServiceHelper about stopService.
-            currentTunnelCore.stopVpnServiceHelper();
-            stopService(new Intent(context, TunnelVpnService.class));
-        }
-    }
-    
-    private void unbindTunnelService()
-    {
-        if (m_boundToTunnelService)
-        {
-            unbindService(m_tunnelServiceConnection);
-            m_boundToTunnelService = false;
-        }
-        if (m_boundToTunnelVpnService)
-        {
-            unbindService(m_tunnelVpnServiceConnection);
-            m_boundToTunnelVpnService = false;
-        }
-    }
-    
-    /**
-     * Determine if the Psiphon local service is currently running.
-     * @see <a href="http://stackoverflow.com/a/5921190/729729">From StackOverflow answer: "android: check if a service is running"</a>
-     * @return True if the service is already running, false otherwise.
-     */
-    private boolean isServiceRunning()
-    {
-        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
-        {
-            if (TunnelService.class.getName().equals(service.service.getClassName()) ||
-                    (Utils.hasVpnService() && isVpnService(service.service.getClassName())))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    private boolean isVpnService(String className)
-    {
-        return TunnelVpnService.class.getName().equals(className);
-    }
-
-    /*
-     * MyLog.ILogger implementation
-     */
-
-    /**
-     * @see com.psiphon3.psiphonlibrary.Utils.MyLog.ILogger#statusEntryAdded()
-     */
-    @Override
-    public void statusEntryAdded()
-    {
-        m_statusListManager.notifyStatusAdded();
     }
 }

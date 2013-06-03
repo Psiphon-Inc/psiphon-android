@@ -7,5 +7,6 @@
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="lib" path="libs/achartengine-1.0.0.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
