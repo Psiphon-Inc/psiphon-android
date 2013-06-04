@@ -64,16 +64,11 @@ public class TunnelService extends Service
         m_Core.onDestroy();
     }
 
-    public void setEventsInterface(Events eventsInterface)
+    public void setEventsInterface(IEvents eventsInterface)
     {
         m_Core.setEventsInterface(eventsInterface);
     }
     
-    public void setUpgradeDownloader(TunnelCore.UpgradeDownloader downloader)
-    {
-        m_Core.setUpgradeDownloader(downloader);
-    }
-
     public ServerInterface getServerInterface()
     {
         return m_Core.getServerInterface();

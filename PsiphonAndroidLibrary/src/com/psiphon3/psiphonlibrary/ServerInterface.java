@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Psiphon Inc.
+ * Copyright (c) 2013, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,13 +28,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.channels.SocketChannel;
 import java.security.KeyManagementException;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -49,35 +49,38 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.AbstractVerifier;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.SingleClientConnManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
+import ch.boye.httpclientandroidlib.HttpEntity;
+import ch.boye.httpclientandroidlib.HttpHost;
+import ch.boye.httpclientandroidlib.HttpResponse;
+import ch.boye.httpclientandroidlib.HttpStatus;
+import ch.boye.httpclientandroidlib.client.ClientProtocolException;
+import ch.boye.httpclientandroidlib.client.methods.HttpGet;
+import ch.boye.httpclientandroidlib.client.methods.HttpPost;
+import ch.boye.httpclientandroidlib.client.methods.HttpRequestBase;
+import ch.boye.httpclientandroidlib.conn.ClientConnectionManager;
+import ch.boye.httpclientandroidlib.conn.DnsResolver;
+import ch.boye.httpclientandroidlib.conn.params.ConnRoutePNames;
+import ch.boye.httpclientandroidlib.conn.scheme.PlainSocketFactory;
+import ch.boye.httpclientandroidlib.conn.scheme.Scheme;
+import ch.boye.httpclientandroidlib.conn.scheme.SchemeRegistry;
+import ch.boye.httpclientandroidlib.conn.ssl.SSLSocketFactory;
+import ch.boye.httpclientandroidlib.conn.ssl.X509HostnameVerifier;
+import ch.boye.httpclientandroidlib.entity.ByteArrayEntity;
+import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
+import ch.boye.httpclientandroidlib.impl.conn.PoolingClientConnectionManager;
+import ch.boye.httpclientandroidlib.impl.conn.SystemDefaultDnsResolver;
+import ch.boye.httpclientandroidlib.params.BasicHttpParams;
+import ch.boye.httpclientandroidlib.params.HttpConnectionParams;
+import ch.boye.httpclientandroidlib.params.HttpParams;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.xbill.DNS.Address;
+import org.xbill.DNS.PsiphonState;
 
+import com.psiphon3.psiphonlibrary.AuthenticatedDataPackage.AuthenticatedDataPackageException;
 import com.psiphon3.psiphonlibrary.R;
-import com.psiphon3.psiphonlibrary.ServerEntryAuth.ServerEntryAuthException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.content.Context;
@@ -144,6 +147,11 @@ public class ServerInterface
             }
         }
         
+        public static final String CAPABILITY_HANDSHAKE = "handshake";
+        public static final String CAPABILITY_VPN = "VPN";
+        public static final String CAPABILITY_OSSH = "OSSH";
+        public static final String CAPABILITY_SSH = "SSH";
+        
         boolean hasCapability(String capability)
         {
             return this.capabilities.contains(capability);
@@ -156,15 +164,15 @@ public class ServerInterface
 
         int getPreferredReachablityTestPort()
         {
-            if (hasCapability("OSSH"))
+            if (hasCapability(CAPABILITY_OSSH))
             {
                 return this.sshObfuscatedPort;
             }
-            else if (hasCapability("SSH"))
+            else if (hasCapability(CAPABILITY_SSH))
             {
                 return this.sshPort;
             }
-            else if (hasCapability("handshake"))
+            else if (hasCapability(CAPABILITY_HANDSHAKE))
             {
                 return this.webServerPort;
             }
@@ -177,6 +185,7 @@ public class ServerInterface
     private ArrayList<ServerEntry> serverEntries = new ArrayList<ServerEntry>();
     private String upgradeClientVersion;
     private String serverSessionID;
+    private int preemptiveReconnectLifetime = 0;
     private ServerEntry currentServerEntry;
     
     /** Array of all outstanding/ongoing requests. Anything in this array will
@@ -237,7 +246,7 @@ public class ServerInterface
         try
         {
             shuffleAndAddServerEntries(
-                EmbeddedValues.EMBEDDED_SERVER_LIST.split("\n"), true);
+                EmbeddedValues.EMBEDDED_SERVER_LIST, true);
             saveServerEntries();
         } 
         catch (JSONException e)
@@ -296,7 +305,12 @@ public class ServerInterface
         {
             Thread.currentThread().interrupt();
         }
-    } 
+    }
+    
+    public boolean isStopped()
+    {
+        return this.stopped;
+    }
 
     public synchronized ServerEntry setCurrentServerEntry()
     {
@@ -388,6 +402,11 @@ public class ServerInterface
         return "";
     }
     
+    synchronized public int getPreemptiveReconnectLifetime()
+    {
+        return this.preemptiveReconnectLifetime;
+    }
+    
     /**
      * Makes the handshake request to the server. The client thereby obtains
      * session info from the server such as what homepages should be shown and
@@ -408,7 +427,7 @@ public class ServerInterface
             
             String url = getRequestURL("handshake", extraParams);
             
-            byte[] response = makeAbortableProxiedPsiphonRequest(url);
+            byte[] response = makeAbortableProxiedPsiphonRequest(PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, url);
 
             final String JSON_CONFIG_PREFIX = "Config: ";
             for (String line : new String(response).split("\n"))
@@ -481,6 +500,12 @@ public class ServerInterface
                     
                     // We only support SSH, so this is our server session ID.
                     this.serverSessionID = obj.getString("ssh_session_id");
+                    
+                    this.preemptiveReconnectLifetime = 0;
+                    if (obj.has("preemptive_reconnect_lifetime_milliseconds"))
+                    {
+                        this.preemptiveReconnectLifetime = obj.getInt("preemptive_reconnect_lifetime_milliseconds");
+                    }
                 }
             }
         }
@@ -534,7 +559,7 @@ public class ServerInterface
         
         String url = getRequestURL("connected", extraParams);
         
-        byte[] response = makeAbortableProxiedPsiphonRequest(url);
+        byte[] response = makeAbortableProxiedPsiphonRequest(PsiphonConstants.HTTPS_REQUEST_SHORT_TIMEOUT, url);
 
         try
         {
@@ -563,7 +588,9 @@ public class ServerInterface
      * @throws PsiphonServerInterfaceException
      */
     synchronized public void doStatusRequest(
-            boolean connected, 
+            Tun2Socks.IProtectSocket protectSocket,
+            boolean hasTunnel, 
+            boolean finalCall, 
             Map<String, Integer> pageViewEntries, 
             Map<String, Integer> httpsRequestEntries,
             Number bytesTransferred) 
@@ -614,24 +641,34 @@ public class ServerInterface
         
         List<Pair<String,String>> extraParams = new ArrayList<Pair<String,String>>();
         extraParams.add(Pair.create("session_id", this.serverSessionID));
-        extraParams.add(Pair.create("connected", connected ? "1" : "0"));
+        extraParams.add(Pair.create("connected", finalCall ? "0" : "1"));
 
         List<Pair<String,String>> additionalHeaders = new ArrayList<Pair<String,String>>();
         additionalHeaders.add(Pair.create("Content-Type", "application/json"));
         
-        if (connected)
+        if (!finalCall)
         {
+            assert(protectSocket == null);
+            assert(hasTunnel == true);
+
             String url = getRequestURL("status", extraParams);
-            makeAbortableProxiedPsiphonRequest(url, additionalHeaders, requestBody);            
+            makeAbortableProxiedPsiphonRequest(
+                    PsiphonConstants.HTTPS_REQUEST_SHORT_TIMEOUT, url, additionalHeaders, requestBody, null);            
         }
         else
         {
             // The final status request is not abortable and will fail over
             // to non-tunnel HTTPS and alternate ports. This is to maximize
             // our chance of getting stats for session duration.
+
+            // When the final call is made, we may not have a tunnel. We may
+            // also be holding VpnService tun routing open. When there's no
+            // tunnel, don't make a tunneled request. When the routing is
+            // in place, protect the (direct) request socket.
             
             String urls[] = getRequestURLsWithFailover("status", extraParams);
-            makePsiphonRequestWithFailover(urls, additionalHeaders, requestBody);
+            makePsiphonRequestWithFailover(
+                    protectSocket, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, hasTunnel, urls, additionalHeaders, requestBody, null);
         }
     }
 
@@ -647,19 +684,36 @@ public class ServerInterface
         
         String url = getRequestURL("speed", extraParams);
         
-        makeAbortableProxiedPsiphonRequest(url);
+        makeAbortableProxiedPsiphonRequest(PsiphonConstants.HTTPS_REQUEST_SHORT_TIMEOUT, url);
     }
 
     /**
-     * Make the 'upgrade' request to the server. 
+     * Make the 'upgrade' request. 
      * @throws PsiphonServerInterfaceException
      */
-    synchronized public byte[] doUpgradeDownloadRequest() 
+    public byte[] doUpgradeDownloadRequest(IResumableDownload resumableDownload) 
         throws PsiphonServerInterfaceException
     {
-        String url = getRequestURL("download", null);
+        // NOTE: This call is not 'synchronized'. This allows it to run in parallel
+        // with other requests (doPeriodicWork/doStatusRequest) made by runTunnelOnce
+        // while the UpgradeDownloader is working.
+
+        // TODO: Other network requests should be changed to not hold a lock and/or
+        // have fine-grained locking
         
-        return makeAbortableProxiedPsiphonRequest(url);
+        boolean canAbort = true;
+        boolean useLocalProxy = true;
+        
+        return makeRequest(
+                null,
+                PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT,
+                canAbort,
+                useLocalProxy,
+                null,
+                EmbeddedValues.UPGRADE_URL,
+                null,
+                null,
+                resumableDownload);
     }
     
     synchronized public void doFailedRequest(String error) 
@@ -670,7 +724,7 @@ public class ServerInterface
         
         String url = getRequestURL("failed", extraParams);
         
-        makeAbortableProxiedPsiphonRequest(url);
+        makeAbortableProxiedPsiphonRequest(PsiphonConstants.HTTPS_REQUEST_SHORT_TIMEOUT, url);
     }
 
     /**
@@ -695,10 +749,15 @@ public class ServerInterface
         additionalHeaders.add(Pair.create("Content-Type", "application/json"));
 
         String urls[] = getRequestURLsWithFailover("feedback", extraParams);
-        makePsiphonRequestWithFailover(urls, additionalHeaders, requestBody);
+
+        // NOTE: don't have TunnelCore reference where this function is called, so
+        // not providing an IProtectSocket or hasTunnel flag. This means the feedback
+        // will fail when stuck in an unsuccessful connecting state.
+        makePsiphonRequestWithFailover(
+                null, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, true, urls, additionalHeaders, requestBody, null);
     }
 
-    synchronized public void fetchRemoteServerList()
+    synchronized public void fetchRemoteServerList(Tun2Socks.IProtectSocket protectSocket)
         throws PsiphonServerInterfaceException
     {
         // NOTE: Running this at the start of every session may be enabling
@@ -750,6 +809,9 @@ public class ServerInterface
                     return;
                 }
             }
+
+            // Update resolvers to match underlying network interface
+            Utils.updateDnsResolvers(ownerContext);
             
             PsiphonData.getPsiphonData().setNextFetchRemoteServerList(
                     SystemClock.elapsedRealtime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_UNSUCCESSFUL_REMOTE_SERVER_LIST_FETCH);
@@ -760,25 +822,28 @@ public class ServerInterface
                 // the attempt since the caller doesn't know that/when a fetch will happen.
                 MyLog.v(R.string.fetch_remote_server_list, MyLog.Sensitivity.NOT_SENSITIVE);
                 
-                byte[] response = makeDirectWebRequest(EmbeddedValues.REMOTE_SERVER_LIST_URL);
+                // We may need to except this connection from the VpnService tun interface
+                byte[] response = makeDirectWebRequest(protectSocket, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, EmbeddedValues.REMOTE_SERVER_LIST_URL);
     
                 PsiphonData.getPsiphonData().setNextFetchRemoteServerList(
                         SystemClock.elapsedRealtime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH);
                 
-                String serverList = ServerEntryAuth.validateAndExtractServerList(new String(response));
+                String serverList = AuthenticatedDataPackage.validateAndExtractData(
+                                        EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY,
+                                        new String(response));
     
                 shuffleAndAddServerEntries(serverList.split("\n"), false);
                 saveServerEntries();
             }
-            catch (ServerEntryAuthException e)
+            catch (AuthenticatedDataPackageException e)
             {
                 MyLog.w(R.string.ServerInterface_InvalidRemoteServerList, MyLog.Sensitivity.NOT_SENSITIVE, e);
-                throw new PsiphonServerInterfaceException(e);            
+                throw new PsiphonServerInterfaceException(e);
             } 
             catch (JSONException e)
             {
                 MyLog.w(R.string.ServerInterface_InvalidRemoteServerList, MyLog.Sensitivity.NOT_SENSITIVE, e);
-                throw new PsiphonServerInterfaceException(e);            
+                throw new PsiphonServerInterfaceException(e);
             }
         }
     }
@@ -872,63 +937,101 @@ public class ServerInterface
         return urls;
     }
 
-    private byte[] makeAbortableProxiedPsiphonRequest(String url)
-            throws PsiphonServerInterfaceException
-    {
-        return makeAbortableProxiedPsiphonRequest(url, null, null);
-    }
-    
     private byte[] makePsiphonRequestWithFailover(
+            Tun2Socks.IProtectSocket protectSocket,
+            int timeout,
+            boolean hasTunnel,
             String[] urls,
             List<Pair<String,String>> additionalHeaders,
-            byte[] body) 
+            byte[] body,
+            IResumableDownload resumableDownload) 
         throws PsiphonServerInterfaceException
     {
         // This request won't abort and will fail over to direct requests,
         // to multiple ports, when tunnel is down            
 
-        PsiphonServerInterfaceException lastError;
+        PsiphonServerInterfaceException lastError = new PsiphonServerInterfaceException();
         
-        try
+        if (hasTunnel)
         {
-            // Try tunneled request on first port (first url)
-            
-            return makeProxiedPsiphonRequest(false, urls[0], additionalHeaders, body);
+            try
+            {
+                // Try tunneled request on first port (first url)
+                
+                return makeProxiedPsiphonRequest(
+                        timeout,
+                        false,
+                        urls[0],
+                        additionalHeaders,
+                        body,
+                        resumableDownload);
+            }
+            catch (PsiphonServerInterfaceException e1)
+            {
+                lastError = e1;
+            }
         }
-        catch (PsiphonServerInterfaceException e1)
+
+        // NOTE: deliberately ignoring this.stopped and adding new non-abortable requests
+
+        if (getCurrentServerEntry().hasCapability(ServerEntry.CAPABILITY_HANDSHAKE))
         {
-            lastError = e1;
-
-            // NOTE: deliberately ignoring this.stopped and adding new non-abortable requests
-
-            // Try direct non-tunnel request
-
+            // Try direct non-tunnel requests
+    
             for (String url : urls)
             {
                 try
                 {
                     // Psiphon web request: authenticate the web server using the embedded certificate.
                     String psiphonServerCertificate = getCurrentServerEntry().webServerCertificate;
-
-                    return makeRequest(false, false, psiphonServerCertificate, url, additionalHeaders, body);
+    
+                    return makeRequest(
+                            protectSocket,
+                            timeout,
+                            false,
+                            false,
+                            psiphonServerCertificate,
+                            url,
+                            additionalHeaders,
+                            body,
+                            resumableDownload);
                 }
                 catch (PsiphonServerInterfaceException e2)
                 {
                     lastError = e2;
-
+    
                     // Try next port/url...
                 }
             }
-            
-            throw lastError;
         }
+        
+        throw lastError;
     }
     
+    private byte[] makeAbortableProxiedPsiphonRequest(int timeout, String url)
+            throws PsiphonServerInterfaceException
+    {
+        return makeAbortableProxiedPsiphonRequest(timeout, url, null, null, null);
+    }
+    
+    private byte[] makeAbortableProxiedPsiphonRequest(
+            int timeout,
+            String url,
+            List<Pair<String,String>> additionalHeaders,
+            byte[] body,
+            IResumableDownload resumableDownload)
+        throws PsiphonServerInterfaceException
+    {
+        return makeProxiedPsiphonRequest(timeout, true, url, additionalHeaders, body, resumableDownload);
+    }
+
     private byte[] makeProxiedPsiphonRequest(
+            int timeout,
             boolean canAbort,
             String url,
             List<Pair<String,String>> additionalHeaders,
-            byte[] body) 
+            byte[] body,
+            IResumableDownload resumableDownload) 
         throws PsiphonServerInterfaceException
     {
         // Psiphon web request: authenticate the web server using the embedded certificate.
@@ -939,35 +1042,29 @@ public class ServerInterface
         boolean useLocalProxy = true;
 
         return makeRequest(
+                null,
+                timeout,
                 canAbort,
                 useLocalProxy,
                 psiphonServerCertificate,
                 url,
                 additionalHeaders,
-                body);
+                body,
+                resumableDownload);
     }
 
-    private byte[] makeAbortableProxiedPsiphonRequest(            
-            String url,
-            List<Pair<String,String>> additionalHeaders,
-            byte[] body) 
-        throws PsiphonServerInterfaceException
-    {
-        return makeProxiedPsiphonRequest(true, url, additionalHeaders, body);
-    }
-
-    private byte[] makeDirectWebRequest(String url)
+    private byte[] makeDirectWebRequest(Tun2Socks.IProtectSocket protectSocket, int timeout, String url)
             throws PsiphonServerInterfaceException
     {
-        return makeRequest(true, false, null, url, null, null);
+        return makeRequest(protectSocket, timeout, true, false, null, url, null, null, null);
     }
 
-    private class CustomTrustManager implements X509TrustManager
+    private class FixedCertTrustManager implements X509TrustManager
     {
         private X509Certificate expectedServerCertificate;
         
         // TODO: pre-validate cert in addServerEntry so this won't throw?
-        CustomTrustManager(String serverCertificate) throws CertificateException
+        FixedCertTrustManager(String serverCertificate) throws CertificateException
         {
             CertificateFactory factory = CertificateFactory.getInstance("X.509");
             byte[] decodedServerCertificate = Utils.Base64.decode(serverCertificate);
@@ -1000,52 +1097,117 @@ public class ServerInterface
             return null;
         }
     }
-
-    private class CustomSSLSocketFactory extends SSLSocketFactory
+    
+    private class ProtectedDnsResolver implements DnsResolver
     {
-        SSLContext sslContext;
-        TrustManager[] trustManager;
-        AbstractVerifier hostnameVerifier;
+        Tun2Socks.IProtectSocket protectSocket;
+        ServerInterface serverInterface;
 
-        CustomSSLSocketFactory(String serverCertificate)
-                throws KeyManagementException,
-                       UnrecoverableKeyException,
-                       NoSuchAlgorithmException,
-                       KeyStoreException,
-                       CertificateException
+        ProtectedDnsResolver(Tun2Socks.IProtectSocket protectSocket, ServerInterface serverInterface)
         {
-            super(null);
-
-            trustManager = new TrustManager[] { new CustomTrustManager(serverCertificate) };
-            hostnameVerifier = new AllowAllHostnameVerifier();
-            setHostnameVerifier(hostnameVerifier);
-
-            sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustManager, new SecureRandom());            
+            this.protectSocket = protectSocket;
+            this.serverInterface = serverInterface;
         }
 
         @Override
-        public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
-                throws IOException, UnknownHostException
+        public InetAddress[] resolve(String hostname) throws UnknownHostException
         {
-            return sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
+            // NOTE:
+            // - The purpose of this DnsResolver is to protect() sockets from the VPN tunnel routing.
+            // - Using ch.boye.httpclientandroidlib instead of org.apache.http.client.HttpClient as the Android
+            //   library is deprecated and doesn't have the DnsResolver interface.
+            // - The Psiphon singleton state will be clobbered by simultaneous ServerInterface instances, which
+            //   could result would be potential failed lookups. Currently only once instance uses the resolver.
+            //   In addition, dnsjava uses also global state internally (shared Resolver object).
+            // - dnsjava has been customized to call protect() on socket objects and to abort DNS lookups when
+            //   a tunnel stop is commanded.
+            // - DNS resolvers are updated in runTunnelOnce() and should be set to the correct resolvers for
+            //   the active underlying (non-VPN) network.
+            
+            PsiphonState.getPsiphonState().setState(protectSocket, serverInterface);
+            InetAddress[] result = Address.getAllByName(hostname);
+            PsiphonState.getPsiphonState().setState(null, null);
+
+            return result;
+        }
+    }
+
+    private class ProtectedSSLSocketFactory extends SSLSocketFactory
+    {
+        Tun2Socks.IProtectSocket protectSocket;
+
+        ProtectedSSLSocketFactory(
+                Tun2Socks.IProtectSocket protectSocket,
+                SSLContext sslContext,
+                X509HostnameVerifier verifier)
+        {
+            super(sslContext, verifier);
+            
+            this.protectSocket = protectSocket;
+        }
+
+        // NOTE:
+        // - The purpose of this custom socket factory is to protect() sockets from the
+        //   VPN tunnel routing.
+        // - The SSLSocketFactory.prepareSocket() hook is invoked too late for us to make use of it.
+        // - Not well understood yet: the protect() function fails with straight Socket objects, but
+        //   succeeds with DatagramSockets and Sockets from SocketChannel. So we're constructing
+        //   channel Sockets here.
+        // - The underlying implementation of ch.boye.httpclientandroidlib.conn.ssl.SSLSocketFactory.createSocket(HttpParams) v. 1.2.2
+        //   (a) ignores HttpParams; (b) makes an SSLSocket but casts that down to a Socket when returning. As long
+        //   as these conditions hold, our implementation which doesn't call super() should be sound.
+        // - Socket.close() closes the channel: http://docs.oracle.com/javase/6/docs/api/java/net/Socket.html#close%28%29
+        // - CreateLayeredSocket not overridden: in our usage of it, this will be invoked with
+        //   the proxy set to localhost and protect() is not required.
+        
+        @Override
+        public Socket createSocket(HttpParams params)
+                throws IOException
+        {
+            Socket socket = SocketChannel.open().socket();
+            if (this.protectSocket != null)
+            {
+                this.protectSocket.doVpnProtect(socket);
+            }
+
+            return socket;
         }
 
         @Override
         public Socket createSocket()
                 throws IOException
         {
-            return sslContext.getSocketFactory().createSocket();
+            // Deprecated - our code will not call this
+            assert(false);
+            return null;
         }
+
+        @Override
+        public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
+                throws IOException, UnknownHostException
+        {
+            // Deprecated - our code will not call this
+            assert(false);
+            return null;
+        }
+    }
+    
+    public interface IResumableDownload
+    {
+        long getResumeOffset();
+        boolean appendData(byte[] buffer, int length);
     }
 
     private byte[] makeRequest(
+            Tun2Socks.IProtectSocket protectSocket,
+            int timeout,
             boolean canAbort,
             boolean useLocalProxy,
             String serverCertificate,
             String url,
             List<Pair<String,String>> additionalHeaders,
-            byte[] body) 
+            byte[] body,
+            IResumableDownload resumableDownload) 
         throws PsiphonServerInterfaceException
     {    
         HttpRequestBase request = null;
@@ -1053,8 +1215,8 @@ public class ServerInterface
         try
         {
             HttpParams params = new BasicHttpParams();
-            HttpConnectionParams.setConnectionTimeout(params, PsiphonConstants.HTTPS_REQUEST_TIMEOUT);
-            HttpConnectionParams.setSoTimeout(params, PsiphonConstants.HTTPS_REQUEST_TIMEOUT);
+            HttpConnectionParams.setConnectionTimeout(params, timeout);
+            HttpConnectionParams.setSoTimeout(params, timeout);
             
             HttpHost httpproxy;
             if (useLocalProxy)
@@ -1063,32 +1225,60 @@ public class ServerInterface
                 params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
             }
 
-            DefaultHttpClient client = null;
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            TrustManager[] trustManager = null;
+            ProtectedSSLSocketFactory sslSocketFactory = null;
 
-            // If a specific web server certificate is provided, expect
-            // exactly that certificate. Otherwise, accept a server
-            // certificate signed by a CA in the default trust manager.
-
-            CustomSSLSocketFactory sslSocketFactory = null;
-            SchemeRegistry registry = null;
-            ClientConnectionManager connManager = null;
             if (serverCertificate != null)
             {
-                sslSocketFactory = new CustomSSLSocketFactory(serverCertificate);
+                // If a specific web server certificate is provided, expect
+                // exactly that certificate.
 
-                registry = new SchemeRegistry();
-                registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-                registry.register(new Scheme("https", sslSocketFactory, 443));
-    
-                connManager = new SingleClientConnManager(params, registry);
-                
-                client = new DefaultHttpClient(connManager, params);
+                trustManager = new TrustManager[] { new FixedCertTrustManager(serverCertificate) };
+                sslContext.init(null, trustManager, new SecureRandom()); 
+                sslSocketFactory = new ProtectedSSLSocketFactory(
+                                        protectSocket,
+                                        sslContext,
+                                        SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
             }
             else
             {
-                client = new DefaultHttpClient(params);
+                // Otherwise, accept a server certificate signed by a CA in
+                // the default trust manager.
+                
+                sslContext.init(null,  null,  null);
+                sslSocketFactory = new ProtectedSSLSocketFactory(
+                                        protectSocket,
+                                        sslContext,
+                                        SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
             }
 
+            SchemeRegistry registry = new SchemeRegistry();
+            registry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
+            registry.register(new Scheme("https", 443, sslSocketFactory));
+
+            DnsResolver dnsResolver;            
+            if (protectSocket != null)
+            {
+                dnsResolver = new ProtectedDnsResolver(protectSocket, this);
+            }
+            else            
+            {
+                // NOTE: It's important to use the SystemDefaultDnsResolver in this case not
+                // simply because protect() is not required, but also because the hidden API
+                // used in getActiveNetworkDnsResolvers() isn't available on Android < 4.0.
+                // So we only use the custom resolver when protectSocket is called for, which
+                // only happens on Android > 4.0 in VpnService mode, which is exactly the mode
+                // where we need the custom resolver. Other modes (browser-only and root on
+                // any version of Android) don't require a custom resolver (browser-only because
+                // DNS isn't tunneled; root because Psiphon pid DNS isn't routed through the
+                // tunnel).
+                dnsResolver = new SystemDefaultDnsResolver();
+            }
+
+            ClientConnectionManager connManager = new PoolingClientConnectionManager(registry, dnsResolver);            
+            DefaultHttpClient client = new DefaultHttpClient(connManager, params);
+            
             if (body != null)
             {
                 HttpPost post = new HttpPost(url);
@@ -1115,17 +1305,39 @@ public class ServerInterface
                     request.addHeader(header.first, header.second);
                 }
             }
+            
+            if (resumableDownload != null)
+            {
+                // Add a Range header to request the resumable download starting offset
+                // E.g., header "Range:bytes=123-" requests the download to start at byte 123 of the resource
+                request.addHeader("Range", "bytes="+Long.toString(resumableDownload.getResumeOffset()) + "-");
+            }
 
             HttpResponse response = client.execute(request);
             
             int statusCode = response.getStatusLine().getStatusCode();
 
-            if (statusCode != HttpStatus.SC_OK)
+            if (resumableDownload != null)
             {
-                throw new PsiphonServerInterfaceException(
-                        this.ownerContext.getString(R.string.ServerInterface_HTTPSRequestFailed) + statusCode);
+                // Special case: the resumeable download may ask for bytes past the resource
+                // range since it doesn't store the "completed download" state. In this case,
+                // the HTTP server returns 416. Otherwise, we expect 206.
+                if (statusCode != HttpStatus.SC_PARTIAL_CONTENT &&
+                        statusCode != HttpStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE)
+                {
+                    throw new PsiphonServerInterfaceException(
+                            this.ownerContext.getString(R.string.ServerInterface_HTTPSRequestFailed) + statusCode);
+                }
             }
-
+            else
+            {                
+                if (statusCode != HttpStatus.SC_OK)
+                {
+                    throw new PsiphonServerInterfaceException(
+                            this.ownerContext.getString(R.string.ServerInterface_HTTPSRequestFailed) + statusCode);
+                }
+            }
+            
             HttpEntity responseEntity = response.getEntity();
             
             ByteArrayOutputStream responseBody = new ByteArrayOutputStream();
@@ -1143,7 +1355,14 @@ public class ServerInterface
                                 this.ownerContext.getString(R.string.ServerInterface_StopRequested));
                     }
                     
-                    responseBody.write(buffer, 0, len);
+                    if (resumableDownload == null)
+                    {
+                        responseBody.write(buffer, 0, len);
+                    }
+                    else
+                    {
+                        resumableDownload.appendData(buffer, len);
+                    }
                 }
             }
             
@@ -1161,15 +1380,7 @@ public class ServerInterface
         {
             throw new PsiphonServerInterfaceException(e);
         }
-        catch (UnrecoverableKeyException e)
-        {
-            throw new PsiphonServerInterfaceException(e);
-        }
         catch (NoSuchAlgorithmException e)
-        {
-            throw new PsiphonServerInterfaceException(e);
-        }
-        catch (KeyStoreException e)
         {
             throw new PsiphonServerInterfaceException(e);
         }
@@ -1284,10 +1495,10 @@ public class ServerInterface
         {
             // At the time of introduction of the server capabilities feature
             // these are the default capabilities possessed by all servers.
-            newEntry.capabilities.add("OSSH");
-            newEntry.capabilities.add("SSH");
-            newEntry.capabilities.add("VPN");
-            newEntry.capabilities.add("handshake");
+            newEntry.capabilities.add(ServerEntry.CAPABILITY_OSSH);
+            newEntry.capabilities.add(ServerEntry.CAPABILITY_SSH);
+            newEntry.capabilities.add(ServerEntry.CAPABILITY_VPN);
+            newEntry.capabilities.add(ServerEntry.CAPABILITY_HANDSHAKE);
         }
         
         return newEntry;
@@ -1446,7 +1657,10 @@ public class ServerInterface
      * @param finalCall Should be true if this is the last call -- i.e., if a
      *                  disconnect is about to occur.
      */
-    public synchronized void doPeriodicWork(boolean finalCall)
+    public synchronized void doPeriodicWork(
+            Tun2Socks.IProtectSocket protectSocket,
+            boolean hasTunnel,
+            boolean finalCall)
     {
         long now = SystemClock.uptimeMillis();
         
@@ -1454,26 +1668,26 @@ public class ServerInterface
         {
             PsiphonData.DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
             
-            long totalBytesSent = dataTransferStats.getTotalBytesSent();
-            double totalSentCompressionRatio = dataTransferStats.getTotalSentCompressionRatio();
-            long totalBytesReceived = dataTransferStats.getTotalBytesReceived();
-            double totalReceivedCompressionRatio = dataTransferStats.getTotalReceivedCompressionRatio();
+            long bytesSent = dataTransferStats.getSessionBytesSent();
+            double sentCompressionRatio = dataTransferStats.getSessionSentCompressionRatio();
+            long bytesReceived = dataTransferStats.getSessionBytesReceived();
+            double receivedCompressionRatio = dataTransferStats.getSessionReceivedCompressionRatio();
             long elapsedTime = dataTransferStats.getElapsedTime();
                 
             MyLog.v(
-                    R.string.data_transfer_total_bytes_sent,
+                    R.string.data_transfer_bytes_sent,
                     MyLog.Sensitivity.NOT_SENSITIVE,
-                    Utils.byteCountToDisplaySize(totalBytesSent, false),
-                    totalSentCompressionRatio);
+                    Utils.byteCountToDisplaySize(bytesSent, false),
+                    sentCompressionRatio);
         
             MyLog.v(
-                    R.string.data_transfer_total_bytes_received,
+                    R.string.data_transfer_bytes_received,
                     MyLog.Sensitivity.NOT_SENSITIVE,
-                    Utils.byteCountToDisplaySize(totalBytesReceived, false),
-                    totalReceivedCompressionRatio);
+                    Utils.byteCountToDisplaySize(bytesReceived, false),
+                    receivedCompressionRatio);
         
             MyLog.v(
-                    R.string.data_transfer_total_elapsed_time,
+                    R.string.data_transfer_elapsed_time,
                     MyLog.Sensitivity.NOT_SENSITIVE,
                     Utils.elapsedTimeToDisplay(elapsedTime));        
         }
@@ -1501,7 +1715,9 @@ public class ServerInterface
                 try
                 {
                     doStatusRequest(
-                            !finalCall, 
+                            protectSocket,
+                            hasTunnel,
+                            finalCall, 
                             reportedStats.getPageViewEntries(), 
                             reportedStats.getHttpsRequestEntries(), 
                             reportedStats.getBytesTransferred());
@@ -1522,6 +1738,11 @@ public class ServerInterface
                     this.sendMaxEntries += DEFAULT_SEND_MAX_ENTRIES;
                     
                     MyLog.d("Sending stats FAILED"+(finalCall?" (final)":""));
+                    
+                    if (finalCall)
+                    {
+                        MyLog.w(R.string.final_status_request_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+                    }
                 }
             }
         }
@@ -1530,5 +1751,17 @@ public class ServerInterface
     public boolean isUpgradeAvailable()
     {
         return this.upgradeClientVersion.length() > 0;
+    }
+
+    public int getUpgradeVersion()
+    {
+        try
+        {
+            return Integer.parseInt(this.upgradeClientVersion);
+        }
+        catch (NumberFormatException e)
+        {
+        }        
+        return 0;
     }
 }

@@ -19,24 +19,20 @@
 
 package com.psiphon3;
 
-import java.util.List;
-
 import com.psiphon3.FeedbackActivity;
 import com.psiphon3.StatusActivity;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.TunnelService;
 
-import android.app.ActivityManager;
-import android.app.ActivityManager.RunningTaskInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.support.v4.content.LocalBroadcastManager;
 
 
-public class Events implements com.psiphon3.psiphonlibrary.Events
+public class Events implements com.psiphon3.psiphonlibrary.IEvents
 {
-    public void signalHandshakeSuccess(Context context)
+    public void signalHandshakeSuccess(Context context, boolean isReconnect)
     {
         // Only send this intent if the StatusActivity is
         // in the foreground. If it isn't and we sent the
@@ -52,6 +48,7 @@ public class Events implements com.psiphon3.psiphonlibrary.Events
                     null,
                     context,
                     com.psiphon3.StatusActivity.class);
+            intent.putExtra(StatusActivity.HANDSHAKE_SUCCESS_IS_RECONNECT, isReconnect);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         }
@@ -59,6 +56,7 @@ public class Events implements com.psiphon3.psiphonlibrary.Events
 
     public void signalUnexpectedDisconnect(Context context)
     {
+        /*
         // Only launch the intent if the browser is the current
         // task. We don't want to interrupt other apps; and in
         // the case of our app (currently), only the browser needs
@@ -85,6 +83,7 @@ public class Events implements com.psiphon3.psiphonlibrary.Events
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         }
+        */
     }
     
     public void signalTunnelStarting(Context context)

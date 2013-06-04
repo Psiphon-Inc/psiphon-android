@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,6 +31,7 @@ import java.util.regex.Pattern;
 import org.json.JSONObject;
 
 import android.os.SystemClock;
+import android.util.Log;
 import android.util.Pair;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -74,10 +76,12 @@ public class PsiphonData
     private boolean m_enableReportedStats;
     private DataTransferStats m_dataTransferStats;
     private boolean m_displayDataTransferStats;
+    private boolean m_downloadUpgrades;
     
     public int m_notificationIconConnecting = 0;
     public int m_notificationIconConnected = 0;
     public int m_notificationIconDisconnected = 0;
+    public int m_notificationIconUpgradeAvailable = 0;
 
     public Object serverEntryFileLock = new Object(); // Used as an intrinsic lock
         
@@ -92,6 +96,7 @@ public class PsiphonData
         m_enableReportedStats = true;
         m_dataTransferStats = new DataTransferStats();
         m_displayDataTransferStats = false;
+        m_downloadUpgrades = false;
     }
 
     public synchronized void setHomePages(ArrayList<String> homePages)
@@ -255,11 +260,13 @@ public class PsiphonData
     public synchronized void setNotificationIcons(
             int connecting, 
             int connected, 
-            int disconnected)
+            int disconnected,
+            int upgradeAvailable)
     {
         m_notificationIconConnecting = connecting;
         m_notificationIconConnected = connected;
         m_notificationIconDisconnected = disconnected;
+        m_notificationIconUpgradeAvailable = upgradeAvailable;
     }
     
     public synchronized int getNotificationIconConnecting()
@@ -275,6 +282,11 @@ public class PsiphonData
     public synchronized int getNotificationIconDisconnected()
     {
         return m_notificationIconDisconnected;
+    }
+
+    public synchronized int getNotificationIconUpgradeAvailable()
+    {
+        return m_notificationIconUpgradeAvailable;
     }
 
     public synchronized void setEnableReportedStats(boolean enableReportedStats)
@@ -412,6 +424,16 @@ public class PsiphonData
         }
     }
     
+    public synchronized void setDownloadUpgrades(boolean downloadUpgrades)
+    {
+        m_downloadUpgrades = downloadUpgrades;
+    }
+
+    public synchronized boolean getDownloadUpgrades()
+    {
+        return m_downloadUpgrades;
+    }
+
     public synchronized void setDisplayDataTransferStats(boolean displayDataTransferStats)
     {
         m_displayDataTransferStats = displayDataTransferStats;
@@ -430,7 +452,7 @@ public class PsiphonData
     public class DataTransferStats
     {
         private boolean m_isConnected;
-        private long m_startTime;
+        private long m_connectedTime;
 
         private long m_totalBytesSent;
         private long m_totalUncompressedBytesSent;
@@ -438,6 +460,13 @@ public class PsiphonData
         private long m_totalBytesReceived;
         private long m_totalUncompressedBytesReceived;
         private long m_totalOverheadBytesReceived;
+
+        private long m_sessionBytesSent;
+        private long m_sessionUncompressedBytesSent;
+        private long m_sessionOverheadBytesSent;
+        private long m_sessionBytesReceived;
+        private long m_sessionUncompressedBytesReceived;
+        private long m_sessionOverheadBytesReceived;
 
         public final static long SLOW_BUCKET_PERIOD_MILLISECONDS = 5*60*1000; 
         public final static long FAST_BUCKET_PERIOD_MILLISECONDS = 1000;
@@ -456,31 +485,43 @@ public class PsiphonData
         
         DataTransferStats()
         {
+            m_totalBytesSent = 0;
+            m_totalUncompressedBytesSent = 0;
+            m_totalOverheadBytesSent = 0;
+            m_totalBytesReceived = 0;
+            m_totalUncompressedBytesReceived = 0;
+            m_totalOverheadBytesReceived = 0;
+
             stop();
         }
         
-        public synchronized void start()
+        public synchronized void startSession()
+        {
+            resetBytesTransferred();
+        }
+
+        public synchronized void startConnected()
         {
             this.m_isConnected = true;
-            reset();
+            this.m_connectedTime = SystemClock.elapsedRealtime();
         }
 
         public synchronized void stop()
         {
             this.m_isConnected = false;
-            reset();
+            this.m_connectedTime = 0;
+            resetBytesTransferred();
         }
         
-        private void reset()
+        private void resetBytesTransferred()
         {
             long now = SystemClock.elapsedRealtime();
-            this.m_startTime = now;
-            this.m_totalBytesSent = 0;
-            this.m_totalUncompressedBytesSent = 0;
-            this.m_totalOverheadBytesSent = 0;
-            this.m_totalBytesReceived = 0;
-            this.m_totalUncompressedBytesReceived = 0;
-            this.m_totalOverheadBytesReceived = 0;
+            this.m_sessionBytesSent = 0;
+            this.m_sessionUncompressedBytesSent = 0;
+            this.m_sessionOverheadBytesSent = 0;
+            this.m_sessionBytesReceived = 0;
+            this.m_sessionUncompressedBytesReceived = 0;
+            this.m_sessionOverheadBytesReceived = 0;
             this.m_slowBucketsLastStartTime = bucketStartTime(now, SLOW_BUCKET_PERIOD_MILLISECONDS);
             this.m_slowBuckets = newBuckets();
             this.m_fastBucketsLastStartTime = bucketStartTime(now, FAST_BUCKET_PERIOD_MILLISECONDS);
@@ -493,6 +534,10 @@ public class PsiphonData
             this.m_totalUncompressedBytesSent += uncompressedBytes;
             this.m_totalOverheadBytesSent += overheadBytes;
             
+            this.m_sessionBytesSent += bytes;
+            this.m_sessionUncompressedBytesSent += uncompressedBytes;
+            this.m_sessionOverheadBytesSent += overheadBytes;
+            
             manageBuckets();
             addSentToBuckets(bytes);
         }
@@ -502,6 +547,10 @@ public class PsiphonData
             this.m_totalBytesReceived += bytes;
             this.m_totalUncompressedBytesReceived += uncompressedBytes;
             this.m_totalOverheadBytesReceived += overheadBytes;
+
+            this.m_sessionBytesReceived += bytes;
+            this.m_sessionUncompressedBytesReceived += uncompressedBytes;
+            this.m_sessionOverheadBytesReceived += overheadBytes;
 
             manageBuckets();
             addReceivedToBuckets(bytes);
@@ -575,14 +624,14 @@ public class PsiphonData
         
         private void addSentToBuckets(int bytes)
         {
-            this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesReceived += bytes;
-            this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesReceived += bytes;
+            this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesSent += bytes;
+            this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesSent += bytes;
         }
         
         private void addReceivedToBuckets(int bytes)
         {
-            this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesSent += bytes;
-            this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesSent += bytes;
+            this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesReceived += bytes;
+            this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesReceived += bytes;
         }
         
         public synchronized boolean isConnected()
@@ -594,7 +643,7 @@ public class PsiphonData
         {
             long now = SystemClock.elapsedRealtime();
             
-            return now - this.m_startTime;
+            return now - this.m_connectedTime;
         }
     
         public synchronized long getTotalBytesSent()
@@ -615,7 +664,14 @@ public class PsiphonData
         public synchronized double getTotalSentCompressionRatio()
         {
             if (this.m_totalUncompressedBytesSent == 0) return 0.0;
-            return 100.0*(1.0-(double)(this.m_totalBytesSent + this.m_totalOverheadBytesSent)/(double)this.m_totalUncompressedBytesSent);
+            double ratio = 100.0*(1.0-(double)(this.m_totalBytesSent + this.m_totalOverheadBytesSent)/(double)this.m_totalUncompressedBytesSent);
+            return ratio > 0.0 ? ratio : 0.0;
+        }
+        
+        public synchronized long getTotalSentSaved()
+        {
+            long savings = this.m_totalUncompressedBytesSent - (this.m_totalBytesSent + this.m_totalOverheadBytesSent);
+            return savings > 0 ? savings : 0;
         }
         
         public synchronized long getTotalBytesReceived()
@@ -636,9 +692,72 @@ public class PsiphonData
         public synchronized double getTotalReceivedCompressionRatio()
         {
             if (this.m_totalUncompressedBytesReceived == 0) return 0.0;
-            return 100.0*(1.0-(double)(this.m_totalBytesReceived + this.m_totalOverheadBytesReceived)/(double)this.m_totalUncompressedBytesReceived);
+            double ratio = 100.0*(1.0-(double)(this.m_totalBytesReceived + this.m_totalOverheadBytesReceived)/(double)this.m_totalUncompressedBytesReceived);
+            return ratio > 0.0 ? ratio : 0.0;
         }
         
+        public synchronized long getTotalReceivedSaved()
+        {
+            long savings = this.m_totalUncompressedBytesReceived - (this.m_totalBytesReceived + this.m_totalOverheadBytesReceived);
+            return savings > 0 ? savings : 0;
+        }
+        
+        public synchronized long getSessionBytesSent()
+        {
+            return this.m_sessionBytesSent;
+        }
+        
+        public synchronized long getSessionUncompressedBytesSent()
+        {
+            return this.m_sessionUncompressedBytesSent;
+        }
+
+        public synchronized long getSessionOverheadBytesSent()
+        {
+            return this.m_sessionOverheadBytesSent;
+        }
+
+        public synchronized double getSessionSentCompressionRatio()
+        {
+            if (this.m_sessionUncompressedBytesSent == 0) return 0.0;
+            double ratio = 100.0*(1.0-(double)(this.m_sessionBytesSent + this.m_sessionOverheadBytesSent)/(double)this.m_sessionUncompressedBytesSent);
+            return ratio > 0.0 ? ratio : 0.0;
+        }
+        
+        public synchronized long getSessionSentSaved()
+        {
+            long savings = this.m_sessionUncompressedBytesSent - (this.m_sessionBytesSent + this.m_sessionOverheadBytesSent);
+            return savings > 0 ? savings : 0;
+        }
+        
+        public synchronized long getSessionBytesReceived()
+        {
+            return this.m_sessionBytesReceived;
+        }
+        
+        public synchronized long getSessionlOverheadBytesReceived()
+        {
+            return this.m_sessionOverheadBytesReceived;
+        }
+        
+        public synchronized long getSessionUncompressedBytesReceived()
+        {
+            return this.m_sessionUncompressedBytesReceived;
+        }
+
+        public synchronized double getSessionReceivedCompressionRatio()
+        {
+            if (this.m_sessionUncompressedBytesReceived == 0) return 0.0;
+            double ratio = 100.0*(1.0-(double)(this.m_sessionBytesReceived + this.m_sessionOverheadBytesReceived)/(double)this.m_sessionUncompressedBytesReceived);
+            return ratio > 0.0 ? ratio : 0.0;
+        }
+        
+        public synchronized long getSessionReceivedSaved()
+        {
+            long savings = this.m_sessionUncompressedBytesReceived - (this.m_sessionBytesReceived + this.m_sessionOverheadBytesReceived);
+            return savings > 0 ? savings : 0;
+        }
+
         public synchronized ArrayList<Long> getSlowSentSeries()
         {
             manageBuckets();
@@ -773,6 +892,28 @@ public class PsiphonData
             }
             
             return m_statusHistory.get(index);
+        }
+    }
+    
+    /** 
+     * @return Returns the last non-DEBUG item, or null if there is none.
+     */
+    public StatusEntry getLastStatusEntryForDisplay() 
+    {
+        synchronized(m_statusHistory) 
+        {   
+            ListIterator<StatusEntry> iterator = m_statusHistory.listIterator(m_statusHistory.size());
+            
+            while (iterator.hasPrevious())
+            {
+                StatusEntry current_item = iterator.previous();
+                if (current_item.priority() != Log.DEBUG)
+                {
+                    return current_item;
+                }
+            }
+            
+            return null;
         }
     }
     

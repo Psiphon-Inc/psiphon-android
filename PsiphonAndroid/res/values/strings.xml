@@ -11,14 +11,6 @@
     <string name="exit">Quit</string>
     <string name="open_browser">Open Browser</string>
     <string name="browser_task_label">Psiphon Browser</string>
-    <string name="UpgradeManager.CanNotRetrievePackageInfo">Unable to retrieve package info for current app</string>
-    <string name="UpgradeManager.UpgradeFileWriteFailed">Failed to write upgrade file</string>
-    <string name="UpgradeManager.UpgradeDownloadFailed">Upgrade download failed</string>
-    <string name="UpgradeManager.UpgradeDownloaded">Upgrade downloaded. Will be installed next time application starts.</string>
-    <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Upgrade failed. Cannot extract package info from upgrade file.</string>
-    <string name="UpgradeManager.UpgradeFileNotFound">Upgrade file not found</string>
-    <string name="UpgradeManager.UpgradePromptTitle">Psiphon Upgrade</string>
-    <string name="UpgradeManager.UpgradePromptMessage">An upgrade for Psiphon 3 is ready to be installed. It is strongly recommended that you allow the upgrade to proceed at this time.\n\nAfter upgrading, you will have to launch Psiphon 3 again.\n\nUpgrade now?</string>
     <string name="feedback">Feedback</string>
     <string name="FeedbackActivity.DefaultText">If you have any specific comments, further information about web sites that do not work, or if this form is not working for you, please email &lt;a href=&quot;mailto:feedback@psiphon.ca&quot;&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
     <string name="FeedbackActivity.Success">Thank you for submitting your feedback</string>

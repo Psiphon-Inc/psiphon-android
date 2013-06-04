@@ -46,7 +46,8 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ListView;
 
-import com.psiphon3.UpgradeManager.UpgradeInstaller;
+import com.psiphon3.psiphonlibrary.UpgradeManager;
+import com.psiphon3.psiphonlibrary.UpgradeManager.UpgradeInstaller;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.PsiphonData;
@@ -63,6 +64,7 @@ public class StatusActivity
 {
     public static final String ADD_MESSAGE_CLASS = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_CLASS";
     public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
+    public static final String HANDSHAKE_SUCCESS_IS_RECONNECT = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS_IS_RECONNECT";
     public static final String UNEXPECTED_DISCONNECT = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT";
     public static final String TUNNEL_STARTING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STARTING";
     public static final String TUNNEL_STOPPING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STOPPING";
@@ -89,8 +91,6 @@ public class StatusActivity
             TunnelService tunnelService = binder.getService();
             m_boundToTunnelService = true;
             tunnelService.setEventsInterface(m_eventsInterface);
-            tunnelService.setUpgradeDownloader(
-                    new UpgradeManager.UpgradeDownloader(StatusActivity.this, tunnelService.getServerInterface()));
             startService(new Intent(StatusActivity.this, TunnelService.class));
         }
         
@@ -114,8 +114,6 @@ public class StatusActivity
             TunnelVpnService tunnelVpnService = binder.getService();
             m_boundToTunnelVpnService = true;
             tunnelVpnService.setEventsInterface(m_eventsInterface);
-            tunnelVpnService.setUpgradeDownloader(
-                    new UpgradeManager.UpgradeDownloader(StatusActivity.this, tunnelVpnService.getServerInterface()));
             startService(new Intent(StatusActivity.this, TunnelVpnService.class));
         }
         
@@ -167,6 +165,8 @@ public class StatusActivity
         // repeat the isRooted check. The preference is retained even if the device becomes "unrooted"
         // and that's why setTunnelWholeDevice != tunnelWholeDevicePreference.
         PsiphonData.getPsiphonData().setTunnelWholeDevice(canWholeDevice && tunnelWholeDevicePreference);
+        
+        PsiphonData.getPsiphonData().setDownloadUpgrades(true);
         
         // Note that this must come after the above lines, or else the activity
         // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
@@ -240,7 +240,16 @@ public class StatusActivity
 
         if (0 == intent.getAction().compareTo(HANDSHAKE_SUCCESS))
         {
-            Events.displayBrowser(this);
+            // Show the home page. Always do this in browser-only mode, even
+            // after an automated reconnect -- since the status activity was
+            // brought to the front after an unexpected disconnect. In whole
+            // device mode, after an automated reconnect, we don't re-invoke
+            // the browser.
+            if (!PsiphonData.getPsiphonData().getTunnelWholeDevice()
+                || !intent.getBooleanExtra(HANDSHAKE_SUCCESS_IS_RECONNECT, false))
+            {
+                Events.displayBrowser(this);
+            }
             
             // We only want to respond to the HANDSHAKE_SUCCESS action once,
             // so we need to clear it (by setting it to a non-special intent).
@@ -349,98 +358,71 @@ public class StatusActivity
     }
     
     private void startUp()
-    {
-        final Context context = this;
-
-        UpgradeInstaller.IUpgradeListener upgradeListener = new UpgradeInstaller.IUpgradeListener()
+    {        
+        // If the user hasn't set a whole-device-tunnel preference, show a prompt
+        // (and delay starting the tunnel service until the prompt is completed)
+        
+        boolean hasPreference = PreferenceManager.getDefaultSharedPreferences(this).contains(TUNNEL_WHOLE_DEVICE_PREFERENCE);
+                
+        if (m_tunnelWholeDeviceToggle.isEnabled() &&
+            !hasPreference &&
+            !isServiceRunning())
         {
-            @Override public void upgradeStarted()
+            if (!m_tunnelWholeDevicePromptShown)
             {
-                // If an upgrade has been started, don't do anything else.
-                return;
+                final Context context = this;
+
+                new AlertDialog.Builder(context)
+                    .setCancelable(false)
+                    .setOnKeyListener(
+                            new DialogInterface.OnKeyListener() {
+                                public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                                    // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
+                                    return keyCode == KeyEvent.KEYCODE_SEARCH;
+                                }})
+                    .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
+                    .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
+                    .setPositiveButton(R.string.StatusActivity_WholeDeviceTunnelPositiveButton,
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int whichButton) {
+                                    // Persist the "on" setting
+                                    updateWholeDevicePreference(true);
+                                    startTunnel(context);
+                                }})
+                    .setNegativeButton(R.string.StatusActivity_WholeDeviceTunnelNegativeButton,
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int whichButton) {
+                                        // Turn off and persist the "off" setting
+                                        m_tunnelWholeDeviceToggle.setChecked(false);
+                                        updateWholeDevicePreference(false);
+                                        startTunnel(context);
+                                    }})
+                    .setOnCancelListener(
+                            new DialogInterface.OnCancelListener() {
+                                public void onCancel(DialogInterface dialog) {
+                                    // Don't change or persist preference (this prompt may reappear)
+                                    startTunnel(context);
+                                }})
+                    .show();
+                m_tunnelWholeDevicePromptShown = true;
+            }
+            else
+            {
+                // ...there's a prompt already showing (e.g., user hit Home with the
+                // prompt up, then resumed Psiphon)
             }
             
-            @Override public void upgradeNotStarted()
-            {
-                // The "normal" Resume code path, when no upgrade has started.
-                
-                // If the user hasn't set a whole-device-tunnel preference, show a prompt
-                // (and delay starting the tunnel service until the prompt is completed)
-                
-                boolean hasPreference = PreferenceManager.getDefaultSharedPreferences(context).contains(TUNNEL_WHOLE_DEVICE_PREFERENCE);
-                        
-                if (m_tunnelWholeDeviceToggle.isEnabled() &&
-                    !hasPreference &&
-                    !isServiceRunning())
-                {
-                    if (!m_tunnelWholeDevicePromptShown)
-                    {
-                        new AlertDialog.Builder(context)
-                            .setCancelable(false)
-                            .setOnKeyListener(
-                                    new DialogInterface.OnKeyListener() {
-                                        public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
-                                            // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
-                                            return keyCode == KeyEvent.KEYCODE_SEARCH;
-                                        }})
-                            .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
-                            .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
-                            .setPositiveButton(R.string.StatusActivity_WholeDeviceTunnelPositiveButton,
-                                    new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog, int whichButton) {
-                                            // Persist the "on" setting
-                                            updateWholeDevicePreference(true);
-                                            startTunnel(context);
-                                        }})
-                            .setNegativeButton(R.string.StatusActivity_WholeDeviceTunnelNegativeButton,
-                                        new DialogInterface.OnClickListener() {
-                                            public void onClick(DialogInterface dialog, int whichButton) {
-                                                // Turn off and persist the "off" setting
-                                                m_tunnelWholeDeviceToggle.setChecked(false);
-                                                updateWholeDevicePreference(false);
-                                                startTunnel(context);
-                                            }})
-                            .setOnCancelListener(
-                                    new DialogInterface.OnCancelListener() {
-                                        public void onCancel(DialogInterface dialog) {
-                                            // Don't change or persist preference (this prompt may reappear)
-                                            startTunnel(context);
-                                        }})
-                            .show();
-                        m_tunnelWholeDevicePromptShown = true;
-                    }
-                    else
-                    {
-                        // ...there's a prompt already showing (e.g., user hit Home with the
-                        // prompt up, then resumed Psiphon)
-                    }
-                    
-                    // ...wait and let onClick handlers will start tunnel
-                }
-                else
-                {
-                    // No prompt, just start the tunnel (if not already running)
-                    
-                    startTunnel(context);                    
-                }
-
-                // Handle the intent that resumed that activity
-                HandleCurrentIntent();
-            }
-        };
-        
-        if (!isServiceRunning())
-        {
-            // UpgradeInstaller.doUpgrade() is always called regardless of whether or not
-            // an upgrade needs to be performed.  If there is no upgrade available it will
-            // simply call upgradeListener.upgradeNotStarted()
-            UpgradeInstaller upgrader = new UpgradeManager.UpgradeInstaller(this);
-            upgrader.doUpgrade(upgradeListener);
+            // ...wait and let onClick handlers will start tunnel
         }
         else
         {
-            upgradeListener.upgradeNotStarted();
-        }        
+            // No prompt, just start the tunnel (if not already running)
+            
+            startTunnel(this);
+        }
+
+        // Handle the intent that resumed that activity
+        HandleCurrentIntent();
     }
     
     private void startTunnel(Context context)

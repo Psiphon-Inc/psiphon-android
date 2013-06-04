@@ -3,6 +3,8 @@ package com.psiphon3.psiphonlibrary;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -14,6 +16,7 @@ import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.IllegalFormatException;
@@ -27,6 +30,7 @@ import java.io.IOException;
 
 import org.apache.http.conn.util.InetAddressUtils;
 import org.json.JSONObject;
+import org.xbill.DNS.ResolverConfig;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -642,19 +646,32 @@ public class Utils
         return networkInfo == null ? "" : networkInfo.getTypeName();
     }
 
+    private static final String CANDIDATE_10_SLASH_8 = "10.0.0.1";
+    private static final String SUBNET_10_SLASH_8 = "10.0.0.0";
+    private static final int PREFIX_LENGTH_10_SLASH_8 = 8;
+
+    private static final String CANDIDATE_172_16_SLASH_12 = "172.16.0.1";
+    private static final String SUBNET_172_16_SLASH_12 = "172.16.0.0";
+    private static final int PREFIX_LENGTH_172_16_SLASH_12 = 12;
+
+    private static final String CANDIDATE_192_168_SLASH_16 = "192.168.0.1";        
+    private static final String SUBNET_192_168_SLASH_16 = "192.168.0.0";
+    private static final int PREFIX_LENGTH_192_168_SLASH_16 = 16;
+    
+    private static final String CANDIDATE_169_254_1_SLASH_24 = "169.254.1.1";        
+    private static final String SUBNET_169_254_1_SLASH_24 = "169.254.1.0";
+    private static final int PREFIX_LENGTH_169_254_1_SLASH_24 = 24;
+    
     public static String selectPrivateAddress()
     {
         // Select one of 10.0.0.1, 172.16.0.1, or 192.168.0.1 depending on
         // which private address range isn't in use.
 
-        final String CANDIDATE_10_SLASH_8 = "10.0.0.1";
-        final String CANDIDATE_172_16_SLASH_12 = "172.16.0.1";
-        final String CANDIDATE_192_168_SLASH_16 = "192.168.0.1";
-        
         ArrayList<String> candidates = new ArrayList<String>();
         candidates.add(CANDIDATE_10_SLASH_8);
         candidates.add(CANDIDATE_172_16_SLASH_12);
         candidates.add(CANDIDATE_192_168_SLASH_16);
+        candidates.add(CANDIDATE_169_254_1_SLASH_24);
         
         List<NetworkInterface> netInterfaces;
         try
@@ -700,6 +717,48 @@ public class Utils
         return null;
     }
     
+    public static String getPrivateAddressSubnet(String privateIpAddress)
+    {
+        if (0 == privateIpAddress.compareTo(CANDIDATE_10_SLASH_8))
+        {
+            return SUBNET_10_SLASH_8;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_172_16_SLASH_12))
+        {
+            return SUBNET_172_16_SLASH_12;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_192_168_SLASH_16))
+        {
+            return SUBNET_192_168_SLASH_16;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_169_254_1_SLASH_24))
+        {
+            return SUBNET_169_254_1_SLASH_24;
+        }
+        return null;
+    }
+    
+    public static int getPrivateAddressPrefixLength(String privateIpAddress)
+    {
+        if (0 == privateIpAddress.compareTo(CANDIDATE_10_SLASH_8))
+        {
+            return PREFIX_LENGTH_10_SLASH_8;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_172_16_SLASH_12))
+        {
+            return PREFIX_LENGTH_172_16_SLASH_12;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_192_168_SLASH_16))
+        {
+            return PREFIX_LENGTH_192_168_SLASH_16;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_169_254_1_SLASH_24))
+        {
+            return PREFIX_LENGTH_169_254_1_SLASH_24;
+        }
+        return 0;        
+    }
+    
     public static String byteCountToDisplaySize(long bytes, boolean si)
     {
         // http://stackoverflow.com/questions/3758606/how-to-convert-byte-size-into-human-readable-format-in-java/3758880#3758880
@@ -718,5 +777,137 @@ public class Utils
         final long minutes = TimeUnit.MILLISECONDS.toMinutes(elapsedTimeMilliseconds - TimeUnit.HOURS.toMillis(hours));
         final long seconds = TimeUnit.MILLISECONDS.toSeconds(elapsedTimeMilliseconds - TimeUnit.HOURS.toMillis(hours) - TimeUnit.MINUTES.toMillis(minutes));
         return String.format("%02dh %02dm %02ds", hours, minutes, seconds);
+    }
+    
+    public static Collection<InetAddress> getActiveNetworkDnsResolvers(Context context)
+    {
+        ArrayList<InetAddress> dnsAddresses = new ArrayList<InetAddress>();
+        
+        try
+        {
+            /*
+
+            Hidden API
+            - only available in Android 4.0+
+            - no guarantee will be available beyond 4.2, or on all vendor devices 
+
+            core/java/android/net/ConnectivityManager.java:
+
+                /** {@hide} * /
+                public LinkProperties getActiveLinkProperties() {
+                    try {
+                        return mService.getActiveLinkProperties();
+                    } catch (RemoteException e) {
+                        return null;
+                    }
+                }
+
+            services/java/com/android/server/ConnectivityService.java:
+
+
+                /*
+                 * Return LinkProperties for the active (i.e., connected) default
+                 * network interface.  It is assumed that at most one default network
+                 * is active at a time. If more than one is active, it is indeterminate
+                 * which will be returned.
+                 * @return the ip properties for the active network, or {@code null} if
+                 * none is active
+                 * /
+                @Override
+                public LinkProperties getActiveLinkProperties() {
+                    return getLinkProperties(mActiveDefaultNetwork);
+                }
+                
+                @Override
+                public LinkProperties getLinkProperties(int networkType) {
+                    enforceAccessPermission();
+                    if (isNetworkTypeValid(networkType)) {
+                        final NetworkStateTracker tracker = mNetTrackers[networkType];
+                        if (tracker != null) {
+                            return tracker.getLinkProperties();
+                        }
+                    }
+                    return null;
+                }
+
+            core/java/android/net/LinkProperties.java:
+
+                public Collection<InetAddress> getDnses() {
+                    return Collections.unmodifiableCollection(mDnses);
+                }
+
+            */
+
+            ConnectivityManager connectivityManager =
+                    (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            
+            Class<?> LinkPropertiesClass = Class.forName("android.net.LinkProperties");
+
+            Method getActiveLinkPropertiesMethod = ConnectivityManager.class.getMethod("getActiveLinkProperties", new Class []{});
+
+            Object linkProperties = getActiveLinkPropertiesMethod.invoke(connectivityManager);
+            
+            Method getDnsesMethod = LinkPropertiesClass.getMethod("getDnses", new Class []{});
+
+            Collection<?> dnses = (Collection<?>)getDnsesMethod.invoke(linkProperties);
+            
+            for (Object dns : dnses)
+            {
+                dnsAddresses.add((InetAddress)dns);
+            }
+        }
+        catch (ClassNotFoundException e)
+        {
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+        }
+        catch (NoSuchMethodException e)
+        {
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+        }
+        catch (IllegalAccessException e)
+        {
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+        }
+        catch (InvocationTargetException e)
+        {
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+        }
+        
+        return dnsAddresses;
+    }
+    
+    static void updateDnsResolvers(Context context)
+    {
+        // Custom DNS resolver only used in VpnService mode. Also, note
+        // that getActiveNetworkDnsResolvers uses hidden APIs available
+        // only in Android 4.0+.
+
+        if (!Utils.hasVpnService())
+        {
+            return;
+        }
+        
+        // Update DNS resolver settings. These settings are used outside the tunnel
+        // but while the VpnService tun device is still up. We try to use the correct
+        // resolver for the active underlying network.            
+
+        String dnsResolver;
+        ArrayList<String> dnsResolvers = new ArrayList<String>();
+        for (InetAddress activeNetworkResolver : Utils.getActiveNetworkDnsResolvers(context))
+        {
+            dnsResolver = activeNetworkResolver.getHostAddress();
+            dnsResolvers.add(dnsResolver);
+            // Disabled for now -- too noisy (not changing to Log.g since it's SENSITIVE)
+            //MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
+        }
+        dnsResolver = PsiphonConstants.TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS;
+        dnsResolvers.add(dnsResolver);
+        // Disabled for now -- too noisy (not changing to Log.g since it's SENSITIVE)
+        //MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
+        ResolverConfig.refresh(dnsResolvers);        
     }
 }
