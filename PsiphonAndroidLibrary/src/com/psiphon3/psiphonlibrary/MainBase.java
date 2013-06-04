@@ -493,7 +493,7 @@ public abstract class MainBase
             public void onReceive(Context context, Intent intent)
             {
                 m_toggleButton.setText(getText(R.string.stop));
-                m_statusTabToggleButton.setImageResource(R.drawable.notification_icon_connecting);
+                m_statusTabToggleButton.setImageResource(R.drawable.status_icon_connecting);
             }
         }
 
@@ -505,7 +505,7 @@ public abstract class MainBase
                 // When the tunnel self-stops, we also need to unbind to ensure the service is destroyed
                 unbindTunnelService();
                 m_toggleButton.setText(getText(R.string.start));
-                m_statusTabToggleButton.setImageResource(R.drawable.notification_icon_disconnected);
+                m_statusTabToggleButton.setImageResource(R.drawable.status_icon_disconnected);
             }
         }
         
@@ -514,7 +514,7 @@ public abstract class MainBase
             @Override
             public void onReceive(Context context, Intent intent)
             {
-                m_statusTabToggleButton.setImageResource(R.drawable.notification_icon_connecting);
+                m_statusTabToggleButton.setImageResource(R.drawable.status_icon_connecting);
             }
         }
         
@@ -540,8 +540,8 @@ public abstract class MainBase
             // use TunnelStoppingReceiver.
             m_toggleButton.setText(isServiceRunning() ? getText(R.string.stop) : getText(R.string.start));
             m_statusTabToggleButton.setImageResource(isServiceRunning() ?
-                    R.drawable.notification_icon_connecting :
-                    R.drawable.notification_icon_disconnected);
+                    R.drawable.status_icon_connecting :
+                    R.drawable.status_icon_disconnected);
         }
 
         protected void doToggle()
@@ -638,7 +638,7 @@ public abstract class MainBase
                         DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
                         if (dataTransferStats.isConnected())
                         {
-                            m_statusTabToggleButton.setImageResource(R.drawable.notification_icon_connected);
+                            m_statusTabToggleButton.setImageResource(R.drawable.status_icon_connected);
                         }
                         m_elapsedConnectionTimeView.setText(
                                 dataTransferStats.isConnected() ?
