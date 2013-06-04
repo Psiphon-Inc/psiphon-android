@@ -85,6 +85,11 @@ public class Events implements com.psiphon3.psiphonlibrary.IEvents
             context.startActivity(intent);
         }
         */
+
+        // Local broadcast to any existing status screen
+        LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(context);
+        Intent intent = new Intent(StatusActivity.UNEXPECTED_DISCONNECT);
+        localBroadcastManager.sendBroadcast(intent);
     }
     
     public void signalTunnelStarting(Context context)
