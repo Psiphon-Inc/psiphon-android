@@ -104,4 +104,12 @@
     <string name="UpgradeManager.UpgradeAvailableNotificationId">Psiphon Upgrade Available Notification</string>
     <string name="UpgradeManager.UpgradeFileReadFailed">Failed to read upgrade file</string>
     <string name="UpgradeManager.UpgradeFileAuthenticateFailed">Failed to authenticate upgrade file</string>
+    <string name="connected_elapsed_time">Connected: %s</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="label_sent">Sent</string>
+    <string name="label_received">Received</string>
+    <string name="compression_ratio">%1$.2f%% compressed</string>
+    <string name="compression_savings">%s saved</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
 </resources>

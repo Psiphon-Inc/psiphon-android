@@ -72,4 +72,6 @@
   <string name="tun2socks_failed">Ошибка VPN to SOCKS</string>
   <string name="tun2socks_running">VPN to SOCKS запущен</string>
   <string name="tun2socks_stopped">VPN to SOCKS остановлен</string>
+  <string name="start">Старт</string>
+  <string name="stop">Стоп</string>
 </resources>
