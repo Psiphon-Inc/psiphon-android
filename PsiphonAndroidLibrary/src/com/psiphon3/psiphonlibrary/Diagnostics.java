@@ -28,6 +28,7 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Locale;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -95,6 +96,7 @@ public class Diagnostics
     
             JSONObject sysInfo = new JSONObject();
             sysInfo.put("isRooted", Utils.isRooted());
+            sysInfo.put("language", Locale.getDefault().getLanguage());
             sysInfo.put("networkTypeName", Utils.getNetworkTypeName(context));
             sysInfo.put("Build", sysInfo_Build);
             sysInfo.put("PsiphonInfo", sysInfo_psiphonEmbeddedValues);
