@@ -94,7 +94,7 @@
         <LinearLayout
             android:id="@+id/fastSentGraph"
             android:layout_width="0dip"
-            android:layout_height="40dip"
+            android:layout_height="35dip"
             android:layout_weight="1.0" />
 
     </LinearLayout>
@@ -172,7 +172,7 @@
         <LinearLayout
             android:id="@+id/fastReceivedGraph"
             android:layout_width="0dip"
-            android:layout_height="40dip"
+            android:layout_height="35dip"
             android:layout_weight="1.0" />
 
     </LinearLayout>
