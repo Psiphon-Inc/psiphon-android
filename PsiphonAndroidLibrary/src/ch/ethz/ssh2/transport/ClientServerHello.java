@@ -6,6 +6,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import ch.ethz.ssh2.Connection;
+import ch.ethz.ssh2.crypto.ObfuscatedSSH.ObfuscatedInputStream;
+import ch.ethz.ssh2.crypto.ObfuscatedSSH.ObfuscatedOutputStream;
 import ch.ethz.ssh2.util.StringEncoder;
 
 /**
@@ -54,7 +56,7 @@ public class ClientServerHello
 		return len;
 	}
 
-	public ClientServerHello(InputStream bi, OutputStream bo) throws IOException
+	public ClientServerHello(ObfuscatedInputStream bi, ObfuscatedOutputStream bo) throws IOException
 	{
 		client_line = "SSH-2.0-" + Connection.identification;
 
@@ -62,12 +64,27 @@ public class ClientServerHello
 		bo.flush();
 
 		byte[] serverVersion = new byte[512];
+		
+		// PSIPHON HTTP-PREFIX
+		boolean skippedPrefix = false;
+		bi.disableObfuscation();
 
 		for (int i = 0; i < 50; i++)
 		{
 			int len = readLineRN(bi, serverVersion);
 
 			server_line = StringEncoder.GetString(serverVersion, 0, len);
+			
+			if (!skippedPrefix)
+			{
+				// Skip to blank line terminated by <CR><LF>
+				if (server_line.isEmpty())
+				{
+					bi.enableObfuscation();
+					skippedPrefix = true;
+				}
+				continue;
+			}
 
 			if (server_line.startsWith("SSH-"))
 				break;
