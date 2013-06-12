@@ -33,7 +33,5 @@
   <string name="StatusActivity.WholeDeviceTunnelNegativeButton">فقط از مرورگر سایفون استفاده کن</string>
   <string name="FeedbackActivity.AttachmentWriteFailed">پیوست فایل بازخورد امکان پذیر نبود </string>
   <string name="FeedbackActivity.EncryptedFailed">رمز گذاراطلاعات تشخیصی امکان پذیر نبود. اطلاعات تشخیصی به ایمیل بازخورد پیوست نمیشود.  </string>
-  <string name="start">شروع</string>
-  <string name="stop">ایست </string>
   <string name="tunnel_whole_device_exception">گوشی شما امکان تونل تمام گوشی را پشتیبانی نمیکند. ببخشید.</string>
 </resources>

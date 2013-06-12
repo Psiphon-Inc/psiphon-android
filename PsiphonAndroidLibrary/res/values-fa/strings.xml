@@ -73,4 +73,6 @@
   <string name="tun2socks_running">وی پی ان به ساکس فعال است</string>
   <string name="tun2socks_stopped">وی پی ان به ساکس متوقف شد</string>
   <string name="check_tunnel_failed">تست برای تونل امکان پذیر نبود. گوشی شما قابلیت تونل تمام گوشی را پشتیبانی نمیکند.</string>
+  <string name="start">شروع</string>
+  <string name="stop">ایست </string>
 </resources>

@@ -73,4 +73,6 @@
   <string name="tun2socks_running">VPN至SOCKS正在运行</string>
   <string name="tun2socks_stopped">VPN至SOCKS已停止</string>
   <string name="check_tunnel_failed">检查隧道失败。您的设备可能不支持隧道整个设备的选项。</string>
+  <string name="start">启动</string>
+  <string name="stop">停止</string>
 </resources>

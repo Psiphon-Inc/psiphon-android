@@ -62,7 +62,6 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 {
     public enum State
     {
-        DISCONNECTED,
         CONNECTING,
         CONNECTED
     }
@@ -73,7 +72,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         UNEXPECTED_DISCONNECT
     }
 
-    private State m_state = State.DISCONNECTED;
+    private State m_state = State.CONNECTING;
     private Context m_parentContext = null;
     private Service m_parentService = null;
     private boolean m_firstStart = true;
@@ -171,14 +170,6 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             }
             break;
             
-        case DISCONNECTED:
-            contentTextID = R.string.psiphon_stopped;
-            iconID = PsiphonData.getPsiphonData().getNotificationIconDisconnected();
-            if (iconID == 0) {
-                iconID = R.drawable.notification_icon_disconnected;
-            }
-            break;
-        
         default:
             assert(false);                
         }
@@ -199,7 +190,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         Notification notification =
                 new Notification(
                         iconID,
-                        m_parentService.getText(R.string.app_name),
+                        null,
                         System.currentTimeMillis());
 
         notification.setLatestEventInfo(
@@ -1136,9 +1127,25 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         }
         finally
         {
+            // Provide visual feedback (notification icon) that we are no longer connected
+            setState(State.CONNECTING);
+            
             if (unexpectedDisconnect)
             {
                 MyLog.v(R.string.current_network_type, MyLog.Sensitivity.NOT_SENSITIVE, Utils.getNetworkTypeName(m_parentContext));
+                
+                if (!isStopSignalPending())
+                {
+                    // This will invoke the status activity to show that
+                    // the tunnel is disconnected. Since that invocation
+                    // will also restart the tunnel, be sure not to do
+                    // it when a stop is signaled.
+                    
+                    if (m_eventsInterface != null)
+                    {
+                        m_eventsInterface.signalUnexpectedDisconnect(m_parentContext);
+                    }
+                }
             }
 
             PsiphonData.getPsiphonData().setTunnelRelayProtocol("");
@@ -1234,24 +1241,6 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             }
                         
             PsiphonData.getPsiphonData().getDataTransferStats().stop();
-
-            if (!runAgain)
-            {
-                setState(State.DISCONNECTED);
-            }
-            
-            if (unexpectedDisconnect && !isStopSignalPending())
-            {
-                // This will invoke the status activity to show that
-                // the tunnel is disconnected. Since that invocation
-                // will also restart the tunnel, be sure not to do
-                // it when a stop is signaled.
-                
-                if (m_eventsInterface != null)
-                {
-                    m_eventsInterface.signalUnexpectedDisconnect(m_parentContext);
-                }
-            }
         }
         
         return runAgain;
@@ -1382,7 +1371,6 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         
         if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
         {
-            setState(State.DISCONNECTED);
             MyLog.e(R.string.no_server_entries, MyLog.Sensitivity.NOT_SENSITIVE);
             return;
         }
@@ -1411,9 +1399,6 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                 // Stop has been requested, so get out of the retry loop.
                 break;
             }
-            
-            // Provide visual feedback (notification icon) that we are no longer connected
-            setState(State.CONNECTING);
             
             try
             {
@@ -1460,8 +1445,6 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             {
             }
         }
-
-        setState(State.DISCONNECTED);
     }
     
     public void startTunnel()
@@ -1475,8 +1458,6 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
         MyLog.v(R.string.starting_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
-        setState(State.CONNECTING);
-        
         // Only allow 1 signal at a time. A backlog of signals will break the retry loop.
         m_signalQueue = new ArrayBlockingQueue<Signal>(1);
 
