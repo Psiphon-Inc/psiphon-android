@@ -20,7 +20,6 @@
 package com.psiphon3;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.ActivityManager.RunningServiceInfo;
@@ -33,7 +32,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences.Editor;
-import android.graphics.Typeface;
 import android.net.Uri;
 import android.net.VpnService;
 import android.os.Build;
@@ -41,22 +39,19 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.webkit.URLUtil;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.ImageView;
-import android.widget.ScrollView;
-import android.widget.TableLayout;
-import android.widget.TextView;
+import android.widget.ListView;
 
-import com.psiphon3.UpgradeManager.UpgradeInstaller;
+import com.psiphon3.psiphonlibrary.UpgradeManager;
+import com.psiphon3.psiphonlibrary.UpgradeManager.UpgradeInstaller;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.PsiphonData;
+import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.TunnelCore;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.TunnelVpnService;
@@ -64,12 +59,12 @@ import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
-public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
+public class StatusActivity 
+    extends com.psiphon3.psiphonlibrary.MainBase.Activity
 {
-    public static final String ADD_MESSAGE = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE";
-    public static final String ADD_MESSAGE_TEXT = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_TEXT";
     public static final String ADD_MESSAGE_CLASS = "com.psiphon3.PsiphonAndroidActivity.ADD_MESSAGE_CLASS";
     public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
+    public static final String HANDSHAKE_SUCCESS_IS_RECONNECT = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS_IS_RECONNECT";
     public static final String UNEXPECTED_DISCONNECT = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT";
     public static final String TUNNEL_STARTING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STARTING";
     public static final String TUNNEL_STOPPING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STOPPING";
@@ -78,15 +73,14 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     
     private static final int VPN_PREPARE = 100;
     
-    private TableLayout m_messagesTableLayout;
-    private ScrollView m_messagesScrollView;
+    private StatusListViewManager m_statusListManager;
     private Button m_toggleButton;
     private CheckBox m_tunnelWholeDeviceToggle;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private LocalBroadcastManager m_localBroadcastManager;
     private final Events m_eventsInterface = new Events();
     private static boolean m_firstRun = true;
-    
+        
     private boolean m_boundToTunnelService = false;
     private ServiceConnection m_tunnelServiceConnection = new ServiceConnection()
     {
@@ -97,8 +91,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             TunnelService tunnelService = binder.getService();
             m_boundToTunnelService = true;
             tunnelService.setEventsInterface(m_eventsInterface);
-            tunnelService.setUpgradeDownloader(
-                    new UpgradeManager.UpgradeDownloader(StatusActivity.this, tunnelService.getServerInterface()));
             startService(new Intent(StatusActivity.this, TunnelService.class));
         }
         
@@ -122,8 +114,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             TunnelVpnService tunnelVpnService = binder.getService();
             m_boundToTunnelVpnService = true;
             tunnelVpnService.setEventsInterface(m_eventsInterface);
-            tunnelVpnService.setUpgradeDownloader(
-                    new UpgradeManager.UpgradeDownloader(StatusActivity.this, tunnelVpnService.getServerInterface()));
             startService(new Intent(StatusActivity.this, TunnelVpnService.class));
         }
         
@@ -135,16 +125,15 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     };
 
     @Override
-    public void onCreate(Bundle savedInstanceState)
+    protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         
-        MyLog.logInfoProvider = this;
-
         setContentView(R.layout.main);
         
-        m_messagesTableLayout = (TableLayout)findViewById(R.id.messagesTableLayout);
-        m_messagesScrollView = (ScrollView)findViewById(R.id.messagesScrollView);
+        // Set up the list view
+        m_statusListManager = new StatusListViewManager((ListView)findViewById(R.id.statusList));
+        
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
         initToggleText();
 
@@ -166,8 +155,8 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         // On Android 4+, we offer "Whole Device" via the VpnService facility, which does not require root.
         // We prefer VpnService when available, even when the device is rooted.
         boolean isRooted = Utils.isRooted();
-        boolean hasVpnService = Utils.hasVpnService();
-        boolean canWholeDevice = isRooted || hasVpnService;
+        boolean canRunVpnService = Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
+        boolean canWholeDevice = isRooted || canRunVpnService;
 
         m_tunnelWholeDeviceToggle.setEnabled(canWholeDevice);
         boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, canWholeDevice);
@@ -176,6 +165,8 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         // repeat the isRooted check. The preference is retained even if the device becomes "unrooted"
         // and that's why setTunnelWholeDevice != tunnelWholeDevicePreference.
         PsiphonData.getPsiphonData().setTunnelWholeDevice(canWholeDevice && tunnelWholeDevicePreference);
+        
+        PsiphonData.getPsiphonData().setDownloadUpgrades(true);
         
         // Note that this must come after the above lines, or else the activity
         // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
@@ -187,10 +178,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         m_localBroadcastManager = LocalBroadcastManager.getInstance(StatusActivity.this);
 
         m_localBroadcastManager.registerReceiver(
-                new AddMessageReceiver(),
-                new IntentFilter(ADD_MESSAGE));
-        
-        m_localBroadcastManager.registerReceiver(
                 new TunnelStartingReceiver(),
                 new IntentFilter(TUNNEL_STARTING));
 
@@ -199,15 +186,13 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
                 new IntentFilter(TUNNEL_STOPPING));
         
         // Restore messages previously posted by the service.
-        // Note that this must come *after* this activity registers to receive ADD_MESSAGE intents.
-        m_messagesTableLayout.removeAllViews();
         MyLog.restoreLogHistory();
         
         // Auto-start on app first run
         if (m_firstRun)
         {
-        	m_firstRun = false;
-        	startUp();
+            m_firstRun = false;
+            startUp();
         }
     }
 
@@ -215,9 +200,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     protected void onResume()
     {
         super.onResume();
-        
-        // Scroll down to display log messages posted while activity was not foreground
-        postScrollToBottom();
         
         PsiphonData.getPsiphonData().setStatusActivityForeground(true);
     }
@@ -258,7 +240,16 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
 
         if (0 == intent.getAction().compareTo(HANDSHAKE_SUCCESS))
         {
-            Events.displayBrowser(this);
+            // Show the home page. Always do this in browser-only mode, even
+            // after an automated reconnect -- since the status activity was
+            // brought to the front after an unexpected disconnect. In whole
+            // device mode, after an automated reconnect, we don't re-invoke
+            // the browser.
+            if (!PsiphonData.getPsiphonData().getTunnelWholeDevice()
+                || !intent.getBooleanExtra(HANDSHAKE_SUCCESS_IS_RECONNECT, false))
+            {
+                Events.displayBrowser(this);
+            }
             
             // We only want to respond to the HANDSHAKE_SUCCESS action once,
             // so we need to clear it (by setting it to a non-special intent).
@@ -274,23 +265,23 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     
     public void onToggleClick(View v)
     {
-    	// TODO: use TunnelStartingReceiver/TunnelStoppingReceiver to track state?
-    	if (!isServiceRunning())
-    	{
-    		startUp();
-    	}
-    	else
-    	{
+        // TODO: use TunnelStartingReceiver/TunnelStoppingReceiver to track state?
+        if (!isServiceRunning())
+        {
+            startUp();
+        }
+        else
+        {
             stopTunnel(this);
-    	}
+        }
     }
 
     private void initToggleText()
     {
-    	// Only use this in onCreate. For updating the text when the activity
-    	// is showing and the service is stopping, it's more reliable to
-    	// use TunnelStoppingReceiver.
-    	m_toggleButton.setText(isServiceRunning() ? getText(R.string.stop) : getText(R.string.start));
+        // Only use this in onCreate. For updating the text when the activity
+        // is showing and the service is stopping, it's more reliable to
+        // use TunnelStoppingReceiver.
+        m_toggleButton.setText(isServiceRunning() ? getText(R.string.stop) : getText(R.string.start));
     }
     
     public class TunnelStartingReceiver extends BroadcastReceiver
@@ -298,7 +289,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         @Override
         public void onReceive(Context context, Intent intent)
         {
-        	m_toggleButton.setText(getText(R.string.stop));
+            m_toggleButton.setText(getText(R.string.stop));
         }
     }
 
@@ -307,18 +298,20 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         @Override
         public void onReceive(Context context, Intent intent)
         {
-        	m_toggleButton.setText(getText(R.string.start));
+            // When the tunnel self-stops, we also need to unbind to ensure the service is destroyed
+            unbindTunnelService();
+            m_toggleButton.setText(getText(R.string.start));
         }
     }
     
     public void onTunnelWholeDeviceToggle(View v)
     {
-    	boolean restart = false;
+        boolean restart = false;
 
-    	if (isServiceRunning())
+        if (isServiceRunning())
         {
-	        stopTunnel(this);
-	        restart = true;
+            stopTunnel(this);
+            restart = true;
         }
 
         boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
@@ -326,7 +319,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         
         if (restart)
         {
-	        startTunnel(this);
+            startTunnel(this);
         }
     }
     
@@ -365,98 +358,71 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     }
     
     private void startUp()
-    {
-        final Context context = this;
-
-        UpgradeInstaller.IUpgradeListener upgradeListener = new UpgradeInstaller.IUpgradeListener()
+    {        
+        // If the user hasn't set a whole-device-tunnel preference, show a prompt
+        // (and delay starting the tunnel service until the prompt is completed)
+        
+        boolean hasPreference = PreferenceManager.getDefaultSharedPreferences(this).contains(TUNNEL_WHOLE_DEVICE_PREFERENCE);
+                
+        if (m_tunnelWholeDeviceToggle.isEnabled() &&
+            !hasPreference &&
+            !isServiceRunning())
         {
-            @Override public void upgradeStarted()
+            if (!m_tunnelWholeDevicePromptShown)
             {
-                // If an upgrade has been started, don't do anything else.
-                return;
+                final Context context = this;
+
+                new AlertDialog.Builder(context)
+                    .setCancelable(false)
+                    .setOnKeyListener(
+                            new DialogInterface.OnKeyListener() {
+                                public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                                    // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
+                                    return keyCode == KeyEvent.KEYCODE_SEARCH;
+                                }})
+                    .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
+                    .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
+                    .setPositiveButton(R.string.StatusActivity_WholeDeviceTunnelPositiveButton,
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int whichButton) {
+                                    // Persist the "on" setting
+                                    updateWholeDevicePreference(true);
+                                    startTunnel(context);
+                                }})
+                    .setNegativeButton(R.string.StatusActivity_WholeDeviceTunnelNegativeButton,
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int whichButton) {
+                                        // Turn off and persist the "off" setting
+                                        m_tunnelWholeDeviceToggle.setChecked(false);
+                                        updateWholeDevicePreference(false);
+                                        startTunnel(context);
+                                    }})
+                    .setOnCancelListener(
+                            new DialogInterface.OnCancelListener() {
+                                public void onCancel(DialogInterface dialog) {
+                                    // Don't change or persist preference (this prompt may reappear)
+                                    startTunnel(context);
+                                }})
+                    .show();
+                m_tunnelWholeDevicePromptShown = true;
+            }
+            else
+            {
+                // ...there's a prompt already showing (e.g., user hit Home with the
+                // prompt up, then resumed Psiphon)
             }
             
-            @Override public void upgradeNotStarted()
-            {
-                // The "normal" Resume code path, when no upgrade has started.
-                
-                // If the user hasn't set a whole-device-tunnel preference, show a prompt
-                // (and delay starting the tunnel service until the prompt is completed)
-                
-                boolean hasPreference = PreferenceManager.getDefaultSharedPreferences(context).contains(TUNNEL_WHOLE_DEVICE_PREFERENCE);
-                        
-                if (m_tunnelWholeDeviceToggle.isEnabled() &&
-                    !hasPreference &&
-                    !isServiceRunning())
-                {
-                    if (!m_tunnelWholeDevicePromptShown)
-                    {
-                        new AlertDialog.Builder(context)
-                            .setCancelable(false)
-                            .setOnKeyListener(
-                                    new DialogInterface.OnKeyListener() {
-                                        public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
-                                            // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
-                                            return keyCode == KeyEvent.KEYCODE_SEARCH;
-                                        }})
-                            .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
-                            .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
-                            .setPositiveButton(R.string.StatusActivity_WholeDeviceTunnelPositiveButton,
-                                    new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog, int whichButton) {
-                                            // Persist the "on" setting
-                                            updateWholeDevicePreference(true);
-                                            startTunnel(context);
-                                        }})
-                            .setNegativeButton(R.string.StatusActivity_WholeDeviceTunnelNegativeButton,
-                                        new DialogInterface.OnClickListener() {
-                                            public void onClick(DialogInterface dialog, int whichButton) {
-                                                // Turn off and persist the "off" setting
-                                                m_tunnelWholeDeviceToggle.setChecked(false);
-                                                updateWholeDevicePreference(false);
-                                                startTunnel(context);
-                                            }})
-                            .setOnCancelListener(
-                                    new DialogInterface.OnCancelListener() {
-                                        public void onCancel(DialogInterface dialog) {
-                                            // Don't change or persist preference (this prompt may reappear)
-                                            startTunnel(context);
-                                        }})
-                            .show();
-                        m_tunnelWholeDevicePromptShown = true;
-                    }
-                    else
-                    {
-                        // ...there's a prompt already showing (e.g., user hit Home with the
-                        // prompt up, then resumed Psiphon)
-                    }
-                    
-                    // ...wait and let onClick handlers will start tunnel
-                }
-                else
-                {
-                    // No prompt, just start the tunnel (if not already running)
-                    
-                    startTunnel(context);                    
-                }
-
-                // Handle the intent that resumed that activity
-                HandleCurrentIntent();
-            }
-        };
-        
-        if (!isServiceRunning())
-        {
-            // UpgradeInstaller.doUpgrade() is always called regardless of whether or not
-            // an upgrade needs to be performed.  If there is no upgrade available it will
-            // simply call upgradeListener.upgradeNotStarted()
-            UpgradeInstaller upgrader = new UpgradeManager.UpgradeInstaller(this);
-            upgrader.doUpgrade(upgradeListener);
+            // ...wait and let onClick handlers will start tunnel
         }
         else
         {
-            upgradeListener.upgradeNotStarted();
-        }    	
+            // No prompt, just start the tunnel (if not already running)
+            
+            startTunnel(this);
+        }
+
+        // Handle the intent that resumed that activity
+        HandleCurrentIntent();
     }
     
     private void startTunnel(Context context)
@@ -495,21 +461,30 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
             
             try
             {
-                startActivityForResult(intent, VPN_PREPARE);
+                startActivityForResult(intent, VPN_PREPARE);                
             }
             catch (ActivityNotFoundException e)
             {
                 MyLog.e(R.string.tunnel_whole_device_exception, MyLog.Sensitivity.NOT_SENSITIVE);
-                if (MyLog.logger == null)
+                
+                // VpnService is broken. For rooted devices, proceed with starting Whole Device in root mode.
+                
+                if (Utils.isRooted())
                 {
-                    // Usually the TunnelCore instance is the 'logger', but at this point there may be no service/TunnelCore
-                    addMessage(getString(R.string.tunnel_whole_device_exception), MESSAGE_CLASS_ERROR);
+                    PsiphonData.getPsiphonData().setVpnServiceUnavailable(true);
+
+                    // false = not waiting for prompt, so service will be started immediately
+                    return false;
                 }
+
+                // For non-rooted devices, turn off the option and abort.
+                
                 m_tunnelWholeDeviceToggle.setChecked(false);
                 m_tunnelWholeDeviceToggle.setEnabled(false);
                 updateWholeDevicePreference(false);
 
-                // drop through to "waiting for prompt" case: we can't start the activity so onActivityResult won't be called
+                // true = waiting for prompt, although we can't start the activity so onActivityResult won't be called
+                return true;
             }
 
             // startTunnelService will be called in onActivityResult
@@ -575,15 +550,15 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
     }
 
     private void doStopVpnTunnel(Context context)
-    {    	
-    	TunnelCore currentTunnelCore = PsiphonData.getPsiphonData().getCurrentTunnelCore();
-    	
-    	if (currentTunnelCore != null)
-    	{
-    		// See comments in stopVpnServiceHelper about stopService.
-    		currentTunnelCore.stopVpnServiceHelper();
-	        stopService(new Intent(context, TunnelVpnService.class));
-    	}
+    {        
+        TunnelCore currentTunnelCore = PsiphonData.getPsiphonData().getCurrentTunnelCore();
+        
+        if (currentTunnelCore != null)
+        {
+            // See comments in stopVpnServiceHelper about stopService.
+            currentTunnelCore.stopVpnServiceHelper();
+            stopService(new Intent(context, TunnelVpnService.class));
+        }
     }
     
     private void unbindTunnelService()
@@ -600,76 +575,6 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         }
     }
     
-    public class AddMessageReceiver extends BroadcastReceiver
-    {
-        @Override
-        public void onReceive(Context context, Intent intent)
-        {
-            String message = intent.getStringExtra(ADD_MESSAGE_TEXT);
-            int messageClass = intent.getIntExtra(ADD_MESSAGE_CLASS, MESSAGE_CLASS_INFO);
-            addMessage(message, messageClass);
-        }
-    }
-    
-    public static final int MESSAGE_CLASS_VERBOSE = 0;
-    public static final int MESSAGE_CLASS_INFO = 1;
-    public static final int MESSAGE_CLASS_WARNING = 2;
-    public static final int MESSAGE_CLASS_ERROR = 3;
-    public static final int MESSAGE_CLASS_DEBUG = 4;
-    
-    public void addMessage(String message, int messageClass)
-    {
-        int messageClassImageRes = -1;
-        boolean boldText = true;
-
-        switch (messageClass)
-        {
-        case MESSAGE_CLASS_INFO:
-            messageClassImageRes = android.R.drawable.presence_online;
-            break;
-        case MESSAGE_CLASS_ERROR:
-            messageClassImageRes = android.R.drawable.presence_busy;
-            break;
-        default:
-            // No image
-            boldText = false;
-            break;
-        }
-        
-        
-        LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View rowView = inflater.inflate(R.layout.message_row, null);
-        
-        TextView textView = (TextView)rowView.findViewById(R.id.MessageRow_Text);
-        textView.setText(message);
-        textView.setTypeface(boldText ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
-        
-        ImageView imageView = (ImageView)rowView.findViewById(R.id.MessageRow_Image);
-        if (messageClassImageRes != -1)
-        {
-            imageView.setImageResource(messageClassImageRes);
-        }
-        
-        m_messagesTableLayout.addView(rowView);
-        
-        // Wait until the messages list is updated before attempting to scroll 
-        // to the bottom.
-        postScrollToBottom();
-    }
-    
-    private void postScrollToBottom()
-    {
-        m_messagesScrollView.post(
-            new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    m_messagesScrollView.fullScroll(View.FOCUS_DOWN);
-                }
-            });    	
-    }
-    
     /**
      * Determine if the Psiphon local service is currently running.
      * @see <a href="http://stackoverflow.com/a/5921190/729729">From StackOverflow answer: "android: check if a service is running"</a>
@@ -681,7 +586,7 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
         {
             if (TunnelService.class.getName().equals(service.service.getClassName()) ||
-            		(Utils.hasVpnService() && isVpnService(service.service.getClassName())))
+                    (Utils.hasVpnService() && isVpnService(service.service.getClassName())))
             {
                 return true;
             }
@@ -694,42 +599,16 @@ public class StatusActivity extends Activity implements MyLog.ILogInfoProvider
         return TunnelVpnService.class.getName().equals(className);
     }
 
+    /*
+     * MyLog.ILogger implementation
+     */
+
     /**
-     * Utils.MyLog.ILogInfoProvider implementation
-     * For Android priority values, see <a href="http://developer.android.com/reference/android/util/Log.html">http://developer.android.com/reference/android/util/Log.html</a>
+     * @see com.psiphon3.psiphonlibrary.Utils.MyLog.ILogger#statusEntryAdded()
      */
     @Override
-    public int getAndroidLogPriorityEquivalent(int priority)
+    public void statusEntryAdded()
     {
-        switch (priority)
-        {
-        case Log.ERROR:
-            return StatusActivity.MESSAGE_CLASS_ERROR;
-        case Log.WARN:
-            return StatusActivity.MESSAGE_CLASS_WARNING;
-        case Log.INFO:
-            return StatusActivity.MESSAGE_CLASS_INFO;
-        case Log.DEBUG:
-            return StatusActivity.MESSAGE_CLASS_DEBUG;
-        default:
-            return StatusActivity.MESSAGE_CLASS_VERBOSE;
-        }
-    }
-
-    @Override
-    public String getResourceString(int stringResID, Object[] formatArgs)
-    {
-        if (formatArgs == null || formatArgs.length == 0)
-        {
-            return getString(stringResID);
-        }
-        
-        return getString(stringResID, formatArgs);
-    }
-
-    @Override
-    public String getResourceEntryName(int stringResID)
-    {
-        return getResources().getResourceEntryName(stringResID);
+        m_statusListManager.notifyStatusAdded();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Psiphon Inc.
+ * Copyright (c) 2013, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,11 +31,12 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.content.Context;
 import android.os.Build;
@@ -54,16 +55,22 @@ public class ServerSelector
     private final int SHUTDOWN_TIMEOUT_MILLISECONDS = 1000;
     private final int MAX_WORK_TIME_MILLISECONDS = 20000;
 
+    private Tun2Socks.IProtectSocket protectSocket = null;
     private ServerInterface serverInterface = null;
     private Context context = null;
+    private boolean protectSocketsRequired = false;
     private Thread thread = null;
     private boolean stopFlag = false;
 
     public Socket firstEntrySocket = null;
     public String firstEntryIpAddress = null;
     
-    ServerSelector(ServerInterface serverInterface, Context context)
+    ServerSelector(
+            Tun2Socks.IProtectSocket protectSocket,
+            ServerInterface serverInterface,
+            Context context)
     {
+        this.protectSocket = protectSocket;
         this.serverInterface = serverInterface;
         this.context = context;
     }
@@ -83,15 +90,23 @@ public class ServerSelector
         public void run()
         {
             long startTime = SystemClock.elapsedRealtime();
+            Selector selector = null;
 
             try
             {
                 this.channel = SocketChannel.open();
+                
+                if (protectSocketsRequired)
+                {
+                    // We may need to except this connection from the VpnService tun interface
+                    protectSocket.doVpnProtect(this.channel.socket());
+                }
+                
                 this.channel.configureBlocking(false);
                 this.channel.connect(new InetSocketAddress(
                                         this.entry.ipAddress,
                                         this.entry.getPreferredReachablityTestPort()));
-                Selector selector = Selector.open();
+                selector = Selector.open();
                 this.channel.register(selector, SelectionKey.OP_CONNECT);
                 
                 while (selector.select(SHUTDOWN_POLL_MILLISECONDS) == 0)
@@ -103,18 +118,38 @@ public class ServerSelector
                 }
                 
                 this.responded = this.channel.finishConnect();
-                
-                selector.close();
-                this.channel.configureBlocking(true);
-                
-                if (!this.responded)
-                {
-                    this.channel.close();
-                    this.channel = null;
-                }
             }
-            catch (IOException e)
+            catch (IOException e) {}
+            finally
             {
+                if (selector != null)
+                {
+                    try
+                    {
+                        selector.close();
+                    }
+                    catch (IOException e) {}
+                }
+                if (this.channel != null)
+                {
+                    if (!this.responded)
+                    {
+                        try
+                        {
+                            this.channel.close();
+                        }
+                        catch (IOException e) {}
+                        this.channel = null;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            this.channel.configureBlocking(true);
+                        }
+                        catch (IOException e) {}
+                    }
+                }
             }
             
             this.responseTime = SystemClock.elapsedRealtime() - startTime;
@@ -144,7 +179,8 @@ public class ServerSelector
                 // throttle a bit, and fetch remote servers (if not fetched recently).
                 try
                 {
-                    ServerSelector.this.serverInterface.fetchRemoteServerList();
+                    ServerSelector.this.serverInterface.fetchRemoteServerList(
+                            protectSocketsRequired ? protectSocket : null);
                 }
                 catch (PsiphonServerInterfaceException requestException)
                 {
@@ -190,6 +226,9 @@ public class ServerSelector
                     return false;
                 }
             }
+
+            // Update resolvers to match underlying network interface
+            Utils.updateDnsResolvers(context);
             
             // Adapted from Psiphon Windows client module server_list_reordering.cpp; see comments there.
             // Revision: https://bitbucket.org/psiphon/psiphon-circumvention-system/src/881d32d09e3a/Client/psiclient/server_list_reordering.cpp
@@ -275,10 +314,17 @@ public class ServerSelector
             
             for (CheckServerWorker worker : workers)
             {
-                Map<String, Object> diagnosticData = new HashMap<String, Object>();
-                diagnosticData.put("ipAddress", worker.entry.ipAddress);
-                diagnosticData.put("responded", worker.responded);
-                diagnosticData.put("responseTime", worker.responseTime);
+                JSONObject diagnosticData = new JSONObject();
+                try 
+                {
+                    diagnosticData.put("ipAddress", worker.entry.ipAddress);
+                    diagnosticData.put("responded", worker.responded);
+                    diagnosticData.put("responseTime", worker.responseTime);
+                } 
+                catch (JSONException e) 
+                {
+                    throw new RuntimeException(e);
+                }
                 MyLog.g("ServerResponseCheck", diagnosticData);
                 
                 MyLog.d(
@@ -358,9 +404,7 @@ public class ServerSelector
                             {
                                 worker.channel.close();
                             }
-                            catch (IOException e)
-                            {
-                            }
+                            catch (IOException e) {}
                         }
                     }
                 }
@@ -391,7 +435,7 @@ public class ServerSelector
         return false;
     }
 
-    public void Run()
+    public void Run(boolean protectSocketsRequired)
     {
         Abort();
         
@@ -402,6 +446,8 @@ public class ServerSelector
         {
             System.setProperty("java.net.preferIPv6Addresses", "false");
         }
+        
+        this.protectSocketsRequired = protectSocketsRequired;
 
         this.thread = new Thread(new Coordinator());
         this.thread.start();

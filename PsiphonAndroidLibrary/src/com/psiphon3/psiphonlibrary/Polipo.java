@@ -72,7 +72,7 @@ public class Polipo
             return;
         }
 
-        int port = Utils.findAvailablePort(PsiphonConstants.HTTP_PROXY_PORT, 10);
+        int port = Utils.findAvailablePort(PsiphonData.getPsiphonData().getDefaultHttpProxyPort(), 10);
         if(port == 0)
         {
             return;

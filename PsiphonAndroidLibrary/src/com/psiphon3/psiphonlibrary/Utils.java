@@ -2,24 +2,37 @@ package com.psiphon3.psiphonlibrary;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.IllegalFormatException;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 
-import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
+import org.apache.http.conn.util.InetAddressUtils;
+import org.json.JSONObject;
+import org.xbill.DNS.ResolverConfig;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
@@ -32,10 +45,11 @@ import android.os.Build;
 import android.util.Log;
 
 
-public class Utils {
+public class Utils
+{
 
     private static SecureRandom s_secureRandom = new SecureRandom();
-    static byte[] generateSecureRandomBytes(int byteCount)
+    public static byte[] generateSecureRandomBytes(int byteCount)
     {
         byte bytes[] = new byte[byteCount];
         s_secureRandom.nextBytes(bytes);
@@ -43,13 +57,19 @@ public class Utils {
     }
 
     private static Random s_insecureRandom = new Random();
-    static byte[] generateInsecureRandomBytes(int byteCount)
+    public static byte[] generateInsecureRandomBytes(int byteCount)
     {
         byte bytes[] = new byte[byteCount];
         s_insecureRandom.nextBytes(bytes);
         return bytes;
     }
 
+    public static int insecureRandRange(int min, int max)
+    {
+        // Returns [min, max]; e.g., inclusive of both min and max.
+        return min + (int)(Math.random() * ((max - min) + 1));
+    }
+    
     // from:
     // http://stackoverflow.com/questions/140131/convert-a-string-representation-of-a-hex-dump-to-a-byte-array-using-java
     public static byte[] hexStringToByteArray(String s) {
@@ -249,20 +269,17 @@ public class Utils {
      */
     static public class MyLog
     {
-        static public interface ILogInfoProvider
-        {
-            public String getResourceString(int stringResID, Object[] formatArgs);
-            public int getAndroidLogPriorityEquivalent(int priority);
-            public String getResourceEntryName(int stringResID);
-        }
-        
         static public interface ILogger
         {
-            public void log(int priority, String message);
+            public void statusEntryAdded();
+            public Context getContext();
         }
         
-        static public ILogInfoProvider logInfoProvider;
-        static public ILogger logger;
+        // It is expected that the logger implementation will be an Activity, so
+        // we're only going to hold a weak reference to it -- we don't want to
+        // interfere with it being destroyed in low memory situations. This class
+        // can cope with the logger going away and being re-set later on.
+        static private WeakReference<ILogger> logger = new WeakReference<ILogger>(null);
         
         /**
          * Used to indicate the sensitivity level of the log. This will affect
@@ -289,53 +306,36 @@ public class Utils {
             SENSITIVE_FORMAT_ARGS
         }
         
-        /**
-         * Safely wraps the string resource extraction function. If an error 
-         * occurs with the format specifiers, the raw string will be returned.
-         * @param stringResID The string resource ID.
-         * @param formatArgs The format arguments. May be empty (non-existent).
-         * @return The requested string, possibly formatted.
-         */
-        static private String myGetResString(int stringResID, Object[] formatArgs)
+        static public void setLogger(ILogger logger)
         {
-            try
-            {
-                return logInfoProvider.getResourceString(stringResID, formatArgs);
-            }
-            catch (IllegalFormatException e)
-            {
-                return logInfoProvider.getResourceString(stringResID, null);
-            }
+            MyLog.logger = new WeakReference<ILogger>(logger);
+        }
+        
+        static public void unsetLogger()
+        {
+            MyLog.logger.clear();
         }
         
         static public void restoreLogHistory()
         {
-            // We need to clear out the history and restore a copy, because the
-            // act of restoring will rebuild the history.
-            
-            ArrayList<StatusEntry> history = PsiphonData.cloneStatusHistory();
-            PsiphonData.clearStatusHistory();
-            
-            for (StatusEntry logEntry : history)
+            // Trigger the UI to refresh its status display
+            if (logger.get() != null)
             {
-                MyLog.println(
-                        logEntry.id(), 
-                        logEntry.sensitivity(), 
-                        logEntry.formatArgs(), 
-                        logEntry.throwable(), 
-                        logEntry.priority(),
-                        logEntry.timestamp());
+                logger.get().statusEntryAdded();
             }
         }
         
-        static void d(String msg)
+        // TODO: Add sensitivity to debug logs
+        static public void d(String msg)
         {
-            MyLog.println(msg, null, Log.DEBUG);
+            Object[] formatArgs = { msg };
+            MyLog.println(R.string.debug_message, Sensitivity.NOT_SENSITIVE, formatArgs, null, Log.DEBUG);
         }
 
-        static void d(String msg, Throwable throwable)
+        static public void d(String msg, Throwable throwable)
         {
-            MyLog.println(msg, throwable, Log.DEBUG);
+            Object[] formatArgs = { msg };
+            MyLog.println(R.string.debug_message, Sensitivity.NOT_SENSITIVE, formatArgs, throwable, Log.DEBUG);
         }
 
         /**
@@ -343,9 +343,9 @@ public class Utils {
          * except it will also be included in the feedback diagnostic attachment.
          * @param msg The message to log.
          */
-        static void g(String msg, Object data)
+        static public void g(String msg, JSONObject data)
         {
-            PsiphonData.addDiagnosticEntry(msg, data);
+            PsiphonData.addDiagnosticEntry(new Date(), msg, data);
             // We're not logging the `data` at all. In the future we may want to.
             MyLog.d(msg);
         }
@@ -403,7 +403,7 @@ public class Utils {
                 formatArgs,
                 throwable,
                 priority,
-                Utils.getISO8601String());
+                new Date());
         }
 
         private static void println(
@@ -412,63 +412,69 @@ public class Utils {
                 Object[] formatArgs, 
                 Throwable throwable, 
                 int priority,
-                String timestamp)
+                Date timestamp)
         {
-            PsiphonData.addStatusEntry(
+            PsiphonData.getPsiphonData().addStatusEntry(
                     timestamp,
                     stringResID,
-                    logInfoProvider.getResourceEntryName(stringResID), 
                     sensitivity,
                     formatArgs, 
                     throwable, 
                     priority);
             
-            println(MyLog.myGetResString(stringResID, formatArgs), throwable, priority);
-        }
-        
-        private static void println(String msg, Throwable throwable, int priority)
-        {
-            // If we're not running in debug mode, don't log debug messages at all.
-            // (This may be redundant with the logic below, but it'll save us if
-            // the log below changes.)
-            if (!PsiphonConstants.DEBUG && priority == Log.DEBUG)
+            // If we're not restoring, and a logger has been set, let it know
+            // that status entries have been added.
+            if (logger.get() != null)
             {
-                return;
+                logger.get().statusEntryAdded();
             }
             
-            // If the external logger has been set, use it.
-            // But don't put debug messages to the external logger.
-            if (logger != null && priority != Log.DEBUG)
+            // Log to LogCat only if we're in debug mode and not restoring.
+            if (PsiphonConstants.DEBUG)
             {
-                String loggerMsg = msg;
-                
-                if (throwable != null)
+                String msg = "";
+                if (logger.get() != null)
                 {
-                    // Just report the first line of the stack trace
-                    String[] stackTraceLines = Log.getStackTraceString(throwable).split("\n");
-                    loggerMsg = loggerMsg + (stackTraceLines.length > 0 ? "\n" + stackTraceLines[0] : ""); 
+                    msg = Utils.safeGetResourceString(logger.get().getContext(), stringResID, formatArgs);
                 }
                 
-                logger.log(logInfoProvider.getAndroidLogPriorityEquivalent(priority), loggerMsg);
+                // Log to LogCat
+                // Note that this is basically identical to how Log.e, etc., are implemented.
+                if (throwable != null)
+                {
+                    msg = msg + '\n' + Log.getStackTraceString(throwable);
+                }
+                Log.println(priority, PsiphonConstants.TAG, msg);
             }
-            
-            // Do not log to LogCat at all if we're not running in debug mode.
-
-            if (!PsiphonConstants.DEBUG)
-            {
-                return;
-            }
-                        
-            // Log to LogCat
-            // Note that this is basically identical to how Log.e, etc., are implemented.
-            if (throwable != null)
-            {
-                msg = msg + '\n' + Log.getStackTraceString(throwable);
-            }
-            Log.println(priority, PsiphonConstants.TAG, msg);
         }
     }
 
+    /**
+     * Safely wraps the string resource extraction function. If an error 
+     * occurs with the format specifiers (as can happen in a bad translation),
+     * the raw string will be returned.
+     * @param context The context providing the resource lookup.
+     * @param stringID The string resource ID.
+     * @param formatArgs The format arguments. May be empty or null.
+     * @return The requested string, possibly formatted.
+     */
+    static private String safeGetResourceString(Context context, int stringID, Object[] formatArgs)
+    {
+        if (context == null) {
+            assert(false);
+            return "";
+        }
+        
+        try
+        {
+            return context.getString(stringID, formatArgs);
+        }
+        catch (IllegalFormatException e)
+        {
+            return context.getString(stringID);
+        }
+    }
+    
     // From:
     // http://abhinavasblog.blogspot.ca/2011/06/check-for-debuggable-flag-in-android.html
     /*
@@ -553,13 +559,25 @@ public class Utils {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH;
     }
     
-    public static String getISO8601String()
+    public static String getLocalTimeString(Date date)
+    {
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.US);
+        String dateStr = sdf.format(date);
+        return dateStr;
+    }
+
+    public static String getISO8601String(Date date)
     {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String date = sdf.format(new Date());
-        date += "Z";
-        return date;
+        String dateStr = sdf.format(date);
+        dateStr += "Z";
+        return dateStr;
+    }
+
+    public static String getISO8601String()
+    {
+        return getISO8601String(new Date());
     }
 
     public static boolean isPortAvailable(int port)
@@ -618,5 +636,278 @@ public class Utils {
                 (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
         return networkInfo != null && networkInfo.isConnected();
+    }
+
+    public static String getNetworkTypeName(Context context)
+    {
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        return networkInfo == null ? "" : networkInfo.getTypeName();
+    }
+
+    private static final String CANDIDATE_10_SLASH_8 = "10.0.0.1";
+    private static final String SUBNET_10_SLASH_8 = "10.0.0.0";
+    private static final int PREFIX_LENGTH_10_SLASH_8 = 8;
+
+    private static final String CANDIDATE_172_16_SLASH_12 = "172.16.0.1";
+    private static final String SUBNET_172_16_SLASH_12 = "172.16.0.0";
+    private static final int PREFIX_LENGTH_172_16_SLASH_12 = 12;
+
+    private static final String CANDIDATE_192_168_SLASH_16 = "192.168.0.1";        
+    private static final String SUBNET_192_168_SLASH_16 = "192.168.0.0";
+    private static final int PREFIX_LENGTH_192_168_SLASH_16 = 16;
+    
+    private static final String CANDIDATE_169_254_1_SLASH_24 = "169.254.1.1";        
+    private static final String SUBNET_169_254_1_SLASH_24 = "169.254.1.0";
+    private static final int PREFIX_LENGTH_169_254_1_SLASH_24 = 24;
+    
+    public static String selectPrivateAddress()
+    {
+        // Select one of 10.0.0.1, 172.16.0.1, or 192.168.0.1 depending on
+        // which private address range isn't in use.
+
+        ArrayList<String> candidates = new ArrayList<String>();
+        candidates.add(CANDIDATE_10_SLASH_8);
+        candidates.add(CANDIDATE_172_16_SLASH_12);
+        candidates.add(CANDIDATE_192_168_SLASH_16);
+        candidates.add(CANDIDATE_169_254_1_SLASH_24);
+        
+        List<NetworkInterface> netInterfaces;
+        try
+        {
+            netInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+        }
+        catch (SocketException e)
+        {
+            return null;
+        }
+
+        for (NetworkInterface netInterface : netInterfaces)
+        {
+            for (InetAddress inetAddress : Collections.list(netInterface.getInetAddresses()))
+            {
+                String ipAddress = inetAddress.getHostAddress();
+                if (InetAddressUtils.isIPv4Address(ipAddress))
+                {
+                    if (ipAddress.startsWith("10."))
+                    {
+                        candidates.remove(CANDIDATE_10_SLASH_8);
+                    }
+                    else if (
+                        ipAddress.length() >= 6 &&
+                        ipAddress.substring(0, 6).compareTo("172.16") >= 0 && 
+                        ipAddress.substring(0, 6).compareTo("172.31") <= 0)
+                    {
+                        candidates.remove(CANDIDATE_172_16_SLASH_12);
+                    }
+                    else if (ipAddress.startsWith("192.168"))
+                    {
+                        candidates.remove(CANDIDATE_192_168_SLASH_16);
+                    }
+                }
+            }
+        }
+        
+        if (candidates.size() > 0)
+        {
+            return candidates.get(0);
+        }
+        
+        return null;
+    }
+    
+    public static String getPrivateAddressSubnet(String privateIpAddress)
+    {
+        if (0 == privateIpAddress.compareTo(CANDIDATE_10_SLASH_8))
+        {
+            return SUBNET_10_SLASH_8;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_172_16_SLASH_12))
+        {
+            return SUBNET_172_16_SLASH_12;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_192_168_SLASH_16))
+        {
+            return SUBNET_192_168_SLASH_16;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_169_254_1_SLASH_24))
+        {
+            return SUBNET_169_254_1_SLASH_24;
+        }
+        return null;
+    }
+    
+    public static int getPrivateAddressPrefixLength(String privateIpAddress)
+    {
+        if (0 == privateIpAddress.compareTo(CANDIDATE_10_SLASH_8))
+        {
+            return PREFIX_LENGTH_10_SLASH_8;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_172_16_SLASH_12))
+        {
+            return PREFIX_LENGTH_172_16_SLASH_12;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_192_168_SLASH_16))
+        {
+            return PREFIX_LENGTH_192_168_SLASH_16;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_169_254_1_SLASH_24))
+        {
+            return PREFIX_LENGTH_169_254_1_SLASH_24;
+        }
+        return 0;        
+    }
+    
+    public static String byteCountToDisplaySize(long bytes, boolean si)
+    {
+        // http://stackoverflow.com/questions/3758606/how-to-convert-byte-size-into-human-readable-format-in-java/3758880#3758880
+        int unit = si ? 1000 : 1024;
+        if (bytes < unit) return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(unit));
+        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (si ? "" : "i");
+        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+    }
+
+    @TargetApi(Build.VERSION_CODES.GINGERBREAD)
+    public static String elapsedTimeToDisplay(long elapsedTimeMilliseconds)
+    {
+        // http://stackoverflow.com/questions/6710094/how-to-format-an-elapsed-time-interval-in-hhmmss-sss-format-in-java/6710604#6710604
+        final long hours = TimeUnit.MILLISECONDS.toHours(elapsedTimeMilliseconds);
+        final long minutes = TimeUnit.MILLISECONDS.toMinutes(elapsedTimeMilliseconds - TimeUnit.HOURS.toMillis(hours));
+        final long seconds = TimeUnit.MILLISECONDS.toSeconds(elapsedTimeMilliseconds - TimeUnit.HOURS.toMillis(hours) - TimeUnit.MINUTES.toMillis(minutes));
+        return String.format("%02dh %02dm %02ds", hours, minutes, seconds);
+    }
+    
+    public static Collection<InetAddress> getActiveNetworkDnsResolvers(Context context)
+    {
+        ArrayList<InetAddress> dnsAddresses = new ArrayList<InetAddress>();
+        
+        try
+        {
+            /*
+
+            Hidden API
+            - only available in Android 4.0+
+            - no guarantee will be available beyond 4.2, or on all vendor devices 
+
+            core/java/android/net/ConnectivityManager.java:
+
+                /** {@hide} * /
+                public LinkProperties getActiveLinkProperties() {
+                    try {
+                        return mService.getActiveLinkProperties();
+                    } catch (RemoteException e) {
+                        return null;
+                    }
+                }
+
+            services/java/com/android/server/ConnectivityService.java:
+
+
+                /*
+                 * Return LinkProperties for the active (i.e., connected) default
+                 * network interface.  It is assumed that at most one default network
+                 * is active at a time. If more than one is active, it is indeterminate
+                 * which will be returned.
+                 * @return the ip properties for the active network, or {@code null} if
+                 * none is active
+                 * /
+                @Override
+                public LinkProperties getActiveLinkProperties() {
+                    return getLinkProperties(mActiveDefaultNetwork);
+                }
+                
+                @Override
+                public LinkProperties getLinkProperties(int networkType) {
+                    enforceAccessPermission();
+                    if (isNetworkTypeValid(networkType)) {
+                        final NetworkStateTracker tracker = mNetTrackers[networkType];
+                        if (tracker != null) {
+                            return tracker.getLinkProperties();
+                        }
+                    }
+                    return null;
+                }
+
+            core/java/android/net/LinkProperties.java:
+
+                public Collection<InetAddress> getDnses() {
+                    return Collections.unmodifiableCollection(mDnses);
+                }
+
+            */
+
+            ConnectivityManager connectivityManager =
+                    (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            
+            Class<?> LinkPropertiesClass = Class.forName("android.net.LinkProperties");
+
+            Method getActiveLinkPropertiesMethod = ConnectivityManager.class.getMethod("getActiveLinkProperties", new Class []{});
+
+            Object linkProperties = getActiveLinkPropertiesMethod.invoke(connectivityManager);
+            
+            Method getDnsesMethod = LinkPropertiesClass.getMethod("getDnses", new Class []{});
+
+            Collection<?> dnses = (Collection<?>)getDnsesMethod.invoke(linkProperties);
+            
+            for (Object dns : dnses)
+            {
+                dnsAddresses.add((InetAddress)dns);
+            }
+        }
+        catch (ClassNotFoundException e)
+        {
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+        }
+        catch (NoSuchMethodException e)
+        {
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+        }
+        catch (IllegalAccessException e)
+        {
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+        }
+        catch (InvocationTargetException e)
+        {
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+        }
+        
+        return dnsAddresses;
+    }
+    
+    static void updateDnsResolvers(Context context)
+    {
+        // Custom DNS resolver only used in VpnService mode. Also, note
+        // that getActiveNetworkDnsResolvers uses hidden APIs available
+        // only in Android 4.0+.
+
+        if (!Utils.hasVpnService())
+        {
+            return;
+        }
+        
+        // Update DNS resolver settings. These settings are used outside the tunnel
+        // but while the VpnService tun device is still up. We try to use the correct
+        // resolver for the active underlying network.            
+
+        String dnsResolver;
+        ArrayList<String> dnsResolvers = new ArrayList<String>();
+        for (InetAddress activeNetworkResolver : Utils.getActiveNetworkDnsResolvers(context))
+        {
+            dnsResolver = activeNetworkResolver.getHostAddress();
+            dnsResolvers.add(dnsResolver);
+            // Disabled for now -- too noisy (not changing to Log.g since it's SENSITIVE)
+            //MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
+        }
+        dnsResolver = PsiphonConstants.TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS;
+        dnsResolvers.add(dnsResolver);
+        // Disabled for now -- too noisy (not changing to Log.g since it's SENSITIVE)
+        //MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
+        ResolverConfig.refresh(dnsResolvers);        
     }
 }

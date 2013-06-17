@@ -61,8 +61,8 @@
 		<activity android:name=".ui.activities.preferences.WeavePreferencesActivity"></activity>
 		<activity android:name=".ui.activities.preferences.WeaveServerPreferenceActivity" android:theme="@android:style/Theme.Dialog" android:label="@string/WeaveServerPreferenceActivity.Title"></activity>
 		
-		<provider android:name=".providers.ZircoBookmarksContentProvider" android:authorities="org.zirco.providers.zircobookmarkscontentprovider"></provider>
-		<provider android:name=".providers.WeaveContentProvider" android:authorities="org.zirco.providers.weavecontentprovider"></provider>
+		<provider android:name=".providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.zircobookmarkscontentprovider"></provider>
+		<provider android:name=".providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.weavecontentprovider"></provider>
 		
 		    
         <receiver
@@ -74,10 +74,11 @@
         </receiver>
 	</application>
 
-	<uses-sdk android:minSdkVersion="8" android:targetSdkVersion="14" />
+	<uses-sdk android:minSdkVersion="8" android:targetSdkVersion="16" />
 	<uses-permission android:name="android.permission.INTERNET"></uses-permission>	
 	<uses-permission android:name="com.android.browser.permission.READ_HISTORY_BOOKMARKS"></uses-permission>	
 	<uses-permission android:name="com.android.browser.permission.WRITE_HISTORY_BOOKMARKS"></uses-permission>
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"></uses-permission>
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"></uses-permission>
 
 	<uses-feature android:name="android.hardware.touchscreen" android:required="true" />

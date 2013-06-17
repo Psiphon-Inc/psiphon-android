@@ -19,14 +19,17 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.util.List;
+
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
+import android.util.Pair;
 
 public class TunnelService extends Service
 {
-    private TunnelCore m_Core = new TunnelCore(this);
+    private TunnelCore m_Core = new TunnelCore(this, this);
 
     public class LocalBinder extends Binder
     {
@@ -61,7 +64,7 @@ public class TunnelService extends Service
         m_Core.onDestroy();
     }
 
-    public void setEventsInterface(Events eventsInterface)
+    public void setEventsInterface(IEvents eventsInterface)
     {
         m_Core.setEventsInterface(eventsInterface);
     }
@@ -71,8 +74,8 @@ public class TunnelService extends Service
         return m_Core.getServerInterface();
     }
     
-    public void setUpgradeDownloader(TunnelCore.UpgradeDownloader downloader)
+    public void setExtraAuthParams(List<Pair<String,String>> extraAuthParams)
     {
-        m_Core.setUpgradeDownloader(downloader);
+        m_Core.setExtraAuthParams(extraAuthParams);
     }
 }

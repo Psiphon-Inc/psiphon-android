@@ -47,6 +47,12 @@ public class PsiphonConstants
 
     public final static int DEFAULT_WEB_SERVER_PORT = 443;
     
+    public final static int CHECK_TUNNEL_SERVER_FIRST_PORT = 9001;
+    
+    public final static int CHECK_TUNNEL_SERVER_LAST_PORT = 10000;
+    
+    public final static int CHECK_TUNNEL_TIMEOUT_MILLISECONDS = 5000;
+    
     public final static int SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS = 20000;
     
     public final static String RELAY_PROTOCOL = "OSSH";
@@ -54,7 +60,9 @@ public class PsiphonConstants
     // The character restrictions are dictated by the server.
     public final static String PLATFORM = ("Android_" + Build.VERSION.RELEASE).replaceAll("[^\\w\\-\\.]", "_");
     
-    public final static int HTTPS_REQUEST_TIMEOUT = 20000;
+    public final static int HTTPS_REQUEST_SHORT_TIMEOUT = 5000;
+    
+    public final static int HTTPS_REQUEST_LONG_TIMEOUT = 20000;
     
     public final static int SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH = 60*60*6;
             
@@ -66,11 +74,17 @@ public class PsiphonConstants
     
     public final static String FEEDBACK_ATTACHMENT_FILENAME = "psiphon-android-feedback.txt";
 
-    public final static String VPN_INTERFACE_NETWORK_ADDRESS = "10.0.0.1";
-    
     public final static String VPN_INTERFACE_NETMASK = "255.255.255.0";
     
     public final static int VPN_INTERFACE_MTU = 1500;
 
     public final static int UDPGW_SERVER_PORT = 7300;
+    
+    public final static String TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS = "8.8.8.8";
+    
+    public final static long PREEMPTIVE_RECONNECT_LIFETIME_ADJUSTMENT_MILLISECONDS = -5000;
+
+    public final static long PREEMPTIVE_RECONNECT_SOCKET_TIMEOUT_MILLISECONDS = 5000;
+
+    public final static long PREEMPTIVE_RECONNECT_BIND_WAIT_MILLISECONDS = 100;
 }
