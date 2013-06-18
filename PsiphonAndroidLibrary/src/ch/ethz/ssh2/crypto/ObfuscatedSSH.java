@@ -51,18 +51,13 @@ public class ObfuscatedSSH
         this.obfuscateKeyword = keyword;        
     }
 
-	public byte[] getSeedMessage() throws IOException
-	{
+    public byte[] getSeedMessage() throws IOException
+    {
         SecureRandom random = new SecureRandom();
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         
-        //byte[] seed = new byte[OBFUSCATE_SEED_LENGTH];
-        //random.nextBytes(seed);        
-        
-        // Temporary test.
-        // TODO: Add longer seed to accommodate both randomness and prefix; add well-formed prefix; randomize prefix
-        String prefix = "GET / HTTP/1.0\r\n";
-        byte[] seed = prefix.getBytes();
+        byte[] seed = new byte[OBFUSCATE_SEED_LENGTH];
+        random.nextBytes(seed);        
         
         buffer.write(ByteBuffer.allocate(4).putInt(OBFUSCATE_MAGIC_VALUE).array());
         
@@ -79,11 +74,16 @@ public class ObfuscatedSSH
         obfuscateOutput(obfuscatedMessage);
 
         buffer.reset();
+
+        // PSIPHON: HTTP-PREFIX
+        String prefix = "POST / HTTP/1.1\r\n\r\n";
+        buffer.write(prefix.getBytes());
+
         buffer.write(seed);
         buffer.write(obfuscatedMessage);
         
         return buffer.toByteArray();
-	}
+    }
 
     public byte obfuscateInput(byte b)
     {
@@ -213,6 +213,11 @@ public class ObfuscatedSSH
             return is.skip(n);
         }
 
+        public void enableObfuscation()
+        {
+            obfuscate = true;
+        }
+
         public void disableObfuscation()
         {
             obfuscate = false;
@@ -291,6 +296,11 @@ public class ObfuscatedSSH
             {
                 os.write((byte) b);
             }
+        }
+
+        public void enableObfuscation()
+        {
+            obfuscate = true;
         }
 
         public void disableObfuscation()
