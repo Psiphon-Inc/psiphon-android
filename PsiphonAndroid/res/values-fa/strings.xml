@@ -11,14 +11,6 @@
   <string name="exit">خروج</string>
   <string name="open_browser">مرورگر </string>
   <string name="browser_task_label">مرورگر سایفون</string>
-  <string name="UpgradeManager.CanNotRetrievePackageInfo">بازیابی اطلاعات بسته برای برنامه جاری امکان پذیر نیست  </string>
-  <string name="UpgradeManager.UpgradeFileWriteFailed">خطا در نوشتن فایل ارتقا</string>
-  <string name="UpgradeManager.UpgradeDownloadFailed">به روز رسانی دانلود شکست خورد</string>
-  <string name="UpgradeManager.UpgradeDownloaded">به روز رسانی دریافت شده است و در شروع بعد برنامه نصب خواهد شد. </string>
-  <string name="UpgradeManager.CannotExtractUpgradePackageInfo">به روز رسانی شکست خورد. بازکردن اطلاعات بسته از فایل ارتقا نا موفق بود.</string>
-  <string name="UpgradeManager.UpgradeFileNotFound">فایل ارتقا پیدا نشد</string>
-  <string name="UpgradeManager.UpgradePromptTitle">به روز رسانی سایفون</string>
-  <string name="UpgradeManager.UpgradePromptMessage">به روز رسانی سایفون آماده برای نصب است. پیشنهاد میشود که شما هرچه زودتراجازه ارتقا بدهید. بعد از ارتقا، شما باید دوباره سایفون ۳ را اجرا کنید. ارتقا؟  </string>
   <string name="feedback">نظر</string>
   <string name="FeedbackActivity.DefaultText">اگر نظر خاصی دارید، اطلاعات بیشتر در مورد سایت های که کار نمیکنند یا این فرم برای شما کار نمیکند، لطفآ ایمیل بزنید به &lt;a href="mailto:feedback@psiphon.ca"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">از اینکه نظرتون رو با ما در میان گذاشتید سپاسگزاریم</string>
@@ -31,7 +23,5 @@
   <string name="StatusActivity.WholeDeviceTunnelPromptMessage">امکان پراکسی تمام دستگاه برای شما موجود است. با این امکان، ارتباط و ترافیک تمامی آپلیکیشن ها و مرورگرهای شما از طریق سایفون انجام میشود. اگرمایل به استفاده ی این امکان نیستید، میتوانید فقط از مروگر سایفون استفاده کنید و از ارتباط مستقیم برای اپلیکیشن ها و مرور گر های دیگرتان استفاده کنید</string>
   <string name="StatusActivity.WholeDeviceTunnelPositiveButton">تمام دستگاه را پراکسی کن</string>
   <string name="StatusActivity.WholeDeviceTunnelNegativeButton">فقط از مرورگر سایفون استفاده کن</string>
-  <string name="FeedbackActivity.AttachmentWriteFailed">پیوست فایل بازخورد امکان پذیر نبود </string>
-  <string name="FeedbackActivity.EncryptedFailed">رمز گذاراطلاعات تشخیصی امکان پذیر نبود. اطلاعات تشخیصی به ایمیل بازخورد پیوست نمیشود.  </string>
   <string name="tunnel_whole_device_exception">گوشی شما امکان تونل تمام گوشی را پشتیبانی نمیکند. ببخشید.</string>
 </resources>

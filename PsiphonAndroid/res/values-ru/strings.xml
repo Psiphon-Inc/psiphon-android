@@ -11,14 +11,6 @@
   <string name="exit">Закрыть</string>
   <string name="open_browser">Открыть браузер</string>
   <string name="browser_task_label">Psiphon Browser</string>
-  <string name="UpgradeManager.CanNotRetrievePackageInfo">Ошибка чтения package info данного приложения</string>
-  <string name="UpgradeManager.UpgradeFileWriteFailed">Ошибка записи апгрейда</string>
-  <string name="UpgradeManager.UpgradeDownloadFailed">Ошибка скачивания апгрейда</string>
-  <string name="UpgradeManager.UpgradeDownloaded">Апгрейд скачан и будет инсталлирован при следующем запуске приложения</string>
-  <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Ошибка чтения package info апгрейда</string>
-  <string name="UpgradeManager.UpgradeFileNotFound">Апгрейд файл не найден</string>
-  <string name="UpgradeManager.UpgradePromptTitle">Апгрейд Psiphon </string>
-  <string name="UpgradeManager.UpgradePromptMessage">Апгрейд Psiphon 3 готов к установке. Мы настоятельно рекомендуем немедленную установку этого апгрейда. n\nПерезапустите Psiphon 3 после установки.\n\nУстановить апгрейд сейчас?</string>
   <string name="feedback">Отзыв</string>
   <string name="FeedbackActivity.DefaultText">Если у вас есть какие-либо особые  комментарии, дополнительная информация о сайтах, которые не загружаются или эта форма не работает для вас, пишите нам на &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">Спасибо за ваш отзыв</string>
@@ -31,7 +23,5 @@
   <string name="StatusActivity.WholeDeviceTunnelPromptMessage">Ваше устройство поддерживает туннелирование всех интернет соединений.\n\nПри выборе этой опции интернет трафик всех приложений, включая браузеры будет тунеллирован через сервер Psiphon.\n\nВ противном случае выбор тунеллирования только для браузера Psiphon оставит интернет соединение для других приложений без изменений.</string>
   <string name="StatusActivity.WholeDeviceTunnelPositiveButton">Туннелировать все интернет соединения</string>
   <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Туннелировать только браузер Psiphon</string>
-  <string name="FeedbackActivity.AttachmentWriteFailed">Ошибка создания или записи файла с диагностическими данными</string>
-  <string name="FeedbackActivity.EncryptedFailed">Ошибка шифрования диагностических данных. Диагностические данные не будут прикреплены к отзыву</string>
-  <string name="tunnel_whole_device_exception">Ваше устройство не поддерживает туннелирование всех интернет соединений</string>
+  <string name="tunnel_whole_device_exception">Ваше устройство не поддерживает туннелирование всех интернет соединений без прав root.</string>
 </resources>
