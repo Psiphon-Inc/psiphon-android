@@ -125,10 +125,11 @@ public abstract class MainBase
         protected List<Pair<String,String>> m_extraAuthParams = new ArrayList<Pair<String,String>>();
         private StatusListViewManager m_statusListManager = null;
         private SharedPreferences m_preferences; 
-        private ImageButton m_statusTabToggleButton;
         private TextView m_statusTabLogLine;
+        private TextView m_statusTabVersionLine;
         private LocalBroadcastManager m_localBroadcastManager;
         private Timer m_updateHeaderTimer;
+        private Timer m_updateStatusTimer;
         private TextView m_elapsedConnectionTimeView;
         private TextView m_totalSentView;
         private TextView m_totalReceivedView;
@@ -141,6 +142,27 @@ public abstract class MainBase
         private DataTransferGraph m_fastSentGraph;
         private DataTransferGraph m_fastReceivedGraph;
 
+        // Avoid calling m_statusTabToggleButton.setImageResource() every 250 ms
+        // when it is set to the connected image
+        private ImageButton m_statusTabToggleButton;
+        private boolean m_statusIconSetToConnected = false;
+        private void setStatusImageButtonResource(int resId)
+        {
+            if (R.drawable.status_icon_connected == resId)
+            {
+                if (!m_statusIconSetToConnected)
+                {
+                    m_statusTabToggleButton.setImageResource(resId);
+                    m_statusIconSetToConnected = true;
+                }
+            }
+            else
+            {
+                m_statusTabToggleButton.setImageResource(resId);
+                m_statusIconSetToConnected = false;
+            }
+        }
+        
         private boolean m_boundToTunnelService = false;
         private ServiceConnection m_tunnelServiceConnection = new ServiceConnection()
         {
@@ -404,6 +426,7 @@ public abstract class MainBase
             m_tabHost.setCurrentTab(currentTab);
 
             m_statusTabLogLine = (TextView)findViewById(R.id.lastlogline);
+            m_statusTabVersionLine = (TextView)findViewById(R.id.versionline);
             m_elapsedConnectionTimeView = (TextView)findViewById(R.id.elapsedConnectionTime);
             m_totalSentView = (TextView)findViewById(R.id.totalSent);
             m_totalReceivedView = (TextView)findViewById(R.id.totalReceived);
@@ -449,6 +472,9 @@ public abstract class MainBase
             // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
             PsiphonConstants.DEBUG = Utils.isDebugMode(this);
             
+            String msg = getContext().getString(R.string.client_version, EmbeddedValues.CLIENT_VERSION);
+            m_statusTabVersionLine.setText(msg);
+            
             // Restore messages previously posted by the service.
             MyLog.restoreLogHistory();
         }
@@ -470,7 +496,20 @@ public abstract class MainBase
                     }
                 },
                 0,
-                1000); 
+                1000);
+            
+            m_updateStatusTimer = new Timer();
+            m_updateStatusTimer.schedule(
+                new TimerTask()
+                {          
+                    @Override
+                    public void run()
+                    {
+                        updateStatusCallback();
+                    }
+                },
+                0,
+                250);
             
             PsiphonData.getPsiphonData().setStatusActivityForeground(true);
         }
@@ -481,6 +520,7 @@ public abstract class MainBase
             super.onPause();
             
             m_updateHeaderTimer.cancel();
+            m_updateStatusTimer.cancel();
             
             unbindTunnelService();
             
@@ -493,7 +533,7 @@ public abstract class MainBase
             public void onReceive(Context context, Intent intent)
             {
                 m_toggleButton.setText(getText(R.string.stop));
-                m_statusTabToggleButton.setImageResource(R.drawable.notification_icon_connecting);
+                setStatusImageButtonResource(R.drawable.status_icon_connecting);
             }
         }
 
@@ -505,7 +545,7 @@ public abstract class MainBase
                 // When the tunnel self-stops, we also need to unbind to ensure the service is destroyed
                 unbindTunnelService();
                 m_toggleButton.setText(getText(R.string.start));
-                m_statusTabToggleButton.setImageResource(R.drawable.notification_icon_disconnected);
+                setStatusImageButtonResource(R.drawable.status_icon_disconnected);
             }
         }
         
@@ -514,7 +554,7 @@ public abstract class MainBase
             @Override
             public void onReceive(Context context, Intent intent)
             {
-                m_statusTabToggleButton.setImageResource(R.drawable.notification_icon_connecting);
+                setStatusImageButtonResource(R.drawable.status_icon_connecting);
             }
         }
         
@@ -539,9 +579,9 @@ public abstract class MainBase
             // is showing and the service is stopping, it's more reliable to
             // use TunnelStoppingReceiver.
             m_toggleButton.setText(isServiceRunning() ? getText(R.string.stop) : getText(R.string.start));
-            m_statusTabToggleButton.setImageResource(isServiceRunning() ?
-                    R.drawable.notification_icon_connecting :
-                    R.drawable.notification_icon_disconnected);
+            setStatusImageButtonResource(isServiceRunning() ?
+                    R.drawable.status_icon_connecting :
+                    R.drawable.status_icon_disconnected);
         }
 
         protected void doToggle()
@@ -636,10 +676,6 @@ public abstract class MainBase
                     public void run()
                     {
                         DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
-                        if (dataTransferStats.isConnected())
-                        {
-                            m_statusTabToggleButton.setImageResource(R.drawable.notification_icon_connected);
-                        }
                         m_elapsedConnectionTimeView.setText(
                                 dataTransferStats.isConnected() ?
                                     getString(
@@ -679,6 +715,22 @@ public abstract class MainBase
                 });
         }
         
+        private void updateStatusCallback()
+        {
+            this.runOnUiThread(
+                new Runnable()
+                {
+                    public void run()
+                    {
+                        DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
+                        if (dataTransferStats.isConnected())
+                        {
+                            setStatusImageButtonResource(R.drawable.status_icon_connected);
+                        }
+                    }
+                });
+        }
+
         protected void startTunnel(Context context)
         {
             boolean waitingForPrompt = false;
