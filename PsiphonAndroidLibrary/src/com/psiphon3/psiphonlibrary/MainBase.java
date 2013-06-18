@@ -126,6 +126,7 @@ public abstract class MainBase
         private StatusListViewManager m_statusListManager = null;
         private SharedPreferences m_preferences; 
         private TextView m_statusTabLogLine;
+        private TextView m_statusTabVersionLine;
         private LocalBroadcastManager m_localBroadcastManager;
         private Timer m_updateHeaderTimer;
         private Timer m_updateStatusTimer;
@@ -425,6 +426,7 @@ public abstract class MainBase
             m_tabHost.setCurrentTab(currentTab);
 
             m_statusTabLogLine = (TextView)findViewById(R.id.lastlogline);
+            m_statusTabVersionLine = (TextView)findViewById(R.id.versionline);
             m_elapsedConnectionTimeView = (TextView)findViewById(R.id.elapsedConnectionTime);
             m_totalSentView = (TextView)findViewById(R.id.totalSent);
             m_totalReceivedView = (TextView)findViewById(R.id.totalReceived);
@@ -469,6 +471,9 @@ public abstract class MainBase
             // Note that this must come after the above lines, or else the activity
             // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
             PsiphonConstants.DEBUG = Utils.isDebugMode(this);
+            
+            String msg = getContext().getString(R.string.client_version, EmbeddedValues.CLIENT_VERSION);
+            m_statusTabVersionLine.setText(msg);
             
             // Restore messages previously posted by the service.
             MyLog.restoreLogHistory();
