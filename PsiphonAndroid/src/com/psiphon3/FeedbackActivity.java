@@ -29,10 +29,12 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.Locale;
 
 
 import com.psiphon3.psiphonlibrary.Diagnostics;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.ServerInterface;
 import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -110,7 +112,21 @@ public class FeedbackActivity extends Activity
                     }
                     return true;
                 }
-                return false;
+                
+                // Else... Open ordinary URLs (like our download page, FAQ, etc.)
+                // in a standard browser. The feedback WebView is not useful
+                // for normal webpages (and doesn't seem to support download).
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                try
+                {
+                    startActivity(browserIntent);
+                }
+                catch (ActivityNotFoundException e)
+                {
+                    // Do nothing
+                }
+
+                return true;
             }
 
             private boolean submitFeedback(String urlParameters)
@@ -190,7 +206,29 @@ public class FeedbackActivity extends Activity
         String html = getHTMLContent();
         // Get the current locale
         String language = Locale.getDefault().getLanguage();
-        webView.loadDataWithBaseURL("file:///#" + language, html, "text/html", "utf-8", null);
+        
+        StringBuilder argsBuilder = new StringBuilder();
+        argsBuilder.append("{ \"newVersionURL\":\"").append(EmbeddedValues.GET_NEW_VERSION_URL).append("\", ");
+        argsBuilder.append("\"newVersionEmail\": \"").append(EmbeddedValues.GET_NEW_VERSION_EMAIL).append("\", ");
+        argsBuilder.append("\"faqURL\": \"").append(EmbeddedValues.FAQ_URL).append("\", ");
+        argsBuilder.append("\"dataCollectionInfoURL\": \"").append(EmbeddedValues.DATA_COLLECTION_INFO_URL).append("\" }");
+        String args = null;
+        try {
+            args = URLEncoder.encode(argsBuilder.toString(), "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            assert(false);
+        }
+        
+        StringBuilder urlBuilder = new StringBuilder();
+        urlBuilder.append("file:///");
+        if (args != null)
+        {
+            urlBuilder.append("?").append(args);
+        }
+        urlBuilder.append("#").append(language);
+        
+        webView.loadDataWithBaseURL(urlBuilder.toString(), html, "text/html", "utf-8", null);
     }
 
     private String getHTMLContent()
