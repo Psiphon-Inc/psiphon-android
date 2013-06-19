@@ -380,15 +380,15 @@ public abstract class MainBase
             
             TabSpec statusTab = m_tabHost.newTabSpec("status");
             statusTab.setContent(R.id.statusTab);
-            statusTab.setIndicator("Status");
+            statusTab.setIndicator(getText(R.string.status_tab_name));
 
             TabSpec statisticsTab = m_tabHost.newTabSpec("statistics");
             statisticsTab.setContent(R.id.statisticsView);
-            statisticsTab.setIndicator("Statistics");
+            statisticsTab.setIndicator(getText(R.string.statistics_tab_name));
             
             TabSpec logsTab = m_tabHost.newTabSpec("logs");
             logsTab.setContent(R.id.logsTab);
-            logsTab.setIndicator("Logs");
+            logsTab.setIndicator(getText(R.string.logs_tab_name));
 
             m_tabHost.addTab(statusTab);
             m_tabHost.addTab(statisticsTab);

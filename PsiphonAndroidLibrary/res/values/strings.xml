@@ -112,4 +112,7 @@
     <string name="compression_savings">%s saved</string>
     <string name="start">Start</string>
     <string name="stop">Stop</string>
+    <string name="status_tab_name">Status</string>
+    <string name="statistics_tab_name">Statistics</string>
+    <string name="logs_tab_name">Logs</string>
 </resources>
