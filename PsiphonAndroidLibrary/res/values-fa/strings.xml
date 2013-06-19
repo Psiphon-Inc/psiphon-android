@@ -112,4 +112,7 @@
   <string name="compression_savings">%s ذخیره شد</string>
   <string name="start">شروع</string>
   <string name="stop">ایست </string>
+  <string name="status_tab_name">وضعیت</string>
+  <string name="statistics_tab_name">آمار</string>
+  <string name="logs_tab_name">لاگ</string>
 </resources>
