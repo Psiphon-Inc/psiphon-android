@@ -78,7 +78,7 @@ public class ClientServerHello
 			if (!skippedPrefix)
 			{
 				// Skip to blank line terminated by <CR><LF>
-				if (server_line.isEmpty())
+				if (server_line.length() == 0)
 				{
 					bi.enableObfuscation();
 					skippedPrefix = true;
