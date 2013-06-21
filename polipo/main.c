@@ -170,6 +170,7 @@ main(int argc, char **argv)
 
 // PSIPHON: custom main() for JNI
 int psiphonMain(
+        int bindAll,
         int proxyPortParam,
         int localParentProxyPortParam)
 {
@@ -192,8 +193,13 @@ int psiphonMain(
     preinitSocks();
 
     const int MAX_SIZE = 80;
+    char proxyAddressParamLine[MAX_SIZE];
     char proxyPortParamLine[MAX_SIZE];
     char localParentProxyPortParamLine[MAX_SIZE];
+    snprintf(
+        proxyAddressParamLine,
+        MAX_SIZE,
+        (0 == bindAll) ? "proxyAddress=127.0.0.1" : "proxyAddress=0.0.0.0");
     snprintf(
         proxyPortParamLine,
         MAX_SIZE,
@@ -205,7 +211,8 @@ int psiphonMain(
         "socksParentProxy=127.0.0.1:%d",
         localParentProxyPortParam);
 
-    if (0 > parseConfigLine(proxyPortParamLine, "psiphon", 0, 0)
+    if (0 > parseConfigLine(proxyAddressParamLine, "psiphon", 0, 0)
+        || 0 > parseConfigLine(proxyPortParamLine, "psiphon", 0, 0)
         || 0 > parseConfigLine(localParentProxyPortParamLine, "psiphon", 0, 0)
         || 0 > parseConfigLine("disableLocalInterface=true", "psiphon", 0, 0)
         || 0 > parseConfigLine("logLevel=1", "psiphon", 0, 0)

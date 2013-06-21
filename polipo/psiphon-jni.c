@@ -19,13 +19,14 @@
 
 #include "jni.h"
 
-int psiphonMain(int proxyPortParam, int localParentProxyPortParam);
+int psiphonMain(int bindAll, int proxyPortParam, int localParentProxyPortParam);
 
 JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Polipo_runPolipo(
     JNIEnv* env,
     jobject obj,
+    int bindAll,
     int proxyPort,
     int localParentProxyPort)
 {
-    return psiphonMain(proxyPort, localParentProxyPort);
+    return psiphonMain(bindAll, proxyPort, localParentProxyPort);
 }
