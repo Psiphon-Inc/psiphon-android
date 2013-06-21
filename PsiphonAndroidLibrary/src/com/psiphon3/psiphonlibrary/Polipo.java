@@ -86,7 +86,7 @@ public class Polipo
                 public void run() 
                 {
                      runPolipo(
-                             0,
+                             PsiphonData.getPsiphonData().getShareProxies() ? 1 : 0,
                              PsiphonData.getPsiphonData().getHttpProxyPort(),
                              PsiphonData.getPsiphonData().getSocksPort());
                 }

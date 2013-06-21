@@ -69,6 +69,7 @@ public class PsiphonData
     private int m_httpProxyPort;
     private int m_dnsProxyPort;
     private int m_transparentProxyPort;
+    private boolean m_shareProxies;
     private boolean m_tunnelWholeDevice;
     private boolean m_vpnServiceUnavailable;
     private TunnelCore m_currentTunnelCore;
@@ -90,6 +91,7 @@ public class PsiphonData
         m_homePages = new ArrayList<String>();
         m_nextFetchRemoteServerList = -1;
         m_statusActivityForeground = false;
+        m_shareProxies = false;
         m_tunnelWholeDevice = false;
         m_vpnServiceUnavailable = false;
         m_reportedStats = new ReportedStats();
@@ -223,6 +225,16 @@ public class PsiphonData
     public synchronized int getTransparentProxyPort()
     {
         return m_transparentProxyPort;
+    }
+
+    public synchronized void setShareProxies(boolean shareProxies)
+    {
+        m_shareProxies = shareProxies;
+    }
+
+    public synchronized boolean getShareProxies()
+    {
+        return m_shareProxies;
     }
 
     public synchronized void setTunnelWholeDevice(boolean tunnelWholeDevice)
