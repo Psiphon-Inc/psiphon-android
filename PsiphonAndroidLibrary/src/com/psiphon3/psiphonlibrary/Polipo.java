@@ -86,6 +86,7 @@ public class Polipo
                 public void run() 
                 {
                      runPolipo(
+                             0,
                              PsiphonData.getPsiphonData().getHttpProxyPort(),
                              PsiphonData.getPsiphonData().getSocksPort());
                 }
@@ -94,7 +95,7 @@ public class Polipo
         m_polipoThread.start();
     }
     
-    private native int runPolipo(int proxyPort, int localParentProxyPort);
+    private native int runPolipo(int bindAll, int proxyPort, int localParentProxyPort);
     
     static
     {
