@@ -21,6 +21,7 @@ package com.psiphon3;
 
 import com.psiphon3.FeedbackActivity;
 import com.psiphon3.StatusActivity;
+import com.psiphon3.psiphonlibrary.MainBase;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.TunnelService;
 
@@ -44,11 +45,11 @@ public class Events implements com.psiphon3.psiphonlibrary.IEvents
         if (PsiphonData.getPsiphonData().getStatusActivityForeground())
         {
             Intent intent = new Intent(
-                    StatusActivity.HANDSHAKE_SUCCESS,
+                    MainBase.TabbedActivityBase.HANDSHAKE_SUCCESS,
                     null,
                     context,
                     com.psiphon3.StatusActivity.class);
-            intent.putExtra(StatusActivity.HANDSHAKE_SUCCESS_IS_RECONNECT, isReconnect);
+            intent.putExtra(MainBase.TabbedActivityBase.HANDSHAKE_SUCCESS_IS_RECONNECT, isReconnect);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         }
@@ -84,13 +85,18 @@ public class Events implements com.psiphon3.psiphonlibrary.IEvents
             context.startActivity(intent);
         }
         */
+
+        // Local broadcast to any existing status screen
+        LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(context);
+        Intent intent = new Intent(StatusActivity.UNEXPECTED_DISCONNECT);
+        localBroadcastManager.sendBroadcast(intent);
     }
     
     public void signalTunnelStarting(Context context)
     {
         // Local broadcast to any existing status screen
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(context);
-        Intent intent = new Intent(StatusActivity.TUNNEL_STARTING);
+        Intent intent = new Intent(MainBase.TabbedActivityBase.TUNNEL_STARTING);
         localBroadcastManager.sendBroadcast(intent);
     }
     
@@ -98,7 +104,7 @@ public class Events implements com.psiphon3.psiphonlibrary.IEvents
     {
         // Local broadcast to any existing status screen
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(context);
-        Intent intent = new Intent(StatusActivity.TUNNEL_STOPPING);
+        Intent intent = new Intent(MainBase.TabbedActivityBase.TUNNEL_STOPPING);
         localBroadcastManager.sendBroadcast(intent);
     }
 

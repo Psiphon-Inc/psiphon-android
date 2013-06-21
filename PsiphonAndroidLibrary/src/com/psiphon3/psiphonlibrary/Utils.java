@@ -772,10 +772,23 @@ public class Utils
     @TargetApi(Build.VERSION_CODES.GINGERBREAD)
     public static String elapsedTimeToDisplay(long elapsedTimeMilliseconds)
     {
-        // http://stackoverflow.com/questions/6710094/how-to-format-an-elapsed-time-interval-in-hhmmss-sss-format-in-java/6710604#6710604
-        final long hours = TimeUnit.MILLISECONDS.toHours(elapsedTimeMilliseconds);
-        final long minutes = TimeUnit.MILLISECONDS.toMinutes(elapsedTimeMilliseconds - TimeUnit.HOURS.toMillis(hours));
-        final long seconds = TimeUnit.MILLISECONDS.toSeconds(elapsedTimeMilliseconds - TimeUnit.HOURS.toMillis(hours) - TimeUnit.MINUTES.toMillis(minutes));
+        long hours = 0;
+        long minutes = 0;
+        long seconds = 0;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD)
+        {
+            // http://stackoverflow.com/questions/6710094/how-to-format-an-elapsed-time-interval-in-hhmmss-sss-format-in-java/6710604#6710604
+            hours = TimeUnit.MILLISECONDS.toHours(elapsedTimeMilliseconds);
+            minutes = TimeUnit.MILLISECONDS.toMinutes(elapsedTimeMilliseconds - TimeUnit.HOURS.toMillis(hours));
+            seconds = TimeUnit.MILLISECONDS.toSeconds(elapsedTimeMilliseconds - TimeUnit.HOURS.toMillis(hours) - TimeUnit.MINUTES.toMillis(minutes));
+        }
+        else
+        {
+            hours = elapsedTimeMilliseconds / (1000 * 60 * 60);
+            minutes = (elapsedTimeMilliseconds / (1000 * 60)) % 60;
+            seconds = (elapsedTimeMilliseconds / (1000)) % 60;
+        }
+        
         return String.format("%02dh %02dm %02ds", hours, minutes, seconds);
     }
     

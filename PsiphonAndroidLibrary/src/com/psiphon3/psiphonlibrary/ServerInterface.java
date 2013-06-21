@@ -691,7 +691,7 @@ public class ServerInterface
      * Make the 'upgrade' request. 
      * @throws PsiphonServerInterfaceException
      */
-    public byte[] doUpgradeDownloadRequest(IResumableDownload resumableDownload) 
+    public void doUpgradeDownloadRequest(IResumableDownload resumableDownload) 
         throws PsiphonServerInterfaceException
     {
         // NOTE: This call is not 'synchronized'. This allows it to run in parallel
@@ -704,7 +704,7 @@ public class ServerInterface
         boolean canAbort = true;
         boolean useLocalProxy = true;
         
-        return makeRequest(
+        makeRequest(
                 null,
                 PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT,
                 canAbort,

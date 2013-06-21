@@ -11,14 +11,6 @@
   <string name="exit">Salir</string>
   <string name="open_browser">Abrir navegador</string>
   <string name="browser_task_label">Navegador Psiphon</string>
-  <string name="UpgradeManager.CanNotRetrievePackageInfo">Incapaz de obtener la información de paquete de esta aplicación</string>
-  <string name="UpgradeManager.UpgradeFileWriteFailed">No pudo escribir archivo de actualización.</string>
-  <string name="UpgradeManager.UpgradeDownloadFailed">Descarga de actualización fallida.</string>
-  <string name="UpgradeManager.UpgradeDownloaded">Actualización descargada. Será instalada la siguiente vez que se inicie la aplicación.</string>
-  <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Falló la actualización. No se puede extraer la información de paquetes del archivo de actualización.</string>
-  <string name="UpgradeManager.UpgradeFileNotFound">No se encontró el archivo de actualización</string>
-  <string name="UpgradeManager.UpgradePromptTitle">Actualización de Psiphon</string>
-  <string name="UpgradeManager.UpgradePromptMessage">Hay una actualización de Psiphon 3 lista para ser instalada. Es recomendable que permita que se realice la actualización en este momento. Después de la actualización, tendrá que iniciar Psiphon 3 nuevamente. ¿Actualizar ahora?</string>
   <string name="feedback">Comentarios</string>
   <string name="FeedbackActivity.DefaultText">Si usted tiene comentarios específicos, mayor información de sitios que no funcionan, o si esta forma no está funcionando para usted por favor mande un mensaje a &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">Gracias por enviar sus comentarios</string>

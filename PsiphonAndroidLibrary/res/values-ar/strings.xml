@@ -31,14 +31,16 @@
   <string name="no_server_entries">لا توجد مخدمات كي يتم الاتصال بها</string>
   <string name="ServerInterface.InvalidRemoteServerList">قائمة المخدم البعيد غير صالحة</string>
   <string name="TunnelService.FetchRemoteServerListFailed">فشل إحضار قائمة المخدم البعيد</string>
-  <string name="ServerEntryAuth.WrongPublicKey">تم توقيع مدخل المخدم البعيد باستخدام مفتاح عام مختلف</string>
-  <string name="ServerEntryAuth.InvalidSignature">توقيع غير صالح بمدخل المخدم البعيد</string>
-  <string name="ServerEntryAuth.FailedToParseRemoteServerEntry">فشل توزيع مدخل المخدم البعيد</string>
   <string name="starting_tunnel">جاري بدء تشغيل النفق...</string>
   <string name="stopping_tunnel">جاري توقف النفق عن العمل...</string>
   <string name="stopped_tunnel">توقف النفق عن العمل</string>
   <string name="ServerInterface.StopRequested">تم طلب التوقف</string>
   <string name="ServerInterface.HTTPSRequestFailed">فشل طلب HTTPS مع إصدار الخطأ: </string>
-  <string name="psiphon_service_notification_message_connecting">جاري تشغيل برنامج Psiphon 3...</string>
   <string name="psiphon_service_notification_id">إعلام خدمة Psiphon</string>
+  <string name="UpgradeManager.CanNotRetrievePackageInfo">يتعذر استرجاع معلومات الحزمة للتطبيق الحالي</string>
+  <string name="UpgradeManager.UpgradeFileWriteFailed">فشل كتابة ملف التحديث</string>
+  <string name="UpgradeManager.UpgradeDownloadFailed">فشل تنزيل التحديث</string>
+  <string name="UpgradeManager.CannotExtractUpgradePackageInfo">فشل التحديث. تعذر استخراج معلومات الحزمة من ملف التحديث.</string>
+  <string name="UpgradeManager.UpgradeFileNotFound">لم يتم العثور على ملف التحديث</string>
+  <string name="UpgradeManager.UpgradePromptTitle">تحديث برنامج Psiphon</string>
 </resources>

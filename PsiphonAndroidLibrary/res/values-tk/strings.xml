@@ -31,14 +31,16 @@
   <string name="no_server_entries">Birikmek üçin serwer ýok</string>
   <string name="ServerInterface.InvalidRemoteServerList">Nädogry uzakdaky serwer sanawy</string>
   <string name="TunnelService.FetchRemoteServerListFailed">Uzakdaky serwer sanawyny getirtmek şowsuz</string>
-  <string name="ServerEntryAuth.WrongPublicKey">Uzakdaky serwere başga köpçülige açyk açar bilen gol çekilen</string>
-  <string name="ServerEntryAuth.InvalidSignature">Uzakdaky serwer elementinde nädogry gol</string>
-  <string name="ServerEntryAuth.FailedToParseRemoteServerEntry">Uzakdaky serwer elementini çözmek şowsuz</string>
   <string name="starting_tunnel">Ötük başladylýar...</string>
   <string name="stopping_tunnel">Ötük duruzylýar...</string>
   <string name="stopped_tunnel">Ötük durzuldy</string>
   <string name="ServerInterface.StopRequested">Duruzmak soraldy</string>
   <string name="ServerInterface.HTTPSRequestFailed">HTTPS islegi säwlik bilen şowsuz:</string>
-  <string name="psiphon_service_notification_message_connecting">Psiphon 3 işleýär...</string>
   <string name="psiphon_service_notification_id">Psiphon hyzmat habarnamasy</string>
+  <string name="UpgradeManager.CanNotRetrievePackageInfo">Häzirki amaly programma üçin toplum maglumatlaryny alyp bolanok</string>
+  <string name="UpgradeManager.UpgradeFileWriteFailed">Beýgeldiş faýlyny ýazmak şowsuz</string>
+  <string name="UpgradeManager.UpgradeDownloadFailed">Beýgeldişi göçürip almak şowsuz</string>
+  <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Beýgeldiş şowsuz. Beýgeldiş faýlyndan toplum maglumatlaryny çykaryp alyp bolanok.</string>
+  <string name="UpgradeManager.UpgradeFileNotFound">Beýgeldiş faýly tapylmady</string>
+  <string name="UpgradeManager.UpgradePromptTitle">Psiphon beýgeldiş</string>
 </resources>
