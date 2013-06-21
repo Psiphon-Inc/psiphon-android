@@ -47,6 +47,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.net.VpnService;
@@ -66,6 +67,7 @@ import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.webkit.URLUtil;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -117,6 +119,7 @@ public abstract class MainBase
         public static final String TUNNEL_STARTING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STARTING";
         public static final String TUNNEL_STOPPING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STOPPING";
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.PsiphonAndroidActivity.STATUS_ENTRY_AVAILABLE";
+        public static final String SHARE_PROXIES_PREFERENCE = "shareProxiesPreference";
         
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
 
@@ -143,6 +146,7 @@ public abstract class MainBase
         private DataTransferGraph m_slowReceivedGraph;
         private DataTransferGraph m_fastSentGraph;
         private DataTransferGraph m_fastReceivedGraph;
+        private CheckBox m_shareProxiesToggle;
 
         // Avoid calling m_statusTabToggleButton.setImageResource() every 250 ms
         // when it is set to the connected image
@@ -438,6 +442,7 @@ public abstract class MainBase
             m_compressionRatioReceivedView = (TextView)findViewById(R.id.compressionRatioReceived);
             m_compressionSavingsSentView = (TextView)findViewById(R.id.compressionSavingsSent);
             m_compressionSavingsReceivedView = (TextView)findViewById(R.id.compressionSavingsReceived);
+            m_shareProxiesToggle = (CheckBox)findViewById(R.id.shareProxiesToggle);
 
             m_slowSentGraph = new DataTransferGraph(this, R.id.slowSentGraph);
             m_slowReceivedGraph = new DataTransferGraph(this, R.id.slowReceivedGraph);
@@ -471,6 +476,11 @@ public abstract class MainBase
             initToggleResources();
             
             PsiphonData.getPsiphonData().setDisplayDataTransferStats(true);
+            
+            boolean shareProxiesPreference =
+                    PreferenceManager.getDefaultSharedPreferences(this).getBoolean(SHARE_PROXIES_PREFERENCE, false);
+            m_shareProxiesToggle.setChecked(shareProxiesPreference);
+            PsiphonData.getPsiphonData().setShareProxies(shareProxiesPreference);
 
             // Note that this must come after the above lines, or else the activity
             // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
@@ -617,6 +627,15 @@ public abstract class MainBase
         
         public void onShareProxiesToggle(View v)
         {
+            // TODO: show a prompt, and kill and restart the app on confirmation
+            
+            boolean shareProxies = m_shareProxiesToggle.isChecked();
+            
+            PsiphonData.getPsiphonData().setShareProxies(shareProxies);
+            
+            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+            editor.putBoolean(SHARE_PROXIES_PREFERENCE, shareProxies);
+            editor.commit();
         }
         
         private class DataTransferGraph
