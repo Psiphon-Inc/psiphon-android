@@ -117,4 +117,5 @@
     <string name="logs_tab_name">Logs</string>
     <string name="socks_proxy_address">Local SOCKS proxy is running at %s</string>
     <string name="http_proxy_address">Local HTTP proxy is running at %s</string>
+    <string name="share_proxies_toggle">Allow other network devices to use the local proxies</string>
 </resources>

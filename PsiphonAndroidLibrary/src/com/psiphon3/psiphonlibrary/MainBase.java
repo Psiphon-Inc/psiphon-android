@@ -615,6 +615,10 @@ public abstract class MainBase
             }
         }
         
+        public void onShareProxiesToggle(View v)
+        {
+        }
+        
         private class DataTransferGraph
         {
             private Activity m_activity;
