@@ -646,6 +646,35 @@ public class Utils
         return networkInfo == null ? "" : networkInfo.getTypeName();
     }
 
+    public static String getIPv4Address()
+    {
+        List<NetworkInterface> netInterfaces;
+        try
+        {
+            netInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+        }
+        catch (SocketException e)
+        {
+            return "";
+        }
+
+        for (NetworkInterface netInterface : netInterfaces)
+        {
+            for (InetAddress inetAddress : Collections.list(netInterface.getInetAddresses()))
+            {
+                if (!inetAddress.isLoopbackAddress())
+                {
+                    String ipAddress = inetAddress.getHostAddress();
+                    if (InetAddressUtils.isIPv4Address(ipAddress))
+                    {
+                        return ipAddress;
+                    }
+                }
+            }
+        }
+        return "";
+    }
+    
     private static final String CANDIDATE_10_SLASH_8 = "10.0.0.1";
     private static final String SUBNET_10_SLASH_8 = "10.0.0.0";
     private static final int PREFIX_LENGTH_10_SLASH_8 = 8;

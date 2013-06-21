@@ -127,6 +127,8 @@ public abstract class MainBase
         private SharedPreferences m_preferences; 
         private TextView m_statusTabLogLine;
         private TextView m_statusTabVersionLine;
+        private TextView m_statusTabSocksPortLine;
+        private TextView m_statusTabHttpProxyPortLine;
         private LocalBroadcastManager m_localBroadcastManager;
         private Timer m_updateHeaderTimer;
         private Timer m_updateStatusTimer;
@@ -427,6 +429,8 @@ public abstract class MainBase
 
             m_statusTabLogLine = (TextView)findViewById(R.id.lastlogline);
             m_statusTabVersionLine = (TextView)findViewById(R.id.versionline);
+            m_statusTabSocksPortLine = (TextView)findViewById(R.id.socksportline);
+            m_statusTabHttpProxyPortLine = (TextView)findViewById(R.id.httpproxyportline);
             m_elapsedConnectionTimeView = (TextView)findViewById(R.id.elapsedConnectionTime);
             m_totalSentView = (TextView)findViewById(R.id.totalSent);
             m_totalReceivedView = (TextView)findViewById(R.id.totalReceived);
@@ -715,6 +719,7 @@ public abstract class MainBase
                 });
         }
         
+        private boolean proxyInfoDisplayed = false;
         private void updateStatusCallback()
         {
             this.runOnUiThread(
@@ -726,6 +731,25 @@ public abstract class MainBase
                         if (dataTransferStats.isConnected())
                         {
                             setStatusImageButtonResource(R.drawable.status_icon_connected);
+                            if (!proxyInfoDisplayed)
+                            {
+                                m_statusTabSocksPortLine.setText(
+                                        getContext().getString(R.string.socks_proxy_address,
+                                                Utils.getIPv4Address() + ":" + PsiphonData.getPsiphonData().getSocksPort()));
+                                m_statusTabHttpProxyPortLine.setText(
+                                        getContext().getString(R.string.http_proxy_address,
+                                                Utils.getIPv4Address() + ":" + PsiphonData.getPsiphonData().getHttpProxyPort()));
+                                proxyInfoDisplayed = true;
+                            }
+                        }
+                        else
+                        {
+                            if (proxyInfoDisplayed)
+                            {
+                                m_statusTabSocksPortLine.setText("");
+                                m_statusTabHttpProxyPortLine.setText("");
+                                proxyInfoDisplayed = false;
+                            }
                         }
                     }
                 });
