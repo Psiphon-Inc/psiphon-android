@@ -29,12 +29,19 @@
                     android:layout_gravity="center"
                     android:orientation="vertical" >
 
+                    <ScrollView
+                        android:layout_width="fill_parent"
+                        android:layout_height="0dip"
+                        android:layout_weight="1.00"
+                        android:orientation="vertical" 
+                        android:scrollbarFadeDuration="0"
+                        android:scrollbarAlwaysDrawVerticalTrack="true" 
+                        android:weightSum="1.0">
+                    
                     <LinearLayout
                         android:layout_width="fill_parent"
                         android:layout_height="0dip"
                         android:layout_gravity="center"
-                        android:layout_weight="1.00"
-                        android:gravity="center"
                         android:orientation="vertical" >
 
                         <ImageButton
@@ -76,6 +83,8 @@
                             android:text="" />
                             
                     </LinearLayout>
+                    
+                    </ScrollView>
 
                     <LinearLayout
                         android:layout_width="fill_parent"
