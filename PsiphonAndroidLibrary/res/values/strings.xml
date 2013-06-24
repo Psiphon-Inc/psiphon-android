@@ -118,4 +118,8 @@
     <string name="socks_proxy_address">Local SOCKS proxy is running at %s</string>
     <string name="http_proxy_address">Local HTTP proxy is running at %s</string>
     <string name="share_proxies_toggle">Allow other network devices to use the local proxies</string>
+    <string name="share_proxies_prompt_title">App restart required</string>
+    <string name="share_proxies_prompt_message">The app needs to restart to apply this setting.</string>
+    <string name="share_proxies_prompt_positive">Restart now</string>
+    <string name="share_proxies_prompt_negative">Cancel</string>
 </resources>

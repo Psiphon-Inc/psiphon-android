@@ -40,11 +40,13 @@ import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlarmManager;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -60,6 +62,7 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Pair;
 import android.view.GestureDetector;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -629,8 +632,36 @@ public abstract class MainBase
         
         public void onShareProxiesToggle(View v)
         {
-            // TODO: show a prompt, and kill and restart the app on confirmation
-            
+            new AlertDialog.Builder(this)
+            .setOnKeyListener(
+                    new DialogInterface.OnKeyListener() {
+                        public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                            // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
+                            return keyCode == KeyEvent.KEYCODE_SEARCH;
+                        }})
+            .setTitle(R.string.share_proxies_prompt_title)
+            .setMessage(R.string.share_proxies_prompt_message)
+            .setPositiveButton(R.string.share_proxies_prompt_positive,
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            applyShareProxies();
+                        }})
+            .setNegativeButton(R.string.share_proxies_prompt_negative,
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            m_shareProxiesToggle.setChecked(!m_shareProxiesToggle.isChecked());
+                        }})
+            .setOnCancelListener(
+                    new DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(DialogInterface dialog) {
+                            m_shareProxiesToggle.setChecked(!m_shareProxiesToggle.isChecked());
+                        }})
+            .show();
+        }
+        
+        private void applyShareProxies()
+        {
             boolean shareProxies = m_shareProxiesToggle.isChecked();
             
             PsiphonData.getPsiphonData().setShareProxies(shareProxies);
