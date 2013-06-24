@@ -92,12 +92,27 @@
   <string name="get_active_network_dns_resolvers_failed">Ошибка определения активных DNS распознавателей сети </string>
   <string name="preemptive_socket_connection_failed">Ошибка упреждающего socket соединения</string>
   <string name="preemptive_ssh_connection_failed">Ошибка упреждающего соединения SSH</string>
+  <string name="preemptive_bind_failed">Ошибка упреждающего bind</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">Ошибка чтения package info данного приложения</string>
   <string name="UpgradeManager.UpgradeFileWriteFailed">Ошибка записи апгрейда</string>
   <string name="UpgradeManager.UpgradeDownloadFailed">Ошибка скачивания апгрейда</string>
+  <string name="UpgradeManager.UpgradeDownloaded">Апгрейд скачан. Мы настоятельно рекомендуем установку этого апгрейда. Перезапустите Psiphon 3 после установки апгрейда.</string>
   <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Ошибка чтения package info апгрейда</string>
   <string name="UpgradeManager.UpgradeFileNotFound">Апгрейд файл не найден</string>
   <string name="UpgradeManager.UpgradePromptTitle">Апгрейд Psiphon </string>
+  <string name="UpgradeManager.UpgradePromptMessage">Апгрейд Psiphon 3 готов к установке. </string>
+  <string name="UpgradeManager.UpgradeAvailableNotificationId">Доступна новая версия Psiphon</string>
+  <string name="UpgradeManager.UpgradeFileReadFailed">Ошибка чтения файла апгрейда</string>
+  <string name="UpgradeManager.UpgradeFileAuthenticateFailed">Ошибка аутенфикации файла апгрейда</string>
+  <string name="connected_elapsed_time">Соединение установлено: %s</string>
+  <string name="disconnected">Соединение прекращено</string>
+  <string name="label_sent">Отослано</string>
+  <string name="label_received">Получено</string>
+  <string name="compression_ratio">%1$.2f%% сжато</string>
+  <string name="compression_savings">%s сохранен</string>
   <string name="start">Старт</string>
   <string name="stop">Стоп</string>
+  <string name="status_tab_name">Статус</string>
+  <string name="statistics_tab_name">Статистика</string>
+  <string name="logs_tab_name">Логи</string>
 </resources>
