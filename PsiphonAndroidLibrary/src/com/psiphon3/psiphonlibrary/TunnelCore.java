@@ -594,7 +594,15 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                 PsiphonData.getPsiphonData().setSocksPort(port);
             }
 
-            socks = sshConnection.createDynamicPortForwarder(PsiphonData.getPsiphonData().getSocksPort());
+            if (PsiphonData.getPsiphonData().getShareProxies())
+            {
+                socks = sshConnection.createDynamicPortForwarder(PsiphonData.getPsiphonData().getSocksPort());
+            }
+            else
+            {
+                socks = sshConnection.createDynamicPortForwarder(
+                        new InetSocketAddress("127.0.0.1", PsiphonData.getPsiphonData().getSocksPort()));
+            }
             MyLog.v(R.string.socks_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getSocksPort());
 
             // The HTTP proxy implementation is provided by Polipo,
