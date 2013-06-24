@@ -395,6 +395,11 @@ public interface UpgradeManager
          */
         public void start(int versionNumber)
         {
+            if (0 == EmbeddedValues.UPGRADE_URL.length())
+            {
+                return;
+            }
+            
             this.versionNumber = versionNumber;
             this.stopFlag = false;
             this.thread = new Thread(

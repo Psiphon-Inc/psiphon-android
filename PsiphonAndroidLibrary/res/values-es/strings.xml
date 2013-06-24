@@ -31,14 +31,16 @@
   <string name="no_server_entries">No hay servidores para conectarse</string>
   <string name="ServerInterface.InvalidRemoteServerList">Lista de servidores remotos no válida</string>
   <string name="TunnelService.FetchRemoteServerListFailed">Obtención de lista de servidores remotos fallida</string>
-  <string name="ServerEntryAuth.WrongPublicKey">Entrada en servidor remoto firmada con una clave pública diferente.</string>
-  <string name="ServerEntryAuth.InvalidSignature">Firma no válida en entrada del servidor remoto</string>
-  <string name="ServerEntryAuth.FailedToParseRemoteServerEntry">Análisis fallido de entrada en servidor remoto</string>
   <string name="starting_tunnel">Iniciando túnel...</string>
   <string name="stopping_tunnel">Deteniendo túnel...</string>
   <string name="stopped_tunnel">Túnel detenido</string>
   <string name="ServerInterface.StopRequested">Alto solicitado</string>
   <string name="ServerInterface.HTTPSRequestFailed">La solicitud HTTPS falló con error:</string>
-  <string name="psiphon_service_notification_message_connecting">Psiphon 3 está ejecutando...</string>
   <string name="psiphon_service_notification_id">notificación de Servicio de Psiphon</string>
+  <string name="UpgradeManager.CanNotRetrievePackageInfo">Incapaz de obtener la información de paquete de esta aplicación</string>
+  <string name="UpgradeManager.UpgradeFileWriteFailed">No pudo escribir archivo de actualización.</string>
+  <string name="UpgradeManager.UpgradeDownloadFailed">Descarga de actualización fallida.</string>
+  <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Falló la actualización. No se puede extraer la información de paquetes del archivo de actualización.</string>
+  <string name="UpgradeManager.UpgradeFileNotFound">No se encontró el archivo de actualización</string>
+  <string name="UpgradeManager.UpgradePromptTitle">Actualización de Psiphon</string>
 </resources>

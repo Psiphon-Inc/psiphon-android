@@ -31,14 +31,16 @@
   <string name="no_server_entries">Không có máy chủ để kết nối</string>
   <string name="ServerInterface.InvalidRemoteServerList">Danh sách máy chủ từ xa không hợp lệ</string>
   <string name="TunnelService.FetchRemoteServerListFailed">Lấy danh sách máy chủ từ xa thất bại</string>
-  <string name="ServerEntryAuth.WrongPublicKey">Mục nhập máy chủ từ xa có chữ ký bằng mã công khai khác</string>
-  <string name="ServerEntryAuth.InvalidSignature">Chữ ký không hợp lệ trên mục nhập máy chủ từ xa</string>
-  <string name="ServerEntryAuth.FailedToParseRemoteServerEntry">Không thể phân tách mục nhập máy chủ từ xa</string>
   <string name="starting_tunnel">Đang bắt đầu định hướng...</string>
   <string name="stopping_tunnel">Đang dừng định hướng...</string>
   <string name="stopped_tunnel">Đã dừng định hướng</string>
   <string name="ServerInterface.StopRequested">Đã yêu cầu dừng</string>
   <string name="ServerInterface.HTTPSRequestFailed">Yêu cầu HTTPS thất bại, có lỗi:</string>
-  <string name="psiphon_service_notification_message_connecting">Psiphon 3 đang chạy</string>
   <string name="psiphon_service_notification_id">Thông Báo Dịch Vụ Psiphon</string>
+  <string name="UpgradeManager.CanNotRetrievePackageInfo">Không thể truy xuất thông tin gói cho ứng dụng hiện tại</string>
+  <string name="UpgradeManager.UpgradeFileWriteFailed">Không thể ghi tập tin nâng cấp</string>
+  <string name="UpgradeManager.UpgradeDownloadFailed">Tải tập tin nâng cấp xuống thất bại</string>
+  <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Nâng cấp thất bại. Không thể xuất thông tin gói từ tập tin nâng cấp.</string>
+  <string name="UpgradeManager.UpgradeFileNotFound">Không tìm thấy tập tin nâng cấp</string>
+  <string name="UpgradeManager.UpgradePromptTitle">Nâng Cấp Psiphon</string>
 </resources>

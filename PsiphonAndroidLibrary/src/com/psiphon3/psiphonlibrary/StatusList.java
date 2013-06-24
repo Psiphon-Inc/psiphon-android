@@ -235,7 +235,9 @@ public class StatusList {
                 m_nextStatusEntryIndex += 1;
                 
                 // Never show debug messages
-                if (entry.priority() == Log.DEBUG) {
+                // Also, don't show warnings
+                if (entry.priority() == Log.DEBUG ||
+                        entry.priority() == Log.WARN) {
                     continue;
                 }
                 

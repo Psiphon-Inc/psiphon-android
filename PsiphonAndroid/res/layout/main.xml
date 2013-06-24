@@ -19,103 +19,104 @@
  *
  -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" 
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
+<TabHost xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:id="@+id/tabHost">
+    
     <LinearLayout
-        android:id="@+id/linearLayout1"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:background="#FFFFFFFF" >
-        
-        <ImageView
-            android:id="@+id/banner"
+        android:orientation="vertical" 
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    
+        <LinearLayout
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:src="@drawable/banner"
-            android:contentDescription="@string/banner_desc" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/linearLayout2"
-        android:layout_width="fill_parent"
-        android:layout_height="0dp"
-        android:orientation="vertical"
-        android:layout_weight="1.0">
-        
-        <ListView android:id="@+id/statusList"
-                  android:layout_width="match_parent"
-                  android:layout_height="match_parent"
-                  android:divider="#000000"
-                  android:drawSelectorOnTop="false"/>
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/linearLayout3"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:weightSum="4.0">
-
-        <CheckBox
-            android:id="@+id/tunnelWholeDeviceToggle"
-            android:onClick="onTunnelWholeDeviceToggle"
+            android:background="#FFFFFFFF" >
+            
+            <ImageView
+                android:id="@+id/banner"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:src="@drawable/banner"
+                android:contentDescription="@string/banner_desc" />
+    
+        </LinearLayout>
+    
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="0dp"
+            android:orientation="vertical"
+            android:layout_weight="1.0">
+            
+            <include
+                android:layout_width="fill_parent"
+                layout="@layout/tabs" />
+                                        
+        </LinearLayout>
+    
+        <LinearLayout
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:layout_gravity="center"
-            android:text="@string/tunnel_whole_device_toggle"
-            android:textAppearance="?android:attr/textAppearanceSmall"/>
-        
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:weightSum="4.0">
+    
+            <CheckBox
+                android:id="@+id/tunnelWholeDeviceToggle"
+                android:onClick="onTunnelWholeDeviceToggle"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/tunnel_whole_device_toggle"
+                android:textAppearance="?android:attr/textAppearanceSmall"/>
+            
+        </LinearLayout>
+    
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="4.0">
+    
+            <Button
+                android:id="@+id/toggleButton"
+                android:onClick="onToggleClick"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="@string/start"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:layout_weight="1.05" />
+    
+            <Button
+                android:id="@+id/openBrowserButton"
+                android:onClick="onOpenBrowserClick"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="@string/open_browser"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:layout_weight="1.0" />
+    
+            <Button
+                android:id="@+id/feedbackButton"
+                android:onClick="onFeedbackClick"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="@string/feedback"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:layout_weight="0.95" />
+    
+            <Button
+                android:id="@+id/aboutButton"
+                android:onClick="onAboutClick"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="@string/about"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:layout_weight="1.0" />
+            
+        </LinearLayout>
+    
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/linearLayout4"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_alignParentBottom="true"
-        android:weightSum="4.0">
-
-        <Button
-            android:id="@+id/toggleButton"
-            android:onClick="onToggleClick"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:text="@string/start"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:layout_weight="1.05" />
-
-        <Button
-            android:id="@+id/openBrowserButton"
-            android:onClick="onOpenBrowserClick"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:text="@string/open_browser"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:layout_weight="1.0" />
-
-        <Button
-            android:id="@+id/feedbackButton"
-            android:onClick="onFeedbackClick"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:text="@string/feedback"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:layout_weight="0.95" />
-
-        <Button
-            android:id="@+id/aboutButton"
-            android:onClick="onAboutClick"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:text="@string/about"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:layout_weight="1.0" />
-        
-    </LinearLayout>
-
-</LinearLayout>
+</TabHost>
