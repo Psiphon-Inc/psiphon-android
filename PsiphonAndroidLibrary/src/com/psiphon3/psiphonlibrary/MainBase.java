@@ -39,6 +39,8 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -636,6 +638,14 @@ public abstract class MainBase
             Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
             editor.putBoolean(SHARE_PROXIES_PREFERENCE, shareProxies);
             editor.commit();
+            
+            stopTunnel(this);
+            
+            AlarmManager alm = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
+            alm.set(AlarmManager.RTC, System.currentTimeMillis() + 1000,
+                    PendingIntent.getActivity(this, 0, new Intent(this, this.getClass()), 0));
+
+            android.os.Process.killProcess(android.os.Process.myPid());
         }
         
         private class DataTransferGraph
@@ -758,10 +768,12 @@ public abstract class MainBase
                             {
                                 m_statusTabSocksPortLine.setText(
                                         getContext().getString(R.string.socks_proxy_address,
-                                                Utils.getIPv4Address() + ":" + PsiphonData.getPsiphonData().getSocksPort()));
+                                                (PsiphonData.getPsiphonData().getShareProxies() ? Utils.getIPv4Address() : "127.0.0.1") +
+                                                ":" + PsiphonData.getPsiphonData().getSocksPort()));
                                 m_statusTabHttpProxyPortLine.setText(
                                         getContext().getString(R.string.http_proxy_address,
-                                                Utils.getIPv4Address() + ":" + PsiphonData.getPsiphonData().getHttpProxyPort()));
+                                                (PsiphonData.getPsiphonData().getShareProxies() ? Utils.getIPv4Address() : "127.0.0.1") +
+                                                ":" + PsiphonData.getPsiphonData().getHttpProxyPort()));
                                 proxyInfoDisplayed = true;
                             }
                         }
