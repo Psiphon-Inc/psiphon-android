@@ -59,5 +59,11 @@ cog.outl('final String UPGRADE_SIGNATURE_PUBLIC_KEY = "%s";' % utils.get_embedde
 
     final String UPGRADE_URL = "";
     final String UPGRADE_SIGNATURE_PUBLIC_KEY = "";
+    
+    // To be shown to the user in the feedback page.
+    final String GET_NEW_VERSION_URL = "https://s3.amazonaws.com/invalid_bucket_name/en.html";
+    final String GET_NEW_VERSION_EMAIL = "get@example.com";
+    final String FAQ_URL = "https://s3.amazonaws.com/invalid_bucket_name/en.html#other_frequently_asked_questions";
+    final String DATA_COLLECTION_INFO_URL = "https://s3.amazonaws.com/invalid_bucket_name/en.html#what_user_information_does_psiphon_3_collect";    
 //[[[end]]]
 }
