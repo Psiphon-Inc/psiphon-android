@@ -39,19 +39,14 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
-import android.app.AlarmManager;
-import android.app.AlertDialog;
-import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.net.VpnService;
@@ -62,7 +57,6 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Pair;
 import android.view.GestureDetector;
-import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -72,7 +66,6 @@ import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.webkit.URLUtil;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -135,8 +128,6 @@ public abstract class MainBase
         private SharedPreferences m_preferences; 
         private TextView m_statusTabLogLine;
         private TextView m_statusTabVersionLine;
-        private TextView m_statusTabSocksPortLine;
-        private TextView m_statusTabHttpProxyPortLine;
         private LocalBroadcastManager m_localBroadcastManager;
         private Timer m_updateHeaderTimer;
         private Timer m_updateStatusTimer;
@@ -151,7 +142,9 @@ public abstract class MainBase
         private DataTransferGraph m_slowReceivedGraph;
         private DataTransferGraph m_fastSentGraph;
         private DataTransferGraph m_fastReceivedGraph;
-        private CheckBox m_shareProxiesToggle;
+        /*private CheckBox m_shareProxiesToggle;
+        private TextView m_statusTabSocksPortLine;
+        private TextView m_statusTabHttpProxyPortLine;*/
 
         // Avoid calling m_statusTabToggleButton.setImageResource() every 250 ms
         // when it is set to the connected image
@@ -438,8 +431,6 @@ public abstract class MainBase
 
             m_statusTabLogLine = (TextView)findViewById(R.id.lastlogline);
             m_statusTabVersionLine = (TextView)findViewById(R.id.versionline);
-            m_statusTabSocksPortLine = (TextView)findViewById(R.id.socksportline);
-            m_statusTabHttpProxyPortLine = (TextView)findViewById(R.id.httpproxyportline);
             m_elapsedConnectionTimeView = (TextView)findViewById(R.id.elapsedConnectionTime);
             m_totalSentView = (TextView)findViewById(R.id.totalSent);
             m_totalReceivedView = (TextView)findViewById(R.id.totalReceived);
@@ -447,7 +438,9 @@ public abstract class MainBase
             m_compressionRatioReceivedView = (TextView)findViewById(R.id.compressionRatioReceived);
             m_compressionSavingsSentView = (TextView)findViewById(R.id.compressionSavingsSent);
             m_compressionSavingsReceivedView = (TextView)findViewById(R.id.compressionSavingsReceived);
-            m_shareProxiesToggle = (CheckBox)findViewById(R.id.shareProxiesToggle);
+            /*m_shareProxiesToggle = (CheckBox)findViewById(R.id.shareProxiesToggle);
+            m_statusTabSocksPortLine = (TextView)findViewById(R.id.socksportline);
+            m_statusTabHttpProxyPortLine = (TextView)findViewById(R.id.httpproxyportline);*/
 
             m_slowSentGraph = new DataTransferGraph(this, R.id.slowSentGraph);
             m_slowReceivedGraph = new DataTransferGraph(this, R.id.slowReceivedGraph);
@@ -484,8 +477,8 @@ public abstract class MainBase
             
             boolean shareProxiesPreference =
                     PreferenceManager.getDefaultSharedPreferences(this).getBoolean(SHARE_PROXIES_PREFERENCE, false);
-            m_shareProxiesToggle.setChecked(shareProxiesPreference);
             PsiphonData.getPsiphonData().setShareProxies(shareProxiesPreference);
+            /*m_shareProxiesToggle.setChecked(shareProxiesPreference);*/
 
             // Note that this must come after the above lines, or else the activity
             // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
@@ -630,7 +623,7 @@ public abstract class MainBase
             }
         }
         
-        public void onShareProxiesToggle(View v)
+        /*public void onShareProxiesToggle(View v)
         {
             new AlertDialog.Builder(this)
             .setOnKeyListener(
@@ -677,7 +670,7 @@ public abstract class MainBase
                     PendingIntent.getActivity(this, 0, new Intent(this, this.getClass()), 0));
 
             android.os.Process.killProcess(android.os.Process.myPid());
-        }
+        }*/
         
         private class DataTransferGraph
         {
@@ -783,7 +776,7 @@ public abstract class MainBase
                 });
         }
         
-        private boolean proxyInfoDisplayed = false;
+        /*private boolean proxyInfoDisplayed = false;*/
         private void updateStatusCallback()
         {
             this.runOnUiThread(
@@ -795,7 +788,7 @@ public abstract class MainBase
                         if (dataTransferStats.isConnected())
                         {
                             setStatusImageButtonResource(R.drawable.status_icon_connected);
-                            if (!proxyInfoDisplayed)
+                            /*if (!proxyInfoDisplayed)
                             {
                                 m_statusTabSocksPortLine.setText(
                                         getContext().getString(R.string.socks_proxy_address,
@@ -806,16 +799,16 @@ public abstract class MainBase
                                                 (PsiphonData.getPsiphonData().getShareProxies() ? Utils.getIPv4Address() : "127.0.0.1") +
                                                 ":" + PsiphonData.getPsiphonData().getHttpProxyPort()));
                                 proxyInfoDisplayed = true;
-                            }
+                            }*/
                         }
                         else
                         {
-                            if (proxyInfoDisplayed)
+                            /*if (proxyInfoDisplayed)
                             {
                                 m_statusTabSocksPortLine.setText("");
                                 m_statusTabHttpProxyPortLine.setText("");
                                 proxyInfoDisplayed = false;
-                            }
+                            }*/
                         }
                     }
                 });
