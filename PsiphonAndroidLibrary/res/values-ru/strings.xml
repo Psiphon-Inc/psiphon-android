@@ -115,4 +115,11 @@
   <string name="status_tab_name">Статус</string>
   <string name="statistics_tab_name">Статистика</string>
   <string name="logs_tab_name">Логи</string>
+  <string name="socks_proxy_address">Локальный прокси-сервер SOCKS работает на %s</string>
+  <string name="http_proxy_address">Локальный прокси-сервер HTTP работает на %s</string>
+  <string name="share_proxies_toggle">Разрешить другим сетевым устройствам использовать локальные прокси</string>
+  <string name="share_proxies_prompt_title">Требуется перезапуск приложения</string>
+  <string name="share_proxies_prompt_message">Для применение этой установки требуется перезапуск приложения</string>
+  <string name="share_proxies_prompt_positive">Перезапустить сейчас</string>
+  <string name="share_proxies_prompt_negative">Отмена</string>
 </resources>

@@ -43,4 +43,5 @@
   <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Nâng cấp thất bại. Không thể xuất thông tin gói từ tập tin nâng cấp.</string>
   <string name="UpgradeManager.UpgradeFileNotFound">Không tìm thấy tập tin nâng cấp</string>
   <string name="UpgradeManager.UpgradePromptTitle">Nâng Cấp Psiphon</string>
+  <string name="share_proxies_prompt_negative">Hủy</string>
 </resources>

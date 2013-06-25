@@ -43,4 +43,5 @@
   <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Falló la actualización. No se puede extraer la información de paquetes del archivo de actualización.</string>
   <string name="UpgradeManager.UpgradeFileNotFound">No se encontró el archivo de actualización</string>
   <string name="UpgradeManager.UpgradePromptTitle">Actualización de Psiphon</string>
+  <string name="share_proxies_prompt_negative">Cancelar</string>
 </resources>

@@ -112,4 +112,8 @@
   <string name="compression_savings">%s 保存</string>
   <string name="start">启动</string>
   <string name="stop">停止</string>
+  <string name="status_tab_name">状况</string>
+  <string name="statistics_tab_name">统计数据</string>
+  <string name="logs_tab_name">日志</string>
+  <string name="share_proxies_prompt_negative">取消</string>
 </resources>
