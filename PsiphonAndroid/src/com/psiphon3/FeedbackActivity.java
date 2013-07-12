@@ -77,10 +77,18 @@ public class FeedbackActivity extends Activity
                     intent.setType("message/rfc822");
                     intent.putExtra(Intent.EXTRA_EMAIL, new String[] {MailTo.parse(url).getTo()});
 
-                    File attachmentFile = Diagnostics.createEmailAttachment(activity);
-                    if (attachmentFile != null)
+                    // This is a hack to only include the diagnostics attachment when clicking the
+                    // feedback mailto: link.  There is another mailto: link now, the get@ responder,
+                    // which should not include the diagnostics attachment.
+                    // Including the diagnostics attachment will break if the mailto: link changes
+                    // to something that does not include "feedback".
+                    if (url.contains("feedback"))
                     {
-                        intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(attachmentFile));
+                        File attachmentFile = Diagnostics.createEmailAttachment(activity);
+                        if (attachmentFile != null)
+                        {
+                            intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(attachmentFile));
+                        }
                     }
 
                     try
