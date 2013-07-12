@@ -69,7 +69,7 @@
         <activity android:name="org.zirco.ui.activities.preferences.WeaveServerPreferenceActivity"></activity>
 
         <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonzircobookmarkscontentprovider"></provider>
-        <provider android:name="org.zirco.providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.weavecontentprovider"></provider>
+        <provider android:name="org.zirco.providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonweavecontentprovider"></provider>
 
     </application>
 
