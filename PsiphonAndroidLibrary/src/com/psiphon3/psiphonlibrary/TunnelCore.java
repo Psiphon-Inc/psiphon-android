@@ -485,6 +485,14 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
             boolean tunnelWholeDevice = PsiphonData.getPsiphonData().getTunnelWholeDevice();
             boolean runVpnService = tunnelWholeDevice && Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
+
+            // Guard against trying to start WDM mode when the global option flips while starting a TunnelService
+            if (runVpnService && (m_parentService instanceof TunnelService))
+            {
+                tunnelWholeDevice = false;
+                runVpnService = false;
+            }
+
             // TODO: get remote address/port from Psiphon server
             String tunnelWholeDeviceDNSServer = PsiphonConstants.TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS;
             
