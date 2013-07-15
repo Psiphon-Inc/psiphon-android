@@ -252,6 +252,13 @@ public class PreferencesActivity extends PreferenceActivity {
 		
 		PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(mPreferenceChangeListener);
 	}
+
+	//PSIPHON
+	@Override
+	protected void onDestroy() {
+	    PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(mPreferenceChangeListener);
+	    super.onDestroy();
+	}
 	
 	/**
 	 * Ask user to restart the app. Do it if click on "Yes".
