@@ -828,7 +828,7 @@ public class ServerInterface
                 PsiphonData.getPsiphonData().setNextFetchRemoteServerList(
                         SystemClock.elapsedRealtime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH);
                 
-                String serverList = AuthenticatedDataPackage.validateAndExtractData(
+                String serverList = AuthenticatedDataPackage.extractAndVerifyData(
                                         EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY,
                                         new String(response));
     

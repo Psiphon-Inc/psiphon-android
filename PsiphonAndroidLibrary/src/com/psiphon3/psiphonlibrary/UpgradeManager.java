@@ -20,37 +20,29 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.zip.GZIPInputStream;
 
-import org.json.JSONException;
-
 import com.psiphon3.psiphonlibrary.ServerInterface;
-import com.psiphon3.psiphonlibrary.TunnelCore;
 import com.psiphon3.psiphonlibrary.AuthenticatedDataPackage.AuthenticatedDataPackageException;
 import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
-import android.os.SystemClock;
-import android.view.KeyEvent;
 
 /**
  * Contains logic relating to downloading and applying upgrades.
@@ -69,9 +61,14 @@ public interface UpgradeManager
             this.context = context;
         }
         
+        public String getFullPath(String filename)
+        {
+            return this.context.getFileStreamPath(filename).getAbsolutePath();
+        }
+        
         public String getFullPath()
         {
-            return this.context.getFileStreamPath(getFilename()).getAbsolutePath();
+            return getFullPath(getFilename());
         }
         
         public abstract String getFilename();
@@ -90,9 +87,15 @@ public interface UpgradeManager
             return true;
         }
         
-        public void delete()
+        public boolean delete()
         {
-            this.context.deleteFile(getFilename());
+            return this.context.deleteFile(getFilename());
+        }
+        
+        public boolean rename(String newFilename)
+        {
+            File file = new File(getFullPath());
+            return file.renameTo(new File(getFullPath(newFilename)));
         }
         
         public Uri getUri()
@@ -110,12 +113,21 @@ public interface UpgradeManager
         public abstract boolean isWorldReadable();
         
         @SuppressLint("WorldReadableFiles")
+        public FileOutputStream createForWriting() throws FileNotFoundException
+        {
+            int mode = 0;
+            if (isWorldReadable()) mode |= Context.MODE_WORLD_READABLE;
+
+            return this.context.openFileOutput(getFilename(), mode);             
+        }
+
+        @SuppressLint("WorldReadableFiles")
         public boolean write(byte[] data, int length, boolean append)
         {
             FileOutputStream fos = null;
             try
             {
-                int mode = 0;                
+                int mode = 0;
                 if (isWorldReadable()) mode |= Context.MODE_WORLD_READABLE;
                 if (append) mode |= Context.MODE_APPEND;
 
@@ -149,9 +161,28 @@ public interface UpgradeManager
         }
     }
 
-    static class CompleteUpgradeFile extends UpgradeFile
+    static class UnverifiedUpgradeFile extends UpgradeFile
     {
-        public CompleteUpgradeFile(Context context)
+        public UnverifiedUpgradeFile(Context context)
+        {
+            super(context);
+        }
+        
+        public String getFilename()
+        {
+            return "PsiphonAndroid.apk.unverified";
+        }
+        
+        public boolean isWorldReadable()
+        {
+            // Making the APK world readable so Installer component can access it
+            return true;
+        }
+    }    
+
+    static class VerifiedUpgradeFile extends UpgradeFile
+    {
+        public VerifiedUpgradeFile(Context context)
         {
             super(context);
         }
@@ -208,15 +239,16 @@ public interface UpgradeManager
                 
                 unzipStream = openUnzipStream();
                 
-                String base64UpgradeAPK = AuthenticatedDataPackage.validateAndExtractData(
-                                            EmbeddedValues.UPGRADE_SIGNATURE_PUBLIC_KEY,
-                                            unzipStream);
+                UnverifiedUpgradeFile unverifiedFile = new UnverifiedUpgradeFile(super.context);
+                OutputStream dataDestination = unverifiedFile.createForWriting();
                 
-                byte[] upgradeAPK = Utils.Base64.decode(base64UpgradeAPK);
-                
-                CompleteUpgradeFile file = new CompleteUpgradeFile(super.context);
-                file.write(upgradeAPK, upgradeAPK.length, false);
+                AuthenticatedDataPackage.extractAndVerifyData(
+                        EmbeddedValues.UPGRADE_SIGNATURE_PUBLIC_KEY,
+                        unzipStream,
+                        dataDestination);
 
+                unverifiedFile.rename(new VerifiedUpgradeFile(super.context).getFilename());
+                
                 return true;
             }
             catch (FileNotFoundException e)
@@ -266,9 +298,9 @@ public interface UpgradeManager
          * version.
          * @return true if upgrade file is available to be applied.
          */
-        protected static CompleteUpgradeFile getAvailableCompleteUpgradeFile(Context context)
+        protected static VerifiedUpgradeFile getAvailableCompleteUpgradeFile(Context context)
         {
-            CompleteUpgradeFile file = new CompleteUpgradeFile(context);
+            VerifiedUpgradeFile file = new VerifiedUpgradeFile(context);
 
             // Does the file exist?
             if (!file.exists())
@@ -322,7 +354,7 @@ public interface UpgradeManager
          */
         public static void notifyUpgrade(Context context)
         {
-            CompleteUpgradeFile file = getAvailableCompleteUpgradeFile(context); 
+            VerifiedUpgradeFile file = getAvailableCompleteUpgradeFile(context); 
             if (file == null)
             {
                 return;
