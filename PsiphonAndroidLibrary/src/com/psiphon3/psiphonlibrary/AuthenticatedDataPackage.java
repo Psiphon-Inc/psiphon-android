@@ -148,7 +148,7 @@ public class AuthenticatedDataPackage
             // stream the encoded data to the signature stream, hence the re-encode.
             // TODO: Avoid this redundant computation.
             
-            this.base64encodedStream = new Base64OutputStream(this.signatureStream, Base64.NO_CLOSE);
+            this.base64encodedStream = new Base64OutputStream(this.signatureStream, Base64.NO_WRAP);
         }
 
         public void write(byte[] b) throws IOException
@@ -169,6 +169,12 @@ public class AuthenticatedDataPackage
             this.out.write(b);            
             this.base64encodedStream.write(b);
         }
+        
+        public void close() throws IOException
+        {
+            this.out.close();            
+            this.base64encodedStream.close();
+        }
     }
 
     static public void extractAndVerifyData(
@@ -181,6 +187,7 @@ public class AuthenticatedDataPackage
         // Psiphon/Automation/psi_ops_server_entry_auth.py
         
         // NOTE: this function always closes the dataPackage input stream
+        // and dataDestination output stream.
 
         JsonParser parser = null;
         VerifyingOutputStream verifyingOutputStream = null;
@@ -194,7 +201,7 @@ public class AuthenticatedDataPackage
             // Initialize a verifier using the expected public key; this will
             // be used while streaming the "data" value when parsing the JSON.
             
-            byte[] publicKeyBytes = Base64.decode(signaturePublicKey, Base64.DEFAULT);
+            byte[] publicKeyBytes = Base64.decode(signaturePublicKey, Base64.NO_WRAP);
             java.security.spec.X509EncodedKeySpec spec = new X509EncodedKeySpec(publicKeyBytes);
             java.security.KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PublicKey publicKey = keyFactory.generatePublic(spec);
@@ -252,6 +259,11 @@ public class AuthenticatedDataPackage
                     // after validateAndExtractData returns true.
                     
                     parser.readBinaryValue(Base64Variants.MIME, verifyingOutputStream);
+                    
+                    // This explicit close() ensures that the Base64OutputStream in 
+                    // Base64OutputStream has flushed and output final padding *before*
+                    // the verifier.verify() call.
+                    verifyingOutputStream.close();
 
                     dataValueRead = true;
                 }
@@ -281,7 +293,7 @@ public class AuthenticatedDataPackage
             
             MessageDigest sha2;
             sha2 = MessageDigest.getInstance("SHA256");
-            String publicKeyDigest = Base64.encodeToString(sha2.digest(signaturePublicKey.getBytes()), Base64.DEFAULT);
+            String publicKeyDigest = Base64.encodeToString(sha2.digest(signaturePublicKey.getBytes()), Base64.NO_WRAP);
             if (0 != publicKeyDigest.compareTo(signingPublicKeyDigest))
             {
                 MyLog.w(R.string.AuthenticatedDataPackage_WrongPublicKey, MyLog.Sensitivity.NOT_SENSITIVE);
@@ -291,7 +303,7 @@ public class AuthenticatedDataPackage
             // Now that we've checked the signing public key and have read the signature,
             // we can complete the verification process.
 
-            if (!verifier.verify(Base64.decode(signature, Base64.DEFAULT)))
+            if (!verifier.verify(Base64.decode(signature, Base64.NO_WRAP)))
             {            
                 MyLog.w(R.string.AuthenticatedDataPackage_InvalidSignature, MyLog.Sensitivity.NOT_SENSITIVE);
                 throw new AuthenticatedDataPackageException();
