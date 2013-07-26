@@ -245,6 +245,7 @@ public interface UpgradeManager
                 AuthenticatedDataPackage.extractAndVerifyData(
                         EmbeddedValues.UPGRADE_SIGNATURE_PUBLIC_KEY,
                         unzipStream,
+                        true, // "data" is Base64 (and is a large value to be streamed)
                         dataDestination);
 
                 unverifiedFile.rename(new VerifiedUpgradeFile(super.context).getFilename());

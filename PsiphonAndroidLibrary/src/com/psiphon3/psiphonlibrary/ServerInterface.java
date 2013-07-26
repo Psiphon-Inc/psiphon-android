@@ -830,6 +830,7 @@ public class ServerInterface
                 
                 String serverList = AuthenticatedDataPackage.extractAndVerifyData(
                                         EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY,
+                                        false, // "data" is not Base64
                                         new String(response));
     
                 shuffleAndAddServerEntries(serverList.split("\n"), false);

@@ -76,6 +76,7 @@ public class AuthenticatedDataPackage
     
     static public String extractAndVerifyData(
             String signaturePublicKey,
+            boolean dataIsBase64,
             String dataPackage)
         throws AuthenticatedDataPackageException
     {
@@ -86,6 +87,7 @@ public class AuthenticatedDataPackage
             extractAndVerifyData(
                 signaturePublicKey,
                 new ByteArrayInputStream(dataPackage.getBytes("UTF-8")),
+                dataIsBase64,
                 dataDestination);
             
             return dataDestination.toString("UTF-8");
@@ -135,51 +137,56 @@ public class AuthenticatedDataPackage
             }
         };
         
-        private SignatureOutputStream signatureStream;
-        private Base64OutputStream base64encodedStream;
+        private boolean dataIsBase64;
+        private OutputStream verifyOutputStream;
 
-        public VerifyingOutputStream(OutputStream out, Signature signature)
+        public VerifyingOutputStream(boolean dataIsBase64, OutputStream out, Signature signature)
         {
             super(out);
-            this.signatureStream = new SignatureOutputStream(signature);
+            this.dataIsBase64 = dataIsBase64;
+            this.verifyOutputStream = new SignatureOutputStream(signature);
 
-            // We re-encode the data as Base64, since the signature is on Base64-encoded
-            // data (a pre-existing design). The Jackson API forces a decode before we can
-            // stream the encoded data to the signature stream, hence the re-encode.
-            // TODO: Avoid this redundant computation.
-            
-            this.base64encodedStream = new Base64OutputStream(this.signatureStream, Base64.NO_WRAP);
+            if (this.dataIsBase64)
+            {
+                // We re-encode the data as Base64, since the signature is on Base64-encoded
+                // data (a pre-existing design). The Jackson API forces a decode before we can
+                // stream the encoded data to the signature stream, hence the re-encode.
+                // TODO: Avoid this redundant computation.
+                
+                this.verifyOutputStream = new Base64OutputStream(this.verifyOutputStream, Base64.NO_WRAP);
+            }
         }
 
         public void write(byte[] b) throws IOException
         {
             this.out.write(b);
-            this.base64encodedStream.write(b);
+            this.verifyOutputStream.write(b);
         }
 
         public void write(byte[] b, int off, int len) throws IOException
         {
             this.out.write(b, off, len);
-            this.base64encodedStream.write(b, off, len);
+            this.verifyOutputStream.write(b, off, len);
             
         }
 
         public void write(int b) throws IOException
         {
             this.out.write(b);            
-            this.base64encodedStream.write(b);
+            this.verifyOutputStream.write(b);
         }
         
         public void close() throws IOException
         {
             this.out.close();            
-            this.base64encodedStream.close();
+            this.verifyOutputStream.close();
         }
     }
 
     static public void extractAndVerifyData(
             String signaturePublicKey,
             InputStream dataPackage,
+            boolean dataIsBase64,
             OutputStream dataDestination)
         throws AuthenticatedDataPackageException
     {
@@ -208,7 +215,7 @@ public class AuthenticatedDataPackage
 
             Signature verifier = java.security.Signature.getInstance("SHA256withRSA");
             verifier.initVerify(publicKey);
-            verifyingOutputStream = new VerifyingOutputStream(dataDestination, verifier);
+            verifyingOutputStream = new VerifyingOutputStream(dataIsBase64, dataDestination, verifier);
             
             // JSON parsing - using a streaming API as the "data" value is too large
             // to be loaded into memory.
@@ -244,21 +251,38 @@ public class AuthenticatedDataPackage
 
                 if (fieldName.equals("data"))
                 {
-                    // This value is too large to load into memory as a string. The value is
-                    // decoded from base64 and written to the output stream; at the same
-                    // time, the bytes is fed into a signature verifier.
-
-                    // NOTE: The verification is not finished here, as we require the 
-                    // "signingPublicKeyDigest" value to check which public key was used
-                    // and we require the "signature" value to complete the verification.
-
-                    // IMPORTANT NOTE: Complete data is written to the "dataDestination"
-                    // output stream *before* the signature is verified. If the caller is
-                    // writing to disk, for example, it should perform a two-phase process
-                    // whereby it writes to a temp file name, then renames (commits) the file
-                    // after validateAndExtractData returns true.
-                    
-                    parser.readBinaryValue(Base64Variants.MIME, verifyingOutputStream);
+                    if (dataIsBase64)
+                    {
+                        // This value is too large to load into memory as a string. The value is
+                        // decoded from base64 and written to the output stream; at the same
+                        // time, the bytes is fed into a signature verifier.
+    
+                        // NOTE: The verification is not finished here, as we require the 
+                        // "signingPublicKeyDigest" value to check which public key was used
+                        // and we require the "signature" value to complete the verification.
+    
+                        // IMPORTANT NOTE: Complete data is written to the "dataDestination"
+                        // output stream *before* the signature is verified. If the caller is
+                        // writing to disk, for example, it should perform a two-phase process
+                        // whereby it writes to a temp file name, then renames (commits) the file
+                        // after validateAndExtractData returns true.
+                        
+                        try
+                        {
+                            parser.readBinaryValue(Base64Variants.MIME, verifyingOutputStream);
+                        }
+                        catch (IllegalArgumentException e)
+                        {
+                            // Jackson throws this unchecked exception for malformed Base64
+                            throw new AuthenticatedDataPackageException(e);
+                        }
+                    }
+                    else
+                    {
+                        // NOTE: Jackson can only stream Base64 values
+                        
+                        verifyingOutputStream.write(parser.getValueAsString().getBytes());
+                    }
                     
                     // This explicit close() ensures that the Base64OutputStream in 
                     // Base64OutputStream has flushed and output final padding *before*
