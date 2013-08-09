@@ -31,9 +31,11 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.Spinner;
 import android.widget.TabHost;
 
 import com.psiphon3.psiphonlibrary.PsiphonData;
+import com.psiphon3.psiphonlibrary.RegionAdapter;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
@@ -45,6 +47,7 @@ public class StatusActivity
     
     private static boolean m_firstRun = true;
     private CheckBox m_tunnelWholeDeviceToggle;
+    private Spinner m_regionSelector;
     private boolean m_tunnelWholeDevicePromptShown = false;
 
     public StatusActivity()
@@ -59,21 +62,10 @@ public class StatusActivity
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
+        m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
+        m_regionSelector = (Spinner)findViewById(R.id.regionSelector);
 
         super.onCreate(savedInstanceState);
-
-        /*
-        // Draw attention to the new Start/Stop command
-        // http://stackoverflow.com/questions/4852281/android-how-to-make-a-button-flashing
-        final Animation animation = new AlphaAnimation(1, 0);
-        animation.setDuration(500);
-        animation.setInterpolator(new LinearInterpolator());
-        animation.setRepeatCount(2);
-        animation.setRepeatMode(Animation.REVERSE);
-        m_toggleButton.startAnimation(animation);
-        */
-
-        m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
 
         // Transparent proxy-based "Tunnel Whole Device" option is only available on rooted devices and
         // defaults to true on rooted devices.
@@ -82,10 +74,12 @@ public class StatusActivity
         boolean isRooted = Utils.isRooted();
         boolean canRunVpnService = Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
         boolean canWholeDevice = isRooted || canRunVpnService;
-
+       
         m_tunnelWholeDeviceToggle.setEnabled(canWholeDevice);
         boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, canWholeDevice);
         m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
+
+        m_regionSelector.setAdapter(new RegionAdapter(this));
         
         // Use PsiphonData to communicate the setting to the TunnelService so it doesn't need to
         // repeat the isRooted check. The preference is retained even if the device becomes "unrooted"
