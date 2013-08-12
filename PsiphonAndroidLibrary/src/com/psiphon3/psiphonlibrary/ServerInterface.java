@@ -133,6 +133,7 @@ public class ServerInterface
         public int sshObfuscatedPort;
         public String sshObfuscatedKey;
         public ArrayList<String> capabilities;
+        public String regionCode;
 
         @Override
         public ServerEntry clone()
@@ -151,6 +152,8 @@ public class ServerInterface
         public static final String CAPABILITY_VPN = "VPN";
         public static final String CAPABILITY_OSSH = "OSSH";
         public static final String CAPABILITY_SSH = "SSH";
+        
+        public static final String REGION_CODE_ANY = "";
         
         boolean hasCapability(String capability)
         {
@@ -178,6 +181,16 @@ public class ServerInterface
             }
 
             return -1;
+        }
+
+        boolean inRegion(String regionCode)
+        {
+            if (regionCode.equals(REGION_CODE_ANY))
+            {
+                return true;
+            }
+
+            return regionCode.equals(this.regionCode);
         }
     }
     
@@ -352,6 +365,19 @@ public class ServerInterface
         for (ServerEntry entry: this.serverEntries)
         {
             if (entry.hasCapabilities(capabilities))
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    synchronized boolean serverInRegionExists(String regionCode)
+    {
+        for (ServerEntry entry: this.serverEntries)
+        {
+            if (entry.inRegion(regionCode))
             {
                 return true;
             }
@@ -1499,6 +1525,15 @@ public class ServerInterface
             newEntry.capabilities.add(ServerEntry.CAPABILITY_SSH);
             newEntry.capabilities.add(ServerEntry.CAPABILITY_VPN);
             newEntry.capabilities.add(ServerEntry.CAPABILITY_HANDSHAKE);
+        }
+        
+        if (obj.has("region"))
+        {
+            newEntry.regionCode = obj.getString("region");
+        }
+        else
+        {
+            newEntry.regionCode = "";            
         }
         
         return newEntry;

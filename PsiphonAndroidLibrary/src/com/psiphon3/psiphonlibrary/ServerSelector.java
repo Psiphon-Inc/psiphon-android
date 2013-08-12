@@ -255,11 +255,14 @@ public class ServerSelector
             }
             
             ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
+            
+            String egressRegion = PsiphonData.getPsiphonData().getEgressRegion();
         
             for (ServerEntry entry : serverEntries)
             {
                 if (-1 != entry.getPreferredReachablityTestPort() &&
-                        entry.hasCapabilities(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
+                        entry.hasCapabilities(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL) &&
+                        entry.inRegion(egressRegion))
                 {
                     CheckServerWorker worker = new CheckServerWorker(entry);
                     threadPool.submit(worker);

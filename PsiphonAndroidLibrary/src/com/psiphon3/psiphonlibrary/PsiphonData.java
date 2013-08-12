@@ -78,6 +78,7 @@ public class PsiphonData
     private DataTransferStats m_dataTransferStats;
     private boolean m_displayDataTransferStats;
     private boolean m_downloadUpgrades;
+    private String m_egressRegion;
     
     public int m_notificationIconConnecting = 0;
     public int m_notificationIconConnected = 0;
@@ -99,6 +100,7 @@ public class PsiphonData
         m_dataTransferStats = new DataTransferStats();
         m_displayDataTransferStats = false;
         m_downloadUpgrades = false;
+        m_egressRegion = ServerInterface.ServerEntry.REGION_CODE_ANY;
     }
 
     public synchronized void setHomePages(ArrayList<String> homePages)
@@ -245,6 +247,16 @@ public class PsiphonData
     public synchronized boolean getTunnelWholeDevice()
     {
         return m_tunnelWholeDevice;
+    }
+
+    public synchronized void setEgressRegion(String egressRegion)
+    {
+        m_egressRegion = egressRegion;
+    }
+
+    public synchronized String getEgressRegion()
+    {
+        return m_egressRegion;
     }
 
     public synchronized void setVpnServiceUnavailable(boolean vpnServiceUnavailable)

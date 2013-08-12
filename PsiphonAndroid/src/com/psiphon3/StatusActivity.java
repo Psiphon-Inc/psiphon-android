@@ -28,7 +28,9 @@ import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.Spinner;
@@ -36,6 +38,7 @@ import android.widget.TabHost;
 
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.RegionAdapter;
+import com.psiphon3.psiphonlibrary.ServerInterface;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
@@ -44,11 +47,13 @@ public class StatusActivity
     extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
 {
     public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
+    public static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
     
     private static boolean m_firstRun = true;
     private CheckBox m_tunnelWholeDeviceToggle;
-    private Spinner m_regionSelector;
     private boolean m_tunnelWholeDevicePromptShown = false;
+    private RegionAdapter m_regionAdapter;
+    private Spinner m_regionSelector;
 
     public StatusActivity()
     {
@@ -79,7 +84,17 @@ public class StatusActivity
         boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, canWholeDevice);
         m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
 
-        m_regionSelector.setAdapter(new RegionAdapter(this));
+        m_regionAdapter = new RegionAdapter(this);
+        m_regionSelector.setAdapter(m_regionAdapter);
+        String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE, ServerInterface.ServerEntry.REGION_CODE_ANY);
+        int position = m_regionAdapter.getPositionForRegionCode(egressRegionPreference);
+        m_regionSelector.setSelection(position);
+
+        m_regionSelector.setOnItemSelectedListener(regionSpinnerOnItemSelected);
+        // Re-populate the spinner when it is expanded -- the underlying region list could change
+        // due to background server discovery or remote server list fetch.
+        m_regionSelector.setOnTouchListener(regionSpinnerOnTouch);
+        m_regionSelector.setOnKeyListener(regionSpinnerOnKey);
         
         // Use PsiphonData to communicate the setting to the TunnelService so it doesn't need to
         // repeat the isRooted check. The preference is retained even if the device becomes "unrooted"
@@ -178,6 +193,79 @@ public class StatusActivity
         
         PsiphonData.getPsiphonData().setTunnelWholeDevice(tunnelWholeDevicePreference);
     }
+
+    public void onRegionSelected(int position)
+    {
+        String selectedRegionCode = m_regionAdapter.getSelectedRegionCode(position);
+        
+        boolean restart = false;
+
+        // NOTE: not necessary to restart when ANY region is selected
+        if (isServiceRunning() || !selectedRegionCode.equals(ServerInterface.ServerEntry.REGION_CODE_ANY))
+        {
+            doToggle();
+            restart = true;
+        }
+
+        updateEgressRegionPreference(selectedRegionCode);
+        
+        if (restart)
+        {
+            startTunnel(this);
+        }
+    }
+    
+    protected void updateEgressRegionPreference(String egressRegionPreference)
+    {
+        // No isRooted check: the user can specify whatever preference they
+        // wish. Also, CheckBox enabling should cover this (but isn't required to).
+        Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+        editor.putString(EGRESS_REGION_PREFERENCE, egressRegionPreference);
+        editor.commit();
+        
+        PsiphonData.getPsiphonData().setEgressRegion(egressRegionPreference);
+    }
+
+    private AdapterView.OnItemSelectedListener regionSpinnerOnItemSelected = new AdapterView.OnItemSelectedListener()
+    {
+
+        public void onItemSelected(AdapterView<?> parent, View view, int position, long id)
+        {
+            onRegionSelected(position);
+        }
+
+        public void onNothingSelected(AdapterView parent)
+        {
+        }
+    };
+    
+    private View.OnTouchListener regionSpinnerOnTouch = new View.OnTouchListener()
+    {
+        public boolean onTouch(View v, MotionEvent event)
+        {
+            if (event.getAction() == MotionEvent.ACTION_UP)
+            {
+                m_regionAdapter.populate();
+            }
+            return false;
+        }
+    };
+
+    private View.OnKeyListener regionSpinnerOnKey = new View.OnKeyListener()
+    {
+        public boolean onKey(View v, int keyCode, KeyEvent event)
+        {
+            if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER)
+            {
+                m_regionAdapter.populate();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    };
     
     public void onOpenBrowserClick(View v)
     {
