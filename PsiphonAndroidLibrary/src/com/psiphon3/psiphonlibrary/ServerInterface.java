@@ -1434,6 +1434,25 @@ public class ServerInterface
             */
             throw new PsiphonServerInterfaceException(e);
         }
+        catch (IllegalStateException e)
+        {
+            /* In some cases we have found the http client.execute method to throw a IllegalStateException after
+               the tunnel has gone away: 
+                E/AndroidRuntime( 7013): FATAL EXCEPTION: Thread-35792
+                E/AndroidRuntime( 7013): java.lang.IllegalStateException: Connection is not open
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.SocketHttpClientConnection.assertOpen(SocketHttpClientConnection.java:84)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.AbstractHttpClientConnection.flush(AbstractHttpClientConnection.java:282)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.conn.ManagedClientConnectionImpl.flush(ManagedClientConnectionImpl.java:175)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.protocol.HttpRequestExecutor.doSendRequest(HttpRequestExecutor.java:260)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.protocol.HttpRequestExecutor.execute(HttpRequestExecutor.java:125)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.client.DefaultRequestDirector.tryExecute(DefaultRequestDirector.java:717)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.client.DefaultRequestDirector.execute(DefaultRequestDirector.java:522)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.client.AbstractHttpClient.execute(AbstractHttpClient.java:902)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.client.AbstractHttpClient.execute(AbstractHttpClient.java:801)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.client.AbstractHttpClient.execute(AbstractHttpClient.java:780)
+            */
+            throw new PsiphonServerInterfaceException(e);
+        }
         catch (NullPointerException e)
         {
             /* In some cases we have found the http client.execute method to throw a NullPointerException after
