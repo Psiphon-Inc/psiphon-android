@@ -200,8 +200,8 @@ public class StatusActivity
         
         boolean restart = false;
 
-        // NOTE: not necessary to restart when ANY region is selected
-        if (isServiceRunning() || !selectedRegionCode.equals(ServerInterface.ServerEntry.REGION_CODE_ANY))
+        // NOTE: reconnects even when Any is selected: we could select a faster server
+        if (isServiceRunning())
         {
             doToggle();
             restart = true;
