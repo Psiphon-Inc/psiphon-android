@@ -53,7 +53,7 @@ public class StatusActivity
     private CheckBox m_tunnelWholeDeviceToggle;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private RegionAdapter m_regionAdapter;
-    private Spinner m_regionSelector;
+    private SpinnerHelper m_regionSelector;
 
     public StatusActivity()
     {
@@ -68,7 +68,7 @@ public class StatusActivity
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
         m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
-        m_regionSelector = (Spinner)findViewById(R.id.regionSelector);
+        m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
 
         super.onCreate(savedInstanceState);
 
@@ -84,17 +84,25 @@ public class StatusActivity
         boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, canWholeDevice);
         m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
 
+        if (m_firstRun)
+        {
+            // Force setServerExists calls so we can configure the region spinner.
+            // TODO: fix this hack.
+            ServerInterface dummy = new ServerInterface(this);
+        }
+ 
         m_regionAdapter = new RegionAdapter(this);
         m_regionSelector.setAdapter(m_regionAdapter);
         String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE, ServerInterface.ServerEntry.REGION_CODE_ANY);
+        PsiphonData.getPsiphonData().setEgressRegion(egressRegionPreference);
         int position = m_regionAdapter.getPositionForRegionCode(egressRegionPreference);
         m_regionSelector.setSelection(position);
 
         m_regionSelector.setOnItemSelectedListener(regionSpinnerOnItemSelected);
         // Re-populate the spinner when it is expanded -- the underlying region list could change
         // due to background server discovery or remote server list fetch.
-        m_regionSelector.setOnTouchListener(regionSpinnerOnTouch);
-        m_regionSelector.setOnKeyListener(regionSpinnerOnKey);
+        m_regionSelector.getSpinner().setOnTouchListener(regionSpinnerOnTouch);
+        m_regionSelector.getSpinner().setOnKeyListener(regionSpinnerOnKey);
         
         // Use PsiphonData to communicate the setting to the TunnelService so it doesn't need to
         // repeat the isRooted check. The preference is retained even if the device becomes "unrooted"

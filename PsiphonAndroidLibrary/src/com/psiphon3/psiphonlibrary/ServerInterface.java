@@ -1603,7 +1603,15 @@ public class ServerInterface
         if (existingIndex != -1)
         {
             // Only replace existing entries in the discovery case
-            if (!isEmbedded)
+
+            // Special case: replace if supposedly newer entry specifies
+            // region and existing does not -- in this case we do know that
+            // the new candidate is actually newer.
+            boolean overwriteEmbedded =
+                    this.serverEntries.get(existingIndex).regionCode.length() == 0
+                    && newEntry.regionCode.length() > 0;
+            
+            if (!isEmbedded || overwriteEmbedded)
             {
                 this.serverEntries.remove(existingIndex);
                 this.serverEntries.add(existingIndex, newEntry);
