@@ -78,8 +78,23 @@ public class RegionAdapter extends ArrayAdapter<Integer>
     
     public void populate()
     {
+        // Only change/redraw if the existing region set has changed. This logic
+        // assumes regions can only be added (via setServerExists), not removed.
+        int count = 0;
+        for (int index = 0; index < regions.length; index++)
+        {
+            if (regions[index].serverExists)
+            {
+                count++;
+            }
+        }        
+        if (count == getCount())
+        {
+            return;
+        }
+
         clear();
-        for (int index = 0; index < regions.length; index ++)
+        for (int index = 0; index < regions.length; index++)
         {
             if (regions[index].serverExists)
             {
