@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 
 import org.apache.http.conn.util.InetAddressUtils;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.xbill.DNS.ResolverConfig;
 
@@ -350,6 +351,22 @@ public class Utils
             MyLog.d(msg);
         }
 
+        static public void g(String msg, Object... nameValuePairs)
+        {
+            assert(nameValuePairs.length%2 == 0);
+            JSONObject diagnosticData = new JSONObject();
+            try 
+            {
+                for (int i = 0; i < nameValuePairs.length/2; i++)
+                diagnosticData.put(nameValuePairs[i*2].toString(), nameValuePairs[i*2+1]);
+            } 
+            catch (JSONException e) 
+            {
+                throw new RuntimeException(e);
+            }
+            MyLog.g(msg, diagnosticData);
+        }
+        
         static public void e(int stringResID, Sensitivity sensitivity, Object... formatArgs)
         {
             MyLog.println(stringResID, sensitivity, formatArgs, null, Log.ERROR);

@@ -313,16 +313,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         // At this point we'll start counting bytes transferred for SSH traffic
         PsiphonData.getPsiphonData().getDataTransferStats().startSession();
         
-        JSONObject diagnosticData = new JSONObject();
-        try 
-        {
-            diagnosticData.put("ipAddress", entry.ipAddress);
-        } 
-        catch (JSONException e) 
-        {
-            throw new RuntimeException(e);
-        }
-        MyLog.g("ConnectingServer", diagnosticData);
+        MyLog.g("ConnectingServer", "ipAddress", entry.ipAddress);
         
         Connection sshConnection = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
         sshConnection.connect(
@@ -838,7 +829,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                     {
                         preemptiveReconnectTimePeriod = 0;
                     }
-                    MyLog.g("preemptiveReconnectTimePeriod " + Long.toString(preemptiveReconnectTimePeriod), null);
+                    MyLog.g("preemptiveReconnectTimePeriod " + Long.toString(preemptiveReconnectTimePeriod));
                     
                     preemptiveReconnectWaitUntil += preemptiveReconnectTimePeriod;
                 }
@@ -917,7 +908,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                                 cleanupSshConnection(oldSocket, oldSshConnection);
                                 oldSocket = null;
                                 oldSshConnection = null;
-                                MyLog.g("preemptive ssh stopped", null);
+                                MyLog.g("preemptive ssh stopped");
                             }
                             
                             checkSignals(0);
@@ -1016,7 +1007,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                                     socks = null;
                                     if (e instanceof java.net.BindException)
                                     {
-                                        MyLog.g("preemptive restart socks: BindException", null);
+                                        MyLog.g("preemptive restart socks: BindException");
                                         Thread.sleep(PsiphonConstants.PREEMPTIVE_RECONNECT_BIND_WAIT_MILLISECONDS);
                                     }
                                     else
@@ -1058,7 +1049,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                                         transparentProxy = null;
                                         if (e instanceof java.net.BindException)
                                         {
-                                            MyLog.g("preemptive restart transparentProxy: BindException", null);
+                                            MyLog.g("preemptive restart transparentProxy: BindException");
                                             Thread.sleep(PsiphonConstants.PREEMPTIVE_RECONNECT_BIND_WAIT_MILLISECONDS);
                                         }
                                         else
