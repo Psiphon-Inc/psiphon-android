@@ -34,24 +34,38 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         String code;
         int nameResourceId;
         int flagResourceId;
+        boolean serverExists;
         
-        Region(String code, int nameResourceId, int flagResourceId)
+        Region(String code, int nameResourceId, int flagResourceId, boolean serverExists)
         {
             this.code = code;
             this.nameResourceId = nameResourceId;
             this.flagResourceId = flagResourceId;
+            this.serverExists = serverExists;
         }
     }
     
-    private static final Region[] regions =
+    private static Region[] regions =
     {
-        new Region(ServerInterface.ServerEntry.REGION_CODE_ANY, R.string.region_name_any, R.drawable.flag_unknown),
-        new Region("US", R.string.region_name_us, R.drawable.flag_us),
-        new Region("GB", R.string.region_name_gb, R.drawable.flag_gb),
-        new Region("CA", R.string.region_name_ca, R.drawable.flag_ca),
-        new Region("JP", R.string.region_name_jp, R.drawable.flag_jp),
-        new Region("DE", R.string.region_name_de, R.drawable.flag_de),
+        new Region(ServerInterface.ServerEntry.REGION_CODE_ANY, R.string.region_name_any, R.drawable.flag_unknown, true),
+        new Region("US", R.string.region_name_us, R.drawable.flag_us, false),
+        new Region("GB", R.string.region_name_gb, R.drawable.flag_gb, false),
+        new Region("CA", R.string.region_name_ca, R.drawable.flag_ca, false),
+        new Region("JP", R.string.region_name_jp, R.drawable.flag_jp, false),
+        new Region("DE", R.string.region_name_de, R.drawable.flag_de, false),
     };
+    
+    static void setServerExists(String regionCode)
+    {
+        for (Region region : regions)
+        {
+            if (region.code.equals(regionCode))
+            {
+                region.serverExists = true;
+                break;
+            }
+        }
+    }
     
     Context m_context;
 
@@ -64,11 +78,10 @@ public class RegionAdapter extends ArrayAdapter<Integer>
     
     public void populate()
     {
-        ServerInterface serverInterface = new ServerInterface(m_context);
         clear();
         for (int index = 0; index < regions.length; index ++)
         {
-            if (serverInterface.serverInRegionExists(regions[index].code))
+            if (regions[index].serverExists)
             {
                 add(index);
             }

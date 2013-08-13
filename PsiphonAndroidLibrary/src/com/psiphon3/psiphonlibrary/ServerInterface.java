@@ -1578,6 +1578,8 @@ public class ServerInterface
         }
         
         this.serverEntries.add(newEntry);
+
+        RegionAdapter.setServerExists(newEntry.regionCode);        
     }
 
     private void insertServerEntry(String encodedServerEntry, boolean isEmbedded)
@@ -1603,8 +1605,11 @@ public class ServerInterface
             // Only replace existing entries in the discovery case
             if (!isEmbedded)
             {
-                serverEntries.remove(existingIndex);
-                serverEntries.add(existingIndex, newEntry);
+                this.serverEntries.remove(existingIndex);
+                this.serverEntries.add(existingIndex, newEntry);
+
+                RegionAdapter.setServerExists(newEntry.regionCode);
+                // TODO: remove region if old entry was last server for region?
             }
         }
         else
@@ -1613,6 +1618,8 @@ public class ServerInterface
             // the first position for the "current" working server
             int index = this.serverEntries.size() > 0 ? 1 : 0;
             this.serverEntries.add(index, newEntry);
+
+            RegionAdapter.setServerExists(newEntry.regionCode);
         }
     }
     
