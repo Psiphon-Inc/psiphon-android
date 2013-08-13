@@ -206,6 +206,13 @@ public class StatusActivity
     {
         String selectedRegionCode = m_regionAdapter.getSelectedRegionCode(position);
         
+        String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE, ServerInterface.ServerEntry.REGION_CODE_ANY);
+        if (selectedRegionCode.equals(egressRegionPreference)
+            && selectedRegionCode.equals(PsiphonData.getPsiphonData().getEgressRegion()))
+        {
+            return;
+        }
+        
         boolean restart = false;
 
         // NOTE: reconnects even when Any is selected: we could select a faster server
