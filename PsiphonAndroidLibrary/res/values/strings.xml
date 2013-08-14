@@ -122,4 +122,10 @@
     <string name="share_proxies_prompt_message">The app needs to restart to apply this setting.</string>
     <string name="share_proxies_prompt_positive">Restart now</string>
     <string name="share_proxies_prompt_negative">Cancel</string>
+    <string name="region_name_any">Best performance</string>
+    <string name="region_name_us">United States</string>
+    <string name="region_name_gb">United Kingdom</string>
+    <string name="region_name_ca">Canada</string>
+    <string name="region_name_de">Germany</string>
+    <string name="region_name_jp">Japan</string>
 </resources>

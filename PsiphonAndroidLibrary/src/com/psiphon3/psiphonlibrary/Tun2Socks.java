@@ -128,7 +128,7 @@ public class Tun2Socks
         }
         else
         {
-            MyLog.g(logMsg, null);
+            MyLog.g(logMsg);
         }
     }
 
