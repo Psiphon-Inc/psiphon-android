@@ -49,7 +49,8 @@ public class StatusActivity
 
     public StatusActivity()
     {
-        m_eventsInterface = new Events();
+        super();
+        m_eventsInterface = new Events();        
     }
 
     @Override

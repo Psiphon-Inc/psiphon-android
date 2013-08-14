@@ -32,6 +32,8 @@ import org.apache.http.conn.util.InetAddressUtils;
 import org.json.JSONObject;
 import org.xbill.DNS.ResolverConfig;
 
+import de.schildbach.wallet.util.LinuxSecureRandom;
+
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
@@ -47,7 +49,31 @@ import android.util.Log;
 
 public class Utils
 {
+    private static boolean m_initializedSecureRandom = false;
 
+    public static void initializeSecureRandom()
+    {
+        // Installs a new SecureRandom SPI which directly uses /dev/urandom. This addresses a flaw in the default
+        // SecureRandom documented here: http://armoredbarista.blogspot.com.au/2013/03/randomly-failed-weaknesses-in-java.html
+        // NOTE: this is now the SPI for all versions of Android, including 4.2+ where the flaw was addressed.
+        
+        if (!m_initializedSecureRandom)
+        {
+            new LinuxSecureRandom();
+            m_initializedSecureRandom = true;
+        }
+    }
+    
+    public static void checkSecureRandom()
+    {
+        // Checks that initializeSecureRandom() was called by the Psiphon library consumer.
+        
+        if (!m_initializedSecureRandom)
+        {
+            throw new RuntimeException("failed to call initializeSecureRandom");
+        }
+    }
+    
     private static SecureRandom s_secureRandom = new SecureRandom();
     public static byte[] generateSecureRandomBytes(int byteCount)
     {

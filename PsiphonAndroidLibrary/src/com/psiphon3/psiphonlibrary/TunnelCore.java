@@ -1465,6 +1465,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
     
     public void startTunnel()
     {
+        Utils.checkSecureRandom();
+        
         stopTunnel();
 
         if (m_eventsInterface != null)

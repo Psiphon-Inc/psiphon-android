@@ -80,6 +80,11 @@ public abstract class MainBase
         extends android.app.Activity
         implements MyLog.ILogger
     {
+        public Activity()
+        {
+            Utils.initializeSecureRandom();
+        }
+
         @Override
         protected void onCreate(Bundle savedInstanceState)
         {
@@ -146,6 +151,11 @@ public abstract class MainBase
         private TextView m_statusTabSocksPortLine;
         private TextView m_statusTabHttpProxyPortLine;*/
 
+        public TabbedActivityBase()
+        {
+            Utils.initializeSecureRandom();
+        }
+        
         // Avoid calling m_statusTabToggleButton.setImageResource() every 250 ms
         // when it is set to the connected image
         private ImageButton m_statusTabToggleButton;
