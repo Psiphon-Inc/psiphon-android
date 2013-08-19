@@ -19,7 +19,11 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.util.ArrayList;
+
 import android.content.Context;
+import android.content.SharedPreferences.Editor;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,6 +33,8 @@ import android.widget.TextView;
 
 public class RegionAdapter extends ArrayAdapter<Integer>
 {
+    public static final String KNOWN_REGIONS_PREFERENCE = "knownRegionsPreference";
+
     private static class Region
     {
         String code;
@@ -55,15 +61,80 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         new Region("DE", R.string.region_name_de, R.drawable.flag_de, false),
     };
     
-    static void setServerExists(String regionCode)
+    private static boolean initialized = false;
+    
+    public static void initialize(Context context)
     {
+        // Restore a list of known regions that's cached as a preferences
+        // value. This workaround done because the JSON parsing/processing
+        // of the ServerEntry list that's done in ServerInterface is slow:
+        // up to 2-3 seconds on a fast device with a realistic-sized server
+        // list. That's too long to block the UI thread. (We will still
+        // hit that parsing in the UI thread on the first run with this
+        // feature).
+        
+        // NOTE: this caching assumes regions are only added, not removed.
+        
+        // Would use get/setStringSet, but that requires API 11.
+        // Since JSON parsing is what we want to avoid, we store the list
+        // of ISO 3166-1 alpha-2 region codes as a simple comma delimited
+        // string (without escaping).
+
+        String knownRegions = PreferenceManager
+                                        .getDefaultSharedPreferences(context)
+                                        .getString(KNOWN_REGIONS_PREFERENCE, "");
+        if (knownRegions.length() == 0)
+        {
+            // Force setServerExists calls so we can configure the region spinner.
+            // TODO: fix this hack.
+            new ServerInterface(context);
+        }
+        else
+        {
+            for (String region : knownRegions.split(","))
+            {
+                setServerExists(context, region, true);
+            }
+        }
+        
+        initialized = true;
+    }
+    
+    public static void setServerExists(Context context, String regionCode, boolean restoringKnownRegions)
+    {
+        // TODO: may want to replace linear lookup once there are many regions
+
+        boolean newRegion = false;
+        
         for (Region region : regions)
         {
             if (region.code.equals(regionCode))
             {
+                newRegion = !region.serverExists; 
                 region.serverExists = true;
                 break;
             }
+        }
+        
+        if (newRegion && !restoringKnownRegions)
+        {
+            StringBuilder knownRegions = new StringBuilder();
+
+            for (Region region : regions)
+            {
+                if (region.serverExists)
+                {
+                    if (knownRegions.length() > 0)
+                    {
+                        knownRegions.append(",");
+                    }
+                    knownRegions.append(region.code);
+                }
+            }
+
+            Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
+            editor.putString(KNOWN_REGIONS_PREFERENCE, knownRegions.toString());
+            editor.commit();
         }
     }
     
@@ -73,6 +144,10 @@ public class RegionAdapter extends ArrayAdapter<Integer>
     {
         super(context, R.layout.region_row);
         m_context = context;
+        if (!initialized)
+        {
+            throw new RuntimeException("failed to call RegionAdapter.initialize");
+        }
         populate();
     }
     

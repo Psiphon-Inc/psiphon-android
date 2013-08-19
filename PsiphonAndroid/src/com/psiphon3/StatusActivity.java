@@ -87,9 +87,7 @@ public class StatusActivity
 
         if (m_firstRun)
         {
-            // Force setServerExists calls so we can configure the region spinner.
-            // TODO: fix this hack.
-            new ServerInterface(this);
+            RegionAdapter.initialize(this);
         }
  
         m_regionAdapter = new RegionAdapter(this);

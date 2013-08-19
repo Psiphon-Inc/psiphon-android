@@ -71,7 +71,7 @@ public class Utils
         
         if (!m_initializedSecureRandom)
         {
-            throw new RuntimeException("failed to call initializeSecureRandom");
+            throw new RuntimeException("failed to call Utils.initializeSecureRandom");
         }
     }
     

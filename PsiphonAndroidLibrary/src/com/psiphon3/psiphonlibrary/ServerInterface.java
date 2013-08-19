@@ -1579,7 +1579,7 @@ public class ServerInterface
         
         this.serverEntries.add(newEntry);
 
-        RegionAdapter.setServerExists(newEntry.regionCode);        
+        RegionAdapter.setServerExists(this.ownerContext, newEntry.regionCode, false);        
     }
 
     private void insertServerEntry(String encodedServerEntry, boolean isEmbedded)
@@ -1616,7 +1616,7 @@ public class ServerInterface
                 this.serverEntries.remove(existingIndex);
                 this.serverEntries.add(existingIndex, newEntry);
 
-                RegionAdapter.setServerExists(newEntry.regionCode);
+                RegionAdapter.setServerExists(this.ownerContext, newEntry.regionCode, false);
                 // TODO: remove region if old entry was last server for region?
             }
         }
@@ -1627,7 +1627,7 @@ public class ServerInterface
             int index = this.serverEntries.size() > 0 ? 1 : 0;
             this.serverEntries.add(index, newEntry);
 
-            RegionAdapter.setServerExists(newEntry.regionCode);
+            RegionAdapter.setServerExists(this.ownerContext, newEntry.regionCode, false);
         }
     }
     
