@@ -920,7 +920,7 @@ public class PsiphonData
     }
     
     /** 
-     * @return Returns the last non-DEBUG item, or null if there is none.
+     * @return Returns the last non-DEBUG, non-WARN(ing) item, or null if there is none.
      */
     public StatusEntry getLastStatusEntryForDisplay() 
     {
@@ -931,7 +931,8 @@ public class PsiphonData
             while (iterator.hasPrevious())
             {
                 StatusEntry current_item = iterator.previous();
-                if (current_item.priority() != Log.DEBUG)
+                if (current_item.priority() != Log.DEBUG &&
+                    current_item.priority() != Log.WARN)
                 {
                     return current_item;
                 }
