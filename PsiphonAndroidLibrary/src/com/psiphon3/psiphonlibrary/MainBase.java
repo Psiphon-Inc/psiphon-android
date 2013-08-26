@@ -183,6 +183,7 @@ public abstract class MainBase
             @Override
             public void onServiceConnected(ComponentName className, IBinder service)
             {
+                onPostStartService();
                 TunnelService.LocalBinder binder = (TunnelService.LocalBinder) service;
                 TunnelService tunnelService = binder.getService();
                 m_boundToTunnelService = true;
@@ -204,9 +205,10 @@ public abstract class MainBase
             @Override
             public void onServiceConnected(ComponentName className, IBinder service)
             {
+                onPostStartService();
+
                 // VpnService backwards compatibility: this has sufficient lazy class loading
                 // as onServiceConnected is only called on bind.
-
                 TunnelVpnService.LocalBinder binder = (TunnelVpnService.LocalBinder) service;
                 TunnelVpnService tunnelVpnService = binder.getService();
                 m_boundToTunnelVpnService = true;
@@ -877,6 +879,9 @@ public abstract class MainBase
             }
         }
         
+        protected abstract void onPreStartService();
+        protected abstract void onPostStartService();
+
         protected void startTunnelService(Context context)
         {
             // TODO: onResume calls this and when there was only one kind of service
@@ -888,26 +893,44 @@ public abstract class MainBase
             
             if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService())
             {
-                assert(m_boundToTunnelService == false);
+                if (m_boundToTunnelService != false)
+                {
+                    MyLog.g("already bound to TunnelService");
+                    return;
+                }
                 
+                onPreStartService();                
                 // VpnService backwards compatibility: doStartTunnelVpnService is a wrapper
                 // function so we don't reference the undefined class when this function
                 // is loaded.
-                doStartTunnelVpnService(context);
+                if (!doStartTunnelVpnService(context))
+                {
+                    // Service won't start, so allow handler to clean up
+                    onPostStartService();                    
+                }
             }
             else
             {
-                assert(m_boundToTunnelVpnService == false);
+                if (m_boundToTunnelVpnService != false)
+                {
+                    MyLog.g("already bound to TunnelVpnService");
+                    return;
+                }
 
+                onPreStartService();                
                 Intent intent = new Intent(context, TunnelService.class);
-                bindService(intent, m_tunnelServiceConnection, Context.BIND_AUTO_CREATE);
+                if (!bindService(intent, m_tunnelServiceConnection, Context.BIND_AUTO_CREATE))
+                {
+                    // Service won't start, so allow handler to clean up
+                    onPostStartService();
+                }
             }
         }
         
-        private void doStartTunnelVpnService(Context context)
+        private boolean doStartTunnelVpnService(Context context)
         {
             Intent intent = new Intent(context, TunnelVpnService.class);
-            bindService(intent, m_tunnelVpnServiceConnection, Context.BIND_AUTO_CREATE);        
+            return bindService(intent, m_tunnelVpnServiceConnection, Context.BIND_AUTO_CREATE);
         }
         
         private void stopTunnel(Context context)

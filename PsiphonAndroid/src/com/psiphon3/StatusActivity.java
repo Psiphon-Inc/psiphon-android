@@ -173,6 +173,12 @@ public class StatusActivity
 
     public void onTunnelWholeDeviceToggle(View v)
     {
+        // Just in case an OnClick message is in transit before setEnabled is processed...(?)
+        if (!m_tunnelWholeDeviceToggle.isEnabled())
+        {
+            return;
+        }
+        
         boolean restart = false;
 
         if (isServiceRunning())
@@ -203,6 +209,12 @@ public class StatusActivity
 
     public void onRegionSelected(int position)
     {
+        // Just in case an OnItemSelected message is in transit before setEnabled is processed...(?)
+        if (!m_regionSelector.isEnabled())
+        {
+            return;
+        }
+
         String selectedRegionCode = m_regionAdapter.getSelectedRegionCode(position);
         
         String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE, ServerInterface.ServerEntry.REGION_CODE_ANY);
@@ -366,6 +378,22 @@ public class StatusActivity
         HandleCurrentIntent();
     }
     
+    @Override
+    protected void onPreStartService()
+    {
+        // Disable service-toggling controls while service is starting up
+        // (i.e., while isServiceRunning can't be relied upon)
+        m_tunnelWholeDeviceToggle.setEnabled(false);
+        m_regionSelector.setEnabled(false);
+    }
+
+    @Override
+    protected void onPostStartService()
+    {
+        m_tunnelWholeDeviceToggle.setEnabled(true);
+        m_regionSelector.setEnabled(true);
+    }
+
     @Override
     protected boolean doVpnPrepare()
     {
