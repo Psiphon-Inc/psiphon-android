@@ -24,4 +24,5 @@
   <string name="StatusActivity.WholeDeviceTunnelPositiveButton">隧道整个设备</string>
   <string name="StatusActivity.WholeDeviceTunnelNegativeButton">只使用赛风浏览器</string>
   <string name="tunnel_whole_device_exception">你的设备不支持安卓4.0+的隧道整个设备选项。</string>
+  <string name="region_selector">选择区域</string>
 </resources>

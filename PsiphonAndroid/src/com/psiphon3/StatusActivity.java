@@ -28,12 +28,17 @@ import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.Spinner;
 import android.widget.TabHost;
 
 import com.psiphon3.psiphonlibrary.PsiphonData;
+import com.psiphon3.psiphonlibrary.RegionAdapter;
+import com.psiphon3.psiphonlibrary.ServerInterface;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
@@ -42,14 +47,18 @@ public class StatusActivity
     extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
 {
     public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
+    public static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
     
     private static boolean m_firstRun = true;
     private CheckBox m_tunnelWholeDeviceToggle;
     private boolean m_tunnelWholeDevicePromptShown = false;
+    private RegionAdapter m_regionAdapter;
+    private SpinnerHelper m_regionSelector;
 
     public StatusActivity()
     {
-        m_eventsInterface = new Events();
+        super();
+        m_eventsInterface = new Events();        
     }
 
     @Override
@@ -59,21 +68,10 @@ public class StatusActivity
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
+        m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
+        m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
 
         super.onCreate(savedInstanceState);
-
-        /*
-        // Draw attention to the new Start/Stop command
-        // http://stackoverflow.com/questions/4852281/android-how-to-make-a-button-flashing
-        final Animation animation = new AlphaAnimation(1, 0);
-        animation.setDuration(500);
-        animation.setInterpolator(new LinearInterpolator());
-        animation.setRepeatCount(2);
-        animation.setRepeatMode(Animation.REVERSE);
-        m_toggleButton.startAnimation(animation);
-        */
-
-        m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
 
         // Transparent proxy-based "Tunnel Whole Device" option is only available on rooted devices and
         // defaults to true on rooted devices.
@@ -82,10 +80,28 @@ public class StatusActivity
         boolean isRooted = Utils.isRooted();
         boolean canRunVpnService = Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
         boolean canWholeDevice = isRooted || canRunVpnService;
-
+       
         m_tunnelWholeDeviceToggle.setEnabled(canWholeDevice);
         boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, canWholeDevice);
         m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
+
+        if (m_firstRun)
+        {
+            RegionAdapter.initialize(this);
+        }
+ 
+        m_regionAdapter = new RegionAdapter(this);
+        m_regionSelector.setAdapter(m_regionAdapter);
+        String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE, ServerInterface.ServerEntry.REGION_CODE_ANY);
+        PsiphonData.getPsiphonData().setEgressRegion(egressRegionPreference);
+        int position = m_regionAdapter.getPositionForRegionCode(egressRegionPreference);
+        m_regionSelector.setSelection(position);
+
+        m_regionSelector.setOnItemSelectedListener(regionSpinnerOnItemSelected);
+        // Re-populate the spinner when it is expanded -- the underlying region list could change
+        // due to background server discovery or remote server list fetch.
+        m_regionSelector.getSpinner().setOnTouchListener(regionSpinnerOnTouch);
+        m_regionSelector.getSpinner().setOnKeyListener(regionSpinnerOnKey);
         
         // Use PsiphonData to communicate the setting to the TunnelService so it doesn't need to
         // repeat the isRooted check. The preference is retained even if the device becomes "unrooted"
@@ -157,6 +173,12 @@ public class StatusActivity
 
     public void onTunnelWholeDeviceToggle(View v)
     {
+        // Just in case an OnClick message is in transit before setEnabled is processed...(?)
+        if (!m_tunnelWholeDeviceToggle.isEnabled())
+        {
+            return;
+        }
+        
         boolean restart = false;
 
         if (isServiceRunning())
@@ -184,6 +206,92 @@ public class StatusActivity
         
         PsiphonData.getPsiphonData().setTunnelWholeDevice(tunnelWholeDevicePreference);
     }
+
+    public void onRegionSelected(int position)
+    {
+        // Just in case an OnItemSelected message is in transit before setEnabled is processed...(?)
+        if (!m_regionSelector.isEnabled())
+        {
+            return;
+        }
+
+        String selectedRegionCode = m_regionAdapter.getSelectedRegionCode(position);
+        
+        String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE, ServerInterface.ServerEntry.REGION_CODE_ANY);
+        if (selectedRegionCode.equals(egressRegionPreference)
+            && selectedRegionCode.equals(PsiphonData.getPsiphonData().getEgressRegion()))
+        {
+            return;
+        }
+        
+        boolean restart = false;
+
+        // NOTE: reconnects even when Any is selected: we could select a faster server
+        if (isServiceRunning())
+        {
+            doToggle();
+            restart = true;
+        }
+
+        updateEgressRegionPreference(selectedRegionCode);
+        
+        if (restart)
+        {
+            startTunnel(this);
+        }
+    }
+    
+    protected void updateEgressRegionPreference(String egressRegionPreference)
+    {
+        // No isRooted check: the user can specify whatever preference they
+        // wish. Also, CheckBox enabling should cover this (but isn't required to).
+        Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+        editor.putString(EGRESS_REGION_PREFERENCE, egressRegionPreference);
+        editor.commit();
+        
+        PsiphonData.getPsiphonData().setEgressRegion(egressRegionPreference);
+    }
+
+    private AdapterView.OnItemSelectedListener regionSpinnerOnItemSelected = new AdapterView.OnItemSelectedListener()
+    {
+
+        public void onItemSelected(AdapterView<?> parent, View view, int position, long id)
+        {
+            onRegionSelected(position);
+        }
+
+        public void onNothingSelected(AdapterView parent)
+        {
+        }
+    };
+    
+    private View.OnTouchListener regionSpinnerOnTouch = new View.OnTouchListener()
+    {
+        public boolean onTouch(View v, MotionEvent event)
+        {
+            if (event.getAction() == MotionEvent.ACTION_UP)
+            {
+                m_regionAdapter.populate();
+            }
+            return false;
+        }
+    };
+
+    private View.OnKeyListener regionSpinnerOnKey = new View.OnKeyListener()
+    {
+        public boolean onKey(View v, int keyCode, KeyEvent event)
+        {
+            if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER)
+            {
+                m_regionAdapter.populate();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    };
     
     public void onOpenBrowserClick(View v)
     {
@@ -270,6 +378,22 @@ public class StatusActivity
         HandleCurrentIntent();
     }
     
+    @Override
+    protected void onPreStartService()
+    {
+        // Disable service-toggling controls while service is starting up
+        // (i.e., while isServiceRunning can't be relied upon)
+        m_tunnelWholeDeviceToggle.setEnabled(false);
+        m_regionSelector.setEnabled(false);
+    }
+
+    @Override
+    protected void onPostStartService()
+    {
+        m_tunnelWholeDeviceToggle.setEnabled(true);
+        m_regionSelector.setEnabled(true);
+    }
+
     @Override
     protected boolean doVpnPrepare()
     {

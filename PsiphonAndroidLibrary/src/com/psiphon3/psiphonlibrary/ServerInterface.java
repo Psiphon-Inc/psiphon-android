@@ -133,6 +133,7 @@ public class ServerInterface
         public int sshObfuscatedPort;
         public String sshObfuscatedKey;
         public ArrayList<String> capabilities;
+        public String regionCode;
 
         @Override
         public ServerEntry clone()
@@ -151,6 +152,8 @@ public class ServerInterface
         public static final String CAPABILITY_VPN = "VPN";
         public static final String CAPABILITY_OSSH = "OSSH";
         public static final String CAPABILITY_SSH = "SSH";
+        
+        public static final String REGION_CODE_ANY = "";
         
         boolean hasCapability(String capability)
         {
@@ -178,6 +181,16 @@ public class ServerInterface
             }
 
             return -1;
+        }
+
+        boolean inRegion(String regionCode)
+        {
+            if (regionCode.equals(REGION_CODE_ANY))
+            {
+                return true;
+            }
+
+            return regionCode.equals(this.regionCode);
         }
     }
     
@@ -352,6 +365,19 @@ public class ServerInterface
         for (ServerEntry entry: this.serverEntries)
         {
             if (entry.hasCapabilities(capabilities))
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    synchronized boolean serverInRegionExists(String regionCode)
+    {
+        for (ServerEntry entry: this.serverEntries)
+        {
+            if (entry.inRegion(regionCode))
             {
                 return true;
             }
@@ -828,8 +854,9 @@ public class ServerInterface
                 PsiphonData.getPsiphonData().setNextFetchRemoteServerList(
                         SystemClock.elapsedRealtime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH);
                 
-                String serverList = AuthenticatedDataPackage.validateAndExtractData(
+                String serverList = AuthenticatedDataPackage.extractAndVerifyData(
                                         EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY,
+                                        false, // "data" is not Base64
                                         new String(response));
     
                 shuffleAndAddServerEntries(serverList.split("\n"), false);
@@ -1407,6 +1434,25 @@ public class ServerInterface
             */
             throw new PsiphonServerInterfaceException(e);
         }
+        catch (IllegalStateException e)
+        {
+            /* In some cases we have found the http client.execute method to throw a IllegalStateException after
+               the tunnel has gone away: 
+                E/AndroidRuntime( 7013): FATAL EXCEPTION: Thread-35792
+                E/AndroidRuntime( 7013): java.lang.IllegalStateException: Connection is not open
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.SocketHttpClientConnection.assertOpen(SocketHttpClientConnection.java:84)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.AbstractHttpClientConnection.flush(AbstractHttpClientConnection.java:282)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.conn.ManagedClientConnectionImpl.flush(ManagedClientConnectionImpl.java:175)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.protocol.HttpRequestExecutor.doSendRequest(HttpRequestExecutor.java:260)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.protocol.HttpRequestExecutor.execute(HttpRequestExecutor.java:125)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.client.DefaultRequestDirector.tryExecute(DefaultRequestDirector.java:717)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.client.DefaultRequestDirector.execute(DefaultRequestDirector.java:522)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.client.AbstractHttpClient.execute(AbstractHttpClient.java:902)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.client.AbstractHttpClient.execute(AbstractHttpClient.java:801)
+                E/AndroidRuntime( 7013):        at ch.boye.httpclientandroidlib.impl.client.AbstractHttpClient.execute(AbstractHttpClient.java:780)
+            */
+            throw new PsiphonServerInterfaceException(e);
+        }
         catch (NullPointerException e)
         {
             /* In some cases we have found the http client.execute method to throw a NullPointerException after
@@ -1501,6 +1547,15 @@ public class ServerInterface
             newEntry.capabilities.add(ServerEntry.CAPABILITY_HANDSHAKE);
         }
         
+        if (obj.has("region"))
+        {
+            newEntry.regionCode = obj.getString("region");
+        }
+        else
+        {
+            newEntry.regionCode = "";            
+        }
+        
         return newEntry;
     }
     
@@ -1523,6 +1578,8 @@ public class ServerInterface
         }
         
         this.serverEntries.add(newEntry);
+
+        RegionAdapter.setServerExists(this.ownerContext, newEntry.regionCode, false);        
     }
 
     private void insertServerEntry(String encodedServerEntry, boolean isEmbedded)
@@ -1546,10 +1603,21 @@ public class ServerInterface
         if (existingIndex != -1)
         {
             // Only replace existing entries in the discovery case
-            if (!isEmbedded)
+
+            // Special case: replace if supposedly newer entry specifies
+            // region and existing does not -- in this case we do know that
+            // the new candidate is actually newer.
+            boolean overwriteEmbedded =
+                    this.serverEntries.get(existingIndex).regionCode.length() == 0
+                    && newEntry.regionCode.length() > 0;
+            
+            if (!isEmbedded || overwriteEmbedded)
             {
-                serverEntries.remove(existingIndex);
-                serverEntries.add(existingIndex, newEntry);
+                this.serverEntries.remove(existingIndex);
+                this.serverEntries.add(existingIndex, newEntry);
+
+                RegionAdapter.setServerExists(this.ownerContext, newEntry.regionCode, false);
+                // TODO: remove region if old entry was last server for region?
             }
         }
         else
@@ -1558,6 +1626,8 @@ public class ServerInterface
             // the first position for the "current" working server
             int index = this.serverEntries.size() > 0 ? 1 : 0;
             this.serverEntries.add(index, newEntry);
+
+            RegionAdapter.setServerExists(this.ownerContext, newEntry.regionCode, false);
         }
     }
     

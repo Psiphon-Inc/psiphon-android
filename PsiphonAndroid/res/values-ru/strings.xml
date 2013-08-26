@@ -24,4 +24,5 @@
   <string name="StatusActivity.WholeDeviceTunnelPositiveButton">Туннелировать все интернет соединения</string>
   <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Туннелировать только браузер Psiphon</string>
   <string name="tunnel_whole_device_exception">Ваше устройство не поддерживает туннелирование всех интернет соединений без прав root.</string>
+  <string name="region_selector">Выберите регион</string>
 </resources>

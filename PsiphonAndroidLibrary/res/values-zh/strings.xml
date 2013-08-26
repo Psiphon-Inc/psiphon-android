@@ -122,4 +122,10 @@
   <string name="share_proxies_prompt_message">这款应用程序需要重新启动以应用此设置。</string>
   <string name="share_proxies_prompt_positive">现在重新启动</string>
   <string name="share_proxies_prompt_negative">取消</string>
+  <string name="region_name_any">最佳性能</string>
+  <string name="region_name_us">美国</string>
+  <string name="region_name_gb">英国</string>
+  <string name="region_name_ca">加拿大</string>
+  <string name="region_name_de">德国</string>
+  <string name="region_name_jp">日本</string>
 </resources>

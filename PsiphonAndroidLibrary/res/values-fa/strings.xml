@@ -122,4 +122,10 @@
   <string name="share_proxies_prompt_message">برای انجام این تنظیم آپ نیاز به رستارت دارد </string>
   <string name="share_proxies_prompt_positive">رستارت </string>
   <string name="share_proxies_prompt_negative">لغو</string>
+  <string name="region_name_any">بهترین عملکرد</string>
+  <string name="region_name_us">ایالات متحده آمریکا</string>
+  <string name="region_name_gb">انگلستان</string>
+  <string name="region_name_ca">کانادا</string>
+  <string name="region_name_de">آلمان</string>
+  <string name="region_name_jp">ژاپن</string>
 </resources>

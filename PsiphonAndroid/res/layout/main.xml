@@ -62,6 +62,32 @@
             android:gravity="center"
             android:weightSum="4.0">
     
+            <TextView
+                android:id="@+id/regionPrompt"
+                android:layout_marginRight="5dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/region_selector"
+                android:textAppearance="?android:attr/textAppearanceSmall"/>
+
+            <Spinner
+                android:id="@+id/regionSelector"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:drawSelectorOnTop="true"
+                android:textAppearance="?android:attr/textAppearanceSmall"/>
+            
+        </LinearLayout>
+    
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:weightSum="4.0">
+    
             <CheckBox
                 android:id="@+id/tunnelWholeDeviceToggle"
                 android:onClick="onTunnelWholeDeviceToggle"

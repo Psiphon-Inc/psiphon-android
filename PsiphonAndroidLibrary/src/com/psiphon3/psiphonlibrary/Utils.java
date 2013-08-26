@@ -29,8 +29,11 @@ import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 
 import org.apache.http.conn.util.InetAddressUtils;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.xbill.DNS.ResolverConfig;
+
+import de.schildbach.wallet.util.LinuxSecureRandom;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -47,7 +50,31 @@ import android.util.Log;
 
 public class Utils
 {
+    private static boolean m_initializedSecureRandom = false;
 
+    public static void initializeSecureRandom()
+    {
+        // Installs a new SecureRandom SPI which directly uses /dev/urandom. This addresses a flaw in the default
+        // SecureRandom documented here: http://armoredbarista.blogspot.com.au/2013/03/randomly-failed-weaknesses-in-java.html
+        // NOTE: this is now the SPI for all versions of Android, including 4.2+ where the flaw was addressed.
+        
+        if (!m_initializedSecureRandom)
+        {
+            new LinuxSecureRandom();
+            m_initializedSecureRandom = true;
+        }
+    }
+    
+    public static void checkSecureRandom()
+    {
+        // Checks that initializeSecureRandom() was called by the Psiphon library consumer.
+        
+        if (!m_initializedSecureRandom)
+        {
+            throw new RuntimeException("failed to call Utils.initializeSecureRandom");
+        }
+    }
+    
     private static SecureRandom s_secureRandom = new SecureRandom();
     public static byte[] generateSecureRandomBytes(int byteCount)
     {
@@ -350,6 +377,22 @@ public class Utils
             MyLog.d(msg);
         }
 
+        static public void g(String msg, Object... nameValuePairs)
+        {
+            assert(nameValuePairs.length%2 == 0);
+            JSONObject diagnosticData = new JSONObject();
+            try 
+            {
+                for (int i = 0; i < nameValuePairs.length/2; i++)
+                diagnosticData.put(nameValuePairs[i*2].toString(), nameValuePairs[i*2+1]);
+            } 
+            catch (JSONException e) 
+            {
+                throw new RuntimeException(e);
+            }
+            MyLog.g(msg, diagnosticData);
+        }
+        
         static public void e(int stringResID, Sensitivity sensitivity, Object... formatArgs)
         {
             MyLog.println(stringResID, sensitivity, formatArgs, null, Log.ERROR);

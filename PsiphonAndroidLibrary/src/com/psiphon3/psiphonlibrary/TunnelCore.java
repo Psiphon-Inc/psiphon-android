@@ -313,16 +313,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         // At this point we'll start counting bytes transferred for SSH traffic
         PsiphonData.getPsiphonData().getDataTransferStats().startSession();
         
-        JSONObject diagnosticData = new JSONObject();
-        try 
-        {
-            diagnosticData.put("ipAddress", entry.ipAddress);
-        } 
-        catch (JSONException e) 
-        {
-            throw new RuntimeException(e);
-        }
-        MyLog.g("ConnectingServer", diagnosticData);
+        MyLog.g("ConnectingServer", "ipAddress", entry.ipAddress);
         
         Connection sshConnection = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
         sshConnection.connect(
@@ -485,6 +476,14 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
             boolean tunnelWholeDevice = PsiphonData.getPsiphonData().getTunnelWholeDevice();
             boolean runVpnService = tunnelWholeDevice && Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
+
+            // Guard against trying to start WDM mode when the global option flips while starting a TunnelService
+            if (runVpnService && (m_parentService instanceof TunnelService))
+            {
+                tunnelWholeDevice = false;
+                runVpnService = false;
+            }
+
             // TODO: get remote address/port from Psiphon server
             String tunnelWholeDeviceDNSServer = PsiphonConstants.TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS;
             
@@ -830,7 +829,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                     {
                         preemptiveReconnectTimePeriod = 0;
                     }
-                    MyLog.g("preemptiveReconnectTimePeriod " + Long.toString(preemptiveReconnectTimePeriod), null);
+                    MyLog.g("preemptiveReconnectTimePeriod " + Long.toString(preemptiveReconnectTimePeriod));
                     
                     preemptiveReconnectWaitUntil += preemptiveReconnectTimePeriod;
                 }
@@ -909,7 +908,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                                 cleanupSshConnection(oldSocket, oldSshConnection);
                                 oldSocket = null;
                                 oldSshConnection = null;
-                                MyLog.g("preemptive ssh stopped", null);
+                                MyLog.g("preemptive ssh stopped");
                             }
                             
                             checkSignals(0);
@@ -1008,7 +1007,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                                     socks = null;
                                     if (e instanceof java.net.BindException)
                                     {
-                                        MyLog.g("preemptive restart socks: BindException", null);
+                                        MyLog.g("preemptive restart socks: BindException");
                                         Thread.sleep(PsiphonConstants.PREEMPTIVE_RECONNECT_BIND_WAIT_MILLISECONDS);
                                     }
                                     else
@@ -1050,7 +1049,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                                         transparentProxy = null;
                                         if (e instanceof java.net.BindException)
                                         {
-                                            MyLog.g("preemptive restart transparentProxy: BindException", null);
+                                            MyLog.g("preemptive restart transparentProxy: BindException");
                                             Thread.sleep(PsiphonConstants.PREEMPTIVE_RECONNECT_BIND_WAIT_MILLISECONDS);
                                         }
                                         else
@@ -1377,7 +1376,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         // Check if an upgrade has already been downloaded and is ready for install
         UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentContext);
         
-        if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
+        if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL)
+                || !m_interface.serverInRegionExists(PsiphonData.getPsiphonData().getEgressRegion()))
         {
             MyLog.e(R.string.no_server_entries, MyLog.Sensitivity.NOT_SENSITIVE);
             return;
@@ -1457,6 +1457,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
     
     public void startTunnel()
     {
+        Utils.checkSecureRandom();
+        
         stopTunnel();
 
         if (m_eventsInterface != null)

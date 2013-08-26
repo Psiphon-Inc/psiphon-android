@@ -255,11 +255,14 @@ public class ServerSelector
             }
             
             ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
+            
+            String egressRegion = PsiphonData.getPsiphonData().getEgressRegion();
         
             for (ServerEntry entry : serverEntries)
             {
                 if (-1 != entry.getPreferredReachablityTestPort() &&
-                        entry.hasCapabilities(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL))
+                        entry.hasCapabilities(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL) &&
+                        entry.inRegion(egressRegion))
                 {
                     CheckServerWorker worker = new CheckServerWorker(entry);
                     threadPool.submit(worker);
@@ -311,21 +314,17 @@ public class ServerSelector
             {
                 Thread.currentThread().interrupt();
             }
+
+            MyLog.g("SelectedRegion", "regionCode", egressRegion);
             
             for (CheckServerWorker worker : workers)
             {
-                JSONObject diagnosticData = new JSONObject();
-                try 
-                {
-                    diagnosticData.put("ipAddress", worker.entry.ipAddress);
-                    diagnosticData.put("responded", worker.responded);
-                    diagnosticData.put("responseTime", worker.responseTime);
-                } 
-                catch (JSONException e) 
-                {
-                    throw new RuntimeException(e);
-                }
-                MyLog.g("ServerResponseCheck", diagnosticData);
+                MyLog.g(
+                    "ServerResponseCheck",
+                    "ipAddress", worker.entry.ipAddress,
+                    "responded", worker.responded,
+                    "responseTime", worker.responseTime,
+                    "regionCode", worker.entry.regionCode);
                 
                 MyLog.d(
                     String.format("server: %s, responded: %s, response time: %d",
