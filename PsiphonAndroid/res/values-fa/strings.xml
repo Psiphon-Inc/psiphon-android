@@ -24,4 +24,5 @@
   <string name="StatusActivity.WholeDeviceTunnelPositiveButton">تمام دستگاه را پراکسی کن</string>
   <string name="StatusActivity.WholeDeviceTunnelNegativeButton">فقط از مرورگر سایفون استفاده کن</string>
   <string name="tunnel_whole_device_exception">گوشی شما امکان تونل تمام گوشی را پشتیبانی نمیکند. ببخشید.</string>
+  <string name="region_selector">منطقۀ خود را انتخاب کنید</string>
 </resources>
