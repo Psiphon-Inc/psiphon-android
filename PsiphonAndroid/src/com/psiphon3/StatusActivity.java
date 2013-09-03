@@ -75,6 +75,16 @@ public class StatusActivity
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
+        setContentView(R.layout.main);
+
+        m_banner = (ImageView)findViewById(R.id.banner);
+        m_tabHost = (TabHost)findViewById(R.id.tabHost);
+        m_toggleButton = (Button)findViewById(R.id.toggleButton);
+        m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
+        m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
+                
+        // NOTE: super class assumes m_tabHost is initialized in its onCreate
+        
         super.onCreate(savedInstanceState);
 
         if (m_firstRun)
@@ -83,14 +93,6 @@ public class StatusActivity
             RegionAdapter.initialize(this);
         }
  
-        setContentView(R.layout.main);
-
-        m_banner = (ImageView)findViewById(R.id.banner);
-        m_tabHost = (TabHost)findViewById(R.id.tabHost);
-        m_toggleButton = (Button)findViewById(R.id.toggleButton);
-        m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
-        m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
-        
         // Play Store Build instances should use existing banner from previously installed APK
         // (if present). To enable this, non-Play Store Build instances write their banner to
         // a private file.
