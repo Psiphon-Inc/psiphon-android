@@ -100,7 +100,7 @@ public class StatusActivity
         {
             if (EmbeddedValues.IS_PLAY_STORE_BUILD)
             {
-                File bannerImageFile = new File(BANNER_FILE_NAME);
+                File bannerImageFile = new File(getFilesDir(), BANNER_FILE_NAME);
                 if (bannerImageFile.exists())
                 {
                     m_banner.setImageURI(Uri.fromFile(bannerImageFile));
