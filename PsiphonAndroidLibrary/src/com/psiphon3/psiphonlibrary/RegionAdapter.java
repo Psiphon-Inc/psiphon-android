@@ -19,8 +19,6 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import java.util.ArrayList;
-
 import android.content.Context;
 import android.content.SharedPreferences.Editor;
 import android.preference.PreferenceManager;
@@ -59,6 +57,8 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         new Region("CA", R.string.region_name_ca, R.drawable.flag_ca, false),
         new Region("JP", R.string.region_name_jp, R.drawable.flag_jp, false),
         new Region("DE", R.string.region_name_de, R.drawable.flag_de, false),
+        new Region("HK", R.string.region_name_hk, R.drawable.flag_hk, false),
+        new Region("SG", R.string.region_name_sg, R.drawable.flag_sg, false),
     };
     
     private static boolean initialized = false;
