@@ -103,7 +103,8 @@ public class StatusActivity
                 File bannerImageFile = new File(getFilesDir(), BANNER_FILE_NAME);
                 if (bannerImageFile.exists())
                 {
-                    m_banner.setImageURI(Uri.fromFile(bannerImageFile));
+                    Bitmap bitmap = BitmapFactory.decodeFile(bannerImageFile.getAbsolutePath());
+                    m_banner.setImageBitmap(bitmap);
                 }
             }
             else
