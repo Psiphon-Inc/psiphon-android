@@ -355,6 +355,12 @@ public interface UpgradeManager
          */
         public static void notifyUpgrade(Context context)
         {
+            // Play Store Build instances must not use custom auto-upgrade
+            if (EmbeddedValues.IS_PLAY_STORE_BUILD)
+            {
+                return;
+            }
+            
             VerifiedUpgradeFile file = getAvailableCompleteUpgradeFile(context); 
             if (file == null)
             {
