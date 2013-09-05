@@ -428,7 +428,8 @@ public interface UpgradeManager
          */
         public void start(int versionNumber)
         {
-            if (0 == EmbeddedValues.UPGRADE_URL.length())
+            // Play Store Build instances must not use custom auto-upgrade
+            if (0 == EmbeddedValues.UPGRADE_URL.length() || EmbeddedValues.IS_PLAY_STORE_BUILD)
             {
                 return;
             }

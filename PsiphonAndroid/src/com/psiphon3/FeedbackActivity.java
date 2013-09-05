@@ -216,8 +216,19 @@ public class FeedbackActivity extends Activity
         String language = Locale.getDefault().getLanguage();
         
         StringBuilder argsBuilder = new StringBuilder();
-        argsBuilder.append("{ \"newVersionURL\":\"").append(EmbeddedValues.GET_NEW_VERSION_URL).append("\", ");
-        argsBuilder.append("\"newVersionEmail\": \"").append(EmbeddedValues.GET_NEW_VERSION_EMAIL).append("\", ");
+        argsBuilder.append("{ ");
+        // We are avoiding any possible conflict with the Play Store policy that apps cannot automatically self-upgrade:
+        // "An app downloaded from Google Play may not modify, replace or update its own APK binary code using any
+        // method other than Google Play's update mechanism."
+        // (https://play.google.com/about/developer-content-policy.html)
+        // These links, if followed, can be used to side-load upgrade the app, bypassing the Play Store upgrade
+        // mechanism.  While it is arguable that this is in conflict with the Play Store policy, we are removing
+        // this links to be cautious and to avoid any possible disruptions.
+        if (!EmbeddedValues.IS_PLAY_STORE_BUILD)
+        {
+            argsBuilder.append("\"newVersionURL\":\"").append(EmbeddedValues.GET_NEW_VERSION_URL).append("\", ");
+            argsBuilder.append("\"newVersionEmail\": \"").append(EmbeddedValues.GET_NEW_VERSION_EMAIL).append("\", ");
+        }
         argsBuilder.append("\"faqURL\": \"").append(EmbeddedValues.FAQ_URL).append("\", ");
         argsBuilder.append("\"dataCollectionInfoURL\": \"").append(EmbeddedValues.DATA_COLLECTION_INFO_URL).append("\" }");
         String args = null;

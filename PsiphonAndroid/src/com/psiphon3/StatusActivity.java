@@ -19,12 +19,19 @@
 
 package com.psiphon3;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences.Editor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.KeyEvent;
@@ -33,9 +40,11 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TabHost;
 
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.RegionAdapter;
 import com.psiphon3.psiphonlibrary.ServerInterface;
@@ -46,10 +55,12 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 public class StatusActivity 
     extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
 {
+    public static final String BANNER_FILE_NAME = "bannerImage";
     public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
     public static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
     
     private static boolean m_firstRun = true;
+    private ImageView m_banner;
     private CheckBox m_tunnelWholeDeviceToggle;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private RegionAdapter m_regionAdapter;
@@ -66,12 +77,51 @@ public class StatusActivity
     {
         setContentView(R.layout.main);
 
+        m_banner = (ImageView)findViewById(R.id.banner);
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
         m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
         m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
-
+                
+        // NOTE: super class assumes m_tabHost is initialized in its onCreate
+        
         super.onCreate(savedInstanceState);
+
+        if (m_firstRun)
+        {
+            EmbeddedValues.initialize(this);
+            RegionAdapter.initialize(this);
+        }
+ 
+        // Play Store Build instances should use existing banner from previously installed APK
+        // (if present). To enable this, non-Play Store Build instances write their banner to
+        // a private file.
+        try
+        {
+            if (EmbeddedValues.IS_PLAY_STORE_BUILD)
+            {
+                File bannerImageFile = new File(getFilesDir(), BANNER_FILE_NAME);
+                if (bannerImageFile.exists())
+                {
+                    Bitmap bitmap = BitmapFactory.decodeFile(bannerImageFile.getAbsolutePath());
+                    m_banner.setImageBitmap(bitmap);
+                }
+            }
+            else
+            {
+                Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.banner);
+                if (bitmap != null)
+                {
+                    FileOutputStream out = openFileOutput(BANNER_FILE_NAME, Context.MODE_PRIVATE);
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+                    out.close();
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            // Ignore failure
+        }
 
         // Transparent proxy-based "Tunnel Whole Device" option is only available on rooted devices and
         // defaults to true on rooted devices.
@@ -85,11 +135,6 @@ public class StatusActivity
         boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, canWholeDevice);
         m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
 
-        if (m_firstRun)
-        {
-            RegionAdapter.initialize(this);
-        }
- 
         m_regionAdapter = new RegionAdapter(this);
         m_regionSelector.setAdapter(m_regionAdapter);
         String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE, ServerInterface.ServerEntry.REGION_CODE_ANY);
