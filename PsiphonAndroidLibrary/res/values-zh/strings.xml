@@ -128,4 +128,6 @@
   <string name="region_name_ca">加拿大</string>
   <string name="region_name_de">德国</string>
   <string name="region_name_jp">日本</string>
+  <string name="region_name_hk">香港</string>
+  <string name="region_name_sg">新加坡</string>
 </resources>

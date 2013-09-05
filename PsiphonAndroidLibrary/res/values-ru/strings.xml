@@ -128,4 +128,6 @@
   <string name="region_name_ca">Канада</string>
   <string name="region_name_de">Германия</string>
   <string name="region_name_jp">Япония</string>
+  <string name="region_name_hk">Гонконг</string>
+  <string name="region_name_sg">Сингапур</string>
 </resources>
