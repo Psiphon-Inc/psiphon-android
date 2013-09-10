@@ -223,8 +223,8 @@ public class FeedbackActivity extends Activity
         // (https://play.google.com/about/developer-content-policy.html)
         // These links, if followed, can be used to side-load upgrade the app, bypassing the Play Store upgrade
         // mechanism.  While it is arguable that this is in conflict with the Play Store policy, we are removing
-        // this links to be cautious and to avoid any possible disruptions.
-        if (!EmbeddedValues.IS_PLAY_STORE_BUILD)
+        // these links to be cautious and to avoid any possible disruptions.
+        if (EmbeddedValues.hasEverBeenSideLoaded(this))
         {
             argsBuilder.append("\"newVersionURL\":\"").append(EmbeddedValues.GET_NEW_VERSION_URL).append("\", ");
             argsBuilder.append("\"newVersionEmail\": \"").append(EmbeddedValues.GET_NEW_VERSION_EMAIL).append("\", ");

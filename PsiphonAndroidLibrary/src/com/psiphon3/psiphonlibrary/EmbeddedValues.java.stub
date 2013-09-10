@@ -132,4 +132,17 @@ cog.outl('public static String DATA_COLLECTION_INFO_URL = "%s";' % utils.get_emb
             DATA_COLLECTION_INFO_URL = preferences.getString(DATA_COLLECTION_INFO_URL_PREFERENCE, DATA_COLLECTION_INFO_URL);
         }
     }
+
+    public static boolean hasEverBeenSideLoaded(Context context)
+    {
+        if (IS_PLAY_STORE_BUILD)
+        {
+            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+            return preferences.contains(PROPAGATION_CHANNEL_ID_PREFERENCE);
+        }
+        else
+        {
+            return true;
+        }
+    }
 }
