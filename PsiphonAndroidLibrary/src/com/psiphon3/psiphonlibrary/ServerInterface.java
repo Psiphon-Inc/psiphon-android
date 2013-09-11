@@ -929,6 +929,12 @@ public class ServerInterface
             clientPlatform += PsiphonConstants.ROOTED;
         }
         
+        // Detect if this is a Play Store build
+        if (EmbeddedValues.IS_PLAY_STORE_BUILD)
+        {
+            clientPlatform += PsiphonConstants.PLAY_STORE_BUILD;
+        }
+        
         url.append("https://").append(serverEntry.ipAddress)
            .append(":").append(webServerPort == -1 ? serverEntry.webServerPort : webServerPort)
            .append("/").append(path)

@@ -67,7 +67,7 @@ public class Diagnostics
             JSONObject metadata = new JSONObject();
     
             metadata.put("platform", "android");
-            metadata.put("version", 2);
+            metadata.put("version", 3);
     
             SecureRandom rnd = new SecureRandom();
             byte[] id = new byte[8];
@@ -96,6 +96,7 @@ public class Diagnostics
     
             JSONObject sysInfo = new JSONObject();
             sysInfo.put("isRooted", Utils.isRooted());
+            sysInfo.put("isPlayStoreBuild", EmbeddedValues.IS_PLAY_STORE_BUILD);
             sysInfo.put("language", Locale.getDefault().getLanguage());
             sysInfo.put("networkTypeName", Utils.getNetworkTypeName(context));
             sysInfo.put("Build", sysInfo_Build);

@@ -69,6 +69,8 @@ public class PsiphonConstants
     public final static int SECONDS_BETWEEN_UNSUCCESSFUL_REMOTE_SERVER_LIST_FETCH = 60*5;
 
     public final static String ROOTED = "_rooted";
+    
+    public final static String PLAY_STORE_BUILD = "_playstore";
 
     public final static ArrayList<String> REQUIRED_CAPABILITIES_FOR_TUNNEL = new ArrayList<String>(){{ add(PsiphonConstants.RELAY_PROTOCOL); }};
     
