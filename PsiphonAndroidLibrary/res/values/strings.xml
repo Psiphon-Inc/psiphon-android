@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Psiphon 3</string>
+    <string name="app_name">Psiphon</string>
     <string name="ssh_connecting">SSH connecting…</string>
     <string name="ssh_connected">SSH connected</string>
     <string name="ssh_connection_failed">SSH connection failed</string>
@@ -96,11 +96,11 @@
     <string name="UpgradeManager.CanNotRetrievePackageInfo">Unable to retrieve package info for current app</string>
     <string name="UpgradeManager.UpgradeFileWriteFailed">Failed to write upgrade file</string>
     <string name="UpgradeManager.UpgradeDownloadFailed">Upgrade download failed</string>
-    <string name="UpgradeManager.UpgradeDownloaded">Upgrade downloaded. It is strongly recommended that you allow the upgrade to proceed at this time. After upgrading, you will have to launch Psiphon 3 again.</string>
+    <string name="UpgradeManager.UpgradeDownloaded">Upgrade downloaded. It is strongly recommended that you allow the upgrade to proceed at this time. After upgrading, you will have to launch Psiphon again.</string>
     <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Upgrade failed. Cannot extract package info from upgrade file.</string>
     <string name="UpgradeManager.UpgradeFileNotFound">Upgrade file not found</string>
     <string name="UpgradeManager.UpgradePromptTitle">Psiphon Upgrade</string>
-    <string name="UpgradeManager.UpgradePromptMessage">An upgrade for Psiphon 3 is ready to be installed.</string>
+    <string name="UpgradeManager.UpgradePromptMessage">An upgrade for Psiphon is ready to be installed.</string>
     <string name="UpgradeManager.UpgradeAvailableNotificationId">Psiphon Upgrade Available Notification</string>
     <string name="UpgradeManager.UpgradeFileReadFailed">Failed to read upgrade file</string>
     <string name="UpgradeManager.UpgradeFileAuthenticateFailed">Failed to authenticate upgrade file</string>
