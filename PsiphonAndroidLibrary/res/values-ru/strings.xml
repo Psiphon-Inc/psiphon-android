@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">Psiphon 3</string>
+  <string name="app_name">Psiphon</string>
   <string name="ssh_connecting">Идет соединение SSH...</string>
   <string name="ssh_connected">Успешное соединение SSH</string>
   <string name="ssh_connection_failed">Ошибка соединения SSH</string>
@@ -96,11 +96,11 @@
   <string name="UpgradeManager.CanNotRetrievePackageInfo">Ошибка чтения package info данного приложения</string>
   <string name="UpgradeManager.UpgradeFileWriteFailed">Ошибка записи апгрейда</string>
   <string name="UpgradeManager.UpgradeDownloadFailed">Ошибка скачивания апгрейда</string>
-  <string name="UpgradeManager.UpgradeDownloaded">Апгрейд скачан. Мы настоятельно рекомендуем установку этого апгрейда. Перезапустите Psiphon 3 после установки апгрейда.</string>
+  <string name="UpgradeManager.UpgradeDownloaded">Скачана новая версия. Мы настоятельно рекомендуем установку этой версии. Перезапустите Psiphon после установки.</string>
   <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Ошибка чтения package info апгрейда</string>
   <string name="UpgradeManager.UpgradeFileNotFound">Апгрейд файл не найден</string>
   <string name="UpgradeManager.UpgradePromptTitle">Апгрейд Psiphon </string>
-  <string name="UpgradeManager.UpgradePromptMessage">Апгрейд Psiphon 3 готов к установке. </string>
+  <string name="UpgradeManager.UpgradePromptMessage">Новая версия Psiphon готова к установке. </string>
   <string name="UpgradeManager.UpgradeAvailableNotificationId">Доступна новая версия Psiphon</string>
   <string name="UpgradeManager.UpgradeFileReadFailed">Ошибка чтения файла апгрейда</string>
   <string name="UpgradeManager.UpgradeFileAuthenticateFailed">Ошибка аутенфикации файла апгрейда</string>

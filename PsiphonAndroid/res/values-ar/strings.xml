@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">برنامج Psiphon 3</string>
-  <string name="about">حول برنامج Psiphon 3</string>
+  <string name="app_name">برنامج Psiphon</string>
+  <string name="about">حول برنامج Psiphon</string>
   <string name="banner_desc">شعار الشركة الراعية؛ انقر لزيارة الصفحة الرئيسية للشركة الراعية</string>
   <string name="start_desc">الاتصال ببرنامج Psiphon؛ انقر للاتصال</string>
   <string name="message_image_success_desc">أيقونة تشير إلى رسالة نجاح</string>

@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">سایفون ٣</string>
+  <string name="app_name">سایفون</string>
   <string name="ssh_connecting">در حال وصل اس اس اچ ...</string>
   <string name="ssh_connected">اس اس اچ وصل شد </string>
   <string name="ssh_connection_failed">وصل به اس اس اچ امکان پذیر نبود </string>
@@ -96,11 +96,11 @@
   <string name="UpgradeManager.CanNotRetrievePackageInfo">بازیابی اطلاعات بسته برای برنامه جاری امکان پذیر نیست  </string>
   <string name="UpgradeManager.UpgradeFileWriteFailed">خطا در نوشتن فایل ارتقا</string>
   <string name="UpgradeManager.UpgradeDownloadFailed">به روز رسانی دانلود شکست خورد</string>
-  <string name="UpgradeManager.UpgradeDownloaded">ارتقا دانلود شد. به شدت توصیه می شود که شما اجازه ی به روزرسانی ارتقاء را بدهید. پس از ارتقاء، شما باید سایفون را دوباره راه اندازی کنید.  \n</string>
+  <string name="UpgradeManager.UpgradeDownloaded">ارتقا دانلود شد. به شدت توصیه می شود که شما اجازه ی به روزرسانی ارتقاء را بدهید. پس از ارتقاء، شما باید سایفون را دوباره راه اندازی کنید.</string>
   <string name="UpgradeManager.CannotExtractUpgradePackageInfo">به روز رسانی شکست خورد. بازکردن اطلاعات بسته از فایل ارتقا نا موفق بود.</string>
   <string name="UpgradeManager.UpgradeFileNotFound">فایل ارتقا پیدا نشد</string>
   <string name="UpgradeManager.UpgradePromptTitle">به روز رسانی سایفون</string>
-  <string name="UpgradeManager.UpgradePromptMessage">ارتقا برای سایفون ٣ آماده نصب است. </string>
+  <string name="UpgradeManager.UpgradePromptMessage">ارتقا برای سایفون آماده نصب است. </string>
   <string name="UpgradeManager.UpgradeAvailableNotificationId">اطلاعیه سایفون برای وجود ارتقا برنامه  </string>
   <string name="UpgradeManager.UpgradeFileReadFailed">خواندن فایل ارتقا ناموفق بود </string>
   <string name="UpgradeManager.UpgradeFileAuthenticateFailed">تصدیق فایل ارتقا نا موفق بود </string>

@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">Psiphon 3</string>
-  <string name="about">Giới thiệu về Psiphon 3</string>
+  <string name="app_name">Psiphon</string>
+  <string name="about">Giới thiệu về Psiphon</string>
   <string name="banner_desc">banner nhà tài trợ; nhấp vào để truy cập trang chủ của nhà tài trợ</string>
   <string name="start_desc">kết nối với Psiphon; nhấp vào để kết nối</string>
   <string name="message_image_success_desc">biểu tượng cho biết thông báo thành công</string>

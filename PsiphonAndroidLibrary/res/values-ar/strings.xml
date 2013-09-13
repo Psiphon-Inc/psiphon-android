@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">برنامج Psiphon 3</string>
+  <string name="app_name">برنامج Psiphon</string>
   <string name="ssh_connecting">جاري اتصال بروتوكول القشرة الآمنة (SSH)...</string>
   <string name="ssh_connected">تم اتصال بروتوكول القشرة الآمنة (SSH)</string>
   <string name="ssh_connection_failed">فشل اتصال بروتوكول القشرة الآمنة (SSH)</string>

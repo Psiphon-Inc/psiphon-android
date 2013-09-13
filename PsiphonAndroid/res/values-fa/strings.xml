@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">سایفون ۳</string>
-  <string name="about">درباره سایفون ۳ </string>
+  <string name="app_name">سایفون</string>
+  <string name="about">درباره سایفون</string>
   <string name="banner_desc">برای بازدید از صفحه ی بانی، اینجا کلیک کنید </string>
   <string name="start_desc">برای وصل شدن به سایفون کلیک کنید</string>
   <string name="message_image_success_desc"> آیکون نشانگر پیام موفق است </string>

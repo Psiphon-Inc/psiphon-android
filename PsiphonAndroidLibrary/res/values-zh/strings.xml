@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">Psiphon 3</string>
+  <string name="app_name">Psiphon</string>
   <string name="ssh_connecting">SSH连接...</string>
   <string name="ssh_connected">SSH连接成功</string>
   <string name="ssh_connection_failed">SSH连接失败</string>
@@ -96,11 +96,11 @@
   <string name="UpgradeManager.CanNotRetrievePackageInfo">无法检索当前应用程序的报信息</string>
   <string name="UpgradeManager.UpgradeFileWriteFailed">未能写入升级文件</string>
   <string name="UpgradeManager.UpgradeDownloadFailed">升级下载失败</string>
-  <string name="UpgradeManager.UpgradeDownloaded">升级下载了。强烈建议您允许升级继续在这一次。升级完成后，您必须重新启动赛风3。</string>
+  <string name="UpgradeManager.UpgradeDownloaded">升级下载了。强烈建议您允许升级继续在这一次。升级完成后，您必须重新启动赛风。</string>
   <string name="UpgradeManager.CannotExtractUpgradePackageInfo">升级失败。无法从升级文件提取报信息。</string>
   <string name="UpgradeManager.UpgradeFileNotFound">升级文件未找到</string>
   <string name="UpgradeManager.UpgradePromptTitle">赛风升级</string>
-  <string name="UpgradeManager.UpgradePromptMessage">赛风3的升级是准备好安装的。</string>
+  <string name="UpgradeManager.UpgradePromptMessage">赛风的升级是准备好安装的。</string>
   <string name="UpgradeManager.UpgradeAvailableNotificationId">赛风升级可用的通知</string>
   <string name="UpgradeManager.UpgradeFileReadFailed">未能读升级文件</string>
   <string name="UpgradeManager.UpgradeFileAuthenticateFailed">未能身份验证此升级文件</string>
