@@ -84,8 +84,7 @@ public class TunnelVpnService extends VpnService
     public void onRevoke()
     {
         MyLog.w(R.string.vpn_service_revoked, MyLog.Sensitivity.NOT_SENSITIVE);
-
-        m_Core.stopTunnel();
+        // stopSelf will trigger onDestroy in the main thread, which will in turn invoke m_Core.onDestroy
         stopSelf();
     }
     
