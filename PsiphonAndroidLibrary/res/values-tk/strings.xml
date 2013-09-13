@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">Psiphon 3</string>
+  <string name="app_name">Psiphon</string>
   <string name="ssh_connecting">SSH birikdirilýär</string>
   <string name="ssh_connected">SSH birikdirildi</string>
   <string name="ssh_connection_failed">SSH birikdirmek şowsuz</string>

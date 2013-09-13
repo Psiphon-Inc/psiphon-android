@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">Psiphon 3</string>
-  <string name="about">Acerca de Psiphon 3</string>
+  <string name="app_name">Psiphon</string>
+  <string name="about">Acerca de Psiphon</string>
   <string name="banner_desc">anuncio de patrocinador; haga click para visitar la página inicial del patrocinador</string>
   <string name="start_desc">conectarse a Psiphon; haga click para conectarse</string>
   <string name="message_image_success_desc">ícono que indica un mensaje exitoso</string>

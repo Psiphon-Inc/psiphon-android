@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">Psiphon 3</string>
+  <string name="app_name">Psiphon</string>
   <string name="ssh_connecting">SSH đang kết nối...</string>
   <string name="ssh_connected">SSH đã kết nối</string>
   <string name="ssh_connection_failed">Kết nối SSH thất bại</string>

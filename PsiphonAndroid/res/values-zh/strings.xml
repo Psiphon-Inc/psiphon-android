@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">赛风3</string>
-  <string name="about">关于Psiphon 3</string>
+  <string name="app_name">Psiphon</string>
+  <string name="about">关于Psiphon</string>
   <string name="banner_desc">赞助商标志; 单击访问赞助商主页</string>
   <string name="start_desc">连接到Psiphon; 单击以连接</string>
   <string name="message_image_success_desc">图标表示成功消息</string>
