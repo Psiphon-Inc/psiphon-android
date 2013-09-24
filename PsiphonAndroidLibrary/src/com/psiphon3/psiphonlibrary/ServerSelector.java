@@ -20,6 +20,8 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -35,12 +37,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.content.Context;
 import android.os.Build;
 import android.os.SystemClock;
+
+import ch.ethz.ssh2.HTTPProxyException;
+import ch.ethz.ssh2.transport.ClientServerHello;
+import ch.ethz.ssh2.util.StringEncoder;
 
 import com.psiphon3.psiphonlibrary.R;
 import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
@@ -103,21 +106,31 @@ public class ServerSelector
                 }
                 
                 this.channel.configureBlocking(false);
-                this.channel.connect(new InetSocketAddress(
-                                        this.entry.ipAddress,
-                                        this.entry.getPreferredReachablityTestPort()));
                 selector = Selector.open();
-                this.channel.register(selector, SelectionKey.OP_CONNECT);
                 
-                while (selector.select(SHUTDOWN_POLL_MILLISECONDS) == 0)
+                // TODO: Option to use the proxy (only when on wifi?)
+                // TODO: Read wifi proxy settings
+                // TODO: fetchRemoteServerList and any other web requests through the proxy
+                // TODO: informational message if fail to connect to proxy
+                boolean useHttpProxy = true;
+                if (useHttpProxy)
                 {
-                    if (stopFlag)
-                    {
-                        break;
-                    }
-                }
+                    makeSocketChannelConnection(selector, "192.168.1.182", 8080);
+                    this.channel.finishConnect();
+                    selector.close();
+                    this.channel.configureBlocking(true);
                 
-                this.responded = this.channel.finishConnect();
+                    makeConnectionViaHTTPProxy();
+                    this.responded = true;
+                }
+                else
+                {
+                    makeSocketChannelConnection(selector,
+                            this.entry.ipAddress,
+                            this.entry.getPreferredReachablityTestPort());
+                    
+                    this.responded = this.channel.finishConnect();
+                }
             }
             catch (IOException e) {}
             finally
@@ -153,6 +166,99 @@ public class ServerSelector
             }
             
             this.responseTime = SystemClock.elapsedRealtime() - startTime;
+        }
+        
+        private void makeSocketChannelConnection(Selector selector, String ipAddress, int port) throws IOException
+        {
+            this.channel.connect(new InetSocketAddress(ipAddress, port));
+            this.channel.register(selector, SelectionKey.OP_CONNECT);
+            
+            while (selector.select(SHUTDOWN_POLL_MILLISECONDS) == 0)
+            {
+                if (stopFlag)
+                {
+                    break;
+                }
+            }
+        }
+        
+        private void makeConnectionViaHTTPProxy() throws IOException
+        {
+            Socket sock = this.channel.socket();
+            
+            // The following is mostly copied from ch.ethz.ssh2.transport.TransportManager.establishConnection()
+
+            sock.setSoTimeout(0);
+    
+            /* OK, now tell the proxy where we actually want to connect to */
+    
+            StringBuffer sb = new StringBuffer();
+    
+            sb.append("CONNECT ");
+            sb.append(this.entry.ipAddress);
+            sb.append(':');
+            sb.append(this.entry.getPreferredReachablityTestPort());
+            sb.append(" HTTP/1.0\r\n");
+            sb.append("\r\n");
+    
+            OutputStream out = sock.getOutputStream();
+    
+            out.write(StringEncoder.GetBytes(sb.toString()));
+            out.flush();
+    
+            /* Now parse the HTTP response */
+    
+            byte[] buffer = new byte[1024];
+            InputStream in = sock.getInputStream();
+    
+            int len = ClientServerHello.readLineRN(in, buffer);
+    
+            String httpResponse = StringEncoder.GetString(buffer, 0, len);
+    
+            if (httpResponse.startsWith("HTTP/") == false)
+            {
+                throw new IOException("The proxy did not send back a valid HTTP response.");
+            }
+    
+            /* "HTTP/1.X XYZ X" => 14 characters minimum */
+    
+            if ((httpResponse.length() < 14) || (httpResponse.charAt(8) != ' ') || (httpResponse.charAt(12) != ' '))
+            {
+                throw new IOException("The proxy did not send back a valid HTTP response.");
+            }
+    
+            int errorCode = 0;
+    
+            try
+            {
+                errorCode = Integer.parseInt(httpResponse.substring(9, 12));
+            }
+            catch (NumberFormatException ignore)
+            {
+                throw new IOException("The proxy did not send back a valid HTTP response.");
+            }
+    
+            if ((errorCode < 0) || (errorCode > 999))
+            {
+                throw new IOException("The proxy did not send back a valid HTTP response.");
+            }
+    
+            if (errorCode != 200)
+            {
+                throw new HTTPProxyException(httpResponse.substring(13), errorCode);
+            }
+    
+            /* OK, read until empty line */
+    
+            while (true)
+            {
+                len = ClientServerHello.readLineRN(in, buffer);
+                if (len == 0)
+                {
+                    break;
+                }
+            }
+            return;
         }
     }
     
