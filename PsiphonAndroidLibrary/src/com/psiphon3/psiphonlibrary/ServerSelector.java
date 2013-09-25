@@ -108,14 +108,12 @@ public class ServerSelector
                 this.channel.configureBlocking(false);
                 selector = Selector.open();
                 
-                // TODO: Option to use the proxy (only when on wifi?)
-                // TODO: Read wifi proxy settings
                 // TODO: fetchRemoteServerList and any other web requests through the proxy
                 // TODO: informational message if fail to connect to proxy
-                boolean useHttpProxy = true;
-                if (useHttpProxy)
+                PsiphonData.SystemProxySettings proxySettings = PsiphonData.getPsiphonData().getSystemProxySettings(context);
+                if (proxySettings != null)
                 {
-                    makeSocketChannelConnection(selector, "192.168.1.182", 8080);
+                    makeSocketChannelConnection(selector, proxySettings.proxyHost, proxySettings.proxyPort);
                     this.channel.finishConnect();
                     selector.close();
                     this.channel.configureBlocking(true);

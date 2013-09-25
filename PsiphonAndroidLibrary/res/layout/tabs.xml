@@ -55,6 +55,23 @@
 
                 </LinearLayout>
                 
+                <ScrollView android:id="@+id/settingsView"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:orientation="vertical" 
+                    android:scrollbarAlwaysDrawVerticalTrack="false" 
+                    android:weightSum="1.0">
+                    
+                    <CheckBox
+                        android:id="@+id/useSystemProxySettingsToggle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:onClick="onUseSystemProxySettingsToggle"
+                        android:text="@string/use_system_proxy_settings_toggle"
+                        android:textAppearance="?android:attr/textAppearanceSmall" />
+                
+                </ScrollView>
+                
                 <ScrollView android:id="@+id/statisticsView"
                     android:layout_width="fill_parent"
                     android:layout_height="fill_parent"

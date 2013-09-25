@@ -430,6 +430,7 @@ public class StatusActivity
         // (i.e., while isServiceRunning can't be relied upon)
         m_tunnelWholeDeviceToggle.setEnabled(false);
         m_regionSelector.setEnabled(false);
+        super.onPreStartService();
     }
 
     @Override
@@ -437,6 +438,7 @@ public class StatusActivity
     {
         m_tunnelWholeDeviceToggle.setEnabled(true);
         m_regionSelector.setEnabled(true);
+        super.onPostStartService();
     }
 
     @Override

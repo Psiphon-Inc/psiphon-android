@@ -30,6 +30,8 @@ import java.util.regex.Pattern;
 
 import org.json.JSONObject;
 
+import android.content.Context;
+import android.os.Build;
 import android.os.SystemClock;
 import android.util.Log;
 import android.util.Pair;
@@ -71,6 +73,7 @@ public class PsiphonData
     private int m_transparentProxyPort;
     private boolean m_shareProxies;
     private boolean m_tunnelWholeDevice;
+    private boolean m_useSystemProxySettings;
     private boolean m_vpnServiceUnavailable;
     private TunnelCore m_currentTunnelCore;
     private ReportedStats m_reportedStats;
@@ -94,6 +97,7 @@ public class PsiphonData
         m_statusActivityForeground = false;
         m_shareProxies = false;
         m_tunnelWholeDevice = false;
+        m_useSystemProxySettings = false;
         m_vpnServiceUnavailable = false;
         m_reportedStats = new ReportedStats();
         m_enableReportedStats = true;
@@ -257,6 +261,55 @@ public class PsiphonData
     public synchronized String getEgressRegion()
     {
         return m_egressRegion;
+    }
+
+    public synchronized void setUseSystemProxySettings(boolean useSystemProxySettings)
+    {
+        m_useSystemProxySettings = useSystemProxySettings;
+    }
+
+    public synchronized boolean getUseSystemProxySettings()
+    {
+        return m_useSystemProxySettings;
+    }
+    
+    public class SystemProxySettings
+    {
+        public String proxyHost;
+        public int proxyPort;
+    }
+    
+    // Checks if we are supposed to use the system proxy settings and if any system proxy settings are configured,
+    // and, if so, returns the configured system proxy settings.
+    public synchronized SystemProxySettings getSystemProxySettings(Context context)
+    {
+        if (!getUseSystemProxySettings())
+        {
+            return null;
+        }
+        
+        SystemProxySettings settings = new SystemProxySettings();
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+        {
+            settings.proxyHost = System.getProperty("http.proxyHost");
+            String port = System.getProperty("http.proxyPort");
+            settings.proxyPort = Integer.parseInt(port != null ? port : "-1");
+        }
+        else
+        {
+            settings.proxyHost = android.net.Proxy.getHost(context);
+            settings.proxyPort = android.net.Proxy.getPort(context);
+        }
+        
+        if (settings.proxyHost == null || 
+            settings.proxyHost.length() == 0 || 
+            settings.proxyPort <= 0)
+        {
+            return null;
+        }
+        
+        return settings;
     }
 
     public synchronized void setVpnServiceUnavailable(boolean vpnServiceUnavailable)

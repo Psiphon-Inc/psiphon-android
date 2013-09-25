@@ -47,6 +47,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.net.VpnService;
@@ -66,6 +67,7 @@ import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.webkit.URLUtil;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -123,6 +125,7 @@ public abstract class MainBase
         public static final String TUNNEL_STOPPING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STOPPING";
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.PsiphonAndroidActivity.STATUS_ENTRY_AVAILABLE";
         public static final String SHARE_PROXIES_PREFERENCE = "shareProxiesPreference";
+        public static final String USE_SYSTEM_PROXY_SETTINGS_PREFERENCE = "useSystemProxySettingsPreference";
         
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
 
@@ -147,6 +150,7 @@ public abstract class MainBase
         private DataTransferGraph m_slowReceivedGraph;
         private DataTransferGraph m_fastSentGraph;
         private DataTransferGraph m_fastReceivedGraph;
+        private CheckBox m_useSystemProxySettingsToggle;
         /*private CheckBox m_shareProxiesToggle;
         private TextView m_statusTabSocksPortLine;
         private TextView m_statusTabHttpProxyPortLine;*/
@@ -402,12 +406,17 @@ public abstract class MainBase
             statisticsTab.setContent(R.id.statisticsView);
             statisticsTab.setIndicator(getText(R.string.statistics_tab_name));
             
+            TabSpec settingsTab = m_tabHost.newTabSpec("settings");
+            settingsTab.setContent(R.id.settingsView);
+            settingsTab.setIndicator(getText(R.string.settings_tab_name));
+
             TabSpec logsTab = m_tabHost.newTabSpec("logs");
             logsTab.setContent(R.id.logsTab);
             logsTab.setIndicator(getText(R.string.logs_tab_name));
 
             m_tabHost.addTab(statusTab);
             m_tabHost.addTab(statisticsTab);
+            m_tabHost.addTab(settingsTab);
             m_tabHost.addTab(logsTab);
             
             m_gestureDetector = new GestureDetector(this, new LateralGestureDetector());
@@ -432,6 +441,7 @@ public abstract class MainBase
             m_tabHost.setOnTouchListener(onTouchListener);
             m_statusTabToggleButton = (ImageButton)findViewById(R.id.statusTabToggleButton);
             m_statusTabToggleButton.setOnTouchListener(onTouchListener);
+            findViewById(R.id.settingsView).setOnTouchListener(onTouchListener);
             findViewById(R.id.statisticsView).setOnTouchListener(onTouchListener);
             ListView statusListView = (ListView)findViewById(R.id.statusList);
             statusListView.setOnTouchListener(onTouchListener);
@@ -450,6 +460,7 @@ public abstract class MainBase
             m_compressionRatioReceivedView = (TextView)findViewById(R.id.compressionRatioReceived);
             m_compressionSavingsSentView = (TextView)findViewById(R.id.compressionSavingsSent);
             m_compressionSavingsReceivedView = (TextView)findViewById(R.id.compressionSavingsReceived);
+            m_useSystemProxySettingsToggle = (CheckBox)findViewById(R.id.useSystemProxySettingsToggle);
             /*m_shareProxiesToggle = (CheckBox)findViewById(R.id.shareProxiesToggle);
             m_statusTabSocksPortLine = (TextView)findViewById(R.id.socksportline);
             m_statusTabHttpProxyPortLine = (TextView)findViewById(R.id.httpproxyportline);*/
@@ -491,6 +502,11 @@ public abstract class MainBase
                     PreferenceManager.getDefaultSharedPreferences(this).getBoolean(SHARE_PROXIES_PREFERENCE, false);
             PsiphonData.getPsiphonData().setShareProxies(shareProxiesPreference);
             /*m_shareProxiesToggle.setChecked(shareProxiesPreference);*/
+            
+            boolean useSystemProxySettingsPreference = 
+                    PreferenceManager.getDefaultSharedPreferences(this).getBoolean(USE_SYSTEM_PROXY_SETTINGS_PREFERENCE, false);
+            PsiphonData.getPsiphonData().setUseSystemProxySettings(useSystemProxySettingsPreference);
+            m_useSystemProxySettingsToggle.setChecked(useSystemProxySettingsPreference);
 
             // Note that this must come after the above lines, or else the activity
             // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
@@ -632,6 +648,36 @@ public abstract class MainBase
 
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(EmbeddedValues.INFO_LINK_URL));
                 startActivity(browserIntent);
+            }
+        }
+        
+        public void onUseSystemProxySettingsToggle(View v)
+        {
+            // Just in case an OnClick message is in transit before setEnabled is processed...(?)
+            if (!m_useSystemProxySettingsToggle.isEnabled())
+            {
+                return;
+            }
+            
+            boolean restart = false;
+
+            if (isServiceRunning())
+            {
+                doToggle();
+                restart = true;
+            }
+
+            boolean useSystemProxySettings = m_useSystemProxySettingsToggle.isChecked();
+            
+            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+            editor.putBoolean(USE_SYSTEM_PROXY_SETTINGS_PREFERENCE, useSystemProxySettings);
+            editor.commit();
+
+            PsiphonData.getPsiphonData().setUseSystemProxySettings(useSystemProxySettings);
+
+            if (restart)
+            {
+                startTunnel(this);
             }
         }
         
@@ -879,8 +925,15 @@ public abstract class MainBase
             }
         }
         
-        protected abstract void onPreStartService();
-        protected abstract void onPostStartService();
+        protected void onPreStartService()
+        {
+            m_useSystemProxySettingsToggle.setEnabled(false);
+        }
+        
+        protected void onPostStartService()
+        {
+            m_useSystemProxySettingsToggle.setEnabled(true);
+        }
 
         protected void startTunnelService(Context context)
         {
