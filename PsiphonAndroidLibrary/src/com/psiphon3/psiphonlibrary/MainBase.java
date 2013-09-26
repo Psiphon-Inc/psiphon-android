@@ -31,6 +31,7 @@ import org.achartengine.model.XYSeries;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
 
+import com.psiphon3.psiphonlibrary.SpinnerHelper;
 import com.psiphon3.psiphonlibrary.PsiphonData.DataTransferStats;
 import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
@@ -58,6 +59,7 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Pair;
 import android.view.GestureDetector;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -66,6 +68,7 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.webkit.URLUtil;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
@@ -124,10 +127,14 @@ public abstract class MainBase
         public static final String TUNNEL_STARTING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STARTING";
         public static final String TUNNEL_STOPPING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STOPPING";
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.PsiphonAndroidActivity.STATUS_ENTRY_AVAILABLE";
-        public static final String SHARE_PROXIES_PREFERENCE = "shareProxiesPreference";
+        public static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
+        public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
         public static final String USE_SYSTEM_PROXY_SETTINGS_PREFERENCE = "useSystemProxySettingsPreference";
+        public static final String SHARE_PROXIES_PREFERENCE = "shareProxiesPreference";
         
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
+        
+        protected static boolean m_firstRun = true;
 
         protected IEvents m_eventsInterface = null;
         protected Button m_toggleButton;
@@ -150,6 +157,9 @@ public abstract class MainBase
         private DataTransferGraph m_slowReceivedGraph;
         private DataTransferGraph m_fastSentGraph;
         private DataTransferGraph m_fastReceivedGraph;
+        private RegionAdapter m_regionAdapter;
+        private SpinnerHelper m_regionSelector;
+        protected CheckBox m_tunnelWholeDeviceToggle;
         private CheckBox m_useSystemProxySettingsToggle;
         /*private CheckBox m_shareProxiesToggle;
         private TextView m_statusTabSocksPortLine;
@@ -460,6 +470,8 @@ public abstract class MainBase
             m_compressionRatioReceivedView = (TextView)findViewById(R.id.compressionRatioReceived);
             m_compressionSavingsSentView = (TextView)findViewById(R.id.compressionSavingsSent);
             m_compressionSavingsReceivedView = (TextView)findViewById(R.id.compressionSavingsReceived);
+            m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
+            m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
             m_useSystemProxySettingsToggle = (CheckBox)findViewById(R.id.useSystemProxySettingsToggle);
             /*m_shareProxiesToggle = (CheckBox)findViewById(R.id.shareProxiesToggle);
             m_statusTabSocksPortLine = (TextView)findViewById(R.id.socksportline);
@@ -498,16 +510,51 @@ public abstract class MainBase
             
             PsiphonData.getPsiphonData().setDisplayDataTransferStats(true);
             
-            boolean shareProxiesPreference =
-                    PreferenceManager.getDefaultSharedPreferences(this).getBoolean(SHARE_PROXIES_PREFERENCE, false);
-            PsiphonData.getPsiphonData().setShareProxies(shareProxiesPreference);
-            /*m_shareProxiesToggle.setChecked(shareProxiesPreference);*/
+            if (m_firstRun)
+            {
+                RegionAdapter.initialize(this);
+            }
             
+            m_regionAdapter = new RegionAdapter(this);
+            m_regionSelector.setAdapter(m_regionAdapter);
+            String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE, ServerInterface.ServerEntry.REGION_CODE_ANY);
+            PsiphonData.getPsiphonData().setEgressRegion(egressRegionPreference);
+            int position = m_regionAdapter.getPositionForRegionCode(egressRegionPreference);
+            m_regionSelector.setSelection(position);
+
+            m_regionSelector.setOnItemSelectedListener(regionSpinnerOnItemSelected);
+            // Re-populate the spinner when it is expanded -- the underlying region list could change
+            // due to background server discovery or remote server list fetch.
+            m_regionSelector.getSpinner().setOnTouchListener(regionSpinnerOnTouch);
+            m_regionSelector.getSpinner().setOnKeyListener(regionSpinnerOnKey);
+            
+            // Transparent proxy-based "Tunnel Whole Device" option is only available on rooted devices and
+            // defaults to true on rooted devices.
+            // On Android 4+, we offer "Whole Device" via the VpnService facility, which does not require root.
+            // We prefer VpnService when available, even when the device is rooted.
+            boolean isRooted = Utils.isRooted();
+            boolean canRunVpnService = Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
+            boolean canWholeDevice = isRooted || canRunVpnService;
+           
+            m_tunnelWholeDeviceToggle.setEnabled(canWholeDevice);
+            boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, canWholeDevice);
+            m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
+
+            // Use PsiphonData to communicate the setting to the TunnelService so it doesn't need to
+            // repeat the isRooted check. The preference is retained even if the device becomes "unrooted"
+            // and that's why setTunnelWholeDevice != tunnelWholeDevicePreference.
+            PsiphonData.getPsiphonData().setTunnelWholeDevice(canWholeDevice && tunnelWholeDevicePreference);
+
             boolean useSystemProxySettingsPreference = 
                     PreferenceManager.getDefaultSharedPreferences(this).getBoolean(USE_SYSTEM_PROXY_SETTINGS_PREFERENCE, false);
             PsiphonData.getPsiphonData().setUseSystemProxySettings(useSystemProxySettingsPreference);
             m_useSystemProxySettingsToggle.setChecked(useSystemProxySettingsPreference);
 
+            boolean shareProxiesPreference =
+                    PreferenceManager.getDefaultSharedPreferences(this).getBoolean(SHARE_PROXIES_PREFERENCE, false);
+            PsiphonData.getPsiphonData().setShareProxies(shareProxiesPreference);
+            /*m_shareProxiesToggle.setChecked(shareProxiesPreference);*/
+            
             // Note that this must come after the above lines, or else the activity
             // will not be sufficiently initialized for isDebugMode to succeed. (Voodoo.)
             PsiphonConstants.DEBUG = Utils.isDebugMode(this);
@@ -651,6 +698,135 @@ public abstract class MainBase
             }
         }
         
+        public abstract void onFeedbackClick(View v);
+        
+        public void onAboutClick(View v)
+        {
+            doAbout();
+        }
+        
+        private AdapterView.OnItemSelectedListener regionSpinnerOnItemSelected = new AdapterView.OnItemSelectedListener()
+        {
+
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id)
+            {
+                onRegionSelected(position);
+            }
+
+            public void onNothingSelected(AdapterView parent)
+            {
+            }
+        };
+        
+        private View.OnTouchListener regionSpinnerOnTouch = new View.OnTouchListener()
+        {
+            public boolean onTouch(View v, MotionEvent event)
+            {
+                if (event.getAction() == MotionEvent.ACTION_UP)
+                {
+                    m_regionAdapter.populate();
+                }
+                return false;
+            }
+        };
+
+        private View.OnKeyListener regionSpinnerOnKey = new View.OnKeyListener()
+        {
+            public boolean onKey(View v, int keyCode, KeyEvent event)
+            {
+                if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER)
+                {
+                    m_regionAdapter.populate();
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        };
+        
+        public void onRegionSelected(int position)
+        {
+            // Just in case an OnItemSelected message is in transit before setEnabled is processed...(?)
+            if (!m_regionSelector.isEnabled())
+            {
+                return;
+            }
+
+            String selectedRegionCode = m_regionAdapter.getSelectedRegionCode(position);
+            
+            String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE, ServerInterface.ServerEntry.REGION_CODE_ANY);
+            if (selectedRegionCode.equals(egressRegionPreference)
+                && selectedRegionCode.equals(PsiphonData.getPsiphonData().getEgressRegion()))
+            {
+                return;
+            }
+            
+            boolean restart = false;
+
+            // NOTE: reconnects even when Any is selected: we could select a faster server
+            if (isServiceRunning())
+            {
+                doToggle();
+                restart = true;
+            }
+
+            updateEgressRegionPreference(selectedRegionCode);
+            
+            if (restart)
+            {
+                startTunnel(this);
+            }
+        }
+        
+        protected void updateEgressRegionPreference(String egressRegionPreference)
+        {
+            // No isRooted check: the user can specify whatever preference they
+            // wish. Also, CheckBox enabling should cover this (but isn't required to).
+            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+            editor.putString(EGRESS_REGION_PREFERENCE, egressRegionPreference);
+            editor.commit();
+            
+            PsiphonData.getPsiphonData().setEgressRegion(egressRegionPreference);
+        }
+
+        public void onTunnelWholeDeviceToggle(View v)
+        {
+            // Just in case an OnClick message is in transit before setEnabled is processed...(?)
+            if (!m_tunnelWholeDeviceToggle.isEnabled())
+            {
+                return;
+            }
+            
+            boolean restart = false;
+
+            if (isServiceRunning())
+            {
+                doToggle();
+                restart = true;
+            }
+
+            boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
+            updateWholeDevicePreference(tunnelWholeDevicePreference);
+            
+            if (restart)
+            {
+                startTunnel(this);
+            }
+        }
+        
+        protected void updateWholeDevicePreference(boolean tunnelWholeDevicePreference)
+        {
+            // No isRooted check: the user can specify whatever preference they
+            // wish. Also, CheckBox enabling should cover this (but isn't required to).
+            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+            editor.putBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, tunnelWholeDevicePreference);
+            editor.commit();
+            
+            PsiphonData.getPsiphonData().setTunnelWholeDevice(tunnelWholeDevicePreference);
+        }
+
         public void onUseSystemProxySettingsToggle(View v)
         {
             // Just in case an OnClick message is in transit before setEnabled is processed...(?)
@@ -927,11 +1103,17 @@ public abstract class MainBase
         
         protected void onPreStartService()
         {
+            // Disable service-toggling controls while service is starting up
+            // (i.e., while isServiceRunning can't be relied upon)
+            m_tunnelWholeDeviceToggle.setEnabled(false);
+            m_regionSelector.setEnabled(false);
             m_useSystemProxySettingsToggle.setEnabled(false);
         }
         
         protected void onPostStartService()
         {
+            m_tunnelWholeDeviceToggle.setEnabled(true);
+            m_regionSelector.setEnabled(true);
             m_useSystemProxySettingsToggle.setEnabled(true);
         }
 

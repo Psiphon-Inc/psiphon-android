@@ -59,51 +59,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center"
-            android:weightSum="4.0">
-    
-            <TextView
-                android:id="@+id/regionPrompt"
-                android:layout_marginRight="5dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="@string/region_selector"
-                android:textAppearance="?android:attr/textAppearanceSmall"/>
-
-            <Spinner
-                android:id="@+id/regionSelector"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:drawSelectorOnTop="true"
-                android:textAppearance="?android:attr/textAppearanceSmall"/>
-            
-        </LinearLayout>
-    
-        <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:weightSum="4.0">
-    
-            <CheckBox
-                android:id="@+id/tunnelWholeDeviceToggle"
-                android:onClick="onTunnelWholeDeviceToggle"
-                android:layout_height="wrap_content"
-                android:layout_width="wrap_content"
-                android:layout_gravity="center"
-                android:text="@string/tunnel_whole_device_toggle"
-                android:textAppearance="?android:attr/textAppearanceSmall"/>
-            
-        </LinearLayout>
-    
-        <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:weightSum="4.0">
+            android:weightSum="2.0">
     
             <Button
                 android:id="@+id/toggleButton"
@@ -112,7 +68,7 @@
                 android:layout_height="fill_parent"
                 android:text="@string/start"
                 android:textAppearance="?android:attr/textAppearanceSmall"
-                android:layout_weight="1.05" />
+                android:layout_weight="1.0" />
     
             <Button
                 android:id="@+id/openBrowserButton"
@@ -120,24 +76,6 @@
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:text="@string/open_browser"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:layout_weight="1.0" />
-    
-            <Button
-                android:id="@+id/feedbackButton"
-                android:onClick="onFeedbackClick"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:text="@string/feedback"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:layout_weight="0.95" />
-    
-            <Button
-                android:id="@+id/aboutButton"
-                android:onClick="onAboutClick"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:text="@string/about"
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:layout_weight="1.0" />
             
