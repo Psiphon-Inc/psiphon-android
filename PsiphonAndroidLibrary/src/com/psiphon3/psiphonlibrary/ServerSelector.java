@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.content.Context;
 import android.os.Build;
@@ -64,6 +65,7 @@ public class ServerSelector
     private boolean protectSocketsRequired = false;
     private Thread thread = null;
     private boolean stopFlag = false;
+    private AtomicBoolean workerPrintedProxyError = new AtomicBoolean(false);
 
     public Socket firstEntrySocket = null;
     public String firstEntryIpAddress = null;
@@ -82,6 +84,7 @@ public class ServerSelector
     {
         ServerEntry entry = null;
         boolean responded = false;
+        boolean completed = false;
         long responseTime = -1;
         SocketChannel channel = null;
 
@@ -92,9 +95,10 @@ public class ServerSelector
         
         public void run()
         {
+            PsiphonData.SystemProxySettings proxySettings = PsiphonData.getPsiphonData().getSystemProxySettings(context);
             long startTime = SystemClock.elapsedRealtime();
             Selector selector = null;
-
+            
             try
             {
                 this.channel = SocketChannel.open();
@@ -109,8 +113,7 @@ public class ServerSelector
                 selector = Selector.open();
                 
                 // TODO: fetchRemoteServerList and any other web requests through the proxy
-                // TODO: informational message if fail to connect to proxy
-                PsiphonData.SystemProxySettings proxySettings = PsiphonData.getPsiphonData().getSystemProxySettings(context);
+                // TODO: interrupt makeConnectionViaHTTPPRoxy by stopFlag
                 if (proxySettings != null)
                 {
                     makeSocketChannelConnection(selector, proxySettings.proxyHost, proxySettings.proxyPort);
@@ -130,7 +133,15 @@ public class ServerSelector
                     this.responded = this.channel.finishConnect();
                 }
             }
-            catch (IOException e) {}
+            catch (IOException e)
+            {
+                // Avoid printing the same message multiple times in the case of a network proxy error
+                if (proxySettings != null && 
+                        workerPrintedProxyError.compareAndSet(false, true))
+                {
+                    MyLog.e(R.string.network_proxy_connect_exception, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, e.getLocalizedMessage());
+                }
+            }
             finally
             {
                 if (selector != null)
@@ -164,6 +175,7 @@ public class ServerSelector
             }
             
             this.responseTime = SystemClock.elapsedRealtime() - startTime;
+            this.completed = true;
         }
         
         private void makeSocketChannelConnection(Selector selector, String ipAddress, int port) throws IOException
@@ -362,6 +374,9 @@ public class ServerSelector
             
             String egressRegion = PsiphonData.getPsiphonData().getEgressRegion();
         
+            // Reset this flag before running the workers.
+            workerPrintedProxyError.set(false);
+            
             for (ServerEntry entry : serverEntries)
             {
                 if (-1 != entry.getPreferredReachablityTestPort() &&
@@ -396,14 +411,23 @@ public class ServerSelector
                     if (wait > 0 && (wait % RESULTS_POLL_MILLISECONDS) == 0)
                     {
                         int resultCount = 0;
+                        boolean threadPoolIsFinished = true;
                         for (CheckServerWorker worker : workers)
                         {
                             resultCount += worker.responded ? 1 : 0;
+                            if (!worker.completed)
+                            {
+                                threadPoolIsFinished = false;
+                            }
                         }
                         if (resultCount > 0)
                         {
                             // Use the results we have so far
                             stopFlag = true;
+                            break;
+                        }
+                        if (threadPoolIsFinished)
+                        {
                             break;
                         }
                     }
