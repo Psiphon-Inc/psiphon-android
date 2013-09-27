@@ -115,7 +115,6 @@ public class ServerSelector
                 this.channel.configureBlocking(false);
                 selector = Selector.open();
                 
-                // TODO: fetchRemoteServerList and any other web requests through the proxy
                 if (proxySettings != null)
                 {
                     makeSocketChannelConnection(selector, proxySettings.proxyHost, proxySettings.proxyPort);

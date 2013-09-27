@@ -1257,6 +1257,15 @@ public class ServerInterface
                 httpproxy = new HttpHost("127.0.0.1", PsiphonData.getPsiphonData().getHttpProxyPort());
                 params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
             }
+            else
+            {
+                PsiphonData.SystemProxySettings proxySettings = PsiphonData.getPsiphonData().getSystemProxySettings(this.ownerContext);
+                if (proxySettings != null)
+                {
+                    httpproxy = new HttpHost(proxySettings.proxyHost, proxySettings.proxyPort);
+                    params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
+                }
+            }
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
             TrustManager[] trustManager = null;
