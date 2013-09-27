@@ -21,13 +21,16 @@ package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -113,7 +116,6 @@ public class ServerSelector
                 selector = Selector.open();
                 
                 // TODO: fetchRemoteServerList and any other web requests through the proxy
-                // TODO: interrupt makeConnectionViaHTTPPRoxy by stopFlag
                 if (proxySettings != null)
                 {
                     makeSocketChannelConnection(selector, proxySettings.proxyHost, proxySettings.proxyPort);
@@ -133,13 +135,31 @@ public class ServerSelector
                     this.responded = this.channel.finishConnect();
                 }
             }
-            catch (IOException e)
+            catch (ClosedByInterruptException e) {}
+            catch (InterruptedIOException e) {}
+            catch (ConnectException e)
             {
                 // Avoid printing the same message multiple times in the case of a network proxy error
                 if (proxySettings != null && 
                         workerPrintedProxyError.compareAndSet(false, true))
                 {
                     MyLog.e(R.string.network_proxy_connect_exception, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, e.getLocalizedMessage());
+                }
+            }
+            catch (SocketException e)
+            {
+                // Avoid printing the same message multiple times in the case of a network proxy error
+                if (proxySettings != null && 
+                        workerPrintedProxyError.compareAndSet(false, true))
+                {
+                    MyLog.e(R.string.network_proxy_connect_exception, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, e.getLocalizedMessage());
+                }
+            }
+            catch (IOException e)
+            {
+                if (proxySettings != null)
+                {
+                    MyLog.w(R.string.network_proxy_connect_exception, MyLog.Sensitivity.NOT_SENSITIVE, e.getLocalizedMessage());
                 }
             }
             finally
