@@ -1065,8 +1065,39 @@ public abstract class MainBase
             }
         }
         
-        @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
         protected boolean doVpnPrepare()
+        {
+            try
+            {
+                return vpnPrepare();
+            }
+            catch (ActivityNotFoundException e)
+            {
+                MyLog.e(R.string.tunnel_whole_device_exception, MyLog.Sensitivity.NOT_SENSITIVE);
+                
+                // VpnService is broken. For rooted devices, proceed with starting Whole Device in root mode.
+                
+                if (Utils.isRooted())
+                {
+                    PsiphonData.getPsiphonData().setVpnServiceUnavailable(true);
+
+                    // false = not waiting for prompt, so service will be started immediately
+                    return false;
+                }
+
+                // For non-rooted devices, turn off the option and abort.
+                
+                m_tunnelWholeDeviceToggle.setChecked(false);
+                m_tunnelWholeDeviceToggle.setEnabled(false);
+                updateWholeDevicePreference(false);
+
+                // true = waiting for prompt, although we can't start the activity so onActivityResult won't be called
+                return true;
+            }
+        }
+
+        @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+        protected boolean vpnPrepare()
                 throws ActivityNotFoundException
         {
             // VpnService: need to display OS user warning. If whole device option is

@@ -20,5 +20,4 @@
     <string name="StatusActivity.WholeDeviceTunnelPromptMessage">The whole device tunnel option is available for your device.\n\nWith this option, all of your Internet traffic for all apps including all browsers will be tunneled through Psiphon.\n\nAlternatively, you can choose to tunnel only the bundled Psiphon browser which will leave all other apps going directly through your standard Internet connection.</string>
     <string name="StatusActivity.WholeDeviceTunnelPositiveButton">Tunnel Whole Device</string>
     <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Use Psiphon Browser Only</string>
-    <string name="tunnel_whole_device_exception">Your device does not support the non-root whole device tunnel option.</string>
 </resources>

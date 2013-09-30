@@ -250,36 +250,4 @@ public class StatusActivity
         // Handle the intent that resumed that activity
         HandleCurrentIntent();
     }
-    
-    @Override
-    protected boolean doVpnPrepare()
-    {
-        try
-        {
-            return super.doVpnPrepare();
-        }
-        catch (ActivityNotFoundException e)
-        {
-            MyLog.e(R.string.tunnel_whole_device_exception, MyLog.Sensitivity.NOT_SENSITIVE);
-            
-            // VpnService is broken. For rooted devices, proceed with starting Whole Device in root mode.
-            
-            if (Utils.isRooted())
-            {
-                PsiphonData.getPsiphonData().setVpnServiceUnavailable(true);
-
-                // false = not waiting for prompt, so service will be started immediately
-                return false;
-            }
-
-            // For non-rooted devices, turn off the option and abort.
-            
-            m_tunnelWholeDeviceToggle.setChecked(false);
-            m_tunnelWholeDeviceToggle.setEnabled(false);
-            updateWholeDevicePreference(false);
-
-            // true = waiting for prompt, although we can't start the activity so onActivityResult won't be called
-            return true;
-        }
-    }
 }
