@@ -451,8 +451,13 @@ public abstract class MainBase
             m_tabHost.setOnTouchListener(onTouchListener);
             m_statusTabToggleButton = (ImageButton)findViewById(R.id.statusTabToggleButton);
             m_statusTabToggleButton.setOnTouchListener(onTouchListener);
-            findViewById(R.id.settingsView).setOnTouchListener(onTouchListener);
             findViewById(R.id.statisticsView).setOnTouchListener(onTouchListener);
+            findViewById(R.id.settingsView).setOnTouchListener(onTouchListener);
+            findViewById(R.id.regionSelector).setOnTouchListener(onTouchListener);
+            findViewById(R.id.tunnelWholeDeviceToggle).setOnTouchListener(onTouchListener);
+            findViewById(R.id.useSystemProxySettingsToggle).setOnTouchListener(onTouchListener);
+            findViewById(R.id.feedbackButton).setOnTouchListener(onTouchListener);
+            findViewById(R.id.aboutButton).setOnTouchListener(onTouchListener);
             ListView statusListView = (ListView)findViewById(R.id.statusList);
             statusListView.setOnTouchListener(onTouchListener);
 
