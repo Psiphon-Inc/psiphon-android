@@ -393,6 +393,14 @@ public class ServerSelector
             
             String egressRegion = PsiphonData.getPsiphonData().getEgressRegion();
         
+            MyLog.g("SelectedRegion", "regionCode", egressRegion);
+            MyLog.g("ProxyChaining", "enabled", 
+                    PsiphonData.getPsiphonData().getSystemProxySettings(context) == null ?
+                    "False" : "True");
+            // Note that workers will still call getSystemProxySettings().  This is in case the
+            // system proxy settings actually do change while the pool is running, and the log
+            // above will not reflect that change.
+
             // Reset this flag before running the workers.
             workerPrintedProxyError.set(false);
             
@@ -462,8 +470,6 @@ public class ServerSelector
                 Thread.currentThread().interrupt();
             }
 
-            MyLog.g("SelectedRegion", "regionCode", egressRegion);
-            
             for (CheckServerWorker worker : workers)
             {
                 MyLog.g(
