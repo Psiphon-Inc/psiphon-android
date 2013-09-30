@@ -11,16 +11,31 @@
     android:layout_weight="1.0"
     android:orientation="vertical" >
     
-            <TabWidget
+            <RelativeLayout
+                android:id="@+id/tablayout"
                 android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:id="@android:id/tabs"/>
+                android:layout_height="wrap_content" >
+                
+                <HorizontalScrollView
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:fillViewport="true"
+                    android:scrollbars="none" >
+                
+                    <TabWidget
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@android:id/tabs"/>
+                    
+                </HorizontalScrollView>
+                
+            </RelativeLayout>
                 
             <FrameLayout
                 android:id="@android:id/tabcontent"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
-                android:layout_below="@android:id/tabs" >
+                android:layout_below="@+id/tablayout" >
                 
                 <LinearLayout
                     android:id="@+id/statusTab"
