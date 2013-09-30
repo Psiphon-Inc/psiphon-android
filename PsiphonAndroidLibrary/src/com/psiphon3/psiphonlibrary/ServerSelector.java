@@ -430,13 +430,13 @@ public class ServerSelector
                     if (wait > 0 && (wait % RESULTS_POLL_MILLISECONDS) == 0)
                     {
                         int resultCount = 0;
-                        boolean threadPoolIsFinished = true;
+                        boolean workQueueIsFinished = true;
                         for (CheckServerWorker worker : workers)
                         {
                             resultCount += worker.responded ? 1 : 0;
                             if (!worker.completed)
                             {
-                                threadPoolIsFinished = false;
+                                workQueueIsFinished = false;
                             }
                         }
                         if (resultCount > 0)
@@ -445,7 +445,7 @@ public class ServerSelector
                             stopFlag = true;
                             break;
                         }
-                        if (threadPoolIsFinished)
+                        if (workQueueIsFinished)
                         {
                             break;
                         }
