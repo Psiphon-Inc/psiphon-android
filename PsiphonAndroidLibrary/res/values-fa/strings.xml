@@ -75,7 +75,7 @@
   <string name="tun2socks_stopped">وی پی ان به ساکس متوقف شد</string>
   <string name="vpn_service_no_private_address_available">آدرس خصوصی برای سرویس وی پی ان وجود ندارد</string>
   <string name="psiphon_running_generic">در حال اجرا...</string>
-  <string name="data_transfer_bytes_sent">بایت های فرستاده شده: %1$ (%2$.2f%% فشرده)</string>
+  <string name="data_transfer_bytes_sent">بایت های فرستاده شده: %1$s (%2$.2f%% فشرده)</string>
   <string name="data_transfer_bytes_received">بایت های دریافت شده: %1$s (%2$.2f%% فشرده)</string>
   <string name="data_transfer_elapsed_time">مدت زمان اتصال : %s</string>
   <string name="check_tunnel_failed">گوشی شما امکان تونل تمام گوشی را پشتیبانی نمیکند. ببخشید.</string>
