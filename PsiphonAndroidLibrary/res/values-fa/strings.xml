@@ -113,6 +113,7 @@
   <string name="start">شروع</string>
   <string name="stop">ایست </string>
   <string name="status_tab_name">وضعیت</string>
+  <string name="settings_tab_name">گزینه ها </string>
   <string name="statistics_tab_name">آمار</string>
   <string name="logs_tab_name">لاگ</string>
   <string name="socks_proxy_address">ساکس محلی فعال است s%</string>
@@ -122,6 +123,7 @@
   <string name="share_proxies_prompt_message">برای انجام این تنظیم آپ نیاز به رستارت دارد </string>
   <string name="share_proxies_prompt_positive">رستارت </string>
   <string name="share_proxies_prompt_negative">لغو</string>
+  <string name="use_system_proxy_settings_toggle">اتصال از طریق شبکه اچ تی تی پی پراکسی</string>
   <string name="region_name_any">بهترین عملکرد</string>
   <string name="region_name_us">ایالات متحده آمریکا</string>
   <string name="region_name_gb">انگلستان</string>
@@ -130,4 +132,10 @@
   <string name="region_name_jp">ژاپن</string>
   <string name="region_name_hk">هنگ کنگ</string>
   <string name="region_name_sg">سنگاپور</string>
+  <string name="about">درباره سایفون</string>
+  <string name="feedback">نظر</string>
+  <string name="tunnel_whole_device_toggle">تونل تمام گوشی (نیاز به اندروید روت شده یا ورژن ٤.٠ به بالا) </string>
+  <string name="region_selector">منطقۀ خود را انتخاب کنید</string>
+  <string name="network_proxy_connect_exception">اتصال به شبکه اچ تی تی پی پراکسی امکان پذیر نبود: %s</string>
+  <string name="tunnel_whole_device_exception">گوشی شما امکان تونل تمام گوشی را پشتیبانی نمیکند. ببخشید.</string>
 </resources>

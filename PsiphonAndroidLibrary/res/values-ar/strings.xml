@@ -44,4 +44,6 @@
   <string name="UpgradeManager.UpgradeFileNotFound">لم يتم العثور على ملف التحديث</string>
   <string name="UpgradeManager.UpgradePromptTitle">تحديث برنامج Psiphon</string>
   <string name="share_proxies_prompt_negative">إلغاء</string>
+  <string name="about">حول برنامج Psiphon</string>
+  <string name="feedback">ردود</string>
 </resources>

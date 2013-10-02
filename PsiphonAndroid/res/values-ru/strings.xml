@@ -1,7 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
   <string name="app_name">Psiphon</string>
-  <string name="about">Что такое Psiphon</string>
   <string name="banner_desc">баннер спонсора; кликните, чтобы увидеть домашнюю страницу спонсора</string>
   <string name="start_desc">подключиться к Psiphon; кликните, чтобы подключиться</string>
   <string name="message_image_success_desc">иконка сообщения об успехе</string>
@@ -11,18 +10,14 @@
   <string name="exit">Закрыть</string>
   <string name="open_browser">Открыть браузер</string>
   <string name="browser_task_label">Psiphon Browser</string>
-  <string name="feedback">Отзыв</string>
   <string name="FeedbackActivity.DefaultText">Если у вас есть какие-либо особые  комментарии, дополнительная информация о сайтах, которые не загружаются или эта форма не работает для вас, пишите нам на &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">Спасибо за ваш отзыв</string>
   <string name="FeedbackActivity.Failure">Отсылка не сработала. Попробуйте еще раз</string>
   <string name="FeedbackActivity.SubmitFeedbackFailed">Ошибка при отсылке отзыва.</string>
   <string name="FeedbackActivity.InvalidURLParameters">Неверные параметры в URL при отсылке формы отзыва</string>
   <string name="FeedbackActivity.GetHTMLContentFailed">Форма отзыва не загружается</string>
-  <string name="tunnel_whole_device_toggle">Туннелирование всех интернет соединений(требует права root)</string>
   <string name="StatusActivity.WholeDeviceTunnelPromptTitle">Туннелировать интернет соединение для всех приложений?</string>
   <string name="StatusActivity.WholeDeviceTunnelPromptMessage">Ваше устройство поддерживает туннелирование всех интернет соединений.\n\nПри выборе этой опции интернет трафик всех приложений, включая браузеры будет тунеллирован через сервер Psiphon.\n\nВ противном случае выбор тунеллирования только для браузера Psiphon оставит интернет соединение для других приложений без изменений.</string>
   <string name="StatusActivity.WholeDeviceTunnelPositiveButton">Туннелировать все интернет соединения</string>
   <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Туннелировать только браузер Psiphon</string>
-  <string name="tunnel_whole_device_exception">Ваше устройство не поддерживает туннелирование всех интернет соединений без прав root.</string>
-  <string name="region_selector">Выберите регион</string>
 </resources>

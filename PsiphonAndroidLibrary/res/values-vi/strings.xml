@@ -44,4 +44,6 @@
   <string name="UpgradeManager.UpgradeFileNotFound">Không tìm thấy tập tin nâng cấp</string>
   <string name="UpgradeManager.UpgradePromptTitle">Nâng Cấp Psiphon</string>
   <string name="share_proxies_prompt_negative">Hủy</string>
+  <string name="about">Giới thiệu về Psiphon</string>
+  <string name="feedback">Ý kiến phản hồi</string>
 </resources>

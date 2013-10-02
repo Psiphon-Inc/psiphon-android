@@ -1,7 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
   <string name="app_name">سایفون</string>
-  <string name="about">درباره سایفون</string>
   <string name="banner_desc">برای بازدید از صفحه ی بانی، اینجا کلیک کنید </string>
   <string name="start_desc">برای وصل شدن به سایفون کلیک کنید</string>
   <string name="message_image_success_desc"> آیکون نشانگر پیام موفق است </string>
@@ -11,18 +10,14 @@
   <string name="exit">خروج</string>
   <string name="open_browser">مرورگر </string>
   <string name="browser_task_label">مرورگر سایفون</string>
-  <string name="feedback">نظر</string>
   <string name="FeedbackActivity.DefaultText">اگر نظر خاصی دارید، اطلاعات بیشتر در مورد سایت های که کار نمیکنند یا این فرم برای شما کار نمیکند، لطفآ ایمیل بزنید به &lt;a href="mailto:feedback@psiphon.ca"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">از اینکه نظرتون رو با ما در میان گذاشتید سپاسگزاریم</string>
   <string name="FeedbackActivity.Failure">ارسال نشد. لطفآ دوباره امتحان کنید</string>
   <string name="FeedbackActivity.SubmitFeedbackFailed">ارسال نظر ناموفق بود</string>
   <string name="FeedbackActivity.InvalidURLParameters">پارامترهای نامعتبر در ارسال فرم</string>
   <string name="FeedbackActivity.GetHTMLContentFailed">گرفتن صفحه ارسال نظر ناموفق بود</string>
-  <string name="tunnel_whole_device_toggle">تمام موبایل را تونل کن</string>
   <string name="StatusActivity.WholeDeviceTunnelPromptTitle">تمام دستگاه را پراکسی کن</string>
   <string name="StatusActivity.WholeDeviceTunnelPromptMessage">امکان پراکسی تمام دستگاه برای شما موجود است. با این امکان، ارتباط و ترافیک تمامی آپلیکیشن ها و مرورگرهای شما از طریق سایفون انجام میشود. اگرمایل به استفاده ی این امکان نیستید، میتوانید فقط از مروگر سایفون استفاده کنید و از ارتباط مستقیم برای اپلیکیشن ها و مرور گر های دیگرتان استفاده کنید</string>
   <string name="StatusActivity.WholeDeviceTunnelPositiveButton">تمام دستگاه را پراکسی کن</string>
   <string name="StatusActivity.WholeDeviceTunnelNegativeButton">فقط از مرورگر سایفون استفاده کن</string>
-  <string name="tunnel_whole_device_exception">گوشی شما امکان تونل تمام گوشی را پشتیبانی نمیکند. ببخشید.</string>
-  <string name="region_selector">منطقۀ خود را انتخاب کنید</string>
 </resources>

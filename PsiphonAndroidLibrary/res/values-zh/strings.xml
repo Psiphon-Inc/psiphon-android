@@ -113,6 +113,7 @@
   <string name="start">启动</string>
   <string name="stop">停止</string>
   <string name="status_tab_name">状况</string>
+  <string name="settings_tab_name">选项</string>
   <string name="statistics_tab_name">统计数据</string>
   <string name="logs_tab_name">日志</string>
   <string name="socks_proxy_address">本地SOCKS代理运行在 %s</string>
@@ -130,4 +131,9 @@
   <string name="region_name_jp">日本</string>
   <string name="region_name_hk">香港</string>
   <string name="region_name_sg">新加坡</string>
+  <string name="about">关于Psiphon</string>
+  <string name="feedback">反馈</string>
+  <string name="tunnel_whole_device_toggle">隧道整个设备 (需要植根或安卓4.0+)</string>
+  <string name="region_selector">选择区域</string>
+  <string name="tunnel_whole_device_exception">你的设备不支持安卓4.0+的隧道整个设备选项。</string>
 </resources>
