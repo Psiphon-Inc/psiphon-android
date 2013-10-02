@@ -961,6 +961,10 @@ public class Utils
         {
             MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
         }
+        catch (NullPointerException e)
+        {
+            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+        }
         
         return dnsAddresses;
     }
