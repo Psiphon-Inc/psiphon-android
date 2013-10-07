@@ -135,6 +135,7 @@ public abstract class MainBase
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
         
         protected static boolean m_firstRun = true;
+        private boolean m_canWholeDevice = false;
 
         protected IEvents m_eventsInterface = null;
         protected Button m_toggleButton;
@@ -539,16 +540,16 @@ public abstract class MainBase
             // We prefer VpnService when available, even when the device is rooted.
             boolean isRooted = Utils.isRooted();
             boolean canRunVpnService = Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
-            boolean canWholeDevice = isRooted || canRunVpnService;
+            m_canWholeDevice = isRooted || canRunVpnService;
            
-            m_tunnelWholeDeviceToggle.setEnabled(canWholeDevice);
-            boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, canWholeDevice);
+            m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
+            boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, m_canWholeDevice);
             m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
 
             // Use PsiphonData to communicate the setting to the TunnelService so it doesn't need to
             // repeat the isRooted check. The preference is retained even if the device becomes "unrooted"
             // and that's why setTunnelWholeDevice != tunnelWholeDevicePreference.
-            PsiphonData.getPsiphonData().setTunnelWholeDevice(canWholeDevice && tunnelWholeDevicePreference);
+            PsiphonData.getPsiphonData().setTunnelWholeDevice(m_canWholeDevice && tunnelWholeDevicePreference);
 
             boolean useSystemProxySettingsPreference = 
                     PreferenceManager.getDefaultSharedPreferences(this).getBoolean(USE_SYSTEM_PROXY_SETTINGS_PREFERENCE, false);
@@ -1148,7 +1149,7 @@ public abstract class MainBase
         
         protected void onPostStartService()
         {
-            m_tunnelWholeDeviceToggle.setEnabled(true);
+            m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
             m_regionSelector.setEnabled(true);
             m_useSystemProxySettingsToggle.setEnabled(true);
         }
