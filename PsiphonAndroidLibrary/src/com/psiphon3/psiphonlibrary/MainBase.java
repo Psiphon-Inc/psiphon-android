@@ -1234,12 +1234,21 @@ public abstract class MainBase
         {
             if (m_boundToTunnelService)
             {
-                unbindService(m_tunnelServiceConnection);
+                try
+                {
+                    unbindService(m_tunnelServiceConnection);
+                }
+                // Ignore "java.lang.IllegalArgumentException: Service not registered"
+                catch (java.lang.IllegalArgumentException e) {}
                 m_boundToTunnelService = false;
             }
             if (m_boundToTunnelVpnService)
             {
-                unbindService(m_tunnelVpnServiceConnection);
+                try
+                {
+                    unbindService(m_tunnelVpnServiceConnection);
+                }
+                catch (java.lang.IllegalArgumentException e) {}
                 m_boundToTunnelVpnService = false;
             }
         }
@@ -1278,9 +1287,15 @@ public abstract class MainBase
         @Override
         public void statusEntryAdded()
         {
-            m_statusListManager.notifyStatusAdded();
+            if (m_statusListManager != null)
+            {
+                m_statusListManager.notifyStatusAdded();
+            }
             
-            m_localBroadcastManager.sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
+            if (m_localBroadcastManager != null)
+            {
+                m_localBroadcastManager.sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
+            }
         }
     }
 }

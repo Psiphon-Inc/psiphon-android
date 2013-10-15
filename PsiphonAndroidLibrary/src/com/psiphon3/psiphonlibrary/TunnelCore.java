@@ -613,7 +613,16 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             // app could plug in its own SOCKS proxy and capture all
             // Psiphon browser activity.
             
-            Polipo.getPolipo().runForever();
+            try
+            {
+                Polipo.getPolipo().runForever();
+            }
+            catch (java.lang.UnsatisfiedLinkError e)
+            {
+                MyLog.e(R.string.run_polipo_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+                runAgain = false;
+                return runAgain;
+            }
 
             if (PsiphonData.getPsiphonData().getHttpProxyPort() == 0)
             {
