@@ -123,6 +123,7 @@
   <string name="share_proxies_prompt_message">这款应用程序需要重新启动以应用此设置。</string>
   <string name="share_proxies_prompt_positive">现在重新启动</string>
   <string name="share_proxies_prompt_negative">取消</string>
+  <string name="use_system_proxy_settings_toggle">通过网络的 HTTP 代理连接</string>
   <string name="region_name_any">最佳性能</string>
   <string name="region_name_us">美国</string>
   <string name="region_name_gb">英国</string>
@@ -135,5 +136,6 @@
   <string name="feedback">反馈</string>
   <string name="tunnel_whole_device_toggle">隧道整个设备 (需要植根或安卓4.0+)</string>
   <string name="region_selector">选择区域</string>
+  <string name="network_proxy_connect_exception">无法连接到网络的 HTTP 代理：%s</string>
   <string name="tunnel_whole_device_exception">你的设备不支持安卓4.0+的隧道整个设备选项。</string>
 </resources>
