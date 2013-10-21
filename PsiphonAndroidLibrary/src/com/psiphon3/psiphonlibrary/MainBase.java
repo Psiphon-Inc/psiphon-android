@@ -129,12 +129,14 @@ public abstract class MainBase
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.PsiphonAndroidActivity.STATUS_ENTRY_AVAILABLE";
         public static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
         public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
+        public static final String WDM_FORCE_IPTABLES_PREFERENCE = "wdmForceIptablesPreference";
         public static final String USE_SYSTEM_PROXY_SETTINGS_PREFERENCE = "useSystemProxySettingsPreference";
         public static final String SHARE_PROXIES_PREFERENCE = "shareProxiesPreference";
         
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
         
         protected static boolean m_firstRun = true;
+        private boolean m_isRooted = false;
         private boolean m_canWholeDevice = false;
 
         protected IEvents m_eventsInterface = null;
@@ -161,6 +163,7 @@ public abstract class MainBase
         private RegionAdapter m_regionAdapter;
         private SpinnerHelper m_regionSelector;
         protected CheckBox m_tunnelWholeDeviceToggle;
+        private CheckBox m_wdmForceIptablesToggle;
         private CheckBox m_useSystemProxySettingsToggle;
         /*private CheckBox m_shareProxiesToggle;
         private TextView m_statusTabSocksPortLine;
@@ -481,6 +484,7 @@ public abstract class MainBase
             m_compressionSavingsReceivedView = (TextView)findViewById(R.id.compressionSavingsReceived);
             m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
             m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
+            m_wdmForceIptablesToggle = (CheckBox)findViewById(R.id.WdmForceIptablesToggle);
             m_useSystemProxySettingsToggle = (CheckBox)findViewById(R.id.useSystemProxySettingsToggle);
             /*m_shareProxiesToggle = (CheckBox)findViewById(R.id.shareProxiesToggle);
             m_statusTabSocksPortLine = (TextView)findViewById(R.id.socksportline);
@@ -541,18 +545,26 @@ public abstract class MainBase
             // defaults to true on rooted devices.
             // On Android 4+, we offer "Whole Device" via the VpnService facility, which does not require root.
             // We prefer VpnService when available, even when the device is rooted.
-            boolean isRooted = Utils.isRooted();
+            m_isRooted = Utils.isRooted();
             boolean canRunVpnService = Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
-            m_canWholeDevice = isRooted || canRunVpnService;
+            m_canWholeDevice = m_isRooted || canRunVpnService;
            
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
             boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, m_canWholeDevice);
             m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
-
+            
             // Use PsiphonData to communicate the setting to the TunnelService so it doesn't need to
             // repeat the isRooted check. The preference is retained even if the device becomes "unrooted"
             // and that's why setTunnelWholeDevice != tunnelWholeDevicePreference.
             PsiphonData.getPsiphonData().setTunnelWholeDevice(m_canWholeDevice && tunnelWholeDevicePreference);
+
+            m_wdmForceIptablesToggle.setEnabled(m_isRooted);
+            boolean wdmForceIptablesPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(WDM_FORCE_IPTABLES_PREFERENCE, false);
+            m_wdmForceIptablesToggle.setChecked(wdmForceIptablesPreference);
+            
+            // The preference is retained even if the device becomes "unrooted"
+            // and that's why setWdmForceIptables != wdmForceIptablesPreference.
+            PsiphonData.getPsiphonData().setWdmForceIptables(m_isRooted && wdmForceIptablesPreference);
 
             boolean useSystemProxySettingsPreference = 
                     PreferenceManager.getDefaultSharedPreferences(this).getBoolean(USE_SYSTEM_PROXY_SETTINGS_PREFERENCE, false);
@@ -834,6 +846,42 @@ public abstract class MainBase
             editor.commit();
             
             PsiphonData.getPsiphonData().setTunnelWholeDevice(tunnelWholeDevicePreference);
+        }
+
+        public void onWdmForceIptablesToggle(View v)
+        {
+            // Just in case an OnClick message is in transit before setEnabled is processed...(?)
+            if (!m_wdmForceIptablesToggle.isEnabled())
+            {
+                return;
+            }
+            
+            boolean restart = false;
+
+            if (isServiceRunning())
+            {
+                doToggle();
+                restart = true;
+            }
+
+            boolean wdmForceIptablesPreference = m_wdmForceIptablesToggle.isChecked();
+            updateWdmForceIptablesPreference(wdmForceIptablesPreference);
+            
+            if (restart)
+            {
+                startTunnel(this);
+            }
+        }
+        
+        protected void updateWdmForceIptablesPreference(boolean wdmForceIptablesPreference)
+        {
+            // No isRooted check: the user can specify whatever preference they
+            // wish. Also, CheckBox enabling should cover this (but isn't required to).
+            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+            editor.putBoolean(WDM_FORCE_IPTABLES_PREFERENCE, wdmForceIptablesPreference);
+            editor.commit();
+            
+            PsiphonData.getPsiphonData().setWdmForceIptables(wdmForceIptablesPreference);
         }
 
         public void onUseSystemProxySettingsToggle(View v)
@@ -1146,6 +1194,7 @@ public abstract class MainBase
             // Disable service-toggling controls while service is starting up
             // (i.e., while isServiceRunning can't be relied upon)
             m_tunnelWholeDeviceToggle.setEnabled(false);
+            m_wdmForceIptablesToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
             m_useSystemProxySettingsToggle.setEnabled(false);
         }
@@ -1153,6 +1202,7 @@ public abstract class MainBase
         protected void onPostStartService()
         {
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
+            m_wdmForceIptablesToggle.setEnabled(m_isRooted);
             m_regionSelector.setEnabled(true);
             m_useSystemProxySettingsToggle.setEnabled(true);
         }

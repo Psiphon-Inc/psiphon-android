@@ -139,4 +139,5 @@
     <string name="network_proxy_connect_exception">Failed to connect to the network\'s HTTP Proxy: %s</string>
     <string name="tunnel_whole_device_exception">Your device does not support the non-root whole device tunnel option.</string>
     <string name="run_polipo_failed">Run Polipo failed: %s</string>
+    <string name="wdm_force_iptables_toggle">Force alternate Tunnel Whole Device method (requires root)</string>
 </resources>
