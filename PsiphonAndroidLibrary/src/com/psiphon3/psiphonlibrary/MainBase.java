@@ -846,6 +846,8 @@ public abstract class MainBase
             editor.commit();
             
             PsiphonData.getPsiphonData().setTunnelWholeDevice(tunnelWholeDevicePreference);
+            
+            m_wdmForceIptablesToggle.setEnabled(m_isRooted && PsiphonData.getPsiphonData().getTunnelWholeDevice());
         }
 
         public void onWdmForceIptablesToggle(View v)
