@@ -277,31 +277,34 @@ public abstract class MainBase
             @Override
             public boolean onFling(MotionEvent event1, MotionEvent event2, float velocityX, float velocityY)
             {
-                int newTab = 0;
-                if (Math.abs(event1.getY() - event2.getY()) > SWIPE_MAX_OFF_PATH)
+                if (event1 != null && event2 != null)
                 {
-                    return false;
+                    int newTab = 0;
+                    if (Math.abs(event1.getY() - event2.getY()) > SWIPE_MAX_OFF_PATH)
+                    {
+                        return false;
+                    }
+                    if (event1.getX() - event2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY)
+                    {
+                        // Swipe right to left
+                        newTab = m_currentTab + 1;
+                    }
+                    else if (event2.getX() - event1.getX() > SWIPE_MIN_DISTANCE
+                            && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY)
+                    {
+                        // Swipe left to right
+                        newTab = m_currentTab - 1;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                    if (newTab < 0 || newTab > (maxTabs - 1))
+                    {
+                        return false;
+                    }
+                    m_tabHost.setCurrentTab(newTab);
                 }
-                if (event1.getX() - event2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY)
-                {
-                    // Swipe right to left
-                    newTab = m_currentTab + 1;
-                }
-                else if (event2.getX() - event1.getX() > SWIPE_MIN_DISTANCE
-                        && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY)
-                {
-                    // Swipe left to right
-                    newTab = m_currentTab - 1;
-                }
-                else
-                {
-                    return false;
-                }
-                if (newTab < 0 || newTab > (maxTabs - 1))
-                {
-                    return false;
-                }
-                m_tabHost.setCurrentTab(newTab);
                 return super.onFling(event1, event2, velocityX, velocityY);
             }
         }
