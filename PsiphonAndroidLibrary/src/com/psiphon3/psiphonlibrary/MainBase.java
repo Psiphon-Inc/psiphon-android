@@ -558,7 +558,7 @@ public abstract class MainBase
             // and that's why setTunnelWholeDevice != tunnelWholeDevicePreference.
             PsiphonData.getPsiphonData().setTunnelWholeDevice(m_canWholeDevice && tunnelWholeDevicePreference);
 
-            m_wdmForceIptablesToggle.setEnabled(m_isRooted);
+            m_wdmForceIptablesToggle.setEnabled(m_isRooted && PsiphonData.getPsiphonData().getTunnelWholeDevice());
             boolean wdmForceIptablesPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(WDM_FORCE_IPTABLES_PREFERENCE, false);
             m_wdmForceIptablesToggle.setChecked(wdmForceIptablesPreference);
             
@@ -1202,7 +1202,7 @@ public abstract class MainBase
         protected void onPostStartService()
         {
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
-            m_wdmForceIptablesToggle.setEnabled(m_isRooted);
+            m_wdmForceIptablesToggle.setEnabled(m_isRooted && PsiphonData.getPsiphonData().getTunnelWholeDevice());
             m_regionSelector.setEnabled(true);
             m_useSystemProxySettingsToggle.setEnabled(true);
         }
