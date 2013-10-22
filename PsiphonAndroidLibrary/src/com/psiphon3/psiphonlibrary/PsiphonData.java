@@ -74,6 +74,7 @@ public class PsiphonData
     private boolean m_shareProxies;
     private boolean m_tunnelWholeDevice;
     private boolean m_wdmForceIptables;
+    private boolean m_httpPrefix;
     private boolean m_useSystemProxySettings;
     private boolean m_vpnServiceUnavailable;
     private TunnelCore m_currentTunnelCore;
@@ -262,6 +263,16 @@ public class PsiphonData
     public synchronized boolean getWdmForceIptables()
     {
         return m_wdmForceIptables;
+    }
+
+    public synchronized void setHttpPrefix(boolean httpPrefix)
+    {
+        m_httpPrefix = httpPrefix;
+    }
+
+    public synchronized boolean getHttpPrefix()
+    {
+        return m_httpPrefix;
     }
 
     public synchronized void setEgressRegion(String egressRegion)

@@ -314,6 +314,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         PsiphonData.getPsiphonData().getDataTransferStats().startSession();
         
         MyLog.g("ConnectingServer", "ipAddress", entry.ipAddress);
+        MyLog.g("HttpPrefix", "enabled", PsiphonData.getPsiphonData().getHttpPrefix() ? "True" : "False");
         
         Connection sshConnection = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
         sshConnection.connect(
