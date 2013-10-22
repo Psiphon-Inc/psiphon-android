@@ -1111,7 +1111,9 @@ public abstract class MainBase
         {
             boolean waitingForPrompt = false;
             
-            if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService())
+            if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService() &&
+                    !PsiphonData.getPsiphonData().getVpnServiceUnavailable() &&
+                    !PsiphonData.getPsiphonData().getWdmForceIptables())
             {
                 // VpnService backwards compatibility: for lazy class loading the VpnService
                 // class reference has to be in another function (doVpnPrepare), not just
