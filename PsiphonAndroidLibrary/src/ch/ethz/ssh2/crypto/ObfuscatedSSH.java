@@ -8,6 +8,8 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 
+import com.psiphon3.psiphonlibrary.PsiphonData;
+
 import ch.ethz.ssh2.crypto.cipher.RC4Engine;
 import ch.ethz.ssh2.crypto.digest.SHA1;
 
@@ -76,8 +78,11 @@ public class ObfuscatedSSH
         buffer.reset();
 
         // PSIPHON: HTTP-PREFIX
-        String prefix = "POST / HTTP/1.1\r\n\r\n";
-        buffer.write(prefix.getBytes());
+        if (PsiphonData.getPsiphonData().getHttpPrefix())
+        {
+            String prefix = "POST / HTTP/1.1\r\n\r\n";
+            buffer.write(prefix.getBytes());
+        }
 
         buffer.write(seed);
         buffer.write(obfuscatedMessage);

@@ -314,6 +314,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         PsiphonData.getPsiphonData().getDataTransferStats().startSession();
         
         MyLog.g("ConnectingServer", "ipAddress", entry.ipAddress);
+        MyLog.g("HttpPrefix", "enabled", PsiphonData.getPsiphonData().getHttpPrefix() ? "True" : "False");
         
         Connection sshConnection = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
         sshConnection.connect(
@@ -475,7 +476,10 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             }
 
             boolean tunnelWholeDevice = PsiphonData.getPsiphonData().getTunnelWholeDevice();
-            boolean runVpnService = tunnelWholeDevice && Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
+            boolean runVpnService = tunnelWholeDevice &&
+                    Utils.hasVpnService() &&
+                    !PsiphonData.getPsiphonData().getVpnServiceUnavailable() &&
+                    !PsiphonData.getPsiphonData().getWdmForceIptables();
 
             // Guard against trying to start WDM mode when the global option flips while starting a TunnelService
             if (runVpnService && (m_parentService instanceof TunnelService))
@@ -613,7 +617,16 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             // app could plug in its own SOCKS proxy and capture all
             // Psiphon browser activity.
             
-            Polipo.getPolipo().runForever();
+            try
+            {
+                Polipo.getPolipo().runForever();
+            }
+            catch (java.lang.UnsatisfiedLinkError e)
+            {
+                MyLog.e(R.string.run_polipo_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+                runAgain = false;
+                return runAgain;
+            }
 
             if (PsiphonData.getPsiphonData().getHttpProxyPort() == 0)
             {
@@ -1205,7 +1218,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             
             if (cleanupTun2Socks)
             {
-                if (!runAgain || PsiphonData.getPsiphonData().getVpnServiceUnavailable())
+                if (!runAgain || PsiphonData.getPsiphonData().getVpnServiceUnavailable() ||
+                        PsiphonData.getPsiphonData().getWdmForceIptables())
                 {
                     // NOTE: getVpnServiceUnavailable() becomes true when failing over to
                     // iptables mode and in that case we don't leave the tun routing up.

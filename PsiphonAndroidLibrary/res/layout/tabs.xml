@@ -119,6 +119,24 @@
                             android:textAppearance="?android:attr/textAppearanceSmall"/>
                         
                         <CheckBox
+                            android:id="@+id/WdmForceIptablesToggle"
+                            android:onClick="onWdmForceIptablesToggle"
+                            android:layout_height="wrap_content"
+                            android:layout_width="wrap_content"
+                            android:layout_gravity="left"
+                            android:text="@string/wdm_force_iptables_toggle"
+                            android:textAppearance="?android:attr/textAppearanceSmall"/>
+                        
+                        <CheckBox
+                            android:id="@+id/httpPrefixToggle"
+                            android:onClick="onHttpPrefixToggle"
+                            android:layout_height="wrap_content"
+                            android:layout_width="wrap_content"
+                            android:layout_gravity="left"
+                            android:text="@string/http_prefix_toggle"
+                            android:textAppearance="?android:attr/textAppearanceSmall"/>
+                        
+                        <CheckBox
                             android:id="@+id/useSystemProxySettingsToggle"
                             android:onClick="onUseSystemProxySettingsToggle"
                             android:layout_width="wrap_content"

@@ -129,12 +129,16 @@ public abstract class MainBase
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.PsiphonAndroidActivity.STATUS_ENTRY_AVAILABLE";
         public static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
         public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
+        public static final String WDM_FORCE_IPTABLES_PREFERENCE = "wdmForceIptablesPreference";
+        public static final String HTTP_PREFIX_PREFERENCE = "httpPrefixPreference";
         public static final String USE_SYSTEM_PROXY_SETTINGS_PREFERENCE = "useSystemProxySettingsPreference";
         public static final String SHARE_PROXIES_PREFERENCE = "shareProxiesPreference";
         
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
         
         protected static boolean m_firstRun = true;
+        private boolean m_isRooted = false;
+        private boolean m_canWholeDevice = false;
 
         protected IEvents m_eventsInterface = null;
         protected Button m_toggleButton;
@@ -160,6 +164,8 @@ public abstract class MainBase
         private RegionAdapter m_regionAdapter;
         private SpinnerHelper m_regionSelector;
         protected CheckBox m_tunnelWholeDeviceToggle;
+        private CheckBox m_wdmForceIptablesToggle;
+        private CheckBox m_httpPrefixToggle;
         private CheckBox m_useSystemProxySettingsToggle;
         /*private CheckBox m_shareProxiesToggle;
         private TextView m_statusTabSocksPortLine;
@@ -276,31 +282,34 @@ public abstract class MainBase
             @Override
             public boolean onFling(MotionEvent event1, MotionEvent event2, float velocityX, float velocityY)
             {
-                int newTab = 0;
-                if (Math.abs(event1.getY() - event2.getY()) > SWIPE_MAX_OFF_PATH)
+                if (event1 != null && event2 != null)
                 {
-                    return false;
+                    int newTab = 0;
+                    if (Math.abs(event1.getY() - event2.getY()) > SWIPE_MAX_OFF_PATH)
+                    {
+                        return false;
+                    }
+                    if (event1.getX() - event2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY)
+                    {
+                        // Swipe right to left
+                        newTab = m_currentTab + 1;
+                    }
+                    else if (event2.getX() - event1.getX() > SWIPE_MIN_DISTANCE
+                            && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY)
+                    {
+                        // Swipe left to right
+                        newTab = m_currentTab - 1;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                    if (newTab < 0 || newTab > (maxTabs - 1))
+                    {
+                        return false;
+                    }
+                    m_tabHost.setCurrentTab(newTab);
                 }
-                if (event1.getX() - event2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY)
-                {
-                    // Swipe right to left
-                    newTab = m_currentTab + 1;
-                }
-                else if (event2.getX() - event1.getX() > SWIPE_MIN_DISTANCE
-                        && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY)
-                {
-                    // Swipe left to right
-                    newTab = m_currentTab - 1;
-                }
-                else
-                {
-                    return false;
-                }
-                if (newTab < 0 || newTab > (maxTabs - 1))
-                {
-                    return false;
-                }
-                m_tabHost.setCurrentTab(newTab);
                 return super.onFling(event1, event2, velocityX, velocityY);
             }
         }
@@ -477,6 +486,8 @@ public abstract class MainBase
             m_compressionSavingsReceivedView = (TextView)findViewById(R.id.compressionSavingsReceived);
             m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
             m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
+            m_wdmForceIptablesToggle = (CheckBox)findViewById(R.id.WdmForceIptablesToggle);
+            m_httpPrefixToggle = (CheckBox)findViewById(R.id.httpPrefixToggle);
             m_useSystemProxySettingsToggle = (CheckBox)findViewById(R.id.useSystemProxySettingsToggle);
             /*m_shareProxiesToggle = (CheckBox)findViewById(R.id.shareProxiesToggle);
             m_statusTabSocksPortLine = (TextView)findViewById(R.id.socksportline);
@@ -537,19 +548,32 @@ public abstract class MainBase
             // defaults to true on rooted devices.
             // On Android 4+, we offer "Whole Device" via the VpnService facility, which does not require root.
             // We prefer VpnService when available, even when the device is rooted.
-            boolean isRooted = Utils.isRooted();
+            m_isRooted = Utils.isRooted();
             boolean canRunVpnService = Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
-            boolean canWholeDevice = isRooted || canRunVpnService;
+            m_canWholeDevice = m_isRooted || canRunVpnService;
            
-            m_tunnelWholeDeviceToggle.setEnabled(canWholeDevice);
-            boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, canWholeDevice);
+            m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
+            boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, m_canWholeDevice);
             m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
-
+            
             // Use PsiphonData to communicate the setting to the TunnelService so it doesn't need to
             // repeat the isRooted check. The preference is retained even if the device becomes "unrooted"
             // and that's why setTunnelWholeDevice != tunnelWholeDevicePreference.
-            PsiphonData.getPsiphonData().setTunnelWholeDevice(canWholeDevice && tunnelWholeDevicePreference);
+            PsiphonData.getPsiphonData().setTunnelWholeDevice(m_canWholeDevice && tunnelWholeDevicePreference);
 
+            m_wdmForceIptablesToggle.setEnabled(m_isRooted && PsiphonData.getPsiphonData().getTunnelWholeDevice());
+            boolean wdmForceIptablesPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(WDM_FORCE_IPTABLES_PREFERENCE, false);
+            m_wdmForceIptablesToggle.setChecked(wdmForceIptablesPreference);
+            
+            // The preference is retained even if the device becomes "unrooted"
+            // and that's why setWdmForceIptables != wdmForceIptablesPreference.
+            PsiphonData.getPsiphonData().setWdmForceIptables(m_isRooted && wdmForceIptablesPreference);
+
+            boolean httpPrefixPreference =
+                    PreferenceManager.getDefaultSharedPreferences(this).getBoolean(HTTP_PREFIX_PREFERENCE, true);
+            m_httpPrefixToggle.setChecked(httpPrefixPreference);
+            PsiphonData.getPsiphonData().setHttpPrefix(httpPrefixPreference);
+            
             boolean useSystemProxySettingsPreference = 
                     PreferenceManager.getDefaultSharedPreferences(this).getBoolean(USE_SYSTEM_PROXY_SETTINGS_PREFERENCE, false);
             PsiphonData.getPsiphonData().setUseSystemProxySettings(useSystemProxySettingsPreference);
@@ -830,6 +854,78 @@ public abstract class MainBase
             editor.commit();
             
             PsiphonData.getPsiphonData().setTunnelWholeDevice(tunnelWholeDevicePreference);
+            
+            m_wdmForceIptablesToggle.setEnabled(m_isRooted && PsiphonData.getPsiphonData().getTunnelWholeDevice());
+        }
+
+        public void onWdmForceIptablesToggle(View v)
+        {
+            // Just in case an OnClick message is in transit before setEnabled is processed...(?)
+            if (!m_wdmForceIptablesToggle.isEnabled())
+            {
+                return;
+            }
+            
+            boolean restart = false;
+
+            if (isServiceRunning())
+            {
+                doToggle();
+                restart = true;
+            }
+
+            boolean wdmForceIptablesPreference = m_wdmForceIptablesToggle.isChecked();
+            updateWdmForceIptablesPreference(wdmForceIptablesPreference);
+            
+            if (restart)
+            {
+                startTunnel(this);
+            }
+        }
+        
+        protected void updateWdmForceIptablesPreference(boolean wdmForceIptablesPreference)
+        {
+            // No isRooted check: the user can specify whatever preference they
+            // wish. Also, CheckBox enabling should cover this (but isn't required to).
+            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+            editor.putBoolean(WDM_FORCE_IPTABLES_PREFERENCE, wdmForceIptablesPreference);
+            editor.commit();
+            
+            PsiphonData.getPsiphonData().setWdmForceIptables(wdmForceIptablesPreference);
+        }
+
+        public void onHttpPrefixToggle(View v)
+        {
+            // Just in case an OnClick message is in transit before setEnabled is processed...(?)
+            if (!m_httpPrefixToggle.isEnabled())
+            {
+                return;
+            }
+            
+            boolean restart = false;
+
+            if (isServiceRunning())
+            {
+                doToggle();
+                restart = true;
+            }
+
+            boolean httpPrefixPreference = m_httpPrefixToggle.isChecked();
+            updateHttpPrefixPreference(httpPrefixPreference);
+            
+            if (restart)
+            {
+                startTunnel(this);
+            }
+        }
+        
+        protected void updateHttpPrefixPreference(boolean httpPrefixPreference)
+        {
+            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+            editor.putBoolean(HTTP_PREFIX_PREFERENCE, httpPrefixPreference);
+            editor.commit();
+            
+            PsiphonData.getPsiphonData().setHttpPrefix(httpPrefixPreference);
         }
 
         public void onUseSystemProxySettingsToggle(View v)
@@ -1057,7 +1153,9 @@ public abstract class MainBase
         {
             boolean waitingForPrompt = false;
             
-            if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService())
+            if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService() &&
+                    !PsiphonData.getPsiphonData().getVpnServiceUnavailable() &&
+                    !PsiphonData.getPsiphonData().getWdmForceIptables())
             {
                 // VpnService backwards compatibility: for lazy class loading the VpnService
                 // class reference has to be in another function (doVpnPrepare), not just
@@ -1142,13 +1240,17 @@ public abstract class MainBase
             // Disable service-toggling controls while service is starting up
             // (i.e., while isServiceRunning can't be relied upon)
             m_tunnelWholeDeviceToggle.setEnabled(false);
+            m_wdmForceIptablesToggle.setEnabled(false);
+            m_httpPrefixToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
             m_useSystemProxySettingsToggle.setEnabled(false);
         }
         
         protected void onPostStartService()
         {
-            m_tunnelWholeDeviceToggle.setEnabled(true);
+            m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
+            m_wdmForceIptablesToggle.setEnabled(m_isRooted && PsiphonData.getPsiphonData().getTunnelWholeDevice());
+            m_httpPrefixToggle.setEnabled(true);
             m_regionSelector.setEnabled(true);
             m_useSystemProxySettingsToggle.setEnabled(true);
         }
@@ -1233,12 +1335,21 @@ public abstract class MainBase
         {
             if (m_boundToTunnelService)
             {
-                unbindService(m_tunnelServiceConnection);
+                try
+                {
+                    unbindService(m_tunnelServiceConnection);
+                }
+                // Ignore "java.lang.IllegalArgumentException: Service not registered"
+                catch (java.lang.IllegalArgumentException e) {}
                 m_boundToTunnelService = false;
             }
             if (m_boundToTunnelVpnService)
             {
-                unbindService(m_tunnelVpnServiceConnection);
+                try
+                {
+                    unbindService(m_tunnelVpnServiceConnection);
+                }
+                catch (java.lang.IllegalArgumentException e) {}
                 m_boundToTunnelVpnService = false;
             }
         }
@@ -1277,9 +1388,15 @@ public abstract class MainBase
         @Override
         public void statusEntryAdded()
         {
-            m_statusListManager.notifyStatusAdded();
+            if (m_statusListManager != null)
+            {
+                m_statusListManager.notifyStatusAdded();
+            }
             
-            m_localBroadcastManager.sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
+            if (m_localBroadcastManager != null)
+            {
+                m_localBroadcastManager.sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
+            }
         }
     }
 }
