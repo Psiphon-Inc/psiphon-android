@@ -314,6 +314,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         PsiphonData.getPsiphonData().getDataTransferStats().startSession();
         
         MyLog.g("ConnectingServer", "ipAddress", entry.ipAddress);
+        MyLog.g("HttpPrefix", "enabled", PsiphonData.getPsiphonData().getHttpPrefix() ? "True" : "False");
         
         Connection sshConnection = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
         sshConnection.connect(
@@ -437,7 +438,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         }
     }
     
-    private boolean runTunnelOnce(boolean isReconnect, boolean[] activeServices)
+    private boolean runTunnelOnce(boolean[] activeServices)
     {
         setState(State.CONNECTING);
         
@@ -475,7 +476,10 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             }
 
             boolean tunnelWholeDevice = PsiphonData.getPsiphonData().getTunnelWholeDevice();
-            boolean runVpnService = tunnelWholeDevice && Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
+            boolean runVpnService = tunnelWholeDevice &&
+                    Utils.hasVpnService() &&
+                    !PsiphonData.getPsiphonData().getVpnServiceUnavailable() &&
+                    !PsiphonData.getPsiphonData().getWdmForceIptables();
 
             // Guard against trying to start WDM mode when the global option flips while starting a TunnelService
             if (runVpnService && (m_parentService instanceof TunnelService))
@@ -613,7 +617,16 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             // app could plug in its own SOCKS proxy and capture all
             // Psiphon browser activity.
             
-            Polipo.getPolipo().runForever();
+            try
+            {
+                Polipo.getPolipo().runForever();
+            }
+            catch (java.lang.UnsatisfiedLinkError e)
+            {
+                MyLog.e(R.string.run_polipo_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+                runAgain = false;
+                return runAgain;
+            }
 
             if (PsiphonData.getPsiphonData().getHttpProxyPort() == 0)
             {
@@ -836,8 +849,10 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
                 if (m_eventsInterface != null)
                 {
-                    m_eventsInterface.signalHandshakeSuccess(m_parentContext, isReconnect);
+                    m_eventsInterface.signalHandshakeSuccess(m_parentContext, m_isReconnect);
                 }
+                
+                m_isReconnect = true;
             } 
             catch (PsiphonServerInterfaceException requestException)
             {
@@ -1205,7 +1220,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             
             if (cleanupTun2Socks)
             {
-                if (!runAgain || PsiphonData.getPsiphonData().getVpnServiceUnavailable())
+                if (!runAgain || PsiphonData.getPsiphonData().getVpnServiceUnavailable() ||
+                        PsiphonData.getPsiphonData().getWdmForceIptables())
                 {
                     // NOTE: getVpnServiceUnavailable() becomes true when failing over to
                     // iptables mode and in that case we don't leave the tun routing up.
@@ -1371,6 +1387,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
     private static int ACTIVE_SERVICE_TUN2SOCKS = 0;
     private static int ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING = 1;
 
+    private boolean m_isReconnect = false;
+    
     private void runTunnel() throws InterruptedException
     {
         // Check if an upgrade has already been downloaded and is ready for install
@@ -1383,17 +1401,15 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             return;
         }
         
-        boolean isReconnect = false;
+        m_isReconnect = false;
         
         // Active services are components runTunnelOnce leaves active on exit.
         // We use this to keep the routing in place in whole device modes to
         // avoid traffic leakage when failing over to another server.
         boolean[] activeServices = new boolean[]{false, false}; // ACTIVE_SERVICE_TUN2SOCKS, ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING
         
-        while (runTunnelOnce(isReconnect, activeServices))
+        while (runTunnelOnce(activeServices))
         {
-            isReconnect = true;
-
             try
             {
                 checkSignals(0);

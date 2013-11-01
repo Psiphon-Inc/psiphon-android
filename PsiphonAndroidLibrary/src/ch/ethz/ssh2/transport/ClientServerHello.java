@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import com.psiphon3.psiphonlibrary.PsiphonData;
+
 import ch.ethz.ssh2.Connection;
 import ch.ethz.ssh2.crypto.ObfuscatedSSH.ObfuscatedInputStream;
 import ch.ethz.ssh2.crypto.ObfuscatedSSH.ObfuscatedOutputStream;
@@ -67,9 +69,18 @@ public class ClientServerHello
 		
 		// PSIPHON HTTP-PREFIX
 		boolean skippedPrefix = false;
-		bi.disableObfuscation();
+        
+        if (PsiphonData.getPsiphonData().getHttpPrefix())
+        {
+            bi.disableObfuscation();
+        }
+        else
+        {
+            // Not sending the HTTP Prefix, so not expecting the server to send the HTTP Prefix response
+            skippedPrefix = true;
+        }
 
-		for (int i = 0; i < 50; i++)
+        for (int i = 0; i < 50; i++)
 		{
 			int len = readLineRN(bi, serverVersion);
 

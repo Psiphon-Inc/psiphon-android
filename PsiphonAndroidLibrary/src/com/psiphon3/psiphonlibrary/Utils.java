@@ -273,6 +273,10 @@ public class Utils
      */
     static public String urlEncode(String s)
     {
+        if (s == null)
+        {
+            return "";
+        }
         try
         {
             return URLEncoder.encode(s, "UTF-8");
