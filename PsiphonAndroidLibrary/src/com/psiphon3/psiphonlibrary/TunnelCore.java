@@ -1337,6 +1337,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                     .addRoute("0.0.0.0", 0)
                     .addRoute(subnet, prefixLength)
                     .addDnsServer(tunnelWholeDeviceDNSServer)
+                    .addRoute(tunnelWholeDeviceDNSServer, 32)
                     .establish();
             
             if (vpnInterfaceFileDescriptor == null)
