@@ -438,7 +438,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         }
     }
     
-    private boolean runTunnelOnce(boolean isReconnect, boolean[] activeServices)
+    private boolean runTunnelOnce(boolean[] activeServices)
     {
         setState(State.CONNECTING);
         
@@ -849,8 +849,10 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
                 if (m_eventsInterface != null)
                 {
-                    m_eventsInterface.signalHandshakeSuccess(m_parentContext, isReconnect);
+                    m_eventsInterface.signalHandshakeSuccess(m_parentContext, m_isReconnect);
                 }
+                
+                m_isReconnect = true;
             } 
             catch (PsiphonServerInterfaceException requestException)
             {
@@ -1335,6 +1337,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                     .addRoute("0.0.0.0", 0)
                     .addRoute(subnet, prefixLength)
                     .addDnsServer(tunnelWholeDeviceDNSServer)
+                    .addRoute(tunnelWholeDeviceDNSServer, 32)
                     .establish();
             
             if (vpnInterfaceFileDescriptor == null)
@@ -1385,6 +1388,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
     private static int ACTIVE_SERVICE_TUN2SOCKS = 0;
     private static int ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING = 1;
 
+    private boolean m_isReconnect = false;
+    
     private void runTunnel() throws InterruptedException
     {
         // Check if an upgrade has already been downloaded and is ready for install
@@ -1397,17 +1402,15 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             return;
         }
         
-        boolean isReconnect = false;
+        m_isReconnect = false;
         
         // Active services are components runTunnelOnce leaves active on exit.
         // We use this to keep the routing in place in whole device modes to
         // avoid traffic leakage when failing over to another server.
         boolean[] activeServices = new boolean[]{false, false}; // ACTIVE_SERVICE_TUN2SOCKS, ACTIVE_SERVICE_TRANSPARENT_PROXY_ROUTING
         
-        while (runTunnelOnce(isReconnect, activeServices))
+        while (runTunnelOnce(activeServices))
         {
-            isReconnect = true;
-
             try
             {
                 checkSignals(0);
