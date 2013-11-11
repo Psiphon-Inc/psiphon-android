@@ -1,5 +1,5 @@
 /**
- * @file BMutex.h
+ * @file BThreadSignal.h
  * @author Ambroz Bizjak <ambrop7@gmail.com>
  * 
  * @section LICENSE
@@ -27,80 +27,27 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef BADVPN_BMUTEX_H
-#define BADVPN_BMUTEX_H
-
-#ifdef BADVPN_THREADWORK_USE_PTHREAD
-#include <pthread.h>
-#endif
+#ifndef BADVPN_B_THREAD_SIGNAL_H
+#define BADVPN_B_THREAD_SIGNAL_H
 
 #include <misc/debug.h>
 #include <base/DebugObject.h>
+#include <system/BReactor.h>
 
-typedef struct {
-#ifdef BADVPN_THREADWORK_USE_PTHREAD
-    pthread_mutex_t pthread_mutex;
+typedef struct BThreadSignal_s BThreadSignal;
+
+typedef void (*BThreadSignal_handler) (BThreadSignal *thread_signal);
+
+struct BThreadSignal_s {
+    BReactor *reactor;
+    BThreadSignal_handler handler;
+    int pipe[2];
+    BFileDescriptor bfd;
     DebugObject d_obj;
-#endif
-} BMutex;
+};
 
-static int BMutex_Init (BMutex *o) WARN_UNUSED;
-static void BMutex_Free (BMutex *o);
-static void BMutex_Lock (BMutex *o);
-static void BMutex_Unlock (BMutex *o);
-
-static int BMutex_Init (BMutex *o)
-{
-#ifdef BADVPN_THREADWORK_USE_PTHREAD
-    if (pthread_mutex_init(&o->pthread_mutex, NULL) != 0) {
-        return 0;
-    }
-    
-    DebugObject_Init(&o->d_obj);
-    return 1;
-#else
-    ASSERT(0)
-    return 0;
-#endif
-}
-
-static void BMutex_Free (BMutex *o)
-{
-#ifdef BADVPN_THREADWORK_USE_PTHREAD
-    DebugObject_Free(&o->d_obj);
-    
-    int res = pthread_mutex_destroy(&o->pthread_mutex);
-    B_USE(res)
-    ASSERT(res == 0)
-#else
-    ASSERT(0)
-#endif
-}
-
-static void BMutex_Lock (BMutex *o)
-{
-#ifdef BADVPN_THREADWORK_USE_PTHREAD
-    DebugObject_Access(&o->d_obj);
-    
-    int res = pthread_mutex_lock(&o->pthread_mutex);
-    B_USE(res)
-    ASSERT(res == 0)
-#else
-    ASSERT(0)
-#endif
-}
-
-static void BMutex_Unlock (BMutex *o)
-{
-#ifdef BADVPN_THREADWORK_USE_PTHREAD
-    DebugObject_Access(&o->d_obj);
-    
-    int res = pthread_mutex_unlock(&o->pthread_mutex);
-    B_USE(res)
-    ASSERT(res == 0)
-#else
-    ASSERT(0)
-#endif
-}
+int BThreadSignal_Init (BThreadSignal *o, BReactor *reactor, BThreadSignal_handler handler) WARN_UNUSED;
+void BThreadSignal_Free (BThreadSignal *o);
+int BThreadSignal_Thread_Signal (BThreadSignal *o);
 
 #endif

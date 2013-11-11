@@ -117,6 +117,7 @@ static void statement_instance_logfunc (NCDModuleInst *inst);
 static void statement_instance_func_interp_exit (void *vinterp, int exit_code);
 static int statement_instance_func_interp_getargs (void *vinterp, NCDValMem *mem, NCDValRef *out_value);
 static btime_t statement_instance_func_interp_getretrytime (void *vinterp);
+static int statement_instance_func_interp_loadgroup (void *vinterp, const struct NCDModuleGroup *group);
 static void process_moduleprocess_func_event (struct process *p, int event);
 static int process_moduleprocess_func_getobj (struct process *p, NCD_string_id_t name, NCDObject *out_object);
 
@@ -211,6 +212,7 @@ int NCDInterpreter_Init (NCDInterpreter *o, NCDProgram program, struct NCDInterp
     o->module_iparams.func_interp_exit = statement_instance_func_interp_exit;
     o->module_iparams.func_interp_getargs = statement_instance_func_interp_getargs;
     o->module_iparams.func_interp_getretrytime = statement_instance_func_interp_getretrytime;
+    o->module_iparams.func_loadgroup = statement_instance_func_interp_loadgroup;
     
     // init processes list
     LinkedList1_Init(&o->processes);
@@ -851,7 +853,7 @@ void process_advance (struct process *p)
     
     if (!objnames) {
         // not a method; module is already known by NCDInterpProcess
-        module = NCDInterpProcess_StatementGetSimpleModule(p->iprocess, p->ap);
+        module = NCDInterpProcess_StatementGetSimpleModule(p->iprocess, p->ap, &p->interp->string_index, &p->interp->mindex);
         
         if (!module) {
             const char *cmdname_str = NCDInterpProcess_StatementCmdName(p->iprocess, p->ap, &p->interp->string_index);
@@ -1303,6 +1305,18 @@ btime_t statement_instance_func_interp_getretrytime (void *vinterp)
     NCDInterpreter *interp = vinterp;
     
     return interp->params.retry_time;
+}
+
+int statement_instance_func_interp_loadgroup (void *vinterp, const struct NCDModuleGroup *group)
+{
+    NCDInterpreter *interp = vinterp;
+    
+    if (!NCDModuleIndex_AddGroup(&interp->mindex, group, &interp->module_iparams, &interp->string_index)) {
+        BLog(BLOG_ERROR, "NCDModuleIndex_AddGroup failed");
+        return 0;
+    }
+    
+    return 1;
 }
 
 void process_moduleprocess_func_event (struct process *p, int event)

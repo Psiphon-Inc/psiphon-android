@@ -1,8 +1,7 @@
-/**
- * @file tun2socks.c
- * @author Ambroz Bizjak <ambrop7@gmail.com>
- * 
- * @section LICENSE
+/*
+ * Copyright (C) Ambroz Bizjak <ambrop7@gmail.com>
+ * Contributions:
+ * Transparent DNS: Copyright (C) Kerem Hadimli <kerem.hadimli@gmail.com>
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,6 +30,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
+#include <limits.h>
 
 // PSIPHON
 #include "jni.h"
@@ -42,11 +42,14 @@
 #include <misc/offset.h>
 #include <misc/dead.h>
 #include <misc/ipv4_proto.h>
+#include <misc/ipv6_proto.h>
 #include <misc/udp_proto.h>
 #include <misc/byteorder.h>
 #include <misc/balloc.h>
 #include <misc/open_standard_streams.h>
 #include <misc/read_file.h>
+#include <misc/ipaddr6.h>
+#include <misc/concat_strings.h>
 #include <structure/LinkedList1.h>
 #include <base/BLog.h>
 #include <system/BReactor.h>
@@ -101,13 +104,16 @@ struct {
     char *tundev;
     char *netif_ipaddr;
     char *netif_netmask;
+    char *netif_ip6addr;
     char *socks_server_addr;
     char *username;
     char *password;
     char *password_file;
+    int append_source_to_username;
     char *udpgw_remote_server_addr;
     int udpgw_max_connections;
     int udpgw_connection_buffer_size;
+    int udpgw_transparent_dns;
 
     // ==== PSIPHON ====
     int tun_fd;
@@ -127,6 +133,7 @@ struct tcp_client {
     int client_closed;
     uint8_t buf[TCP_WND];
     int buf_used;
+    char *socks_username;
     BSocksClient socks_client;
     int socks_up;
     int socks_closed;
@@ -144,6 +151,9 @@ BIPAddr netif_ipaddr;
 
 // netmask of netif
 BIPAddr netif_netmask;
+
+// IP6 address of netif
+struct ipv6_addr netif_ip6addr;
 
 // SOCKS server address
 BAddr socks_server_addr;
@@ -191,6 +201,9 @@ struct netif netif;
 // lwip TCP listener
 struct tcp_pcb *listener;
 
+// lwip TCP/IPv6 listener
+struct tcp_pcb *listener_ip6;
+
 // TCP clients
 LinkedList1 tcp_clients;
 
@@ -208,6 +221,7 @@ static void print_version (void);
 static int parse_arguments (int argc, char *argv[]);
 static int process_arguments (void);
 static void signal_handler (void *unused);
+static BAddr baddr_from_lwip (int is_ipv6, const ipX_addr_t *ipx_addr, uint16_t port_hostorder);
 static void lwip_init_job_hadler (void *unused);
 static void tcp_timer_handler (void *unused);
 static void device_error_handler (void *unused);
@@ -215,11 +229,14 @@ static void device_read_handler_send (void *unused, uint8_t *data, int data_len)
 static int process_device_udp_packet (uint8_t *data, int data_len);
 static err_t netif_init_func (struct netif *netif);
 static err_t netif_output_func (struct netif *netif, struct pbuf *p, ip_addr_t *ipaddr);
+static err_t netif_output_ip6_func (struct netif *netif, struct pbuf *p, ip6_addr_t *ipaddr);
+static err_t common_netif_output (struct netif *netif, struct pbuf *p);
+static err_t netif_input_func (struct pbuf *p, struct netif *inp);
 static void client_logfunc (struct tcp_client *client);
 static void client_log (struct tcp_client *client, int level, const char *fmt, ...);
 static err_t listener_accept_func (void *arg, struct tcp_pcb *newpcb, err_t err);
-static void client_handle_freed_client (struct tcp_client *client, int was_abrt);
-static int client_free_client (struct tcp_client *client);
+static void client_handle_freed_client (struct tcp_client *client);
+static void client_free_client (struct tcp_client *client);
 static void client_abort_client (struct tcp_client *client);
 static void client_free_socks (struct tcp_client *client);
 static void client_murder (struct tcp_client *client);
@@ -259,7 +276,7 @@ void PsiphonLog(const char *levelStr, const char *channelStr, const char *msgStr
     (*g_env)->CallStaticVoidMethod(g_env, cls, logMethod, level, channel, msg);
 
     (*g_env)->DeleteLocalRef(g_env, cls);
-    
+
     (*g_env)->DeleteLocalRef(g_env, level);
     (*g_env)->DeleteLocalRef(g_env, channel);
     (*g_env)->DeleteLocalRef(g_env, msg);
@@ -349,9 +366,9 @@ int main (int argc, char **argv)
     if (!parse_arguments(argc, argv)) {
         fprintf(stderr, "Failed to parse arguments\n");
         print_help(argv[0]);
-        return 0;
+        goto fail0;
     }
-
+    
     // handle --help and --version
     if (options.help) {
         print_version();
@@ -362,7 +379,7 @@ int main (int argc, char **argv)
         print_version();
         return 0;
     }
-
+    
     // initialize logger
     switch (options.logger) {
         case LOGGER_STDOUT:
@@ -372,14 +389,14 @@ int main (int argc, char **argv)
         case LOGGER_SYSLOG:
             if (!BLog_InitSyslog(options.logger_syslog_ident, options.logger_syslog_facility)) {
                 fprintf(stderr, "Failed to initialize syslog logger\n");
-                return 0;
+                goto fail0;
             }
             break;
         #endif
         default:
             ASSERT(0);
     }
-    
+
     run();
 
     return 1;
@@ -465,11 +482,22 @@ void run()
     }
     
     if (options.udpgw_remote_server_addr) {
-        // compute UDP mtu
+        // compute maximum UDP payload size we need to pass through udpgw
         udp_mtu = BTap_GetMTU(&device) - (int)(sizeof(struct ipv4_header) + sizeof(struct udp_header));
+        if (options.netif_ip6addr) {
+            int udp_ip6_mtu = BTap_GetMTU(&device) - (int)(sizeof(struct ipv6_header) + sizeof(struct udp_header));
+            if (udp_mtu < udp_ip6_mtu) {
+                udp_mtu = udp_ip6_mtu;
+            }
+        }
+        if (udp_mtu < 0) {
+            udp_mtu = 0;
+        }
+        
+        // make sure our UDP payloads aren't too large for udpgw
         int udpgw_mtu = udpgw_compute_mtu(udp_mtu);
         if (udpgw_mtu < 0 || udpgw_mtu > PACKETPROTO_MAXPAYLOAD) {
-            BLog(BLOG_ERROR, "bad device MTU for UDP");
+            BLog(BLOG_ERROR, "device MTU is too large for UDP");
             goto fail4a;
         }
         
@@ -503,6 +531,7 @@ void run()
     
     // set no listener
     listener = NULL;
+    listener_ip6 = NULL;
     
     // init clients list
     LinkedList1_Init(&tcp_clients);
@@ -522,6 +551,9 @@ void run()
     }
     
     // free listener
+    if (listener_ip6) {
+        tcp_close(listener_ip6);
+    }
     if (listener) {
         tcp_close(listener);
     }
@@ -547,7 +579,7 @@ void run()
     tcp_remove(tcp_active_pcbs);
     tcp_remove(tcp_tw_pcbs);
     // ==== PSIPHON ====
-
+    
 
     BReactor_RemoveTimer(&ss, &tcp_timer);
     BFree(device_write_buf);
@@ -606,12 +638,15 @@ void print_help (const char *name)
         "        --netif-ipaddr <ipaddr>\n"
         "        --netif-netmask <ipnetmask>\n"
         "        --socks-server-addr <addr>\n"
+        "        [--netif-ip6addr <addr>]\n"
         "        [--username <username>]\n"
         "        [--password <password>]\n"
         "        [--password-file <file>]\n"
+        "        [--append-source-to-username]\n"
         "        [--udpgw-remote-server-addr <addr>]\n"
         "        [--udpgw-max-connections <number>]\n"
         "        [--udpgw-connection-buffer-size <number>]\n"
+        "        [--udpgw-transparent-dns]\n"
         "Address format is a.b.c.d:port (IPv4) or [addr]:port (IPv6).\n",
         name
     );
@@ -640,13 +675,16 @@ void init_arguments (const char* program_name)
     options.tundev = NULL;
     options.netif_ipaddr = NULL;
     options.netif_netmask = NULL;
+    options.netif_ip6addr = NULL;
     options.socks_server_addr = NULL;
     options.username = NULL;
     options.password = NULL;
     options.password_file = NULL;
+    options.append_source_to_username = 0;
     options.udpgw_remote_server_addr = NULL;
     options.udpgw_max_connections = DEFAULT_UDPGW_MAX_CONNECTIONS;
     options.udpgw_connection_buffer_size = DEFAULT_UDPGW_CONNECTION_BUFFER_SIZE;
+    options.udpgw_transparent_dns = 0;
 
     options.tun_fd = 0;
     options.set_signal = 1;
@@ -763,6 +801,14 @@ int parse_arguments (int argc, char *argv[])
             options.netif_netmask = argv[i + 1];
             i++;
         }
+        else if (!strcmp(arg, "--netif-ip6addr")) {
+            if (1 >= argc - i) {
+                fprintf(stderr, "%s: requires an argument\n", arg);
+                return 0;
+            }
+            options.netif_ip6addr = argv[i + 1];
+            i++;
+        }
         else if (!strcmp(arg, "--socks-server-addr")) {
             if (1 >= argc - i) {
                 fprintf(stderr, "%s: requires an argument\n", arg);
@@ -795,6 +841,9 @@ int parse_arguments (int argc, char *argv[])
             options.password_file = argv[i + 1];
             i++;
         }
+        else if (!strcmp(arg, "--append-source-to-username")) {
+            options.append_source_to_username = 1;
+        }
         else if (!strcmp(arg, "--udpgw-remote-server-addr")) {
             if (1 >= argc - i) {
                 fprintf(stderr, "%s: requires an argument\n", arg);
@@ -824,6 +873,9 @@ int parse_arguments (int argc, char *argv[])
                 return 0;
             }
             i++;
+        }
+        else if (!strcmp(arg, "--udpgw-transparent-dns")) {
+            options.udpgw_transparent_dns = 1;
         }
         else {
             fprintf(stderr, "unknown option: %s\n", arg);
@@ -889,6 +941,14 @@ int process_arguments (void)
         return 0;
     }
     
+    // parse IP6 address
+    if (options.netif_ip6addr) {
+        if (!ipaddr6_parse_ipv6_addr(options.netif_ip6addr, &netif_ip6addr)) {
+            BLog(BLOG_ERROR, "netif ip6addr: incorrect");
+            return 0;
+        }
+    }
+    
     // resolve SOCKS server address
     if (!BAddr_Parse2(&socks_server_addr, options.socks_server_addr, NULL, 0, 0)) {
         BLog(BLOG_ERROR, "socks server addr: BAddr_Parse2 failed");
@@ -940,6 +1000,17 @@ void signal_handler (void *unused)
     terminate();
 }
 
+BAddr baddr_from_lwip (int is_ipv6, const ipX_addr_t *ipx_addr, uint16_t port_hostorder)
+{
+    BAddr addr;
+    if (is_ipv6) {
+        BAddr_InitIPv6(&addr, (uint8_t *)ipx_addr->ip6.addr, hton16(port_hostorder));
+    } else {
+        BAddr_InitIPv4(&addr, ipx_addr->ip4.addr, hton16(port_hostorder));
+    }
+    return addr;
+}
+
 void lwip_init_job_hadler (void *unused)
 {
     ASSERT(!quitting)
@@ -947,6 +1018,7 @@ void lwip_init_job_hadler (void *unused)
     ASSERT(netif_netmask.type == BADDR_TYPE_IPV4)
     ASSERT(!have_netif)
     ASSERT(!listener)
+    ASSERT(!listener_ip6)
     
     BLog(BLOG_DEBUG, "lwip init");
     
@@ -965,7 +1037,7 @@ void lwip_init_job_hadler (void *unused)
     ip_addr_set_any(&gw);
     
     // init netif
-    if (!netif_add(&netif, &addr, &netmask, &gw, NULL, netif_init_func, ip_input)) {
+    if (!netif_add(&netif, &addr, &netmask, &gw, NULL, netif_init_func, netif_input_func)) {
         BLog(BLOG_ERROR, "netif_add failed");
         goto fail;
     }
@@ -979,6 +1051,12 @@ void lwip_init_job_hadler (void *unused)
     
     // set netif default
     netif_set_default(&netif);
+    
+    if (options.netif_ip6addr) {
+        // add IPv6 address
+        memcpy(netif_ip6_addr(&netif, 0), netif_ip6addr.bytes, sizeof(netif_ip6addr.bytes));
+        netif_ip6_addr_set_state(&netif, 0, IP6_ADDR_VALID);
+    }
     
     // init listener
     struct tcp_pcb *l = tcp_new();
@@ -1003,6 +1081,28 @@ void lwip_init_job_hadler (void *unused)
     
     // setup listener accept handler
     tcp_accept(listener, listener_accept_func);
+    
+    if (options.netif_ip6addr) {
+        struct tcp_pcb *l_ip6 = tcp_new_ip6();
+        if (!l_ip6) {
+            BLog(BLOG_ERROR, "tcp_new_ip6 failed");
+            goto fail;
+        }
+        
+        if (tcp_bind_to_netif(l_ip6, "ho0") != ERR_OK) {
+            BLog(BLOG_ERROR, "tcp_bind_to_netif failed");
+            tcp_close(l_ip6);
+            goto fail;
+        }
+        
+        if (!(listener_ip6 = tcp_listen(l_ip6))) {
+            BLog(BLOG_ERROR, "tcp_listen failed");
+            tcp_close(l_ip6);
+            goto fail;
+        }
+        
+        tcp_accept(listener_ip6, listener_accept_func);
+    }
     
     return;
     
@@ -1039,6 +1139,7 @@ void device_error_handler (void *unused)
 void device_read_handler_send (void *unused, uint8_t *data, int data_len)
 {
     ASSERT(!quitting)
+    ASSERT(data_len >= 0)
     
     BLog(BLOG_DEBUG, "device: received packet");
     
@@ -1051,6 +1152,10 @@ void device_read_handler_send (void *unused, uint8_t *data, int data_len)
     }
     
     // obtain pbuf
+    if (data_len > UINT16_MAX) {
+        BLog(BLOG_WARNING, "device read: packet too large");
+        return;
+    }
     struct pbuf *p = pbuf_alloc(PBUF_RAW, data_len, PBUF_POOL);
     if (!p) {
         BLog(BLOG_WARNING, "device read: pbuf_alloc failed");
@@ -1069,66 +1174,116 @@ void device_read_handler_send (void *unused, uint8_t *data, int data_len)
 
 int process_device_udp_packet (uint8_t *data, int data_len)
 {
+    ASSERT(data_len >= 0)
+    
     // do nothing if we don't have udpgw
     if (!options.udpgw_remote_server_addr) {
         goto fail;
     }
     
-    // ignore non-UDP packets
-    if (data_len < sizeof(struct ipv4_header) || ((struct ipv4_header *)data)->protocol != IPV4_PROTOCOL_UDP) {
-        goto fail;
+    BAddr local_addr;
+    BAddr remote_addr;
+    int is_dns;
+    
+    uint8_t ip_version = 0;
+    if (data_len > 0) {
+        ip_version = (data[0] >> 4);
     }
     
-    // parse IPv4 header
-    struct ipv4_header ipv4_header;
-    if (!ipv4_check(data, data_len, &ipv4_header, &data, &data_len)) {
-        goto fail;
+    switch (ip_version) {
+        case 4: {
+            // ignore non-UDP packets
+            if (data_len < sizeof(struct ipv4_header) || data[offsetof(struct ipv4_header, protocol)] != IPV4_PROTOCOL_UDP) {
+                goto fail;
+            }
+            
+            // parse IPv4 header
+            struct ipv4_header ipv4_header;
+            if (!ipv4_check(data, data_len, &ipv4_header, &data, &data_len)) {
+                goto fail;
+            }
+            
+            // parse UDP
+            struct udp_header udp_header;
+            if (!udp_check(data, data_len, &udp_header, &data, &data_len)) {
+                goto fail;
+            }
+            
+            // verify UDP checksum
+            uint16_t checksum_in_packet = udp_header.checksum;
+            udp_header.checksum = 0;
+            uint16_t checksum_computed = udp_checksum(&udp_header, data, data_len, ipv4_header.source_address, ipv4_header.destination_address);
+            if (checksum_in_packet != checksum_computed) {
+                goto fail;
+            }
+            
+            BLog(BLOG_INFO, "UDP: from device %d bytes", data_len);
+            
+            // construct addresses
+            BAddr_InitIPv4(&local_addr, ipv4_header.source_address, udp_header.source_port);
+            BAddr_InitIPv4(&remote_addr, ipv4_header.destination_address, udp_header.dest_port);
+            
+            // if transparent DNS is enabled, any packet arriving at out netif
+            // address to port 53 is considered a DNS packet
+            is_dns = (options.udpgw_transparent_dns &&
+                      ipv4_header.destination_address == netif_ipaddr.ipv4 &&
+                      udp_header.dest_port == hton16(53));
+        } break;
+        
+        case 6: {
+            // ignore if IPv6 support is disabled
+            if (!options.netif_ip6addr) {
+                goto fail;
+            }
+            
+            // ignore non-UDP packets
+            if (data_len < sizeof(struct ipv6_header) || data[offsetof(struct ipv6_header, next_header)] != IPV6_NEXT_UDP) {
+                goto fail;
+            }
+            
+            // parse IPv6 header
+            struct ipv6_header ipv6_header;
+            if (!ipv6_check(data, data_len, &ipv6_header, &data, &data_len)) {
+                goto fail;
+            }
+            
+            // parse UDP
+            struct udp_header udp_header;
+            if (!udp_check(data, data_len, &udp_header, &data, &data_len)) {
+                goto fail;
+            }
+            
+            // verify UDP checksum
+            uint16_t checksum_in_packet = udp_header.checksum;
+            udp_header.checksum = 0;
+            uint16_t checksum_computed = udp_ip6_checksum(&udp_header, data, data_len, ipv6_header.source_address, ipv6_header.destination_address);
+            if (checksum_in_packet != checksum_computed) {
+                goto fail;
+            }
+            
+            BLog(BLOG_INFO, "UDP/IPv6: from device %d bytes", data_len);
+            
+            // construct addresses
+            BAddr_InitIPv6(&local_addr, ipv6_header.source_address, udp_header.source_port);
+            BAddr_InitIPv6(&remote_addr, ipv6_header.destination_address, udp_header.dest_port);
+            
+            // TODO dns
+            is_dns = 0;
+        } break;
+        
+        default: {
+            goto fail;
+        } break;
     }
-    
-    // parse UDP header
-    if (data_len < sizeof(struct udp_header)) {
-        goto fail;
-    }
-    struct udp_header udp_header;
-    memcpy(&udp_header, data, sizeof(udp_header));
-    data += sizeof(udp_header);
-    data_len -= sizeof(udp_header);
-    
-    // verify UDP payload
-    int udp_length = ntoh16(udp_header.length);
-    if (udp_length < sizeof(udp_header)) {
-        goto fail;
-    }
-    if (udp_length > sizeof(udp_header) + data_len) {
-        goto fail;
-    }
-    
-    // ignore stray data
-    data_len = udp_length - sizeof(udp_header);
     
     // check payload length
     if (data_len > udp_mtu) {
+        BLog(BLOG_ERROR, "packet is too large, cannot send to udpgw");
         goto fail;
     }
-    
-    // verify UDP checksum
-    uint16_t checksum_in_packet = udp_header.checksum;
-    udp_header.checksum = 0;
-    uint16_t checksum_computed = udp_checksum(&udp_header, data, data_len, ipv4_header.source_address, ipv4_header.destination_address);
-    if (checksum_in_packet != checksum_computed) {
-        goto fail;
-    }
-    
-    BLog(BLOG_INFO, "UDP: from device %d bytes", data_len);
-    
-    // construct addresses
-    BAddr local_addr;
-    BAddr_InitIPv4(&local_addr, ipv4_header.source_address, udp_header.source_port);
-    BAddr remote_addr;
-    BAddr_InitIPv4(&remote_addr, ipv4_header.destination_address, udp_header.dest_port);
     
     // submit packet to udpgw
-    SocksUdpGwClient_SubmitPacket(&udpgw_client, local_addr, remote_addr, data, data_len);
+    SocksUdpGwClient_SubmitPacket(&udpgw_client, local_addr, remote_addr, is_dns, data, data_len);
     
     return 1;
     
@@ -1143,11 +1298,22 @@ err_t netif_init_func (struct netif *netif)
     netif->name[0] = 'h';
     netif->name[1] = 'o';
     netif->output = netif_output_func;
+    netif->output_ip6 = netif_output_ip6_func;
     
     return ERR_OK;
 }
 
 err_t netif_output_func (struct netif *netif, struct pbuf *p, ip_addr_t *ipaddr)
+{
+    return common_netif_output(netif, p);
+}
+
+err_t netif_output_ip6_func (struct netif *netif, struct pbuf *p, ip6_addr_t *ipaddr)
+{
+    return common_netif_output(netif, p);
+}
+
+err_t common_netif_output (struct netif *netif, struct pbuf *p)
 {
     SYNC_DECL
     
@@ -1187,6 +1353,28 @@ out:
     return ERR_OK;
 }
 
+err_t netif_input_func (struct pbuf *p, struct netif *inp)
+{
+    uint8_t ip_version = 0;
+    if (p->len > 0) {
+        ip_version = (((uint8_t *)p->payload)[0] >> 4);
+    }
+    
+    switch (ip_version) {
+        case 4: {
+            return ip_input(p, inp);
+        } break;
+        case 6: {
+            if (options.netif_ip6addr) {
+                return ip6_input(p, inp);
+            }
+        } break;
+    }
+    
+    pbuf_free(p);
+    return ERR_OK;
+}
+
 void client_logfunc (struct tcp_client *client)
 {
     char local_addr_s[BADDR_MAX_PRINT_LEN];
@@ -1207,34 +1395,50 @@ void client_log (struct tcp_client *client, int level, const char *fmt, ...)
 
 err_t listener_accept_func (void *arg, struct tcp_pcb *newpcb, err_t err)
 {
-    ASSERT(listener)
     ASSERT(err == ERR_OK)
     
     // signal accepted
-    tcp_accepted(listener);
+    struct tcp_pcb *this_listener = (PCB_ISIPV6(newpcb) ? listener_ip6 : listener);
+    tcp_accepted(this_listener);
     
     // allocate client structure
     struct tcp_client *client = (struct tcp_client *)malloc(sizeof(*client));
     if (!client) {
         BLog(BLOG_ERROR, "listener accept: malloc failed");
-        return ERR_MEM;
+        goto fail0;
     }
+    client->socks_username = NULL;
     
     SYNC_DECL
     SYNC_FROMHERE
     
-    // init SOCKS
-    BAddr addr;
-    BAddr_InitIPv4(&addr, newpcb->local_ip.addr, hton16(newpcb->local_port));
-    #ifdef OVERRIDE_DEST_ADDR
+    // read addresses
+    client->local_addr = baddr_from_lwip(PCB_ISIPV6(newpcb), &newpcb->local_ip, newpcb->local_port);
+    client->remote_addr = baddr_from_lwip(PCB_ISIPV6(newpcb), &newpcb->remote_ip, newpcb->remote_port);
+    
+    // get destination address
+    BAddr addr = client->local_addr;
+#ifdef OVERRIDE_DEST_ADDR
     ASSERT_FORCE(BAddr_Parse2(&addr, OVERRIDE_DEST_ADDR, NULL, 0, 1))
-    #endif
+#endif
+    
+    // add source address to username if requested
+    if (options.username && options.append_source_to_username) {
+        char addr_str[BADDR_MAX_PRINT_LEN];
+        BAddr_Print(&client->remote_addr, addr_str);
+        client->socks_username = concat_strings(3, options.username, "@", addr_str);
+        if (!client->socks_username) {
+            goto fail1;
+        }
+        socks_auth_info[1].password.username = client->socks_username;
+        socks_auth_info[1].password.username_len = strlen(client->socks_username);
+    }
+    
+    // init SOCKS
     if (!BSocksClient_Init(&client->socks_client, socks_server_addr, socks_auth_info, socks_num_auth_info,
                            addr, (BSocksClient_handler)client_socks_handler, client, &ss)) {
         BLog(BLOG_ERROR, "listener accept: BSocksClient_Init failed");
-        SYNC_BREAK
-        free(client);
-        return ERR_MEM;
+        goto fail1;
     }
     
     // init dead vars
@@ -1253,10 +1457,6 @@ err_t listener_accept_func (void *arg, struct tcp_pcb *newpcb, err_t err)
     
     // set client not closed
     client->client_closed = 0;
-    
-    // read addresses
-    BAddr_InitIPv4(&client->local_addr, client->pcb->local_ip.addr, hton16(client->pcb->local_port));
-    BAddr_InitIPv4(&client->remote_addr, client->pcb->remote_ip.addr, hton16(client->pcb->remote_port));
     
     // setup handler argument
     tcp_arg(client->pcb, client);
@@ -1277,22 +1477,28 @@ err_t listener_accept_func (void *arg, struct tcp_pcb *newpcb, err_t err)
     DEAD_ENTER(client->dead_client)
     SYNC_COMMIT
     DEAD_LEAVE2(client->dead_client)
-    if (DEAD_KILLED == -1) {
+    if (DEAD_KILLED) {
         return ERR_ABRT;
     }
     
     return ERR_OK;
+    
+fail1:
+    SYNC_BREAK
+    free(client->socks_username);
+    free(client);
+fail0:
+    return ERR_MEM;
 }
 
-void client_handle_freed_client (struct tcp_client *client, int was_abrt)
+void client_handle_freed_client (struct tcp_client *client)
 {
     ASSERT(!client->client_closed)
-    ASSERT(was_abrt == 0 || was_abrt == 1)
     
     // pcb was taken care of by the caller
     
     // kill client dead var
-    DEAD_KILL_WITH(client->dead_client, (was_abrt ? -1 : 1));
+    DEAD_KILL(client->dead_client);
     
     // set client closed
     client->client_closed = 1;
@@ -1309,11 +1515,9 @@ void client_handle_freed_client (struct tcp_client *client, int was_abrt)
     }
 }
 
-int client_free_client (struct tcp_client *client)
+void client_free_client (struct tcp_client *client)
 {
     ASSERT(!client->client_closed)
-    
-    int was_abrt = 0;
     
     // remove callbacks
     tcp_err(client->pcb, NULL);
@@ -1324,14 +1528,10 @@ int client_free_client (struct tcp_client *client)
     err_t err = tcp_close(client->pcb);
     if (err != ERR_OK) {
         client_log(client, BLOG_ERROR, "tcp_close failed (%d)", err);
-        
         tcp_abort(client->pcb);
-        was_abrt = 1;
     }
     
-    client_handle_freed_client(client, was_abrt);
-    
-    return was_abrt;
+    client_handle_freed_client(client);
 }
 
 void client_abort_client (struct tcp_client *client)
@@ -1346,7 +1546,7 @@ void client_abort_client (struct tcp_client *client)
     // free pcb
     tcp_abort(client->pcb);
     
-    client_handle_freed_client(client, 1);
+    client_handle_freed_client(client);
 }
 
 void client_free_socks (struct tcp_client *client)
@@ -1392,7 +1592,7 @@ void client_murder (struct tcp_client *client)
         tcp_abort(client->pcb);
         
         // kill client dead var
-        DEAD_KILL_WITH(client->dead_client, -1);
+        DEAD_KILL(client->dead_client);
         
         // set client closed
         client->client_closed = 1;
@@ -1427,6 +1627,7 @@ void client_dealloc (struct tcp_client *client)
     DEAD_KILL(client->dead);
     
     // free memory
+    free(client->socks_username);
     free(client);
 }
 
@@ -1438,7 +1639,7 @@ void client_err_func (void *arg, err_t err)
     client_log(client, BLOG_INFO, "client error (%d)", (int)err);
     
     // the pcb was taken care of by the caller
-    client_handle_freed_client(client, 0);
+    client_handle_freed_client(client);
 }
 
 err_t client_recv_func (void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err)
@@ -1450,10 +1651,8 @@ err_t client_recv_func (void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t e
     
     if (!p) {
         client_log(client, BLOG_INFO, "client closed");
-        
-        int ret = client_free_client(client);
-        
-        return (ret ? ERR_ABRT : ERR_OK);
+        client_free_client(client);
+        return ERR_ABRT;
     }
     
     ASSERT(p->tot_len > 0)
@@ -1478,7 +1677,7 @@ err_t client_recv_func (void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t e
         DEAD_ENTER(client->dead_client)
         SYNC_COMMIT
         DEAD_LEAVE2(client->dead_client)
-        if (DEAD_KILLED == -1) {
+        if (DEAD_KILLED) {
             return ERR_ABRT;
         }
     }
@@ -1514,7 +1713,9 @@ void client_socks_handler (struct tcp_client *client, int event)
             StreamRecvInterface_Receiver_Init(client->socks_recv_if, (StreamRecvInterface_handler_done)client_socks_recv_handler_done, client);
             client->socks_recv_buf_used = -1;
             client->socks_recv_tcp_pending = 0;
-            tcp_sent(client->pcb, client_sent_func);
+            if (!client->client_closed) {
+                tcp_sent(client->pcb, client_sent_func);
+            }
             
             // set up
             client->socks_up = 1;
@@ -1716,9 +1917,9 @@ err_t client_sent_func (void *arg, struct tcp_pcb *tpcb, u16_t len)
             SYNC_DECL
             SYNC_FROMHERE
             client_socks_recv_initiate(client);
-            DEAD_ENTER(client->dead)
+            DEAD_ENTER(client->dead_client)
             SYNC_COMMIT
-            DEAD_LEAVE2(client->dead)
+            DEAD_LEAVE2(client->dead_client)
             if (DEAD_KILLED) {
                 return ERR_ABRT;
             }
@@ -1730,10 +1931,8 @@ err_t client_sent_func (void *arg, struct tcp_pcb *tpcb, u16_t len)
     // have we sent everything after SOCKS was closed?
     if (client->socks_closed && client->socks_recv_tcp_pending == 0) {
         client_log(client, BLOG_INFO, "removing after SOCKS went down");
-        
-        int ret = client_free_client(client);
-        
-        return (ret ? ERR_ABRT : ERR_OK);
+        client_free_client(client);
+        return ERR_ABRT;
     }
     
     return ERR_OK;
@@ -1742,38 +1941,94 @@ err_t client_sent_func (void *arg, struct tcp_pcb *tpcb, u16_t len)
 void udpgw_client_handler_received (void *unused, BAddr local_addr, BAddr remote_addr, const uint8_t *data, int data_len)
 {
     ASSERT(options.udpgw_remote_server_addr)
+    ASSERT(local_addr.type == BADDR_TYPE_IPV4 || local_addr.type == BADDR_TYPE_IPV6)
+    ASSERT(local_addr.type == remote_addr.type)
     ASSERT(data_len >= 0)
-    ASSERT(data_len <= udp_mtu)
     
-    BLog(BLOG_INFO, "UDP: from udpgw %d bytes", data_len);
+    int packet_length = 0;
     
-    // build IP header
-    struct ipv4_header iph;
-    iph.version4_ihl4 = IPV4_MAKE_VERSION_IHL(sizeof(iph));
-    iph.ds = hton8(0);
-    iph.total_length = hton16(sizeof(iph) + sizeof(struct udp_header) + data_len);
-    iph.identification = hton16(0);
-    iph.flags3_fragmentoffset13 = hton16(0);
-    iph.ttl = hton8(64);
-    iph.protocol = hton8(IPV4_PROTOCOL_UDP);
-    iph.checksum = hton16(0);
-    iph.source_address = remote_addr.ipv4.ip;
-    iph.destination_address = local_addr.ipv4.ip;
-    iph.checksum = ipv4_checksum(&iph, NULL, 0);
-    
-    // build UDP header
-    struct udp_header udph;
-    udph.source_port = remote_addr.ipv4.port;
-    udph.dest_port = local_addr.ipv4.port;
-    udph.length = hton16(sizeof(udph) + data_len);
-    udph.checksum = hton16(0);
-    udph.checksum = udp_checksum(&udph, data, data_len, iph.source_address, iph.destination_address);
-    
-    // write packet
-    memcpy(device_write_buf, &iph, sizeof(iph));
-    memcpy(device_write_buf + sizeof(iph), &udph, sizeof(udph));
-    memcpy(device_write_buf + sizeof(iph) + sizeof(udph), data, data_len);
+    switch (local_addr.type) {
+        case BADDR_TYPE_IPV4: {
+            BLog(BLOG_INFO, "UDP: from udpgw %d bytes", data_len);
+            
+            if (data_len > UINT16_MAX - (sizeof(struct ipv4_header) + sizeof(struct udp_header)) ||
+                data_len > BTap_GetMTU(&device) - (int)(sizeof(struct ipv4_header) + sizeof(struct udp_header))
+            ) {
+                BLog(BLOG_ERROR, "UDP: packet is too large");
+                return;
+            }
+            
+            // build IP header
+            struct ipv4_header iph;
+            iph.version4_ihl4 = IPV4_MAKE_VERSION_IHL(sizeof(iph));
+            iph.ds = hton8(0);
+            iph.total_length = hton16(sizeof(iph) + sizeof(struct udp_header) + data_len);
+            iph.identification = hton16(0);
+            iph.flags3_fragmentoffset13 = hton16(0);
+            iph.ttl = hton8(64);
+            iph.protocol = hton8(IPV4_PROTOCOL_UDP);
+            iph.checksum = hton16(0);
+            iph.source_address = remote_addr.ipv4.ip;
+            iph.destination_address = local_addr.ipv4.ip;
+            iph.checksum = ipv4_checksum(&iph, NULL, 0);
+            
+            // build UDP header
+            struct udp_header udph;
+            udph.source_port = remote_addr.ipv4.port;
+            udph.dest_port = local_addr.ipv4.port;
+            udph.length = hton16(sizeof(udph) + data_len);
+            udph.checksum = hton16(0);
+            udph.checksum = udp_checksum(&udph, data, data_len, iph.source_address, iph.destination_address);
+            
+            // write packet
+            memcpy(device_write_buf, &iph, sizeof(iph));
+            memcpy(device_write_buf + sizeof(iph), &udph, sizeof(udph));
+            memcpy(device_write_buf + sizeof(iph) + sizeof(udph), data, data_len);
+            packet_length = sizeof(iph) + sizeof(udph) + data_len;
+        } break;
+        
+        case BADDR_TYPE_IPV6: {
+            BLog(BLOG_INFO, "UDP/IPv6: from udpgw %d bytes", data_len);
+            
+            if (!options.netif_ip6addr) {
+                BLog(BLOG_ERROR, "got IPv6 packet from udpgw but IPv6 is disabled");
+                return;
+            }
+            
+            if (data_len > UINT16_MAX - sizeof(struct udp_header) ||
+                data_len > BTap_GetMTU(&device) - (int)(sizeof(struct ipv6_header) + sizeof(struct udp_header))
+            ) {
+                BLog(BLOG_ERROR, "UDP/IPv6: packet is too large");
+                return;
+            }
+            
+            // build IPv6 header
+            struct ipv6_header iph;
+            iph.version4_tc4 = hton8((6 << 4));
+            iph.tc4_fl4 = hton8(0);
+            iph.fl = hton16(0);
+            iph.payload_length = hton16(sizeof(struct udp_header) + data_len);
+            iph.next_header = hton8(IPV6_NEXT_UDP);
+            iph.hop_limit = hton8(64);
+            memcpy(iph.source_address, remote_addr.ipv6.ip, 16);
+            memcpy(iph.destination_address, local_addr.ipv6.ip, 16);
+            
+            // build UDP header
+            struct udp_header udph;
+            udph.source_port = remote_addr.ipv6.port;
+            udph.dest_port = local_addr.ipv6.port;
+            udph.length = hton16(sizeof(udph) + data_len);
+            udph.checksum = hton16(0);
+            udph.checksum = udp_ip6_checksum(&udph, data, data_len, iph.source_address, iph.destination_address);
+            
+            // write packet
+            memcpy(device_write_buf, &iph, sizeof(iph));
+            memcpy(device_write_buf + sizeof(iph), &udph, sizeof(udph));
+            memcpy(device_write_buf + sizeof(iph) + sizeof(udph), data, data_len);
+            packet_length = sizeof(iph) + sizeof(udph) + data_len;
+        } break;
+    }
     
     // submit packet
-    BTap_Send(&device, device_write_buf, sizeof(iph) + sizeof(udph) + data_len);
+    BTap_Send(&device, device_write_buf, packet_length);
 }

@@ -1,8 +1,7 @@
-/**
- * @file SocksUdpGwClient.c
- * @author Ambroz Bizjak <ambrop7@gmail.com>
- * 
- * @section LICENSE
+/*
+ * Copyright (C) Ambroz Bizjak <ambrop7@gmail.com>
+ * Contributions:
+ * Transparent DNS: Copyright (C) Kerem Hadimli <kerem.hadimli@gmail.com>
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -164,11 +163,7 @@ int SocksUdpGwClient_Init (SocksUdpGwClient *o, int udp_mtu, int max_connections
                            BAddr remote_udpgw_addr, btime_t reconnect_time, BReactor *reactor, void *user,
                            SocksUdpGwClient_handler_received handler_received)
 {
-    ASSERT(udp_mtu >= 0)
-    ASSERT(udpgw_compute_mtu(udp_mtu) >= 0)
-    ASSERT(udpgw_compute_mtu(udp_mtu) <= PACKETPROTO_MAXPAYLOAD)
-    ASSERT(max_connections > 0)
-    ASSERT(send_buffer_size > 0)
+    // see asserts in UdpGwClient_Init
     ASSERT(!BAddr_IsInvalid(&socks_server_addr))
     ASSERT(remote_udpgw_addr.type == BADDR_TYPE_IPV4 || remote_udpgw_addr.type == BADDR_TYPE_IPV6)
     
@@ -222,14 +217,12 @@ void SocksUdpGwClient_Free (SocksUdpGwClient *o)
     UdpGwClient_Free(&o->udpgw_client);
 }
 
-void SocksUdpGwClient_SubmitPacket (SocksUdpGwClient *o, BAddr local_addr, BAddr remote_addr, const uint8_t *data, int data_len)
+void SocksUdpGwClient_SubmitPacket (SocksUdpGwClient *o, BAddr local_addr, BAddr remote_addr, int is_dns, const uint8_t *data, int data_len)
 {
     DebugObject_Access(&o->d_obj);
-    ASSERT(local_addr.type == BADDR_TYPE_IPV4)
-    ASSERT(remote_addr.type == BADDR_TYPE_IPV4)
-    ASSERT(data_len >= 0)
-    ASSERT(data_len <= o->udp_mtu)
+    // see asserts in UdpGwClient_SubmitPacket
     
     // submit to udpgw client
-    UdpGwClient_SubmitPacket(&o->udpgw_client, local_addr, remote_addr, data, data_len);
+    UdpGwClient_SubmitPacket(&o->udpgw_client, local_addr, remote_addr, is_dns, data, data_len);
 }
+

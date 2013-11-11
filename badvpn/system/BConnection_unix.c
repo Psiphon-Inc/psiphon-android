@@ -201,7 +201,7 @@ static void connector_fd_handler (BConnector *o, int events)
     ASSERT_FORCE(result_len == sizeof(result))
     
     if (result != 0) {
-        BLog(BLOG_WARNING, "connection failed");
+        BLog(BLOG_ERROR, "connection failed");
         goto fail0;
     }
     
@@ -261,7 +261,7 @@ static void connection_send (BConnection *o)
             return;
         }
         
-        BLog(BLOG_WARNING, "send failed");
+        BLog(BLOG_ERROR, "send failed");
         connection_report_error(o);
         return;
     }
@@ -301,7 +301,7 @@ static void connection_recv (BConnection *o)
             return;
         }
         
-        BLog(BLOG_WARNING, "recv failed");
+        BLog(BLOG_ERROR, "recv failed");
         connection_report_error(o);
         return;
     }
