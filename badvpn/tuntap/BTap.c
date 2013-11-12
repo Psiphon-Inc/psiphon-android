@@ -467,47 +467,6 @@ success:
     return 1;
 }
 
-void BTap_Free (BTap *o)
-{
-    DebugObject_Free(&o->d_obj);
-    DebugError_Free(&o->d_err);
-    
-    // free output
-    PacketRecvInterface_Free(&o->output);
-    
-#ifdef BADVPN_USE_WINAPI
-    
-    // cancel I/O
-    ASSERT_FORCE(CancelIo(o->device))
-    
-    // wait receiving to finish
-    if (o->output_packet) {
-        BLog(BLOG_DEBUG, "waiting for receiving to finish");
-        BReactorIOCPOverlapped_Wait(&o->recv_olap, NULL, NULL);
-    }
-    
-    // free recv olap
-    BReactorIOCPOverlapped_Free(&o->recv_olap);
-    
-    // free send olap
-    BReactorIOCPOverlapped_Free(&o->send_olap);
-    
-    // close device
-    ASSERT_FORCE(CloseHandle(o->device))
-    
-#else
-    
-    // free BFileDescriptor
-    BReactor_RemoveFileDescriptor(o->reactor, &o->bfd);
-    
-    if (o->close_fd) {
-        // close file descriptor
-        ASSERT_FORCE(close(o->fd) == 0)
-    }
-    
-#endif
-}
-
 // ==== PSIPHON ====
 
 int BTap_InitWithFD (BTap *o, BReactor *reactor, int fd, int mtu, BTap_handler_error handler_error, void *handler_error_user, int tun)
@@ -561,38 +520,40 @@ void BTap_Free (BTap *o)
 {
     DebugObject_Free(&o->d_obj);
     DebugError_Free(&o->d_err);
-
+    
     // free output
     PacketRecvInterface_Free(&o->output);
-
+    
 #ifdef BADVPN_USE_WINAPI
-
+    
     // cancel I/O
     ASSERT_FORCE(CancelIo(o->device))
-
+    
     // wait receiving to finish
     if (o->output_packet) {
         BLog(BLOG_DEBUG, "waiting for receiving to finish");
         BReactorIOCPOverlapped_Wait(&o->recv_olap, NULL, NULL);
     }
-
+    
     // free recv olap
     BReactorIOCPOverlapped_Free(&o->recv_olap);
-
+    
     // free send olap
     BReactorIOCPOverlapped_Free(&o->send_olap);
-
+    
     // close device
     ASSERT_FORCE(CloseHandle(o->device))
-
+    
 #else
-
+    
     // free BFileDescriptor
     BReactor_RemoveFileDescriptor(o->reactor, &o->bfd);
-
-    // close file descriptor
-    ASSERT_FORCE(close(o->fd) == 0)
-
+    
+    if (o->close_fd) {
+        // close file descriptor
+        ASSERT_FORCE(close(o->fd) == 0)
+    }
+    
 #endif
 }
 

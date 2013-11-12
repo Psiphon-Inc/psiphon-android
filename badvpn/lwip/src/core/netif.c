@@ -209,7 +209,7 @@ netif_add(struct netif *netif, ip_addr_t *ipaddr, ip_addr_t *netmask,
 #ifdef PSIPHON
   /* tun2socks as a library, with a multi-run lifetime,
      may invoke this multiple times */
-  netif->num = netifnum;
+  netif->num = netif_num;
 #else
   netif->num = netif_num++;
 #endif /* PSIPHON */
