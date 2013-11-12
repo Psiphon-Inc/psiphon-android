@@ -8,9 +8,11 @@ LOCAL_CFLAGS := -std=gnu99
 LOCAL_CFLAGS += -DBADVPN_THREADWORK_USE_PTHREAD -DBADVPN_LINUX -DBADVPN_BREACTOR_BADVPN -D_GNU_SOURCE
 LOCAL_CFLAGS += -DBADVPN_USE_SELFPIPE -DBADVPN_USE_EPOLL
 LOCAL_CFLAGS += -DBADVPN_LITTLE_ENDIAN
+LOCAL_CFLAGS += -DBADVPN_THREAD_SAFE 1
 LOCAL_CFLAGS += -DPSIPHON
 
 LOCAL_C_INCLUDES:= \
+        $(LOCAL_PATH) \
         $(LOCAL_PATH)/lwip/src/include/ipv4 \
         $(LOCAL_PATH)/lwip/src/include \
         $(LOCAL_PATH)/lwip/custom
@@ -50,12 +52,16 @@ LOCAL_SRC_FILES := \
         lwip/src/core/mem.c \
         lwip/src/core/tcp_in.c \
         lwip/src/core/stats.c \
+        lwip/src/core/inet_chksum.c \
         lwip/src/core/ipv4/icmp.c \
-        lwip/src/core/ipv4/ip_addr.c \
+        lwip/src/core/ipv4/ip4.c \
+        lwip/src/core/ipv4/ip4_addr.c \
         lwip/src/core/ipv4/ip_frag.c \
-        lwip/src/core/ipv4/inet_chksum.c \
-        lwip/src/core/ipv4/ip.c \
-        lwip/src/core/ipv4/inet.c \
+        lwip/src/core/ipv6/ip6.c \
+        lwip/src/core/ipv6/nd6.c \
+        lwip/src/core/ipv6/icmp6.c \
+        lwip/src/core/ipv6/ip6_addr.c \
+        lwip/src/core/ipv6/ip6_frag.c \
         lwip/custom/sys.c \
         tun2socks/tun2socks.c \
         base/DebugObject.c \
