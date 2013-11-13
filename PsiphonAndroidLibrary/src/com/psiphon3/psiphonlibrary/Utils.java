@@ -725,18 +725,22 @@ public class Utils
     private static final String CANDIDATE_10_SLASH_8 = "10.0.0.1";
     private static final String SUBNET_10_SLASH_8 = "10.0.0.0";
     private static final int PREFIX_LENGTH_10_SLASH_8 = 8;
+    private static final String ROUTER_10_SLASH_8 = "10.0.0.2";
 
     private static final String CANDIDATE_172_16_SLASH_12 = "172.16.0.1";
     private static final String SUBNET_172_16_SLASH_12 = "172.16.0.0";
     private static final int PREFIX_LENGTH_172_16_SLASH_12 = 12;
+    private static final String ROUTER_172_16_SLASH_12 = "172.16.0.2";
 
     private static final String CANDIDATE_192_168_SLASH_16 = "192.168.0.1";        
     private static final String SUBNET_192_168_SLASH_16 = "192.168.0.0";
     private static final int PREFIX_LENGTH_192_168_SLASH_16 = 16;
+    private static final String ROUTER_192_168_SLASH_16 = "192.168.0.2";
     
     private static final String CANDIDATE_169_254_1_SLASH_24 = "169.254.1.1";        
     private static final String SUBNET_169_254_1_SLASH_24 = "169.254.1.0";
     private static final int PREFIX_LENGTH_169_254_1_SLASH_24 = 24;
+    private static final String ROUTER_169_254_1_SLASH_24 = "169.254.1.2";
     
     public static String selectPrivateAddress()
     {
@@ -835,6 +839,27 @@ public class Utils
         return 0;        
     }
     
+    public static String getPrivateAddressRouter(String privateIpAddress)
+    {
+        if (0 == privateIpAddress.compareTo(CANDIDATE_10_SLASH_8))
+        {
+            return ROUTER_10_SLASH_8;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_172_16_SLASH_12))
+        {
+            return ROUTER_172_16_SLASH_12;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_192_168_SLASH_16))
+        {
+            return ROUTER_192_168_SLASH_16;
+        }
+        else if (0 == privateIpAddress.compareTo(CANDIDATE_169_254_1_SLASH_24))
+        {
+            return ROUTER_169_254_1_SLASH_24;
+        }
+        return null;
+    }
+
     public static String byteCountToDisplaySize(long bytes, boolean si)
     {
         // http://stackoverflow.com/questions/3758606/how-to-convert-byte-size-into-human-readable-format-in-java/3758880#3758880
