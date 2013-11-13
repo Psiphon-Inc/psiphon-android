@@ -290,7 +290,8 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_runTun2Socks(
     jstring vpnIpAddress,
     jstring vpnNetMask,
     jstring socksServerAddress,
-    jstring udpgwServerAddress)
+    jstring udpgwServerAddress,
+    jint udpgwTransparentDNS)
 {
     g_env = env;
 
@@ -305,6 +306,7 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_runTun2Socks(
     options.netif_netmask = (char*)vpnNetMaskStr;
     options.socks_server_addr = (char*)socksServerAddressStr;
     options.udpgw_remote_server_addr = (char*)udpgwServerAddressStr;
+    options.udpgw_transparent_dns = udpgwTransparentDNS;
     options.tun_fd = vpnInterfaceFileDescriptor;
     options.tun_mtu = vpnInterfaceMTU;
     options.set_signal = 0;
