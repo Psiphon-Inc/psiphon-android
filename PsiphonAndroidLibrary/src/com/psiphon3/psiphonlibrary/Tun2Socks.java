@@ -46,6 +46,7 @@ public class Tun2Socks
     private static String mVpnNetMask;
     private static String mSocksServerAddress;
     private static String mUdpgwServerAddress;
+    private static boolean mUdpgwTransparentDNS;
     
     // Note: this class isn't a singleton, but you can't run more
     // than one instance due to the use of global state (the lwip
@@ -58,7 +59,8 @@ public class Tun2Socks
             String vpnIpAddress,
             String vpnNetMask,
             String socksServerAddress,
-            String udpgwServerAddress)
+            String udpgwServerAddress,
+            boolean udpgwTransparentDNS)
     {
         // TODO: will be cleaner if/when TunnelCore is a singleton
         assert(mTunnelCore == null);
@@ -72,6 +74,7 @@ public class Tun2Socks
         mVpnNetMask = vpnNetMask;
         mSocksServerAddress = socksServerAddress;
         mUdpgwServerAddress = udpgwServerAddress;
+        mUdpgwTransparentDNS = udpgwTransparentDNS;
 
         mThread = new Thread(new Runnable()
         {
@@ -84,7 +87,8 @@ public class Tun2Socks
                         mVpnIpAddress,
                         mVpnNetMask,
                         mSocksServerAddress,
-                        mUdpgwServerAddress);
+                        mUdpgwServerAddress,
+                        mUdpgwTransparentDNS ? 1 : 0);
             	
                 // Unexpected error condition (Stop not signaled)
                 if (mTunnelCore != null)
@@ -138,7 +142,8 @@ public class Tun2Socks
             String vpnIpAddress,
             String vpnNetMask,
             String socksServerAddress,
-            String udpgwServerAddress);
+            String udpgwServerAddress,
+            int udpgwTransparentDNS);
 
     private native static void terminateTun2Socks();
     
