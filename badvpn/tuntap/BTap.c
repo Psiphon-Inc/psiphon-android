@@ -484,6 +484,9 @@ int BTap_InitWithFD (BTap *o, BReactor *reactor, int fd, int mtu, BTap_handler_e
     o->handler_error_user = handler_error_user;
     o->frame_mtu = mtu;
     o->fd = fd;
+    o->close_fd = 1;
+
+    // TODO: use BTap_Init2? Still some different behavior (we don't want the fcntl block; we do want close to be called)
 
     // The following is identical to BTap_Init...
 
@@ -498,7 +501,9 @@ int BTap_InitWithFD (BTap *o, BReactor *reactor, int fd, int mtu, BTap_handler_e
     goto success;
 
 fail1:
-    ASSERT_FORCE(close(o->fd) == 0)
+    if (o->close_fd) {
+        ASSERT_FORCE(close(o->fd) == 0)
+    }
 fail0:
     return 0;
 
