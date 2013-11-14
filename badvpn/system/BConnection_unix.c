@@ -201,7 +201,9 @@ static void connector_fd_handler (BConnector *o, int events)
     ASSERT_FORCE(result_len == sizeof(result))
     
     if (result != 0) {
-        BLog(BLOG_ERROR, "connection failed");
+        // PSIPHON
+        // BLog(BLOG_ERROR, "connection failed");
+        BLog(BLOG_WARNING, "connection failed");
         goto fail0;
     }
     
@@ -261,7 +263,9 @@ static void connection_send (BConnection *o)
             return;
         }
         
-        BLog(BLOG_ERROR, "send failed");
+        // PSIPHON
+        // BLog(BLOG_ERROR, "send failed");
+        BLog(BLOG_WARNING, "send failed");
         connection_report_error(o);
         return;
     }
@@ -301,7 +305,9 @@ static void connection_recv (BConnection *o)
             return;
         }
         
-        BLog(BLOG_ERROR, "recv failed");
+        // PSIPHON
+        // BLog(BLOG_ERROR, "recv failed");
+        BLog(BLOG_WARNING, "recv failed");
         connection_report_error(o);
         return;
     }
