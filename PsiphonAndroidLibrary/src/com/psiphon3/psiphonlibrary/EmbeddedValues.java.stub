@@ -78,10 +78,10 @@ cog.outl('public static String DATA_COLLECTION_INFO_URL = "%s";' % utils.get_emb
     public static String UPGRADE_SIGNATURE_PUBLIC_KEY = "";
 
     // To be shown to the user in the feedback page.
-    public static String GET_NEW_VERSION_URL = "https://s3.amazonaws.com/invalid_bucket_name/en.html";
+    public static String GET_NEW_VERSION_URL = "https://s3.amazonaws.com/invalid_bucket_name/en/index.html";
     public static String GET_NEW_VERSION_EMAIL = "get@example.com";
-    public static String FAQ_URL = "https://s3.amazonaws.com/invalid_bucket_name/en.html#other_frequently_asked_questions";
-    public static String DATA_COLLECTION_INFO_URL = "https://s3.amazonaws.com/invalid_bucket_name/en.html#what_user_information_does_psiphon_3_collect";
+    public static String FAQ_URL = "https://s3.amazonaws.com/invalid_bucket_name/en/faq.html";
+    public static String DATA_COLLECTION_INFO_URL = "https://s3.amazonaws.com/invalid_bucket_name/en/faq.html#information-collected";
 
 //[[[end]]] 
 
