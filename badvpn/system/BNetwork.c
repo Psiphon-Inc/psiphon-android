@@ -43,7 +43,11 @@
 
 #include <generated/blog_channel_BNetwork.h>
 
-static int bnetwork_initialized = 0;
+extern int bnetwork_initialized;
+
+#ifndef BADVPN_PLUGIN
+int bnetwork_initialized = 0;
+#endif
 
 int BNetwork_GlobalInit (void)
 {

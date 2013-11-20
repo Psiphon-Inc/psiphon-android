@@ -718,7 +718,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                     ParcelFileDescriptor vpnInterfaceFileDescriptor = null;
                     
                     if (!doVpnProtect(socket)
-                        || null == (vpnInterfaceFileDescriptor = doVpnBuilder(privateIpAddress, tunnelWholeDeviceDNSServer)))
+                        || null == (vpnInterfaceFileDescriptor = doVpnBuilder(privateIpAddress)))
                     {
                         // TODO: don't fail over to root mode in the not-really-broken revoked edge condition case (e.g., establish() returns null)?
                         runAgain = failOverToRootWholeDeviceMode();
@@ -736,10 +736,11 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                             this,
                             vpnInterfaceFileDescriptor,
                             PsiphonConstants.VPN_INTERFACE_MTU,
-                            privateIpAddress,
+                            Utils.getPrivateAddressRouter(privateIpAddress),
                             PsiphonConstants.VPN_INTERFACE_NETMASK,
                             socksServerAddress,
-                            udpgwServerAddress);
+                            udpgwServerAddress,
+                            true);
                     
                     // TODO: detect and report: tun2Socks.Start failed; tun2socks run() unexpected exit
     
@@ -1308,7 +1309,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
     }
     
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    private ParcelFileDescriptor doVpnBuilder(String privateIpAddress, String tunnelWholeDeviceDNSServer)
+    private ParcelFileDescriptor doVpnBuilder(String privateIpAddress)
     {
         // *Must* have a parent service for this mode
         assert (m_parentService != null);
@@ -1321,6 +1322,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         {
             String subnet = Utils.getPrivateAddressSubnet(privateIpAddress);
             int prefixLength = Utils.getPrivateAddressPrefixLength(privateIpAddress);
+            String router = Utils.getPrivateAddressRouter(privateIpAddress);
 
             // Set the locale to English (or probably any other language that
             // uses Hindu-Arabic (aka Latin) numerals).
@@ -1336,8 +1338,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                     .addAddress(privateIpAddress, prefixLength)
                     .addRoute("0.0.0.0", 0)
                     .addRoute(subnet, prefixLength)
-                    .addDnsServer(tunnelWholeDeviceDNSServer)
-                    .addRoute(tunnelWholeDeviceDNSServer, 32)
+                    .addDnsServer(router)
                     .establish();
             
             if (vpnInterfaceFileDescriptor == null)

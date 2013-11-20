@@ -326,6 +326,13 @@ void NCDModuleInst_Backend_LogVarArg (NCDModuleInst *n, int channel, int level, 
     BLog_LogViaFuncVarArg(n->params->logfunc, n, channel, level, fmt, vl);
 }
 
+BLogContext NCDModuleInst_Backend_LogContext (NCDModuleInst *n)
+{
+    DebugObject_Access(&n->d_obj);
+    
+    return BLog_MakeContext(n->params->logfunc, n);
+}
+
 void NCDModuleInst_Backend_InterpExit (NCDModuleInst *n, int exit_code)
 {
     DebugObject_Access(&n->d_obj);
@@ -354,6 +361,15 @@ btime_t NCDModuleInst_Backend_InterpGetRetryTime (NCDModuleInst *n)
     inst_assert_backend(n);
     
     return n->params->iparams->func_interp_getretrytime(n->params->iparams->user);
+}
+
+int NCDModuleInst_Backend_InterpLoadGroup (NCDModuleInst *n, const struct NCDModuleGroup *group)
+{
+    DebugObject_Access(&n->d_obj);
+    inst_assert_backend(n);
+    ASSERT(group)
+    
+    return n->params->iparams->func_loadgroup(n->params->iparams->user, group);
 }
 
 int NCDModuleProcess_InitId (NCDModuleProcess *o, NCDModuleInst *n, NCD_string_id_t template_name, NCDValRef args, NCDModuleProcess_handler_event handler_event)
