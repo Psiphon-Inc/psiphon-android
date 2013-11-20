@@ -132,10 +132,16 @@
   <string name="region_name_jp">ژاپن</string>
   <string name="region_name_hk">هنگ کنگ</string>
   <string name="region_name_sg">سنگاپور</string>
+  <string name="region_name_nl">هلند</string>
   <string name="about">درباره سایفون</string>
   <string name="feedback">نظر</string>
   <string name="tunnel_whole_device_toggle">تونل تمام گوشی (نیاز به اندروید روت شده یا ورژن ٤.٠ به بالا) </string>
   <string name="region_selector">منطقۀ خود را انتخاب کنید</string>
   <string name="network_proxy_connect_exception">اتصال به شبکه اچ تی تی پی پراکسی امکان پذیر نبود: %s</string>
   <string name="tunnel_whole_device_exception">گوشی شما امکان تونل تمام گوشی را پشتیبانی نمیکند. ببخشید.</string>
+  <string name="run_polipo_failed">اجرای پولیپو موفق نبود: %s</string>
+  <string name="wdm_force_iptables_toggle">مجبور تونل تمام گوشی </string>
+  <string name="http_prefix_toggle">ترافیک را مثل http نشان بده</string>
+  <string name="browser_only_mode_kitkat_prompt_title">ببخشید! </string>
+  <string name="browser_only_mode_kitkat_prompt_message">استفاده از حالت فقط مرورگر سایفون در اندورید 4.4 به بالا امکان پذیر نیست. شما میتوانید  همچنان از تونل تمام گوشی سایفون استفاده کنید.  </string>
 </resources>

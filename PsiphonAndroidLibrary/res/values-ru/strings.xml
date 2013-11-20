@@ -132,10 +132,14 @@
   <string name="region_name_jp">Япония</string>
   <string name="region_name_hk">Гонконг</string>
   <string name="region_name_sg">Сингапур</string>
+  <string name="region_name_nl">Нидерланды</string>
   <string name="about">Что такое Psiphon</string>
   <string name="feedback">Отзыв</string>
   <string name="tunnel_whole_device_toggle">Туннелирование всех интернет соединений(требует права root или Android 4.0+)</string>
   <string name="region_selector">Выберите регион</string>
   <string name="network_proxy_connect_exception">Ошибка соединения с HTTP прокси сети: %s</string>
   <string name="tunnel_whole_device_exception">Ваше устройство не поддерживает туннелирование всех интернет соединений без прав root.</string>
+  <string name="run_polipo_failed">Ошибка запуска Polipo: %s</string>
+  <string name="wdm_force_iptables_toggle">Туннелировать все интернет соединения методом root</string>
+  <string name="http_prefix_toggle">Симулировать HTTP </string>
 </resources>

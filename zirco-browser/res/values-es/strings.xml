@@ -364,37 +364,37 @@
   <string name="Main.FileChooserPrompt">Seleccione archivo a subir</string>
   <string name="Commons.HistoryBookmarksExportSDCardConfirmation">Exportar historial y marcadores</string>
   <string name="Commons.HistoryBookmarksExportSDCardDoneTitle">Exportación finalizada</string>
-  <string name="Commons.HistoryBookmarksExportSDCardDoneMessage">Su historia y favoritos fueron guardados en %s.</string>
-  <string name="Commons.HistoryBookmarksExportSDCardFailedTitle">Falló la exportación</string>
+  <string name="Commons.HistoryBookmarksExportSDCardDoneMessage">Su historial y marcadores han sido guardados en %s.</string>
+  <string name="Commons.HistoryBookmarksExportSDCardFailedTitle">Fallo al exportar</string>
   <string name="Commons.HistoryBookmarksFailedMessage">Mensaje de error: %s.</string>
-  <string name="Commons.HistoryBookmarksImportSDCardFailedTitle">Falló la importación</string>
-  <string name="Commons.OperationCanBeLongMessage">Esta operación puede tardar. ¿Quiere proceder?</string>
-  <string name="PreferencesActivity.ToolsHistoryBookmarksPreferenceTitle">Administrar favoritos e historia</string>
-  <string name="PreferencesActivity.ToolsHistoryBookmarksPreferenceSummary">Importar, exportar, eliminar historia y favoritos.</string>
-  <string name="PreferencesActivity.ExportHistoryBookmarksPreferenceTitle">Exportar favoritos e historia</string>
-  <string name="PreferencesActivity.ExportHistoryBookmarksPreferenceSummary">Exportar favoritos e historia a la tarjeta SD.</string>
-  <string name="PreferencesActivity.ImportHistoryBookmarksPreferenceTitle">Importar favoritos e historia</string>
-  <string name="PreferencesActivity.ImportHistoryBookmarksPreferenceSummary">Importar favoritos e historia de la tarjeta SD.</string>
-  <string name="PreferencesActivity.PrivacyClearHistoryBookmarksTitle">Eliminar historia y/o favoritos</string>
-  <string name="PreferencesActivity.SummaryCannotBeUndone">Emplee con precaución, esta acción no se puede revertir.</string>
-  <string name="Commons.ClearingHistoryBookmarks">Eliminando historia y/o favoritos...</string>
-  <string name="Commons.ClearHistoryBookmarks">Eliminar historia y/o favoritos</string>
-  <string name="Commons.Bookmarks">Favoritos</string>
-  <string name="Commons.History">Historia</string>
+  <string name="Commons.HistoryBookmarksImportSDCardFailedTitle">Fallo al importar</string>
+  <string name="Commons.OperationCanBeLongMessage">Esta operación puede tardar algún tiempo. ¿Quiere proceder?</string>
+  <string name="PreferencesActivity.ToolsHistoryBookmarksPreferenceTitle">Administrar marcadores e historial</string>
+  <string name="PreferencesActivity.ToolsHistoryBookmarksPreferenceSummary">Importar, exportar, vaciar historial y marcadores.</string>
+  <string name="PreferencesActivity.ExportHistoryBookmarksPreferenceTitle">Exportar marcadores e historial</string>
+  <string name="PreferencesActivity.ExportHistoryBookmarksPreferenceSummary">Exporta marcadores e historial a la tarjeta SD.</string>
+  <string name="PreferencesActivity.ImportHistoryBookmarksPreferenceTitle">Importar marcadores e historial</string>
+  <string name="PreferencesActivity.ImportHistoryBookmarksPreferenceSummary">Importa marcadores e historial desde la tarjeta SD.</string>
+  <string name="PreferencesActivity.PrivacyClearHistoryBookmarksTitle">Vaciar historial y/o marcadores</string>
+  <string name="PreferencesActivity.SummaryCannotBeUndone">Úselo con precaución, esta acción no se puede revertir.</string>
+  <string name="Commons.ClearingHistoryBookmarks">Vaciando historial y/o marcadores...</string>
+  <string name="Commons.ClearHistoryBookmarks">Vaciar historial y/o marcadores</string>
+  <string name="Commons.Bookmarks">Marcadores</string>
+  <string name="Commons.History">Historial</string>
   <string name="Commons.All">Todos</string>
-  <string name="Commons.ExportingHistoryBookmarks">Exportando historia y favoritos...</string>
-  <string name="Commons.ImportingHistoryBookmarks">Importando historia y favoritos..</string>
-  <string name="Commons.ImportHistoryBookmarksSource">Elegir la fuente de importación</string>
-  <string name="Commons.ClearingBookmarks">Borrando favoritos...</string>
-  <string name="DownloadListActivity.RemoveCompletedDownloads">Eliminar descargas finalizadas</string>
-  <string name="QuickAction.Find">Encontrar en la página</string>
-  <string name="SearchDialog.Hint">Encontrar en la página</string>
+  <string name="Commons.ExportingHistoryBookmarks">Exportando historial y marcadores...</string>
+  <string name="Commons.ImportingHistoryBookmarks">Importando historial y marcadores...</string>
+  <string name="Commons.ImportHistoryBookmarksSource">Elija la fuente para importar</string>
+  <string name="Commons.ClearingBookmarks">Vaciando marcadores...</string>
+  <string name="DownloadListActivity.RemoveCompletedDownloads">Quitar descargas finalizadas</string>
+  <string name="QuickAction.Find">Buscar en la página</string>
+  <string name="SearchDialog.Hint">Buscar en la página</string>
   <!--0.4.2-->
   <string name="PreferencesActivity.AdvancedCategoryTitle">Avanzado</string>
-  <string name="PreferencesActivity.BookmarksDatabaseTitle">Almacén de favoritos</string>
-  <string name="PreferencesActivity.BookmarksDatabaseSummary">Elija la modalidad de almacenamiento de favoritos.</string>
-  <string name="PreferencesActivity.BookmarksDatabaseStock">Favoritos de Android</string>
-  <string name="PreferencesActivity.BookmarksDatabaseInternal">Interna</string>
+  <string name="PreferencesActivity.BookmarksDatabaseTitle">Almacén de marcadores</string>
+  <string name="PreferencesActivity.BookmarksDatabaseSummary">Elija la modalidad de almacenamiento de marcadores.</string>
+  <string name="PreferencesActivity.BookmarksDatabaseStock">Marcadores de Android</string>
+  <string name="PreferencesActivity.BookmarksDatabaseInternal">Interno</string>
   <string-array name="BookmarksDatabaseEntries">
     <item>@string/PreferencesActivity.BookmarksDatabaseStock</item>
     <item>@string/PreferencesActivity.BookmarksDatabaseInternal</item>
@@ -403,22 +403,22 @@
     <item>STOCK</item>
     <item>INTERNAL</item>
   </string-array>
-  <string name="HistoryListActivity.BookmarkAdded">Agregado a favoritos.</string>
-  <string name="HistoryListActivity.BookmarkRemoved">Eliminado de favoritos.</string>
-  <string name="HttpAuthenticationDialog.DialogTitle">Registrarse a %1$s - %2$s</string>
+  <string name="HistoryListActivity.BookmarkAdded">Agregado a marcadores.</string>
+  <string name="HistoryListActivity.BookmarkRemoved">Eliminado de marcadores.</string>
+  <string name="HttpAuthenticationDialog.DialogTitle">Autentificarse en %1$s - %2$s</string>
   <string name="HttpAuthenticationDialog.UserName">Nombre</string>
   <string name="HttpAuthenticationDialog.Password">Contraseña</string>
   <string name="Commons.Proceed">Proceder</string>
-  <string name="PreferencesActivity.EnableProxySettings">Activar proxy del sistema</string>
-  <string name="PreferencesActivity.EnableProxySettingsSummary">Activar o inactivar el soporte a los ajustes del proxy.</string>
-  <string name="ProxySettings.EnablingProxySettings">Activando parámetros del proxy...</string>
-  <string name="ProxySettings.ErrorProxySettingsNotValid">Parámetros del proxy inválidos.</string>
-  <string name="ProxySettings.ErrorProxyServerNotReachable">No se puede contactar el proxy.</string>
-  <string name="ProxySettings.ErrorProxyInternetNotReachable">No se puede acceder a la red a través del proxy especificado.</string>
-  <string name="ProxySettings.ProxySettingsEnabled">Los parámetros del proxy fueron activados con éxito.</string>
+  <string name="PreferencesActivity.EnableProxySettings">Habilitar proxy del sistema</string>
+  <string name="PreferencesActivity.EnableProxySettingsSummary">Habilita o deshabilita el soporte para ajustes de proxy del sistema</string>
+  <string name="ProxySettings.EnablingProxySettings">Habilitando ajustes de proxy...</string>
+  <string name="ProxySettings.ErrorProxySettingsNotValid">Ajustes de proxy del sistema no válidos.</string>
+  <string name="ProxySettings.ErrorProxyServerNotReachable">No se pudo contactar con el servidor proxy.</string>
+  <string name="ProxySettings.ErrorProxyInternetNotReachable">No se pudo acceder a la web a través del servidor proxy especificado.</string>
+  <string name="ProxySettings.ProxySettingsEnabled">Los ajustes del proxy fueron activados con éxito.</string>
   <string name="AboutActivity.ContributorsText">Colaboradores del Navegador Zirco:\n   • LeChuck (parámetros del Proxy);\n   • Martin (desplazamiento con teclas de volumen, traducción al alemán);\n   • Isaac L. (traducción al español);</string>
-  <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Pestañas de restauración</string>
-  <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">Si se marca, las pestañas se restaurarán cuando estén disponibles.</string>
+  <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Restaurar pestañas</string>
+  <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">Si está marcado, las pestañas se restaurarán cuando estén disponibles.</string>
   <!--0.4.3-->
   <string name="VideoLoading">Cargando video\u2026</string>
   <string name="PreferencesActivity.DesktopViewCategoryTitle">Ajustes de la vista de escritorio</string>
@@ -427,6 +427,6 @@
   <string name="DesktopViewListActivity.Title">Navegador Psiphon - Lista de sitios web para vista de escritorio</string>
   <string name="DesktopViewListActivity.ListEmpty">La lista está vacía.</string>
   <string name="DesktopViewListActivity.AddMessage">Agregar un sitio web</string>
-  <string name="DesktopViewListActivity.ClearMessage">Eliminar todos los sitios</string>
+  <string name="DesktopViewListActivity.ClearMessage">Limpiar todos los sitios</string>
   <string name="Main.MenuFeedback">Comentarios</string>
 </resources>
