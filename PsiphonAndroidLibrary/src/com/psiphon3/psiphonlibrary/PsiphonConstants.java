@@ -82,7 +82,7 @@ public class PsiphonConstants
 
     public final static int UDPGW_SERVER_PORT = 7300;
     
-    public final static String TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS = "8.8.8.8";
+    public final static String TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS = "8.8.4.4";
     
     public final static long PREEMPTIVE_RECONNECT_LIFETIME_ADJUSTMENT_MILLISECONDS = -5000;
 

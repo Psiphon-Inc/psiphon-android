@@ -53,6 +53,7 @@
 #include <misc/debug.h>
 #include <misc/print_macros.h>
 #include <misc/read_write_int.h>
+#include <misc/compare.h>
 
 #define BADDR_TYPE_NONE 0
 #define BADDR_TYPE_IPV4 1
@@ -129,28 +130,52 @@ typedef struct {
 } BAddr;
 
 /**
- * Initializes an invalid address.
+ * Makes an invalid address.
+ */
+static BAddr BAddr_MakeNone (void);
+
+/**
+ * Makes an IPv4 address.
+ *
+ * @param ip IP address in network byte order
+ * @param port port number in network byte order
+ */
+static BAddr BAddr_MakeIPv4 (uint32_t ip, uint16_t port);
+
+/**
+ * Makes an IPv6 address.
+ *
+ * @param ip IP address (16 bytes)
+ * @param port port number in network byte order
+ */
+static BAddr BAddr_MakeIPv6 (const uint8_t *ip, uint16_t port);
+
+/**
+ * Makes an address from a BIPAddr and port number.
+ *
+ * @param ipaddr the BIPAddr
+ * @param port port number in network byte order
+ */
+static BAddr BAddr_MakeFromIpaddrAndPort (BIPAddr ipaddr, uint16_t port);
+
+/**
+ * Deprecated, use BAddr_MakeNone.
  */
 static void BAddr_InitNone (BAddr *addr);
 
 /**
- * Initializes an IPv4 address.
- *
- * @param addr the object
- * @param ip IP address in network byte order
- * @param port port number in network byte order
+ * Deprecated, use BAddr_MakeIPv4.
  */
 static void BAddr_InitIPv4 (BAddr *addr, uint32_t ip, uint16_t port);
 
 /**
- * Initializes an IPv6 address.
- *
- * @param addr the object
- * @param ip 16-byte IP address in network byte order
- * @param port port number in network byte order
+ * Deprecated, use BAddr_MakeIPv6.
  */
 static void BAddr_InitIPv6 (BAddr *addr, uint8_t *ip, uint16_t port);
 
+/**
+ * Deprecated, use BAddr_MakeFromIpaddrAndPort.
+ */
 static void BAddr_InitFromIpaddrAndPort (BAddr *addr, BIPAddr ipaddr, uint16_t port);
 
 /**
@@ -251,6 +276,8 @@ static int BAddr_Parse2 (BAddr *addr, char *str, char *name, int name_len, int n
 static int BAddr_Parse (BAddr *addr, char *str, char *name, int name_len) WARN_UNUSED;
 
 static int BAddr_Compare (BAddr *addr1, BAddr *addr2);
+
+static int BAddr_CompareOrder (BAddr *addr1, BAddr *addr2);
 
 void BIPAddr_InitInvalid (BIPAddr *addr)
 {
@@ -456,41 +483,68 @@ void BIPAddr_Print (BIPAddr *addr, char *out)
     }
 }
 
+BAddr BAddr_MakeNone (void)
+{
+    BAddr addr;
+    addr.type = BADDR_TYPE_NONE;
+    return addr;
+}
+
+BAddr BAddr_MakeIPv4 (uint32_t ip, uint16_t port)
+{
+    BAddr addr;
+    addr.type = BADDR_TYPE_IPV4;
+    addr.ipv4.ip = ip;
+    addr.ipv4.port = port;
+    return addr;
+}
+
+BAddr BAddr_MakeIPv6 (const uint8_t *ip, uint16_t port)
+{
+    BAddr addr;
+    addr.type = BADDR_TYPE_IPV6;
+    memcpy(addr.ipv6.ip, ip, 16);
+    addr.ipv6.port = port;
+    return addr;
+}
+
+BAddr BAddr_MakeFromIpaddrAndPort (BIPAddr ipaddr, uint16_t port)
+{
+    BIPAddr_Assert(&ipaddr);
+    
+    switch (ipaddr.type) {
+        case BADDR_TYPE_NONE:
+            return BAddr_MakeNone();
+        case BADDR_TYPE_IPV4:
+            return BAddr_MakeIPv4(ipaddr.ipv4, port);
+        case BADDR_TYPE_IPV6:
+            return BAddr_MakeIPv6(ipaddr.ipv6, port);
+        default:
+            ASSERT(0);
+            return BAddr_MakeNone();
+    }
+}
+
 void BAddr_InitNone (BAddr *addr)
 {
-    addr->type = BADDR_TYPE_NONE;
+    *addr = BAddr_MakeNone();
 }
 
 void BAddr_InitIPv4 (BAddr *addr, uint32_t ip, uint16_t port)
 {
-    addr->type = BADDR_TYPE_IPV4;
-    addr->ipv4.ip = ip;
-    addr->ipv4.port = port;
+    *addr = BAddr_MakeIPv4(ip, port);
 }
 
 void BAddr_InitIPv6 (BAddr *addr, uint8_t *ip, uint16_t port)
 {
-    addr->type = BADDR_TYPE_IPV6;
-    memcpy(addr->ipv6.ip, ip, 16);
-    addr->ipv6.port = port;
+    *addr = BAddr_MakeIPv6(ip, port);
 }
 
 void BAddr_InitFromIpaddrAndPort (BAddr *addr, BIPAddr ipaddr, uint16_t port)
 {
     BIPAddr_Assert(&ipaddr);
     
-    switch (ipaddr.type) {
-        case BADDR_TYPE_NONE:
-            BAddr_InitNone(addr);
-            break;
-        case BADDR_TYPE_IPV4:
-            BAddr_InitIPv4(addr, ipaddr.ipv4, port);
-            break;
-        case BADDR_TYPE_IPV6:
-            BAddr_InitIPv6(addr, ipaddr.ipv6, port);
-            break;
-        default: ASSERT(0);
-    }
+    *addr = BAddr_MakeFromIpaddrAndPort(ipaddr, port);
 }
 
 #ifdef BADVPN_LINUX
@@ -708,6 +762,46 @@ int BAddr_Compare (BAddr *addr1, BAddr *addr2)
             return (!memcmp(addr1->ipv6.ip, addr2->ipv6.ip, sizeof(addr1->ipv6.ip)) && addr1->ipv6.port == addr2->ipv6.port);
         default:
             return 0;
+    }
+}
+
+int BAddr_CompareOrder (BAddr *addr1, BAddr *addr2)
+{
+    BAddr_Assert(addr1);
+    BAddr_Assert(addr2);
+    
+    int cmp = B_COMPARE(addr1->type, addr2->type);
+    if (cmp) {
+        return cmp;
+    }
+    
+    switch (addr1->type) {
+        case BADDR_TYPE_NONE: {
+            return 0;
+        } break;
+        case BADDR_TYPE_IPV4: {
+            uint32_t ip1 = ntoh32(addr1->ipv4.ip);
+            uint32_t ip2 = ntoh32(addr2->ipv4.ip);
+            cmp = B_COMPARE(ip1, ip2);
+            if (cmp) {
+                return cmp;
+            }
+            uint16_t port1 = ntoh16(addr1->ipv4.port);
+            uint16_t port2 = ntoh16(addr2->ipv4.port);
+            return B_COMPARE(port1, port2);
+        } break;
+        case BADDR_TYPE_IPV6: {
+            cmp = memcmp(addr1->ipv6.ip, addr2->ipv6.ip, sizeof(addr1->ipv6.ip));
+            if (cmp) {
+                return B_COMPARE(cmp, 0);
+            }
+            uint16_t port1 = ntoh16(addr1->ipv6.port);
+            uint16_t port2 = ntoh16(addr2->ipv6.port);
+            return B_COMPARE(port1, port2);
+        } break;
+        default: {
+            return 0;
+        } break;
     }
 }
 

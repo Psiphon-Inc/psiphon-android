@@ -59,6 +59,7 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         new Region("DE", R.string.region_name_de, R.drawable.flag_de, false),
         new Region("HK", R.string.region_name_hk, R.drawable.flag_hk, false),
         new Region("SG", R.string.region_name_sg, R.drawable.flag_sg, false),
+        new Region("NL", R.string.region_name_nl, R.drawable.flag_nl, false),
     };
     
     private static boolean initialized = false;
