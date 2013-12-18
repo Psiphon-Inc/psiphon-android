@@ -1278,11 +1278,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         if (!((TunnelVpnService)m_parentService).protect(socket))
         {
             String networkTypeName = Utils.getNetworkTypeName(m_parentService);
-            if (!networkTypeName.isEmpty())
-            {
-                MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE,
-                        "protect socket failed (" + networkTypeName + ")");
-            }
+            MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE,
+                    "protect socket failed (" + networkTypeName + ")");
             return false;
         }
         return true;
@@ -1297,11 +1294,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         if (!((TunnelVpnService)m_parentService).protect(socket))
         {
             String networkTypeName = Utils.getNetworkTypeName(m_parentService);
-            if (!networkTypeName.isEmpty())
-            {
-                MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE,
-                        "protect datagram socket failed (" + networkTypeName + ")");
-            }
+            MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE,
+                    "protect datagram socket failed (" + networkTypeName + ")");
             return false;
         }
         return true;
