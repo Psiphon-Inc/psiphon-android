@@ -134,6 +134,7 @@ public class WebViewProxySettings
     }
 
     // http://stackoverflow.com/questions/19979578/android-webview-set-proxy-programatically-kitkat
+    // http://src.chromium.org/viewvc/chrome/trunk/src/net/android/java/src/org/chromium/net/ProxyChangeListener.java
     @TargetApi(Build.VERSION_CODES.KITKAT)
     @SuppressWarnings("rawtypes")
     private static boolean setWebkitProxyKitKat(Context appContext, String host, int port)
