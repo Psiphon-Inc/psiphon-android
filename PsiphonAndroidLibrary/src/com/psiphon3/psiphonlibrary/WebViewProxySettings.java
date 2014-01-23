@@ -21,14 +21,20 @@ package com.psiphon3.psiphonlibrary;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.apache.http.HttpHost;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Proxy;
 import android.os.Build;
+import android.os.Parcelable;
+import android.util.ArrayMap;
 
 public class WebViewProxySettings 
 {
@@ -53,13 +59,17 @@ public class WebViewProxySettings
     {
         boolean worked = false;
 
-        if (Build.VERSION.SDK_INT < 14) 
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH)
         {
             worked = setWebkitProxyGingerbread(ctx, host, port);
         }
-        else
+        else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT)
         {
             worked = setWebkitProxyICS(ctx, host, port);
+        }
+        else
+        {
+            worked = setWebkitProxyKitKat(ctx.getApplicationContext(), host, port);
         }
         
         return worked;
@@ -120,6 +130,80 @@ public class WebViewProxySettings
             MyLog.d("Exception setting WebKit proxy through android.webkit.Network: " + e.toString());
         }
         
+        return false;
+    }
+
+    // http://stackoverflow.com/questions/19979578/android-webview-set-proxy-programatically-kitkat
+    // http://src.chromium.org/viewvc/chrome/trunk/src/net/android/java/src/org/chromium/net/ProxyChangeListener.java
+    @TargetApi(Build.VERSION_CODES.KITKAT)
+    @SuppressWarnings("rawtypes")
+    private static boolean setWebkitProxyKitKat(Context appContext, String host, int port)
+    {
+        System.setProperty("http.proxyHost", host);
+        System.setProperty("http.proxyPort", port + "");
+        System.setProperty("https.proxyHost", host);
+        System.setProperty("https.proxyPort", port + "");
+        try
+        {
+            Class applicationClass = Class.forName("android.app.Application");
+            Field loadedApkField = applicationClass.getDeclaredField("mLoadedApk");
+            loadedApkField.setAccessible(true);
+            Object loadedApk = loadedApkField.get(appContext);
+            Class loadedApkClass = Class.forName("android.app.LoadedApk");
+            Field receiversField = loadedApkClass.getDeclaredField("mReceivers");
+            receiversField.setAccessible(true);
+            ArrayMap receivers = (ArrayMap) receiversField.get(loadedApk);
+            for (Object receiverMap : receivers.values())
+            {
+                for (Object receiver : ((ArrayMap) receiverMap).keySet())
+                {
+                    Class receiverClass = receiver.getClass();
+                    if (receiverClass.getName().contains("ProxyChangeListener"))
+                    {
+                        Method onReceiveMethod = receiverClass.getDeclaredMethod("onReceive", Context.class, Intent.class);
+                        Intent intent = new Intent(Proxy.PROXY_CHANGE_ACTION);
+
+                        final String CLASS_NAME = "android.net.ProxyProperties";
+                        Class proxyPropertiesClass = Class.forName(CLASS_NAME);
+                        Constructor constructor = proxyPropertiesClass.getConstructor(String.class, Integer.TYPE, String.class);
+                        constructor.setAccessible(true);
+                        Object proxyProperties = constructor.newInstance(host, port, null);
+                        intent.putExtra("proxy", (Parcelable) proxyProperties);
+
+                        onReceiveMethod.invoke(receiver, appContext, intent);
+                    }
+                }
+            }
+            return true;
+        }
+        catch (ClassNotFoundException e)
+        {
+            MyLog.d("Exception setting WebKit proxy on KitKat through ProxyChangeListener: " + e.toString());
+        }
+        catch (NoSuchFieldException e)
+        {
+            MyLog.d("Exception setting WebKit proxy on KitKat through ProxyChangeListener: " + e.toString());
+        }
+        catch (IllegalAccessException e)
+        {
+            MyLog.d("Exception setting WebKit proxy on KitKat through ProxyChangeListener: " + e.toString());
+        }
+        catch (IllegalArgumentException e)
+        {
+            MyLog.d("Exception setting WebKit proxy on KitKat through ProxyChangeListener: " + e.toString());
+        }
+        catch (NoSuchMethodException e)
+        {
+            MyLog.d("Exception setting WebKit proxy on KitKat through ProxyChangeListener: " + e.toString());
+        }
+        catch (InvocationTargetException e)
+        {
+            MyLog.d("Exception setting WebKit proxy on KitKat through ProxyChangeListener: " + e.toString());
+        }
+        catch (InstantiationException e)
+        {
+            MyLog.d("Exception setting WebKit proxy on KitKat through ProxyChangeListener: " + e.toString());
+        }
         return false;
     }
 
