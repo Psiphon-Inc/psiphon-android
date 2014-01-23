@@ -174,19 +174,29 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             assert(false);                
         }
 
-        // TODO: default intent if m_eventsInterface is null or returns a null pendingSignalNotification Intent?
-        // NOTE that setLatestEventInfo requires a PendingIntent.  And that calls to notify (ie from setState below)
-        // require a contentView which is set by setLatestEventInfo.
-        assert(m_eventsInterface != null);
-        Intent activityIntent = m_eventsInterface.pendingSignalNotification(m_parentService);
-        assert(activityIntent != null);
+        Intent activityIntent = null;
+        if (m_eventsInterface != null)
+        {
+            activityIntent = m_eventsInterface.pendingSignalNotification(m_parentService);
+        }
+        
+        if (activityIntent == null)
+        {
+            // Default intent if m_eventsInterface is null or returns a null pendingSignalNotification Intent.
+            // This intent will launch nothing.
+            // NOTE that setLatestEventInfo requires a PendingIntent.  And that calls to notify (ie from setState below)
+            // require a contentView which is set by setLatestEventInfo.
+            activityIntent = new Intent();
+            activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
+    
         PendingIntent invokeActivityIntent = 
                 PendingIntent.getActivity(
                     m_parentService,
                     0,
                     activityIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT);
-    
+
         Notification notification =
                 new Notification(
                         iconID,
