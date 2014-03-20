@@ -570,7 +570,7 @@ public abstract class MainBase
             PsiphonData.getPsiphonData().setWdmForceIptables(m_isRooted && wdmForceIptablesPreference);
 
             boolean httpPrefixPreference =
-                    PreferenceManager.getDefaultSharedPreferences(this).getBoolean(HTTP_PREFIX_PREFERENCE, true);
+                    PreferenceManager.getDefaultSharedPreferences(this).getBoolean(HTTP_PREFIX_PREFERENCE, false);
             m_httpPrefixToggle.setChecked(httpPrefixPreference);
             PsiphonData.getPsiphonData().setHttpPrefix(httpPrefixPreference);
             
