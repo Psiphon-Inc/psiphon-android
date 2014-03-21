@@ -68,6 +68,7 @@ public class MainActivity
     private boolean m_showSplashScreen = false;
     private Handler m_handler = new Handler();
     private TunnelCore m_tunnelCore;
+    private Runnable m_infiniteToast = null;
 
     // Infinite toast
     private void showSplashScreen()
@@ -96,26 +97,25 @@ public class MainActivity
         splashScreen.setDuration(Toast.LENGTH_SHORT);
         splashScreen.setView(layout);
 
-        Thread t = new Thread()
-        {
-            public void run()
+        if (m_infiniteToast == null) {
+            m_infiniteToast = new Runnable()
             {
-                try
+                @Override
+                public void run()
                 {
-                    while (m_showSplashScreen)
+                    if (m_showSplashScreen)
                     {
                         splashScreen.show();
-                        sleep(1850);
+                        m_handler.postDelayed(m_infiniteToast, 1850);
+                    }
+                    else
+                    {
+                        m_textView = null;
                     }
                 }
-                catch (Exception e)
-                {
-                }
-
-                m_textView = null;
-            }
-        };
-        t.start();
+            };
+        }
+        m_handler.post(m_infiniteToast);
     }
 
     private void dismissSplashScreen()
@@ -171,7 +171,7 @@ public class MainActivity
     protected void onDestroy()
     {
         super.onDestroy();
-
+        
         m_tunnelCore.stopTunnel();
         m_tunnelCore.onDestroy();
         m_tunnelCore = null;
@@ -198,9 +198,8 @@ public class MainActivity
     @Override
     protected void onPause()
     {
-        super.onPause();
-
         dismissSplashScreen();
+        super.onPause();
     }
 
     @Override
