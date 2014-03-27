@@ -33,11 +33,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -47,7 +47,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
@@ -59,76 +58,91 @@ import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 public class MainActivity 
-    extends com.psiphon3.psiphonlibrary.MainBase.Activity 
+    extends com.psiphon3.psiphonlibrary.MainBase.SupportFragmentActivity 
     implements IEvents
 {
-    private boolean m_loadedWebView = false;
-    private WebView m_webView;
-    private TextView m_textView;
-    private Handler m_handler = new Handler();
+    private enum Display {SPLASH_SCREEN, PROXIED_WEB_VIEW};
+    private Display m_currentDisplay;
+    private SplashScreen m_splashScreen;
+    private ProxiedWebView m_proxiedWebView;
     private TunnelCore m_tunnelCore;
-    private Toast m_splashScreen;
-    private Runnable m_infiniteToast;
+    private Handler m_handler;
+    boolean m_initializedWebApp = false;
 
-    private void makeSplashScreen()
+    public static class SplashScreen extends Fragment
     {
-        LayoutInflater inflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View layout = inflater.inflate(R.layout.splash_screen, (ViewGroup)findViewById(R.id.splash_screen));
-        m_textView = (TextView)layout.findViewById(R.id.splash_screen_text);
+        public static final String FRAGMENT_TAG = "SplashScreen";
 
-        // Set background to match (0,0) splash image pixel color
-        ImageView imageView = (ImageView)layout.findViewById(R.id.splash_screen_image);
-        Bitmap bitmap = ((BitmapDrawable)imageView.getDrawable()).getBitmap();
-        int pixel = bitmap.getPixel(0, 0);
-        layout.setBackgroundColor(pixel);
+        private TextView m_textView;
 
-        m_splashScreen = new Toast(this);        
-        m_splashScreen.setGravity(Gravity.FILL, 0, 0);
-        m_splashScreen.setDuration(Toast.LENGTH_SHORT);
-        m_splashScreen.setView(layout);
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        {
+            View view = inflater.inflate(R.layout.splash_screen, container, false);
 
-        m_infiniteToast = new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    m_splashScreen.show();
-                    m_handler.postDelayed(m_infiniteToast, 1850);
-                }
-            };
+            m_textView = (TextView)view.findViewById(R.id.splash_screen_text);
+
+            // Set background to match (0,0) splash image pixel color
+            ImageView imageView = (ImageView)view.findViewById(R.id.splash_screen_image);
+            Bitmap bitmap = ((BitmapDrawable)imageView.getDrawable()).getBitmap();
+            int pixel = bitmap.getPixel(0, 0);
+            view.setBackgroundColor(pixel);
+            
+            setRetainInstance(true);
+
+            return view;
+        }
+        
+        public void setSplashText(String text)
+        {
+            m_textView.setText(text);
+        }
     }
     
-    private void showSplashScreen()
+    public static class ProxiedWebView extends Fragment
     {
-        dismissSplashScreen();
-        m_handler.post(m_infiniteToast);
-    }
+        public static final String FRAGMENT_TAG = "ProxiedWebView";
 
-    private void dismissSplashScreen()
-    {
-        m_handler.removeCallbacks(m_infiniteToast);
-        if (m_splashScreen != null)
+        private WebView m_webView;
+
+        private static class CustomWebViewClient extends WebViewClient
         {
-            m_splashScreen.cancel();
-        }
-    }
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url)
+            {
+                // Always open links in the proxied WebView
+                return false;
+            }
 
-    private class CustomWebViewClient extends WebViewClient
-    {
+            @Override
+            public void onReceivedHttpAuthRequest(WebView view, final HttpAuthHandler handler, final String host, final String realm)
+            {
+                handler.proceed(EmbeddedValues.PROXIED_WEB_APP_HTTP_AUTH_USERNAME, EmbeddedValues.PROXIED_WEB_APP_HTTP_AUTH_PASSWORD);
+            }
+        }
+
+        @SuppressLint("SetJavaScriptEnabled")
         @Override
-        public boolean shouldOverrideUrlLoading(WebView view, String url)
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Always open links in the proxied WebView
-            return false;
-        }
+            View view = inflater.inflate(R.layout.proxied_web_view, container, false);
 
-        @Override
-        public void onReceivedHttpAuthRequest(WebView view, final HttpAuthHandler handler, final String host, final String realm)
+            m_webView = (WebView)view.findViewById(R.id.webView);
+            m_webView.setWebViewClient(new CustomWebViewClient());
+            WebSettings webSettings = m_webView.getSettings();
+            webSettings.setJavaScriptEnabled(true);
+            webSettings.setDomStorageEnabled(true);
+
+            setRetainInstance(true);
+
+            return view;
+        }
+        
+        public WebView getWebView()
         {
-            handler.proceed(EmbeddedValues.PROXIED_WEB_APP_HTTP_AUTH_USERNAME, EmbeddedValues.PROXIED_WEB_APP_HTTP_AUTH_PASSWORD);
+            return  m_webView;
         }
     }
-
+    
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -137,19 +151,21 @@ public class MainActivity
         
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
-        m_webView = (WebView)findViewById(R.id.webView);
-        m_webView.setWebViewClient(new CustomWebViewClient());
-        WebSettings webSettings = m_webView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
-        webSettings.setDomStorageEnabled(true);
 
         PsiphonConstants.DEBUG = Utils.isDebugMode(this);
         
         // Restore messages previously posted by the service.
         MyLog.restoreLogHistory();
         
-        makeSplashScreen();
-
+        m_splashScreen = new SplashScreen();
+        m_proxiedWebView = new ProxiedWebView();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.add(R.id.content_frame, m_splashScreen, SplashScreen.FRAGMENT_TAG);
+        transaction.add(R.id.content_frame, m_proxiedWebView, ProxiedWebView.FRAGMENT_TAG);
+        transaction.hide(m_proxiedWebView);
+        transaction.commit();
+        m_currentDisplay = Display.SPLASH_SCREEN;
+        
         PsiphonData.getPsiphonData().setDefaultSocksPort(PsiphonConstants.SOCKS_PORT + 10);
         PsiphonData.getPsiphonData().setDefaultHttpProxyPort(PsiphonConstants.HTTP_PROXY_PORT + 10);
         m_tunnelCore = new TunnelCore(this, null);
@@ -157,6 +173,32 @@ public class MainActivity
         m_tunnelCore.setEventsInterface(this);
         m_tunnelCore.onCreate();
         m_tunnelCore.startTunnel();
+        
+        m_handler = new Handler();
+    }
+
+    void displaySplashScreen()
+    {
+        if (m_currentDisplay != Display.SPLASH_SCREEN)
+        {
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            transaction.hide(m_proxiedWebView);
+            transaction.show(m_splashScreen);
+            transaction.commitAllowingStateLoss();
+            m_currentDisplay = Display.SPLASH_SCREEN;
+        }
+    }
+
+    void displayProxiedWebView()
+    {
+        if (m_currentDisplay != Display.PROXIED_WEB_VIEW)
+        {
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            transaction.hide(m_splashScreen);
+            transaction.show(m_proxiedWebView);
+            transaction.commitAllowingStateLoss();
+            m_currentDisplay = Display.PROXIED_WEB_VIEW;
+        }        
     }
 
     @Override
@@ -170,37 +212,27 @@ public class MainActivity
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu)
-    {
-        getMenuInflater().inflate(R.menu.activity_main, menu);
-        return true;
-    }
-
-    @Override
     protected void onResume()
     {
         super.onResume();
 
         if (m_tunnelCore.getState() != TunnelCore.State.CONNECTED)
         {
-            showSplashScreen();
+            displaySplashScreen();
         }
-    }
-
-    @Override
-    protected void onPause()
-    {
-        dismissSplashScreen();
-        super.onPause();
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event)
     {
-        if ((keyCode == KeyEvent.KEYCODE_BACK) && m_webView.canGoBack())
+        if (m_currentDisplay == Display.PROXIED_WEB_VIEW)
         {
-            m_webView.goBack();
-            return true;
+            WebView webView = m_proxiedWebView.getWebView();
+            if ((keyCode == KeyEvent.KEYCODE_BACK) && webView.canGoBack())
+            {
+                webView.goBack();
+                return true;
+            }
         }
 
         return super.onKeyDown(keyCode, event);
@@ -236,39 +268,28 @@ public class MainActivity
         
         final String finalMessage = getString(entry.id(), entry.formatArgs());
 
-        m_handler.post(
-            new Runnable()
-            {
-                @Override
-                public void run()
+        if (m_handler != null && m_splashScreen != null)
+        {
+            m_handler.post(
+                new Runnable()
                 {
-                    if (m_textView != null)
+                    @Override
+                    public void run()
                     {
-                        m_textView.setText(finalMessage);
+                        m_splashScreen.setSplashText(finalMessage);
                     }
-                }
-            });
+                });
+        }
     }
     
     /*
      * Events implementation
      */
     
-    private String getHomePage()
-    {
-        // Only supports one home page
-        for (String homePage : PsiphonData.getPsiphonData().getHomePages())
-        {
-            return homePage;
-        }
-
-        return null;
-    }
-
     @Override
     public void signalHandshakeSuccess(Context context, boolean isReconnect)
     {
-        final Context finalContext = this;
+        final Context finalContext = context;
 
         m_handler.post(
             new Runnable()
@@ -276,24 +297,25 @@ public class MainActivity
                 @Override
                 public void run()
                 {
-                    String homePage = getHomePage();
-                    if (homePage != null)
+                    if (PsiphonData.getPsiphonData().getHomePages().size() > 0)
                     {
-                        dismissSplashScreen();
+                        String webAppUrl = PsiphonData.getPsiphonData().getHomePages().get(0);
+
+                        displayProxiedWebView();
 
                         WebViewProxySettings.setLocalProxy(
                                 finalContext,
                                 PsiphonData.getPsiphonData().getHttpProxyPort());
 
-                        if (!m_loadedWebView)
+                        if (!m_initializedWebApp)
                         {
                             // Only load the WebView once. So if we get an unexpected
                             // disconnect and reconnect, the WebView retains its state.
                             // Note this means we ignore changes to the home page during
                             // this session.
 
-                            m_webView.loadUrl(homePage);
-                            m_loadedWebView = true;
+                            m_proxiedWebView.getWebView().loadUrl(webAppUrl);
+                            m_initializedWebApp = true;
                         }
                     }
                 }
@@ -309,7 +331,7 @@ public class MainActivity
                 @Override
                 public void run()
                 {
-                    showSplashScreen();
+                    displaySplashScreen();
                 }
             });
     }
