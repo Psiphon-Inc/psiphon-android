@@ -225,6 +225,24 @@ public class MainActivity
     }
 
     @Override
+    protected void onPause()
+    {
+        // Don't leave toast dangling if e.g., Home button pressed
+        if (mBackPressedToast != null)
+        {
+            View view = mBackPressedToast.getView();
+            if (view != null)
+            {
+                if (view.isShown())
+                {
+                    mBackPressedToast.cancel();
+                }
+            }            
+        }
+        super.onPause();
+    }
+
+    @Override
     public boolean onKeyDown(int keyCode, KeyEvent event)
     {
         if (m_currentDisplay == Display.PROXIED_WEB_VIEW)
