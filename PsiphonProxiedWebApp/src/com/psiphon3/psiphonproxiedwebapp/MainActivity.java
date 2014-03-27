@@ -251,7 +251,8 @@ public class MainActivity
                 }
             }
         }
-        mBackPressedToast = Toast.makeText(this, R.string.back_pressed_confirmation_prompt, Toast.LENGTH_LONG);
+        String prompt = getString(R.string.back_pressed_confirmation_prompt, getString(R.string.app_name));
+        mBackPressedToast = Toast.makeText(this, prompt, Toast.LENGTH_LONG);
         mBackPressedToast.show();
         return true;
     }
