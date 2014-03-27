@@ -47,6 +47,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
@@ -68,6 +69,7 @@ public class MainActivity
     private TunnelCore m_tunnelCore;
     private Handler m_handler;
     boolean m_initializedWebApp = false;
+    private Toast mBackPressedToast;
 
     public static class SplashScreen extends Fragment
     {
@@ -235,7 +237,23 @@ public class MainActivity
             }
         }
 
-        return super.onKeyDown(keyCode, event);
+        // Confirm before dismissing app
+        
+        if (mBackPressedToast != null)
+        {
+            View view = mBackPressedToast.getView();
+            if (view != null)
+            {
+                if (view.isShown())
+                {
+                    mBackPressedToast.cancel();
+                    return super.onKeyDown(keyCode, event);
+                }
+            }
+        }
+        mBackPressedToast = Toast.makeText(this, R.string.back_pressed_confirmation_prompt, Toast.LENGTH_LONG);
+        mBackPressedToast.show();
+        return true;
     }
 
     /*
