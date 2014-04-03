@@ -39,7 +39,6 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
-import android.app.AlertDialog;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
@@ -571,7 +570,7 @@ public abstract class MainBase
             PsiphonData.getPsiphonData().setWdmForceIptables(m_isRooted && wdmForceIptablesPreference);
 
             boolean httpPrefixPreference =
-                    PreferenceManager.getDefaultSharedPreferences(this).getBoolean(HTTP_PREFIX_PREFERENCE, true);
+                    PreferenceManager.getDefaultSharedPreferences(this).getBoolean(HTTP_PREFIX_PREFERENCE, false);
             m_httpPrefixToggle.setChecked(httpPrefixPreference);
             PsiphonData.getPsiphonData().setHttpPrefix(httpPrefixPreference);
             
@@ -1153,17 +1152,6 @@ public abstract class MainBase
         protected void startTunnel(Context context)
         {
             boolean waitingForPrompt = false;
-            
-            // We can't set the WebView proxy settings in Android 4.4
-            // Build.VERSION_CODES.KIT_KAT = 19
-            if (!PsiphonData.getPsiphonData().getTunnelWholeDevice() && Build.VERSION.SDK_INT >= 19) {
-                new AlertDialog.Builder(context)
-                    .setTitle(R.string.browser_only_mode_kitkat_prompt_title)
-                    .setMessage(R.string.browser_only_mode_kitkat_prompt_message)
-                    .setNeutralButton(android.R.string.ok, null)
-                    .show();
-                return;                
-            }
             
             if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService() &&
                     !PsiphonData.getPsiphonData().getVpnServiceUnavailable() &&

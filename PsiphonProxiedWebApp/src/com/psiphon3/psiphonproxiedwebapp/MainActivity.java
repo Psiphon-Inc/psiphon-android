@@ -65,22 +65,13 @@ public class MainActivity
     private boolean m_loadedWebView = false;
     private WebView m_webView;
     private TextView m_textView;
-    private boolean m_showSplashScreen = false;
     private Handler m_handler = new Handler();
     private TunnelCore m_tunnelCore;
+    private Toast m_splashScreen;
+    private Runnable m_infiniteToast;
 
-    // Infinite toast
-    private void showSplashScreen()
+    private void makeSplashScreen()
     {
-        // The text view does not appear to update if this function is invoked
-        // while the splash screen is already showing
-        if (m_showSplashScreen)
-        {
-            return;
-        }
-
-        m_showSplashScreen = true;
-
         LayoutInflater inflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View layout = inflater.inflate(R.layout.splash_screen, (ViewGroup)findViewById(R.id.splash_screen));
         m_textView = (TextView)layout.findViewById(R.id.splash_screen_text);
@@ -91,36 +82,35 @@ public class MainActivity
         int pixel = bitmap.getPixel(0, 0);
         layout.setBackgroundColor(pixel);
 
-        final Toast splashScreen = new Toast(this);
-        splashScreen.setGravity(Gravity.FILL, 0, 0);
-        splashScreen.setDuration(Toast.LENGTH_SHORT);
-        splashScreen.setView(layout);
+        m_splashScreen = new Toast(this);        
+        m_splashScreen.setGravity(Gravity.FILL, 0, 0);
+        m_splashScreen.setDuration(Toast.LENGTH_SHORT);
+        m_splashScreen.setView(layout);
 
-        Thread t = new Thread()
-        {
-            public void run()
+        m_infiniteToast = new Runnable()
             {
-                try
+                @Override
+                public void run()
                 {
-                    while (m_showSplashScreen)
-                    {
-                        splashScreen.show();
-                        sleep(1850);
-                    }
+                    m_splashScreen.show();
+                    m_handler.postDelayed(m_infiniteToast, 1850);
                 }
-                catch (Exception e)
-                {
-                }
-
-                m_textView = null;
-            }
-        };
-        t.start();
+            };
+    }
+    
+    private void showSplashScreen()
+    {
+        dismissSplashScreen();
+        m_handler.post(m_infiniteToast);
     }
 
     private void dismissSplashScreen()
     {
-        m_showSplashScreen = false;
+        m_handler.removeCallbacks(m_infiniteToast);
+        if (m_splashScreen != null)
+        {
+            m_splashScreen.cancel();
+        }
     }
 
     private class CustomWebViewClient extends WebViewClient
@@ -144,7 +134,7 @@ public class MainActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-
+        
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
         m_webView = (WebView)findViewById(R.id.webView);
@@ -158,6 +148,8 @@ public class MainActivity
         // Restore messages previously posted by the service.
         MyLog.restoreLogHistory();
         
+        makeSplashScreen();
+
         PsiphonData.getPsiphonData().setDefaultSocksPort(PsiphonConstants.SOCKS_PORT + 10);
         PsiphonData.getPsiphonData().setDefaultHttpProxyPort(PsiphonConstants.HTTP_PROXY_PORT + 10);
         m_tunnelCore = new TunnelCore(this, null);
@@ -171,7 +163,7 @@ public class MainActivity
     protected void onDestroy()
     {
         super.onDestroy();
-
+        
         m_tunnelCore.stopTunnel();
         m_tunnelCore.onDestroy();
         m_tunnelCore = null;
@@ -198,9 +190,8 @@ public class MainActivity
     @Override
     protected void onPause()
     {
-        super.onPause();
-
         dismissSplashScreen();
+        super.onPause();
     }
 
     @Override

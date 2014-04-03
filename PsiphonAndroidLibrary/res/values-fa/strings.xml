@@ -142,6 +142,4 @@
   <string name="run_polipo_failed">اجرای پولیپو موفق نبود: %s</string>
   <string name="wdm_force_iptables_toggle">مجبور تونل تمام گوشی </string>
   <string name="http_prefix_toggle">ترافیک را مثل http نشان بده</string>
-  <string name="browser_only_mode_kitkat_prompt_title">ببخشید! </string>
-  <string name="browser_only_mode_kitkat_prompt_message">استفاده از حالت فقط مرورگر سایفون در اندورید 4.4 به بالا امکان پذیر نیست. شما میتوانید  همچنان از تونل تمام گوشی سایفون استفاده کنید.  </string>
 </resources>
