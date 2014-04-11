@@ -36,6 +36,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +47,7 @@ import android.os.Build;
 import android.os.SystemClock;
 
 import ch.ethz.ssh2.HTTPProxyException;
+import ch.ethz.ssh2.crypto.Base64;
 import ch.ethz.ssh2.transport.ClientServerHello;
 import ch.ethz.ssh2.util.StringEncoder;
 
@@ -122,7 +124,23 @@ public class ServerSelector
                     selector.close();
                     this.channel.configureBlocking(true);
                 
-                    makeConnectionViaHTTPProxy();
+                    makeConnectionViaHTTPProxy(null, null);
+                    this.responded = true;
+                }
+                else if ((int)(2.0 * Math.random()) == 0)
+                {
+                    List<String> proxyIpAddresses = new ArrayList<String>();
+                    proxyIpAddresses.add("x.x.x.x");
+                    proxyIpAddresses.add("y.y.y.y");
+                    proxyIpAddresses.add("z.z.z.z");
+                    Collections.shuffle(proxyIpAddresses);
+                	
+                    makeSocketChannelConnection(selector, proxyIpAddresses.get(0), 3128);
+                    this.channel.finishConnect();
+                    selector.close();
+                    this.channel.configureBlocking(true);
+                
+                    makeConnectionViaHTTPProxy("user", "password");
                     this.responded = true;
                 }
                 else
@@ -211,7 +229,7 @@ public class ServerSelector
             }
         }
         
-        private void makeConnectionViaHTTPProxy() throws IOException
+        private void makeConnectionViaHTTPProxy(String proxyUsername, String proxyPassword) throws IOException
         {
             Socket sock = this.channel.socket();
             
@@ -228,6 +246,16 @@ public class ServerSelector
             sb.append(':');
             sb.append(this.entry.getPreferredReachablityTestPort());
             sb.append(" HTTP/1.0\r\n");
+            
+            if ((proxyUsername != null) && (proxyPassword != null))
+            {
+                String credentials = proxyUsername + ":" + proxyPassword;
+                char[] encoded = Base64.encode(StringEncoder.GetBytes(credentials));
+                sb.append("Proxy-Authorization: Basic ");
+                sb.append(encoded);
+                sb.append("\r\n");
+            }
+
             sb.append("\r\n");
     
             OutputStream out = sock.getOutputStream();
