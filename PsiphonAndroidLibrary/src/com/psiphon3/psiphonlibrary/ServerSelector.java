@@ -127,7 +127,7 @@ public class ServerSelector
                     makeConnectionViaHTTPProxy(null, null);
                     this.responded = true;
                 }
-                else if ((int)(2.0 * Math.random()) == 0)
+                else if (Math.random() >= 0.5)
                 {
                     List<String> proxyIpAddresses = new ArrayList<String>();
                     proxyIpAddresses.add("x.x.x.x");
@@ -135,6 +135,8 @@ public class ServerSelector
                     proxyIpAddresses.add("z.z.z.z");
                     Collections.shuffle(proxyIpAddresses);
                 	
+                    MyLog.g("EmbeddedInProxy", "forServer", this.entry.ipAddress);
+
                     makeSocketChannelConnection(selector, proxyIpAddresses.get(0), 3128);
                     this.channel.finishConnect();
                     selector.close();
