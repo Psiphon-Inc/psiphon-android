@@ -76,6 +76,7 @@ public class PsiphonData
     private boolean m_wdmForceIptables;
     private boolean m_httpPrefix;
     private boolean m_useSystemProxySettings;
+    private boolean m_useCustomProxySettings;
     private boolean m_vpnServiceUnavailable;
     private TunnelCore m_currentTunnelCore;
     private ReportedStats m_reportedStats;
@@ -100,6 +101,7 @@ public class PsiphonData
         m_shareProxies = false;
         m_tunnelWholeDevice = false;
         m_useSystemProxySettings = false;
+        m_useCustomProxySettings = false;
         m_vpnServiceUnavailable = false;
         m_reportedStats = new ReportedStats();
         m_enableReportedStats = true;
@@ -295,6 +297,16 @@ public class PsiphonData
         return m_useSystemProxySettings;
     }
     
+    public synchronized void setUseCustomProxySettings(boolean useCustomProxySettings)
+    {
+        m_useCustomProxySettings = useCustomProxySettings;
+    }
+
+    public synchronized boolean getUseCustomProxySettings()
+    {
+        return m_useCustomProxySettings;
+    }
+
     public class SystemProxySettings
     {
         public String proxyHost;

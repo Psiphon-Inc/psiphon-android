@@ -123,7 +123,11 @@
     <string name="share_proxies_prompt_message">The app needs to restart to apply this setting.</string>
     <string name="share_proxies_prompt_positive">Restart now</string>
     <string name="share_proxies_prompt_negative">Cancel</string>
-    <string name="use_system_proxy_settings_toggle">Connect through the network\'s HTTP Proxy</string>
+    <string name="use_proxy_settings_toggle">Connect through an HTTP Proxy</string>
+    <string name="use_system_proxy_settings_radio">Use system network settings</string>
+    <string name="use_custom_proxy_settings_radio">Use the following settings:</string>
+    <string name="custom_proxy_settings_host">Host Address</string>
+    <string name="custom_proxy_settings_port">Port</string>
     <string name="region_name_any">Best performance</string>
     <string name="region_name_us">United States</string>
     <string name="region_name_gb">United Kingdom</string>
