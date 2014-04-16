@@ -271,7 +271,7 @@
     <!-- 0.3.4 -->
     <string name="Main.MenuCopyLinkUrl">Copy link url</string>
     <string name="Main.MenuViewImage">View image</string>
-    <string name="Main.MenuCopyImageUrl">"Copy image url</string>
+    <string name="Main.MenuCopyImageUrl">Copy image url</string>
     <string name="Main.MenuDownloadImage">Download image</string>
     <string name="Main.MenuSendEmail">Send email</string>
     <string name="Main.MenuCopyEmailUrl">Copy email url</string>
