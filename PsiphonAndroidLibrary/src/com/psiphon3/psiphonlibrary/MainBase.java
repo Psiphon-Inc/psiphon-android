@@ -134,9 +134,11 @@ public abstract class MainBase
         public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
         public static final String WDM_FORCE_IPTABLES_PREFERENCE = "wdmForceIptablesPreference";
         public static final String HTTP_PREFIX_PREFERENCE = "httpPrefixPreference";
-        // TODO: NEW PREFERENCE AND BACKWARDS COMPATIBILITY
+        public static final String USE_PROXY_SETTINGS_PREFERENCE = "useProxySettingsPreference";
         public static final String USE_SYSTEM_PROXY_SETTINGS_PREFERENCE = "useSystemProxySettingsPreference";
         public static final String USE_CUSTOM_PROXY_SETTINGS_PREFERENCE = "useCustomProxySettingsPreference";
+        public static final String USE_CUSTOM_PROXY_SETTINGS_HOST_PREFERENCE = "useCustomProxySettingsHostPreference";
+        public static final String USE_CUSTOM_PROXY_SETTINGS_PORT_PREFERENCE = "useCustomProxySettingsPortPreference";
         public static final String SHARE_PROXIES_PREFERENCE = "shareProxiesPreference";
         
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
@@ -596,18 +598,48 @@ public abstract class MainBase
             
             boolean useSystemProxySettingsPreference = 
                     PreferenceManager.getDefaultSharedPreferences(this).getBoolean(USE_SYSTEM_PROXY_SETTINGS_PREFERENCE, false);
-            m_useSystemProxySettings.setChecked(useSystemProxySettingsPreference);
+            if (useSystemProxySettingsPreference)
+            {
+                m_useSystemProxySettings.setChecked(true);
+            }
             PsiphonData.getPsiphonData().setUseSystemProxySettings(useSystemProxySettingsPreference);
             
             boolean useCustomProxySettingsPreference = 
                     PreferenceManager.getDefaultSharedPreferences(this).getBoolean(USE_CUSTOM_PROXY_SETTINGS_PREFERENCE, false);
-            m_useCustomProxySettings.setChecked(useCustomProxySettingsPreference);
+            if (useCustomProxySettingsPreference)
+            {
+                m_useCustomProxySettings.setChecked(true);
+            }
             PsiphonData.getPsiphonData().setUseCustomProxySettings(useCustomProxySettingsPreference);
 
-            m_useProxySettingsToggle.setChecked(useSystemProxySettingsPreference || useCustomProxySettingsPreference);
+            // Backwards compatibility: if USE_SYSTEM_PROXY_SETTINGS_PREFERENCE is set
+            // and (the new) USE_PROXY_SETTINGS_PREFERENCE is not, then set it
+            if (useSystemProxySettingsPreference &&
+                    !PreferenceManager.getDefaultSharedPreferences(this).contains(USE_PROXY_SETTINGS_PREFERENCE))
+            {
+                Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+                editor.putBoolean(USE_PROXY_SETTINGS_PREFERENCE, true);
+                editor.commit();
+            }
+
+            boolean useProxySettingsPreference = 
+                    PreferenceManager.getDefaultSharedPreferences(this).getBoolean(USE_PROXY_SETTINGS_PREFERENCE, false);
+            m_useProxySettingsToggle.setChecked(useProxySettingsPreference);
+            PsiphonData.getPsiphonData().setUseHTTPProxy(useProxySettingsPreference);
+
             m_useProxySettingsRadioGroup.setOnCheckedChangeListener(this);
             SetProxySettingsRadioGroupEnabled(m_useProxySettingsToggle.isChecked());
 
+            String customProxyHostPreference = 
+                    PreferenceManager.getDefaultSharedPreferences(this).getString(USE_CUSTOM_PROXY_SETTINGS_HOST_PREFERENCE, "");
+            m_customProxySettingsHost.setText(customProxyHostPreference);
+            PsiphonData.getPsiphonData().setCustomProxyHost(customProxyHostPreference);
+            
+            String customProxyPortPreference = 
+                    PreferenceManager.getDefaultSharedPreferences(this).getString(USE_CUSTOM_PROXY_SETTINGS_PORT_PREFERENCE, "");
+            m_customProxySettingsPort.setText(customProxyPortPreference);
+            PsiphonData.getPsiphonData().setCustomProxyPort(customProxyPortPreference);
+            
             boolean shareProxiesPreference =
                     PreferenceManager.getDefaultSharedPreferences(this).getBoolean(SHARE_PROXIES_PREFERENCE, false);
             PsiphonData.getPsiphonData().setShareProxies(shareProxiesPreference);
@@ -1011,18 +1043,27 @@ public abstract class MainBase
         
         public void updateProxyPreferences()
         {
+            boolean useProxySettings = m_useProxySettingsToggle.isChecked();
             boolean useSystemProxySettings = 
                 (m_useProxySettingsRadioGroup.getCheckedRadioButtonId() == R.id.useSystemProxySettingsRadio);
             boolean useCustomProxySettings = 
                 (m_useProxySettingsRadioGroup.getCheckedRadioButtonId() == R.id.useCustomProxySettingsRadio);
+            String customProxySettingsHost = m_customProxySettingsHost.getText().toString();
+            String customProxySettingsPort = m_customProxySettingsPort.getText().toString();
             
             Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+            editor.putBoolean(USE_PROXY_SETTINGS_PREFERENCE, useProxySettings);
             editor.putBoolean(USE_SYSTEM_PROXY_SETTINGS_PREFERENCE, useSystemProxySettings);
             editor.putBoolean(USE_CUSTOM_PROXY_SETTINGS_PREFERENCE, useCustomProxySettings);
+            editor.putString(USE_CUSTOM_PROXY_SETTINGS_HOST_PREFERENCE, customProxySettingsHost);
+            editor.putString(USE_CUSTOM_PROXY_SETTINGS_PORT_PREFERENCE, customProxySettingsPort);
             editor.commit();
 
+            PsiphonData.getPsiphonData().setUseHTTPProxy(useProxySettings);
             PsiphonData.getPsiphonData().setUseSystemProxySettings(useSystemProxySettings);
             PsiphonData.getPsiphonData().setUseCustomProxySettings(useCustomProxySettings);
+            PsiphonData.getPsiphonData().setCustomProxyHost(customProxySettingsHost);
+            PsiphonData.getPsiphonData().setCustomProxyPort(customProxySettingsPort);
         }
         
         /*public void onShareProxiesToggle(View v)

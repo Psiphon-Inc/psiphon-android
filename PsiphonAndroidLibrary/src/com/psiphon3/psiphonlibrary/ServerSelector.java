@@ -100,7 +100,7 @@ public class ServerSelector
         
         public void run()
         {
-            PsiphonData.SystemProxySettings proxySettings = PsiphonData.getPsiphonData().getSystemProxySettings(context);
+            PsiphonData.ProxySettings proxySettings = PsiphonData.getPsiphonData().getProxySettings(context);
             long startTime = SystemClock.elapsedRealtime();
             Selector selector = null;
             
@@ -117,6 +117,8 @@ public class ServerSelector
                 this.channel.configureBlocking(false);
                 selector = Selector.open();
                 
+                List<String> proxyIpAddresses = new ArrayList<String>();
+
                 if (proxySettings != null)
                 {
                     makeSocketChannelConnection(selector, proxySettings.proxyHost, proxySettings.proxyPort);
@@ -127,12 +129,8 @@ public class ServerSelector
                     makeConnectionViaHTTPProxy(null, null);
                     this.responded = true;
                 }
-                else if (Math.random() >= 0.5)
+                else if (proxyIpAddresses.length() > 0 && Math.random() >= 0.5)
                 {
-                    List<String> proxyIpAddresses = new ArrayList<String>();
-                    proxyIpAddresses.add("x.x.x.x");
-                    proxyIpAddresses.add("y.y.y.y");
-                    proxyIpAddresses.add("z.z.z.z");
                     Collections.shuffle(proxyIpAddresses);
                 	
                     MyLog.g("EmbeddedInProxy", "forServer", this.entry.ipAddress);
@@ -425,7 +423,7 @@ public class ServerSelector
         
             MyLog.g("SelectedRegion", "regionCode", egressRegion);
             MyLog.g("ProxyChaining", "enabled", 
-                    PsiphonData.getPsiphonData().getSystemProxySettings(context) == null ?
+                    PsiphonData.getPsiphonData().getProxySettings(context) == null ?
                     "False" : "True");
             // Note that workers will still call getSystemProxySettings().  This is in case the
             // system proxy settings actually do change while the pool is running, and the log

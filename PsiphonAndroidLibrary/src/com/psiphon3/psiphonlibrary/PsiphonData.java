@@ -75,8 +75,11 @@ public class PsiphonData
     private boolean m_tunnelWholeDevice;
     private boolean m_wdmForceIptables;
     private boolean m_httpPrefix;
+    private boolean m_useHTTPProxy;
     private boolean m_useSystemProxySettings;
     private boolean m_useCustomProxySettings;
+    private String m_customProxyHost;
+    private String m_customProxyPort;
     private boolean m_vpnServiceUnavailable;
     private TunnelCore m_currentTunnelCore;
     private ReportedStats m_reportedStats;
@@ -100,6 +103,7 @@ public class PsiphonData
         m_statusActivityForeground = false;
         m_shareProxies = false;
         m_tunnelWholeDevice = false;
+        m_useHTTPProxy = false;
         m_useSystemProxySettings = false;
         m_useCustomProxySettings = false;
         m_vpnServiceUnavailable = false;
@@ -287,6 +291,16 @@ public class PsiphonData
         return m_egressRegion;
     }
 
+    public synchronized void setUseHTTPProxy(boolean useHTTPProxy)
+    {
+    	m_useHTTPProxy = useHTTPProxy;
+    }
+
+    public synchronized boolean getUseHTTPProxy()
+    {
+    	return m_useHTTPProxy;
+    }
+    
     public synchronized void setUseSystemProxySettings(boolean useSystemProxySettings)
     {
         m_useSystemProxySettings = useSystemProxySettings;
@@ -306,41 +320,76 @@ public class PsiphonData
     {
         return m_useCustomProxySettings;
     }
+    
+    public synchronized void setCustomProxyHost(String host)
+    {
+    	m_customProxyHost = host;
+    }
+    
+    public synchronized String getCustomProxyHost()
+    {
+    	return m_customProxyHost;
+    }
 
-    public class SystemProxySettings
+    public synchronized void setCustomProxyPort(String port)
+    {
+    	m_customProxyPort = port;
+    }
+    
+    public synchronized String getCustomProxyPort()
+    {
+    	return m_customProxyPort;
+    }
+    
+    public class ProxySettings
     {
         public String proxyHost;
         public int proxyPort;
     }
     
-    // Checks if we are supposed to use the system proxy settings and if any system proxy settings are configured,
-    // and, if so, returns the configured system proxy settings.
-    public synchronized SystemProxySettings getSystemProxySettings(Context context)
+    // Checks if we are supposed to use proxy settings, custom or system,
+    // and if system, if any system proxy settings are configured.
+    // Returns the user-requested proxy settings.
+    public synchronized ProxySettings getProxySettings(Context context)
     {
-        if (!getUseSystemProxySettings())
+        if (!getUseHTTPProxy())
         {
             return null;
         }
         
-        SystemProxySettings settings = new SystemProxySettings();
+        ProxySettings settings = null;
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+        if (getUseCustomProxySettings())
         {
-            settings.proxyHost = System.getProperty("http.proxyHost");
-            String port = System.getProperty("http.proxyPort");
-            settings.proxyPort = Integer.parseInt(port != null ? port : "-1");
+            settings = new ProxySettings();
+            
+            settings.proxyHost = getCustomProxyHost();
+            String port = getCustomProxyPort();
+            settings.proxyPort = Integer.parseInt(port);
         }
-        else
+        		
+        if (getUseSystemProxySettings())
         {
-            settings.proxyHost = android.net.Proxy.getHost(context);
-            settings.proxyPort = android.net.Proxy.getPort(context);
-        }
-        
-        if (settings.proxyHost == null || 
-            settings.proxyHost.length() == 0 || 
-            settings.proxyPort <= 0)
-        {
-            return null;
+            settings = new ProxySettings();
+        	
+	        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+	        {
+	            settings.proxyHost = System.getProperty("http.proxyHost");
+	            String port = System.getProperty("http.proxyPort");
+	            settings.proxyPort = Integer.parseInt(port != null ? port : "-1");
+	        }
+	        else
+	        {
+	            settings.proxyHost = android.net.Proxy.getHost(context);
+	            settings.proxyPort = android.net.Proxy.getPort(context);
+	        }
+	        
+	        if (settings.proxyHost == null || 
+	            settings.proxyHost.length() == 0 || 
+	            settings.proxyPort <= 0)
+	        {
+	            settings = null;
+	        }
         }
         
         return settings;
