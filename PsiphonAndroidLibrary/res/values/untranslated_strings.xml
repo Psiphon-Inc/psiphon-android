@@ -5,4 +5,5 @@
     <string name="preemptive_socket_connection_failed">Preemptive socket connection failed</string>
     <string name="preemptive_ssh_connection_failed">Preemptive SSH connection failed</string>
     <string name="AuthenticatedDataPackage.InvalidEncoding">Invalid encoding for authenticated data package</string>
+    <string name="UpgradeManager.UpgradeAvailableNotificationId">Psiphon Upgrade Available Notification</string>
 </resources>

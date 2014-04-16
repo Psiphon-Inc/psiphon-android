@@ -96,7 +96,6 @@
     <string name="UpgradeManager.UpgradeFileNotFound">Upgrade file not found</string>
     <string name="UpgradeManager.UpgradePromptTitle">Psiphon Upgrade</string>
     <string name="UpgradeManager.UpgradePromptMessage">An upgrade for Psiphon is ready to be installed.</string>
-    <string name="UpgradeManager.UpgradeAvailableNotificationId">Psiphon Upgrade Available Notification</string>
     <string name="UpgradeManager.UpgradeFileReadFailed">Failed to read upgrade file</string>
     <string name="UpgradeManager.UpgradeFileAuthenticateFailed">Failed to authenticate upgrade file</string>
     <string name="connected_elapsed_time">Connected: %s</string>
