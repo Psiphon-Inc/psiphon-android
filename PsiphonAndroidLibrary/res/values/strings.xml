@@ -26,16 +26,13 @@
     <string name="ServerInterface.FailedToParseLastConnected">Failed to parse JSON last connected time response.</string>
     <string name="ServerInterface.FailedToReadLastConnected">Failed to read last connected time.</string>
     <string name="PsiphonAndroidService.HandshakeRequestFailed">Handshake request failed.</string>
-    <string name="PsiphonAndroidService.ConnectedRequestFailed">Connected request failed.</string>
     <string name="ssh_disconnected_unexpectedly">SSH disconnected unexpectedly</string>
     <string name="client_version">Client Version %s</string>
     <string name="no_server_entries">There are no servers to connect to</string>
     <string name="ServerInterface.InvalidRemoteServerList">Invalid remote server list</string>
-    <string name="TunnelService.FetchRemoteServerListFailed">Fetch remote server list failed</string>
     <string name="AuthenticatedDataPackage.WrongPublicKey">Authenticated data package signed with different public key</string>
     <string name="AuthenticatedDataPackage.InvalidSignature">Invalid signature on authenticated data package</string>
     <string name="AuthenticatedDataPackage.FailedToParseRemoteServerEntry">Failed to parse authenticated data package</string>
-    <string name="AuthenticatedDataPackage.InvalidEncoding">Invalid encoding for authenticated data package</string>
     <string name="AuthenticatedDataPackage.MissingValue">Missing value in authenticated data package</string>
     <string name="starting_tunnel">Starting tunnel…</string>
     <string name="stopping_tunnel">Stopping tunnel…</string>
@@ -90,8 +87,6 @@
     <string name="current_network_type">Current network: %s</string>
     <string name="dns_resolver">DNS resolver: %s</string>
     <string name="get_active_network_dns_resolvers_failed">Get active network DNS resolvers failed</string>
-    <string name="preemptive_socket_connection_failed">Preemptive socket connection failed</string>
-    <string name="preemptive_ssh_connection_failed">Preemptive SSH connection failed</string>
     <string name="preemptive_bind_failed">Preemptive bind failed</string>
     <string name="UpgradeManager.CanNotRetrievePackageInfo">Unable to retrieve package info for current app</string>
     <string name="UpgradeManager.UpgradeFileWriteFailed">Failed to write upgrade file</string>
@@ -101,7 +96,6 @@
     <string name="UpgradeManager.UpgradeFileNotFound">Upgrade file not found</string>
     <string name="UpgradeManager.UpgradePromptTitle">Psiphon Upgrade</string>
     <string name="UpgradeManager.UpgradePromptMessage">An upgrade for Psiphon is ready to be installed.</string>
-    <string name="UpgradeManager.UpgradeAvailableNotificationId">Psiphon Upgrade Available Notification</string>
     <string name="UpgradeManager.UpgradeFileReadFailed">Failed to read upgrade file</string>
     <string name="UpgradeManager.UpgradeFileAuthenticateFailed">Failed to authenticate upgrade file</string>
     <string name="connected_elapsed_time">Connected: %s</string>
