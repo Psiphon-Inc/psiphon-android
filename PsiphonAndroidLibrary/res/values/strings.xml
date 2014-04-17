@@ -136,4 +136,6 @@
     <string name="run_polipo_failed">Run Polipo failed: %s</string>
     <string name="wdm_force_iptables_toggle">Force root Tunnel Whole Device method</string>
     <string name="http_prefix_toggle">Masquerade as HTTP</string>
+    <string name="meek_error">Meek Error</string>
+    <string name="meek_http_request_error">Meek HTTP Request Error: %d</string>
 </resources>
