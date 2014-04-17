@@ -365,7 +365,14 @@ public class PsiphonData
             
             settings.proxyHost = getCustomProxyHost();
             String port = getCustomProxyPort();
-            settings.proxyPort = Integer.parseInt(port);
+            try
+            {
+                settings.proxyPort = Integer.parseInt(port);
+            }
+            catch (NumberFormatException e)
+            {
+                settings.proxyPort = -1;
+            }
         }
         		
         if (getUseSystemProxySettings())

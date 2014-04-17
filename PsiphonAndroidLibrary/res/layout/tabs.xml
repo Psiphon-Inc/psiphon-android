@@ -185,7 +185,7 @@
                             android:layout_weight="1"
                             android:ems="10"
                             android:hint="@string/custom_proxy_settings_port"
-                            android:inputType="phone"
+                            android:singleLine="true"
                             android:textAppearance="?android:attr/textAppearanceSmall" />
                     </LinearLayout>
                 </RadioGroup>

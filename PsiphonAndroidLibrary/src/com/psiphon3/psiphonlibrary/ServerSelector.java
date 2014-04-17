@@ -129,7 +129,7 @@ public class ServerSelector
                     makeConnectionViaHTTPProxy(null, null);
                     this.responded = true;
                 }
-                else if (proxyIpAddresses.length() > 0 && Math.random() >= 0.5)
+                else if (proxyIpAddresses.size() > 0 && Math.random() >= 0.5)
                 {
                     Collections.shuffle(proxyIpAddresses);
                 	
@@ -154,6 +154,15 @@ public class ServerSelector
             }
             catch (ClosedByInterruptException e) {}
             catch (InterruptedIOException e) {}
+            catch (IllegalArgumentException e)
+            {
+                // Avoid printing the same message multiple times in the case of a network proxy error
+                if (proxySettings != null && 
+                        workerPrintedProxyError.compareAndSet(false, true))
+                {
+                    MyLog.e(R.string.network_proxy_connect_exception, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, e.getLocalizedMessage());
+                }
+            }
             catch (ConnectException e)
             {
                 // Avoid printing the same message multiple times in the case of a network proxy error
@@ -422,12 +431,19 @@ public class ServerSelector
             String egressRegion = PsiphonData.getPsiphonData().getEgressRegion();
         
             MyLog.g("SelectedRegion", "regionCode", egressRegion);
+            
+            PsiphonData.ProxySettings proxySettings = PsiphonData.getPsiphonData().getProxySettings(context);
             MyLog.g("ProxyChaining", "enabled", 
-                    PsiphonData.getPsiphonData().getProxySettings(context) == null ?
-                    "False" : "True");
+                    proxySettings == null ? "False" : "True");
             // Note that workers will still call getSystemProxySettings().  This is in case the
             // system proxy settings actually do change while the pool is running, and the log
             // above will not reflect that change.
+            
+            if (proxySettings != null)
+            {
+                MyLog.i(R.string.network_proxy_connect_information, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS,
+                        proxySettings.proxyHost + ":" + proxySettings.proxyPort);
+            }
 
             // Reset this flag before running the workers.
             workerPrintedProxyError.set(false);

@@ -57,6 +57,8 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Pair;
 import android.view.GestureDetector;
 import android.view.KeyEvent;
@@ -64,6 +66,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.View.OnTouchListener;
+import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
@@ -81,6 +84,7 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TabHost.TabSpec;
+import android.widget.Toast;
 
 public abstract class MainBase
 {
@@ -640,6 +644,9 @@ public abstract class MainBase
             m_customProxySettingsPort.setText(customProxyPortPreference);
             PsiphonData.getPsiphonData().setCustomProxyPort(customProxyPortPreference);
             
+            m_customProxySettingsHost.addTextChangedListener(onCustomProxySettingsChanged);
+            m_customProxySettingsPort.addTextChangedListener(onCustomProxySettingsChanged);
+            
             boolean shareProxiesPreference =
                     PreferenceManager.getDefaultSharedPreferences(this).getBoolean(SHARE_PROXIES_PREFERENCE, false);
             PsiphonData.getPsiphonData().setShareProxies(shareProxiesPreference);
@@ -707,6 +714,9 @@ public abstract class MainBase
                 250);
             
             PsiphonData.getPsiphonData().setStatusActivityForeground(true);
+            
+            // Don't show the keyboard until edit selected
+            getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
         }
         
         @Override
@@ -1034,36 +1044,86 @@ public abstract class MainBase
         
         public void onCheckedChanged(RadioGroup group, int checkedId)
         {
+            boolean restart = false;
+            
+            if (isServiceRunning())
+            {
+                doToggle();
+                restart = true;
+            }
+            
             if (group == m_useProxySettingsRadioGroup)
             {
                 SetCustomProxySettingsValuesEnabledState();
                 updateProxyPreferences();
             }
+
+            if (restart)
+            {
+                startTunnel(this);
+            }
         }
         
-        public void updateProxyPreferences()
+        // Basic check that the values are populated
+        private boolean customProxySettingsValuesValid()
+        {
+            PsiphonData.ProxySettings proxySettings = PsiphonData.getPsiphonData().getProxySettings(this);
+            return proxySettings != null &&
+                    proxySettings.proxyHost.length() > 0 &&
+                    proxySettings.proxyPort >= 1 &&
+                    proxySettings.proxyPort <= 65535;
+        }
+        
+        private TextWatcher onCustomProxySettingsChanged = new TextWatcher()
+        {
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count)
+            {
+                updateCustomProxyValues();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s)
+            {
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after)
+            {
+            }
+        };
+        
+        private void updateCustomProxyValues()
+        {
+            String customProxySettingsHost = m_customProxySettingsHost.getText().toString();
+            String customProxySettingsPort = m_customProxySettingsPort.getText().toString();
+            
+            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+            editor.putString(USE_CUSTOM_PROXY_SETTINGS_HOST_PREFERENCE, customProxySettingsHost);
+            editor.putString(USE_CUSTOM_PROXY_SETTINGS_PORT_PREFERENCE, customProxySettingsPort);
+            editor.commit();
+
+            PsiphonData.getPsiphonData().setCustomProxyHost(customProxySettingsHost);
+            PsiphonData.getPsiphonData().setCustomProxyPort(customProxySettingsPort);
+        }
+        
+        private void updateProxyPreferences()
         {
             boolean useProxySettings = m_useProxySettingsToggle.isChecked();
             boolean useSystemProxySettings = 
                 (m_useProxySettingsRadioGroup.getCheckedRadioButtonId() == R.id.useSystemProxySettingsRadio);
             boolean useCustomProxySettings = 
                 (m_useProxySettingsRadioGroup.getCheckedRadioButtonId() == R.id.useCustomProxySettingsRadio);
-            String customProxySettingsHost = m_customProxySettingsHost.getText().toString();
-            String customProxySettingsPort = m_customProxySettingsPort.getText().toString();
             
             Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
             editor.putBoolean(USE_PROXY_SETTINGS_PREFERENCE, useProxySettings);
             editor.putBoolean(USE_SYSTEM_PROXY_SETTINGS_PREFERENCE, useSystemProxySettings);
             editor.putBoolean(USE_CUSTOM_PROXY_SETTINGS_PREFERENCE, useCustomProxySettings);
-            editor.putString(USE_CUSTOM_PROXY_SETTINGS_HOST_PREFERENCE, customProxySettingsHost);
-            editor.putString(USE_CUSTOM_PROXY_SETTINGS_PORT_PREFERENCE, customProxySettingsPort);
             editor.commit();
 
             PsiphonData.getPsiphonData().setUseHTTPProxy(useProxySettings);
             PsiphonData.getPsiphonData().setUseSystemProxySettings(useSystemProxySettings);
             PsiphonData.getPsiphonData().setUseCustomProxySettings(useCustomProxySettings);
-            PsiphonData.getPsiphonData().setCustomProxyHost(customProxySettingsHost);
-            PsiphonData.getPsiphonData().setCustomProxyPort(customProxySettingsPort);
         }
         
         /*public void onShareProxiesToggle(View v)
@@ -1259,6 +1319,15 @@ public abstract class MainBase
 
         protected void startTunnel(Context context)
         {
+            // Don't start if custom proxy settings is selected and values are invalid
+            if (m_useProxySettingsToggle.isChecked() &&
+                    m_useCustomProxySettings.isChecked() && !customProxySettingsValuesValid())
+            {
+                Toast toast = Toast.makeText(context, R.string.network_proxy_connect_invalid_values, Toast.LENGTH_SHORT);
+                toast.show();
+                return;
+            }
+ 
             boolean waitingForPrompt = false;
             
             if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService() &&

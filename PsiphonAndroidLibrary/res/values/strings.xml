@@ -142,6 +142,8 @@
     <string name="tunnel_whole_device_toggle">Tunnel Whole Device (requires root or Android 4.0+)</string>
     <string name="region_selector">Select region</string>
     <string name="network_proxy_connect_exception">Failed to connect to the network\'s HTTP Proxy: %s</string>
+    <string name="network_proxy_connect_information">Connecting via your HTTP Proxy: %s</string>
+    <string name="network_proxy_connect_invalid_values">Invalid HTTP Proxy settings</string>
     <string name="tunnel_whole_device_exception">Your device does not support the non-root whole device tunnel option.</string>
     <string name="run_polipo_failed">Run Polipo failed: %s</string>
     <string name="wdm_force_iptables_toggle">Force root Tunnel Whole Device method</string>
