@@ -36,6 +36,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +47,7 @@ import android.os.Build;
 import android.os.SystemClock;
 
 import ch.ethz.ssh2.HTTPProxyException;
+import ch.ethz.ssh2.crypto.Base64;
 import ch.ethz.ssh2.transport.ClientServerHello;
 import ch.ethz.ssh2.util.StringEncoder;
 
@@ -98,7 +100,7 @@ public class ServerSelector
         
         public void run()
         {
-            PsiphonData.SystemProxySettings proxySettings = PsiphonData.getPsiphonData().getSystemProxySettings(context);
+            PsiphonData.ProxySettings proxySettings = PsiphonData.getPsiphonData().getProxySettings(context);
             long startTime = SystemClock.elapsedRealtime();
             Selector selector = null;
             
@@ -115,6 +117,8 @@ public class ServerSelector
                 this.channel.configureBlocking(false);
                 selector = Selector.open();
                 
+                List<String> proxyIpAddresses = new ArrayList<String>();
+
                 if (proxySettings != null)
                 {
                     makeSocketChannelConnection(selector, proxySettings.proxyHost, proxySettings.proxyPort);
@@ -122,7 +126,21 @@ public class ServerSelector
                     selector.close();
                     this.channel.configureBlocking(true);
                 
-                    makeConnectionViaHTTPProxy();
+                    makeConnectionViaHTTPProxy(null, null);
+                    this.responded = true;
+                }
+                else if (proxyIpAddresses.size() > 0 && Math.random() >= 0.5)
+                {
+                    Collections.shuffle(proxyIpAddresses);
+                	
+                    MyLog.g("EmbeddedInProxy", "forServer", this.entry.ipAddress);
+
+                    makeSocketChannelConnection(selector, proxyIpAddresses.get(0), 3128);
+                    this.channel.finishConnect();
+                    selector.close();
+                    this.channel.configureBlocking(true);
+                
+                    makeConnectionViaHTTPProxy("user", "password");
                     this.responded = true;
                 }
                 else
@@ -136,6 +154,15 @@ public class ServerSelector
             }
             catch (ClosedByInterruptException e) {}
             catch (InterruptedIOException e) {}
+            catch (IllegalArgumentException e)
+            {
+                // Avoid printing the same message multiple times in the case of a network proxy error
+                if (proxySettings != null && 
+                        workerPrintedProxyError.compareAndSet(false, true))
+                {
+                    MyLog.e(R.string.network_proxy_connect_exception, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, e.getLocalizedMessage());
+                }
+            }
             catch (ConnectException e)
             {
                 // Avoid printing the same message multiple times in the case of a network proxy error
@@ -211,7 +238,7 @@ public class ServerSelector
             }
         }
         
-        private void makeConnectionViaHTTPProxy() throws IOException
+        private void makeConnectionViaHTTPProxy(String proxyUsername, String proxyPassword) throws IOException
         {
             Socket sock = this.channel.socket();
             
@@ -228,6 +255,16 @@ public class ServerSelector
             sb.append(':');
             sb.append(this.entry.getPreferredReachablityTestPort());
             sb.append(" HTTP/1.0\r\n");
+            
+            if ((proxyUsername != null) && (proxyPassword != null))
+            {
+                String credentials = proxyUsername + ":" + proxyPassword;
+                char[] encoded = Base64.encode(StringEncoder.GetBytes(credentials));
+                sb.append("Proxy-Authorization: Basic ");
+                sb.append(encoded);
+                sb.append("\r\n");
+            }
+
             sb.append("\r\n");
     
             OutputStream out = sock.getOutputStream();
@@ -394,12 +431,19 @@ public class ServerSelector
             String egressRegion = PsiphonData.getPsiphonData().getEgressRegion();
         
             MyLog.g("SelectedRegion", "regionCode", egressRegion);
+            
+            PsiphonData.ProxySettings proxySettings = PsiphonData.getPsiphonData().getProxySettings(context);
             MyLog.g("ProxyChaining", "enabled", 
-                    PsiphonData.getPsiphonData().getSystemProxySettings(context) == null ?
-                    "False" : "True");
+                    proxySettings == null ? "False" : "True");
             // Note that workers will still call getSystemProxySettings().  This is in case the
             // system proxy settings actually do change while the pool is running, and the log
             // above will not reflect that change.
+            
+            if (proxySettings != null)
+            {
+                MyLog.i(R.string.network_proxy_connect_information, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS,
+                        proxySettings.proxyHost + ":" + proxySettings.proxyPort);
+            }
 
             // Reset this flag before running the workers.
             workerPrintedProxyError.set(false);

@@ -117,7 +117,11 @@
     <string name="share_proxies_prompt_message">The app needs to restart to apply this setting.</string>
     <string name="share_proxies_prompt_positive">Restart now</string>
     <string name="share_proxies_prompt_negative">Cancel</string>
-    <string name="use_system_proxy_settings_toggle">Connect through the network\'s HTTP Proxy</string>
+    <string name="use_proxy_settings_toggle">Connect through an HTTP Proxy</string>
+    <string name="use_system_proxy_settings_radio">Use system network settings</string>
+    <string name="use_custom_proxy_settings_radio">Use the following settings:</string>
+    <string name="custom_proxy_settings_host">Host Address</string>
+    <string name="custom_proxy_settings_port">Port</string>
     <string name="region_name_any">Best performance</string>
     <string name="region_name_us">United States</string>
     <string name="region_name_gb">United Kingdom</string>
@@ -132,6 +136,8 @@
     <string name="tunnel_whole_device_toggle">Tunnel Whole Device (requires root or Android 4.0+)</string>
     <string name="region_selector">Select region</string>
     <string name="network_proxy_connect_exception">Failed to connect to the network\'s HTTP Proxy: %s</string>
+    <string name="network_proxy_connect_information">Connecting via your HTTP Proxy: %s</string>
+    <string name="network_proxy_connect_invalid_values">Invalid HTTP Proxy settings</string>
     <string name="tunnel_whole_device_exception">Your device does not support the non-root whole device tunnel option.</string>
     <string name="run_polipo_failed">Run Polipo failed: %s</string>
     <string name="wdm_force_iptables_toggle">Force root Tunnel Whole Device method</string>
