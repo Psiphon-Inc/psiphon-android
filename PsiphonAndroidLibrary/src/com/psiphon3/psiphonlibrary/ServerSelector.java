@@ -420,10 +420,12 @@ public class ServerSelector
             // work queue) along with a randomly prioritized list of servers
             // from deeper in the list. Assumes the default Executors.newFixedThreadPool
             // priority is FIFO.
+            // NEW: Don't prioritize the first few servers any more, to give equal waiting
+            // to older servers and to newer servers.
             
             if (serverEntries.size() > NUM_THREADS)
             {
-                Collections.shuffle(serverEntries.subList(NUM_THREADS, serverEntries.size()));
+                Collections.shuffle(serverEntries.subList(1, serverEntries.size()));
             }
             
             ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
