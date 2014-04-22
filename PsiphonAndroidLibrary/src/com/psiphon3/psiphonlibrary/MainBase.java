@@ -183,6 +183,7 @@ public abstract class MainBase
         private RadioButton m_useCustomProxySettings;
         private TextView m_customProxySettingsHost;
         private TextView m_customProxySettingsPort;
+        private Toast m_invalidProxySettingsToast;
         /*private CheckBox m_shareProxiesToggle;
         private TextView m_statusTabSocksPortLine;
         private TextView m_statusTabHttpProxyPortLine;*/
@@ -723,6 +724,8 @@ public abstract class MainBase
         protected void onPause()
         {
             super.onPause();
+            
+            cancelInvalidProxySettingsToast();
             
             m_updateHeaderTimer.cancel();
             m_updateStatusTimer.cancel();
@@ -1317,14 +1320,30 @@ public abstract class MainBase
                 });
         }
 
+        private void cancelInvalidProxySettingsToast()
+        {
+            if (m_invalidProxySettingsToast != null)
+            {
+                View toastView = m_invalidProxySettingsToast.getView();
+                if (toastView != null)
+                {
+                    if (toastView.isShown())
+                    {
+                        m_invalidProxySettingsToast.cancel();
+                    }
+                }
+            }
+        }
+        
         protected void startTunnel(Context context)
         {
             // Don't start if custom proxy settings is selected and values are invalid
             if (m_useProxySettingsToggle.isChecked() &&
                     m_useCustomProxySettings.isChecked() && !customProxySettingsValuesValid())
             {
-                Toast toast = Toast.makeText(context, R.string.network_proxy_connect_invalid_values, Toast.LENGTH_SHORT);
-                toast.show();
+                cancelInvalidProxySettingsToast();
+                m_invalidProxySettingsToast = Toast.makeText(context, R.string.network_proxy_connect_invalid_values, Toast.LENGTH_SHORT);
+                m_invalidProxySettingsToast.show();
                 return;
             }
  
