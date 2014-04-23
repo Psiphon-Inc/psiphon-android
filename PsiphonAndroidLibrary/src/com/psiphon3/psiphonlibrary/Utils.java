@@ -13,7 +13,11 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.spec.X509EncodedKeySpec;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,6 +31,12 @@ import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.io.IOException;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 
 import org.apache.http.conn.util.InetAddressUtils;
 import org.json.JSONException;
@@ -1027,5 +1037,92 @@ public class Utils
         // Disabled for now -- too noisy (not changing to Log.g since it's SENSITIVE)
         //MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
         ResolverConfig.refresh(dnsResolvers);        
+    }
+    
+    public static class RSAEncryptOutput {
+        public final byte[] mContentCiphertext;
+        public final byte[] mIv;
+        public final byte[] mWrappedEncryptionKey;
+        public final byte[] mContentMac;
+        public final byte[] mWrappedMacKey;
+
+        public RSAEncryptOutput(
+                byte[] contentCiphertext, byte[] iv, byte[] wrappedEncryptionKey,
+                byte[] contentMac, byte[] wrappedMacKey) {
+            mContentCiphertext = contentCiphertext;
+            mIv = iv;
+            mWrappedEncryptionKey = wrappedEncryptionKey;
+            mContentMac = contentMac;
+            mWrappedMacKey = wrappedMacKey;            
+        }
+    }
+    
+    public static RSAEncryptOutput encryptWithRSA(byte[] data, String rsaPublicKey)
+        throws GeneralSecurityException, UnsupportedEncodingException {
+
+        byte[] contentCiphertext = null;
+        byte[] iv = null;
+        byte[] wrappedEncryptionKey = null;
+        byte[] contentMac = null;
+        byte[] wrappedMacKey = null;
+
+        int KEY_LENGTH = 128;
+
+        //
+        // Encrypt the cleartext content
+        //
+
+        KeyGenerator encryptionKeygen = KeyGenerator.getInstance("AES");
+        encryptionKeygen.init(KEY_LENGTH);
+        SecretKey encryptionKey = encryptionKeygen.generateKey();
+
+        SecureRandom rng = new SecureRandom();
+        iv = new byte[16];
+        rng.nextBytes(iv);
+        IvParameterSpec ivParamSpec = new IvParameterSpec(iv);
+
+        // TODO: should be PCKS7Padding?
+        // http://stackoverflow.com/questions/20770072/aes-cbc-pkcs5padding-vs-aes-cbc-pkcs7padding-with-256-key-size-performance-java/20770158#20770158
+        Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        aesCipher.init(Cipher.ENCRYPT_MODE, encryptionKey, ivParamSpec);
+
+        contentCiphertext = aesCipher.doFinal(data);
+
+        // Get the IV. (I don't know if it can be different from the
+        // one generated above, but retrieving it here seems safest.)
+        iv = aesCipher.getIV();
+
+        //
+        // Create a MAC (encrypt-then-MAC).
+        //
+
+        KeyGenerator macKeygen = KeyGenerator.getInstance("AES");
+        macKeygen.init(KEY_LENGTH);
+        SecretKey macKey = macKeygen.generateKey();
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(macKey);
+        // Include the IV in the MAC'd data, as per http://tools.ietf.org/html/draft-mcgrew-aead-aes-cbc-hmac-sha2-01
+        mac.update(iv);
+        contentMac = mac.doFinal(contentCiphertext);
+
+        //
+        // Ready the public key that we'll use to share keys
+        //
+
+        byte[] publicKeyBytes = Base64.decode(rsaPublicKey);
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(publicKeyBytes);
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        PublicKey publicKey = keyFactory.generatePublic(spec);
+        Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
+        rsaCipher.init(Cipher.WRAP_MODE, publicKey);
+
+        //
+        // Wrap the symmetric keys
+        //
+
+        wrappedEncryptionKey = rsaCipher.wrap(encryptionKey);
+        wrappedMacKey = rsaCipher.wrap(macKey);
+        
+        return new RSAEncryptOutput(contentCiphertext, iv, wrappedEncryptionKey, contentMac, wrappedMacKey);
     }
 }

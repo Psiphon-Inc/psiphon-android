@@ -35,6 +35,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -51,12 +52,13 @@ import ch.ethz.ssh2.crypto.Base64;
 import ch.ethz.ssh2.transport.ClientServerHello;
 import ch.ethz.ssh2.util.StringEncoder;
 
+import com.psiphon3.psiphonlibrary.MeekClient.IAbortIndicator;
 import com.psiphon3.psiphonlibrary.R;
 import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.ServerInterface.ServerEntry;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
-public class ServerSelector
+public class ServerSelector implements IAbortIndicator
 {
     private final int NUM_THREADS = 10;
     private final int SHUTDOWN_POLL_MILLISECONDS = 50;
@@ -72,6 +74,8 @@ public class ServerSelector
     private boolean stopFlag = false;
     private AtomicBoolean workerPrintedProxyError = new AtomicBoolean(false);
 
+    public MeekClient firstEntryMeekClient = null;
+    public boolean firstEntryUsingHTTPProxy = false;
     public Socket firstEntrySocket = null;
     public String firstEntryIpAddress = null;
     
@@ -85,8 +89,45 @@ public class ServerSelector
         this.context = context;
     }
     
+    // MeekClient.IAbortIndicator
+    @Override
+    public boolean shouldAbort() {
+        return this.stopFlag;
+    }
+
+    private static class MeekRelay {
+        public final String mHost;
+        public final int mPort;
+        public final String mObfuscationKeyword;
+
+        MeekRelay(String host, int port, String obfuscationKeyword) {
+            mHost = host;
+            mPort = port;
+            mObfuscationKeyword = obfuscationKeyword;
+        }
+    }; 
+
+    // Embedded meek relay addresses (put your real values here)
+    private final List<MeekRelay> mMeekRelays =
+            Arrays.asList(
+                    new MeekRelay("192.168.0.1", 8080, "secret1"),
+                    new MeekRelay("172.16.0.1", 8080, "secret2"),
+                    new MeekRelay("10.0.0.1", 8080, "secret3")
+                    );
+    
+    private synchronized boolean hasMeekRelays() {
+        return mMeekRelays.size() > 0;
+    }
+    
+    private synchronized MeekRelay selectRandomMeekRelay() {
+        Collections.shuffle(mMeekRelays);
+        return mMeekRelays.get(0);
+    }
+    
     class CheckServerWorker implements Runnable
     {
+        MeekClient meekClient = null;
+        boolean usingHTTPProxy = false;
         ServerEntry entry = null;
         boolean responded = false;
         boolean completed = false;
@@ -117,10 +158,10 @@ public class ServerSelector
                 this.channel.configureBlocking(false);
                 selector = Selector.open();
                 
-                List<String> proxyIpAddresses = new ArrayList<String>();
-
                 if (proxySettings != null)
                 {
+                    this.usingHTTPProxy = true;
+
                     makeSocketChannelConnection(selector, proxySettings.proxyHost, proxySettings.proxyPort);
                     this.channel.finishConnect();
                     selector.close();
@@ -129,18 +170,37 @@ public class ServerSelector
                     makeConnectionViaHTTPProxy(null, null);
                     this.responded = true;
                 }
-                else if (proxyIpAddresses.size() > 0 && Math.random() >= 0.5)
+                // This meek code replaces the HTTP in-proxies and inherits the same "50%" invocation logic
+                else if (hasMeekRelays() && Math.random() >= 0.5)
                 {
-                    Collections.shuffle(proxyIpAddresses);
-                	
-                    MyLog.g("EmbeddedInProxy", "forServer", this.entry.ipAddress);
+                    // 1. Create a new meek client with the selected meek configuration
+                    // 2. Start the meek client, which is a localhost server listening on a OS assigned port
+                    // 3. The meek client is a static port forward to the selected Psiphon server, so call
+                    //    makeSocketChannelConnection with the meek client address in place of the Psiphon server
+                    // 4. The meek client accepts local connections instantly, so the meek protocol has been
+                    //    tweaked to immediately poll the meek server -- we wait for that round trip to
+                    //    complete, via awaitEstablishedFirstServerConnection, and take that to be the
+                    //    response time.
+                    //    Note that awaitEstablishedFirstServerConnection only works here because there's a new
+                    //    MeekClient instance per server candidate; if we started to reuse MeekClient instances
+                    //    then we need more sophisticated signaling.
+                    
+                    MyLog.g("EmbeddedMeekRelay", "forServer", this.entry.ipAddress);
 
-                    makeSocketChannelConnection(selector, proxyIpAddresses.get(0), 3128);
-                    this.channel.finishConnect();
-                    selector.close();
-                    this.channel.configureBlocking(true);
-                
-                    makeConnectionViaHTTPProxy("user", "password");
+                    MeekRelay meekRelay = selectRandomMeekRelay();                    
+                    
+                    this.meekClient = new MeekClient(
+                            ServerSelector.this.protectSocket,
+                            this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
+                            meekRelay.mHost,
+                            meekRelay.mPort,
+                            meekRelay.mObfuscationKeyword);
+                    this.meekClient.start();
+
+                    makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
+                    
+                    this.meekClient.awaitEstablishedFirstServerConnection(ServerSelector.this);
+
                     this.responded = true;
                 }
                 else
@@ -187,6 +247,10 @@ public class ServerSelector
                 {
                     MyLog.w(R.string.network_proxy_connect_exception, MyLog.Sensitivity.NOT_SENSITIVE, e.getLocalizedMessage());
                 }
+            }
+            catch (InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
             }
             finally
             {
@@ -593,6 +657,8 @@ public class ServerSelector
                         if (worker.entry.ipAddress.equals(firstEntry.ipAddress))
                         {
                             // TODO: getters with mutex?
+                            firstEntryMeekClient = worker.meekClient;
+                            firstEntryUsingHTTPProxy = worker.usingHTTPProxy;
                             firstEntrySocket = worker.channel.socket();
                             firstEntryIpAddress = worker.entry.ipAddress;
                         }

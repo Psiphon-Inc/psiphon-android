@@ -125,15 +125,6 @@
                     android:textAppearance="?android:attr/textAppearanceSmall" />
 
                 <CheckBox
-                    android:id="@+id/httpPrefixToggle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="left"
-                    android:onClick="onHttpPrefixToggle"
-                    android:text="@string/http_prefix_toggle"
-                    android:textAppearance="?android:attr/textAppearanceSmall" />
-
-                <CheckBox
                     android:id="@+id/useProxySettingsToggle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

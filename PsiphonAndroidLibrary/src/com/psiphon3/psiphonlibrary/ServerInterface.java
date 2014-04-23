@@ -1165,7 +1165,7 @@ public class ServerInterface
         }
     }
 
-    private class ProtectedSSLSocketFactory extends SSLSocketFactory
+    public static class ProtectedSSLSocketFactory extends SSLSocketFactory
     {
         Tun2Socks.IProtectSocket protectSocket;
 
@@ -1218,6 +1218,48 @@ public class ServerInterface
         @Override
         public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
                 throws IOException, UnknownHostException
+        {
+            // Deprecated - our code will not call this
+            assert(false);
+            return null;
+        }
+    }
+    
+    public static class ProtectedPlainSocketFactory extends PlainSocketFactory
+    {
+        Tun2Socks.IProtectSocket protectSocket;
+
+        ProtectedPlainSocketFactory(Tun2Socks.IProtectSocket protectSocket)
+        {
+            super();
+            
+            this.protectSocket = protectSocket;
+        }
+
+        // NOTE:
+        // See comment block in ProtectedSSLSocketFactory
+        
+        @Override
+        public Socket createSocket(HttpParams params)
+        {
+            Socket socket = null;
+            try
+            {
+                socket = SocketChannel.open().socket();
+                if (this.protectSocket != null)
+                {
+                    this.protectSocket.doVpnProtect(socket);
+                }
+            } catch (IOException e)
+            {
+                // TODO: log?
+            }
+
+            return socket;
+        }
+
+        @Override
+        public Socket createSocket()
         {
             // Deprecated - our code will not call this
             assert(false);

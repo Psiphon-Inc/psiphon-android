@@ -3,9 +3,6 @@ package ch.ethz.ssh2.transport;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-
-import com.psiphon3.psiphonlibrary.PsiphonData;
 
 import ch.ethz.ssh2.Connection;
 import ch.ethz.ssh2.crypto.ObfuscatedSSH.ObfuscatedInputStream;
@@ -67,36 +64,12 @@ public class ClientServerHello
 
 		byte[] serverVersion = new byte[512];
 		
-		// PSIPHON HTTP-PREFIX
-		boolean skippedPrefix = false;
-        
-        if (PsiphonData.getPsiphonData().getHttpPrefix())
-        {
-            bi.disableObfuscation();
-        }
-        else
-        {
-            // Not sending the HTTP Prefix, so not expecting the server to send the HTTP Prefix response
-            skippedPrefix = true;
-        }
-
         for (int i = 0; i < 50; i++)
 		{
 			int len = readLineRN(bi, serverVersion);
 
 			server_line = StringEncoder.GetString(serverVersion, 0, len);
 			
-			if (!skippedPrefix)
-			{
-				// Skip to blank line terminated by <CR><LF>
-				if (server_line.length() == 0)
-				{
-					bi.enableObfuscation();
-					skippedPrefix = true;
-				}
-				continue;
-			}
-
 			if (server_line.startsWith("SSH-"))
 				break;
 		}

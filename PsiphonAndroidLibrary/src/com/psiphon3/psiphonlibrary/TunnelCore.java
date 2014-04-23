@@ -324,7 +324,6 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         PsiphonData.getPsiphonData().getDataTransferStats().startSession();
         
         MyLog.g("ConnectingServer", "ipAddress", entry.ipAddress);
-        MyLog.g("HttpPrefix", "enabled", PsiphonData.getPsiphonData().getHttpPrefix() ? "True" : "False");
         
         Connection sshConnection = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
         sshConnection.connect(
@@ -468,6 +467,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         long preemptiveReconnectWaitUntil = 0;
         long preemptiveReconnectTimePeriod = 0; 
 
+        MeekClient meekClient = null;
+        boolean usingHTTPProxy = false;
         Socket socket = null;
         Connection sshConnection = null;
         DynamicPortForwarder socks = null;
@@ -560,6 +561,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
             checkSignals(0);
             
+            meekClient = m_serverSelector.firstEntryMeekClient;
+            usingHTTPProxy = m_serverSelector.firstEntryUsingHTTPProxy;
             socket = m_serverSelector.firstEntrySocket;
             String ipAddress = m_serverSelector.firstEntryIpAddress;
             if (socket == null)
@@ -618,7 +621,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             }
             MyLog.v(R.string.socks_running, MyLog.Sensitivity.NOT_SENSITIVE, PsiphonData.getPsiphonData().getSocksPort());
 
-            // The HTTP proxy implementation is provided by Polipo,
+            // The Psiphon localhost HTTP proxy implementation is provided by Polipo,
             // a native application accessed via JNI. This proxy is
             // chained to our SOCKS proxy.
 
@@ -922,7 +925,12 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
     
                     m_interface.doPeriodicWork(null, true, false);
                     
-                    if (preemptiveReconnectTimePeriod != 0)
+                    // NOTE: this preemptive reconnect code isn't compatible with HTTP proxy or
+                    // meek modes (yet)... it only makes direct connections
+                    
+                    if (preemptiveReconnectTimePeriod != 0
+                            && !usingHTTPProxy
+                            && meekClient == null)
                     {
                         long now = SystemClock.elapsedRealtime();
                         if (now >= preemptiveReconnectWaitUntil)
@@ -1272,6 +1280,12 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                 sshConnection = null;
                 socket = null;
                 MyLog.v(R.string.ssh_stopped, MyLog.Sensitivity.NOT_SENSITIVE);
+            }
+            
+            if (meekClient != null)
+            {
+                meekClient.stop();
+                meekClient = null;
             }
                         
             PsiphonData.getPsiphonData().getDataTransferStats().stop();
