@@ -24,17 +24,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Locale;
-
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -46,7 +37,6 @@ import android.os.Environment;
 import android.util.Log;
 
 import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
-import com.psiphon3.psiphonlibrary.Utils.Base64;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 public class Diagnostics
@@ -195,67 +185,13 @@ public class Diagnostics
         assert(diagnosticJSON != null);
 
         // Encrypt the file contents
-        byte[] contentCiphertext = null, iv = null,
-                wrappedEncryptionKey = null, contentMac = null,
-                wrappedMacKey = null;
+        Utils.RSAEncryptOutput rsaEncryptOutput = null;
         boolean attachOkay = false;
         try
         {
-            int KEY_LENGTH = 128;
-
-            //
-            // Encrypt the cleartext content
-            //
-
-            KeyGenerator encryptionKeygen = KeyGenerator.getInstance("AES");
-            encryptionKeygen.init(KEY_LENGTH);
-            SecretKey encryptionKey = encryptionKeygen.generateKey();
-
-            SecureRandom rng = new SecureRandom();
-            iv = new byte[16];
-            rng.nextBytes(iv);
-            IvParameterSpec ivParamSpec = new IvParameterSpec(iv);
-
-            Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            aesCipher.init(Cipher.ENCRYPT_MODE, encryptionKey, ivParamSpec);
-
-            contentCiphertext = aesCipher.doFinal(diagnosticJSON.getBytes("UTF-8"));
-
-            // Get the IV. (I don't know if it can be different from the
-            // one generated above, but retrieving it here seems safest.)
-            iv = aesCipher.getIV();
-
-            //
-            // Create a MAC (encrypt-then-MAC).
-            //
-
-            KeyGenerator macKeygen = KeyGenerator.getInstance("AES");
-            macKeygen.init(KEY_LENGTH);
-            SecretKey macKey = macKeygen.generateKey();
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(macKey);
-            // Include the IV in the MAC'd data, as per http://tools.ietf.org/html/draft-mcgrew-aead-aes-cbc-hmac-sha2-01
-            mac.update(iv);
-            contentMac = mac.doFinal(contentCiphertext);
-
-            //
-            // Ready the public key that we'll use to share keys
-            //
-
-            byte[] publicKeyBytes = Base64.decode(EmbeddedValues.FEEDBACK_ENCRYPTION_PUBLIC_KEY);
-            X509EncodedKeySpec spec = new X509EncodedKeySpec(publicKeyBytes);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PublicKey publicKey = keyFactory.generatePublic(spec);
-            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
-            rsaCipher.init(Cipher.WRAP_MODE, publicKey);
-
-            //
-            // Wrap the symmetric keys
-            //
-
-            wrappedEncryptionKey = rsaCipher.wrap(encryptionKey);
-            wrappedMacKey = rsaCipher.wrap(macKey);
-
+            rsaEncryptOutput = Utils.encryptWithRSA(
+                    diagnosticJSON.getBytes("UTF-8"),
+                    EmbeddedValues.FEEDBACK_ENCRYPTION_PUBLIC_KEY);
             attachOkay = true;
         }
         catch (GeneralSecurityException e)
@@ -272,11 +208,11 @@ public class Diagnostics
         {
             StringBuilder encryptedContent = new StringBuilder();
             encryptedContent.append("{\n");
-            encryptedContent.append("  \"contentCiphertext\": \"").append(Utils.Base64.encode(contentCiphertext)).append("\",\n");
-            encryptedContent.append("  \"iv\": \"").append(Utils.Base64.encode(iv)).append("\",\n");
-            encryptedContent.append("  \"wrappedEncryptionKey\": \"").append(Utils.Base64.encode(wrappedEncryptionKey)).append("\",\n");
-            encryptedContent.append("  \"contentMac\": \"").append(Utils.Base64.encode(contentMac)).append("\",\n");
-            encryptedContent.append("  \"wrappedMacKey\": \"").append(Utils.Base64.encode(wrappedMacKey)).append("\"\n");
+            encryptedContent.append("  \"contentCiphertext\": \"").append(Utils.Base64.encode(rsaEncryptOutput.mContentCiphertext)).append("\",\n");
+            encryptedContent.append("  \"iv\": \"").append(Utils.Base64.encode(rsaEncryptOutput.mIv)).append("\",\n");
+            encryptedContent.append("  \"wrappedEncryptionKey\": \"").append(Utils.Base64.encode(rsaEncryptOutput.mWrappedEncryptionKey)).append("\",\n");
+            encryptedContent.append("  \"contentMac\": \"").append(Utils.Base64.encode(rsaEncryptOutput.mContentMac)).append("\",\n");
+            encryptedContent.append("  \"wrappedMacKey\": \"").append(Utils.Base64.encode(rsaEncryptOutput.mWrappedMacKey)).append("\"\n");
             encryptedContent.append("}");
 
             try

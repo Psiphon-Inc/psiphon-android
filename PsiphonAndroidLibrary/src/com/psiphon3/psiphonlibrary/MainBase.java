@@ -137,7 +137,6 @@ public abstract class MainBase
         public static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
         public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
         public static final String WDM_FORCE_IPTABLES_PREFERENCE = "wdmForceIptablesPreference";
-        public static final String HTTP_PREFIX_PREFERENCE = "httpPrefixPreference";
         public static final String USE_PROXY_SETTINGS_PREFERENCE = "useProxySettingsPreference";
         public static final String USE_SYSTEM_PROXY_SETTINGS_PREFERENCE = "useSystemProxySettingsPreference";
         public static final String USE_CUSTOM_PROXY_SETTINGS_PREFERENCE = "useCustomProxySettingsPreference";
@@ -176,7 +175,6 @@ public abstract class MainBase
         private SpinnerHelper m_regionSelector;
         protected CheckBox m_tunnelWholeDeviceToggle;
         private CheckBox m_wdmForceIptablesToggle;
-        private CheckBox m_httpPrefixToggle;
         private CheckBox m_useProxySettingsToggle;
         private RadioGroup m_useProxySettingsRadioGroup;
         private RadioButton m_useSystemProxySettings;
@@ -508,7 +506,6 @@ public abstract class MainBase
             m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
             m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
             m_wdmForceIptablesToggle = (CheckBox)findViewById(R.id.WdmForceIptablesToggle);
-            m_httpPrefixToggle = (CheckBox)findViewById(R.id.httpPrefixToggle);
             m_useProxySettingsToggle = (CheckBox)findViewById(R.id.useProxySettingsToggle);
             m_useProxySettingsRadioGroup = (RadioGroup)findViewById(R.id.useProxySettingsRadioGroup);
             m_useSystemProxySettings = (RadioButton)findViewById(R.id.useSystemProxySettingsRadio);
@@ -595,11 +592,6 @@ public abstract class MainBase
             // and that's why setWdmForceIptables != wdmForceIptablesPreference.
             PsiphonData.getPsiphonData().setWdmForceIptables(m_isRooted && wdmForceIptablesPreference);
 
-            boolean httpPrefixPreference =
-                    PreferenceManager.getDefaultSharedPreferences(this).getBoolean(HTTP_PREFIX_PREFERENCE, false);
-            m_httpPrefixToggle.setChecked(httpPrefixPreference);
-            PsiphonData.getPsiphonData().setHttpPrefix(httpPrefixPreference);
-            
             boolean useSystemProxySettingsPreference = 
                     PreferenceManager.getDefaultSharedPreferences(this).getBoolean(USE_SYSTEM_PROXY_SETTINGS_PREFERENCE, false);
             if (useSystemProxySettingsPreference)
@@ -981,40 +973,6 @@ public abstract class MainBase
             editor.commit();
             
             PsiphonData.getPsiphonData().setWdmForceIptables(wdmForceIptablesPreference);
-        }
-
-        public void onHttpPrefixToggle(View v)
-        {
-            // Just in case an OnClick message is in transit before setEnabled is processed...(?)
-            if (!m_httpPrefixToggle.isEnabled())
-            {
-                return;
-            }
-            
-            boolean restart = false;
-
-            if (isServiceRunning())
-            {
-                doToggle();
-                restart = true;
-            }
-
-            boolean httpPrefixPreference = m_httpPrefixToggle.isChecked();
-            updateHttpPrefixPreference(httpPrefixPreference);
-            
-            if (restart)
-            {
-                startTunnel(this);
-            }
-        }
-        
-        protected void updateHttpPrefixPreference(boolean httpPrefixPreference)
-        {
-            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-            editor.putBoolean(HTTP_PREFIX_PREFERENCE, httpPrefixPreference);
-            editor.commit();
-            
-            PsiphonData.getPsiphonData().setHttpPrefix(httpPrefixPreference);
         }
 
         public void onUseProxySettingsToggle(View v)
@@ -1418,7 +1376,6 @@ public abstract class MainBase
             // (i.e., while isServiceRunning can't be relied upon)
             m_tunnelWholeDeviceToggle.setEnabled(false);
             m_wdmForceIptablesToggle.setEnabled(false);
-            m_httpPrefixToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
             m_useProxySettingsToggle.setEnabled(false);
             SetProxySettingsRadioGroupEnabled(false);
@@ -1428,7 +1385,6 @@ public abstract class MainBase
         {
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
             m_wdmForceIptablesToggle.setEnabled(m_isRooted && PsiphonData.getPsiphonData().getTunnelWholeDevice());
-            m_httpPrefixToggle.setEnabled(true);
             m_regionSelector.setEnabled(true);
             m_useProxySettingsToggle.setEnabled(true);
             SetProxySettingsRadioGroupEnabled(m_useProxySettingsToggle.isChecked());

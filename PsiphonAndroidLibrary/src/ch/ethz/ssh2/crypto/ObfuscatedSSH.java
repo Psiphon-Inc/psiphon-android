@@ -44,13 +44,20 @@ public class ObfuscatedSSH
     static final byte[] CLIENT_TO_SERVER_IV = "client_to_server".getBytes();
     static final byte[] SERVER_TO_CLIENT_IV = "server_to_client".getBytes();
 	
+    private int obfuscateMaxPadding = OBFUSCATE_MAX_PADDING;
     private String obfuscateKeyword;
     private RC4Engine rc4input = new RC4Engine();
     private RC4Engine rc4output = new RC4Engine();
     
     public ObfuscatedSSH(String keyword)
     {
-        this.obfuscateKeyword = keyword;        
+        this.obfuscateKeyword = keyword;
+    }
+
+    public ObfuscatedSSH(String keyword, int maxPadding)
+    {
+        this.obfuscateKeyword = keyword;
+        this.obfuscateMaxPadding = maxPadding;
     }
 
     public byte[] getSeedMessage() throws IOException
@@ -63,7 +70,7 @@ public class ObfuscatedSSH
         
         buffer.write(ByteBuffer.allocate(4).putInt(OBFUSCATE_MAGIC_VALUE).array());
         
-        int paddingLength = random.nextInt(OBFUSCATE_MAX_PADDING);
+        int paddingLength = random.nextInt(this.obfuscateMaxPadding);
         byte[] padding = new byte[paddingLength];
         random.nextBytes(padding);
         buffer.write(ByteBuffer.allocate(4).putInt(paddingLength).array());
@@ -76,13 +83,6 @@ public class ObfuscatedSSH
         obfuscateOutput(obfuscatedMessage);
 
         buffer.reset();
-
-        // PSIPHON: HTTP-PREFIX
-        if (PsiphonData.getPsiphonData().getHttpPrefix())
-        {
-            String prefix = "POST / HTTP/1.1\r\n\r\n";
-            buffer.write(prefix.getBytes());
-        }
 
         buffer.write(seed);
         buffer.write(obfuscatedMessage);
