@@ -76,9 +76,8 @@
             android:weightSum="1.0" >
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
                 android:gravity="center"
                 android:orientation="vertical" >
 
@@ -106,42 +105,50 @@
                         android:textAppearance="?android:attr/textAppearanceSmall" />
                 </LinearLayout>
 
-                <CheckBox
-                    android:id="@+id/tunnelWholeDeviceToggle"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="left"
-                    android:onClick="onTunnelWholeDeviceToggle"
-                    android:text="@string/tunnel_whole_device_toggle"
-                    android:textAppearance="?android:attr/textAppearanceSmall" />
+                    android:layout_gravity="center"
+                    android:orientation="vertical" >
+                    
+	                <CheckBox
+	                    android:id="@+id/tunnelWholeDeviceToggle"
+	                    android:layout_width="wrap_content"
+	                    android:layout_height="wrap_content"
+	                    android:layout_gravity="left"
+	                    android:onClick="onTunnelWholeDeviceToggle"
+	                    android:text="@string/tunnel_whole_device_toggle"
+	                    android:textAppearance="?android:attr/textAppearanceSmall" />
+	
+	                <CheckBox
+	                    android:id="@+id/WdmForceIptablesToggle"
+	                    android:layout_width="wrap_content"
+	                    android:layout_height="wrap_content"
+	                    android:layout_gravity="left"
+	                    android:onClick="onWdmForceIptablesToggle"
+	                    android:text="@string/wdm_force_iptables_toggle"
+	                    android:textAppearance="?android:attr/textAppearanceSmall" />
+	
+	                <CheckBox
+	                    android:id="@+id/httpPrefixToggle"
+	                    android:layout_width="wrap_content"
+	                    android:layout_height="wrap_content"
+	                    android:layout_gravity="left"
+	                    android:onClick="onHttpPrefixToggle"
+	                    android:text="@string/http_prefix_toggle"
+	                    android:textAppearance="?android:attr/textAppearanceSmall" />
+	
+	                <CheckBox
+	                    android:id="@+id/useProxySettingsToggle"
+	                    android:layout_width="wrap_content"
+	                    android:layout_height="wrap_content"
+	                    android:layout_gravity="left"
+	                    android:onClick="onUseProxySettingsToggle"
+	                    android:text="@string/use_proxy_settings_toggle"
+	                    android:textAppearance="?android:attr/textAppearanceSmall" />
 
-                <CheckBox
-                    android:id="@+id/WdmForceIptablesToggle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="left"
-                    android:onClick="onWdmForceIptablesToggle"
-                    android:text="@string/wdm_force_iptables_toggle"
-                    android:textAppearance="?android:attr/textAppearanceSmall" />
-
-                <CheckBox
-                    android:id="@+id/httpPrefixToggle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="left"
-                    android:onClick="onHttpPrefixToggle"
-                    android:text="@string/http_prefix_toggle"
-                    android:textAppearance="?android:attr/textAppearanceSmall" />
-
-                <CheckBox
-                    android:id="@+id/useProxySettingsToggle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="left"
-                    android:onClick="onUseProxySettingsToggle"
-                    android:text="@string/use_proxy_settings_toggle"
-                    android:textAppearance="?android:attr/textAppearanceSmall" />
-
+                </LinearLayout>
+	            
                 <RadioGroup
                     android:id="@+id/useProxySettingsRadioGroup"
                     android:layout_width="wrap_content"
