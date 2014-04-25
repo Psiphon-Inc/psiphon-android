@@ -262,6 +262,10 @@ public class MeekClient {
                 } catch (SocketTimeoutException e) {
                     // In this case, we POST with no content -- this is for polling the server
                 }
+                if (payloadLength == -1) {
+                    // EOF
+                    break;
+                }
 
                 HttpPost httpPost = new HttpPost(uri);
                 ByteArrayEntity entity = new ByteArrayEntity(payloadBuffer, 0, payloadLength);
@@ -344,18 +348,18 @@ public class MeekClient {
                         EmbeddedValues.MEEK_CLIENT_COOKIE_PAYLOAD_ENCRYPTION_PUBLIC_KEY);
 
         JSONObject encryptedPayload = new JSONObject();
-        payload.put("c", rsaEncryptOutput.mContentCiphertext);
-        payload.put("v", rsaEncryptOutput.mIv);
-        payload.put("e", rsaEncryptOutput.mWrappedEncryptionKey);
-        payload.put("d", rsaEncryptOutput.mContentMac);
-        payload.put("m", rsaEncryptOutput.mWrappedMacKey);
+        encryptedPayload.put("c", Utils.Base64.encode(rsaEncryptOutput.mContentCiphertext));
+        encryptedPayload.put("v", Utils.Base64.encode(rsaEncryptOutput.mIv));
+        encryptedPayload.put("e", Utils.Base64.encode(rsaEncryptOutput.mWrappedEncryptionKey));
+        encryptedPayload.put("d", Utils.Base64.encode(rsaEncryptOutput.mContentMac));
+        encryptedPayload.put("m", Utils.Base64.encode(rsaEncryptOutput.mWrappedMacKey));
 
         String cookieValue = encryptedPayload.toString();
         if (mRelayServerObfuscationKeyword != null) {
-            final int OBFUSCATE_MAX_PADDING = 128;
+            final int OBFUSCATE_MAX_PADDING = 32;
             ObfuscatedSSH obfuscator = new ObfuscatedSSH(mRelayServerObfuscationKeyword, OBFUSCATE_MAX_PADDING);
             byte[] obfuscatedSeedMessage = obfuscator.getSeedMessage();
-            byte[] obfuscatedPayload = payload.toString().getBytes("UTF-8");
+            byte[] obfuscatedPayload = encryptedPayload.toString().getBytes("UTF-8");
             obfuscator.obfuscateOutput(obfuscatedPayload);
             byte[] obfuscatedCookieValue = new byte[obfuscatedSeedMessage.length + obfuscatedPayload.length];
             System.arraycopy(obfuscatedSeedMessage, 0, obfuscatedCookieValue, 0, obfuscatedSeedMessage.length);
