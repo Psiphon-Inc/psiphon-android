@@ -170,6 +170,8 @@ public class MainActivity
         
         PsiphonData.getPsiphonData().setDefaultSocksPort(PsiphonConstants.SOCKS_PORT + 10);
         PsiphonData.getPsiphonData().setDefaultHttpProxyPort(PsiphonConstants.HTTP_PROXY_PORT + 10);
+        PsiphonData.getPsiphonData().setEnableReportedStats(false);
+
         m_tunnelCore = new TunnelCore(this, null);
         m_tunnelCore.setUseGenericLogMessages(true);
         m_tunnelCore.setEventsInterface(this);
