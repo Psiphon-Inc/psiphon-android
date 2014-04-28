@@ -46,6 +46,7 @@ import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -337,24 +338,30 @@ public class MeekClient {
     
     private String makeCookie()
             throws JSONException, GeneralSecurityException, IOException {
+
         String meekSessionId = Utils.Base64.encode(Utils.generateSecureRandomBytes(SESSION_ID_LENGTH));
         JSONObject payload = new JSONObject();
         payload.put("s", meekSessionId);
         payload.put("p", mPsiphonServerAddress);
+
+        // NaCl crypto_box: http://nacl.cr.yp.to/box.html
+        // The recipient public key is known and trusted (embedded in the signed APK)
+        // The sender public key is ephemeral (recipient does not authenticate sender)
+        // The nonce is fixed as as 0s; the one-time, single-use ephemeral public key is sent with the box
         
-        Utils.RSAEncryptOutput rsaEncryptOutput =
-                Utils.encryptWithRSA(
-                        payload.toString().getBytes("UTF-8"),
-                        EmbeddedValues.MEEK_CLIENT_COOKIE_PAYLOAD_ENCRYPTION_PUBLIC_KEY);
+        org.abstractj.kalium.keys.PublicKey recipientPublicKey = new org.abstractj.kalium.keys.PublicKey(
+                Utils.Base64.decode(EmbeddedValues.MEEK_CLIENT_COOKIE_PAYLOAD_ENCRYPTION_PUBLIC_KEY));
+        org.abstractj.kalium.keys.KeyPair ephemeralKeyPair = new org.abstractj.kalium.keys.KeyPair();
+        byte[] nonce = new byte[org.abstractj.kalium.SodiumConstants.NONCE_BYTES]; // Java bytes arrays default to 0s
+        org.abstractj.kalium.crypto.Box box = new org.abstractj.kalium.crypto.Box(recipientPublicKey, ephemeralKeyPair.getPrivateKey());
+        byte[] message = box.encrypt(nonce, payload.toString().getBytes("UTF-8"));
+        byte[] ephemeralPublicKeyBytes = ephemeralKeyPair.getPublicKey().toBytes();
+        byte[] encryptedPayload = new byte[ephemeralPublicKeyBytes.length + message.length];
+        System.arraycopy(ephemeralPublicKeyBytes, 0, encryptedPayload, 0, ephemeralPublicKeyBytes.length);
+        System.arraycopy(message, 0, encryptedPayload, ephemeralPublicKeyBytes.length, message.length);
 
-        JSONObject encryptedPayload = new JSONObject();
-        encryptedPayload.put("c", Utils.Base64.encode(rsaEncryptOutput.mContentCiphertext));
-        encryptedPayload.put("v", Utils.Base64.encode(rsaEncryptOutput.mIv));
-        encryptedPayload.put("e", Utils.Base64.encode(rsaEncryptOutput.mWrappedEncryptionKey));
-        encryptedPayload.put("d", Utils.Base64.encode(rsaEncryptOutput.mContentMac));
-        encryptedPayload.put("m", Utils.Base64.encode(rsaEncryptOutput.mWrappedMacKey));
+        String cookieValue = Utils.Base64.encode(encryptedPayload);
 
-        String cookieValue = encryptedPayload.toString();
         if (mRelayServerObfuscationKeyword != null) {
             final int OBFUSCATE_MAX_PADDING = 32;
             ObfuscatedSSH obfuscator = new ObfuscatedSSH(mRelayServerObfuscationKeyword, OBFUSCATE_MAX_PADDING);
@@ -366,6 +373,7 @@ public class MeekClient {
             System.arraycopy(obfuscatedPayload, 0, obfuscatedCookieValue, obfuscatedSeedMessage.length, obfuscatedPayload.length);
             cookieValue = Base64.encode(obfuscatedCookieValue);
         }
+
         // *TODO* random key
         return "key=" + cookieValue;
     }
