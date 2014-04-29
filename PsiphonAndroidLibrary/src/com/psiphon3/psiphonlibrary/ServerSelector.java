@@ -171,7 +171,7 @@ public class ServerSelector implements IAbortIndicator
                     this.responded = true;
                 }
                 // This meek code replaces the HTTP in-proxies and inherits the same "50%" invocation logic
-                else if (hasMeekRelays() && Math.random() >= 0.5)
+                else if (this.entry.hasMeekServer && hasMeekRelays() && Math.random() >= 0.5)
                 {
                     // 1. Create a new meek client with the selected meek configuration
                     // 2. Start the meek client, which is a localhost server listening on a OS assigned port
@@ -191,6 +191,7 @@ public class ServerSelector implements IAbortIndicator
                     
                     this.meekClient = new MeekClient(
                             ServerSelector.this.protectSocket,
+                            this.entry.ipAddress + ":" + Integer.toString(this.entry.meekServerPort),
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
                             meekRelay.mHost,
                             meekRelay.mPort,

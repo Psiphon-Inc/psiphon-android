@@ -134,6 +134,8 @@ public class ServerInterface
         public String sshObfuscatedKey;
         public ArrayList<String> capabilities;
         public String regionCode;
+        public boolean hasMeekServer = false;
+        public int meekServerPort;
 
         @Override
         public ServerEntry clone()
@@ -1611,6 +1613,17 @@ public class ServerInterface
         else
         {
             newEntry.regionCode = "";            
+        }
+
+        if (obj.has("meekServerPort"))
+        {
+            newEntry.hasMeekServer = true;
+            newEntry.meekServerPort = obj.getInt("meekServerPort");
+        }
+        else
+        {
+            newEntry.hasMeekServer = false;
+            newEntry.meekServerPort = -1;            
         }
         
         return newEntry;

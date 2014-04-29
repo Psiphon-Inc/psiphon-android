@@ -46,7 +46,6 @@ import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -93,6 +92,7 @@ public class MeekClient {
     final static String HTTP_POST_CONTENT_TYPE = "application/octet-stream";
     
     final private Tun2Socks.IProtectSocket mProtectSocket;
+    final private String mMeekServerAddress;
     final private String mPsiphonServerAddress;
     final private String mFrontingDomain;
     final private String mRelayServerHost;
@@ -110,9 +110,11 @@ public class MeekClient {
     
     public MeekClient(
             Tun2Socks.IProtectSocket protectSocket,
+            String meekServerAddress,
             String psiphonServerAddress,
             String frontingDomain) {
         mProtectSocket = protectSocket;
+        mMeekServerAddress = meekServerAddress;
         mPsiphonServerAddress = psiphonServerAddress;
         mFrontingDomain = frontingDomain;
         mRelayServerHost = null;
@@ -122,11 +124,13 @@ public class MeekClient {
 
     public MeekClient(
             Tun2Socks.IProtectSocket protectSocket,
+            String meekServerAddress,
             String psiphonServerAddress,
             String relayServerHost,
             int relayServerPort,
             String relayServerObfuscationKeyword) {
         mProtectSocket = protectSocket;
+        mMeekServerAddress = meekServerAddress;
         mPsiphonServerAddress = psiphonServerAddress;
         mFrontingDomain = null;
         mRelayServerHost = relayServerHost;
@@ -342,6 +346,7 @@ public class MeekClient {
         String meekSessionId = Utils.Base64.encode(Utils.generateSecureRandomBytes(SESSION_ID_LENGTH));
         JSONObject payload = new JSONObject();
         payload.put("s", meekSessionId);
+        payload.put("m", mMeekServerAddress);
         payload.put("p", mPsiphonServerAddress);
 
         // NaCl crypto_box: http://nacl.cr.yp.to/box.html
