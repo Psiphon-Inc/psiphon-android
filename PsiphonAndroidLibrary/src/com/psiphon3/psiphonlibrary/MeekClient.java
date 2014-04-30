@@ -81,7 +81,6 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 public class MeekClient {
 
-    final static int SESSION_ID_LENGTH = 32;
     final static int MAX_PAYLOAD_LENGTH = 0x10000;
     final static int INIT_POLL_INTERVAL_MILLISECONDS = 100;
     final static int MAX_POLL_INTERVAL_MILLISECONDS = 5000;
@@ -343,9 +342,7 @@ public class MeekClient {
     private String makeCookie()
             throws JSONException, GeneralSecurityException, IOException {
 
-        String meekSessionId = Utils.Base64.encode(Utils.generateSecureRandomBytes(SESSION_ID_LENGTH));
         JSONObject payload = new JSONObject();
-        payload.put("s", meekSessionId);
         payload.put("m", mMeekServerAddress);
         payload.put("p", mPsiphonServerAddress);
 
