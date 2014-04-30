@@ -136,6 +136,7 @@ public class ServerInterface
         public String regionCode;
         public boolean hasMeekServer = false;
         public int meekServerPort;
+        public String meekFrontingDomain;
 
         @Override
         public ServerEntry clone()
@@ -1624,6 +1625,15 @@ public class ServerInterface
         {
             newEntry.hasMeekServer = false;
             newEntry.meekServerPort = -1;            
+        }
+        
+        if (obj.has("meekFrontingDomain"))
+        {
+            newEntry.meekFrontingDomain = obj.getString("meekFrontingDomain");
+        }
+        else
+        {
+            newEntry.meekFrontingDomain = null;
         }
         
         return newEntry;

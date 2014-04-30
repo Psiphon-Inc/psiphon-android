@@ -158,7 +158,40 @@ public class ServerSelector implements IAbortIndicator
                 this.channel.configureBlocking(false);
                 selector = Selector.open();
                 
-                if (proxySettings != null)
+                // TODO: Add HTTP proxy support to MeekClient. Currently, since that support
+                // is lacking, these cases are treated as mutually exclusive.
+
+                // Meek cases:
+                // 1. Create a new meek client with the selected meek configuration. The meek client
+                //    for the selected connection will be managed by TunnelCore. All others will
+                //    be shutdown by ServerSelector.
+                // 2. Start the meek client, which is a localhost server listening on a OS assigned port
+                // 3. The meek client is a static port forward to the selected Psiphon server, so call
+                //    makeSocketChannelConnection with the meek client address in place of the Psiphon server
+                // 4. The meek client accepts local connections instantly, so the meek protocol has been
+                //    tweaked to immediately poll the meek server -- we wait for that round trip to
+                //    complete, via awaitEstablishedFirstServerConnection, and take that to be the
+                //    response time.
+                //    Note that awaitEstablishedFirstServerConnection only works here because there's a new
+                //    MeekClient instance per server candidate; if we started to reuse MeekClient instances
+                //    then we need more sophisticated signaling.
+                
+                if (this.entry.meekFrontingDomain != null && this.entry.meekFrontingDomain.length() > 0)
+                {
+                    this.meekClient = new MeekClient(
+                            ServerSelector.this.protectSocket,
+                            this.entry.ipAddress + ":" + Integer.toString(this.entry.meekServerPort),
+                            this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
+                            this.entry.meekFrontingDomain);
+                    this.meekClient.start();
+
+                    makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
+                    
+                    this.meekClient.awaitEstablishedFirstServerConnection(ServerSelector.this);
+
+                    this.responded = true;
+                }
+                else if (proxySettings != null)
                 {
                     this.usingHTTPProxy = true;
 
@@ -173,18 +206,6 @@ public class ServerSelector implements IAbortIndicator
                 // This meek code replaces the HTTP in-proxies and inherits the same "50%" invocation logic
                 else if (this.entry.hasMeekServer && hasMeekRelays() && Math.random() >= 0.5)
                 {
-                    // 1. Create a new meek client with the selected meek configuration
-                    // 2. Start the meek client, which is a localhost server listening on a OS assigned port
-                    // 3. The meek client is a static port forward to the selected Psiphon server, so call
-                    //    makeSocketChannelConnection with the meek client address in place of the Psiphon server
-                    // 4. The meek client accepts local connections instantly, so the meek protocol has been
-                    //    tweaked to immediately poll the meek server -- we wait for that round trip to
-                    //    complete, via awaitEstablishedFirstServerConnection, and take that to be the
-                    //    response time.
-                    //    Note that awaitEstablishedFirstServerConnection only works here because there's a new
-                    //    MeekClient instance per server candidate; if we started to reuse MeekClient instances
-                    //    then we need more sophisticated signaling.
-                    
                     MyLog.g("EmbeddedMeekRelay", "forServer", this.entry.ipAddress);
 
                     MeekRelay meekRelay = selectRandomMeekRelay();                    
@@ -267,6 +288,12 @@ public class ServerSelector implements IAbortIndicator
                 {
                     if (!this.responded)
                     {
+                        if (this.meekClient != null)
+                        {
+                            this.meekClient.stop();
+                            this.meekClient = null;
+                        }
+
                         try
                         {
                             this.channel.close();
@@ -665,6 +692,11 @@ public class ServerSelector implements IAbortIndicator
                         }
                         else
                         {
+                            if (worker.meekClient != null)
+                            {
+                                worker.meekClient.stop();
+                                worker.meekClient = null;
+                            }
                             try
                             {
                                 worker.channel.close();
