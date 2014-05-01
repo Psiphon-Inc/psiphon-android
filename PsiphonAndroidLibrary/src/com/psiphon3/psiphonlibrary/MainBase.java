@@ -56,6 +56,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -88,6 +89,42 @@ import android.widget.Toast;
 
 public abstract class MainBase
 {
+    public static abstract class SupportFragmentActivity 
+    extends FragmentActivity
+    implements MyLog.ILogger
+    {
+        public SupportFragmentActivity()
+        {
+            Utils.initializeSecureRandom();
+        }
+    
+        @Override
+        protected void onCreate(Bundle savedInstanceState)
+        {
+            super.onCreate(savedInstanceState);
+            
+            MyLog.setLogger(this);
+        }
+        
+        @Override
+        protected void onDestroy()
+        {
+            super.onDestroy();
+    
+            MyLog.unsetLogger();
+        }
+        
+        /*
+         * Partial MyLog.ILogger implementation
+         */
+        
+        @Override
+        public Context getContext()
+        {
+            return this;
+        }
+    }
+
     public static abstract class Activity 
         extends android.app.Activity
         implements MyLog.ILogger
