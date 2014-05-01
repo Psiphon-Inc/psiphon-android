@@ -628,6 +628,10 @@ public class ServerInterface
         {
             JSONObject stats = new JSONObject();
             
+            // Stats traffic analysis mitigation: [non-cryptographic] pseudorandom padding to ensure the size of status requests is not constant.
+            // Padding size is JSON field overhead + 0-255 bytes + 33% base64 encoding overhead
+            stats.put("padding", Utils.Base64.encode(Utils.generateInsecureRandomBytes(Utils.insecureRandRange(0, 255))));
+            
             stats.put("bytes_transferred", bytesTransferred);
             MyLog.d("BYTES: " + bytesTransferred);
             
@@ -1812,6 +1816,9 @@ public class ServerInterface
                     this.statsSendInterval = DEFAULT_STATS_SEND_INTERVAL_MS;
                     this.sendMaxEntries = DEFAULT_SEND_MAX_ENTRIES;
                     
+                    // Stats traffic analysis mitigation: add some [non-cryptographic] pseudorandom jitter to the time interval
+                    this.statsSendInterval += Utils.insecureRandRange(0, (int)DEFAULT_STATS_SEND_INTERVAL_MS);
+
                     // Reset stats
                     reportedStats.clear();
                 } 
