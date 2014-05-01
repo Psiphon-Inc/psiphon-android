@@ -91,6 +91,7 @@ public class MeekClient {
     final static String HTTP_POST_CONTENT_TYPE = "application/octet-stream";
     
     final private Tun2Socks.IProtectSocket mProtectSocket;
+    final private String mPsiphonClientSessionId;
     final private String mMeekServerAddress;
     final private String mPsiphonServerAddress;
     final private String mFrontingDomain;
@@ -109,10 +110,12 @@ public class MeekClient {
     
     public MeekClient(
             Tun2Socks.IProtectSocket protectSocket,
+            String psiphonClientSessionId,
             String meekServerAddress,
             String psiphonServerAddress,
             String frontingDomain) {
         mProtectSocket = protectSocket;
+        mPsiphonClientSessionId = psiphonClientSessionId;
         mMeekServerAddress = meekServerAddress;
         mPsiphonServerAddress = psiphonServerAddress;
         mFrontingDomain = frontingDomain;
@@ -123,12 +126,14 @@ public class MeekClient {
 
     public MeekClient(
             Tun2Socks.IProtectSocket protectSocket,
+            String psiphonClientSessionId,
             String meekServerAddress,
             String psiphonServerAddress,
             String relayServerHost,
             int relayServerPort,
             String relayServerObfuscationKeyword) {
         mProtectSocket = protectSocket;
+        mPsiphonClientSessionId = psiphonClientSessionId;
         mMeekServerAddress = meekServerAddress;
         mPsiphonServerAddress = psiphonServerAddress;
         mFrontingDomain = null;
@@ -343,6 +348,7 @@ public class MeekClient {
             throws JSONException, GeneralSecurityException, IOException {
 
         JSONObject payload = new JSONObject();
+        payload.put("s", mPsiphonClientSessionId);
         payload.put("m", mMeekServerAddress);
         payload.put("p", mPsiphonServerAddress);
 

@@ -70,6 +70,7 @@ public class ServerSelector implements IAbortIndicator
     private ServerInterface serverInterface = null;
     private Context context = null;
     private boolean protectSocketsRequired = false;
+    private String clientSessionId = null;
     private Thread thread = null;
     private boolean stopFlag = false;
     private AtomicBoolean workerPrintedProxyError = new AtomicBoolean(false);
@@ -180,6 +181,7 @@ public class ServerSelector implements IAbortIndicator
                 {
                     this.meekClient = new MeekClient(
                             ServerSelector.this.protectSocket,
+                            ServerSelector.this.clientSessionId,
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.meekServerPort),
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
                             this.entry.meekFrontingDomain);
@@ -212,6 +214,7 @@ public class ServerSelector implements IAbortIndicator
                     
                     this.meekClient = new MeekClient(
                             ServerSelector.this.protectSocket,
+                            ServerSelector.this.clientSessionId,
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.meekServerPort),
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
                             meekRelay.mHost,
@@ -732,7 +735,9 @@ public class ServerSelector implements IAbortIndicator
         return false;
     }
 
-    public void Run(boolean protectSocketsRequired)
+    public void Run(
+            boolean protectSocketsRequired,
+            String clientSessionId)
     {
         Abort();
         
@@ -745,6 +750,7 @@ public class ServerSelector implements IAbortIndicator
         }
         
         this.protectSocketsRequired = protectSocketsRequired;
+        this.clientSessionId = clientSessionId;
 
         this.thread = new Thread(new Coordinator());
         this.thread.start();

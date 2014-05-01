@@ -459,7 +459,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         m_interface.start();
         
         // Generate a new client session ID to be included with all subsequent web requests
-        // It's also included with the SSH login, for GeoIP region lookup on the server-side
+        // It's also included with the SSH login, and Meek cookie, for GeoIP region lookup on the server-side
         m_interface.generateNewCurrentClientSessionID();
         
         boolean runAgain = true;
@@ -552,7 +552,9 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             
             checkSignals(0);
 
-            m_serverSelector.Run(activeServices[ACTIVE_SERVICE_TUN2SOCKS]);
+            m_serverSelector.Run(
+                    activeServices[ACTIVE_SERVICE_TUN2SOCKS],
+                    m_interface.getCurrentClientSessionID());
             
             // The preemptive reconnect should be started "preemptiveReconnectTimePeriod" after
             // the last socket connection completed. But we don't know preemptiveReconnectTimePeriod yet.
