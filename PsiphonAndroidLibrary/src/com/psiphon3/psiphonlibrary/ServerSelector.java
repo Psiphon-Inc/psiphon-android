@@ -189,9 +189,12 @@ public class ServerSelector implements IAbortIndicator
 
                     makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
                     
-                    this.meekClient.awaitEstablishedFirstServerConnection(ServerSelector.this);
+                    if (this.channel.finishConnect())
+                    {
+                        this.meekClient.awaitEstablishedFirstServerConnection(ServerSelector.this);
+                        this.responded = true;
+                    }
 
-                    this.responded = true;
                 }
                 else if (proxySettings != null)
                 {
@@ -203,6 +206,7 @@ public class ServerSelector implements IAbortIndicator
                     this.channel.configureBlocking(true);
                 
                     makeConnectionViaHTTPProxy(null, null);
+
                     this.responded = true;
                 }
                 // This meek code replaces the HTTP in-proxies and inherits the same "50%" invocation logic
@@ -224,9 +228,11 @@ public class ServerSelector implements IAbortIndicator
 
                     makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
                     
-                    this.meekClient.awaitEstablishedFirstServerConnection(ServerSelector.this);
-
-                    this.responded = true;
+                    if (this.channel.finishConnect())
+                    {
+                        this.meekClient.awaitEstablishedFirstServerConnection(ServerSelector.this);
+                        this.responded = true;
+                    }
                 }
                 else
                 {
