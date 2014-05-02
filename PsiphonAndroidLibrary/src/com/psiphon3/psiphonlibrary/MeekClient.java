@@ -40,6 +40,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -73,7 +74,6 @@ import ch.ethz.ssh2.crypto.ObfuscatedSSH;
 
 import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedPlainSocketFactory;
 import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedSSLSocketFactory;
-import com.psiphon3.psiphonlibrary.Utils.Base64;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 //ch.boye.httpclientandroidlib.impl.conn.SingleClientConnManager is deprecated
@@ -171,6 +171,8 @@ public class MeekClient {
                                         });
                                 clientThread.start();
                             }
+                        } catch (SocketException e) {
+                            MyLog.e(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e);
                         } catch (IOException e) {
                             MyLog.e(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e);
                         }                        
@@ -258,22 +260,21 @@ public class MeekClient {
                 uri = new URIBuilder().setScheme("http").setHost(mRelayServerHost).setPort(mRelayServerPort).setPath("/").build();                    
             }
 
-            // We make the very first poll instantly to check connection establishment
-            if (mEstablishedFirstServerConnection.getCount() > 0) {
-                pollInternalMilliseconds = 0;
-            }
-
             while (true) {
                 socket.setSoTimeout(pollInternalMilliseconds);
                 int payloadLength = 0;
-                try {
-                    payloadLength = socketInputStream.read(payloadBuffer);
-                } catch (SocketTimeoutException e) {
-                    // In this case, we POST with no content -- this is for polling the server
-                }
-                if (payloadLength == -1) {
-                    // EOF
-                    break;
+
+                // We make the very first poll without waiting to read in order to check connection establishment
+                if (mEstablishedFirstServerConnection.getCount() == 0) {
+                    try {
+                        payloadLength = socketInputStream.read(payloadBuffer);
+                    } catch (SocketTimeoutException e) {
+                        // In this case, we POST with no content -- this is for polling the server
+                    }
+                    if (payloadLength == -1) {
+                        // EOF
+                        break;
+                    }
                 }
 
                 HttpPost httpPost = new HttpPost(uri);
@@ -368,18 +369,20 @@ public class MeekClient {
         System.arraycopy(ephemeralPublicKeyBytes, 0, encryptedPayload, 0, ephemeralPublicKeyBytes.length);
         System.arraycopy(message, 0, encryptedPayload, ephemeralPublicKeyBytes.length, message.length);
 
-        String cookieValue = Utils.Base64.encode(encryptedPayload);
-
+        String cookieValue;
         if (mRelayServerObfuscationKeyword != null) {
             final int OBFUSCATE_MAX_PADDING = 32;
             ObfuscatedSSH obfuscator = new ObfuscatedSSH(mRelayServerObfuscationKeyword, OBFUSCATE_MAX_PADDING);
             byte[] obfuscatedSeedMessage = obfuscator.getSeedMessage();
-            byte[] obfuscatedPayload = encryptedPayload.toString().getBytes("UTF-8");
+            byte[] obfuscatedPayload = new byte[encryptedPayload.length];
+            System.arraycopy(encryptedPayload, 0, obfuscatedPayload, 0, encryptedPayload.length);
             obfuscator.obfuscateOutput(obfuscatedPayload);
             byte[] obfuscatedCookieValue = new byte[obfuscatedSeedMessage.length + obfuscatedPayload.length];
             System.arraycopy(obfuscatedSeedMessage, 0, obfuscatedCookieValue, 0, obfuscatedSeedMessage.length);
             System.arraycopy(obfuscatedPayload, 0, obfuscatedCookieValue, obfuscatedSeedMessage.length, obfuscatedPayload.length);
-            cookieValue = Base64.encode(obfuscatedCookieValue);
+            cookieValue = Utils.Base64.encode(obfuscatedCookieValue);
+        } else {
+            cookieValue = Utils.Base64.encode(encryptedPayload);
         }
 
         // *TODO* random key
@@ -387,6 +390,9 @@ public class MeekClient {
     }
     
     public static void closeHelper(Closeable closable) {
+        if (closable == null) {
+            return;
+        }
         try {
             closable.close();
         } catch (IOException e) {
