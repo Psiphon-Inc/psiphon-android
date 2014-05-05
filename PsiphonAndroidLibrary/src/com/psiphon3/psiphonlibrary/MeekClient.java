@@ -34,10 +34,10 @@ package com.psiphon3.psiphonlibrary;
  * - initial meek server poll is made with no delay in order to time connection responsiveness
  */
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -144,9 +144,7 @@ public class MeekClient {
 
     public synchronized void start() throws IOException {
         stop();
-        mServerSocket = new ServerSocket();
-        // TODO: bind to loopback?
-        mServerSocket.bind(null);
+        mServerSocket = new ServerSocket(0, 50, InetAddress.getByName("127.0.0.1"));
         mLocalPort = mServerSocket.getLocalPort();
         mClients = new HashSet<Socket>();
         mEstablishedFirstServerConnection = new CountDownLatch(1);
@@ -189,7 +187,7 @@ public class MeekClient {
     
     public synchronized void stop() {
         if (mServerSocket != null) {
-            closeHelper(mServerSocket);
+            Utils.closeHelper(mServerSocket);
             try {
                 mAcceptThread.join();
             } catch (InterruptedException e) {
@@ -222,7 +220,7 @@ public class MeekClient {
     private synchronized void stopClients() {
         // Note: not actually joining client threads
         for (Socket socket : mClients) {
-            closeHelper(socket);
+            Utils.closeHelper(socket);
         }
         mClients.clear();
     }
@@ -302,7 +300,7 @@ public class MeekClient {
                         socketOutputStream.write(payloadBuffer, 0 , readLength);
                     }
                 } finally {
-                    closeHelper(responseInputStream);
+                    Utils.closeHelper(responseInputStream);
                 }
                 
                 // Signal when first connection is established
@@ -341,9 +339,9 @@ public class MeekClient {
             if (connManager != null) {
                 connManager.shutdown();
             }
-            closeHelper(socketInputStream);
-            closeHelper(socketOutputStream);
-            closeHelper(socket);
+            Utils.closeHelper(socketInputStream);
+            Utils.closeHelper(socketOutputStream);
+            Utils.closeHelper(socket);
         }
     }
     
@@ -389,16 +387,5 @@ public class MeekClient {
 
         // *TODO* random key
         return "key=" + cookieValue;
-    }
-    
-    public static void closeHelper(Closeable closable) {
-        if (closable == null) {
-            return;
-        }
-        try {
-            closable.close();
-        } catch (IOException e) {
-            MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
-        }
     }
 }

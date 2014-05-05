@@ -150,12 +150,6 @@ public class ServerSelector implements IAbortIndicator
             {
                 this.channel = SocketChannel.open();
                 
-                if (protectSocketsRequired)
-                {
-                    // We may need to except this connection from the VpnService tun interface
-                    protectSocket.doVpnProtect(this.channel.socket());
-                }
-                
                 this.channel.configureBlocking(false);
                 selector = Selector.open();
                 
@@ -179,8 +173,10 @@ public class ServerSelector implements IAbortIndicator
                 
                 if (this.entry.meekFrontingDomain != null && this.entry.meekFrontingDomain.length() > 0)
                 {
+                    // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
+
                     this.meekClient = new MeekClient(
-                            ServerSelector.this.protectSocket,
+                            protectSocketsRequired ? ServerSelector.this.protectSocket : null,
                             ServerSelector.this.clientSessionId,
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.meekServerPort),
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
@@ -198,6 +194,12 @@ public class ServerSelector implements IAbortIndicator
                 }
                 else if (proxySettings != null)
                 {
+                    if (protectSocketsRequired)
+                    {
+                        // We may need to except this connection from the VpnService tun interface
+                        protectSocket.doVpnProtect(this.channel.socket());
+                    }
+                    
                     this.usingHTTPProxy = true;
 
                     makeSocketChannelConnection(selector, proxySettings.proxyHost, proxySettings.proxyPort);
@@ -212,12 +214,14 @@ public class ServerSelector implements IAbortIndicator
                 // This meek code replaces the HTTP in-proxies and inherits the same "50%" invocation logic
                 else if (this.entry.hasMeekServer && hasMeekRelays() && Math.random() >= 0.5)
                 {
+                    // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
+                    
                     MyLog.g("EmbeddedMeekRelay", "forServer", this.entry.ipAddress);
 
                     MeekRelay meekRelay = selectRandomMeekRelay();                    
                     
                     this.meekClient = new MeekClient(
-                            ServerSelector.this.protectSocket,
+                            protectSocketsRequired ? ServerSelector.this.protectSocket : null,
                             ServerSelector.this.clientSessionId,
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.meekServerPort),
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
@@ -236,6 +240,12 @@ public class ServerSelector implements IAbortIndicator
                 }
                 else
                 {
+                    if (protectSocketsRequired)
+                    {
+                        // We may need to except this connection from the VpnService tun interface
+                        protectSocket.doVpnProtect(this.channel.socket());
+                    }
+                    
                     makeSocketChannelConnection(selector,
                             this.entry.ipAddress,
                             this.entry.getPreferredReachablityTestPort());

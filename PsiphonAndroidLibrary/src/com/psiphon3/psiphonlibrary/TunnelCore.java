@@ -732,7 +732,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
     
                     ParcelFileDescriptor vpnInterfaceFileDescriptor = null;
                     
-                    if (!doVpnProtect(socket)
+                    // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
+                    if ((meekClient == null && !doVpnProtect(socket))
                         || null == (vpnInterfaceFileDescriptor = doVpnBuilder(privateIpAddress)))
                     {
                         // TODO: don't fail over to root mode in the not-really-broken revoked edge condition case (e.g., establish() returns null)?

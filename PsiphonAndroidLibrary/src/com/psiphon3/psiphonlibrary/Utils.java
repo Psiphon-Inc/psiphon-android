@@ -1,6 +1,8 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
@@ -8,6 +10,7 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
@@ -1124,5 +1127,37 @@ public class Utils
         wrappedMacKey = rsaCipher.wrap(macKey);
         
         return new RSAEncryptOutput(contentCiphertext, iv, wrappedEncryptionKey, contentMac, wrappedMacKey);
+    }
+
+    public static void closeHelper(Socket socket) {
+        try {
+            if (socket != null) {
+                socket.close();
+            }
+        } catch (IOException e) {}
+    }
+    
+    public static void closeHelper(ServerSocket serverSocket) {
+        try {
+            if (serverSocket != null) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {}
+    }
+    
+    public static void closeHelper(InputStream inputStream) {
+        try {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+        } catch (IOException e) {}
+    }
+    
+    public static void closeHelper(OutputStream outputStream) {
+        try {
+            if (outputStream != null) {
+                outputStream.close();
+            }
+        } catch (IOException e) {}
     }
 }
