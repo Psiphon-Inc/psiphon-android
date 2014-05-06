@@ -137,6 +137,7 @@ public class ServerInterface
         public boolean hasMeekServer = false;
         public int meekServerPort;
         public String meekFrontingDomain;
+        public String meekFrontingHost;
 
         @Override
         public ServerEntry clone()
@@ -1634,10 +1635,12 @@ public class ServerInterface
         if (obj.has("meekFrontingDomain"))
         {
             newEntry.meekFrontingDomain = obj.getString("meekFrontingDomain");
+            newEntry.meekFrontingHost = obj.getString("meekFrontingHost");
         }
         else
         {
             newEntry.meekFrontingDomain = null;
+            newEntry.meekFrontingHost = null;
         }
         
         return newEntry;

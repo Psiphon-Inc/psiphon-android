@@ -95,6 +95,7 @@ public class MeekClient {
     final private String mMeekServerAddress;
     final private String mPsiphonServerAddress;
     final private String mFrontingDomain;
+    final private String mFrontingHost;
     final private String mRelayServerHost;
     final private int mRelayServerPort;
     final private String mRelayServerObfuscationKeyword;
@@ -113,12 +114,14 @@ public class MeekClient {
             String psiphonClientSessionId,
             String meekServerAddress,
             String psiphonServerAddress,
-            String frontingDomain) {
+            String frontingDomain,
+            String frontingHost) {
         mProtectSocket = protectSocket;
         mPsiphonClientSessionId = psiphonClientSessionId;
         mMeekServerAddress = meekServerAddress;
         mPsiphonServerAddress = psiphonServerAddress;
         mFrontingDomain = frontingDomain;
+        mFrontingHost = frontingHost;
         mRelayServerHost = null;
         mRelayServerPort = -1;
         mRelayServerObfuscationKeyword = null;
@@ -137,6 +140,7 @@ public class MeekClient {
         mMeekServerAddress = meekServerAddress;
         mPsiphonServerAddress = psiphonServerAddress;
         mFrontingDomain = null;
+        mFrontingHost = null;
         mRelayServerHost = relayServerHost;
         mRelayServerPort = relayServerPort;
         mRelayServerObfuscationKeyword = relayServerObfuscationKeyword;
@@ -283,7 +287,7 @@ public class MeekClient {
                 httpPost.setEntity(entity);
 
                 if (mFrontingDomain != null) {
-                    httpPost.addHeader("Host", mFrontingDomain);
+                    httpPost.addHeader("Host", mFrontingHost);
                 }
                 httpPost.addHeader("Cookie", cookie);
 

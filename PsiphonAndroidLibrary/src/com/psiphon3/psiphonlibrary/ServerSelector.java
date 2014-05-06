@@ -180,7 +180,8 @@ public class ServerSelector implements IAbortIndicator
                             ServerSelector.this.clientSessionId,
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.meekServerPort),
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
-                            this.entry.meekFrontingDomain);
+                            this.entry.meekFrontingDomain,
+                            this.entry.meekFrontingHost);
                     this.meekClient.start();
 
                     makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
