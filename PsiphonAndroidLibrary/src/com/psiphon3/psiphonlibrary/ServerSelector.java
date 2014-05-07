@@ -96,35 +96,6 @@ public class ServerSelector implements IAbortIndicator
         return this.stopFlag;
     }
 
-    private static class MeekRelay {
-        public final String mHost;
-        public final int mPort;
-        public final String mObfuscationKeyword;
-
-        MeekRelay(String host, int port, String obfuscationKeyword) {
-            mHost = host;
-            mPort = port;
-            mObfuscationKeyword = obfuscationKeyword;
-        }
-    }; 
-
-    // Embedded meek relay addresses (put your real values here)
-    private final List<MeekRelay> mMeekRelays =
-            Arrays.asList(
-                    new MeekRelay("192.168.0.1", 8080, "secret1"),
-                    new MeekRelay("172.16.0.1", 8080, "secret2"),
-                    new MeekRelay("10.0.0.1", 8080, "secret3")
-                    );
-    
-    private synchronized boolean hasMeekRelays() {
-        return mMeekRelays.size() > 0;
-    }
-    
-    private synchronized MeekRelay selectRandomMeekRelay() {
-        Collections.shuffle(mMeekRelays);
-        return mMeekRelays.get(0);
-    }
-    
     class CheckServerWorker implements Runnable
     {
         MeekClient meekClient = null;
@@ -171,29 +142,7 @@ public class ServerSelector implements IAbortIndicator
                 //    MeekClient instance per server candidate; if we started to reuse MeekClient instances
                 //    then we need more sophisticated signaling.
                 
-                if (this.entry.meekFrontingDomain != null && this.entry.meekFrontingDomain.length() > 0)
-                {
-                    // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
-
-                    this.meekClient = new MeekClient(
-                            protectSocketsRequired ? ServerSelector.this.protectSocket : null,
-                            ServerSelector.this.clientSessionId,
-                            this.entry.ipAddress + ":" + Integer.toString(this.entry.meekServerPort),
-                            this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
-                            this.entry.meekFrontingDomain,
-                            this.entry.meekFrontingHost);
-                    this.meekClient.start();
-
-                    makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
-                    
-                    if (this.channel.finishConnect())
-                    {
-                        this.meekClient.awaitEstablishedFirstServerConnection(ServerSelector.this);
-                        this.responded = true;
-                    }
-
-                }
-                else if (proxySettings != null)
+                if (proxySettings != null)
                 {
                     if (protectSocketsRequired)
                     {
@@ -212,23 +161,43 @@ public class ServerSelector implements IAbortIndicator
 
                     this.responded = true;
                 }
-                // This meek code replaces the HTTP in-proxies and inherits the same "50%" invocation logic
-                else if (this.entry.hasMeekServer && hasMeekRelays() && Math.random() >= 0.5)
+                else if (this.entry.hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
                 {
                     // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
-                    
-                    MyLog.g("EmbeddedMeekRelay", "forServer", this.entry.ipAddress);
 
-                    MeekRelay meekRelay = selectRandomMeekRelay();                    
-                    
                     this.meekClient = new MeekClient(
                             protectSocketsRequired ? ServerSelector.this.protectSocket : null,
                             ServerSelector.this.clientSessionId,
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.meekServerPort),
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
-                            meekRelay.mHost,
-                            meekRelay.mPort,
-                            meekRelay.mObfuscationKeyword);
+                            this.entry.meekObfuscatedKey,
+                            this.entry.meekFrontingDomain,
+                            this.entry.meekFrontingHost);
+                    this.meekClient.start();
+
+                    makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
+                    
+                    if (this.channel.finishConnect())
+                    {
+                        this.meekClient.awaitEstablishedFirstServerConnection(ServerSelector.this);
+                        this.responded = true;
+                    }
+
+                }
+                else if (this.entry.hasCapability(ServerEntry.CAPABILITY_UNFRONTED_MEEK))
+                {
+                    // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
+                    
+                    MyLog.g("EmbeddedMeekRelay", "forServer", this.entry.ipAddress);
+
+                    this.meekClient = new MeekClient(
+                            protectSocketsRequired ? ServerSelector.this.protectSocket : null,
+                            ServerSelector.this.clientSessionId,
+                            this.entry.ipAddress + ":" + Integer.toString(this.entry.meekServerPort),
+                            this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
+                            this.entry.meekObfuscatedKey,
+                            this.entry.ipAddress,
+                            this.entry.meekRelayPort);
                     this.meekClient.start();
 
                     makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());

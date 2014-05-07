@@ -98,7 +98,7 @@ public class MeekClient {
     final private String mFrontingHost;
     final private String mRelayServerHost;
     final private int mRelayServerPort;
-    final private String mRelayServerObfuscationKeyword;
+    final private String mObfuscationKeyword;
     private Thread mAcceptThread;
     private ServerSocket mServerSocket;
     private int mLocalPort = -1;
@@ -114,17 +114,18 @@ public class MeekClient {
             String psiphonClientSessionId,
             String meekServerAddress,
             String psiphonServerAddress,
+            String obfuscationKeyword,
             String frontingDomain,
             String frontingHost) {
         mProtectSocket = protectSocket;
         mPsiphonClientSessionId = psiphonClientSessionId;
         mMeekServerAddress = meekServerAddress;
         mPsiphonServerAddress = psiphonServerAddress;
+        mObfuscationKeyword = obfuscationKeyword;
         mFrontingDomain = frontingDomain;
         mFrontingHost = frontingHost;
         mRelayServerHost = null;
         mRelayServerPort = -1;
-        mRelayServerObfuscationKeyword = null;
     }
 
     public MeekClient(
@@ -132,18 +133,18 @@ public class MeekClient {
             String psiphonClientSessionId,
             String meekServerAddress,
             String psiphonServerAddress,
+            String obfuscationKeyword,
             String relayServerHost,
-            int relayServerPort,
-            String relayServerObfuscationKeyword) {
+            int relayServerPort) {
         mProtectSocket = protectSocket;
         mPsiphonClientSessionId = psiphonClientSessionId;
         mMeekServerAddress = meekServerAddress;
         mPsiphonServerAddress = psiphonServerAddress;
+        mObfuscationKeyword = obfuscationKeyword;
         mFrontingDomain = null;
         mFrontingHost = null;
         mRelayServerHost = relayServerHost;
         mRelayServerPort = relayServerPort;
-        mRelayServerObfuscationKeyword = relayServerObfuscationKeyword;
     }
 
     public synchronized void start() throws IOException {
@@ -374,9 +375,9 @@ public class MeekClient {
         System.arraycopy(message, 0, encryptedPayload, ephemeralPublicKeyBytes.length, message.length);
 
         String cookieValue;
-        if (mRelayServerObfuscationKeyword != null) {
+        if (mObfuscationKeyword != null) {
             final int OBFUSCATE_MAX_PADDING = 32;
-            ObfuscatedSSH obfuscator = new ObfuscatedSSH(mRelayServerObfuscationKeyword, OBFUSCATE_MAX_PADDING);
+            ObfuscatedSSH obfuscator = new ObfuscatedSSH(mObfuscationKeyword, OBFUSCATE_MAX_PADDING);
             byte[] obfuscatedSeedMessage = obfuscator.getSeedMessage();
             byte[] obfuscatedPayload = new byte[encryptedPayload.length];
             System.arraycopy(encryptedPayload, 0, obfuscatedPayload, 0, encryptedPayload.length);

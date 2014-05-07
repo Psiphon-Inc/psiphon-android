@@ -134,8 +134,9 @@ public class ServerInterface
         public String sshObfuscatedKey;
         public ArrayList<String> capabilities;
         public String regionCode;
-        public boolean hasMeekServer = false;
         public int meekServerPort;
+        public int meekRelayPort;
+        public String meekObfuscatedKey;
         public String meekFrontingDomain;
         public String meekFrontingHost;
 
@@ -156,20 +157,22 @@ public class ServerInterface
         public static final String CAPABILITY_VPN = "VPN";
         public static final String CAPABILITY_OSSH = "OSSH";
         public static final String CAPABILITY_SSH = "SSH";
+        public static final String CAPABILITY_FRONTED_MEEK = "FRONTED-MEEK";
+        public static final String CAPABILITY_UNFRONTED_MEEK = "UNFRONTED-MEEK";
         
         public static final String REGION_CODE_ANY = "";
         
-        boolean hasCapability(String capability)
+        public boolean hasCapability(String capability)
         {
             return this.capabilities.contains(capability);
         }
 
-        boolean hasCapabilities(List<String> capabilities)
+        public boolean hasCapabilities(List<String> capabilities)
         {
             return this.capabilities.containsAll(capabilities);
         }
 
-        int getPreferredReachablityTestPort()
+        public int getPreferredReachablityTestPort()
         {
             if (hasCapability(CAPABILITY_OSSH))
             {
@@ -187,7 +190,7 @@ public class ServerInterface
             return -1;
         }
 
-        boolean inRegion(String regionCode)
+        public boolean inRegion(String regionCode)
         {
             if (regionCode.equals(REGION_CODE_ANY))
             {
@@ -1621,26 +1624,29 @@ public class ServerInterface
             newEntry.regionCode = "";            
         }
 
-        if (obj.has("meekServerPort"))
+        if (newEntry.hasCapability(ServerEntry.CAPABILITY_UNFRONTED_MEEK) ||
+                newEntry.hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
         {
-            newEntry.hasMeekServer = true;
             newEntry.meekServerPort = obj.getInt("meekServerPort");
+            newEntry.meekRelayPort = obj.getInt("meekRelayPort");
+            newEntry.meekObfuscatedKey = obj.getString("meekObfuscationKey");
         }
         else
         {
-            newEntry.hasMeekServer = false;
-            newEntry.meekServerPort = -1;            
+            newEntry.meekServerPort = -1;
+            newEntry.meekRelayPort = -1;
+            newEntry.meekObfuscatedKey = "";
         }
         
-        if (obj.has("meekFrontingDomain"))
+        if (newEntry.hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
         {
             newEntry.meekFrontingDomain = obj.getString("meekFrontingDomain");
             newEntry.meekFrontingHost = obj.getString("meekFrontingHost");
         }
         else
         {
-            newEntry.meekFrontingDomain = null;
-            newEntry.meekFrontingHost = null;
+            newEntry.meekFrontingDomain = "";
+            newEntry.meekFrontingHost = "";
         }
         
         return newEntry;
