@@ -553,7 +553,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             checkSignals(0);
 
             m_serverSelector.Run(
-                    activeServices[ACTIVE_SERVICE_TUN2SOCKS],
+                    tunnelWholeDevice && runVpnService, // protect sockets in whole device mode
                     m_interface.getCurrentClientSessionID());
             
             // The preemptive reconnect should be started "preemptiveReconnectTimePeriod" after
@@ -732,9 +732,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
     
                     ParcelFileDescriptor vpnInterfaceFileDescriptor = null;
                     
-                    // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
-                    if ((meekClient == null && !doVpnProtect(socket))
-                        || null == (vpnInterfaceFileDescriptor = doVpnBuilder(privateIpAddress)))
+                    // NOTE: relying on ServerSelector to have called doVpnProtect on the connection socket, as required
+                    if (null == (vpnInterfaceFileDescriptor = doVpnBuilder(privateIpAddress)))
                     {
                         // TODO: don't fail over to root mode in the not-really-broken revoked edge condition case (e.g., establish() returns null)?
                         runAgain = failOverToRootWholeDeviceMode();
