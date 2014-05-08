@@ -135,7 +135,6 @@ public class ServerInterface
         public ArrayList<String> capabilities;
         public String regionCode;
         public int meekServerPort;
-        public int meekRelayPort;
         public String meekObfuscatedKey;
         public String meekFrontingDomain;
         public String meekFrontingHost;
@@ -877,7 +876,7 @@ public class ServerInterface
             {
                 MyLog.w(R.string.ServerInterface_InvalidRemoteServerList, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 throw new PsiphonServerInterfaceException(e);
-            } 
+            }
             catch (JSONException e)
             {
                 MyLog.w(R.string.ServerInterface_InvalidRemoteServerList, MyLog.Sensitivity.NOT_SENSITIVE, e);
@@ -1142,7 +1141,7 @@ public class ServerInterface
         }
     }
     
-    private class ProtectedDnsResolver implements DnsResolver
+    public static class ProtectedDnsResolver implements DnsResolver
     {
         Tun2Socks.IProtectSocket protectSocket;
         ServerInterface serverInterface;
@@ -1170,7 +1169,13 @@ public class ServerInterface
             
             PsiphonState.getPsiphonState().setState(protectSocket, serverInterface);
             InetAddress[] result = Address.getAllByName(hostname);
-            PsiphonState.getPsiphonState().setState(null, null);
+
+            // HACK: now we're using ProtectedDnsResolver in meek, which may perform many
+            // lookups in a short time period. To avoid clobbering, we're no longed clearing
+            // the shared global state -- but this is only safe because the entire session has
+            // a single IProtectSocket and [main] ServerInterface.
+
+            // PsiphonState.getPsiphonState().setState(null, null);
 
             return result;
         }
@@ -1621,20 +1626,18 @@ public class ServerInterface
         }
         else
         {
-            newEntry.regionCode = "";            
+            newEntry.regionCode = "";
         }
 
         if (newEntry.hasCapability(ServerEntry.CAPABILITY_UNFRONTED_MEEK) ||
                 newEntry.hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
         {
             newEntry.meekServerPort = obj.getInt("meekServerPort");
-            newEntry.meekRelayPort = obj.getInt("meekRelayPort");
             newEntry.meekObfuscatedKey = obj.getString("meekObfuscationKey");
         }
         else
         {
             newEntry.meekServerPort = -1;
-            newEntry.meekRelayPort = -1;
             newEntry.meekObfuscatedKey = "";
         }
         

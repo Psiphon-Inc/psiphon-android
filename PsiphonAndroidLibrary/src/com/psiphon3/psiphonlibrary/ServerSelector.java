@@ -35,9 +35,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -61,6 +59,7 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 public class ServerSelector implements IAbortIndicator
 {
     private final int NUM_THREADS = 10;
+
     private final int SHUTDOWN_POLL_MILLISECONDS = 50;
     private final int RESULTS_POLL_MILLISECONDS = 100;
     private final int SHUTDOWN_TIMEOUT_MILLISECONDS = 1000;
@@ -167,6 +166,7 @@ public class ServerSelector implements IAbortIndicator
 
                     this.meekClient = new MeekClient(
                             protectSocketsRequired ? ServerSelector.this.protectSocket : null,
+                            ServerSelector.this.serverInterface,
                             ServerSelector.this.clientSessionId,
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
                             this.entry.meekObfuscatedKey,
@@ -191,6 +191,7 @@ public class ServerSelector implements IAbortIndicator
 
                     this.meekClient = new MeekClient(
                             protectSocketsRequired ? ServerSelector.this.protectSocket : null,
+                            ServerSelector.this.serverInterface,
                             ServerSelector.this.clientSessionId,
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
                             this.entry.meekObfuscatedKey,

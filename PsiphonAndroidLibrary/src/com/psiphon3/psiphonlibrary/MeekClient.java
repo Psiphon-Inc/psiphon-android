@@ -61,17 +61,22 @@ import ch.boye.httpclientandroidlib.HttpResponse;
 import ch.boye.httpclientandroidlib.HttpStatus;
 import ch.boye.httpclientandroidlib.client.methods.HttpPost;
 import ch.boye.httpclientandroidlib.client.utils.URIBuilder;
+import ch.boye.httpclientandroidlib.conn.ClientConnectionManager;
+import ch.boye.httpclientandroidlib.conn.DnsResolver;
 import ch.boye.httpclientandroidlib.conn.scheme.Scheme;
 import ch.boye.httpclientandroidlib.conn.scheme.SchemeRegistry;
 import ch.boye.httpclientandroidlib.conn.ssl.SSLSocketFactory;
 import ch.boye.httpclientandroidlib.entity.ByteArrayEntity;
 import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
+import ch.boye.httpclientandroidlib.impl.conn.PoolingClientConnectionManager;
 import ch.boye.httpclientandroidlib.impl.conn.SingleClientConnManager;
+import ch.boye.httpclientandroidlib.impl.conn.SystemDefaultDnsResolver;
 import ch.boye.httpclientandroidlib.params.BasicHttpParams;
 import ch.boye.httpclientandroidlib.params.HttpConnectionParams;
 import ch.boye.httpclientandroidlib.params.HttpParams;
 import ch.ethz.ssh2.crypto.ObfuscatedSSH;
 
+import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedDnsResolver;
 import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedPlainSocketFactory;
 import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedSSLSocketFactory;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -91,6 +96,7 @@ public class MeekClient {
     final static String HTTP_POST_CONTENT_TYPE = "application/octet-stream";
     
     final private Tun2Socks.IProtectSocket mProtectSocket;
+    final private ServerInterface mServerInterface;
     final private String mPsiphonClientSessionId;
     final private String mPsiphonServerAddress;
     final private String mFrontingDomain;
@@ -110,12 +116,14 @@ public class MeekClient {
     
     public MeekClient(
             Tun2Socks.IProtectSocket protectSocket,
+            ServerInterface serverInterface,
             String psiphonClientSessionId,
             String psiphonServerAddress,
             String obfuscationKeyword,
             String frontingDomain,
             String frontingHost) {
         mProtectSocket = protectSocket;
+        mServerInterface = serverInterface;
         mPsiphonClientSessionId = psiphonClientSessionId;
         mPsiphonServerAddress = psiphonServerAddress;
         mObfuscationKeyword = obfuscationKeyword;
@@ -127,12 +135,14 @@ public class MeekClient {
 
     public MeekClient(
             Tun2Socks.IProtectSocket protectSocket,
+            ServerInterface serverInterface,
             String psiphonClientSessionId,
             String psiphonServerAddress,
             String obfuscationKeyword,
             String meekServerHost,
             int meekServerPort) {
         mProtectSocket = protectSocket;
+        mServerInterface = serverInterface;
         mPsiphonClientSessionId = psiphonClientSessionId;
         mPsiphonServerAddress = psiphonServerAddress;
         mObfuscationKeyword = obfuscationKeyword;
@@ -228,7 +238,7 @@ public class MeekClient {
     private void runClient(Socket socket) {
         InputStream socketInputStream = null;
         OutputStream socketOutputStream = null;
-        SingleClientConnManager connManager = null;
+        ClientConnectionManager connManager = null;
         try {
             socketInputStream = socket.getInputStream();
             socketOutputStream = socket.getOutputStream();
@@ -247,7 +257,15 @@ public class MeekClient {
                 ProtectedPlainSocketFactory plainSocketFactory = new ProtectedPlainSocketFactory(mProtectSocket);
                 registry.register(new Scheme("http", 80, plainSocketFactory));                
             }
-            connManager = new SingleClientConnManager(registry);
+
+            if (mProtectSocket != null) {
+                // Use ProtectedDnsResolver to resolve the fronting domain outside of the tunnel
+                DnsResolver dnsResolver = new ProtectedDnsResolver(mProtectSocket, mServerInterface);
+                connManager = new PoolingClientConnectionManager(registry, dnsResolver);
+            }
+            else {
+                connManager = new SingleClientConnManager(registry);
+            }
 
             HttpParams httpParams = new BasicHttpParams();
             HttpConnectionParams.setConnectionTimeout(httpParams, MEEK_SERVER_TIMEOUT_MILLISECONDS);
