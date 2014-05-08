@@ -168,7 +168,6 @@ public class ServerSelector implements IAbortIndicator
                     this.meekClient = new MeekClient(
                             protectSocketsRequired ? ServerSelector.this.protectSocket : null,
                             ServerSelector.this.clientSessionId,
-                            this.entry.ipAddress + ":" + Integer.toString(this.entry.meekServerPort),
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
                             this.entry.meekObfuscatedKey,
                             this.entry.meekFrontingDomain,
@@ -193,11 +192,10 @@ public class ServerSelector implements IAbortIndicator
                     this.meekClient = new MeekClient(
                             protectSocketsRequired ? ServerSelector.this.protectSocket : null,
                             ServerSelector.this.clientSessionId,
-                            this.entry.ipAddress + ":" + Integer.toString(this.entry.meekServerPort),
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
                             this.entry.meekObfuscatedKey,
                             this.entry.ipAddress,
-                            this.entry.meekRelayPort);
+                            this.entry.meekServerPort);
                     this.meekClient.start();
 
                     makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());

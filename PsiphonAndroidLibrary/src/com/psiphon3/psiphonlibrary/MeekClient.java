@@ -92,12 +92,11 @@ public class MeekClient {
     
     final private Tun2Socks.IProtectSocket mProtectSocket;
     final private String mPsiphonClientSessionId;
-    final private String mMeekServerAddress;
     final private String mPsiphonServerAddress;
     final private String mFrontingDomain;
     final private String mFrontingHost;
-    final private String mRelayServerHost;
-    final private int mRelayServerPort;
+    final private String mMeekServerHost;
+    final private int mMeekServerPort;
     final private String mObfuscationKeyword;
     private Thread mAcceptThread;
     private ServerSocket mServerSocket;
@@ -112,39 +111,35 @@ public class MeekClient {
     public MeekClient(
             Tun2Socks.IProtectSocket protectSocket,
             String psiphonClientSessionId,
-            String meekServerAddress,
             String psiphonServerAddress,
             String obfuscationKeyword,
             String frontingDomain,
             String frontingHost) {
         mProtectSocket = protectSocket;
         mPsiphonClientSessionId = psiphonClientSessionId;
-        mMeekServerAddress = meekServerAddress;
         mPsiphonServerAddress = psiphonServerAddress;
         mObfuscationKeyword = obfuscationKeyword;
         mFrontingDomain = frontingDomain;
         mFrontingHost = frontingHost;
-        mRelayServerHost = null;
-        mRelayServerPort = -1;
+        mMeekServerHost = null;
+        mMeekServerPort = -1;
     }
 
     public MeekClient(
             Tun2Socks.IProtectSocket protectSocket,
             String psiphonClientSessionId,
-            String meekServerAddress,
             String psiphonServerAddress,
             String obfuscationKeyword,
-            String relayServerHost,
-            int relayServerPort) {
+            String meekServerHost,
+            int meekServerPort) {
         mProtectSocket = protectSocket;
         mPsiphonClientSessionId = psiphonClientSessionId;
-        mMeekServerAddress = meekServerAddress;
         mPsiphonServerAddress = psiphonServerAddress;
         mObfuscationKeyword = obfuscationKeyword;
         mFrontingDomain = null;
         mFrontingHost = null;
-        mRelayServerHost = relayServerHost;
-        mRelayServerPort = relayServerPort;
+        mMeekServerHost = meekServerHost;
+        mMeekServerPort = meekServerPort;
     }
 
     public synchronized void start() throws IOException {
@@ -262,7 +257,7 @@ public class MeekClient {
             if (mFrontingDomain != null) {
                 uri = new URIBuilder().setScheme("https").setHost(mFrontingDomain).setPath("/").build();
             } else {
-                uri = new URIBuilder().setScheme("http").setHost(mRelayServerHost).setPort(mRelayServerPort).setPath("/").build();                    
+                uri = new URIBuilder().setScheme("http").setHost(mMeekServerHost).setPort(mMeekServerPort).setPath("/").build();                    
             }
 
             while (true) {
@@ -355,7 +350,6 @@ public class MeekClient {
 
         JSONObject payload = new JSONObject();
         payload.put("s", mPsiphonClientSessionId);
-        payload.put("m", mMeekServerAddress);
         payload.put("p", mPsiphonServerAddress);
 
         // NaCl crypto_box: http://nacl.cr.yp.to/box.html
