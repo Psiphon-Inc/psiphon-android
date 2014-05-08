@@ -3,9 +3,10 @@
 	filemode = true
 	bare = false
 	logallrefupdates = true
+	ignorecase = true
 [remote "origin"]
 	fetch = +refs/heads/*:refs/remotes/origin/*
-	url = https://github.com/jech/polipo.git
+	url = https://github.com/Psiphon-Inc/polipo.git
 [branch "master"]
 	remote = origin
 	merge = refs/heads/master

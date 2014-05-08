@@ -46,3 +46,8 @@ void preinitDns(void);
 void initDns(void);
 int do_gethostbyname(char *name, int count,
                      int (*handler)(int, GethostbynameRequestPtr), void *data);
+
+/* PSIPHON version of do_gethostbyname for doing DNS over TCP over SOCKS */
+int do_gethostbyname_socks(char *name, int count,
+                     int (*handler)(int, GethostbynameRequestPtr), void *data);
+/* /PSIPHON */

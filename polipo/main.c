@@ -29,7 +29,7 @@ int daemonise = 0;
 static void
 usage(char *argv0)
 {
-    fprintf(stderr,
+    fprintf(stderr, 
             "%s [ -h ] [ -v ] [ -x ] [ -c filename ] [ -- ] [ var=val... ]\n",
             argv0);
     fprintf(stderr, "  -h: display this message.\n");
@@ -61,6 +61,10 @@ main(int argc, char **argv)
     preinitLocal();
     preinitForbidden();
     preinitSocks();
+
+    /* PSIPHON */
+    preinitSplitTunneling();
+    /* /PSIPHON */
 
     i = 1;
     while(i < argc) {
@@ -139,6 +143,10 @@ main(int argc, char **argv)
     initForbidden();
     initSocks();
 
+    /* PSIPHON */
+    initSplitTunneling();
+    /* /PSIPHON */
+
     if(printConfig) {
         printConfigVariables(stdout, 0);
         exit(0);
@@ -155,7 +163,7 @@ main(int argc, char **argv)
     if(pidFile)
         writePid(pidFile->string);
 
-    listener = create_listener(proxyAddress->string,
+    listener = create_listener(proxyAddress->string, 
                                proxyPort, httpAccept, NULL);
     if(!listener) {
         if(pidFile) unlink(pidFile->string);
@@ -168,7 +176,9 @@ main(int argc, char **argv)
     return 0;
 }
 
-// PSIPHON: custom main() for JNI
+
+/* PSIPHON: custom main() for JNI */
+#ifdef ANDROID
 int psiphonMain(
         int bindAll,
         int proxyPortParam,
@@ -248,3 +258,5 @@ int psiphonMain(
 
     return 0;
 }
+#endif
+/* /PSIPHON */
