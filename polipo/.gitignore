@@ -4,3 +4,9 @@ core
 polipo.html
 polipo.info
 html/
+
+Release
+Debug
+*.suo
+*.opensdf
+*.sdf

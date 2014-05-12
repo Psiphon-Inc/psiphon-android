@@ -41,6 +41,13 @@ THE SOFTWARE.
 #include <dirent.h>
 #else
 #include "dirent_compat.h"
+
+/* PSIPHON: This definition seems to be missing in Visual Studio */
+#ifndef F_OK
+#define F_OK  0x00
+#endif
+/* /PSIPHON */
+
 #endif
 #include <fcntl.h>
 #include <time.h>
