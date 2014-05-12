@@ -11,6 +11,14 @@ Windows: https://bitbucket.org/psiphon/psiphon-circumvention-system/src/tip/Clie
 
 Android: https://bitbucket.org/psiphon/psiphon-circumvention-system/src/tip/Android/polipo/
 
+When you make changes to the code, you MUST wrap the changes in:
+
+```
+/* PSIPHON: maybe some text here */
+...changes...
+/* /PSIPHON */
+```
+
 
 ## Building for Android
 
