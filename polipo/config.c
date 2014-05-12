@@ -562,9 +562,16 @@ parseAtom(char *buf, int offset, AtomPtr *value_return, int insensitive)
         j = i + 1;
     } else {
         y0 = i;
-        while(letter(buf[i]) || digit(buf[i]) || 
+        while(letter(buf[i]) || digit(buf[i]) ||
               buf[i] == '_' || buf[i] == '-' || buf[i] == '~' ||
-              buf[i] == '.' || buf[i] == ':' || buf[i] == '/')
+              buf[i] == '.' || buf[i] == ':' || buf[i] == '/'
+              /* PSIPHON: support Windows paths (...which isn't supposed to be
+                 a problem... maybe because we're compiling in Cygwin?) */
+#if defined(CYGWIN) || defined(WIN32)
+              || buf[i] == '\\'
+              /* /PSIPHON */
+#endif
+              )
             i++;
         j = i;
     }
@@ -815,7 +822,7 @@ int
 parseConfigFile(AtomPtr filename)
 {
     char buf[512];
-    int rc, lineno;
+    int lineno;
     FILE *f;
 
     if(!filename || filename->length == 0)
@@ -835,7 +842,7 @@ parseConfigFile(AtomPtr filename)
             fclose(f);
             return 1;
         }
-        rc = parseConfigLine(buf, filename->string, lineno, 0);
+        parseConfigLine(buf, filename->string, lineno, 0);
         lineno++;
     }
 }

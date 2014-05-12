@@ -22,6 +22,10 @@ THE SOFTWARE.
 
 #include "polipo.h"
 
+/* PSIPHON */
+extern int psiphonStats;
+/* /PSIPHON */
+
 #ifdef NO_TUNNEL
 
 void
@@ -58,6 +62,11 @@ static int tunnelConnectionHandler(int, FdEventHandlerPtr, ConnectRequestPtr);
 static int tunnelSocksHandler(int, SocksRequestPtr);
 static int tunnelHandlerCommon(int, TunnelPtr);
 static int tunnelError(TunnelPtr, int, AtomPtr);
+
+/* PSIPHON */
+static int tunnelSplitTunnelingDnsHandler(int, GethostbynameRequestPtr);
+/* /PSIPHON */
+
 
 static int
 circularBufferFull(CircularBufferPtr buf)
@@ -123,12 +132,22 @@ destroyTunnel(TunnelPtr tunnel)
     free(tunnel);
 }
 
-void 
+void
 do_tunnel(int fd, char *buf, int offset, int len, AtomPtr url)
 {
     TunnelPtr tunnel;
     int port;
     char *p, *q;
+
+    /* PSIPHON */
+    if(psiphonStats)
+    {
+        /* Update the page view stats by printf-ing the URI. Our stdout is piped to
+           the client process. */
+        printf("PSIPHON-PAGE-VIEW-HTTPS:>>%s<<\n", url->string);
+        fflush(NULL);
+    }
+    /* /PSIPHON */
 
     tunnel = makeTunnel(fd, buf, offset, len);
     if(tunnel == NULL) {
@@ -164,30 +183,56 @@ do_tunnel(int fd, char *buf, int offset, int len, AtomPtr url)
         return;
     }
 
+    /* PSIPHON
+       Checking if tunnel is allowed on a particular port is not needed if the
+       proxy accepts connections made only from localhost */
+    /*
     if(!intListMember(port, tunnelAllowedPorts)) {
         releaseAtom(url);
         tunnelError(tunnel, 403, internAtom("Forbidden port"));
         return;
     }
+    */
+    /* /PSIPHON */
+
     tunnel->port = port;
-    
-    if (tunnelIsMatched(url->string, url->length, 
+
+    if (tunnelIsMatched(url->string, url->length,
 			tunnel->hostname->string, tunnel->hostname->length)) {
         releaseAtom(url);
         tunnelError(tunnel, 404, internAtom("Forbidden tunnel"));
 	logTunnel(tunnel,1);
         return;
     }
-    
+
     logTunnel(tunnel,0);
-    
+
     releaseAtom(url);
 
+    /* PSIPHON split tunneling option*/
+    /* This was the original:
     if(socksParentProxy)
         do_socks_connect(parentHost ?
                          parentHost->string : tunnel->hostname->string,
                          parentHost ? parentPort : tunnel->port,
                          tunnelSocksHandler, tunnel);
+    */
+    if(socksParentProxy) {
+        if(splitTunneling)
+        {
+            do_gethostbyname_socks(parentHost ?
+                    parentHost->string : tunnel->hostname->string, 0,
+                    tunnelSplitTunnelingDnsHandler, tunnel);
+        }
+        else
+        {
+            do_socks_connect(parentHost ?
+                    parentHost->string : tunnel->hostname->string,
+                    parentHost ? parentPort : tunnel->port,
+                    tunnelSocksHandler, tunnel);
+        }
+    }
+    /* /PSIPHON */
     else
         do_gethostbyname(parentHost ?
                          parentHost->string : tunnel->hostname->string, 0,
@@ -220,6 +265,69 @@ tunnelDnsHandler(int status, GethostbynameRequestPtr request)
                tunnelConnectionHandler, tunnel);
     return 1;
 }
+
+/* PSIPHON: entire function */
+static int
+tunnelSplitTunnelingDnsHandler(int status, GethostbynameRequestPtr request)
+{
+    TunnelPtr tunnel = request->data;
+
+    if(status <= 0) {
+        tunnelError(tunnel, 504,
+                    internAtomError(-status,
+                                    "Host %s lookup failed",
+                                    atomString(tunnel->hostname)));
+        return 1;
+    }
+
+    if(request->addr->string[0] == DNS_CNAME) {
+        if(request->count > 10)
+            tunnelError(tunnel, 504, internAtom("CNAME loop"));
+        do_gethostbyname_socks(request->addr->string + 1, request->count + 1,
+                         tunnelSplitTunnelingDnsHandler, tunnel);
+        return 1;
+    }
+
+    //Get IP from the request, check against our local networks list
+    int local_addr = 0;
+    if(request->addr->string[0] == DNS_A)
+    {
+        HostAddressPtr host_addr;
+        host_addr = (HostAddressPtr) &request->addr->string[1];
+        //we deal only with IPv4 addresses
+        if(host_addr->af == 4)
+        {
+            struct in_addr servaddr;
+            memcpy(&servaddr.s_addr, &host_addr->data, sizeof(struct in_addr));
+            local_addr =  isLocalAddress(servaddr);
+        }
+    }
+
+    if (local_addr != 0)
+    {
+        printf("PSIPHON-UNPROXIED:>>%s<<", request->name->string);
+        fflush(NULL);
+    }
+
+    //Use SOCKS for IPs that are not local and connect directly to the ones that are
+    //At this point the DNS record for the request should be cached, default TTL for DNS requests
+    //is 240 seconds
+    if(local_addr == 0)
+    {
+            do_socks_connect(parentHost ?
+                    parentHost->string : tunnel->hostname->string,
+                    parentHost ? parentPort : tunnel->port,
+                    tunnelSocksHandler, tunnel);
+    }
+    else
+    {
+        do_connect(retainAtom(request->addr), 0,
+                parentHost ? parentPort : tunnel->port,
+                tunnelConnectionHandler, tunnel);
+    }
+    return 1;
+}
+/* /PSIPHON */
 
 static int
 tunnelConnectionHandler(int status,
@@ -462,7 +570,7 @@ tunnelRead1Handler(int status,
 {
     TunnelPtr tunnel = request->data;
     if(status) {
-        if(status < 0)
+        if(status < 0 && status != -EPIPE && status != -ECONNRESET)
             do_log_error(L_ERROR, -status, "Couldn't read from client");
         tunnel->flags |= TUNNEL_EOF1;
         goto done;
@@ -482,7 +590,7 @@ tunnelRead2Handler(int status,
                    FdEventHandlerPtr event, StreamRequestPtr request)
 {
     TunnelPtr tunnel = request->data;
-    if(status) {
+    if(status && status != -EPIPE && status != -ECONNRESET) {
         if(status < 0)
             do_log_error(L_ERROR, -status, "Couldn't read from server");
         tunnel->flags |= TUNNEL_EOF2;

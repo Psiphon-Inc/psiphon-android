@@ -22,6 +22,10 @@ THE SOFTWARE.
 
 #include "polipo.h"
 
+/* PSIPHON */
+extern int psiphonStats;
+/* /PSIPHON */
+
 #ifdef HAVE_IPv6
 #ifdef IPV6_PREFER_TEMPADDR
 #define HAVE_IPV6_PREFER_TEMPADDR 1
@@ -223,6 +227,14 @@ schedule_stream(int operation, int fd, int offset,
 
 static const char *endChunkTrailer = "\r\n0\r\n\r\n";
 
+
+/* PSIPHON */
+#include <time.h>
+int bytes_read = 0;
+time_t last_send_time = 0;
+/* /PSIPHON */
+
+
 int
 do_scheduled_stream(int status, FdEventHandlerPtr event)
 {
@@ -349,15 +361,38 @@ do_scheduled_stream(int status, FdEventHandlerPtr event)
     assert(i > 0);
 
     if((request->operation & IO_MASK) == IO_WRITE) {
-        if(i > 1) 
+        if(i > 1)
             rc = WRITEV(request->fd, iov, i);
         else
             rc = WRITE(request->fd, iov[0].iov_base, iov[0].iov_len);
     } else {
-        if(i > 1) 
+        if(i > 1)
             rc = READV(request->fd, iov, i);
         else
             rc = READ(request->fd, iov[0].iov_base, iov[0].iov_len);
+
+        /* PSIPHON
+           All proxied traffic gets read and written by the above calls, so
+           counting one of them will give us a "total bytes proxied" value.
+           Every so often we'll tell the Psiphon client this number so that
+           it can update the stats. */
+        if(psiphonStats && rc > 0)
+        {
+            const time_t SEND_INTERVAL_SECS = 5;
+            //TODO: check for int overflow in the future
+            bytes_read += rc;
+            if (last_send_time+SEND_INTERVAL_SECS < time(NULL))
+            {
+                if(bytes_read > 0)
+                {
+                    printf("PSIPHON-BYTES-TRANSFERRED:>>%d<<", bytes_read);
+                    fflush(NULL);
+                }
+                bytes_read = 0;
+                last_send_time = time(NULL);
+            }
+        }
+        /* /PSIPHON */
     }
 
     if(rc > 0) {
@@ -647,7 +682,7 @@ schedule_accept(int fd,
     request.fd = fd;
     request.handler = handler;
     request.data = data;
-    event = registerFdEvent(fd, POLLOUT|POLLIN, 
+    event = registerFdEvent(fd, POLLIN, 
                             do_scheduled_accept, sizeof(request), &request);
     if(!event) {
         done = (*handler)(-ENOMEM, NULL, NULL);
