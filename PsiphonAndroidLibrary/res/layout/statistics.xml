@@ -79,7 +79,8 @@
             android:id="@+id/slowSentGraph"
             android:layout_width="0dip"
             android:layout_height="70dip"
-            android:layout_weight="1.0" />
+            android:layout_weight="1.0"
+            android:orientation="horizontal" />
 
     </LinearLayout>
 
@@ -95,7 +96,8 @@
             android:id="@+id/fastSentGraph"
             android:layout_width="0dip"
             android:layout_height="35dip"
-            android:layout_weight="1.0" />
+            android:layout_weight="1.0"
+            android:orientation="horizontal" />
 
     </LinearLayout>
 
@@ -157,7 +159,8 @@
             android:id="@+id/slowReceivedGraph"
             android:layout_width="0dip"
             android:layout_height="70dip"
-            android:layout_weight="1.0" />
+            android:layout_weight="1.0"
+            android:orientation="horizontal" />
 
     </LinearLayout>
 
@@ -173,7 +176,8 @@
             android:id="@+id/fastReceivedGraph"
             android:layout_width="0dip"
             android:layout_height="35dip"
-            android:layout_weight="1.0" />
+            android:layout_weight="1.0"
+            android:orientation="horizontal" />
 
     </LinearLayout>
     

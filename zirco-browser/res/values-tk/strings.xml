@@ -215,7 +215,6 @@
   <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">Baglanyşyk URL-sini göçür</string>
   <string name="Main.MenuViewImage">Şekili görkez</string>
-  <string name="Main.MenuCopyImageUrl">\"Şekil URL-sini göçür</string>
   <string name="Main.MenuDownloadImage">Şekili göçürip al</string>
   <string name="Main.MenuSendEmail">E-poçta iber</string>
   <string name="Main.MenuCopyEmailUrl">E-poçta URL-sini göçür</string>
@@ -323,7 +322,6 @@
   <string name="QuickAction.Share">Paýlaş</string>
   <string name="QuickAction.SelectText">Teksti belle</string>
   <string name="QuickAction.MobileView">Ykjam görkeziş </string>
-  <string name="AboutActivity.OtherLicenseText">Bu amaly programma GPLv3 çäginde ygtyýarlandyrylan Zirco brauzeri taslamasyndan (https://code.google.com/p/zirco-browser/), ikisi hem Apache ygtyýarnamasynyň 2-nji wersiýasy tarapyndan ygtyýarlandyrylan GreenDroid taslamasyndan (https://github.com/cyrilmottier/GreenDroid) we Sharman taslamasyndan (https://github.com/emergentdotorg/shaman) kody öz içine alýar.</string>
   <!--0.4.0-->
   <string name="PreferencesActivity.WeavePreferenceTitle">Firefox ýer belliklerini sinhronlamak</string>
   <string name="PreferencesActivity.WeavePreferenceSummary">Firefox Sync bilen ýer belliklerini sinhronlamak sazlamalaryny dolandyryň.</string>

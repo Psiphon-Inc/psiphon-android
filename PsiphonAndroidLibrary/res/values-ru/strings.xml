@@ -26,16 +26,13 @@
   <string name="ServerInterface.FailedToParseLastConnected">Ошибка парсинга времени последнего соединения в ответе JSON</string>
   <string name="ServerInterface.FailedToReadLastConnected">Ошибка чтения параметра \'last connected time\'</string>
   <string name="PsiphonAndroidService.HandshakeRequestFailed">Ошибка запроса инициализации(handshake request).</string>
-  <string name="PsiphonAndroidService.ConnectedRequestFailed">Ошибка запроса постинициализации(connected request).</string>
   <string name="ssh_disconnected_unexpectedly">Неожиданный обрыв соединения SSH </string>
   <string name="client_version">Версия клиента %s</string>
   <string name="no_server_entries">Список серверов для соединения отсутствует</string>
   <string name="ServerInterface.InvalidRemoteServerList">Некорректный список remote server list</string>
-  <string name="TunnelService.FetchRemoteServerListFailed">Ошибка получения списка remote server list</string>
   <string name="AuthenticatedDataPackage.WrongPublicKey">Неверный публичный ключ в подписи прошедшего проверку пакета данных</string>
   <string name="AuthenticatedDataPackage.InvalidSignature">Неверная цифровая подпись на пакете данных</string>
   <string name="AuthenticatedDataPackage.FailedToParseRemoteServerEntry">Ошибка разбора(парсинга) пакета данных</string>
-  <string name="AuthenticatedDataPackage.InvalidEncoding">Неверная кодировка в пакете данных</string>
   <string name="AuthenticatedDataPackage.MissingValue">Отсутствующее значение в пакете данных</string>
   <string name="starting_tunnel">Запуск тоннеля...</string>
   <string name="stopping_tunnel">Остановка тоннеля...</string>
@@ -90,8 +87,6 @@
   <string name="current_network_type">Текущая сеть: %s</string>
   <string name="dns_resolver">DNS распознаватель: %s</string>
   <string name="get_active_network_dns_resolvers_failed">Ошибка определения активных DNS распознавателей сети </string>
-  <string name="preemptive_socket_connection_failed">Ошибка упреждающего socket соединения</string>
-  <string name="preemptive_ssh_connection_failed">Ошибка упреждающего соединения SSH</string>
   <string name="preemptive_bind_failed">Ошибка упреждающего bind</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">Ошибка чтения package info данного приложения</string>
   <string name="UpgradeManager.UpgradeFileWriteFailed">Ошибка записи апгрейда</string>
@@ -101,7 +96,6 @@
   <string name="UpgradeManager.UpgradeFileNotFound">Апгрейд файл не найден</string>
   <string name="UpgradeManager.UpgradePromptTitle">Апгрейд Psiphon </string>
   <string name="UpgradeManager.UpgradePromptMessage">Новая версия Psiphon готова к установке. </string>
-  <string name="UpgradeManager.UpgradeAvailableNotificationId">Доступна новая версия Psiphon</string>
   <string name="UpgradeManager.UpgradeFileReadFailed">Ошибка чтения файла апгрейда</string>
   <string name="UpgradeManager.UpgradeFileAuthenticateFailed">Ошибка аутенфикации файла апгрейда</string>
   <string name="connected_elapsed_time">Соединение установлено: %s</string>
