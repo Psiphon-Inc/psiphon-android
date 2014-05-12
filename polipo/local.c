@@ -309,6 +309,12 @@ httpSpecialSideRequest(ObjectPtr object, int method, int from, int to,
         return 1;
     }
 
+    if(requestor->flags & REQUEST_WAIT_CONTINUE) {
+        httpClientError(requestor, 417, internAtom("Expectation failed"));
+        requestor->connection->flags &= ~CONN_READER;
+        return 1;
+    }
+
     return httpSpecialDoSide(requestor);
 }
 
@@ -565,7 +571,7 @@ fillSpecialObject(ObjectPtr object, void (*fn)(FILE*, char*), void* closure)
             abortObject(object, 503,
                         internAtom("Couldn't allocate request\n"));
             notifyObject(object);
-            /* specialRequestHandler will take care of the rest. */
+            return;
         } else {
             request->buf = get_chunk();
             if(request->buf == NULL) {
@@ -575,6 +581,7 @@ fillSpecialObject(ObjectPtr object, void (*fn)(FILE*, char*), void* closure)
                 abortObject(object, 503,
                             internAtom("Couldn't allocate request\n"));
                 notifyObject(object);
+                return;
             }
         }
         object->flags |= OBJECT_INPROGRESS;

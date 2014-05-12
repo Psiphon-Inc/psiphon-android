@@ -58,6 +58,8 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Pair;
 import android.view.GestureDetector;
 import android.view.KeyEvent;
@@ -65,6 +67,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.View.OnTouchListener;
+import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
@@ -75,10 +78,14 @@ import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TabHost.TabSpec;
+import android.widget.Toast;
 
 public abstract class MainBase
 {
@@ -156,7 +163,7 @@ public abstract class MainBase
     
     public static abstract class TabbedActivityBase 
         extends Activity
-        implements OnTabChangeListener
+        implements OnTabChangeListener, OnCheckedChangeListener
     {
         public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
         public static final String HANDSHAKE_SUCCESS_IS_RECONNECT = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS_IS_RECONNECT";
@@ -168,7 +175,11 @@ public abstract class MainBase
         public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
         public static final String WDM_FORCE_IPTABLES_PREFERENCE = "wdmForceIptablesPreference";
         public static final String HTTP_PREFIX_PREFERENCE = "httpPrefixPreference";
+        public static final String USE_PROXY_SETTINGS_PREFERENCE = "useProxySettingsPreference";
         public static final String USE_SYSTEM_PROXY_SETTINGS_PREFERENCE = "useSystemProxySettingsPreference";
+        public static final String USE_CUSTOM_PROXY_SETTINGS_PREFERENCE = "useCustomProxySettingsPreference";
+        public static final String USE_CUSTOM_PROXY_SETTINGS_HOST_PREFERENCE = "useCustomProxySettingsHostPreference";
+        public static final String USE_CUSTOM_PROXY_SETTINGS_PORT_PREFERENCE = "useCustomProxySettingsPortPreference";
         public static final String SHARE_PROXIES_PREFERENCE = "shareProxiesPreference";
         
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
@@ -203,7 +214,13 @@ public abstract class MainBase
         protected CheckBox m_tunnelWholeDeviceToggle;
         private CheckBox m_wdmForceIptablesToggle;
         private CheckBox m_httpPrefixToggle;
-        private CheckBox m_useSystemProxySettingsToggle;
+        private CheckBox m_useProxySettingsToggle;
+        private RadioGroup m_useProxySettingsRadioGroup;
+        private RadioButton m_useSystemProxySettings;
+        private RadioButton m_useCustomProxySettings;
+        private TextView m_customProxySettingsHost;
+        private TextView m_customProxySettingsPort;
+        private Toast m_invalidProxySettingsToast;
         /*private CheckBox m_shareProxiesToggle;
         private TextView m_statusTabSocksPortLine;
         private TextView m_statusTabHttpProxyPortLine;*/
@@ -501,7 +518,12 @@ public abstract class MainBase
             findViewById(R.id.settingsView).setOnTouchListener(onTouchListener);
             findViewById(R.id.regionSelector).setOnTouchListener(onTouchListener);
             findViewById(R.id.tunnelWholeDeviceToggle).setOnTouchListener(onTouchListener);
-            findViewById(R.id.useSystemProxySettingsToggle).setOnTouchListener(onTouchListener);
+            findViewById(R.id.useProxySettingsToggle).setOnTouchListener(onTouchListener);
+            findViewById(R.id.useProxySettingsRadioGroup).setOnTouchListener(onTouchListener);
+            findViewById(R.id.useSystemProxySettingsRadio).setOnTouchListener(onTouchListener);
+            findViewById(R.id.useCustomProxySettingsRadio).setOnTouchListener(onTouchListener);
+            findViewById(R.id.customProxySettingsHost).setOnTouchListener(onTouchListener);
+            findViewById(R.id.customProxySettingsPort).setOnTouchListener(onTouchListener);
             findViewById(R.id.feedbackButton).setOnTouchListener(onTouchListener);
             findViewById(R.id.aboutButton).setOnTouchListener(onTouchListener);
             ListView statusListView = (ListView)findViewById(R.id.statusList);
@@ -525,11 +547,16 @@ public abstract class MainBase
             m_tunnelWholeDeviceToggle = (CheckBox)findViewById(R.id.tunnelWholeDeviceToggle);
             m_wdmForceIptablesToggle = (CheckBox)findViewById(R.id.WdmForceIptablesToggle);
             m_httpPrefixToggle = (CheckBox)findViewById(R.id.httpPrefixToggle);
-            m_useSystemProxySettingsToggle = (CheckBox)findViewById(R.id.useSystemProxySettingsToggle);
+            m_useProxySettingsToggle = (CheckBox)findViewById(R.id.useProxySettingsToggle);
+            m_useProxySettingsRadioGroup = (RadioGroup)findViewById(R.id.useProxySettingsRadioGroup);
+            m_useSystemProxySettings = (RadioButton)findViewById(R.id.useSystemProxySettingsRadio);
+            m_useCustomProxySettings = (RadioButton)findViewById(R.id.useCustomProxySettingsRadio);
+            m_customProxySettingsHost = (TextView)findViewById(R.id.customProxySettingsHost);
+            m_customProxySettingsPort = (TextView)findViewById(R.id.customProxySettingsPort);
             /*m_shareProxiesToggle = (CheckBox)findViewById(R.id.shareProxiesToggle);
             m_statusTabSocksPortLine = (TextView)findViewById(R.id.socksportline);
             m_statusTabHttpProxyPortLine = (TextView)findViewById(R.id.httpproxyportline);*/
-
+            
             m_slowSentGraph = new DataTransferGraph(this, R.id.slowSentGraph);
             m_slowReceivedGraph = new DataTransferGraph(this, R.id.slowReceivedGraph);
             m_fastSentGraph = new DataTransferGraph(this, R.id.fastSentGraph);
@@ -613,9 +640,51 @@ public abstract class MainBase
             
             boolean useSystemProxySettingsPreference = 
                     PreferenceManager.getDefaultSharedPreferences(this).getBoolean(USE_SYSTEM_PROXY_SETTINGS_PREFERENCE, false);
+            if (useSystemProxySettingsPreference)
+            {
+                m_useSystemProxySettings.setChecked(true);
+            }
             PsiphonData.getPsiphonData().setUseSystemProxySettings(useSystemProxySettingsPreference);
-            m_useSystemProxySettingsToggle.setChecked(useSystemProxySettingsPreference);
+            
+            boolean useCustomProxySettingsPreference = 
+                    PreferenceManager.getDefaultSharedPreferences(this).getBoolean(USE_CUSTOM_PROXY_SETTINGS_PREFERENCE, false);
+            if (useCustomProxySettingsPreference)
+            {
+                m_useCustomProxySettings.setChecked(true);
+            }
+            PsiphonData.getPsiphonData().setUseCustomProxySettings(useCustomProxySettingsPreference);
 
+            // Backwards compatibility: if USE_SYSTEM_PROXY_SETTINGS_PREFERENCE is set
+            // and (the new) USE_PROXY_SETTINGS_PREFERENCE is not, then set it
+            if (useSystemProxySettingsPreference &&
+                    !PreferenceManager.getDefaultSharedPreferences(this).contains(USE_PROXY_SETTINGS_PREFERENCE))
+            {
+                Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+                editor.putBoolean(USE_PROXY_SETTINGS_PREFERENCE, true);
+                editor.commit();
+            }
+
+            boolean useProxySettingsPreference = 
+                    PreferenceManager.getDefaultSharedPreferences(this).getBoolean(USE_PROXY_SETTINGS_PREFERENCE, false);
+            m_useProxySettingsToggle.setChecked(useProxySettingsPreference);
+            PsiphonData.getPsiphonData().setUseHTTPProxy(useProxySettingsPreference);
+
+            m_useProxySettingsRadioGroup.setOnCheckedChangeListener(this);
+            SetProxySettingsRadioGroupEnabled(m_useProxySettingsToggle.isChecked());
+
+            String customProxyHostPreference = 
+                    PreferenceManager.getDefaultSharedPreferences(this).getString(USE_CUSTOM_PROXY_SETTINGS_HOST_PREFERENCE, "");
+            m_customProxySettingsHost.setText(customProxyHostPreference);
+            PsiphonData.getPsiphonData().setCustomProxyHost(customProxyHostPreference);
+            
+            String customProxyPortPreference = 
+                    PreferenceManager.getDefaultSharedPreferences(this).getString(USE_CUSTOM_PROXY_SETTINGS_PORT_PREFERENCE, "");
+            m_customProxySettingsPort.setText(customProxyPortPreference);
+            PsiphonData.getPsiphonData().setCustomProxyPort(customProxyPortPreference);
+            
+            m_customProxySettingsHost.addTextChangedListener(onCustomProxySettingsChanged);
+            m_customProxySettingsPort.addTextChangedListener(onCustomProxySettingsChanged);
+            
             boolean shareProxiesPreference =
                     PreferenceManager.getDefaultSharedPreferences(this).getBoolean(SHARE_PROXIES_PREFERENCE, false);
             PsiphonData.getPsiphonData().setShareProxies(shareProxiesPreference);
@@ -630,6 +699,24 @@ public abstract class MainBase
             
             // Restore messages previously posted by the service.
             MyLog.restoreLogHistory();
+        }
+        
+        private void SetProxySettingsRadioGroupEnabled(boolean enabled)
+        {
+        	for (int i = 0; i < m_useProxySettingsRadioGroup.getChildCount(); ++i)
+        	{
+                m_useProxySettingsRadioGroup.getChildAt(i).setEnabled(enabled);
+            }
+        	SetCustomProxySettingsValuesEnabledState();
+        }
+        
+        private void SetCustomProxySettingsValuesEnabledState()
+        {
+        	boolean enabled = 
+        			m_useCustomProxySettings.isEnabled() &&
+        			(m_useProxySettingsRadioGroup.getCheckedRadioButtonId() == R.id.useCustomProxySettingsRadio);
+        	m_customProxySettingsHost.setEnabled(enabled);
+        	m_customProxySettingsPort.setEnabled(enabled);
         }
         
         @Override
@@ -665,12 +752,17 @@ public abstract class MainBase
                 250);
             
             PsiphonData.getPsiphonData().setStatusActivityForeground(true);
+            
+            // Don't show the keyboard until edit selected
+            getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
         }
         
         @Override
         protected void onPause()
         {
             super.onPause();
+            
+            cancelInvalidProxySettingsToast();
             
             m_updateHeaderTimer.cancel();
             m_updateStatusTimer.cancel();
@@ -965,10 +1057,10 @@ public abstract class MainBase
             PsiphonData.getPsiphonData().setHttpPrefix(httpPrefixPreference);
         }
 
-        public void onUseSystemProxySettingsToggle(View v)
+        public void onUseProxySettingsToggle(View v)
         {
             // Just in case an OnClick message is in transit before setEnabled is processed...(?)
-            if (!m_useSystemProxySettingsToggle.isEnabled())
+            if (!m_useProxySettingsToggle.isEnabled())
             {
                 return;
             }
@@ -981,18 +1073,97 @@ public abstract class MainBase
                 restart = true;
             }
 
-            boolean useSystemProxySettings = m_useSystemProxySettingsToggle.isChecked();
+            SetProxySettingsRadioGroupEnabled(m_useProxySettingsToggle.isChecked());
+            updateProxyPreferences();
             
-            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-            editor.putBoolean(USE_SYSTEM_PROXY_SETTINGS_PREFERENCE, useSystemProxySettings);
-            editor.commit();
-
-            PsiphonData.getPsiphonData().setUseSystemProxySettings(useSystemProxySettings);
+            if (restart)
+            {
+                startTunnel(this);
+            }
+        }
+        
+        public void onCheckedChanged(RadioGroup group, int checkedId)
+        {
+            boolean restart = false;
+            
+            if (isServiceRunning())
+            {
+                doToggle();
+                restart = true;
+            }
+            
+            if (group == m_useProxySettingsRadioGroup)
+            {
+                SetCustomProxySettingsValuesEnabledState();
+                updateProxyPreferences();
+            }
 
             if (restart)
             {
                 startTunnel(this);
             }
+        }
+        
+        // Basic check that the values are populated
+        private boolean customProxySettingsValuesValid()
+        {
+            PsiphonData.ProxySettings proxySettings = PsiphonData.getPsiphonData().getProxySettings(this);
+            return proxySettings != null &&
+                    proxySettings.proxyHost.length() > 0 &&
+                    proxySettings.proxyPort >= 1 &&
+                    proxySettings.proxyPort <= 65535;
+        }
+        
+        private TextWatcher onCustomProxySettingsChanged = new TextWatcher()
+        {
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count)
+            {
+                updateCustomProxyValues();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s)
+            {
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after)
+            {
+            }
+        };
+        
+        private void updateCustomProxyValues()
+        {
+            String customProxySettingsHost = m_customProxySettingsHost.getText().toString();
+            String customProxySettingsPort = m_customProxySettingsPort.getText().toString();
+            
+            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+            editor.putString(USE_CUSTOM_PROXY_SETTINGS_HOST_PREFERENCE, customProxySettingsHost);
+            editor.putString(USE_CUSTOM_PROXY_SETTINGS_PORT_PREFERENCE, customProxySettingsPort);
+            editor.commit();
+
+            PsiphonData.getPsiphonData().setCustomProxyHost(customProxySettingsHost);
+            PsiphonData.getPsiphonData().setCustomProxyPort(customProxySettingsPort);
+        }
+        
+        private void updateProxyPreferences()
+        {
+            boolean useProxySettings = m_useProxySettingsToggle.isChecked();
+            boolean useSystemProxySettings = 
+                (m_useProxySettingsRadioGroup.getCheckedRadioButtonId() == R.id.useSystemProxySettingsRadio);
+            boolean useCustomProxySettings = 
+                (m_useProxySettingsRadioGroup.getCheckedRadioButtonId() == R.id.useCustomProxySettingsRadio);
+            
+            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+            editor.putBoolean(USE_PROXY_SETTINGS_PREFERENCE, useProxySettings);
+            editor.putBoolean(USE_SYSTEM_PROXY_SETTINGS_PREFERENCE, useSystemProxySettings);
+            editor.putBoolean(USE_CUSTOM_PROXY_SETTINGS_PREFERENCE, useCustomProxySettings);
+            editor.commit();
+
+            PsiphonData.getPsiphonData().setUseHTTPProxy(useProxySettings);
+            PsiphonData.getPsiphonData().setUseSystemProxySettings(useSystemProxySettings);
+            PsiphonData.getPsiphonData().setUseCustomProxySettings(useCustomProxySettings);
         }
         
         /*public void onShareProxiesToggle(View v)
@@ -1186,8 +1357,33 @@ public abstract class MainBase
                 });
         }
 
+        private void cancelInvalidProxySettingsToast()
+        {
+            if (m_invalidProxySettingsToast != null)
+            {
+                View toastView = m_invalidProxySettingsToast.getView();
+                if (toastView != null)
+                {
+                    if (toastView.isShown())
+                    {
+                        m_invalidProxySettingsToast.cancel();
+                    }
+                }
+            }
+        }
+        
         protected void startTunnel(Context context)
         {
+            // Don't start if custom proxy settings is selected and values are invalid
+            if (m_useProxySettingsToggle.isChecked() &&
+                    m_useCustomProxySettings.isChecked() && !customProxySettingsValuesValid())
+            {
+                cancelInvalidProxySettingsToast();
+                m_invalidProxySettingsToast = Toast.makeText(context, R.string.network_proxy_connect_invalid_values, Toast.LENGTH_SHORT);
+                m_invalidProxySettingsToast.show();
+                return;
+            }
+ 
             boolean waitingForPrompt = false;
             
             if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService() &&
@@ -1280,7 +1476,8 @@ public abstract class MainBase
             m_wdmForceIptablesToggle.setEnabled(false);
             m_httpPrefixToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
-            m_useSystemProxySettingsToggle.setEnabled(false);
+            m_useProxySettingsToggle.setEnabled(false);
+            SetProxySettingsRadioGroupEnabled(false);
         }
         
         protected void onPostStartService()
@@ -1289,7 +1486,8 @@ public abstract class MainBase
             m_wdmForceIptablesToggle.setEnabled(m_isRooted && PsiphonData.getPsiphonData().getTunnelWholeDevice());
             m_httpPrefixToggle.setEnabled(true);
             m_regionSelector.setEnabled(true);
-            m_useSystemProxySettingsToggle.setEnabled(true);
+            m_useProxySettingsToggle.setEnabled(true);
+            SetProxySettingsRadioGroupEnabled(m_useProxySettingsToggle.isChecked());
         }
 
         protected void startTunnelService(Context context)

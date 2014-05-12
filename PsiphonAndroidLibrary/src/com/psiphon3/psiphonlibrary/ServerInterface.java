@@ -1259,7 +1259,7 @@ public class ServerInterface
             }
             else
             {
-                PsiphonData.SystemProxySettings proxySettings = PsiphonData.getPsiphonData().getSystemProxySettings(this.ownerContext);
+                PsiphonData.ProxySettings proxySettings = PsiphonData.getPsiphonData().getProxySettings(this.ownerContext);
                 if (proxySettings != null)
                 {
                     httpproxy = new HttpHost(proxySettings.proxyHost, proxySettings.proxyPort);

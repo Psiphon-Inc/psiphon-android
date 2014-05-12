@@ -62,8 +62,14 @@ int httpServerSideHandler(int status,
 int httpServerSideHandler2(int status,
                            FdEventHandlerPtr event,
                            StreamRequestPtr srequest);
-int httpServerConnectionDnsHandler(int status, 
+int httpServerConnectionDnsHandler(int status,
                                    GethostbynameRequestPtr request);
+
+/* PSIPHON */
+int httpServerSplitTunnelingDnsHandler(int status,
+                                    GethostbynameRequestPtr request);
+/* /PSIPHON */
+
 int httpServerConnectionHandler(int status,
                                 FdEventHandlerPtr event,
                                 ConnectRequestPtr request);

@@ -50,9 +50,14 @@ int
 snnvprintf(char *restrict buf, int n, int len, const char *format, va_list args)
 {
     int rc = -1;
+    va_list args_copy;
+
     if(n < 0) return -2;
-    if(n < len)
-        rc = vsnprintf(buf + n, len - n, format, args);
+    if(n < len) {
+        va_copy(args_copy, args);
+        rc = vsnprintf(buf + n, len - n, format, args_copy);
+        va_end(args_copy);
+    }
     if(rc >= 0 && n + rc <= len)
         return n + rc;
     else
@@ -197,9 +202,9 @@ memrchr(const void *s, int c, size_t n)
     const unsigned char *ss = s;
     unsigned char cc = c;
     size_t i;
-    for(i = n - 1; i >= 0; i--)
-        if(ss[i] == cc)
-            return (void*)(ss + i);
+    for(i = 1; i <= n; i++)
+        if(ss[n - i] == cc)
+            return (void*)(ss + n - i);
     return NULL;
 }
 #endif
@@ -268,8 +273,11 @@ vsprintf_a(const char *f, va_list args)
 {
     char *r;
     int rc;
+    va_list args_copy;
 
-    rc = vasprintf(&r, f, args);
+    va_copy(args_copy, args);
+    rc = vasprintf(&r, f, args_copy);
+    va_end(args_copy);
     if(rc < 0)
         return NULL;
     return r;
@@ -277,12 +285,6 @@ vsprintf_a(const char *f, va_list args)
 }
 
 #else
-
-/* This is not going to work if va_list is interesting.  But then, if you
-   have a non-trivial implementation of va_list, you should have va_copy. */
-#ifndef va_copy
-#define va_copy(a, b) do { a = b; } while(0)
-#endif
 
 char*
 vsprintf_a(const char *f, va_list args)
@@ -294,6 +296,7 @@ vsprintf_a(const char *f, va_list args)
 
     va_copy(args_copy, args);
     n = vsnprintf(buf, 64, f, args_copy);
+    va_end(args_copy);
     if(n >= 0 && n < 64) {
         return strdup_n(buf, n);
     }
@@ -308,9 +311,10 @@ vsprintf_a(const char *f, va_list args)
             return NULL;
         va_copy(args_copy, args);
         n = vsnprintf(string, size, f, args_copy);
-        if(n >= 0 && n < size)
+        va_end(args_copy);
+        if(n >= 0 && n < size) {
             return string;
-        else if(n >= size)
+        } else if(n >= size)
             size = n + 1;
         else
             size = size * 3 / 2;
@@ -416,6 +420,12 @@ time_t
 mktime_gmt(struct tm *tm)
 {
     return timegm(tm);
+}
+#elif defined(HAVE_MKGMTIME)
+time_t
+mktime_gmt(struct tm *tm)
+{
+    return _mkgmtime(tm);
 }
 #elif defined(HAVE_TM_GMTOFF)
 time_t
@@ -798,10 +808,11 @@ intListCons(int from, int to, IntListPtr list)
 int
 physicalMemory()
 {
-    // PSIPHON: In Android, we don't have sysinfo readily available
+    /* PSIPHON */
+#ifdef ANDROID
+    /* In Android, we don't have sysinfo readily available */
     return -1;
-
-    /*
+#else
     int rc;
     struct sysinfo info;
 
@@ -813,7 +824,8 @@ physicalMemory()
         return (int)(info.totalram * info.mem_unit);
 
     return -1;
-    */
+#endif
+    /* /PSIPHON */
 }
 
 #elif defined(__FreeBSD__)

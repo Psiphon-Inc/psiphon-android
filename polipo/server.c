@@ -41,6 +41,10 @@ int maxConnectionAge = 1260;
 int maxConnectionRequests = 400;
 int alwaysAddNoTransform = 0;
 
+/* PSIPHON stats output, default is false */
+int psiphonStats = 0;
+/* /PSIPHON */
+
 static HTTPServerPtr servers = 0;
 
 static int httpServerContinueConditionHandler(int, ConditionHandlerPtr);
@@ -95,6 +99,11 @@ preinitServer(void)
                              "Maximum number of requests on a server-side connection.");
     CONFIG_VARIABLE(alwaysAddNoTransform, CONFIG_BOOLEAN,
                     "If true, add a no-transform directive to all requests.");
+
+    /* PSIPHON */
+    CONFIG_VARIABLE(psiphonStats, CONFIG_BOOLEAN,
+            "Output Psiphon page stats");
+    /* /PSIPHON */
 }
 
 static int
@@ -515,9 +524,26 @@ httpServerConnection(HTTPServerPtr server)
            scrub(connection->server->name), connection->server->port);
     httpSetTimeout(connection, serverTimeout);
     if(socksParentProxy) {
+        /* PSIPHON split tunneling option */
+        /* Replacing this:
         connection->connecting = CONNECTING_SOCKS;
         do_socks_connect(server->name, connection->server->port,
                          httpServerSocksHandler, connection);
+        */
+        if(splitTunneling)
+        {
+            connection->connecting = CONNECTING_SOCKS;
+            do_gethostbyname_socks(server->name, 0,
+                    httpServerSplitTunnelingDnsHandler,
+                    connection);
+        }
+        else
+        {
+            connection->connecting = CONNECTING_SOCKS;
+            do_socks_connect(server->name, connection->server->port,
+                    httpServerSocksHandler, connection);
+        }
+        /* /PSIPHON */
     } else {
         connection->connecting = CONNECTING_DNS;
         do_gethostbyname(server->name, 0,
@@ -526,6 +552,101 @@ httpServerConnection(HTTPServerPtr server)
     }
     return 1;
 }
+
+
+/* PSIPHON split tunneling handler function */
+int httpServerSplitTunnelingDnsHandler(int status, GethostbynameRequestPtr request)
+{
+    HTTPConnectionPtr connection = request->data;
+
+    //This is pretty much original polipo code for httpServerConnectionDnsHandler
+
+    if(status <= 0) {
+        AtomPtr message;
+        message = internAtomF("Host %s lookup failed: %s",
+                              request->name ?
+                              request->name->string : "(unknown)",
+                              request->error_message ?
+                              request->error_message->string :
+                              pstrerror(-status));
+        do_log(L_ERROR, "Host %s lookup failed: %s (%d).\n",
+               request->name ?
+               request->name->string : "(unknown)",
+               request->error_message ?
+               request->error_message->string :
+               pstrerror(-status), -status);
+        connection->connecting = 0;
+        if(connection->server->request)
+            httpServerAbortRequest(connection->server->request, 1, 504,
+                                   retainAtom(message));
+        httpServerAbort(connection, 1, 502, message);
+        return 1;
+    }
+
+    if(request->addr->string[0] == DNS_CNAME) {
+        if(request->count > 10) {
+            AtomPtr message = internAtom("DNS CNAME loop");
+            do_log(L_ERROR, "DNS CNAME loop.\n");
+            connection->connecting = 0;
+            if(connection->server->request)
+                httpServerAbortRequest(connection->server->request, 1, 504,
+                                       retainAtom(message));
+            httpServerAbort(connection, 1, 504, message);
+            return 1;
+        }
+
+        httpSetTimeout(connection, serverTimeout);
+        do_gethostbyname_socks(request->addr->string + 1, request->count + 1,
+                         httpServerSplitTunnelingDnsHandler,
+                         connection);
+        return 1;
+    }
+
+
+    //Get IP from the request, check against our local networks list
+    int local_addr = 0;
+    if(request->addr->string[0] == DNS_A)
+    {
+        HostAddressPtr host_addr;
+        host_addr = (HostAddressPtr) &request->addr->string[1];
+        //we deal only with IPv4 addresses
+        if(host_addr->af == 4)
+        {
+            struct in_addr servaddr;
+            memcpy(&servaddr.s_addr, &host_addr->data, sizeof(struct in_addr));
+            local_addr =  isLocalAddress(servaddr);
+        }
+    }
+
+    if (local_addr != 0)
+    {
+        printf("PSIPHON-UNPROXIED:>>%s<<", request->name->string);
+        fflush(NULL);
+    }
+
+    //Use SOCKS for IPs that are not local and connect directly to the ones that are
+    //At this point the DNS record for the request should be cached, default TTL for DNS requests
+    //is 240 seconds
+    if(local_addr == 0)
+    {
+        connection->connecting = CONNECTING_SOCKS;
+        do_socks_connect(connection->server->name, connection->server->port,
+                httpServerSocksHandler, connection);
+
+    }
+    else
+    {
+        connection->connecting = CONNECTING_CONNECT;
+        httpSetTimeout(connection, serverTimeout);
+        do_connect(retainAtom(request->addr), connection->server->addrindex,
+                connection->server->port,
+                httpServerConnectionHandler, connection);
+    }
+
+    return 1;
+}
+/* /PSIPHON handler */
+
 
 int
 httpServerConnectionDnsHandler(int status, GethostbynameRequestPtr request)
@@ -1713,17 +1834,16 @@ httpWriteRequest(HTTPConnectionPtr connection, HTTPRequestPtr request,
 }
 
 int
-httpServerHandler(int status, 
+httpServerHandler(int status,
                   FdEventHandlerPtr event,
                   StreamRequestPtr srequest)
 {
     HTTPConnectionPtr connection = srequest->data;
-    AtomPtr message;
-    
+
     assert(connection->request->object->flags & OBJECT_INPROGRESS);
 
     if(connection->reqlen == 0) {
-        do_log(D_SERVER_REQ, "Writing aborted on 0x%lx\n", 
+        do_log(D_SERVER_REQ, "Writing aborted on 0x%lx\n",
                (unsigned long)connection);
         goto fail;
     }
@@ -1732,7 +1852,7 @@ httpServerHandler(int status,
         httpSetTimeout(connection, serverTimeout);
         return 0;
     }
-    
+
     httpConnectionDestroyReqbuf(connection);
 
     if(status) {
@@ -1740,19 +1860,12 @@ httpServerHandler(int status,
             httpServerRestart(connection);
             return 1;
         }
-        if(status >= 0 || status == ECONNRESET) {
-            message = internAtom("Couldn't send request to server: "
-                                 "short write");
-        } else {
-            if(status != -EPIPE)
-                do_log_error(L_ERROR, -status,
-                             "Couldn't send request to server");
-            message = 
-                internAtomError(-status, "Couldn't send request to server");
-        }
+        if(status < 0 && status != -ECONNRESET && status != -EPIPE)
+            do_log_error(L_ERROR, -status,
+                         "Couldn't send request to server");
         goto fail;
     }
-    
+
     return 1;
 
  fail:
@@ -2364,9 +2477,104 @@ httpServerHandlerHeaders(int eof,
         connection->len = 0;
     }
 
+    /* PSIPHON
+       specify psiphonStats=true in the config or command line to enable page stats output */
+    if(psiphonStats)
+    {
+        /*
+           Update the page view stats by printf-ing the URI. Our stdout is piped to
+           the client process. */
+
+        /* We update the stats if the code is 200 (OK) and the MIME type is text/html */
+        if (code == 200)
+        {
+            /* Note: using localObjectMimeType(new_object, ...) to check MIME type
+               is very flaky -- that function basically uses the extension of the
+               page filename, and only returns "text/html" if the extension is
+               "html" -- but not .py, .php, etc.
+               So instead we look at the response headers. */
+
+            int mime_type_ok = 0;
+            AtomPtr header = new_object->headers;
+            for (; header != NULL; header = header->next)
+            {
+                if (strstr(header->string, "text/html") != NULL
+                    || strstr(header->string, "application/xhtml+xml") != NULL)
+                {
+                    mime_type_ok = 1;
+                    break;
+                }
+            }
+
+            if (mime_type_ok && new_object->key_size > 0)
+            {
+                /* Note: The object's key is its original URI, which is what
+                   we want to send back to the Psiphon client. */
+
+                char* ext_check_uri = 0;
+                char* query_params_start = 0;
+                char* ext_start = 0;
+                int bad_extension = 0;
+
+                /* Hack: It's not unusual for png, js, swf, etc., files to have
+                   a MIME type of text/html (probably due to a misconfigured
+                   server). So we'll exclude files if they have an obviously
+                   incorrect file extension.
+                   Note that there's at least one theoretical case when URIs
+                   will be incorrectly discarded by this code:
+                        http://example.js (no trailing slash or path or file)
+                   We're not going to worry about that for now.
+                */
+                /* We'll need to make a copy, since we might need to modify it. */
+                ext_check_uri = (char*)malloc(sizeof(char)*(new_object->key_size+1));
+                strncpy(ext_check_uri, (char*)new_object->key, new_object->key_size);
+                ext_check_uri[new_object->key_size] = '\0';
+                /* Exclude query parameters. */
+                query_params_start = strchr(ext_check_uri, '?');
+                if (query_params_start) *query_params_start = '\0';
+                /* Look for the extension. */
+                ext_start = strrchr(ext_check_uri, '.');
+                if (ext_start)
+                {
+                    const char* bad_extensions[] =
+                        { ".js", ".jpg", ".jpeg", ".png", ".swf", ".flv", ".css",
+                          ".gif", ".ico" };
+
+                    int i;
+                    for (i = 0;
+                         i < (sizeof(bad_extensions)/sizeof(*bad_extensions));
+                         i++)
+                    {
+                        if (strcmp(ext_start, bad_extensions[i]) == 0)
+                        {
+                            bad_extension = 1;
+                            break;
+                        }
+                    }
+                }
+
+                free(ext_check_uri);
+
+                /* If the MIME type and extension are good, send the URI to psiclient. */
+                if (!bad_extension)
+                {
+                    char* uri = (char*)malloc(sizeof(char)*(new_object->key_size+1));
+                    strncpy(uri, (char*)new_object->key, new_object->key_size);
+                    uri[new_object->key_size] = '\0';
+
+                    printf("PSIPHON-PAGE-VIEW-HTTP:>>%s<<\n", uri);
+                    fflush(NULL);
+
+                    free(uri);
+                }
+            }
+        }
+    }
+    /* /PSIPHON */
+
     if(eof) {
         if(connection->te == TE_CHUNKED ||
-           (object->length >= 0 && 
+           (object->length >= 0 &&
             connection->offset < object->length)) {
             do_log(L_ERROR, "Server closed connection.\n");
             httpServerAbort(connection, 1, 502,

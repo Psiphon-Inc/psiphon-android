@@ -366,11 +366,15 @@ urlDirname(char *buf, int n, const char *url, int len)
     int i, j;
     if(len < 8)
         return -1;
-    if(memcmp(url, "http://", 7) != 0)
+    if(lwrcmp(url, "http://", 7) != 0)
         return -1;
 
     if(diskCacheRoot == NULL ||
-       diskCacheRoot->length <= 0 || diskCacheRoot->string[0] != '/')
+       diskCacheRoot->length <= 0
+#ifndef WIN32
+       || diskCacheRoot->string[0] != '/'
+#endif
+       )
         return -1;
 
     if(n <= diskCacheRoot->length)
@@ -1044,6 +1048,8 @@ validateEntry(ObjectPtr object, int fd,
         dirty = 1;
 
     object->cache_control |= cache_control.flags;
+    object->max_age = cache_control.max_age;
+    object->s_maxage = cache_control.s_maxage;
 
     if(object->age < 0) object->age = object->date;
     if(object->age < 0) object->age = 0; /* a long time ago */
@@ -1445,8 +1451,12 @@ destroyDiskEntry(ObjectPtr object, int d)
         entry = object->disk_entry;
         if(entry == NULL || entry == &negativeEntry)
             return 0;
-        if(diskCacheWriteoutOnClose > 0)
+        if(diskCacheWriteoutOnClose > 0) {
             reallyWriteoutToDisk(object, -1, diskCacheWriteoutOnClose);
+            entry = object->disk_entry;
+            if(entry == NULL || entry == &negativeEntry)
+                return 0;
+        }
     }
  again:
     rc = close(entry->fd);
@@ -1936,7 +1946,7 @@ processObject(DiskObjectPtr dobjects, char *filename, struct stat *sb)
 
     dobject = readDiskObject((char*)filename, sb);
     if(dobject == NULL)
-        return 0;
+        return dobjects;
 
     if(!dobjects ||
        (c = strcmp(dobject->location, dobjects->location)) <= 0) {
