@@ -25,12 +25,10 @@
   <string name="ServerInterface.FailedToStoreLastConnected">Không thể lưu thời gian đã kết nối lần cuối.</string>
   <string name="ServerInterface.FailedToReadLastConnected">Không thể đọc thời gian đã kết nối lần cuối.</string>
   <string name="PsiphonAndroidService.HandshakeRequestFailed">Yêu cầu hanshake thất bại.</string>
-  <string name="PsiphonAndroidService.ConnectedRequestFailed">Yêu cầu kết nối thất bại.</string>
   <string name="ssh_disconnected_unexpectedly">SSH ngắt kết nối bất ngờ</string>
   <string name="client_version">Phiên Bản Client %s</string>
   <string name="no_server_entries">Không có máy chủ để kết nối</string>
   <string name="ServerInterface.InvalidRemoteServerList">Danh sách máy chủ từ xa không hợp lệ</string>
-  <string name="TunnelService.FetchRemoteServerListFailed">Lấy danh sách máy chủ từ xa thất bại</string>
   <string name="starting_tunnel">Đang bắt đầu định hướng...</string>
   <string name="stopping_tunnel">Đang dừng định hướng...</string>
   <string name="stopped_tunnel">Đã dừng định hướng</string>

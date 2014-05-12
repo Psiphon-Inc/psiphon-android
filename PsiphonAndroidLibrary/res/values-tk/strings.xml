@@ -25,12 +25,10 @@
   <string name="ServerInterface.FailedToStoreLastConnected">Iň soňky birikme wagtyny saklamak şowsuz.</string>
   <string name="ServerInterface.FailedToReadLastConnected">Iň soňky birikme wagtyny okamak şowsuz.</string>
   <string name="PsiphonAndroidService.HandshakeRequestFailed">Tassyklaýyş islegi şowsuz.</string>
-  <string name="PsiphonAndroidService.ConnectedRequestFailed">Birikme islegi şowsuz.</string>
   <string name="ssh_disconnected_unexpectedly">SSH birikmesi birdenkä kesildi</string>
   <string name="client_version">Müşderi wersiýasy %s</string>
   <string name="no_server_entries">Birikmek üçin serwer ýok</string>
   <string name="ServerInterface.InvalidRemoteServerList">Nädogry uzakdaky serwer sanawy</string>
-  <string name="TunnelService.FetchRemoteServerListFailed">Uzakdaky serwer sanawyny getirtmek şowsuz</string>
   <string name="starting_tunnel">Ötük başladylýar...</string>
   <string name="stopping_tunnel">Ötük duruzylýar...</string>
   <string name="stopped_tunnel">Ötük durzuldy</string>

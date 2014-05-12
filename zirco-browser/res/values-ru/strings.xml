@@ -215,7 +215,6 @@
   <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">Скопировать линк</string>
   <string name="Main.MenuViewImage">Показать картинку</string>
-  <string name="Main.MenuCopyImageUrl">\"Скопировать адрес картинки</string>
   <string name="Main.MenuDownloadImage">Скачать картинку</string>
   <string name="Main.MenuSendEmail">Послать письмо</string>
   <string name="Main.MenuCopyEmailUrl">Скопировать адрес эл. почты</string>
@@ -323,7 +322,6 @@
   <string name="QuickAction.Share">Отправить</string>
   <string name="QuickAction.SelectText">Выделить текст</string>
   <string name="QuickAction.MobileView">Мобильный просмотр</string>
-  <string name="AboutActivity.OtherLicenseText">Это приложение использует исходный код из проекта Zirco Browser (https://code.google.com/p/zirco-browser/) под лицензией GPLv3, а также из проекта GreenDroid  (https://github.com/cyrilmottier/GreenDroid) и из проекта Shaman (https://github.com/emergentdotorg/shaman), оба под лицензией Apache, версия 2.</string>
   <!--0.4.0-->
   <string name="PreferencesActivity.WeavePreferenceTitle">Синхронизация закладок Firefox</string>
   <string name="PreferencesActivity.WeavePreferenceSummary">Настройки синхронизации закладок с сервисом Firefox Sync.</string>
