@@ -1057,7 +1057,7 @@ httpClientDiscardHandler(int status,
 
     assert(connection->flags & CONN_READER);
     if(status) {
-        if(status < 0 && status != -EPIPE)
+        if(status < 0 && status != -EPIPE && status != -ECONNRESET)
             do_log_error(L_ERROR, -status, "Couldn't read from client");
         connection->bodylen = -1;
         return httpClientDiscardBody(connection);
@@ -1365,12 +1365,16 @@ httpClientGetHandler(int status, ConditionHandlerPtr chandler)
 
     /* See httpServerHandlerHeaders */
     if((object->flags & OBJECT_SUPERSEDED) &&
+       /* Avoid superseding loops. */
+       !(request->flags & REQUEST_SUPERSEDED) &&
        request->request && request->request->can_mutate) {
         ObjectPtr new_object = retainObject(request->request->can_mutate);
         if(object->requestor == request) {
             if(new_object->requestor == NULL)
                 new_object->requestor = request;
             object->requestor = NULL;
+            /* Avoid superseding the same request more than once. */
+            request->flags |= REQUEST_SUPERSEDED;
         }
         request->chandler = NULL;
         releaseObject(object);

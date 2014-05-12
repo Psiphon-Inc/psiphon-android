@@ -85,9 +85,16 @@ static DnsQueryPtr inFlightDnsQueriesLast;
 static int really_do_gethostbyname(AtomPtr name, ObjectPtr object);
 static int really_do_dns(AtomPtr name, ObjectPtr object);
 
+/* PSIPHON DNS over TCP over SOCKS functions */
+static int really_do_dns_socks(AtomPtr name, ObjectPtr object);
+static int dnsSocksConnectHandler(int status, SocksRequestPtr request);
+static int dnsSocksSendHandler(int status, FdEventHandlerPtr event);
+static int dnsSocksReplyHandler(int status, FdEventHandlerPtr event);
+/* /PSIPHON */
+
 #ifndef NO_FANCY_RESOLVER
 static int stringToLabels(char *buf, int offset, int n, char *string);
-static int labelsToString(char *buf, int offset, int n, char *d, 
+static int labelsToString(char *buf, int offset, int n, char *d,
                           int m, int *j_return);
 static int dnsBuildQuery(int id, char *buf, int offset, int n,
                          AtomPtr name, int af);
@@ -644,7 +651,9 @@ really_do_gethostbyname(AtomPtr name, ObjectPtr object)
     if(host == NULL) {
         switch(h_errno) {
         case HOST_NOT_FOUND: error = EDNS_HOST_NOT_FOUND; break;
+#ifdef NO_ADDRESS
         case NO_ADDRESS: error = EDNS_NO_ADDRESS; break;
+#endif
         case NO_RECOVERY: error = EDNS_NO_RECOVERY; break;
         case TRY_AGAIN: error = EDNS_TRY_AGAIN; break;
         default: error = EUNKNOWN; break;
@@ -1081,6 +1090,548 @@ really_do_dns(AtomPtr name, ObjectPtr object)
     }
 }
 
+
+/* PSIPHON new functions */
+static int
+dnsSocksTimeoutHandler(TimeEventHandlerPtr event)
+{
+    //just abort
+    DnsQueryPtr query = *(DnsQueryPtr*)event->data;
+    ObjectPtr object = query->object;
+    removeQuery(query);
+    object->flags &= ~OBJECT_INPROGRESS;
+    if(query->inet4) releaseAtom(query->inet4);
+    if(query->inet6) releaseAtom(query->inet6);
+    free(query);
+    releaseNotifyObject(object);
+    return 1;
+}
+
+int
+do_gethostbyname_socks(char *origname,
+                 int count,
+                 int (*handler)(int, GethostbynameRequestPtr),
+                 void *data)
+{
+    /*
+       This is an adaptation of the do_gethostbyname function
+     */
+    ObjectPtr object;
+    int n = strlen(origname);
+    AtomPtr name;
+    GethostbynameRequestRec request;
+    int done, rc;
+
+    memset(&request, 0, sizeof(request));
+    request.name = NULL;
+    request.addr = NULL;
+    request.error_message = NULL;
+    request.count = count;
+    request.handler = handler;
+    request.data = data;
+
+    if(n <= 0 || n > 131) {
+        if(n <= 0) {
+            request.error_message = internAtom("empty name");
+            do_log(L_ERROR, "Empty DNS name.\n");
+            done = handler(-EINVAL, &request);
+        } else {
+            request.error_message = internAtom("name too long");
+            do_log(L_ERROR, "DNS name too long.\n");
+            done = handler(-ENAMETOOLONG, &request);
+        }
+        assert(done);
+        releaseAtom(request.error_message);
+        return 1;
+    }
+
+    if(origname[n - 1] == '.')
+        n--;
+
+    name = internAtomLowerN(origname, n);
+
+    if(name == NULL) {
+        request.error_message = internAtom("couldn't allocate name");
+        do_log(L_ERROR, "Couldn't allocate DNS name.\n");
+        done = handler(-ENOMEM, &request);
+        assert(done);
+        releaseAtom(request.error_message);
+        return 1;
+    }
+
+    request.name = name;
+    request.addr = NULL;
+    request.error_message = NULL;
+    request.count = count;
+    request.object = NULL;
+    request.handler = handler;
+    request.data = data;
+
+    object = findObject(OBJECT_DNS, name->string, name->length);
+    if(object == NULL || objectMustRevalidate(object, NULL)) {
+        if(object) {
+            privatiseObject(object, 0);
+            releaseObject(object);
+        }
+        object = makeObject(OBJECT_DNS, name->string, name->length, 1, 0,
+                            NULL, NULL);
+        if(object == NULL) {
+            request.error_message = internAtom("Couldn't allocate object");
+            do_log(L_ERROR, "Couldn't allocate DNS object.\n");
+            done = handler(-ENOMEM, &request);
+            assert(done);
+            releaseAtom(name);
+            releaseAtom(request.error_message);
+            return 1;
+        }
+    }
+
+    if((object->flags & (OBJECT_INITIAL | OBJECT_INPROGRESS)) ==
+       OBJECT_INITIAL) {
+            rc = really_do_dns_socks(name, object);
+        if(rc < 0) {
+            assert(!(object->flags & (OBJECT_INITIAL | OBJECT_INPROGRESS)));
+            goto fail;
+        }
+    }
+
+    if(object->flags & OBJECT_INITIAL) {
+        ConditionHandlerPtr chandler;
+        assert(object->flags & OBJECT_INPROGRESS);
+        request.object = object;
+        chandler = conditionWait(&object->condition, dnsHandler,
+                                 sizeof(request), &request);
+        if(chandler == NULL) {
+            rc = ENOMEM;
+            goto fail;
+        }
+        return 1;
+    }
+
+    if(object->headers && object->headers->length > 0) {
+        if(object->headers->string[0] == DNS_A)
+            assert(((object->headers->length - 1) %
+                    sizeof(HostAddressRec)) == 0);
+        else
+            assert(object->headers->string[0] == DNS_CNAME);
+        request.addr = retainAtom(object->headers);
+    } else if(object->message) {
+        request.error_message = retainAtom(object->message);
+    }
+
+    releaseObject(object);
+
+    if(request.addr && request.addr->length > 0)
+        done = handler(1, &request);
+    else
+        done = handler(-EDNS_HOST_NOT_FOUND, &request);
+    assert(done);
+
+    releaseAtom(request.addr); request.addr = NULL;
+    releaseAtom(request.name); request.name = NULL;
+    releaseAtom(request.error_message); request.error_message = NULL;
+    return 1;
+
+ fail:
+    releaseNotifyObject(object);
+    done = handler(-errno, &request);
+    assert(done);
+    releaseAtom(name);
+    return 1;
+}
+
+static int
+really_do_dns_socks(AtomPtr name, ObjectPtr object)
+{
+    /*
+       This is different from really_do_dns function:
+       1. There is no static global UDP socket, we need to establish a SOCKS connection
+       to the given DNS server with every request and use it's TCP socket for the DNS protocol
+       2. DNS over TCP is slightly different from DNS over UDP. The first two bytes of the
+       request and reply are storing the query length.
+     */
+    int rc;
+    DnsQueryPtr query;
+    AtomPtr message = NULL;
+    int id;
+    AtomPtr a = NULL;
+
+    if(a == NULL) {
+        if(name == atomLocalhost || name == atomLocalhostDot) {
+            char s[1 + sizeof(HostAddressRec)];
+            memset(s, 0, sizeof(s));
+            s[0] = DNS_A;
+            s[1] = 4;
+            s[2] = 127;
+            s[3] = 0;
+            s[4] = 0;
+            s[5] = 1;
+            a = internAtomN(s, 1 + sizeof(HostAddressRec));
+            if(a == NULL) {
+                abortObject(object, 501,
+                            internAtom("Couldn't allocate address"));
+                notifyObject(object);
+                errno = ENOMEM;
+                return -1;
+            }
+        }
+    }
+
+    if(a == NULL) {
+        struct in_addr ina;
+        rc = inet_aton(name->string, &ina);
+        if(rc == 1) {
+            char s[1 + sizeof(HostAddressRec)];
+            memset(s, 0, sizeof(s));
+            s[0] = DNS_A;
+            s[1] = 4;
+            memcpy(s + 2, &ina, 4);
+            a = internAtomN(s, 1 + sizeof(HostAddressRec));
+            if(a == NULL) {
+                abortObject(object, 501,
+                            internAtom("Couldn't allocate address"));
+                notifyObject(object);
+                errno = ENOMEM;
+                return -1;
+            }
+        }
+    }
+#ifdef HAVE_IPv6
+    if(a == NULL)
+        a = rfc2732(name);
+#endif
+
+    if(a) {
+        object->headers = a;
+        object->age = current_time.tv_sec;
+        object->expires = current_time.tv_sec + 240;
+        object->flags &= ~(OBJECT_INITIAL | OBJECT_INPROGRESS);
+        notifyObject(object);
+        return 0;
+    }
+
+    /* The id is used to speed up detecting replies to queries that
+       are no longer current -- see dnsReplyHandler. */
+    id = (idSeed++) & 0xFFFF;
+
+    query = malloc(sizeof(DnsQueryRec));
+    if(query == NULL) {
+        do_log(L_ERROR, "Couldn't allocate DNS query.\n");
+        message = internAtom("Couldn't allocate DNS query");
+        abortObject(object, 501, message);
+        notifyObject(object);
+        errno = ENOMEM;
+        return -1;
+    }
+    query->id = id;
+    query->inet4 = NULL;
+    query->inet6 = NULL;
+    query->name = name;
+    query->time = current_time.tv_sec;
+    query->object = retainObject(object);
+    query->timeout = 4;
+    query->timeout_handler = NULL;
+    query->next = NULL;
+
+    query->timeout_handler =
+        scheduleTimeEvent(query->timeout, dnsSocksTimeoutHandler,
+                          sizeof(query), &query);
+    if(query->timeout_handler == NULL) {
+        do_log(L_ERROR, "Couldn't schedule DNS timeout handler.\n");
+        message = internAtom("Couldn't schedule DNS timeout handler");
+        abortObject(object, 501, message);
+        notifyObject(object);
+        free(query);
+        return -1;
+    }
+    insertQuery(query);
+
+    object->flags |= OBJECT_INPROGRESS;
+
+    //Connect to parent SOCKS
+    do_socks_connect(splitTunnelingDnsServer->string, 53, dnsSocksConnectHandler, query);
+    releaseAtom(message);
+    return 0;
+}
+
+
+static int
+dnsSocksConnectHandler(int status, SocksRequestPtr request)
+{
+    AtomPtr message = NULL;
+    DnsQueryPtr query = request->data;
+
+    if(status  < 0) {
+        do_log_error(L_ERROR, -status, "Couldn't establish DNS socket over SOCKS.\n");
+        message = internAtomError(-status, "Couldn't establish DNS socket over SOCKS");
+        goto fallback;
+    }
+
+    //We want to send DNS query as soon as socket is ready to send(), see dnsSocksSendHandler
+    FdEventHandlerPtr event_handler = registerFdEvent(request->fd, POLLOUT, dnsSocksSendHandler, sizeof(DnsQueryPtr), &query);
+    if(event_handler == NULL) {
+        do_log(L_ERROR, "Couldn't register DNS SOCKS socket handler.\n");
+        message = internAtomError(-status, "Couldn't  register DNS SOCKS socket handler.");
+        goto fallback;
+    }
+
+    releaseAtom(message);
+    return 1;
+
+ fallback:
+    query->object->flags &= ~OBJECT_INPROGRESS;
+    abortObject(query->object, 501, message);
+    notifyObject(query->object);
+    CLOSE(request->fd);
+    return 1;
+}
+
+static int
+dnsSocksSendHandler(int status, FdEventHandlerPtr event)
+{
+    AtomPtr message = NULL;
+    DnsQueryPtr query = *(DnsQueryPtr*)event->data;
+    char buf[512];
+    int buflen;
+    int af[2];
+    int i;
+    int fd = event->fd;
+
+    if(status  < 0) {
+        do_log_error(L_ERROR, -status, "Couldn't establish DNS socket over SOCKS.\n");
+        message = internAtomError(-status, "Couldn't establish DNS socket over SOCKS");
+        goto fallback;
+    }
+
+    //this is copied and adapted from sendQuery
+
+    if(dnsQueryIPv6 <= 0) {
+        af[0] = 4; af[1] = 0;
+    } else if(dnsQueryIPv6 <= 2) {
+        af[0] = 4; af[1] = 6;
+    } else {
+        af[0] = 6; af[1] = 0;
+    }
+
+    for(i = 0; i < 2; i++) {
+        if(af[i] == 0)
+            continue;
+        if(af[i] == 4 && query->inet4)
+            continue;
+        else if(af[i] == 6 && query->inet6)
+            continue;
+
+        //reserve two first bytes of the buf for putting in the query length
+        //as required by doing DNS oves TCP
+        int qlen = dnsBuildQuery(query->id, &buf[2], 0, 510, query->name, af[i]);
+        if(qlen <= 0) {
+            do_log(L_ERROR, "Couldn't build DNS query.\n");
+            message = internAtomError(0, "Couldn't  build DNS query.");
+            goto fallback;
+        }
+
+        //fill out the 2 first bytes of the query buf
+        buf[0] = 0xff & qlen >> 8;
+        buf[1] = 0xff & qlen >> 0;
+
+        buflen = qlen + 2;
+
+        //send data yo
+        int len = send(fd, buf, buflen, 0);
+
+        if(len <= 0) {
+            if(errno == EINTR || errno == EAGAIN) return 0;
+            /* This is where we get ECONNREFUSED for an ICMP port unreachable */
+            do_log_error(L_ERROR, errno, "DNS: send failed");
+            return 0;
+        }
+
+        //When socket is ready to recv() reply we'll fire dnsSocksReplyHandler
+        FdEventHandlerPtr event_handler = registerFdEvent(fd, POLLIN, dnsSocksReplyHandler, 0, NULL);
+        if(event_handler == NULL) {
+            do_log(L_ERROR, "Couldn't register DNS SOCKS socket handler.\n");
+            message = internAtomError(0, "Couldn't  register DNS SOCKS socket handler");
+            goto fallback;
+        }
+    }
+
+    releaseAtom(message);
+    return 1;
+
+ fallback:
+    CLOSE(fd);
+    abortObject(query->object, 501, message);
+    notifyObject(query->object);
+    return 1;
+}
+
+static int
+dnsSocksReplyHandler(int status, FdEventHandlerPtr event)
+{
+    //Adaptation of dnsReplyHandler for TCP DNS request
+    int fd = event->fd;
+    char buf[2048];
+    int len, rc;
+    ObjectPtr object;
+    unsigned ttl = 0;
+    AtomPtr name, value, message = NULL;
+    int id;
+    int af;
+    DnsQueryPtr query;
+    AtomPtr cname = NULL;
+
+    if(status < 0) {
+        return 1;
+    }
+
+    len = recv(fd, buf, 2048, 0);
+
+    //We are not expecting to send or recv on this socket anymore
+    unregisterFdEvent(event);
+    CLOSE(fd);
+
+    if(len <= 0) {
+        if(errno == EINTR || errno == EAGAIN) return 0;
+        /* This is where we get ECONNREFUSED for an ICMP port unreachable */
+        do_log_error(L_ERROR, errno, "DNS: recv failed");
+        return 0;
+    }
+
+    /* This could be a late reply to a query that timed out and was
+       resent, a reply to a query that timed out, or a reply to an
+       AAAA query when we already got a CNAME reply to the associated
+       A.  We filter such replies straight away, without trying to
+       parse them. */
+    rc = dnsReplyId(buf, 2, len, &id); //First two bytes are the length of the query when do TCP
+    if(rc < 0) {
+        do_log(L_WARN, "Short DNS reply.\n");
+        return 0;
+    }
+    if(!findQuery(id, NULL)) {
+        return 0;
+    }
+
+    rc = dnsDecodeReply(&buf[2], 0, len - 2, &id, &name, &value, &af, &ttl); //DNS over TCP see above
+    if(rc < 0) {
+        assert(value == NULL);
+        return 0;
+    }
+
+    query = findQuery(id, name);
+    if(query == NULL) {
+        /* Duplicate id ? */
+        releaseAtom(value);
+        releaseAtom(name);
+        return 0;
+    }
+
+    /* We're going to use the information in this reply.  If it was an
+       error, construct an empty atom to distinguish it from information
+       we're still waiting for. */
+    if(value == NULL)
+        value = internAtom("");
+
+ again:
+    if(af == 4) {
+        if(query->inet4 == NULL) {
+            query->inet4 = value;
+            query->ttl4 = current_time.tv_sec + ttl;
+        } else
+            releaseAtom(value);
+    } else if(af == 6) {
+        if(query->inet6 == NULL) {
+            query->inet6 = value;
+            query->ttl6 = current_time.tv_sec + ttl;
+        } else
+            releaseAtom(value);
+    } else if(af == 0) {
+        if(query->inet4 || query->inet6) {
+            do_log(L_WARN, "Host %s has both %s and CNAME -- "
+                   "ignoring CNAME.\n", query->name->string,
+                   query->inet4 ? "A" : "AAAA");
+            releaseAtom(value);
+            value = internAtom("");
+            af = query->inet4 ? 4 : 6;
+            goto again;
+        } else {
+            cname = value;
+        }
+    }
+
+    if(rc >= 0 && !cname &&
+       ((dnsQueryIPv6 < 3 && query->inet4 == NULL) ||
+        (dnsQueryIPv6 > 0 && query->inet6 == NULL)))
+        return 0;
+
+    /* This query is complete */
+
+    cancelTimeEvent(query->timeout_handler);
+    object = query->object;
+
+    if(object->flags & OBJECT_INITIAL) {
+        assert(!object->headers);
+        if(cname) {
+            assert(query->inet4 == NULL && query->inet6 == NULL);
+            object->headers = cname;
+            object->expires = current_time.tv_sec + ttl;
+        } else if((!query->inet4 || query->inet4->length == 0) &&
+                  (!query->inet6 || query->inet6->length == 0)) {
+            releaseAtom(query->inet4);
+            releaseAtom(query->inet6);
+            object->expires = current_time.tv_sec + dnsNegativeTtl;
+            abortObject(object, 500, retainAtom(message));
+        } else if(!query->inet4 || query->inet4->length == 0) {
+            object->headers = query->inet6;
+            object->expires = query->ttl6;
+            releaseAtom(query->inet4);
+        } else if(!query->inet6 || query->inet6->length == 0) {
+            object->headers = query->inet4;
+            object->expires = query->ttl4;
+            releaseAtom(query->inet6);
+        } else {
+            /* need to merge results */
+            char buf[1024];
+            if(query->inet4->length + query->inet6->length > 1024) {
+                releaseAtom(query->inet4);
+                releaseAtom(query->inet6);
+                abortObject(object, 500, internAtom("DNS reply too long"));
+            } else {
+                if(dnsQueryIPv6 <= 1) {
+                    memcpy(buf, query->inet4->string, query->inet4->length);
+                    memcpy(buf + query->inet4->length,
+                           query->inet6->string + 1, query->inet6->length - 1);
+                } else {
+                    memcpy(buf, query->inet6->string, query->inet6->length);
+                    memcpy(buf + query->inet6->length,
+                           query->inet4->string + 1, query->inet4->length - 1);
+                }
+                object->headers =
+                    internAtomN(buf,
+                                query->inet4->length +
+                                query->inet6->length - 1);
+                if(object->headers == NULL)
+                    abortObject(object, 500,
+                                internAtom("Couldn't allocate DNS atom"));
+            }
+            object->expires = MIN(query->ttl4, query->ttl6);
+        }
+        object->age = current_time.tv_sec;
+        object->flags &= ~(OBJECT_INITIAL | OBJECT_INPROGRESS);
+    } else {
+        do_log(L_WARN, "DNS object ex nihilo for %s.\n", query->name->string);
+    }
+
+    removeQuery(query);
+    free(query);
+
+    releaseAtom(name);
+    releaseAtom(message);
+    releaseNotifyObject(object);
+    return 0;
+}
+/* /PSIPHON */
+
+
 static int
 dnsReplyHandler(int abort, FdEventHandlerPtr event)
 {
@@ -1396,7 +1947,7 @@ static int
 labelsToString(char *buf, int offset, int n, char *d, int m, int *j_return)
 {
     int i = offset, j, k;
-    int ll;
+    int ll, rc;
 
     j = 0;
     while(1) {
@@ -1411,7 +1962,9 @@ labelsToString(char *buf, int offset, int n, char *d, int m, int *j_return)
             if(i >= n) return -1;
             o = (ll & ~(3 << 6)) << 8 | *(unsigned char*)&buf[i];
             i++;
-            labelsToString(buf, o, n, &d[j], m - j, &k);
+            rc = labelsToString(buf, o, n, &d[j], m - j, &k);
+            if(rc < 0)
+                return -1;
             j += k;
             break;
         } else if((ll & (3 << 6)) == 0) {
