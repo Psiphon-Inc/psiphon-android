@@ -1633,7 +1633,7 @@ public class ServerInterface
                 newEntry.hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
         {
             newEntry.meekServerPort = obj.getInt("meekServerPort");
-            newEntry.meekObfuscatedKey = obj.getString("meekObfuscationKey");
+            newEntry.meekObfuscatedKey = obj.getString("meekObfuscatedKey");
         }
         else
         {
