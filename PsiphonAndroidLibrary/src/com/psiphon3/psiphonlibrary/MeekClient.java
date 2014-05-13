@@ -70,7 +70,6 @@ import ch.boye.httpclientandroidlib.entity.ByteArrayEntity;
 import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
 import ch.boye.httpclientandroidlib.impl.conn.PoolingClientConnectionManager;
 import ch.boye.httpclientandroidlib.impl.conn.SingleClientConnManager;
-import ch.boye.httpclientandroidlib.impl.conn.SystemDefaultDnsResolver;
 import ch.boye.httpclientandroidlib.params.BasicHttpParams;
 import ch.boye.httpclientandroidlib.params.HttpConnectionParams;
 import ch.boye.httpclientandroidlib.params.HttpParams;
@@ -261,7 +260,11 @@ public class MeekClient {
             if (mProtectSocket != null) {
                 // Use ProtectedDnsResolver to resolve the fronting domain outside of the tunnel
                 DnsResolver dnsResolver = new ProtectedDnsResolver(mProtectSocket, mServerInterface);
-                connManager = new PoolingClientConnectionManager(registry, dnsResolver);
+                PoolingClientConnectionManager poolingConnManager = new PoolingClientConnectionManager(registry, dnsResolver);
+                // We're using the pool for its ability to override the DnsResolver. Only need 1 connection.
+                poolingConnManager.setDefaultMaxPerRoute(1);
+                poolingConnManager.setMaxTotal(1);
+                connManager = poolingConnManager;
             }
             else {
                 connManager = new SingleClientConnManager(registry);
