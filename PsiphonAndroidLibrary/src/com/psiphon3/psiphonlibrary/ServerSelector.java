@@ -186,8 +186,6 @@ public class ServerSelector implements IAbortIndicator
                 else if (this.entry.hasCapability(ServerEntry.CAPABILITY_UNFRONTED_MEEK))
                 {
                     // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
-                    
-                    MyLog.g("EmbeddedMeekRelay", "forServer", this.entry.ipAddress);
 
                     this.meekClient = new MeekClient(
                             protectSocketsRequired ? ServerSelector.this.protectSocket : null,
