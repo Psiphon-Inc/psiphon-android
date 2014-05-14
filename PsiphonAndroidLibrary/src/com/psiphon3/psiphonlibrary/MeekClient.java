@@ -86,9 +86,9 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 public class MeekClient {
 
     final static int MAX_PAYLOAD_LENGTH = 0x10000;
-    final static int INIT_POLL_INTERVAL_MILLISECONDS = 100;
+    final static int INIT_POLL_INTERVAL_MILLISECONDS = 10;
     final static int MAX_POLL_INTERVAL_MILLISECONDS = 5000;
-    final static double POLL_INTERVAL_MULTIPLIER = 1.5;
+    final static double POLL_INTERVAL_MULTIPLIER = 2.0;
     final static int MEEK_SERVER_TIMEOUT_MILLISECONDS = 20000;
     final static int ABORT_POLL_MILLISECONDS = 100;
 
@@ -282,6 +282,7 @@ public class MeekClient {
             }
 
             while (true) {
+                // TODO: read in a separate thread (or asynchronously) to allow continuous requests while streaming downloads
                 socket.setSoTimeout(pollInternalMilliseconds);
                 int payloadLength = 0;
 
