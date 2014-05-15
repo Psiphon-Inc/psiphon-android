@@ -169,6 +169,7 @@ public class ServerSelector implements IAbortIndicator
                             ServerSelector.this.serverInterface,
                             ServerSelector.this.clientSessionId,
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
+                            this.entry.meekCookieEncryptionPublicKey,
                             this.entry.meekObfuscatedKey,
                             this.entry.meekFrontingDomain,
                             this.entry.meekFrontingHost);
@@ -192,6 +193,7 @@ public class ServerSelector implements IAbortIndicator
                             ServerSelector.this.serverInterface,
                             ServerSelector.this.clientSessionId,
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
+                            this.entry.meekCookieEncryptionPublicKey,
                             this.entry.meekObfuscatedKey,
                             this.entry.ipAddress,
                             this.entry.meekServerPort);

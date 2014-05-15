@@ -102,6 +102,7 @@ public class MeekClient {
     final private String mFrontingHost;
     final private String mMeekServerHost;
     final private int mMeekServerPort;
+    final private String mCookieEncryptionPublicKey;
     final private String mObfuscationKeyword;
     private Thread mAcceptThread;
     private ServerSocket mServerSocket;
@@ -118,6 +119,7 @@ public class MeekClient {
             ServerInterface serverInterface,
             String psiphonClientSessionId,
             String psiphonServerAddress,
+            String cookieEncryptionPublicKey,
             String obfuscationKeyword,
             String frontingDomain,
             String frontingHost) {
@@ -125,6 +127,7 @@ public class MeekClient {
         mServerInterface = serverInterface;
         mPsiphonClientSessionId = psiphonClientSessionId;
         mPsiphonServerAddress = psiphonServerAddress;
+        mCookieEncryptionPublicKey = cookieEncryptionPublicKey;
         mObfuscationKeyword = obfuscationKeyword;
         mFrontingDomain = frontingDomain;
         mFrontingHost = frontingHost;
@@ -137,6 +140,7 @@ public class MeekClient {
             ServerInterface serverInterface,
             String psiphonClientSessionId,
             String psiphonServerAddress,
+            String cookieEncryptionPublicKey,
             String obfuscationKeyword,
             String meekServerHost,
             int meekServerPort) {
@@ -144,6 +148,7 @@ public class MeekClient {
         mServerInterface = serverInterface;
         mPsiphonClientSessionId = psiphonClientSessionId;
         mPsiphonServerAddress = psiphonServerAddress;
+        mCookieEncryptionPublicKey = cookieEncryptionPublicKey;
         mObfuscationKeyword = obfuscationKeyword;
         mFrontingDomain = null;
         mFrontingHost = null;
@@ -380,7 +385,7 @@ public class MeekClient {
         // The nonce is fixed as as 0s; the one-time, single-use ephemeral public key is sent with the box
         
         org.abstractj.kalium.keys.PublicKey recipientPublicKey = new org.abstractj.kalium.keys.PublicKey(
-                Utils.Base64.decode(EmbeddedValues.MEEK_CLIENT_COOKIE_PAYLOAD_ENCRYPTION_PUBLIC_KEY));
+                Utils.Base64.decode(mCookieEncryptionPublicKey));
         org.abstractj.kalium.keys.KeyPair ephemeralKeyPair = new org.abstractj.kalium.keys.KeyPair();
         byte[] nonce = new byte[org.abstractj.kalium.SodiumConstants.NONCE_BYTES]; // Java bytes arrays default to 0s
         org.abstractj.kalium.crypto.Box box = new org.abstractj.kalium.crypto.Box(recipientPublicKey, ephemeralKeyPair.getPrivateKey());

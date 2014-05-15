@@ -135,6 +135,7 @@ public class ServerInterface
         public ArrayList<String> capabilities;
         public String regionCode;
         public int meekServerPort;
+        public String meekCookieEncryptionPublicKey;
         public String meekObfuscatedKey;
         public String meekFrontingDomain;
         public String meekFrontingHost;
@@ -1633,6 +1634,7 @@ public class ServerInterface
                 newEntry.hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
         {
             newEntry.meekServerPort = obj.getInt("meekServerPort");
+            newEntry.meekCookieEncryptionPublicKey = obj.getString("meekCookieEncryptionPublicKey");
             newEntry.meekObfuscatedKey = obj.getString("meekObfuscatedKey");
         }
         else

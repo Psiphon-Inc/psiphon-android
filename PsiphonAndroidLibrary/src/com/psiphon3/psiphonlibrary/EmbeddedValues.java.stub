@@ -46,7 +46,6 @@ cog.outl('public static String GET_NEW_VERSION_URL = "%s";' % utils.get_embedded
 cog.outl('public static String GET_NEW_VERSION_EMAIL = "%s";' % utils.get_embedded_value(buildname, 'GET_NEW_VERSION_EMAIL'))
 cog.outl('public static String FAQ_URL = "%s";' % utils.get_embedded_value(buildname, 'FAQ_URL'))
 cog.outl('public static String DATA_COLLECTION_INFO_URL = "%s";' % utils.get_embedded_value(buildname, 'DATA_COLLECTION_INFO_URL'))
-cog.outl('public static final String MEEK_CLIENT_COOKIE_PAYLOAD_ENCRYPTION_PUBLIC_KEY = "%s";' % utils.get_embedded_value(buildname, 'MEEK_CLIENT_COOKIE_PAYLOAD_ENCRYPTION_PUBLIC_KEY'))
 ]]]*/
     public static final String CLIENT_VERSION = "1";
     
