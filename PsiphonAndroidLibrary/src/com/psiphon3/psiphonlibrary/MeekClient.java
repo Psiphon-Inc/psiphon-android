@@ -94,6 +94,7 @@ public class MeekClient {
 
     final static String HTTP_POST_CONTENT_TYPE = "application/octet-stream";
     
+    final private MeekProtocol mProtocol;
     final private Tun2Socks.IProtectSocket mProtectSocket;
     final private ServerInterface mServerInterface;
     final private String mPsiphonClientSessionId;
@@ -110,6 +111,8 @@ public class MeekClient {
     private Set<Socket> mClients;
     private CountDownLatch mEstablishedFirstServerConnection;
     
+    public enum MeekProtocol {FRONTED, UNFRONTED};
+
     public interface IAbortIndicator {
         public boolean shouldAbort();
     }
@@ -123,6 +126,7 @@ public class MeekClient {
             String obfuscationKeyword,
             String frontingDomain,
             String frontingHost) {
+        mProtocol = MeekProtocol.FRONTED;
         mProtectSocket = protectSocket;
         mServerInterface = serverInterface;
         mPsiphonClientSessionId = psiphonClientSessionId;
@@ -144,6 +148,7 @@ public class MeekClient {
             String obfuscationKeyword,
             String meekServerHost,
             int meekServerPort) {
+        mProtocol = MeekProtocol.UNFRONTED;
         mProtectSocket = protectSocket;
         mServerInterface = serverInterface;
         mPsiphonClientSessionId = psiphonClientSessionId;
@@ -154,6 +159,10 @@ public class MeekClient {
         mFrontingHost = null;
         mMeekServerHost = meekServerHost;
         mMeekServerPort = meekServerPort;
+    }
+    
+    public MeekProtocol getProtocol() {
+        return mProtocol;
     }
 
     public synchronized void start() throws IOException {

@@ -770,7 +770,18 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             PsiphonData.getPsiphonData().getDataTransferStats().startConnected();
             
             setState(State.CONNECTED);
-            PsiphonData.getPsiphonData().setTunnelRelayProtocol(PsiphonConstants.RELAY_PROTOCOL);
+            if (meekClient != null) {
+                switch (meekClient.getProtocol()) {
+                case FRONTED:
+                    PsiphonData.getPsiphonData().setTunnelRelayProtocol(PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH);
+                    break;
+                case UNFRONTED:
+                    PsiphonData.getPsiphonData().setTunnelRelayProtocol(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH);
+                    break;
+                }
+            } else {
+                PsiphonData.getPsiphonData().setTunnelRelayProtocol(PsiphonConstants.RELAY_PROTOCOL_OSSH);
+            }
             
             checkSignals(0);
 
