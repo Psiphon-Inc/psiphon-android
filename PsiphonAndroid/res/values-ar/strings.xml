@@ -2,7 +2,7 @@
 <resources>
   <string name="app_name">برنامج Psiphon</string>
   <string name="banner_desc">شعار الشركة الراعية؛ انقر لزيارة الصفحة الرئيسية للشركة الراعية</string>
-  <string name="start_desc">الاتصال ببرنامج Psiphon؛ انقر للاتصال</string>
+  <string name="start_desc">الاتصال بسايفون؛ انقر للاتصال</string>
   <string name="message_image_success_desc">أيقونة تشير إلى رسالة نجاح</string>
   <string name="message_image_error_desc">أيقونة تشير إلى رسالة خطأ</string>
   <string name="message_image_debug_desc">أيقونة تشير إلى رسالة تصحيح الخطأ</string>
