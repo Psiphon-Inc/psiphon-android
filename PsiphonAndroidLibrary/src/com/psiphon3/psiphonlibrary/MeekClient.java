@@ -411,7 +411,10 @@ public class MeekClient {
             cookieValue = Utils.Base64.encode(encryptedPayload);
         }
 
-        // *TODO* random key
-        return "key=" + cookieValue;
+        // Select a random-ish cookie key (which will be observable and subject to fingerprinting in unfronted mode)
+        final String cookieKeyValues = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        char cookieKey = cookieKeyValues.toCharArray()[Utils.insecureRandRange(0, cookieKeyValues.length()-1)];
+
+        return cookieKey + "=" + cookieValue;
     }
 }
