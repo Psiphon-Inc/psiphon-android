@@ -167,14 +167,23 @@ public class ServerInterface
             return this.capabilities.contains(capability);
         }
 
-        public boolean hasCapabilities(List<String> capabilities)
+        public boolean hasOneOfTheseCapabilities(List<String> capabilities)
         {
-            return this.capabilities.containsAll(capabilities);
+            for (String capability : capabilities)
+            {
+                if (hasCapability(capability))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public int getPreferredReachablityTestPort()
         {
-            if (hasCapability(CAPABILITY_OSSH))
+            if (hasCapability(CAPABILITY_OSSH) ||
+                hasCapability(CAPABILITY_FRONTED_MEEK) ||
+                hasCapability(CAPABILITY_UNFRONTED_MEEK))
             {
                 return this.sshObfuscatedPort;
             }
@@ -367,11 +376,11 @@ public class ServerInterface
         return serverEntries;        
     }
 
-    synchronized boolean serverWithCapabilitiesExists(List<String> capabilities)
+    synchronized boolean serverWithOneOfTheseCapabilitiesExists(List<String> capabilities)
     {
         for (ServerEntry entry: this.serverEntries)
         {
-            if (entry.hasCapabilities(capabilities))
+            if (entry.hasOneOfTheseCapabilities(capabilities))
             {
                 return true;
             }

@@ -1427,7 +1427,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         // Check if an upgrade has already been downloaded and is ready for install
         UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentContext);
         
-        if (!m_interface.serverWithCapabilitiesExists(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL)
+        if (!m_interface.serverWithOneOfTheseCapabilitiesExists(PsiphonConstants.SUFFICIENT_CAPABILITIES_FOR_TUNNEL)
                 || !m_interface.serverInRegionExists(PsiphonData.getPsiphonData().getEgressRegion()))
         {
             MyLog.e(R.string.no_server_entries, MyLog.Sensitivity.NOT_SENSITIVE);

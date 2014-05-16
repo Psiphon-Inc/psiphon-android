@@ -533,7 +533,7 @@ public class ServerSelector implements IAbortIndicator
             for (ServerEntry entry : serverEntries)
             {
                 if (-1 != entry.getPreferredReachablityTestPort() &&
-                        entry.hasCapabilities(PsiphonConstants.REQUIRED_CAPABILITIES_FOR_TUNNEL) &&
+                        entry.hasOneOfTheseCapabilities(PsiphonConstants.SUFFICIENT_CAPABILITIES_FOR_TUNNEL) &&
                         entry.inRegion(egressRegion))
                 {
                     CheckServerWorker worker = new CheckServerWorker(entry);

@@ -76,7 +76,11 @@ public class PsiphonConstants
     
     public final static String PLAY_STORE_BUILD = "_playstore";
 
-    public final static ArrayList<String> REQUIRED_CAPABILITIES_FOR_TUNNEL = new ArrayList<String>(){{ add(PsiphonConstants.RELAY_PROTOCOL_OSSH); }};
+    // Only one of these capabilities are needed
+    public final static ArrayList<String> SUFFICIENT_CAPABILITIES_FOR_TUNNEL = new ArrayList<String>() {{
+        add(ServerInterface.ServerEntry.CAPABILITY_OSSH);
+        add(ServerInterface.ServerEntry.CAPABILITY_FRONTED_MEEK);
+        add(ServerInterface.ServerEntry.CAPABILITY_UNFRONTED_MEEK);}};
     
     public final static String FEEDBACK_ATTACHMENT_FILENAME = "psiphon-android-feedback.txt";
 
