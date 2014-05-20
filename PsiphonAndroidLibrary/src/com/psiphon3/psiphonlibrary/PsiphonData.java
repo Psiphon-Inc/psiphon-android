@@ -75,7 +75,6 @@ public class PsiphonData
     private boolean m_tunnelWholeDevice;
     private boolean m_wdmForceIptables;
     private boolean m_useHTTPProxy;
-    private boolean m_useHTTPProxy;
     private boolean m_useSystemProxySettings;
     private boolean m_useCustomProxySettings;
     private String m_customProxyHost;
@@ -281,16 +280,6 @@ public class PsiphonData
         return m_egressRegion;
     }
 
-    public synchronized void setUseHTTPProxy(boolean useHTTPProxy)
-    {
-    	m_useHTTPProxy = useHTTPProxy;
-    }
-
-    public synchronized boolean getUseHTTPProxy()
-    {
-    	return m_useHTTPProxy;
-    }
-    
     public synchronized void setUseHTTPProxy(boolean useHTTPProxy)
     {
     	m_useHTTPProxy = useHTTPProxy;
