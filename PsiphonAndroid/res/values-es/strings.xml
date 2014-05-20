@@ -3,10 +3,10 @@
   <string name="app_name">Psiphon</string>
   <string name="banner_desc">anuncio del patrocinador; haga clic para visitar la página principal del patrocinador</string>
   <string name="start_desc">conectar con Psiphon; haga clic para conectarse</string>
-  <string name="message_image_success_desc">icono que indica un mensaje de éxito</string>
-  <string name="message_image_error_desc">icono que indica un mensaje de error</string>
-  <string name="message_image_debug_desc">icono que indica un mensaje de depuración</string>
-  <string name="message_image_warning_desc">icono que indica un mensaje de advertencia</string>
+  <string name="message_image_success_desc">ícono que indica un mensaje de éxito</string>
+  <string name="message_image_error_desc">ícono que indica un mensaje de error</string>
+  <string name="message_image_debug_desc">ícono que indica un mensaje de depuración</string>
+  <string name="message_image_warning_desc">ícono que indica un mensaje de advertencia</string>
   <string name="exit">Salir</string>
   <string name="open_browser">Abrir navegador</string>
   <string name="browser_task_label">Navegador Psiphon</string>
@@ -17,7 +17,7 @@
   <string name="FeedbackActivity.InvalidURLParameters">Parámetros de URL no válidos en el formulario de envío de comentarios</string>
   <string name="FeedbackActivity.GetHTMLContentFailed">No se pudo obtener el contenido de la página de comentarios</string>
   <string name="StatusActivity.WholeDeviceTunnelPromptTitle">¿Incluír en un túnel todo el dispositivo?</string>
-  <string name="StatusActivity.WholeDeviceTunnelPromptMessage">La opción de túnel para todo el dispositivo está disponible para su dispositivo.\n\nCon esta opción todo su tráfico de Internet para todas las aplicaciones, incluyendo todos los navegadores, se dirigirá por un túnel a través de Psiphon.\n\nComo alternativa, puede elegir dirigir por un túnel sólo al navegador Psiphon incluido, lo que dejará a todo el resto de sus aplicaciones atravesando directamente su conexión a Internet standard.</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptMessage">La opción de túnel para todo el dispositivo está disponible para su dispositivo.\n\nCon esta opción todo su tráfico de Internet para todas las aplicaciones, incluyendo todos los navegadores, se dirigirá por un túnel a través de Psiphon.\n\nComo alternativa, puede elegir dirigir por un túnel solo al navegador Psiphon incluido, lo que dejará a todo el resto de sus aplicaciones atravesando directamente su conexión a Internet estándar.</string>
   <string name="StatusActivity.WholeDeviceTunnelPositiveButton">Dirigir por un túnel todo el dispositivo</string>
-  <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Usar sólo el navegador Psiphon</string>
+  <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Usar solo el navegador Psiphon</string>
 </resources>
