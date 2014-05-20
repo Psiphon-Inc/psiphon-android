@@ -36,7 +36,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -151,8 +150,6 @@ public class ServerSelector implements IAbortIndicator
                     }
                     
                     this.usingHTTPProxy = true;
-
-                List<String> proxyIpAddresses = new ArrayList<String>();
 
                     makeSocketChannelConnection(selector, proxySettings.proxyHost, proxySettings.proxyPort);
                     this.channel.finishConnect();
@@ -530,12 +527,6 @@ public class ServerSelector implements IAbortIndicator
                         proxySettings.proxyHost + ":" + proxySettings.proxyPort);
             }
             
-            if (proxySettings != null)
-            {
-                MyLog.i(R.string.network_proxy_connect_information, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS,
-                        proxySettings.proxyHost + ":" + proxySettings.proxyPort);
-            }
-
             // Reset this flag before running the workers.
             workerPrintedProxyError.set(false);
             
