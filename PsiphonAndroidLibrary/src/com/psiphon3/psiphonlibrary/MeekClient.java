@@ -86,9 +86,10 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 public class MeekClient {
 
     final static int MAX_PAYLOAD_LENGTH = 0x10000;
-    final static int INIT_POLL_INTERVAL_MILLISECONDS = 10;
+    final static int MIN_POLL_INTERVAL_MILLISECONDS = 1;
+    final static int IDLE_POLL_INTERVAL_MILLISECONDS = 100;
     final static int MAX_POLL_INTERVAL_MILLISECONDS = 5000;
-    final static double POLL_INTERVAL_MULTIPLIER = 2.0;
+    final static double POLL_INTERVAL_MULTIPLIER = 1.5;
     final static int MEEK_SERVER_TIMEOUT_MILLISECONDS = 20000;
     final static int ABORT_POLL_MILLISECONDS = 100;
 
@@ -257,7 +258,7 @@ public class MeekClient {
             socketOutputStream = socket.getOutputStream();
             String cookie = makeCookie();
             byte[] payloadBuffer = new byte[MAX_PAYLOAD_LENGTH];
-            int pollInternalMilliseconds = INIT_POLL_INTERVAL_MILLISECONDS;
+            int pollIntervalMilliseconds = MIN_POLL_INTERVAL_MILLISECONDS;
             
             SchemeRegistry registry = new SchemeRegistry();
             if (mFrontingDomain != null) {
@@ -297,7 +298,7 @@ public class MeekClient {
 
             while (true) {
                 // TODO: read in a separate thread (or asynchronously) to allow continuous requests while streaming downloads
-                socket.setSoTimeout(pollInternalMilliseconds);
+                socket.setSoTimeout(pollIntervalMilliseconds);
                 int payloadLength = 0;
 
                 // We make the very first poll without waiting to read in order to check connection establishment
@@ -329,10 +330,13 @@ public class MeekClient {
                     MyLog.e(R.string.meek_http_request_error, MyLog.Sensitivity.NOT_SENSITIVE, statusCode);
                     break;
                 }
+
+                boolean receivedData = false;
                 InputStream responseInputStream = response.getEntity().getContent();
                 try {
                     int readLength;
                     while ((readLength = responseInputStream.read(payloadBuffer)) != -1) {
+                        receivedData = true;
                         socketOutputStream.write(payloadBuffer, 0 , readLength);
                     }
                 } finally {
@@ -342,13 +346,15 @@ public class MeekClient {
                 // Signal when first connection is established
                 mEstablishedFirstServerConnection.countDown();
 
-                if (payloadLength > 0) {
-                    pollInternalMilliseconds = INIT_POLL_INTERVAL_MILLISECONDS;
+                if (payloadLength > 0 || receivedData) {
+                    pollIntervalMilliseconds = MIN_POLL_INTERVAL_MILLISECONDS;
+                } else if (pollIntervalMilliseconds == MIN_POLL_INTERVAL_MILLISECONDS) {
+                    pollIntervalMilliseconds = IDLE_POLL_INTERVAL_MILLISECONDS;
                 } else {
-                    pollInternalMilliseconds = (int)(pollInternalMilliseconds*POLL_INTERVAL_MULTIPLIER);
+                    pollIntervalMilliseconds = (int)(pollIntervalMilliseconds*POLL_INTERVAL_MULTIPLIER);
                 }
-                if (pollInternalMilliseconds > MAX_POLL_INTERVAL_MILLISECONDS) {
-                    pollInternalMilliseconds = MAX_POLL_INTERVAL_MILLISECONDS;
+                if (pollIntervalMilliseconds > MAX_POLL_INTERVAL_MILLISECONDS) {
+                    pollIntervalMilliseconds = MAX_POLL_INTERVAL_MILLISECONDS;
                 }
             }
         } catch (IOException e) {
