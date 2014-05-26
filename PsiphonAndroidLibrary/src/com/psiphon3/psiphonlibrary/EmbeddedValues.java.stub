@@ -31,6 +31,7 @@ import cog
 import utils
 cog.outl('public static final String CLIENT_VERSION = "%s";' % utils.get_embedded_value(buildname, 'CLIENT_VERSION'))
 cog.outl('public static final String EMBEDDED_SERVER_LIST[] = {"%s"};' % utils.get_embedded_value(buildname, 'EMBEDDED_SERVER_LIST'))
+cog.outl('public static final boolean IGNORE_NON_EMBEDDED_SERVER_ENTRIES = %s;' % ('true' if utils.get_embedded_value(buildname, 'IGNORE_NON_EMBEDDED_SERVER_ENTRIES') else 'false'))
 cog.outl('public static final String FEEDBACK_ENCRYPTION_PUBLIC_KEY = "%s";' % utils.get_embedded_value(buildname, 'FEEDBACK_ENCRYPTION_PUBLIC_KEY'))
 cog.outl('public static final String PROXIED_WEB_APP_HTTP_AUTH_USERNAME = "%s";' % utils.get_embedded_value(buildname, 'PROXIED_WEB_APP_HTTP_AUTH_USERNAME'))
 cog.outl('public static final String PROXIED_WEB_APP_HTTP_AUTH_PASSWORD = "%s";' % utils.get_embedded_value(buildname, 'PROXIED_WEB_APP_HTTP_AUTH_PASSWORD'))
@@ -50,6 +51,8 @@ cog.outl('public static String DATA_COLLECTION_INFO_URL = "%s";' % utils.get_emb
     public static final String CLIENT_VERSION = "1";
     
     public static final String[] EMBEDDED_SERVER_LIST = {""};
+
+    public static final boolean IGNORE_NON_EMBEDDED_SERVER_ENTRIES = false;
 
     public static final String FEEDBACK_ENCRYPTION_PUBLIC_KEY = "";    
     

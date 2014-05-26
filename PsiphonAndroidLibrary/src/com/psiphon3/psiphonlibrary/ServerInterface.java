@@ -253,7 +253,9 @@ public class ServerInterface
                 for (int i = 0; i < jsonServerEntries.length(); i++)
                 {
                     // NOTE: No shuffling, as we're restoring a previously arranged list
-                    appendServerEntry(jsonServerEntries.getString(i));
+                    if (!EmbeddedValues.IGNORE_NON_EMBEDDED_SERVER_ENTRIES) {
+                        appendServerEntry(jsonServerEntries.getString(i));
+                    }
                 }
             }
             catch (FileNotFoundException e)
@@ -536,8 +538,10 @@ public class ServerInterface
                     }
                     if (encoded_server_list.length() > 0)
                     {
-                        shuffleAndAddServerEntries(entries, false);
-                        saveServerEntries();
+                        if (!EmbeddedValues.IGNORE_NON_EMBEDDED_SERVER_ENTRIES) {
+                            shuffleAndAddServerEntries(entries, false);
+                            saveServerEntries();
+                        }
                     }
                     
                     // We only support SSH, so this is our server session ID.
@@ -879,8 +883,10 @@ public class ServerInterface
                                         false, // "data" is not Base64
                                         new String(response));
     
-                shuffleAndAddServerEntries(serverList.split("\n"), false);
-                saveServerEntries();
+                if (!EmbeddedValues.IGNORE_NON_EMBEDDED_SERVER_ENTRIES) {
+                    shuffleAndAddServerEntries(serverList.split("\n"), false);
+                    saveServerEntries();
+                }
             }
             catch (AuthenticatedDataPackageException e)
             {
