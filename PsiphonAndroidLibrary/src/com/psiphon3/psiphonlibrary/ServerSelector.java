@@ -63,11 +63,6 @@ public class ServerSelector implements IAbortIndicator
     private final int SHUTDOWN_TIMEOUT_MILLISECONDS = 1000;
     private final int MAX_WORK_TIME_MILLISECONDS = 20000;
 
-    private final String FRONTED_MEEK_CONN_TYPE = "FRONTED-MEEK-OSSH";
-    private final String UNFRONTED_MEEK_CONN_TYPE = "UNFRONTED-MEEK-OSSH";
-    private final String PROXIED_OSSH_CONN_TYPE = "PROXIED-OSSH";
-    private final String OSSH_CONN_TYPE = "OSSH";
-
     private Tun2Socks.IProtectSocket protectSocket = null;
     private ServerInterface serverInterface = null;
     private Context context = null;
@@ -145,6 +140,10 @@ public class ServerSelector implements IAbortIndicator
                 //    MeekClient instance per server candidate; if we started to reuse MeekClient instances
                 //    then we need more sophisticated signaling.
 
+                // Even though the ServerEntry here is a clone, assigning to it
+                // works because ServerSelector merges it back in for the servers
+                // that respond.
+
                 if (proxySettings != null)
                 {
                     if (protectSocketsRequired)
@@ -164,7 +163,7 @@ public class ServerSelector implements IAbortIndicator
 
                     this.responded = true;
 
-                    this.entry.connType = PROXIED_OSSH_CONN_TYPE;
+                    this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_OSSH;
                 }
                 else if (this.entry.hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
                 {
@@ -189,7 +188,7 @@ public class ServerSelector implements IAbortIndicator
                         this.responded = true;
                     }
 
-                    this.entry.connType = FRONTED_MEEK_CONN_TYPE;
+                    this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH;
                     this.entry.front = this.entry.meekFrontingDomain;
                 }
                 else if (this.entry.hasCapability(ServerEntry.CAPABILITY_UNFRONTED_MEEK))
@@ -215,7 +214,7 @@ public class ServerSelector implements IAbortIndicator
                         this.responded = true;
                     }
 
-                    this.entry.connType = UNFRONTED_MEEK_CONN_TYPE;
+                    this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH;
                 }
                 else
                 {
@@ -231,7 +230,7 @@ public class ServerSelector implements IAbortIndicator
 
                     this.responded = this.channel.finishConnect();
 
-                    this.entry.connType = OSSH_CONN_TYPE;
+                    this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_OSSH;
                 }
             }
             catch (ClosedByInterruptException e) {}

@@ -139,7 +139,7 @@ public class ServerInterface
         public String meekFrontingHost;
 
         // These are determined while connecting.
-        public String connType;
+        public String connType; // Set to one of PsiphonConstants.RELAY_PROTOCOL_*
         public String front;
 
         @Override
