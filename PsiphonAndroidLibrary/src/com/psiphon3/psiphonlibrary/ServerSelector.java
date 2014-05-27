@@ -6,12 +6,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -44,14 +44,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import android.content.Context;
 import android.os.Build;
 import android.os.SystemClock;
-
 import ch.ethz.ssh2.HTTPProxyException;
 import ch.ethz.ssh2.crypto.Base64;
 import ch.ethz.ssh2.transport.ClientServerHello;
 import ch.ethz.ssh2.util.StringEncoder;
 
 import com.psiphon3.psiphonlibrary.MeekClient.IAbortIndicator;
-import com.psiphon3.psiphonlibrary.R;
 import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.ServerInterface.ServerEntry;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -65,6 +63,11 @@ public class ServerSelector implements IAbortIndicator
     private final int SHUTDOWN_TIMEOUT_MILLISECONDS = 1000;
     private final int MAX_WORK_TIME_MILLISECONDS = 20000;
 
+    private final String FRONTED_MEEK_CONN_TYPE = "FRONTED-MEEK-OSSH";
+    private final String UNFRONTED_MEEK_CONN_TYPE = "UNFRONTED-MEEK-OSSH";
+    private final String PROXIED_OSSH_CONN_TYPE = "PROXIED-OSSH";
+    private final String OSSH_CONN_TYPE = "OSSH";
+
     private Tun2Socks.IProtectSocket protectSocket = null;
     private ServerInterface serverInterface = null;
     private Context context = null;
@@ -72,13 +75,13 @@ public class ServerSelector implements IAbortIndicator
     private String clientSessionId = null;
     private Thread thread = null;
     private boolean stopFlag = false;
-    private AtomicBoolean workerPrintedProxyError = new AtomicBoolean(false);
+    private final AtomicBoolean workerPrintedProxyError = new AtomicBoolean(false);
 
     public MeekClient firstEntryMeekClient = null;
     public boolean firstEntryUsingHTTPProxy = false;
     public Socket firstEntrySocket = null;
     public String firstEntryIpAddress = null;
-    
+
     ServerSelector(
             Tun2Socks.IProtectSocket protectSocket,
             ServerInterface serverInterface,
@@ -88,7 +91,7 @@ public class ServerSelector implements IAbortIndicator
         this.serverInterface = serverInterface;
         this.context = context;
     }
-    
+
     // MeekClient.IAbortIndicator
     @Override
     public boolean shouldAbort() {
@@ -109,20 +112,21 @@ public class ServerSelector implements IAbortIndicator
         {
             this.entry = entry;
         }
-        
+
+        @Override
         public void run()
         {
             PsiphonData.ProxySettings proxySettings = PsiphonData.getPsiphonData().getProxySettings(context);
             long startTime = SystemClock.elapsedRealtime();
             Selector selector = null;
-            
+
             try
             {
                 this.channel = SocketChannel.open();
-                
+
                 this.channel.configureBlocking(false);
                 selector = Selector.open();
-                
+
                 // TODO: Add HTTP proxy support to MeekClient. Currently, since that support
                 // is lacking, these cases are treated as mutually exclusive.
 
@@ -140,7 +144,7 @@ public class ServerSelector implements IAbortIndicator
                 //    Note that awaitEstablishedFirstServerConnection only works here because there's a new
                 //    MeekClient instance per server candidate; if we started to reuse MeekClient instances
                 //    then we need more sophisticated signaling.
-                
+
                 if (proxySettings != null)
                 {
                     if (protectSocketsRequired)
@@ -148,17 +152,19 @@ public class ServerSelector implements IAbortIndicator
                         // We may need to except this connection from the VpnService tun interface
                         protectSocket.doVpnProtect(this.channel.socket());
                     }
-                    
+
                     this.usingHTTPProxy = true;
 
                     makeSocketChannelConnection(selector, proxySettings.proxyHost, proxySettings.proxyPort);
                     this.channel.finishConnect();
                     selector.close();
                     this.channel.configureBlocking(true);
-                
+
                     makeConnectionViaHTTPProxy(null, null);
 
                     this.responded = true;
+
+                    this.entry.connType = PROXIED_OSSH_CONN_TYPE;
                 }
                 else if (this.entry.hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
                 {
@@ -176,13 +182,15 @@ public class ServerSelector implements IAbortIndicator
                     this.meekClient.start();
 
                     makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
-                    
+
                     if (this.channel.finishConnect())
                     {
                         this.meekClient.awaitEstablishedFirstServerConnection(ServerSelector.this);
                         this.responded = true;
                     }
 
+                    this.entry.connType = FRONTED_MEEK_CONN_TYPE;
+                    this.entry.front = this.entry.meekFrontingDomain;
                 }
                 else if (this.entry.hasCapability(ServerEntry.CAPABILITY_UNFRONTED_MEEK))
                 {
@@ -200,12 +208,14 @@ public class ServerSelector implements IAbortIndicator
                     this.meekClient.start();
 
                     makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
-                    
+
                     if (this.channel.finishConnect())
                     {
                         this.meekClient.awaitEstablishedFirstServerConnection(ServerSelector.this);
                         this.responded = true;
                     }
+
+                    this.entry.connType = UNFRONTED_MEEK_CONN_TYPE;
                 }
                 else
                 {
@@ -214,12 +224,14 @@ public class ServerSelector implements IAbortIndicator
                         // We may need to except this connection from the VpnService tun interface
                         protectSocket.doVpnProtect(this.channel.socket());
                     }
-                    
+
                     makeSocketChannelConnection(selector,
                             this.entry.ipAddress,
                             this.entry.getPreferredReachablityTestPort());
-                    
+
                     this.responded = this.channel.finishConnect();
+
+                    this.entry.connType = OSSH_CONN_TYPE;
                 }
             }
             catch (ClosedByInterruptException e) {}
@@ -227,7 +239,7 @@ public class ServerSelector implements IAbortIndicator
             catch (IllegalArgumentException e)
             {
                 // Avoid printing the same message multiple times in the case of a network proxy error
-                if (proxySettings != null && 
+                if (proxySettings != null &&
                         workerPrintedProxyError.compareAndSet(false, true))
                 {
                     MyLog.e(R.string.network_proxy_connect_exception, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, e.getLocalizedMessage());
@@ -236,7 +248,7 @@ public class ServerSelector implements IAbortIndicator
             catch (ConnectException e)
             {
                 // Avoid printing the same message multiple times in the case of a network proxy error
-                if (proxySettings != null && 
+                if (proxySettings != null &&
                         workerPrintedProxyError.compareAndSet(false, true))
                 {
                     MyLog.e(R.string.network_proxy_connect_exception, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, e.getLocalizedMessage());
@@ -245,7 +257,7 @@ public class ServerSelector implements IAbortIndicator
             catch (SocketException e)
             {
                 // Avoid printing the same message multiple times in the case of a network proxy error
-                if (proxySettings != null && 
+                if (proxySettings != null &&
                         workerPrintedProxyError.compareAndSet(false, true))
                 {
                     MyLog.e(R.string.network_proxy_connect_exception, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, e.getLocalizedMessage());
@@ -299,16 +311,16 @@ public class ServerSelector implements IAbortIndicator
                     }
                 }
             }
-            
+
             this.responseTime = SystemClock.elapsedRealtime() - startTime;
             this.completed = true;
         }
-        
+
         private void makeSocketChannelConnection(Selector selector, String ipAddress, int port) throws IOException
         {
             this.channel.connect(new InetSocketAddress(ipAddress, port));
             this.channel.register(selector, SelectionKey.OP_CONNECT);
-            
+
             while (selector.select(SHUTDOWN_POLL_MILLISECONDS) == 0)
             {
                 if (stopFlag)
@@ -317,25 +329,25 @@ public class ServerSelector implements IAbortIndicator
                 }
             }
         }
-        
+
         private void makeConnectionViaHTTPProxy(String proxyUsername, String proxyPassword) throws IOException
         {
             Socket sock = this.channel.socket();
-            
+
             // The following is mostly copied from ch.ethz.ssh2.transport.TransportManager.establishConnection()
 
             sock.setSoTimeout(0);
-    
+
             /* OK, now tell the proxy where we actually want to connect to */
-    
+
             StringBuffer sb = new StringBuffer();
-    
+
             sb.append("CONNECT ");
             sb.append(this.entry.ipAddress);
             sb.append(':');
             sb.append(this.entry.getPreferredReachablityTestPort());
             sb.append(" HTTP/1.0\r\n");
-            
+
             if ((proxyUsername != null) && (proxyPassword != null))
             {
                 String credentials = proxyUsername + ":" + proxyPassword;
@@ -346,35 +358,35 @@ public class ServerSelector implements IAbortIndicator
             }
 
             sb.append("\r\n");
-    
+
             OutputStream out = sock.getOutputStream();
-    
+
             out.write(StringEncoder.GetBytes(sb.toString()));
             out.flush();
-    
+
             /* Now parse the HTTP response */
-    
+
             byte[] buffer = new byte[1024];
             InputStream in = sock.getInputStream();
-    
+
             int len = ClientServerHello.readLineRN(in, buffer);
-    
+
             String httpResponse = StringEncoder.GetString(buffer, 0, len);
-    
+
             if (httpResponse.startsWith("HTTP/") == false)
             {
                 throw new IOException("The proxy did not send back a valid HTTP response.");
             }
-    
+
             /* "HTTP/1.X XYZ X" => 14 characters minimum */
-    
+
             if ((httpResponse.length() < 14) || (httpResponse.charAt(8) != ' ') || (httpResponse.charAt(12) != ' '))
             {
                 throw new IOException("The proxy did not send back a valid HTTP response.");
             }
-    
+
             int errorCode = 0;
-    
+
             try
             {
                 errorCode = Integer.parseInt(httpResponse.substring(9, 12));
@@ -383,19 +395,19 @@ public class ServerSelector implements IAbortIndicator
             {
                 throw new IOException("The proxy did not send back a valid HTTP response.");
             }
-    
+
             if ((errorCode < 0) || (errorCode > 999))
             {
                 throw new IOException("The proxy did not send back a valid HTTP response.");
             }
-    
+
             if (errorCode != 200)
             {
                 throw new HTTPProxyException(httpResponse.substring(13), errorCode);
             }
-    
+
             /* OK, read until empty line */
-    
+
             while (true)
             {
                 len = ClientServerHello.readLineRN(in, buffer);
@@ -407,9 +419,10 @@ public class ServerSelector implements IAbortIndicator
             return;
         }
     }
-    
+
     class Coordinator implements Runnable
-    {        
+    {
+        @Override
         public void run()
         {
             // Run until we have results (> 0) or abort requested.
@@ -419,7 +432,7 @@ public class ServerSelector implements IAbortIndicator
             while (!stopFlag)
             {
                 MyLog.v(R.string.selecting_server, MyLog.Sensitivity.NOT_SENSITIVE);
-                
+
                 if (runOnce())
                 {
                     // We have a server
@@ -452,7 +465,7 @@ public class ServerSelector implements IAbortIndicator
                 }
             }
         }
-        
+
         private boolean runOnce()
         {
             boolean printedWaitingMessage = false;
@@ -481,13 +494,13 @@ public class ServerSelector implements IAbortIndicator
 
             // Update resolvers to match underlying network interface
             Utils.updateDnsResolvers(context);
-            
+
             // Adapted from Psiphon Windows client module server_list_reordering.cpp; see comments there.
             // Revision: https://bitbucket.org/psiphon/psiphon-circumvention-system/src/881d32d09e3a/Client/psiclient/server_list_reordering.cpp
 
             ArrayList<ServerEntry> serverEntries = serverInterface.getServerEntries();
             ArrayList<CheckServerWorker> workers = new ArrayList<CheckServerWorker>();
-            
+
             // Remember the original first entry
             ServerEntry originalFirstEntry = null;
             if (serverEntries.size() > 0)
@@ -502,34 +515,34 @@ public class ServerSelector implements IAbortIndicator
             // priority is FIFO.
             // NEW: Don't prioritize the first few servers any more, to give equal waiting
             // to older servers and to newer servers.
-            
+
             if (serverEntries.size() > NUM_THREADS)
             {
                 Collections.shuffle(serverEntries.subList(1, serverEntries.size()));
             }
-            
+
             ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
-            
+
             String egressRegion = PsiphonData.getPsiphonData().getEgressRegion();
-        
+
             MyLog.g("SelectedRegion", "regionCode", egressRegion);
-            
+
             PsiphonData.ProxySettings proxySettings = PsiphonData.getPsiphonData().getProxySettings(context);
-            MyLog.g("ProxyChaining", "enabled", 
+            MyLog.g("ProxyChaining", "enabled",
                     proxySettings == null ? "False" : "True");
             // Note that workers will still call getSystemProxySettings().  This is in case the
             // system proxy settings actually do change while the pool is running, and the log
             // above will not reflect that change.
-            
+
             if (proxySettings != null)
             {
                 MyLog.i(R.string.network_proxy_connect_information, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS,
                         proxySettings.proxyHost + ":" + proxySettings.proxyPort);
             }
-            
+
             // Reset this flag before running the workers.
             workerPrintedProxyError.set(false);
-            
+
             for (ServerEntry entry : serverEntries)
             {
                 if (-1 != entry.getPreferredReachablityTestPort() &&
@@ -541,7 +554,7 @@ public class ServerSelector implements IAbortIndicator
                     workers.add(worker);
                 }
             }
-            
+
             try
             {
                 // Wait for either all tasks to complete, an abort request, or the
@@ -552,7 +565,7 @@ public class ServerSelector implements IAbortIndicator
                 // world data will contain clusters of multiple results (good for load
                 // balancing). This early exit allows us to wait for some results
                 // before starting the tunnel for the first time.
-                
+
                 for (int wait = 0;
                      !threadPool.awaitTermination(0, TimeUnit.MILLISECONDS) &&
                      !stopFlag &&
@@ -601,22 +614,24 @@ public class ServerSelector implements IAbortIndicator
                 MyLog.g(
                     "ServerResponseCheck",
                     "ipAddress", worker.entry.ipAddress,
+                    "connType", worker.entry.connType,
+                    "front", worker.entry.front,
                     "responded", worker.responded,
                     "responseTime", worker.responseTime,
                     "regionCode", worker.entry.regionCode);
-                
+
                 MyLog.d(
                     String.format("server: %s, responded: %s, response time: %d",
                             worker.entry.ipAddress, worker.responded ? "Yes" : "No", worker.responseTime));
             }
-        
+
             // Build a list of all servers that responded. We randomly shuffle the
             // resulting list for some client-side load balancing. Any server
             // that responded within the last RESULTS_POLL_MILLISECONDS is considered
             // equally qualified for any position towards the top of the list.
-        
+
             ArrayList<ServerEntry> respondingServers = new ArrayList<ServerEntry>();
-        
+
             for (CheckServerWorker worker : workers)
             {
                 // NOTE: used to filter by worker.responseTime <= fastestResponseTime*RESPONSE_TIME_THRESHOLD_FACTOR,
@@ -627,9 +642,9 @@ public class ServerSelector implements IAbortIndicator
                     respondingServers.add(worker.entry);
                 }
             }
-        
+
             Collections.shuffle(respondingServers);
-            
+
             // If the original first entry is a faster responder, keep it as the first entry.
             // This is to increase the chance that users have a "consistent" outbound IP address,
             // while also taking performance and load balancing into consideration (this is
@@ -648,18 +663,18 @@ public class ServerSelector implements IAbortIndicator
                     }
                 }
             }
-        
+
             // Merge back into server entry list. MoveEntriesToFront will move
             // these servers to the top of the list in the order submitted. Any
             // other servers, including non-responders and new servers discovered
             // while this process ran will remain in position after the move-to-front
             // list. By using the ConnectionManager's ServerList object we ensure
             // there's no conflict while reading/writing the persistent server list.
-        
+
             if (respondingServers.size() > 0)
             {
                 serverInterface.moveEntriesToFront(respondingServers);
-        
+
                 MyLog.v(R.string.preferred_servers, MyLog.Sensitivity.NOT_SENSITIVE, respondingServers.size());
 
                 // Keep open (and return) the socket to the new #1 server; close the others.
@@ -694,7 +709,7 @@ public class ServerSelector implements IAbortIndicator
                     }
                 }
             }
-            
+
             return (respondingServers.size() > 0);
         }
     }
@@ -725,7 +740,7 @@ public class ServerSelector implements IAbortIndicator
             String clientSessionId)
     {
         Abort();
-        
+
         // Android 2.2 bug workaround
         // See http://code.google.com/p/android/issues/detail?id=9431
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.FROYO &&
@@ -733,7 +748,7 @@ public class ServerSelector implements IAbortIndicator
         {
             System.setProperty("java.net.preferIPv6Addresses", "false");
         }
-        
+
         this.protectSocketsRequired = protectSocketsRequired;
         this.clientSessionId = clientSessionId;
 
@@ -750,14 +765,14 @@ public class ServerSelector implements IAbortIndicator
         this.thread = null;
         this.stopFlag = false;
     }
-    
+
     public void Abort()
     {
         if (this.thread != null)
         {
             try
             {
-                this.stopFlag = true;                
+                this.stopFlag = true;
                 this.thread.join();
             }
             catch (InterruptedException e)
@@ -765,7 +780,7 @@ public class ServerSelector implements IAbortIndicator
                 Thread.currentThread().interrupt();
             }
         }
-        
+
         this.thread = null;
         this.stopFlag = false;
     }
