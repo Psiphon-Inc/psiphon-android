@@ -1200,6 +1200,55 @@ public class ServerInterface
         }
     }
 
+    public static class CustomDnsResolver implements DnsResolver
+    {
+        CustomDnsResolver()
+        {
+        }
+
+        @Override
+        public InetAddress[] resolve(String hostname) throws UnknownHostException
+        {
+            return Address.getAllByName(hostname);
+        }
+    }
+    
+    public static DnsResolver getDnsResolver(Tun2Socks.IProtectSocket protectSocket, ServerInterface serverInterface)
+    {
+        if (protectSocket != null)
+        {
+            return new ProtectedDnsResolver(protectSocket, serverInterface);
+        }
+        // NOTE: It's important to use the SystemDefaultDnsResolver in the other case not
+        // simply because protect() is not required, but also because the hidden API
+        // used in getActiveNetworkDnsResolvers() isn't available on Android < 4.0.
+        // So we only use the custom resolver when protectSocket is called for, which
+        // only happens on Android > 4.0 in VpnService mode, which is exactly the mode
+        // where we need the custom resolver. Other modes (browser-only and root on
+        // any version of Android) don't require a custom resolver (browser-only because
+        // DNS isn't tunneled; root because Psiphon pid DNS isn't routed through the
+        // tunnel).
+        // NEW: It turns out that on Android > 4.0, using the SystemDefaultDnsResolver
+        // results in DNS requests being made by a different process. So in rooted WDM
+        // these requests aren't excluded by transparent proxy routing, which is required.
+        // The CustomDnsResolver ensures that DNS requests are made by this process,
+        // so that they can be excluded from transparent proxy routing,
+        // so that they succeed in WDM when the tunnel is down.
+        // NOTE that the CustomDnsResolver relies on a hidden API only available on
+        // Android > 4.0.
+        // NOTE also that the SystemDefaultDnsResolver makes requests from the Psiphon
+        // process on Android < 4.0.
+        else if (PsiphonData.getPsiphonData().getTunnelWholeDevice() &&
+                Utils.hasVpnService())
+        {
+            return new CustomDnsResolver();
+        }
+        else
+        {
+            return new SystemDefaultDnsResolver();
+        }
+    }
+
     public static class ProtectedSSLSocketFactory extends SSLSocketFactory
     {
         Tun2Socks.IProtectSocket protectSocket;
@@ -1376,24 +1425,7 @@ public class ServerInterface
             registry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
             registry.register(new Scheme("https", 443, sslSocketFactory));
 
-            DnsResolver dnsResolver;
-            if (protectSocket != null)
-            {
-                dnsResolver = new ProtectedDnsResolver(protectSocket, this);
-            }
-            else
-            {
-                // NOTE: It's important to use the SystemDefaultDnsResolver in this case not
-                // simply because protect() is not required, but also because the hidden API
-                // used in getActiveNetworkDnsResolvers() isn't available on Android < 4.0.
-                // So we only use the custom resolver when protectSocket is called for, which
-                // only happens on Android > 4.0 in VpnService mode, which is exactly the mode
-                // where we need the custom resolver. Other modes (browser-only and root on
-                // any version of Android) don't require a custom resolver (browser-only because
-                // DNS isn't tunneled; root because Psiphon pid DNS isn't routed through the
-                // tunnel).
-                dnsResolver = new SystemDefaultDnsResolver();
-            }
+            DnsResolver dnsResolver = getDnsResolver(protectSocket, this);
 
             ClientConnectionManager connManager = new PoolingClientConnectionManager(registry, dnsResolver);
             DefaultHttpClient client = new DefaultHttpClient(connManager, params);

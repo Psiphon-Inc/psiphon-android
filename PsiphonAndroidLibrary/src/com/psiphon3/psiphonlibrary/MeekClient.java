@@ -69,13 +69,11 @@ import ch.boye.httpclientandroidlib.conn.ssl.SSLSocketFactory;
 import ch.boye.httpclientandroidlib.entity.ByteArrayEntity;
 import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
 import ch.boye.httpclientandroidlib.impl.conn.PoolingClientConnectionManager;
-import ch.boye.httpclientandroidlib.impl.conn.SingleClientConnManager;
 import ch.boye.httpclientandroidlib.params.BasicHttpParams;
 import ch.boye.httpclientandroidlib.params.HttpConnectionParams;
 import ch.boye.httpclientandroidlib.params.HttpParams;
 import ch.ethz.ssh2.crypto.ObfuscatedSSH;
 
-import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedDnsResolver;
 import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedPlainSocketFactory;
 import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedSSLSocketFactory;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -272,18 +270,13 @@ public class MeekClient {
                 registry.register(new Scheme("http", 80, plainSocketFactory));                
             }
 
-            if (mProtectSocket != null) {
-                // Use ProtectedDnsResolver to resolve the fronting domain outside of the tunnel
-                DnsResolver dnsResolver = new ProtectedDnsResolver(mProtectSocket, mServerInterface);
-                PoolingClientConnectionManager poolingConnManager = new PoolingClientConnectionManager(registry, dnsResolver);
-                // We're using the pool for its ability to override the DnsResolver. Only need 1 connection.
-                poolingConnManager.setDefaultMaxPerRoute(1);
-                poolingConnManager.setMaxTotal(1);
-                connManager = poolingConnManager;
-            }
-            else {
-                connManager = new SingleClientConnManager(registry);
-            }
+            // Use ProtectedDnsResolver to resolve the fronting domain outside of the tunnel
+            DnsResolver dnsResolver = ServerInterface.getDnsResolver(mProtectSocket, mServerInterface);
+            PoolingClientConnectionManager poolingConnManager = new PoolingClientConnectionManager(registry, dnsResolver);
+            // We're using the pool for its ability to override the DnsResolver. Only need 1 connection.
+            poolingConnManager.setDefaultMaxPerRoute(1);
+            poolingConnManager.setMaxTotal(1);
+            connManager = poolingConnManager;
 
             HttpParams httpParams = new BasicHttpParams();
             HttpConnectionParams.setConnectionTimeout(httpParams, MEEK_SERVER_TIMEOUT_MILLISECONDS);
