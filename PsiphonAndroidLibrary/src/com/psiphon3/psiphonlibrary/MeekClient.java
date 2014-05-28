@@ -194,11 +194,11 @@ public class MeekClient {
                                 clientThread.start();
                             }
                         } catch (NullPointerException e) {
-                            MyLog.e(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+                            MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
                         } catch (SocketException e) {
-                            MyLog.e(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+                            MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
                         } catch (IOException e) {
-                            MyLog.e(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+                            MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
                         }                        
                     }
                 });
@@ -358,25 +358,25 @@ public class MeekClient {
                 }
             }
         } catch (IOException e) {
-            MyLog.e(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+            MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
         } catch (URISyntaxException e) {
-            MyLog.e(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+            MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
         } catch (UnsupportedOperationException e) {
-            MyLog.e(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+            MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
         } catch (IllegalStateException e) {
-            MyLog.e(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+            MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
         } catch (IllegalArgumentException e) {
-            MyLog.e(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+            MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
         } catch (NullPointerException e) {
-            MyLog.e(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+            MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
         } catch (NoSuchAlgorithmException e) {
-            MyLog.e(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());                    
+            MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());                    
         } catch (KeyManagementException e) {
-            MyLog.e(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());                    
+            MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());                    
         } catch (JSONException e) {
-            MyLog.e(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());                    
+            MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());                    
         } catch (GeneralSecurityException e) {
-            MyLog.e(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());                    
+            MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());                    
         } finally {
             if (connManager != null) {
                 connManager.shutdown();
