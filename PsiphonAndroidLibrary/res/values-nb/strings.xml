@@ -117,7 +117,6 @@
   <string name="share_proxies_prompt_message">Programmet behøver omstart før denne innstillingen trår i kraft.</string>
   <string name="share_proxies_prompt_positive">Omstart nå</string>
   <string name="share_proxies_prompt_negative">Avbryt</string>
-  <string name="use_system_proxy_settings_toggle">Koble til gjennom nettverkets HTTP-mellomtjener</string>
   <string name="region_name_any">Best ytelse</string>
   <string name="region_name_us">USA</string>
   <string name="region_name_gb">Storbritannia</string>

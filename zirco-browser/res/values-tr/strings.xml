@@ -49,7 +49,7 @@
   <string name="AdBlockerWhiteListActivity.ClearMessage">Beyaz listeyi temizle</string>
   <string name="PreferencesActivity.GeneralSettingsCategoryTitle">Genel ayarlar</string>
   <string name="PreferencesActivity.HomePagePreferenceTitle">Ana sayfa</string>
-  <string name="PreferencesActivity.HomePagePreferenceSummary">Öntanımlı ana sayfanızı tanımlayın.</string>
+  <string name="PreferencesActivity.HomePagePreferenceSummary">Öntanımlı ana sayfayı tanımla.</string>
   <string name="PreferencesActivity.FullScreenPreferenceTitle">Tam ekran</string>
   <string name="PreferencesActivity.FullScreenPreferenceSummary">Tarayıcıyı tam ekran kipinde görüntüle (uygulamanın yeniden başlatılmasını gerektirir).</string>
   <string name="PreferencesActivity.ShowToastOnTabSwitchPreferenceTitle">Sekme değişiminde uyarı göster</string>
@@ -159,7 +159,7 @@
   <string name="StartPage.History">Yakın geçmiş</string>
   <string name="ChangelogActivity.Title">Değişim günlüğü</string>
   <string name="PreferencesActivity.ChangelogPreferenceTitle">Değişim günlüğü</string>
-  <string name="PreferencesActivity.ChangelogPreferenceSummary">Uygulamanın değişim günlüğü</string>
+  <string name="PreferencesActivity.ChangelogPreferenceSummary">Uygulamanın değişim günlüğü.</string>
   <string name="HomepagePreferenceActivity.Title">Ana sayfa</string>
   <string name="HomepagePreferenceActivity.Prompt">Ana sayfa</string>
   <string name="PreferencesActivity.HomepageStart">Başlangıç sayfası</string>
@@ -227,7 +227,7 @@
   <string name="PreferencesActivity.ClearCacheOnExitPreferenceTitle">Çıkışta önbelleği temizle</string>
   <string name="PreferencesActivity.ClearCacheOnExitPreferenceSummary">İşaretliyse, uygulamadan çıkıldığında tarayıcı önbelleği temizlenecek.</string>
   <string name="PreferencesActivity.UIPreferenceTitle">Kullanıcı arayüz ayarları</string>
-  <string name="PreferencesActivity.UIPreferenceSummary">Kullanıcı arayüzünü özelleştir</string>
+  <string name="PreferencesActivity.UIPreferenceSummary">Kullanıcı arayüzünü özelleştir.</string>
   <string name="Main.MenuExit">Çık</string>
   <string name="PreferencesActivity.RestartDialogTitle">Yeniden başlatma gerekli</string>
   <string name="PreferencesActivity.RestartDialogMessage">Bu değişiklik uygulama yeniden başlatana kadar etkili olmayacak. Şimdi yapmak ister misiniz?</string>
@@ -258,8 +258,8 @@
   <string name="MobileViewListActivity.AddMessage">Bir website ekle</string>
   <string name="MobileViewListActivity.ClearMessage">Tüm siteleri temizle</string>
   <string name="PreferencesActivity.MobileViewCategoryTitle">Mobil görünüm ayarları</string>
-  <string name="PreferencesActivity.MobileViewListPreferenceTitle">Websitelerini yönet</string>
-  <string name="PreferencesActivity.MobileViewListPreferenceSummary">Bu listedeki websiteleri Google mobil görünüm (GWT) kullanılarak yüklenecek.</string>
+  <string name="PreferencesActivity.MobileViewListPreferenceTitle">Web sitelerini yönet</string>
+  <string name="PreferencesActivity.MobileViewListPreferenceSummary">Bu listedeki web siteleri Google mobil görünüm (GWT) kullanılarak yüklenecek.</string>
   <string name="Commons.Add">Ekle</string>
   <string name="Commons.Clear">Temizle</string>
   <string name="Commons.Delete">Sil</string>
@@ -325,7 +325,7 @@
   <string name="AboutActivity.OtherLicenseText">Bu uygulama, GPLv3 altında lisanslanmış Zirco Tarayıcı projesinden (https://code.google.com/p/zirco-browser/) kodlar barındırmaktadır. Ayrıca her biri Apache lisansı sürüm 2 altında lisanslanmış GreenDroid (https://github.com/cyrilmottier/GreenDroid) ve Shaman (https://github.com/emergentdotorg/shaman) projelerinden de kod içerir.</string>
   <!--0.4.0-->
   <string name="PreferencesActivity.WeavePreferenceTitle">Firefox yer imi eşitleme</string>
-  <string name="PreferencesActivity.WeavePreferenceSummary">Firefox Sync ile yer imi eşitleme ayarlarını yönetin.</string>
+  <string name="PreferencesActivity.WeavePreferenceSummary">Firefox Sync ile yer imi eşitleme ayarlarını yönet.</string>
   <string name="PreferencesActivity.UseWeavePreferenceTitle">Firefox Sync Kullan</string>
   <string name="PreferencesActivity.UseWeavePreferenceSummary">İşaretlendiğinde, yer imlerinizi Firefox Sync\'ten getirebilirsiniz.</string>
   <string name="PreferencesActivity.WeaveServerPreferenceTitle">Sunucu</string>
@@ -422,8 +422,8 @@
   <string name="VideoLoading">Video yükleniyor\u2026</string>
   <string name="PreferencesActivity.DesktopViewCategoryTitle">Masaüstü görünümü ayarları</string>
   <string name="PreferencesActivity.DesktopViewListPreferenceTitle">Masaüstü kipi listesi</string>
-  <string name="PreferencesActivity.DesktopViewListPreferenceSummary">Bu listedeki websiteleri, Masaüstü Kullanıcı Aracısı kullanılarak yüklenecek.</string>
-  <string name="DesktopViewListActivity.Title">Psiphon Tarayıcı - Masaüstü görünümü için websiteleri</string>
+  <string name="PreferencesActivity.DesktopViewListPreferenceSummary">Bu listedeki web siteleri, Masaüstü Kullanıcı Aracısı kullanılarak yüklenecek.</string>
+  <string name="DesktopViewListActivity.Title">Psiphon Tarayıcı - Masaüstü görünümü için web siteleri</string>
   <string name="DesktopViewListActivity.ListEmpty">Liste boş.</string>
   <string name="DesktopViewListActivity.AddMessage">Bir website ekle</string>
   <string name="DesktopViewListActivity.ClearMessage">Tüm siteleri temizle</string>

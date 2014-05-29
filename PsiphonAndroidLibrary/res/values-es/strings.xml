@@ -117,7 +117,11 @@
   <string name="share_proxies_prompt_message">La aplicación necesita reiniciarse para aplicar esta configuración.</string>
   <string name="share_proxies_prompt_positive">Reiniciar ahora</string>
   <string name="share_proxies_prompt_negative">Cancelar</string>
-  <string name="use_system_proxy_settings_toggle">Conectar a través del proxy HTTP de la red.</string>
+  <string name="use_proxy_settings_toggle">Conectar a través de un Proxy HTTP</string>
+  <string name="use_system_proxy_settings_radio">Usar las configuraciones de red del sistema</string>
+  <string name="use_custom_proxy_settings_radio">Usar las siguiente configuraciones:</string>
+  <string name="custom_proxy_settings_host">Dirección del servidor</string>
+  <string name="custom_proxy_settings_port">Puerto</string>
   <string name="region_name_any">Mejor rendimiento</string>
   <string name="region_name_us">Estados Unidos</string>
   <string name="region_name_gb">Reino Unido</string>
@@ -132,6 +136,8 @@
   <string name="tunnel_whole_device_toggle">Túnel para el dispositivo completo (requiere root o Android 4.0+)</string>
   <string name="region_selector">Seleccionar región</string>
   <string name="network_proxy_connect_exception">Fallo al conectar al proxy HTTP de la red: %s</string>
+  <string name="network_proxy_connect_information">Conectando mediante su proxy HTTP: %s</string>
+  <string name="network_proxy_connect_invalid_values">Configuraciones de proxy HTTP no válidas</string>
   <string name="tunnel_whole_device_exception">Su dispositivo no soporta la opción \'non-root\' para el túnel del dispositivo completo</string>
   <string name="run_polipo_failed">La ejecución de Polipo falló: %s</string>
   <string name="wdm_force_iptables_toggle">Forzar método de \'Túnel para el dispositivo completo\' de root</string>

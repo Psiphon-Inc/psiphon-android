@@ -117,7 +117,6 @@
   <string name="share_proxies_prompt_message">Для применение этой установки требуется перезапуск приложения</string>
   <string name="share_proxies_prompt_positive">Перезапустить сейчас</string>
   <string name="share_proxies_prompt_negative">Отмена</string>
-  <string name="use_system_proxy_settings_toggle">Использовать HTTP прокси сети при соединении</string>
   <string name="region_name_any">Оптимальное соединение</string>
   <string name="region_name_us">США</string>
   <string name="region_name_gb">Великобритания</string>
