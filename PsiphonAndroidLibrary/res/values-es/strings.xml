@@ -142,4 +142,6 @@
   <string name="run_polipo_failed">La ejecución de Polipo falló: %s</string>
   <string name="wdm_force_iptables_toggle">Forzar método de \'Túnel para el dispositivo completo\' de root</string>
   <string name="http_prefix_toggle">Enmascarar como HTTP</string>
+  <string name="meek_error">¡Meek! Error: %s</string>
+  <string name="meek_http_request_error">¡Meek! Error de petición HTTP: %d</string>
 </resources>
