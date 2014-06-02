@@ -2,18 +2,18 @@
 <resources>
   <string name="app_name">Psiphon</string>
   <string name="ssh_connecting">SSH bağlanılıyor...</string>
-  <string name="ssh_connected">SSH bağlantı</string>
+  <string name="ssh_connected">SSH bağlandı</string>
   <string name="ssh_connection_failed">SSH bağlantısı başarısız</string>
-  <string name="ssh_authenticating">SSH kimlik doğrulaması yapılıyor..</string>
+  <string name="ssh_authenticating">SSH kimlik doğrulaması yapılıyor...</string>
   <string name="ssh_authentication_failed">SSH kimlik doğrulaması başarısız</string>
-  <string name="ssh_authenticated">SSH kimlik doğrulandı</string>
+  <string name="ssh_authenticated">SSH kimliği doğrulandı</string>
   <string name="socks_starting">SOCKS başlıyor...</string>
-  <string name="socks_running">SOCKS %d bağlantı noktasında çalışıyor</string>
+  <string name="socks_running">SOCKS, %d bağlantı noktasında çalışıyor</string>
   <string name="socks_stopped">SOCKS durdu</string>
   <string name="ssh_stopped">SSH durdu</string>
   <string name="error_message">Bir hata oluştu:</string>
   <string name="http_proxy_starting">HTTP vekil sunucusu başlıyor...</string>
-  <string name="http_proxy_running">HTTP vekil sunucusu %d bağlantı noktasında çalışıyor</string>
+  <string name="http_proxy_running">HTTP vekil sunucusu, %d bağlantı noktasında çalışıyor</string>
   <string name="http_proxy_stopped">HTTP vekil sunucusu durdu</string>
   <string name="http_proxy_stopped_unexpectedly">HTTP vekil sunucusu beklenmedik şekilde durdu</string>
   <string name="ServerInterface.FailedToCreateServerEntries">Kaydedilecek sunucu girdileri oluşturma başarısız</string>
@@ -124,7 +124,7 @@
   <string name="custom_proxy_settings_port">Bağl. Noktası</string>
   <string name="region_name_any">En iyi başarım</string>
   <string name="region_name_us">Amerika Birleşik Devletleri</string>
-  <string name="region_name_gb">Birleşik Krallı</string>
+  <string name="region_name_gb">Birleşik Krallık</string>
   <string name="region_name_ca">Kanada</string>
   <string name="region_name_de">Almanya</string>
   <string name="region_name_jp">Japonya</string>
@@ -140,6 +140,8 @@
   <string name="network_proxy_connect_invalid_values">Geçersiz HTTP Vekil Sunucu ayarları</string>
   <string name="tunnel_whole_device_exception">Cihazınız root olmadan tüm cihazı tünelle seçeneğini desteklemiyor.</string>
   <string name="run_polipo_failed">Polipo\'yu çalıştırma başarısız: %s</string>
-  <string name="wdm_force_iptables_toggle">Kök Tüm Cihazı Tünelle yöntemini zorla</string>
+  <string name="wdm_force_iptables_toggle">Yönetici Tüm Cihazı Tünelle yöntemini zorla</string>
   <string name="http_prefix_toggle">HTTP olarak görün</string>
+  <string name="meek_error">Meek Hatası: %s</string>
+  <string name="meek_http_request_error">Meek HTTP İstek Hatası: %d</string>
 </resources>
