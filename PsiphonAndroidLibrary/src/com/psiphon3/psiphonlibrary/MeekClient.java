@@ -320,7 +320,7 @@ public class MeekClient {
                 HttpResponse response = httpClient.execute(httpPost);
                 int statusCode = response.getStatusLine().getStatusCode();
                 if (statusCode != HttpStatus.SC_OK) {
-                    MyLog.e(R.string.meek_http_request_error, MyLog.Sensitivity.NOT_SENSITIVE, statusCode);
+                    MyLog.w(R.string.meek_http_request_error, MyLog.Sensitivity.NOT_SENSITIVE, statusCode);
                     break;
                 }
 
