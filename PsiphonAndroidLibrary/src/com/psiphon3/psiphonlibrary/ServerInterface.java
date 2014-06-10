@@ -1787,6 +1787,8 @@ public class ServerInterface
         }
     }
 
+    private static final long MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE = 2*1024*1024; // 2MB
+    
     private void saveServerEntries()
     {
         synchronized(PsiphonData.getPsiphonData().serverEntryFileLock)
@@ -1797,9 +1799,23 @@ public class ServerInterface
                 file = this.ownerContext.openFileOutput(PsiphonConstants.SERVER_ENTRY_FILENAME, Context.MODE_PRIVATE);
                 JSONObject obj = new JSONObject();
                 JSONArray array = new JSONArray();
-                for (ServerEntry serverEntry : this.serverEntries)
+                long serializedServerEntrySize = 0;
+                for (int i = 0; i < this.serverEntries.size(); i++)
                 {
+                    ServerEntry serverEntry = this.serverEntries.get(i);
+                    if (serializedServerEntrySize > 0 &&
+                            serializedServerEntrySize + serverEntry.encodedEntry.length() > MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE)
+                    {
+                        // Enforce MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE:
+                        // Don't add this entry when there's already at least one entry (serializedServerEntrySize > 0) and
+                        // adding this one will exceed the memory size limit (serializedServerEntrySize + serverEntry.encodedEntry.length() > MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE)
+                        //
+                        // NOTE: side-effect! we truncate this.serverEntries to match what's serialized                        
+                        this.serverEntries.subList(i, this.serverEntries.size()).clear();
+                        break;
+                    }
                     array.put(serverEntry.encodedEntry);
+                    serializedServerEntrySize += serverEntry.encodedEntry.length();
                 }
                 obj.put("serverEntries", array);
                 file.write(obj.toString().getBytes());
