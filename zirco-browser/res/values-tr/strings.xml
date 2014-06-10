@@ -5,9 +5,7 @@
   <string name="ApplicationDescription">Psiphon Tarayıcı, Zirco Tarayıcısı tabanlı Android için açık kaynaklı bir tarayıcıdır.</string>
   <string name="AboutActivity.Title">Hakkında</string>
   <string name="AboutActivity.VersionText">Sürüm:</string>
-  <string name="AboutActivity.UrlTextValue">https://bitbucket.org/psiphon/psiphon-circumvention-system/overview</string>
   <string name="AboutActivity.LicenseText">Lisans:</string>
-  <string name="AboutActivity.LicenseTextValue">GPL v3</string>
   <string name="Main.MenuAddBookmark">Yer imi ekle</string>
   <string name="Main.MenuShowBookmarks">Yer İmleri</string>
   <string name="Main.MenuShowHistory">Geçmiş</string>
@@ -80,35 +78,11 @@
   <string name="PreferencesActivity.BarDuration3sec">3 saniye</string>
   <string name="PreferencesActivity.BarDuration4sec">4 saniye</string>
   <string name="PreferencesActivity.BarDuration5sec">5 saniye</string>
-  <string-array name="BarDurationEntries">
-    <item>@string/PreferencesActivity.BarDuration1sec</item>
-    <item>@string/PreferencesActivity.BarDuration2sec</item>
-    <item>@string/PreferencesActivity.BarDuration3sec</item>
-    <item>@string/PreferencesActivity.BarDuration4sec</item>
-    <item>@string/PreferencesActivity.BarDuration5sec</item>
-  </string-array>
-  <string-array name="BarDurationValues">
-    <item>1000</item>
-    <item>2000</item>
-    <item>3000</item>
-    <item>4000</item>
-    <item>5000</item>
-  </string-array>
   <string name="PreferencesActivity.BubblePositionPreferenceTitle">Baloncuk konumu</string>
   <string name="PreferencesActivity.BubblePositionPreferenceSummary">\"Baloncuk\" konumu.</string>
   <string name="PreferencesActivity.BubbleRight">Sağ</string>
   <string name="PreferencesActivity.BubbleLeft">Sol</string>
   <string name="PreferencesActivity.BubbleBoth">İki tarafta da</string>
-  <string-array name="BubblePositionEntries">
-    <item>@string/PreferencesActivity.BubbleRight</item>
-    <item>@string/PreferencesActivity.BubbleLeft</item>
-    <item>@string/PreferencesActivity.BubbleBoth</item>
-  </string-array>
-  <string-array name="BubblePositionValues">
-    <item>right</item>
-    <item>left</item>
-    <item>both</item>
-  </string-array>
   <string name="PreferencesActivity.AdBlockerSettingsCategoryTitle">Reklam önleyici ayarları</string>
   <string name="PreferencesActivity.EnableAdBlockerPreferenceTitle">Reklam önleyiciyi etkinleştir</string>
   <string name="PreferencesActivity.EnableAdBlockerPreferenceSummary">JavaScript etkin değilse reklam önleyici çalışmayacak.</string>
@@ -144,16 +118,6 @@
   <string name="PreferencesActivity.DefaultZoomClose">Kapalı</string>
   <string name="PreferencesActivity.DefaultZoomMedium">Orta</string>
   <string name="PreferencesActivity.DefaultZoomFar">Uzak</string>
-  <string-array name="DefaultZoomEntries">
-    <item>@string/PreferencesActivity.DefaultZoomClose</item>
-    <item>@string/PreferencesActivity.DefaultZoomMedium</item>
-    <item>@string/PreferencesActivity.DefaultZoomFar</item>
-  </string-array>
-  <string-array name="DefaultZoomValues">
-    <item>CLOSE</item>
-    <item>MEDIUM</item>
-    <item>FAR</item>
-  </string-array>
   <string name="StartPage.Welcome">Hoş Geldiniz!</string>
   <string name="StartPage.Bookmarks">En sık kullanılan yer imleri</string>
   <string name="StartPage.History">Yakın geçmiş</string>
@@ -165,11 +129,6 @@
   <string name="PreferencesActivity.HomepageStart">Başlangıç sayfası</string>
   <string name="PreferencesActivity.HomepageBlank">Boş sayfa</string>
   <string name="PreferencesActivity.HomepageCustom">Özel sayfa</string>
-  <string-array name="HomepageValues">
-    <item>@string/PreferencesActivity.HomepageStart</item>
-    <item>@string/PreferencesActivity.HomepageBlank</item>
-    <item>@string/PreferencesActivity.HomepageCustom</item>
-  </string-array>
   <!--0.3.3-->
   <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=tr&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
   <string name="Constants.SearchUrlWikipedia">http://tr.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
@@ -180,11 +139,6 @@
   <string name="PreferencesActivity.SearchUrlGoogle">Google</string>
   <string name="PreferencesActivity.SearchUrlWikipedia">Vikipedi</string>
   <string name="PreferencesActivity.SearchUrlCustom">Özel</string>
-  <string-array name="SearchUrlValues">
-    <item>@string/PreferencesActivity.SearchUrlGoogle</item>
-    <item>@string/PreferencesActivity.SearchUrlWikipedia</item>
-    <item>@string/PreferencesActivity.SearchUrlCustom</item>
-  </string-array>
   <string name="StartPage.Search">Ara</string>
   <string name="StartPage.SearchButton">Git</string>
   <string name="PreferencesActivity.StartPageCustomizationPreferenceTitle">Başlangıç sayfası özelleştirmesi</string>
@@ -206,11 +160,6 @@
   <string name="PreferencesActivity.UserAgentDefault">Öntanımlı</string>
   <string name="PreferencesActivity.UserAgentDesktop">Masaüstü</string>
   <string name="PreferencesActivity.UserAgentCustom">Özel</string>
-  <string-array name="UserAgentValues">
-    <item>@string/PreferencesActivity.UserAgentDefault</item>
-    <item>@string/PreferencesActivity.UserAgentDesktop</item>
-    <item>@string/PreferencesActivity.UserAgentCustom</item>
-  </string-array>
   <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">Bağlantı adresini kopyala</string>
   <string name="Main.MenuViewImage">Resme bak</string>
@@ -236,16 +185,6 @@
   <string name="PreferencesActivity.PluginsAlwaysOff">Her zaman kapalı</string>
   <string name="PreferencesActivity.PluginsOnDemand">İsteğe göre</string>
   <string name="PreferencesActivity.PluginsAlwaysOn">Her zaman açık</string>
-  <string-array name="PluginsEntries">
-    <item>@string/PreferencesActivity.PluginsAlwaysOff</item>
-    <item>@string/PreferencesActivity.PluginsOnDemand</item>
-    <item>@string/PreferencesActivity.PluginsAlwaysOn</item>
-  </string-array>
-  <string-array name="PluginsValues">
-    <item>OFF</item>
-    <item>ON_DEMAND</item>
-    <item>ON</item>
-  </string-array>
   <string name="Commons.Continue">Devam et</string>
   <string name="Commons.SslWarning">Güvenlik uyarısı</string>
   <string name="Commons.SslWarningsHeader">Bu sitenin sertifikası ile ilgili sorunlar var.</string>
@@ -271,20 +210,6 @@
   <string name="PreferencesActivity.VolumeKeysActionScroll">Yukarı/Aşağı kaydır</string>
   <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">Sekmeleri değiştir</string>
   <string name="PreferencesActivity.VolumeKeysActionHistory">Geri/İleri</string>
-  <string-array name="VolumeKeysActionEntries">
-    <item>@string/PreferencesActivity.VolumeKeysActionDefault</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionZoom</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionScroll</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionSwitchTabs</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionHistory</item>
-  </string-array>
-  <string-array name="VolumeKeysActionValues">
-    <item>DEFAULT</item>
-    <item>ZOOM</item>
-    <item>SCROLL</item>
-    <item>SWITCH_TABS</item>
-    <item>HISTORY</item>
-  </string-array>
   <!--0.3.7-->
   <string name="Main.ShareChooserTitle">Şununla paylaş</string>
   <string name="Main.MenuShareLinkUrl">Bağlantıyı paylaş</string>
@@ -302,16 +227,6 @@
   <string name="PreferencesActivity.SwitchTabButtons">Düğmeler</string>
   <string name="PreferencesActivity.SwitchTabFling">Kaydırma</string>
   <string name="PreferencesActivity.SwitchTabBoth">İkisi de</string>
-  <string-array name="SwitchTabsMethodEntries">
-    <item>@string/PreferencesActivity.SwitchTabButtons</item>
-    <item>@string/PreferencesActivity.SwitchTabFling</item>
-    <item>@string/PreferencesActivity.SwitchTabBoth</item>
-  </string-array>
-  <string-array name="SwitchTabsMethodValues">
-    <item>buttons</item>
-    <item>fling</item>
-    <item>both</item>
-  </string-array>
   <!--0.3.9-->
   <string name="HistoryListActivity.Today">Bugün</string>
   <string name="HistoryListActivity.Yesterday">Dü</string>
@@ -356,10 +271,6 @@
   <string name="WeaveServerPreferenceActivity.Title">Sunuc</string>
   <string name="WeaveServerPreferenceActivity.DefaultServer">Firefox Sync sunucusu</string>
   <string name="WeaveServerPreferenceActivity.CustomServer">Özel sunucu</string>
-  <string-array name="WeaveServerValues">
-    <item>@string/WeaveServerPreferenceActivity.DefaultServer</item>
-    <item>@string/WeaveServerPreferenceActivity.CustomServer</item>
-  </string-array>
   <string name="Main.FileChooserPrompt">Göndermek için dosya seçin</string>
   <string name="Commons.HistoryBookmarksExportSDCardConfirmation">Geçmiş ve yer imlerini dışa aktar</string>
   <string name="Commons.HistoryBookmarksExportSDCardDoneTitle">Dışa aktarma başarılı</string>
@@ -394,14 +305,6 @@
   <string name="PreferencesActivity.BookmarksDatabaseSummary">Yer imleri depolama kipini seçin.</string>
   <string name="PreferencesActivity.BookmarksDatabaseStock">Android yer imleri</string>
   <string name="PreferencesActivity.BookmarksDatabaseInternal">Dahili</string>
-  <string-array name="BookmarksDatabaseEntries">
-    <item>@string/PreferencesActivity.BookmarksDatabaseStock</item>
-    <item>@string/PreferencesActivity.BookmarksDatabaseInternal</item>
-  </string-array>
-  <string-array name="BookmarksDatabaseValues">
-    <item>STOCK</item>
-    <item>INTERNAL</item>
-  </string-array>
   <string name="HistoryListActivity.BookmarkAdded">Yer imlerine eklendi.</string>
   <string name="HistoryListActivity.BookmarkRemoved">Yer imlerinden kaldırıldı.</string>
   <string name="HttpAuthenticationDialog.DialogTitle">Şurada oturum aç: %1$s - %2$s</string>
@@ -415,7 +318,6 @@
   <string name="ProxySettings.ErrorProxyServerNotReachable">Vekil sunucuya ulaşılamıyor.</string>
   <string name="ProxySettings.ErrorProxyInternetNotReachable">Belirtilen vekil sunucu kullanılarak ağa erişilemiyor.</string>
   <string name="ProxySettings.ProxySettingsEnabled">Vekil sunucu ayarları başarıyla etkinleştirildi</string>
-  <string name="AboutActivity.ContributorsText">Zirco Tarayıcı katkıda bulunanlar:\n   • LeChuck (Vekil sunucu ayarları);\n   • Martin (Ses tuşları ile kaydırma, Almanca çeviri);\n   • Isaac L. (İspanyolca çeviri);</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Sekmeleri geri yükle</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">İşaretlendiğinde, mümkün olduğu zaman sekmeler geri yüklenecek.</string>
   <!--0.4.3-->
