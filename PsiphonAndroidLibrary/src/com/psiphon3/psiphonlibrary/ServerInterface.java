@@ -1629,7 +1629,15 @@ public class ServerInterface
     private ServerEntry decodeServerEntry(String encodedServerEntry)
             throws JSONException
     {
-        String serverEntry = new String(Utils.hexStringToByteArray(encodedServerEntry));
+        String serverEntry;
+        try
+        {
+            serverEntry = new String(Utils.hexStringToByteArray(encodedServerEntry));
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new JSONException("invalid encoded server entry");
+        }
 
         // Skip past legacy format (4 space delimited fields) and just parse the JSON config
         int jsonIndex = 0;
