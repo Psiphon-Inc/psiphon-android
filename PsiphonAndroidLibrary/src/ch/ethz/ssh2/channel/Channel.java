@@ -40,7 +40,8 @@ public class Channel
 	static final int STATE_OPEN = 2;
 	static final int STATE_CLOSED = 4;
 
-	static final int CHANNEL_BUFFER_SIZE = 30000;
+    // PSIPHON: Tuned channel window size to improve performance of streaming over meek
+	static final int CHANNEL_BUFFER_SIZE = 75000; // Original Ganymed: CHANNEL_BUFFER_SIZE = 30000;
 
 	/*
 	 * To achieve correctness, the following rules have to be respected when
