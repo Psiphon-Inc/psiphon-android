@@ -604,7 +604,7 @@ public class ServerInterface
         
         // We have observed blank last_connected values from some Android clients; we don't know what
         // exactly causes this; so, simply default to a valid value. This will now pass the validation
-        //  in the connected request, and ultimatelt LAST_CONNECTED_FILENAME should be overwritten with
+        //  in the connected request, and ultimately LAST_CONNECTED_FILENAME should be overwritten with
         // a new, valid value.
         if (lastConnected.length() == 0) {
             lastConnected = PsiphonConstants.LAST_CONNECTED_NO_VALUE;
