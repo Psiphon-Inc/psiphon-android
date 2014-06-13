@@ -1789,7 +1789,7 @@ public class ServerInterface
 
     private static final long MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE = 2*1024*1024; // 2MB
     
-    private void saveServerEntries()
+    private synchronized void saveServerEntries()
     {
         synchronized(PsiphonData.getPsiphonData().serverEntryFileLock)
         {
