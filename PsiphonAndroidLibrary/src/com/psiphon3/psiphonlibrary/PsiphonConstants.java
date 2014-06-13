@@ -33,6 +33,8 @@ public class PsiphonConstants
 
     public final static String LAST_CONNECTED_FILENAME = "last_connected";
 
+    public final static String LAST_CONNECTED_NO_VALUE = "None";
+
     public final static int CLIENT_SESSION_ID_SIZE_IN_BYTES = 16;
     
     public final static int STANDARD_DNS_PORT = 53;

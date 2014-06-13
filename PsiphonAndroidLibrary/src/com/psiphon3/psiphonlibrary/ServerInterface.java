@@ -578,7 +578,7 @@ public class ServerInterface
     synchronized public void doConnectedRequest()
         throws PsiphonServerInterfaceException
     {
-        String lastConnected = "None";
+        String lastConnected = PsiphonConstants.LAST_CONNECTED_NO_VALUE;
         try
         {
             FileInputStream file = this.ownerContext.openFileInput(
@@ -600,6 +600,14 @@ public class ServerInterface
         {
             MyLog.w(R.string.ServerInterface_FailedToReadLastConnected, MyLog.Sensitivity.NOT_SENSITIVE, e);
             // skip loading persistent server entries
+        }
+        
+        // We have observed blank last_connected values from some Android clients; we don't know what
+        // exactly causes this; so, simply default to a valid value. This will now pass the validation
+        //  in the connected request, and ultimatelt LAST_CONNECTED_FILENAME should be overwritten with
+        // a new, valid value.
+        if (lastConnected.length() == 0) {
+            lastConnected = PsiphonConstants.LAST_CONNECTED_NO_VALUE;
         }
 
         List<Pair<String,String>> extraParams = new ArrayList<Pair<String,String>>();
