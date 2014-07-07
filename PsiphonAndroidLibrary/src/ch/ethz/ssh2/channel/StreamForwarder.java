@@ -20,9 +20,11 @@ import java.net.Socket;
  */
 public class StreamForwarder extends Thread
 {
+    static final int IO_BUFFER_SIZE = 4096; 
+
     OutputStream os;
     InputStream is;
-    byte[] buffer = new byte[Channel.CHANNEL_BUFFER_SIZE];
+    byte[] buffer = new byte[IO_BUFFER_SIZE];
     Channel c;
     StreamForwarder sibling;
     Socket s;

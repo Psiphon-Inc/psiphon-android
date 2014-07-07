@@ -28,9 +28,30 @@ public class Util {
         System.arraycopy(message, 0, result, n, message.length);
         return result;
     }
+    
+    // PSIPHON
+    // Arrays.copyOfRange isn't in Android API 8, so we use this instead
+    private static byte[] copyOfRange(byte[] original, int start, int end) {
+        // Arrays.copyOfRange doc:
+        // Copies elements from original into a new array, from indexes start (inclusive) to end (exclusive).
+        // The original order of elements is preserved. If end is greater than original.length, the result is
+        // padded with the value (byte) 0.
+        int length = end - start;
+        if (length < 0) {
+            throw new IllegalArgumentException("length < 0");
+        }
+        if (length > original.length - start) {
+            throw new IllegalArgumentException("length > original.length - start");
+        }
+        byte[] copy = new byte[length];
+        System.arraycopy(original, start, copy, 0, length);
+        return copy;
+    }
 
     public static byte[] removeZeros(int n, byte[] message) {
-        return Arrays.copyOfRange(message, n, message.length);
+        // PSIPHON
+        //return Arrays.copyOfRange(message, n, message.length);
+        return copyOfRange(message, n, message.length);
     }
 
     public static void checkLength(byte[] data, int size) {
@@ -49,7 +70,9 @@ public class Util {
     }
 
     public static byte[] slice(byte[] buffer, int start, int end) {
-        return Arrays.copyOfRange(buffer, start, end);
+        // PSIPHON
+        //return Arrays.copyOfRange(buffer, start, end);
+        return copyOfRange(buffer, start, end);
     }
 
     public static byte[] merge(byte[] signature, byte[] message) {

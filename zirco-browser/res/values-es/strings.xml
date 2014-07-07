@@ -5,9 +5,7 @@
   <string name="ApplicationDescription">El Navegador Psiphon es un navegador de código abierto para Android, basado en el Navegador Zirco.</string>
   <string name="AboutActivity.Title">Acerca de</string>
   <string name="AboutActivity.VersionText">Versión:</string>
-  <string name="AboutActivity.UrlTextValue">https://bitbucket.org/psiphon/psiphon-circumvention-system/overview</string>
   <string name="AboutActivity.LicenseText">Licencia:</string>
-  <string name="AboutActivity.LicenseTextValue">GPL v3</string>
   <string name="Main.MenuAddBookmark">Agregar marcador</string>
   <string name="Main.MenuShowBookmarks">Marcadores</string>
   <string name="Main.MenuShowHistory">Historial</string>
@@ -80,35 +78,11 @@
   <string name="PreferencesActivity.BarDuration3sec">3 segundos</string>
   <string name="PreferencesActivity.BarDuration4sec">4 segundos</string>
   <string name="PreferencesActivity.BarDuration5sec">5 segundos</string>
-  <string-array name="BarDurationEntries">
-    <item>@string/PreferencesActivity.BarDuration1sec</item>
-    <item>@string/PreferencesActivity.BarDuration2sec</item>
-    <item>@string/PreferencesActivity.BarDuration3sec</item>
-    <item>@string/PreferencesActivity.BarDuration4sec</item>
-    <item>@string/PreferencesActivity.BarDuration5sec</item>
-  </string-array>
-  <string-array name="BarDurationValues">
-    <item>1000</item>
-    <item>2000</item>
-    <item>3000</item>
-    <item>4000</item>
-    <item>5000</item>
-  </string-array>
   <string name="PreferencesActivity.BubblePositionPreferenceTitle">Posición de la burbuja</string>
   <string name="PreferencesActivity.BubblePositionPreferenceSummary">Posición de la \"burbuja\".</string>
   <string name="PreferencesActivity.BubbleRight">Derecha</string>
   <string name="PreferencesActivity.BubbleLeft">Izquierda</string>
   <string name="PreferencesActivity.BubbleBoth">Ambas</string>
-  <string-array name="BubblePositionEntries">
-    <item>@string/PreferencesActivity.BubbleRight</item>
-    <item>@string/PreferencesActivity.BubbleLeft</item>
-    <item>@string/PreferencesActivity.BubbleBoth</item>
-  </string-array>
-  <string-array name="BubblePositionValues">
-    <item>right</item>
-    <item>left</item>
-    <item>both</item>
-  </string-array>
   <string name="PreferencesActivity.AdBlockerSettingsCategoryTitle">Ajustes del bloqueador de publicidad</string>
   <string name="PreferencesActivity.EnableAdBlockerPreferenceTitle">Habilitar bloqueador de publicidad</string>
   <string name="PreferencesActivity.EnableAdBlockerPreferenceSummary">El bloqueador de publicidad no funcionará si JavaScript no está habilitado.</string>
@@ -133,7 +107,6 @@
   <string name="Commons.SDCardErrorNoSDMsg">No se encontró tarjeta SD.</string>
   <string name="Commons.SDCardErrorSDUnavailable">La tarjeta SD no está disponible.</string>
   <string name="Commons.Close">Cerrar</string>
-  <string name="DATE_FORMAT_ISO8601">yyyy-MM-dd\'T\'HH:mm:ss.SSS</string>
   <!--0.3.1-->
   <string name="PreferencesActivity.AboutCategoryTitle">Acerca de</string>
   <string name="PreferencesActivity.AboutPreferenceTitle">Acerca de</string>
@@ -145,16 +118,6 @@
   <string name="PreferencesActivity.DefaultZoomClose">Cerrar</string>
   <string name="PreferencesActivity.DefaultZoomMedium">Medio</string>
   <string name="PreferencesActivity.DefaultZoomFar">Lejos</string>
-  <string-array name="DefaultZoomEntries">
-    <item>@string/PreferencesActivity.DefaultZoomClose</item>
-    <item>@string/PreferencesActivity.DefaultZoomMedium</item>
-    <item>@string/PreferencesActivity.DefaultZoomFar</item>
-  </string-array>
-  <string-array name="DefaultZoomValues">
-    <item>CLOSE</item>
-    <item>MEDIUM</item>
-    <item>FAR</item>
-  </string-array>
   <string name="StartPage.Welcome">¡Bienvenido!</string>
   <string name="StartPage.Bookmarks">Marcadores más empleados</string>
   <string name="StartPage.History">Historial reciente</string>
@@ -166,11 +129,6 @@
   <string name="PreferencesActivity.HomepageStart">Página de inicio</string>
   <string name="PreferencesActivity.HomepageBlank">Página en blanco</string>
   <string name="PreferencesActivity.HomepageCustom">Página personalizada</string>
-  <string-array name="HomepageValues">
-    <item>@string/PreferencesActivity.HomepageStart</item>
-    <item>@string/PreferencesActivity.HomepageBlank</item>
-    <item>@string/PreferencesActivity.HomepageCustom</item>
-  </string-array>
   <!--0.3.3-->
   <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=es&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
   <string name="Constants.SearchUrlWikipedia">http://es.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
@@ -181,11 +139,6 @@
   <string name="PreferencesActivity.SearchUrlGoogle">Google</string>
   <string name="PreferencesActivity.SearchUrlWikipedia">Wikipedia</string>
   <string name="PreferencesActivity.SearchUrlCustom">Personalizada</string>
-  <string-array name="SearchUrlValues">
-    <item>@string/PreferencesActivity.SearchUrlGoogle</item>
-    <item>@string/PreferencesActivity.SearchUrlWikipedia</item>
-    <item>@string/PreferencesActivity.SearchUrlCustom</item>
-  </string-array>
   <string name="StartPage.Search">Buscar</string>
   <string name="StartPage.SearchButton">Ir</string>
   <string name="PreferencesActivity.StartPageCustomizationPreferenceTitle">Personalización de página de inicio</string>
@@ -207,11 +160,6 @@
   <string name="PreferencesActivity.UserAgentDefault">Por defecto</string>
   <string name="PreferencesActivity.UserAgentDesktop">Escritorio</string>
   <string name="PreferencesActivity.UserAgentCustom">Personalizado</string>
-  <string-array name="UserAgentValues">
-    <item>@string/PreferencesActivity.UserAgentDefault</item>
-    <item>@string/PreferencesActivity.UserAgentDesktop</item>
-    <item>@string/PreferencesActivity.UserAgentCustom</item>
-  </string-array>
   <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">Copiar URL de enlace</string>
   <string name="Main.MenuViewImage">Ver imagen</string>
@@ -237,16 +185,6 @@
   <string name="PreferencesActivity.PluginsAlwaysOff">Siempre inactivo</string>
   <string name="PreferencesActivity.PluginsOnDemand">Bajo demanda</string>
   <string name="PreferencesActivity.PluginsAlwaysOn">Siempre activo</string>
-  <string-array name="PluginsEntries">
-    <item>@string/PreferencesActivity.PluginsAlwaysOff</item>
-    <item>@string/PreferencesActivity.PluginsOnDemand</item>
-    <item>@string/PreferencesActivity.PluginsAlwaysOn</item>
-  </string-array>
-  <string-array name="PluginsValues">
-    <item>OFF</item>
-    <item>ON_DEMAND</item>
-    <item>ON</item>
-  </string-array>
   <string name="Commons.Continue">Continuar</string>
   <string name="Commons.SslWarning">Advertencia de seguridad</string>
   <string name="Commons.SslWarningsHeader">Hay problemas con el certificado de seguridad de este sitio.</string>
@@ -272,20 +210,6 @@
   <string name="PreferencesActivity.VolumeKeysActionScroll">Desplazamiento arriba/abajo</string>
   <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">Alternar pestañas</string>
   <string name="PreferencesActivity.VolumeKeysActionHistory">Atrás/Adelante</string>
-  <string-array name="VolumeKeysActionEntries">
-    <item>@string/PreferencesActivity.VolumeKeysActionDefault</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionZoom</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionScroll</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionSwitchTabs</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionHistory</item>
-  </string-array>
-  <string-array name="VolumeKeysActionValues">
-    <item>DEFAULT</item>
-    <item>ZOOM</item>
-    <item>SCROLL</item>
-    <item>SWITCH_TABS</item>
-    <item>HISTORY</item>
-  </string-array>
   <!--0.3.7-->
   <string name="Main.ShareChooserTitle">Compartir mediante</string>
   <string name="Main.MenuShareLinkUrl">Compartir enlace</string>
@@ -303,16 +227,6 @@
   <string name="PreferencesActivity.SwitchTabButtons">Botones</string>
   <string name="PreferencesActivity.SwitchTabFling">Fling (gesto de desplazamiento)</string>
   <string name="PreferencesActivity.SwitchTabBoth">Ambos</string>
-  <string-array name="SwitchTabsMethodEntries">
-    <item>@string/PreferencesActivity.SwitchTabButtons</item>
-    <item>@string/PreferencesActivity.SwitchTabFling</item>
-    <item>@string/PreferencesActivity.SwitchTabBoth</item>
-  </string-array>
-  <string-array name="SwitchTabsMethodValues">
-    <item>buttons</item>
-    <item>fling</item>
-    <item>both</item>
-  </string-array>
   <!--0.3.9-->
   <string name="HistoryListActivity.Today">Hoy</string>
   <string name="HistoryListActivity.Yesterday">Ayer</string>
@@ -357,10 +271,6 @@
   <string name="WeaveServerPreferenceActivity.Title">Servidor</string>
   <string name="WeaveServerPreferenceActivity.DefaultServer">Servidor de sincronización (\'Sync\') de Firefox</string>
   <string name="WeaveServerPreferenceActivity.CustomServer">Servidor personalizado</string>
-  <string-array name="WeaveServerValues">
-    <item>@string/WeaveServerPreferenceActivity.DefaultServer</item>
-    <item>@string/WeaveServerPreferenceActivity.CustomServer</item>
-  </string-array>
   <string name="Main.FileChooserPrompt">Seleccione archivo a subir</string>
   <string name="Commons.HistoryBookmarksExportSDCardConfirmation">Exportar historial y marcadores</string>
   <string name="Commons.HistoryBookmarksExportSDCardDoneTitle">Exportación finalizada</string>
@@ -395,14 +305,6 @@
   <string name="PreferencesActivity.BookmarksDatabaseSummary">Elija la modalidad de almacenamiento de marcadores.</string>
   <string name="PreferencesActivity.BookmarksDatabaseStock">Marcadores de Android</string>
   <string name="PreferencesActivity.BookmarksDatabaseInternal">Interno</string>
-  <string-array name="BookmarksDatabaseEntries">
-    <item>@string/PreferencesActivity.BookmarksDatabaseStock</item>
-    <item>@string/PreferencesActivity.BookmarksDatabaseInternal</item>
-  </string-array>
-  <string-array name="BookmarksDatabaseValues">
-    <item>STOCK</item>
-    <item>INTERNAL</item>
-  </string-array>
   <string name="HistoryListActivity.BookmarkAdded">Agregado a marcadores.</string>
   <string name="HistoryListActivity.BookmarkRemoved">Eliminado de marcadores.</string>
   <string name="HttpAuthenticationDialog.DialogTitle">Autentificarse en %1$s - %2$s</string>
@@ -416,7 +318,6 @@
   <string name="ProxySettings.ErrorProxyServerNotReachable">No se pudo contactar con el servidor proxy.</string>
   <string name="ProxySettings.ErrorProxyInternetNotReachable">No se pudo acceder a la web a través del servidor proxy especificado.</string>
   <string name="ProxySettings.ProxySettingsEnabled">Los ajustes del proxy fueron activados con éxito.</string>
-  <string name="AboutActivity.ContributorsText">Colaboradores del Navegador Zirco:\n   • LeChuck (parámetros del Proxy);\n   • Martin (desplazamiento con teclas de volumen, traducción al alemán);\n   • Isaac L. (traducción al español);</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Restaurar pestañas</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">Si está marcado, las pestañas se restaurarán cuando estén disponibles.</string>
   <!--0.4.3-->

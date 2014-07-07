@@ -25,6 +25,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 
+// PSIPHON
 // Based on LocalAcceptThread
 
 public class TransparentProxyAcceptThread extends Thread implements IChannelWorkerThread
@@ -45,7 +46,10 @@ public class TransparentProxyAcceptThread extends Thread implements IChannelWork
         }
         catch (IOException e)
         {
-            this.serverSocket.close();
+            if (this.serverSocket != null)
+            {
+                this.serverSocket.close();
+            }
             this.serverSocket = null;
             throw e;
         }
