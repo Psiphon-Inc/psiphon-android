@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
   <string name="app_name">Psiphon</string>
-  <string name="banner_desc">sponsor-banner; klikk for å besøke sponsors hjemmeside</string>
+  <string name="banner_desc">sponsor-banner; klikk for å besøke sponsor-siden på nett</string>
   <string name="start_desc">koble til Psiphon; trykk for å koble til</string>
   <string name="message_image_success_desc">ikon som indikerer en gladmelding</string>
   <string name="message_image_error_desc">ikon som indikerer en feilmelding</string>
@@ -10,7 +10,7 @@
   <string name="exit">Avslutt</string>
   <string name="open_browser">Åpne nettleser</string>
   <string name="browser_task_label">Psiphon nettleser</string>
-  <string name="FeedbackActivity.DefaultText">Hvis du har spesifikke kommentarer, videre informasjon om nettsider som ikke virker, eller hvis dette datafeltet ikke virker for din del, vennligst send epost til &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
+  <string name="FeedbackActivity.DefaultText">Hvis du har spesifikke kommentarer, videre informasjon om nettsider som ikke virker, eller hvis dette datafeltet ikke virker for din del, send e-post til &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">Takk for at du sender inn din tilbakemelding</string>
   <string name="FeedbackActivity.Failure">Innsending feilet. Vennligst prøv igjen.</string>
   <string name="FeedbackActivity.SubmitFeedbackFailed">Klarte ikke å sende inn tilbakemelding</string>
@@ -19,5 +19,5 @@
   <string name="StatusActivity.WholeDeviceTunnelPromptTitle">Kjør tunnel over hele fjøla?</string>
   <string name="StatusActivity.WholeDeviceTunnelPromptMessage">Hele-fjøla-modus er tilgjengelig på din enhet.\n\nDette valget sender all internett-trafikk for alle programmer, inkludert alle nettlesere i en tunnel gjennom Psiphon.\n\nAlternativt kan du velge å bare sende data fra den medfølgende Psiphon-nettlesen gjennom tunnelen, hvilket ikke vil ha noen innvirkning på andre programmer som måtte bruke din Internett-tilkobling.</string>
   <string name="StatusActivity.WholeDeviceTunnelPositiveButton">Tunnel over hele fjøla</string>
-  <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Bare for Psiphon-nettleseren</string>
+  <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Bare bruk Psiphon-nettleser</string>
 </resources>

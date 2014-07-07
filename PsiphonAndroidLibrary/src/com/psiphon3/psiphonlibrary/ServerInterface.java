@@ -578,7 +578,7 @@ public class ServerInterface
     synchronized public void doConnectedRequest()
         throws PsiphonServerInterfaceException
     {
-        String lastConnected = "None";
+        String lastConnected = PsiphonConstants.LAST_CONNECTED_NO_VALUE;
         try
         {
             FileInputStream file = this.ownerContext.openFileInput(
@@ -600,6 +600,14 @@ public class ServerInterface
         {
             MyLog.w(R.string.ServerInterface_FailedToReadLastConnected, MyLog.Sensitivity.NOT_SENSITIVE, e);
             // skip loading persistent server entries
+        }
+        
+        // We have observed blank last_connected values from some Android clients; we don't know what
+        // exactly causes this; so, simply default to a valid value. This will now pass the validation
+        //  in the connected request, and ultimately LAST_CONNECTED_FILENAME should be overwritten with
+        // a new, valid value.
+        if (lastConnected.length() == 0) {
+            lastConnected = PsiphonConstants.LAST_CONNECTED_NO_VALUE;
         }
 
         List<Pair<String,String>> extraParams = new ArrayList<Pair<String,String>>();
@@ -1629,7 +1637,15 @@ public class ServerInterface
     private ServerEntry decodeServerEntry(String encodedServerEntry)
             throws JSONException
     {
-        String serverEntry = new String(Utils.hexStringToByteArray(encodedServerEntry));
+        String serverEntry;
+        try
+        {
+            serverEntry = new String(Utils.hexStringToByteArray(encodedServerEntry));
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new JSONException("invalid encoded server entry");
+        }
 
         // Skip past legacy format (4 space delimited fields) and just parse the JSON config
         int jsonIndex = 0;
@@ -1779,7 +1795,9 @@ public class ServerInterface
         }
     }
 
-    private void saveServerEntries()
+    private static final long MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE = 2*1024*1024; // 2MB
+    
+    private synchronized void saveServerEntries()
     {
         synchronized(PsiphonData.getPsiphonData().serverEntryFileLock)
         {
@@ -1789,9 +1807,23 @@ public class ServerInterface
                 file = this.ownerContext.openFileOutput(PsiphonConstants.SERVER_ENTRY_FILENAME, Context.MODE_PRIVATE);
                 JSONObject obj = new JSONObject();
                 JSONArray array = new JSONArray();
-                for (ServerEntry serverEntry : this.serverEntries)
+                long serializedServerEntrySize = 0;
+                for (int i = 0; i < this.serverEntries.size(); i++)
                 {
+                    ServerEntry serverEntry = this.serverEntries.get(i);
+                    if (serializedServerEntrySize > 0 &&
+                            serializedServerEntrySize + serverEntry.encodedEntry.length() > MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE)
+                    {
+                        // Enforce MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE:
+                        // Don't add this entry when there's already at least one entry (serializedServerEntrySize > 0) and
+                        // adding this one will exceed the memory size limit (serializedServerEntrySize + serverEntry.encodedEntry.length() > MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE)
+                        //
+                        // NOTE: side-effect! we truncate this.serverEntries to match what's serialized                        
+                        this.serverEntries.subList(i, this.serverEntries.size()).clear();
+                        break;
+                    }
                     array.put(serverEntry.encodedEntry);
+                    serializedServerEntrySize += serverEntry.encodedEntry.length();
                 }
                 obj.put("serverEntries", array);
                 file.write(obj.toString().getBytes());

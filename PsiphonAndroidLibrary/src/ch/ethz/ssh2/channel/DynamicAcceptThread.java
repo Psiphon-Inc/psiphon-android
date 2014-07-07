@@ -241,7 +241,11 @@ public class DynamicAcceptThread extends Thread implements IChannelWorkerThread 
 		}
 		catch (IOException e)
 		{
-		    ss.close();
+            // PSIPHON: added null check: new ServerSocket() can throw IOException
+            if (ss != null)
+            {
+                ss.close();
+            }
 		    ss = null;
 		    throw e;
 		}
@@ -259,7 +263,11 @@ public class DynamicAcceptThread extends Thread implements IChannelWorkerThread 
         }
         catch (IOException e)
         {
-            ss.close();
+            // PSIPHON: added null check: new ServerSocket() can throw IOException
+            if (ss != null)
+            {
+                ss.close();
+            }
             ss = null;
             throw e;
         }

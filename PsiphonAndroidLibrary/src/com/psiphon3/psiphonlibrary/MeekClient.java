@@ -83,6 +83,7 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 public class MeekClient {
 
+    final static int MEEK_PROTOCOL_VERSION = 1;
     final static int MAX_PAYLOAD_LENGTH = 0x10000;
     final static int MIN_POLL_INTERVAL_MILLISECONDS = 1;
     final static int IDLE_POLL_INTERVAL_MILLISECONDS = 100;
@@ -384,6 +385,7 @@ public class MeekClient {
             throws JSONException, GeneralSecurityException, IOException {
 
         JSONObject payload = new JSONObject();
+        payload.put("v", MEEK_PROTOCOL_VERSION);
         payload.put("s", mPsiphonClientSessionId);
         payload.put("p", mPsiphonServerAddress);
 
