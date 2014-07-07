@@ -5,9 +5,7 @@
   <string name="ApplicationDescription">赛风浏览器是一款基于Zirco浏览器，用于安卓设备的开源浏览器\n</string>
   <string name="AboutActivity.Title">关于</string>
   <string name="AboutActivity.VersionText">版本:</string>
-  <string name="AboutActivity.UrlTextValue">https://bitbucket.org/psiphon/psiphon-circumvention-system/overview</string>
   <string name="AboutActivity.LicenseText">版权:</string>
-  <string name="AboutActivity.LicenseTextValue">GPL v3</string>
   <string name="Main.MenuAddBookmark">添加书签</string>
   <string name="Main.MenuShowBookmarks">书签</string>
   <string name="Main.MenuShowHistory">历史</string>
@@ -80,35 +78,11 @@
   <string name="PreferencesActivity.BarDuration3sec">3秒</string>
   <string name="PreferencesActivity.BarDuration4sec">4秒</string>
   <string name="PreferencesActivity.BarDuration5sec">5秒</string>
-  <string-array name="BarDurationEntries">
-    <item>@string/PreferencesActivity.BarDuration1sec</item>
-    <item>@string/PreferencesActivity.BarDuration2sec</item>
-    <item>@string/PreferencesActivity.BarDuration3sec</item>
-    <item>@string/PreferencesActivity.BarDuration4sec</item>
-    <item>@string/PreferencesActivity.BarDuration5sec</item>
-  </string-array>
-  <string-array name="BarDurationValues">
-    <item>1000</item>
-    <item>2000</item>
-    <item>3000</item>
-    <item>4000</item>
-    <item>5000</item>
-  </string-array>
   <string name="PreferencesActivity.BubblePositionPreferenceTitle">工具条图标</string>
   <string name="PreferencesActivity.BubblePositionPreferenceSummary">工具条图标位置.</string>
   <string name="PreferencesActivity.BubbleRight">右</string>
   <string name="PreferencesActivity.BubbleLeft">左</string>
   <string name="PreferencesActivity.BubbleBoth">两边都有</string>
-  <string-array name="BubblePositionEntries">
-    <item>@string/PreferencesActivity.BubbleRight</item>
-    <item>@string/PreferencesActivity.BubbleLeft</item>
-    <item>@string/PreferencesActivity.BubbleBoth</item>
-  </string-array>
-  <string-array name="BubblePositionValues">
-    <item>right</item>
-    <item>left</item>
-    <item>both</item>
-  </string-array>
   <string name="PreferencesActivity.AdBlockerSettingsCategoryTitle">广告阻止设定</string>
   <string name="PreferencesActivity.EnableAdBlockerPreferenceTitle">启用广告阻止</string>
   <string name="PreferencesActivity.EnableAdBlockerPreferenceSummary">必须启用JavaScript，广告阻止才能运行.</string>
@@ -133,7 +107,6 @@
   <string name="Commons.SDCardErrorNoSDMsg">找不到SD卡.</string>
   <string name="Commons.SDCardErrorSDUnavailable">SD卡不能使用.</string>
   <string name="Commons.Close">关闭</string>
-  <string name="DATE_FORMAT_ISO8601">yyyy-MM-dd\'T\'HH:mm:ss.SSS</string>
   <!--0.3.1-->
   <string name="PreferencesActivity.AboutCategoryTitle">关于</string>
   <string name="PreferencesActivity.AboutPreferenceTitle">关于</string>
@@ -145,16 +118,6 @@
   <string name="PreferencesActivity.DefaultZoomClose">近</string>
   <string name="PreferencesActivity.DefaultZoomMedium">远</string>
   <string name="PreferencesActivity.DefaultZoomFar">非常远</string>
-  <string-array name="DefaultZoomEntries">
-    <item>@string/PreferencesActivity.DefaultZoomClose</item>
-    <item>@string/PreferencesActivity.DefaultZoomMedium</item>
-    <item>@string/PreferencesActivity.DefaultZoomFar</item>
-  </string-array>
-  <string-array name="DefaultZoomValues">
-    <item>CLOSE</item>
-    <item>MEDIUM</item>
-    <item>FAR</item>
-  </string-array>
   <string name="StartPage.Welcome">欢迎!</string>
   <string name="StartPage.Bookmarks">最常用的书签</string>
   <string name="StartPage.History">最近历史记录</string>
@@ -166,11 +129,6 @@
   <string name="PreferencesActivity.HomepageStart">开始页</string>
   <string name="PreferencesActivity.HomepageBlank">空白页</string>
   <string name="PreferencesActivity.HomepageCustom">自定义页</string>
-  <string-array name="HomepageValues">
-    <item>@string/PreferencesActivity.HomepageStart</item>
-    <item>@string/PreferencesActivity.HomepageBlank</item>
-    <item>@string/PreferencesActivity.HomepageCustom</item>
-  </string-array>
   <!--0.3.3-->
   <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=en&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
   <string name="Constants.SearchUrlWikipedia">http://en.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
@@ -181,11 +139,6 @@
   <string name="PreferencesActivity.SearchUrlGoogle">谷歌</string>
   <string name="PreferencesActivity.SearchUrlWikipedia">维基百科</string>
   <string name="PreferencesActivity.SearchUrlCustom">自定义</string>
-  <string-array name="SearchUrlValues">
-    <item>@string/PreferencesActivity.SearchUrlGoogle</item>
-    <item>@string/PreferencesActivity.SearchUrlWikipedia</item>
-    <item>@string/PreferencesActivity.SearchUrlCustom</item>
-  </string-array>
   <string name="StartPage.Search">搜索</string>
   <string name="StartPage.SearchButton">开始</string>
   <string name="PreferencesActivity.StartPageCustomizationPreferenceTitle">开始自定义页面</string>
@@ -207,11 +160,6 @@
   <string name="PreferencesActivity.UserAgentDefault">默认</string>
   <string name="PreferencesActivity.UserAgentDesktop">桌面</string>
   <string name="PreferencesActivity.UserAgentCustom">自定义</string>
-  <string-array name="UserAgentValues">
-    <item>@string/PreferencesActivity.UserAgentDefault</item>
-    <item>@string/PreferencesActivity.UserAgentDesktop</item>
-    <item>@string/PreferencesActivity.UserAgentCustom</item>
-  </string-array>
   <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">复制链接URL</string>
   <string name="Main.MenuViewImage">显示图像</string>
@@ -236,16 +184,6 @@
   <string name="PreferencesActivity.PluginsAlwaysOff">关闭</string>
   <string name="PreferencesActivity.PluginsOnDemand">点播</string>
   <string name="PreferencesActivity.PluginsAlwaysOn">保持开启状态</string>
-  <string-array name="PluginsEntries">
-    <item>@string/PreferencesActivity.PluginsAlwaysOff</item>
-    <item>@string/PreferencesActivity.PluginsOnDemand</item>
-    <item>@string/PreferencesActivity.PluginsAlwaysOn</item>
-  </string-array>
-  <string-array name="PluginsValues">
-    <item>OFF</item>
-    <item>ON_DEMAND</item>
-    <item>ON</item>
-  </string-array>
   <string name="Commons.Continue">继续</string>
   <string name="Commons.SslWarning">安全警告</string>
   <string name="Commons.SslWarningsHeader">网站的安全证书存在问题.</string>
@@ -271,20 +209,6 @@
   <string name="PreferencesActivity.VolumeKeysActionScroll">向上滚动／向下滚动</string>
   <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">切换选项卡</string>
   <string name="PreferencesActivity.VolumeKeysActionHistory">后退／前进</string>
-  <string-array name="VolumeKeysActionEntries">
-    <item>@string/PreferencesActivity.VolumeKeysActionDefault</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionZoom</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionScroll</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionSwitchTabs</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionHistory</item>
-  </string-array>
-  <string-array name="VolumeKeysActionValues">
-    <item>DEFAULT</item>
-    <item>ZOOM</item>
-    <item>SCROLL</item>
-    <item>SWITCH_TABS</item>
-    <item>HISTORY</item>
-  </string-array>
   <!--0.3.7-->
   <string name="Main.ShareChooserTitle">共享通道</string>
   <string name="Main.MenuShareLinkUrl">共享链接</string>
@@ -302,16 +226,6 @@
   <string name="PreferencesActivity.SwitchTabButtons">按钮</string>
   <string name="PreferencesActivity.SwitchTabFling">滑动</string>
   <string name="PreferencesActivity.SwitchTabBoth">两边都有</string>
-  <string-array name="SwitchTabsMethodEntries">
-    <item>@string/PreferencesActivity.SwitchTabButtons</item>
-    <item>@string/PreferencesActivity.SwitchTabFling</item>
-    <item>@string/PreferencesActivity.SwitchTabBoth</item>
-  </string-array>
-  <string-array name="SwitchTabsMethodValues">
-    <item>buttons</item>
-    <item>fling</item>
-    <item>both</item>
-  </string-array>
   <!--0.3.9-->
   <string name="HistoryListActivity.Today">今天</string>
   <string name="HistoryListActivity.Yesterday">昨天</string>
@@ -355,10 +269,6 @@
   <string name="WeaveServerPreferenceActivity.Title">服务器</string>
   <string name="WeaveServerPreferenceActivity.DefaultServer">火狐同步服务器</string>
   <string name="WeaveServerPreferenceActivity.CustomServer">自定义服务器</string>
-  <string-array name="WeaveServerValues">
-    <item>@string/WeaveServerPreferenceActivity.DefaultServer</item>
-    <item>@string/WeaveServerPreferenceActivity.CustomServer</item>
-  </string-array>
   <string name="Main.FileChooserPrompt">选择要上传的文件</string>
   <string name="Commons.HistoryBookmarksExportSDCardConfirmation">导出历史和书签</string>
   <string name="Commons.HistoryBookmarksExportSDCardDoneTitle">导出完成</string>
@@ -393,14 +303,6 @@
   <string name="PreferencesActivity.BookmarksDatabaseSummary">选择存储书签的方式.</string>
   <string name="PreferencesActivity.BookmarksDatabaseStock">安卓书签</string>
   <string name="PreferencesActivity.BookmarksDatabaseInternal">内部</string>
-  <string-array name="BookmarksDatabaseEntries">
-    <item>@string/PreferencesActivity.BookmarksDatabaseStock</item>
-    <item>@string/PreferencesActivity.BookmarksDatabaseInternal</item>
-  </string-array>
-  <string-array name="BookmarksDatabaseValues">
-    <item>STOCK</item>
-    <item>INTERNAL</item>
-  </string-array>
   <string name="HistoryListActivity.BookmarkAdded">添加到书签.</string>
   <string name="HistoryListActivity.BookmarkRemoved">从书签中删除.</string>
   <string name="HttpAuthenticationDialog.DialogTitle">登录到 %1$s - %2$s</string>
@@ -414,7 +316,6 @@
   <string name="ProxySettings.ErrorProxyServerNotReachable">代理服务器不能访问.</string>
   <string name="ProxySettings.ErrorProxyInternetNotReachable">不能通过此代理服务器访问网络.</string>
   <string name="ProxySettings.ProxySettingsEnabled">成功启用了代理设置.</string>
-  <string name="AboutActivity.ContributorsText">Zirco浏览器贡献者:\n   • LeChuck (代理设置);\n   • Martin (音量调整设置，德语翻译);\n   • Isaac L. (西班牙语翻译);</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">恢复选项卡</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">如果选中，可以将选项卡恢复.</string>
   <!--0.4.3-->
