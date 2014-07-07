@@ -40,8 +40,11 @@ public class Channel
 	static final int STATE_OPEN = 2;
 	static final int STATE_CLOSED = 4;
 
-    // PSIPHON: Tuned channel window size to improve performance of streaming over meek
-	static final int CHANNEL_BUFFER_SIZE = 75000; // Original Ganymed: CHANNEL_BUFFER_SIZE = 30000;
+    // PSIPHON:
+	// First, we tuned channel window size to improve performance of streaming over meek (30000 --> 75000)
+	// Next, we made the channel buffers dynamic to allow for a much larger *MAX_*CHANNEL_BUFFER_SIZE
+	// Original Ganymed: "CHANNEL_BUFFER_SIZE = 30000;"
+	static final int MAX_CHANNEL_BUFFER_SIZE = 1000000;
 
 	/*
 	 * To achieve correctness, the following rules have to be respected when
@@ -118,8 +121,8 @@ public class Channel
 	int localMaxPacketSize = -1;
 	int remoteMaxPacketSize = -1;
 
-	final byte[] stdoutBuffer = new byte[CHANNEL_BUFFER_SIZE];
-	final byte[] stderrBuffer = new byte[CHANNEL_BUFFER_SIZE];
+	final PsiphonChannelBuffer stdoutBuffer = new PsiphonChannelBuffer();
+	final PsiphonChannelBuffer stderrBuffer = new PsiphonChannelBuffer();
 
 	int stdoutReadpos = 0;
 	int stdoutWritepos = 0;
@@ -148,7 +151,7 @@ public class Channel
 	{
 		this.cm = cm;
 
-		this.localWindow = CHANNEL_BUFFER_SIZE;
+		this.localWindow = MAX_CHANNEL_BUFFER_SIZE;
 		this.localMaxPacketSize = 35000 - 1024; // leave enough slack
 
 		this.stdinStream = new ChannelOutputStream(this);
