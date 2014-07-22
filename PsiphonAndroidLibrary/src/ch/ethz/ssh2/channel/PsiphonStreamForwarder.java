@@ -39,9 +39,11 @@ import com.psiphon3.psiphonlibrary.PsiphonData;
 
 public class PsiphonStreamForwarder extends Thread
 {
+    static final int IO_BUFFER_SIZE = 4096; 
+    
     OutputStream os;
     InputStream is;
-    byte[] buffer = new byte[Channel.CHANNEL_BUFFER_SIZE];
+    byte[] buffer = new byte[IO_BUFFER_SIZE];
     Channel c;
     PsiphonStreamForwarder sibling;
     Socket s;

@@ -811,7 +811,14 @@ public class ChannelManager implements MessageHandler
 
 			c.localWindow -= len;
 
-			System.arraycopy(msg, 13, c.stderrBuffer, c.stderrWritepos, len);
+            // PSIPHON: TODO -- remove old code (currently leaving for review/reference)
+            /*
+            System.arraycopy(msg, 13, c.stderrBuffer, c.stderrWritepos, len);
+            */
+            // PSIPHON:
+            // Modified to use PsiphonChannelBuffer instead of pre-allocated byte[] arrays.
+            c.stderrBuffer.write(c.stderrWritepos, msg, 13, len);
+			
 			c.stderrWritepos += len;
 
 			c.notifyAll();
@@ -970,6 +977,8 @@ public class ChannelManager implements MessageHandler
 
 				/* OK, there is some data. Return it. */
 
+				// PSIPHON: TODO -- remove old code (currently leaving for review/reference)
+				/*
 				if (!extended)
 				{
 					copylen = (stdoutAvail > len) ? len : stdoutAvail;
@@ -998,14 +1007,51 @@ public class ChannelManager implements MessageHandler
 					c.stderrWritepos -= c.stderrReadpos;
 					c.stderrReadpos = 0;
 				}
+				*/
+				// PSIPHON:
+				// Modified to use PsiphonChannelBuffer instead of pre-allocated byte[] arrays.
+                if (!extended)
+                {
+                    copylen = (stdoutAvail > len) ? len : stdoutAvail;
+                    c.stdoutBuffer.read(c.stdoutReadpos, target, off, copylen);
+                    c.stdoutReadpos += copylen;
+
+                    if (c.stdoutReadpos != c.stdoutWritepos)
+                    {
+                        c.stdoutBuffer.move(c.stdoutReadpos, 0, c.stdoutWritepos - c.stdoutReadpos);
+                    }
+
+                    c.stdoutWritepos -= c.stdoutReadpos;
+                    c.stdoutReadpos = 0;
+                }
+                else
+                {
+                    copylen = (stderrAvail > len) ? len : stderrAvail;
+                    c.stderrBuffer.read(c.stderrReadpos, target, off, copylen);
+                    c.stderrReadpos += copylen;
+
+                    if (c.stderrReadpos != c.stderrWritepos)
+                    {
+                        c.stderrBuffer.move(c.stderrReadpos, 0, c.stderrWritepos - c.stderrReadpos);
+                    }
+
+                    c.stderrWritepos -= c.stderrReadpos;
+                    c.stderrReadpos = 0;
+                }
 
 				if (c.state != Channel.STATE_OPEN)
 					return copylen;
 
-				if (c.localWindow < ((Channel.CHANNEL_BUFFER_SIZE + 1) / 2))
+		        // PSIPHON:
+		        // With PsiphonChannelBuffer, we no longer pre-allocate buffers the size
+		        // of this channel window. Should we also change the Ganymed logic to
+		        // report a smaller initial window size and grow that value dynamically
+		        // as well? E.g., maybe this change as-is naively requests too much
+				// data to be sent?
+				if (c.localWindow < ((Channel.MAX_CHANNEL_BUFFER_SIZE + 1) / 2))
 				{
-					int minFreeSpace = Math.min(Channel.CHANNEL_BUFFER_SIZE - c.stdoutWritepos,
-							Channel.CHANNEL_BUFFER_SIZE - c.stderrWritepos);
+					int minFreeSpace = Math.min(Channel.MAX_CHANNEL_BUFFER_SIZE - c.stdoutWritepos,
+							Channel.MAX_CHANNEL_BUFFER_SIZE - c.stderrWritepos);
 
 					increment = minFreeSpace - c.localWindow;
 					c.localWindow = minFreeSpace;
@@ -1088,7 +1134,14 @@ public class ChannelManager implements MessageHandler
 
 			c.localWindow -= len;
 
-			System.arraycopy(msg, 9, c.stdoutBuffer, c.stdoutWritepos, len);
+            // PSIPHON: TODO -- remove old code (currently leaving for review/reference)
+			/*
+            System.arraycopy(msg, 9, c.stdoutBuffer, c.stdoutWritepos, len);
+            */
+            // PSIPHON:
+            // Modified to use PsiphonChannelBuffer instead of pre-allocated byte[] arrays.
+			c.stdoutBuffer.write(c.stdoutWritepos, msg, 9, len);
+
 			c.stdoutWritepos += len;
 
 			c.notifyAll();
