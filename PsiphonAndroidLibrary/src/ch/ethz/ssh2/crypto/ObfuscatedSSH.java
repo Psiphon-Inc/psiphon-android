@@ -39,7 +39,7 @@ public class ObfuscatedSSH
     static final int OBFUSCATE_KEY_LENGTH = 16;
     static final int OBFUSCATE_SEED_LENGTH = 16;
     static final int OBFUSCATE_HASH_ITERATIONS = 6000;
-    static final int OBFUSCATE_MAX_PADDING = 8192;
+    public static final int OBFUSCATE_MAX_PADDING = 8192;
     static final int OBFUSCATE_MAGIC_VALUE = 0x0BF5CA7E;
     static final byte[] CLIENT_TO_SERVER_IV = "client_to_server".getBytes();
     static final byte[] SERVER_TO_CLIENT_IV = "server_to_client".getBytes();
