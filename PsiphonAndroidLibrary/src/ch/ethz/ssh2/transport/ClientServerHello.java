@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import ch.ethz.ssh2.Connection;
+import ch.ethz.ssh2.crypto.ObfuscatedSSH;
 import ch.ethz.ssh2.crypto.ObfuscatedSSH.ObfuscatedInputStream;
 import ch.ethz.ssh2.crypto.ObfuscatedSSH.ObfuscatedOutputStream;
 import ch.ethz.ssh2.util.StringEncoder;
@@ -62,7 +63,7 @@ public class ClientServerHello
 		bo.write(StringEncoder.GetBytes(client_line + "\r\n"));
 		bo.flush();
 
-		byte[] serverVersion = new byte[512];
+		byte[] serverVersion = new byte[Math.max(512, ObfuscatedSSH.OBFUSCATE_MAX_PADDING + 2)];
 		
         for (int i = 0; i < 50; i++)
 		{
