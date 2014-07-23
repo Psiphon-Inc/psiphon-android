@@ -5,9 +5,7 @@
   <string name="ApplicationDescription"> متصفح سايفون هو متصفح مفتوح المصدر لنظام أندرويد هو يعتمد على المتصفح زيركو.</string>
   <string name="AboutActivity.Title">نبذة عن</string>
   <string name="AboutActivity.VersionText">الإصدار:</string>
-  <string name="AboutActivity.UrlTextValue">https://bitbucket.org/psiphon/psiphon-circumvention-system/overview</string>
   <string name="AboutActivity.LicenseText">الترخيص:</string>
-  <string name="AboutActivity.LicenseTextValue">رخصة جنو العمومية (GPL) الإصدار 3</string>
   <string name="Main.MenuAddBookmark">إضافة إشارة مرجعية</string>
   <string name="Main.MenuShowBookmarks">الإشارات المرجعية</string>
   <string name="Main.MenuShowHistory">المحفوظات</string>
@@ -80,35 +78,11 @@
   <string name="PreferencesActivity.BarDuration3sec">3 ثوان</string>
   <string name="PreferencesActivity.BarDuration4sec">4 ثوان</string>
   <string name="PreferencesActivity.BarDuration5sec">5 ثوان</string>
-  <string-array name="BarDurationEntries">
-    <item>@string/PreferencesActivity.BarDuration1sec</item>
-    <item>@string/PreferencesActivity.BarDuration2sec</item>
-    <item>@string/PreferencesActivity.BarDuration3sec</item>
-    <item>@string/PreferencesActivity.BarDuration4sec</item>
-    <item>@string/PreferencesActivity.BarDuration5sec</item>
-  </string-array>
-  <string-array name="BarDurationValues">
-    <item>1000</item>
-    <item>2000</item>
-    <item>3000</item>
-    <item>4000</item>
-    <item>5000</item>
-  </string-array>
   <string name="PreferencesActivity.BubblePositionPreferenceTitle">موضع الفقاعة</string>
   <string name="PreferencesActivity.BubblePositionPreferenceSummary">موضع \"الفقاعة\".</string>
   <string name="PreferencesActivity.BubbleRight">يمين</string>
   <string name="PreferencesActivity.BubbleLeft">يسار</string>
   <string name="PreferencesActivity.BubbleBoth">كلاهما</string>
-  <string-array name="BubblePositionEntries">
-    <item>@string/PreferencesActivity.BubbleRight</item>
-    <item>@string/PreferencesActivity.BubbleLeft</item>
-    <item>@string/PreferencesActivity.BubbleBoth</item>
-  </string-array>
-  <string-array name="BubblePositionValues">
-    <item>right</item>
-    <item>left</item>
-    <item>both</item>
-  </string-array>
   <string name="PreferencesActivity.AdBlockerSettingsCategoryTitle">إعدادات أداة حظر الإعلانات</string>
   <string name="PreferencesActivity.EnableAdBlockerPreferenceTitle">تمكين أداة حظر الإعلانات</string>
   <string name="PreferencesActivity.EnableAdBlockerPreferenceSummary">لن تعمل أداة حظر الإعلانات إذا لم يتم تمكين JavaScript.</string>
@@ -133,7 +107,6 @@
   <string name="Commons.SDCardErrorNoSDMsg">لم يتم العثور على بطاقة SD.</string>
   <string name="Commons.SDCardErrorSDUnavailable">بطاقة SD غير متوفرة.</string>
   <string name="Commons.Close">إغلاق</string>
-  <string name="DATE_FORMAT_ISO8601">سنة-شهر-يوم\'T\'ساعة:دقيقة:ثانية.SSS</string>
   <!--0.3.1-->
   <string name="PreferencesActivity.AboutCategoryTitle">حول</string>
   <string name="PreferencesActivity.AboutPreferenceTitle">حول</string>
@@ -145,16 +118,6 @@
   <string name="PreferencesActivity.DefaultZoomClose">قريب</string>
   <string name="PreferencesActivity.DefaultZoomMedium">متوسط</string>
   <string name="PreferencesActivity.DefaultZoomFar">بعيد</string>
-  <string-array name="DefaultZoomEntries">
-    <item>@string/PreferencesActivity.DefaultZoomClose</item>
-    <item>@string/PreferencesActivity.DefaultZoomMedium</item>
-    <item>@string/PreferencesActivity.DefaultZoomFar</item>
-  </string-array>
-  <string-array name="DefaultZoomValues">
-    <item>CLOSE</item>
-    <item>MEDIUM</item>
-    <item>FAR</item>
-  </string-array>
   <string name="StartPage.Welcome">مرحباً!</string>
   <string name="StartPage.Bookmarks">الإشارات المرجعية الأكثر استخداما</string>
   <string name="StartPage.History">أحدث المحفوظات</string>
@@ -166,11 +129,6 @@
   <string name="PreferencesActivity.HomepageStart">الصفحة البدء</string>
   <string name="PreferencesActivity.HomepageBlank">صفحة فارغة</string>
   <string name="PreferencesActivity.HomepageCustom">صفحة مخصصة</string>
-  <string-array name="HomepageValues">
-    <item>@string/PreferencesActivity.HomepageStart</item>
-    <item>@string/PreferencesActivity.HomepageBlank</item>
-    <item>@string/PreferencesActivity.HomepageCustom</item>
-  </string-array>
   <!--0.3.3-->
   <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=en&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
   <string name="Constants.SearchUrlWikipedia">http://en.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
@@ -181,11 +139,6 @@
   <string name="PreferencesActivity.SearchUrlGoogle">Google</string>
   <string name="PreferencesActivity.SearchUrlWikipedia">Wikipedia</string>
   <string name="PreferencesActivity.SearchUrlCustom">مخصص</string>
-  <string-array name="SearchUrlValues">
-    <item>@string/PreferencesActivity.SearchUrlGoogle</item>
-    <item>@string/PreferencesActivity.SearchUrlWikipedia</item>
-    <item>@string/PreferencesActivity.SearchUrlCustom</item>
-  </string-array>
   <string name="StartPage.Search">بحث</string>
   <string name="StartPage.SearchButton">انتقال</string>
   <string name="PreferencesActivity.StartPageCustomizationPreferenceTitle">تخصيص صفحة البدء</string>
@@ -207,11 +160,6 @@
   <string name="PreferencesActivity.UserAgentDefault">الافتراضي</string>
   <string name="PreferencesActivity.UserAgentDesktop">سطح المكتب</string>
   <string name="PreferencesActivity.UserAgentCustom">مخصص</string>
-  <string-array name="UserAgentValues">
-    <item>@string/PreferencesActivity.UserAgentDefault</item>
-    <item>@string/PreferencesActivity.UserAgentDesktop</item>
-    <item>@string/PreferencesActivity.UserAgentCustom</item>
-  </string-array>
   <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">نسخ عنوان url الخاص بالارتباط</string>
   <string name="Main.MenuViewImage">عرض الصورة</string>
@@ -236,16 +184,6 @@
   <string name="PreferencesActivity.PluginsAlwaysOff">إيقاف التشغيل دائماً</string>
   <string name="PreferencesActivity.PluginsOnDemand">حسب الطلب</string>
   <string name="PreferencesActivity.PluginsAlwaysOn">التشغيل دائماً</string>
-  <string-array name="PluginsEntries">
-    <item>@string/PreferencesActivity.PluginsAlwaysOff</item>
-    <item>@string/PreferencesActivity.PluginsOnDemand</item>
-    <item>@string/PreferencesActivity.PluginsAlwaysOn</item>
-  </string-array>
-  <string-array name="PluginsValues">
-    <item>OFF</item>
-    <item>ON_DEMAND</item>
-    <item>ON</item>
-  </string-array>
   <string name="Commons.Continue">متابعة</string>
   <string name="Commons.SslWarning">تحذير الأمان</string>
   <string name="Commons.SslWarningsHeader">هناك مشاكل بخصوص شهادة الأمان لهذا الموقع.</string>
@@ -271,20 +209,6 @@
   <string name="PreferencesActivity.VolumeKeysActionScroll">التمرير لأعلى/لأسفل</string>
   <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">التبديل بين التبويبات</string>
   <string name="PreferencesActivity.VolumeKeysActionHistory">العودة/التقدم</string>
-  <string-array name="VolumeKeysActionEntries">
-    <item>@string/PreferencesActivity.VolumeKeysActionDefault</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionZoom</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionScroll</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionSwitchTabs</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionHistory</item>
-  </string-array>
-  <string-array name="VolumeKeysActionValues">
-    <item>DEFAULT</item>
-    <item>ZOOM</item>
-    <item>SCROLL</item>
-    <item>SWITCH_TABS</item>
-    <item>HISTORY</item>
-  </string-array>
   <!--0.3.7-->
   <string name="Main.ShareChooserTitle">مشاركة عبر</string>
   <string name="Main.MenuShareLinkUrl">مشاركة ارتباط</string>
@@ -302,16 +226,6 @@
   <string name="PreferencesActivity.SwitchTabButtons">الأزرار</string>
   <string name="PreferencesActivity.SwitchTabFling">قذف</string>
   <string name="PreferencesActivity.SwitchTabBoth">كلاهما</string>
-  <string-array name="SwitchTabsMethodEntries">
-    <item>@string/PreferencesActivity.SwitchTabButtons</item>
-    <item>@string/PreferencesActivity.SwitchTabFling</item>
-    <item>@string/PreferencesActivity.SwitchTabBoth</item>
-  </string-array>
-  <string-array name="SwitchTabsMethodValues">
-    <item>buttons</item>
-    <item>fling</item>
-    <item>both</item>
-  </string-array>
   <!--0.3.9-->
   <string name="HistoryListActivity.Today">اليوم</string>
   <string name="HistoryListActivity.Yesterday">أمس</string>
@@ -355,10 +269,6 @@
   <string name="WeaveServerPreferenceActivity.Title">الخادم</string>
   <string name="WeaveServerPreferenceActivity.DefaultServer">خادم مزامنة Firefox</string>
   <string name="WeaveServerPreferenceActivity.CustomServer">خادم مخصص</string>
-  <string-array name="WeaveServerValues">
-    <item>@string/WeaveServerPreferenceActivity.DefaultServer</item>
-    <item>@string/WeaveServerPreferenceActivity.CustomServer</item>
-  </string-array>
   <string name="Main.FileChooserPrompt">اختر ملف للتحميل</string>
   <string name="Commons.HistoryBookmarksExportSDCardConfirmation">تصدير الإشارات المرجعية والمحفوظات</string>
   <string name="Commons.HistoryBookmarksExportSDCardDoneTitle">تم الانتهاء من التصدير</string>
@@ -393,14 +303,6 @@
   <string name="PreferencesActivity.BookmarksDatabaseSummary">اختر وضع تخزين الإشارات المرجعية.</string>
   <string name="PreferencesActivity.BookmarksDatabaseStock">الإشارات المرجعية لنظام التشغيل Android</string>
   <string name="PreferencesActivity.BookmarksDatabaseInternal">داخلي</string>
-  <string-array name="BookmarksDatabaseEntries">
-    <item>@string/PreferencesActivity.BookmarksDatabaseStock</item>
-    <item>@string/PreferencesActivity.BookmarksDatabaseInternal</item>
-  </string-array>
-  <string-array name="BookmarksDatabaseValues">
-    <item>STOCK</item>
-    <item>INTERNAL</item>
-  </string-array>
   <string name="HistoryListActivity.BookmarkAdded">إضافة إلى الإشارات المرجعية.</string>
   <string name="HistoryListActivity.BookmarkRemoved">إزالة من الإشارات المرجعية</string>
   <string name="HttpAuthenticationDialog.DialogTitle">تسجيل الدخول إلىs %1$s - %2$s</string>
@@ -414,7 +316,6 @@
   <string name="ProxySettings.ErrorProxyServerNotReachable">يتعذر الوصول إلى خادم الوكيل.</string>
   <string name="ProxySettings.ErrorProxyInternetNotReachable">يتعذر الوصول إلى الويب من خلال خادم الوكيل المُحدد.</string>
   <string name="ProxySettings.ProxySettingsEnabled">تم تميكن إعدادات الوكيل بنجاح.</string>
-  <string name="AboutActivity.ContributorsText">المساهمون في مستعرض Zirco:\n • LeChuck (إعدادات الوكيل)؛ \n • Martin (التمرير باستخدام مفاتيح التحكم بالصوت، الترجمة الألمانية)؛ \n • إيزاك إل. (الترجمة الإسبانية)؛</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">استعادة التبويبات</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">إذا تم نقره, سيتم استعادة التبويبات عند توفرها.</string>
   <!--0.4.3-->

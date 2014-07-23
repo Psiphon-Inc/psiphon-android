@@ -5,9 +5,7 @@
   <string name="ApplicationDescription">Psiphon-nettleseren er en åpen-kildekode nettleser for Android basert på Zirco-nettleseren.</string>
   <string name="AboutActivity.Title">Om</string>
   <string name="AboutActivity.VersionText">Versjon:</string>
-  <string name="AboutActivity.UrlTextValue">https://bitbucket.org/psiphon/psiphon-circumvention-system/overview</string>
   <string name="AboutActivity.LicenseText">Lisens:</string>
-  <string name="AboutActivity.LicenseTextValue">GPL v3</string>
   <string name="Main.MenuAddBookmark">Legg til bokmerke</string>
   <string name="Main.MenuShowBookmarks">Bokmerker</string>
   <string name="Main.MenuShowHistory">Historie</string>
@@ -80,35 +78,11 @@
   <string name="PreferencesActivity.BarDuration3sec">3 sekunder</string>
   <string name="PreferencesActivity.BarDuration4sec">4 sekunder</string>
   <string name="PreferencesActivity.BarDuration5sec">5 sekunder</string>
-  <string-array name="BarDurationEntries">
-    <item>@string/PreferencesActivity.BarDuration1sec</item>
-    <item>@string/PreferencesActivity.BarDuration2sec</item>
-    <item>@string/PreferencesActivity.BarDuration3sec</item>
-    <item>@string/PreferencesActivity.BarDuration4sec</item>
-    <item>@string/PreferencesActivity.BarDuration5sec</item>
-  </string-array>
-  <string-array name="BarDurationValues">
-    <item>1000</item>
-    <item>2000</item>
-    <item>3000</item>
-    <item>4000</item>
-    <item>5000</item>
-  </string-array>
   <string name="PreferencesActivity.BubblePositionPreferenceTitle">Boble-posisjon</string>
   <string name="PreferencesActivity.BubblePositionPreferenceSummary">Posisjonen til \"boblen\".</string>
   <string name="PreferencesActivity.BubbleRight">Høyre</string>
   <string name="PreferencesActivity.BubbleLeft">Venstre</string>
   <string name="PreferencesActivity.BubbleBoth">Begge</string>
-  <string-array name="BubblePositionEntries">
-    <item>@string/PreferencesActivity.BubbleRight</item>
-    <item>@string/PreferencesActivity.BubbleLeft</item>
-    <item>@string/PreferencesActivity.BubbleBoth</item>
-  </string-array>
-  <string-array name="BubblePositionValues">
-    <item>høyre</item>
-    <item>venstre</item>
-    <item>begge</item>
-  </string-array>
   <string name="PreferencesActivity.AdBlockerSettingsCategoryTitle">Innstillinger for reklameblokkerer</string>
   <string name="PreferencesActivity.EnableAdBlockerPreferenceTitle">Skru på reklameblokkering</string>
   <string name="PreferencesActivity.EnableAdBlockerPreferenceSummary">Reklameblokkering kommer ikke til å fungere hvis ikke JavaScript er påskrudd.</string>
@@ -133,7 +107,6 @@
   <string name="Commons.SDCardErrorNoSDMsg">SD-kort ikke funnet</string>
   <string name="Commons.SDCardErrorSDUnavailable">SD-kort ikke tilgjengelig</string>
   <string name="Commons.Close">Lukk</string>
-  <string name="DATE_FORMAT_ISO8601">dd-MM-yyyy\'T\'HH:mm:ss.SSS</string>
   <!--0.3.1-->
   <string name="PreferencesActivity.AboutCategoryTitle">Om</string>
   <string name="PreferencesActivity.AboutPreferenceTitle">Om</string>
@@ -145,16 +118,6 @@
   <string name="PreferencesActivity.DefaultZoomClose">Lukk</string>
   <string name="PreferencesActivity.DefaultZoomMedium">Middels</string>
   <string name="PreferencesActivity.DefaultZoomFar">Langt borte</string>
-  <string-array name="DefaultZoomEntries">
-    <item>@string/PreferencesActivity.DefaultZoomClose</item>
-    <item>@string/PreferencesActivity.DefaultZoomMedium</item>
-    <item>@string/PreferencesActivity.DefaultZoomFar</item>
-  </string-array>
-  <string-array name="DefaultZoomValues">
-    <item>LUKK</item>
-    <item>MIDDELS</item>
-    <item>LANGT BORTE</item>
-  </string-array>
   <string name="StartPage.Welcome">Velkommen!</string>
   <string name="StartPage.Bookmarks">Flittigst brukte bokmerker</string>
   <string name="StartPage.History">Nylig historikk</string>
@@ -166,11 +129,6 @@
   <string name="PreferencesActivity.HomepageStart">Startside</string>
   <string name="PreferencesActivity.HomepageBlank">Blank side</string>
   <string name="PreferencesActivity.HomepageCustom">Tilpasset side</string>
-  <string-array name="HomepageValues">
-    <item>@string/PreferencesActivity.HomepageStart</item>
-    <item>@string/PreferencesActivity.HomepageBlank</item>
-    <item>@string/PreferencesActivity.HomepageCustom</item>
-  </string-array>
   <!--0.3.3-->
   <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=en&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
   <string name="Constants.SearchUrlWikipedia">http://en.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
@@ -181,11 +139,6 @@
   <string name="PreferencesActivity.SearchUrlGoogle">Google</string>
   <string name="PreferencesActivity.SearchUrlWikipedia">Wikipedia</string>
   <string name="PreferencesActivity.SearchUrlCustom">Tilpasset</string>
-  <string-array name="SearchUrlValues">
-    <item>@string/PreferencesActivity.SearchUrlGoogle</item>
-    <item>@string/PreferencesActivity.SearchUrlWikipedia</item>
-    <item>@string/PreferencesActivity.SearchUrlCustom</item>
-  </string-array>
   <string name="StartPage.Search">Søk</string>
   <string name="StartPage.SearchButton">Gå</string>
   <string name="PreferencesActivity.StartPageCustomizationPreferenceTitle">Start stidetilpasning</string>
@@ -207,11 +160,6 @@
   <string name="PreferencesActivity.UserAgentDefault">Standard</string>
   <string name="PreferencesActivity.UserAgentDesktop">Skrivebord</string>
   <string name="PreferencesActivity.UserAgentCustom">Tilpasset</string>
-  <string-array name="UserAgentValues">
-    <item>@string/PreferencesActivity.UserAgentDefault</item>
-    <item>@string/PreferencesActivity.UserAgentDesktop</item>
-    <item>@string/PreferencesActivity.UserAgentCustom</item>
-  </string-array>
   <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">Kopier lenkens nettaddresse</string>
   <string name="Main.MenuViewImage">Se bilde</string>
@@ -237,16 +185,6 @@
   <string name="PreferencesActivity.PluginsAlwaysOff">Alltid av</string>
   <string name="PreferencesActivity.PluginsOnDemand">Ved behov</string>
   <string name="PreferencesActivity.PluginsAlwaysOn">Alltid på</string>
-  <string-array name="PluginsEntries">
-    <item>@string/PreferencesActivity.PluginsAlwaysOff</item>
-    <item>@string/PreferencesActivity.PluginsOnDemand</item>
-    <item>@string/PreferencesActivity.PluginsAlwaysOn</item>
-  </string-array>
-  <string-array name="PluginsValues">
-    <item>AV</item>
-    <item>VED_BEHOV</item>
-    <item>PÅ</item>
-  </string-array>
   <string name="Commons.Continue">Fortsett</string>
   <string name="Commons.SslWarning">Sikkerhetsadvarsel</string>
   <string name="Commons.SslWarningsHeader">Det er problemer med sikkerhetssertifikatet på denne siden.</string>
@@ -272,20 +210,6 @@
   <string name="PreferencesActivity.VolumeKeysActionScroll">Rull opp/ned</string>
   <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">Bytt faner</string>
   <string name="PreferencesActivity.VolumeKeysActionHistory">Tilbake/Frem</string>
-  <string-array name="VolumeKeysActionEntries">
-    <item>@string/PreferencesActivity.VolumeKeysActionDefault</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionZoom</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionScroll</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionSwitchTabs</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionHistory</item>
-  </string-array>
-  <string-array name="VolumeKeysActionValues">
-    <item>STANDARD</item>
-    <item>ZOOM</item>
-    <item>RULL</item>
-    <item>BYTT_FANER</item>
-    <item>HISTORIE</item>
-  </string-array>
   <!--0.3.7-->
   <string name="Main.ShareChooserTitle">Del via</string>
   <string name="Main.MenuShareLinkUrl">Del lenke</string>
@@ -303,16 +227,6 @@
   <string name="PreferencesActivity.SwitchTabButtons">Knapper</string>
   <string name="PreferencesActivity.SwitchTabFling">Nøkk</string>
   <string name="PreferencesActivity.SwitchTabBoth">Begge</string>
-  <string-array name="SwitchTabsMethodEntries">
-    <item>@string/PreferencesActivity.SwitchTabButtons</item>
-    <item>@string/PreferencesActivity.SwitchTabFling</item>
-    <item>@string/PreferencesActivity.SwitchTabBoth</item>
-  </string-array>
-  <string-array name="SwitchTabsMethodValues">
-    <item>knapper</item>
-    <item>nøkk</item>
-    <item>begge</item>
-  </string-array>
   <!--0.3.9-->
   <string name="HistoryListActivity.Today">I dag</string>
   <string name="HistoryListActivity.Yesterday">Gårdagen</string>
@@ -357,10 +271,6 @@
   <string name="WeaveServerPreferenceActivity.Title">Tjener</string>
   <string name="WeaveServerPreferenceActivity.DefaultServer">Firefox Sync-tjener</string>
   <string name="WeaveServerPreferenceActivity.CustomServer">Tilpasset-tjener</string>
-  <string-array name="WeaveServerValues">
-    <item>@string/WeaveServerPreferenceActivity.DefaultServer</item>
-    <item>@string/WeaveServerPreferenceActivity.CustomServer</item>
-  </string-array>
   <string name="Main.FileChooserPrompt">Velg fil å laste opp</string>
   <string name="Commons.HistoryBookmarksExportSDCardConfirmation">Eksporter historie og bokmerker</string>
   <string name="Commons.HistoryBookmarksExportSDCardDoneTitle">Eksport ferdig</string>
@@ -395,14 +305,6 @@
   <string name="PreferencesActivity.BookmarksDatabaseSummary">Velg modus for bokmerke-lagring.</string>
   <string name="PreferencesActivity.BookmarksDatabaseStock">Android-bokmerker</string>
   <string name="PreferencesActivity.BookmarksDatabaseInternal">Intern</string>
-  <string-array name="BookmarksDatabaseEntries">
-    <item>@string/PreferencesActivity.BookmarksDatabaseStock</item>
-    <item>@string/PreferencesActivity.BookmarksDatabaseInternal</item>
-  </string-array>
-  <string-array name="BookmarksDatabaseValues">
-    <item>SYSTEM</item>
-    <item>INTERN</item>
-  </string-array>
   <string name="HistoryListActivity.BookmarkAdded">Lagt til som bokmerke.</string>
   <string name="HistoryListActivity.BookmarkRemoved">Fjernet fra bokmerker.</string>
   <string name="HttpAuthenticationDialog.DialogTitle">Logg inn på %1$s - %2$s</string>
@@ -416,7 +318,6 @@
   <string name="ProxySettings.ErrorProxyServerNotReachable">Mellomtjener kunne ikke nås.</string>
   <string name="ProxySettings.ErrorProxyInternetNotReachable">Kan ikke nå nettet gjennom oppgitt mellomtjener.</string>
   <string name="ProxySettings.ProxySettingsEnabled">Mellomlagrings-innstillinger skrudd på og i orden.</string>
-  <string name="AboutActivity.ContributorsText">Zirco-nettleser bidragsytere\n   • LeChuck (mellomlager-innstillinger);\n   • Martin (Rull med volumknapper, Tysk oversettelse);\n   • Isaac L. (Spansk oversettelse);</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Gjenoppretter faner</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">Hvis avkrysset, vil faner bli gjenopprettet når tilgjengelig.</string>
   <!--0.4.3-->

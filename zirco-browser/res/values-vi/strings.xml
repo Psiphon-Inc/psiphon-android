@@ -5,9 +5,7 @@
   <string name="ApplicationDescription">Trình Duyệt Psiphon là một trình duyệt dành cho Android dựa trên Trình Duyệt Zirco.</string>
   <string name="AboutActivity.Title">Giới thiệu</string>
   <string name="AboutActivity.VersionText">Phiên bản:</string>
-  <string name="AboutActivity.UrlTextValue">https://bitbucket.org/psiphon/psiphon-circumvention-system/overview</string>
   <string name="AboutActivity.LicenseText">Giấy phép:</string>
-  <string name="AboutActivity.LicenseTextValue">GPL v3</string>
   <string name="Main.MenuAddBookmark">Thêm dấu trang</string>
   <string name="Main.MenuShowBookmarks">Dấu trang</string>
   <string name="Main.MenuShowHistory">Lịch sử</string>
@@ -80,35 +78,11 @@
   <string name="PreferencesActivity.BarDuration3sec">3 giây</string>
   <string name="PreferencesActivity.BarDuration4sec">4 giây</string>
   <string name="PreferencesActivity.BarDuration5sec">5 giây</string>
-  <string-array name="BarDurationEntries">
-    <item>@string/PreferencesActivity.BarDuration1sec</item>
-    <item>@string/PreferencesActivity.BarDuration2sec</item>
-    <item>@string/PreferencesActivity.BarDuration3sec</item>
-    <item>@string/PreferencesActivity.BarDuration4sec</item>
-    <item>@string/PreferencesActivity.BarDuration5sec</item>
-  </string-array>
-  <string-array name="BarDurationValues">
-    <item>1000</item>
-    <item>2000</item>
-    <item>3000</item>
-    <item>4000</item>
-    <item>5000</item>
-  </string-array>
   <string name="PreferencesActivity.BubblePositionPreferenceTitle">Vị trí bong bóng</string>
   <string name="PreferencesActivity.BubblePositionPreferenceSummary">Vị trí của \"bong bóng\".</string>
   <string name="PreferencesActivity.BubbleRight">Phải</string>
   <string name="PreferencesActivity.BubbleLeft">Trái</string>
   <string name="PreferencesActivity.BubbleBoth">Cả hai</string>
-  <string-array name="BubblePositionEntries">
-    <item>@string/PreferencesActivity.BubbleRight</item>
-    <item>@string/PreferencesActivity.BubbleLeft</item>
-    <item>@string/PreferencesActivity.BubbleBoth</item>
-  </string-array>
-  <string-array name="BubblePositionValues">
-    <item>right</item>
-    <item>left</item>
-    <item>both</item>
-  </string-array>
   <string name="PreferencesActivity.AdBlockerSettingsCategoryTitle">Thiết lập chặn quảng cáo</string>
   <string name="PreferencesActivity.EnableAdBlockerPreferenceTitle">Cho Phép Chặn Quảng Cáo</string>
   <string name="PreferencesActivity.EnableAdBlockerPreferenceSummary">Chức năng chặn quảng cáo sẽ không hoạt động nếu JavaScript chưa được cho phép.</string>
@@ -133,7 +107,6 @@
   <string name="Commons.SDCardErrorNoSDMsg">Không tìm thấy Thẻ SD.</string>
   <string name="Commons.SDCardErrorSDUnavailable">Thẻ SD không khả dụng.</string>
   <string name="Commons.Close">Đóng</string>
-  <string name="DATE_FORMAT_ISO8601">yyyy-MM-dd\'T\'HH:mm:ss.SSS</string>
   <!--0.3.1-->
   <string name="PreferencesActivity.AboutCategoryTitle">Giới thiệu</string>
   <string name="PreferencesActivity.AboutPreferenceTitle">Giới thiệu</string>
@@ -145,16 +118,6 @@
   <string name="PreferencesActivity.DefaultZoomClose">Đóng</string>
   <string name="PreferencesActivity.DefaultZoomMedium">Trung bình</string>
   <string name="PreferencesActivity.DefaultZoomFar">Xa</string>
-  <string-array name="DefaultZoomEntries">
-    <item>@string/PreferencesActivity.DefaultZoomClose</item>
-    <item>@string/PreferencesActivity.DefaultZoomMedium</item>
-    <item>@string/PreferencesActivity.DefaultZoomFar</item>
-  </string-array>
-  <string-array name="DefaultZoomValues">
-    <item>CLOSE</item>
-    <item>MEDIUM</item>
-    <item>FAR</item>
-  </string-array>
   <string name="StartPage.Welcome">Chào mừng bạn!</string>
   <string name="StartPage.Bookmarks">Các dấu trang được sử dụng nhiều nhất</string>
   <string name="StartPage.History">Lịch sử gần đây</string>
@@ -166,11 +129,6 @@
   <string name="PreferencesActivity.HomepageStart">Trang bắt đầu</string>
   <string name="PreferencesActivity.HomepageBlank">Trang trắng</string>
   <string name="PreferencesActivity.HomepageCustom">Trang tùy chỉnh</string>
-  <string-array name="HomepageValues">
-    <item>@string/PreferencesActivity.HomepageStart</item>
-    <item>@string/PreferencesActivity.HomepageBlank</item>
-    <item>@string/PreferencesActivity.HomepageCustom</item>
-  </string-array>
   <!--0.3.3-->
   <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=en&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
   <string name="Constants.SearchUrlWikipedia">http://en.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
@@ -181,11 +139,6 @@
   <string name="PreferencesActivity.SearchUrlGoogle">Google</string>
   <string name="PreferencesActivity.SearchUrlWikipedia">Wikipedia</string>
   <string name="PreferencesActivity.SearchUrlCustom">Tùy chỉnh</string>
-  <string-array name="SearchUrlValues">
-    <item>@string/PreferencesActivity.SearchUrlGoogle</item>
-    <item>@string/PreferencesActivity.SearchUrlWikipedia</item>
-    <item>@string/PreferencesActivity.SearchUrlCustom</item>
-  </string-array>
   <string name="StartPage.Search">Tìm kiếm</string>
   <string name="StartPage.SearchButton">Đi</string>
   <string name="PreferencesActivity.StartPageCustomizationPreferenceTitle">Tùy chỉnh trang bắt đầu</string>
@@ -207,11 +160,6 @@
   <string name="PreferencesActivity.UserAgentDefault">Mặc định</string>
   <string name="PreferencesActivity.UserAgentDesktop">Desktop</string>
   <string name="PreferencesActivity.UserAgentCustom">Tùy chỉnh</string>
-  <string-array name="UserAgentValues">
-    <item>@string/PreferencesActivity.UserAgentDefault</item>
-    <item>@string/PreferencesActivity.UserAgentDesktop</item>
-    <item>@string/PreferencesActivity.UserAgentCustom</item>
-  </string-array>
   <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">Sao chép url liên kết</string>
   <string name="Main.MenuViewImage">Xem hình ảnh</string>
@@ -236,16 +184,6 @@
   <string name="PreferencesActivity.PluginsAlwaysOff">Luôn tắt</string>
   <string name="PreferencesActivity.PluginsOnDemand">Khi có yêu cầu</string>
   <string name="PreferencesActivity.PluginsAlwaysOn">Luôn bật</string>
-  <string-array name="PluginsEntries">
-    <item>@string/PreferencesActivity.PluginsAlwaysOff</item>
-    <item>@string/PreferencesActivity.PluginsOnDemand</item>
-    <item>@string/PreferencesActivity.PluginsAlwaysOn</item>
-  </string-array>
-  <string-array name="PluginsValues">
-    <item>OFF</item>
-    <item>ON_DEMAND</item>
-    <item>ON</item>
-  </string-array>
   <string name="Commons.Continue">Tiếp tục</string>
   <string name="Commons.SslWarning">Cảnh báo an ninh</string>
   <string name="Commons.SslWarningsHeader">Có vấn đề với chứng nhận an ninh đối với trang này.</string>
@@ -271,20 +209,6 @@
   <string name="PreferencesActivity.VolumeKeysActionScroll">Cuộn lên/xuống</string>
   <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">Thay đổi các tab</string>
   <string name="PreferencesActivity.VolumeKeysActionHistory">Trở Lại/Tới</string>
-  <string-array name="VolumeKeysActionEntries">
-    <item>@string/PreferencesActivity.VolumeKeysActionDefault</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionZoom</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionScroll</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionSwitchTabs</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionHistory</item>
-  </string-array>
-  <string-array name="VolumeKeysActionValues">
-    <item>DEFAULT</item>
-    <item>ZOOM</item>
-    <item>SCROLL</item>
-    <item>SWITCH_TABS</item>
-    <item>HISTORY</item>
-  </string-array>
   <!--0.3.7-->
   <string name="Main.ShareChooserTitle">Chia sẻ qua</string>
   <string name="Main.MenuShareLinkUrl">Chia sẻ liên kết</string>
@@ -302,16 +226,6 @@
   <string name="PreferencesActivity.SwitchTabButtons">Các nút</string>
   <string name="PreferencesActivity.SwitchTabFling">Fling</string>
   <string name="PreferencesActivity.SwitchTabBoth">Cả hai</string>
-  <string-array name="SwitchTabsMethodEntries">
-    <item>@string/PreferencesActivity.SwitchTabButtons</item>
-    <item>@string/PreferencesActivity.SwitchTabFling</item>
-    <item>@string/PreferencesActivity.SwitchTabBoth</item>
-  </string-array>
-  <string-array name="SwitchTabsMethodValues">
-    <item>buttons</item>
-    <item>fling</item>
-    <item>both</item>
-  </string-array>
   <!--0.3.9-->
   <string name="HistoryListActivity.Today">Hôm nay</string>
   <string name="HistoryListActivity.Yesterday">Hôm qua</string>
@@ -355,10 +269,6 @@
   <string name="WeaveServerPreferenceActivity.Title">Máy chủ</string>
   <string name="WeaveServerPreferenceActivity.DefaultServer">Máy chủ Firefox Sync</string>
   <string name="WeaveServerPreferenceActivity.CustomServer">Máy chủ tùy chỉnh</string>
-  <string-array name="WeaveServerValues">
-    <item>@string/WeaveServerPreferenceActivity.DefaultServer</item>
-    <item>@string/WeaveServerPreferenceActivity.CustomServer</item>
-  </string-array>
   <string name="Main.FileChooserPrompt">Chọn tập tin để tải lên</string>
   <string name="Commons.HistoryBookmarksExportSDCardConfirmation">Xuất lịch sử và dấu trang</string>
   <string name="Commons.HistoryBookmarksExportSDCardDoneTitle">Xuất hoàn tất</string>
@@ -393,14 +303,6 @@
   <string name="PreferencesActivity.BookmarksDatabaseSummary">Chọn chế độ lưu dấu trang.</string>
   <string name="PreferencesActivity.BookmarksDatabaseStock">Dấu trang Android</string>
   <string name="PreferencesActivity.BookmarksDatabaseInternal">Bên trong</string>
-  <string-array name="BookmarksDatabaseEntries">
-    <item>@string/PreferencesActivity.BookmarksDatabaseStock</item>
-    <item>@string/PreferencesActivity.BookmarksDatabaseInternal</item>
-  </string-array>
-  <string-array name="BookmarksDatabaseValues">
-    <item>STOCK</item>
-    <item>INTERNAL</item>
-  </string-array>
   <string name="HistoryListActivity.BookmarkAdded">Đã thêm vào dấu trang.</string>
   <string name="HistoryListActivity.BookmarkRemoved">Đã xóa khỏi dấu trang.</string>
   <string name="HttpAuthenticationDialog.DialogTitle">Đăng nhập vào %1$s - %2$s</string>
@@ -414,7 +316,6 @@
   <string name="ProxySettings.ErrorProxyServerNotReachable">Không thể kết nối máy chủ proxy.</string>
   <string name="ProxySettings.ErrorProxyInternetNotReachable">Không thể truy cập Web qua máy chủ proxy đã cho.</string>
   <string name="ProxySettings.ProxySettingsEnabled">Đã cho phép thiết lập proxy thành công.</string>
-  <string name="AboutActivity.ContributorsText">Những người đóng góp vào Trình Duyệt Zirco:\n• LeChuck (Thiết lập proxy);\n• Martin (Cuộn bằng các phím âm lương, bản dịch tiếng Đức);\n• Isaac L. (Bản dịch tiếng Tây Ban Nha);</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Khôi phục các tab</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">Nếu được chọn, các tab sẽ được khôi phục khi khả dụng.</string>
   <!--0.4.3-->

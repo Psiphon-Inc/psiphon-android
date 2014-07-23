@@ -22,9 +22,7 @@
 
     <string name="AboutActivity.Title">About</string>
 	<string name="AboutActivity.VersionText">Version:</string>
-	<string name="AboutActivity.UrlTextValue">https://bitbucket.org/psiphon/psiphon-circumvention-system/overview</string>
 	<string name="AboutActivity.LicenseText">License:</string>
-	<string name="AboutActivity.LicenseTextValue">GPL v3</string>
 
     <string name="Main.MenuAddBookmark">Add bookmark</string>
     <string name="Main.MenuShowBookmarks">Bookmarks</string>
@@ -110,20 +108,6 @@
     <string name="PreferencesActivity.BarDuration3sec">3 seconds</string>
     <string name="PreferencesActivity.BarDuration4sec">4 seconds</string>
     <string name="PreferencesActivity.BarDuration5sec">5 seconds</string>
-    <string-array name="BarDurationEntries">
-		<item>@string/PreferencesActivity.BarDuration1sec</item>
-		<item>@string/PreferencesActivity.BarDuration2sec</item>
-		<item>@string/PreferencesActivity.BarDuration3sec</item>
-		<item>@string/PreferencesActivity.BarDuration4sec</item>
-		<item>@string/PreferencesActivity.BarDuration5sec</item>
-	</string-array>
-	<string-array name="BarDurationValues">
-		<item>1000</item>
-		<item>2000</item>
-		<item>3000</item>
-		<item>4000</item>
-		<item>5000</item>
-	</string-array>
 
 	<string name="PreferencesActivity.BubblePositionPreferenceTitle">Bubble position</string>
     <string name="PreferencesActivity.BubblePositionPreferenceSummary">Position of the "bubble".</string>
@@ -131,16 +115,6 @@
     <string name="PreferencesActivity.BubbleRight">Right</string>
     <string name="PreferencesActivity.BubbleLeft">Left</string>
     <string name="PreferencesActivity.BubbleBoth">Both</string>
-    <string-array name="BubblePositionEntries">
-		<item>@string/PreferencesActivity.BubbleRight</item>
-		<item>@string/PreferencesActivity.BubbleLeft</item>
-		<item>@string/PreferencesActivity.BubbleBoth</item>
-	</string-array>
-    <string-array name="BubblePositionValues">
-		<item>right</item>
-		<item>left</item>
-		<item>both</item>
-	</string-array>
 
 	<string name="PreferencesActivity.AdBlockerSettingsCategoryTitle">Ad-blocker settings</string>
 	<string name="PreferencesActivity.EnableAdBlockerPreferenceTitle">Enable Ad-blocker</string>
@@ -168,14 +142,10 @@
     <string name="Commons.SDCardErrorSDUnavailable">SD Card is not available.</string>
     <string name="Commons.Close">Close</string>
 
-    <string name="DATE_FORMAT_ISO8601">yyyy-MM-dd\'T\'HH:mm:ss.SSS</string>
-
-    <!-- 0.3.1 -->
     <string name="PreferencesActivity.AboutCategoryTitle">About</string>
     <string name="PreferencesActivity.AboutPreferenceTitle">About</string>
     <string name="PreferencesActivity.AboutPreferenceSummary">Information about this application.</string>
 
-    <!-- 0.3.2 -->
     <string name="BookmarksListActivity.MostUsedSortMode">Most used</string>
     <string name="PreferencesActivity.DefaultZoomPreferenceTitle">Default zoom level</string>
     <string name="PreferencesActivity.DefaultZoomPreferenceSummary">Set the default zoom level.</string>
@@ -183,17 +153,6 @@
     <string name="PreferencesActivity.DefaultZoomClose">Close</string>
     <string name="PreferencesActivity.DefaultZoomMedium">Medium</string>
     <string name="PreferencesActivity.DefaultZoomFar">Far</string>
-
-    <string-array name="DefaultZoomEntries">
-		<item>@string/PreferencesActivity.DefaultZoomClose</item>
-		<item>@string/PreferencesActivity.DefaultZoomMedium</item>
-		<item>@string/PreferencesActivity.DefaultZoomFar</item>
-	</string-array>
-    <string-array name="DefaultZoomValues">
-		<item>CLOSE</item>
-		<item>MEDIUM</item>
-		<item>FAR</item>
-	</string-array>
 
 	<string name="StartPage.Welcome">Welcome!</string>
 	<string name="StartPage.Bookmarks">Most used bookmarks</string>
@@ -210,13 +169,6 @@
     <string name="PreferencesActivity.HomepageBlank">Blank page</string>
     <string name="PreferencesActivity.HomepageCustom">Custom page</string>
 
-    <string-array name="HomepageValues">
-        <item>@string/PreferencesActivity.HomepageStart</item>
-        <item>@string/PreferencesActivity.HomepageBlank</item>
-        <item>@string/PreferencesActivity.HomepageCustom</item>
-    </string-array>
-
-    <!-- 0.3.3 -->
     <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=en&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
     <string name="Constants.SearchUrlWikipedia">http://en.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
 
@@ -229,12 +181,6 @@
     <string name="PreferencesActivity.SearchUrlGoogle">Google</string>
     <string name="PreferencesActivity.SearchUrlWikipedia">Wikipedia</string>
     <string name="PreferencesActivity.SearchUrlCustom">Custom</string>
-
-    <string-array name="SearchUrlValues">
-        <item>@string/PreferencesActivity.SearchUrlGoogle</item>
-        <item>@string/PreferencesActivity.SearchUrlWikipedia</item>
-        <item>@string/PreferencesActivity.SearchUrlCustom</item>
-    </string-array>
 
     <string name="StartPage.Search">Search</string>
     <string name="StartPage.SearchButton">Go</string>
@@ -262,13 +208,6 @@
     <string name="PreferencesActivity.UserAgentDesktop">Desktop</string>
     <string name="PreferencesActivity.UserAgentCustom">Custom</string>
 
-    <string-array name="UserAgentValues">
-        <item>@string/PreferencesActivity.UserAgentDefault</item>
-        <item>@string/PreferencesActivity.UserAgentDesktop</item>
-        <item>@string/PreferencesActivity.UserAgentCustom</item>
-    </string-array>
-
-    <!-- 0.3.4 -->
     <string name="Main.MenuCopyLinkUrl">Copy link url</string>
     <string name="Main.MenuViewImage">View image</string>
     <string name="Main.MenuCopyImageUrl">Copy image url</string>
@@ -296,23 +235,11 @@
     <string name="PreferencesActivity.RestartDialogTitle">Restart required</string>
     <string name="PreferencesActivity.RestartDialogMessage">This change will not take effect until the application restart. Do you want to do it now?</string>
 
-    <!-- 0.3.5 -->
     <string name="PreferencesActivity.EnablePluginsTitle">Enable plug-ins</string>
 
     <string name="PreferencesActivity.PluginsAlwaysOff">Always off</string>
     <string name="PreferencesActivity.PluginsOnDemand">On demand</string>
     <string name="PreferencesActivity.PluginsAlwaysOn">Always on</string>
-
-    <string-array name="PluginsEntries">
-		<item>@string/PreferencesActivity.PluginsAlwaysOff</item>
-		<item>@string/PreferencesActivity.PluginsOnDemand</item>
-		<item>@string/PreferencesActivity.PluginsAlwaysOn</item>
-	</string-array>
-    <string-array name="PluginsValues">
-		<item>OFF</item>
-		<item>ON_DEMAND</item>
-		<item>ON</item>
-	</string-array>
 
 	<string name="Commons.Continue">Continue</string>
 
@@ -336,7 +263,6 @@
     <string name="Commons.Clear">Clear</string>
     <string name="Commons.Delete">Delete</string>
 
-    <!-- 0.3.6 -->
     <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceTitle">Volume keys behaviour</string>
     <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceSummary">Choose the volume keys actions.</string>
 
@@ -346,30 +272,12 @@
     <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">Switch tabs</string>
     <string name="PreferencesActivity.VolumeKeysActionHistory">Back/Forward</string>
 
-    <string-array name="VolumeKeysActionEntries">
-		<item>@string/PreferencesActivity.VolumeKeysActionDefault</item>
-		<item>@string/PreferencesActivity.VolumeKeysActionZoom</item>
-		<item>@string/PreferencesActivity.VolumeKeysActionScroll</item>
-		<item>@string/PreferencesActivity.VolumeKeysActionSwitchTabs</item>
-		<item>@string/PreferencesActivity.VolumeKeysActionHistory</item>
-	</string-array>
-
-    <string-array name="VolumeKeysActionValues">
-		<item>DEFAULT</item>
-		<item>ZOOM</item>
-		<item>SCROLL</item>
-		<item>SWITCH_TABS</item>
-		<item>HISTORY</item>
-	</string-array>
-
-	<!-- 0.3.7 -->
 	<string name="Main.ShareChooserTitle">Share via</string>
 
 	<string name="Main.MenuShareLinkUrl">Share link</string>
 	<string name="Main.MenuShareImageUrl">Share image</string>
 	<string name="Main.MenuShareEmailUrl">Share email</string>
 
-	<!-- 0.3.8 -->
 	<string name="PreferencesActivity.HideTitleBarPreferenceTitle">Hide title bars</string>
     <string name="PreferencesActivity.HideTitleBarPreferenceSummary">If checked, windows title bars will not be displayed (need application restart).</string>
 
@@ -385,18 +293,7 @@
     <string name="PreferencesActivity.SwitchTabButtons">Buttons</string>
     <string name="PreferencesActivity.SwitchTabFling">Fling</string>
     <string name="PreferencesActivity.SwitchTabBoth">Both</string>
-    <string-array name="SwitchTabsMethodEntries">
-		<item>@string/PreferencesActivity.SwitchTabButtons</item>
-		<item>@string/PreferencesActivity.SwitchTabFling</item>
-		<item>@string/PreferencesActivity.SwitchTabBoth</item>
-	</string-array>
-    <string-array name="SwitchTabsMethodValues">
-		<item>buttons</item>
-		<item>fling</item>
-		<item>both</item>
-	</string-array>
 
-	<!-- 0.3.9 -->
 	<string name="HistoryListActivity.Today">Today</string>
     <string name="HistoryListActivity.Yesterday">Yesterday</string>
     <string name="HistoryListActivity.LastSevenDays">Last 7 days</string>
@@ -410,7 +307,6 @@
 
     <string name="AboutActivity.OtherLicenseText">This application includes code from the Zirco Browser project (https://code.google.com/p/zirco-browser/), licensed under GPLv3. It also includes code from the GreenDroid project (https://github.com/cyrilmottier/GreenDroid), and from the Shaman project (https://github.com/emergentdotorg/shaman), both licensed under the Apache license, version 2.</string>
 
-    <!-- 0.4.0 -->
     <string name="PreferencesActivity.WeavePreferenceTitle">Firefox bookmarks synchronization</string>
     <string name="PreferencesActivity.WeavePreferenceSummary">Manage the settings of the bookmarks synchronization with Firefox Sync.</string>
     <string name="PreferencesActivity.UseWeavePreferenceTitle">Use Firefox Sync</string>
@@ -447,11 +343,6 @@
     <string name="WeaveServerPreferenceActivity.Title">Server</string>
     <string name="WeaveServerPreferenceActivity.DefaultServer">Firefox Sync server</string>
     <string name="WeaveServerPreferenceActivity.CustomServer">Custom server</string>
-
-    <string-array name="WeaveServerValues">
-        <item>@string/WeaveServerPreferenceActivity.DefaultServer</item>
-        <item>@string/WeaveServerPreferenceActivity.CustomServer</item>
-    </string-array>
 
     <string name="Main.FileChooserPrompt">Choose file for upload</string>
 
@@ -491,7 +382,6 @@
     <string name="QuickAction.Find">Find on page</string>
     <string name="SearchDialog.Hint">Find on page</string>
 
-    <!-- 0.4.2 -->
     <string name="PreferencesActivity.AdvancedCategoryTitle">Advanced</string>
 
     <string name="PreferencesActivity.BookmarksDatabaseTitle">Bookmarks storage</string>
@@ -499,15 +389,6 @@
 
     <string name="PreferencesActivity.BookmarksDatabaseStock">Android bookmarks</string>
     <string name="PreferencesActivity.BookmarksDatabaseInternal">Internal</string>
-
-    <string-array name="BookmarksDatabaseEntries">
-		<item>@string/PreferencesActivity.BookmarksDatabaseStock</item>
-		<item>@string/PreferencesActivity.BookmarksDatabaseInternal</item>
-	</string-array>
-    <string-array name="BookmarksDatabaseValues">
-		<item>STOCK</item>
-		<item>INTERNAL</item>
-	</string-array>
 
     <string name="HistoryListActivity.BookmarkAdded">Added to bookmarks.</string>
     <string name="HistoryListActivity.BookmarkRemoved">Removed from bookmarks.</string>
@@ -526,12 +407,9 @@
     <string name="ProxySettings.ErrorProxyInternetNotReachable">Cannot access the Web through the specified proxy server.</string>
     <string name="ProxySettings.ProxySettingsEnabled">Proxy settings succesfully enabled.</string>
 
-    <string name="AboutActivity.ContributorsText">Zirco Browser contributors:\n   • LeChuck (Proxy settings);\n   • Martin (Scroll with volume keys, German translation);\n   • Isaac L. (Spanish translation);</string>
-
     <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Restore tabs</string>
     <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">If checked, tabs will be restored when available.</string>
 
-    <!-- 0.4.3 -->
     <string name="VideoLoading">Loading video\u2026</string>
     <string name="PreferencesActivity.DesktopViewCategoryTitle">Desktop view settings</string>
     <string name="PreferencesActivity.DesktopViewListPreferenceTitle">Desktop mode list</string>
