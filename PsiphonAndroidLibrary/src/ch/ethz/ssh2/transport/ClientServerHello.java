@@ -63,7 +63,7 @@ public class ClientServerHello
 		bo.write(StringEncoder.GetBytes(client_line + "\r\n"));
 		bo.flush();
 
-		byte[] serverVersion = new byte[Math.max(512, ObfuscatedSSH.OBFUSCATE_MAX_PADDING + 2)];
+		byte[] serverVersion = new byte[Math.max(512, ObfuscatedSSH.OBFUSCATE_MAX_PADDING + 2)]; // + 2 for CRLF terminator
 		
         for (int i = 0; i < 50; i++)
 		{
