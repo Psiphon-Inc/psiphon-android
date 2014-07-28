@@ -1852,8 +1852,11 @@ public class ServerInterface
                         savedServerEntriesLimitMemorySize /= 2;
                     }
                 }
-                file = this.ownerContext.openFileOutput(PsiphonConstants.SERVER_ENTRY_FILENAME, Context.MODE_PRIVATE);
-                file.write(fileContents);
+                if (fileContents != null)
+                {
+                    file = this.ownerContext.openFileOutput(PsiphonConstants.SERVER_ENTRY_FILENAME, Context.MODE_PRIVATE);
+                    file.write(fileContents);
+                }
             }
             catch (JSONException e)
             {
