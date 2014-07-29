@@ -107,11 +107,9 @@
   <string name="Commons.SDCardErrorNoSDMsg">SD карта не найдена.</string>
   <string name="Commons.SDCardErrorSDUnavailable">SD карта недоступна.</string>
   <string name="Commons.Close">Закрыть</string>
-  <!--0.3.1-->
   <string name="PreferencesActivity.AboutCategoryTitle">О приложении</string>
   <string name="PreferencesActivity.AboutPreferenceTitle">О приложении</string>
   <string name="PreferencesActivity.AboutPreferenceSummary">Информация о приложении.</string>
-  <!--0.3.2-->
   <string name="BookmarksListActivity.MostUsedSortMode">По популярности</string>
   <string name="PreferencesActivity.DefaultZoomPreferenceTitle">Масштабирование</string>
   <string name="PreferencesActivity.DefaultZoomPreferenceSummary">Установить уровень масштабирования по умолчанию.</string>
@@ -129,7 +127,6 @@
   <string name="PreferencesActivity.HomepageStart">Стартовая страница</string>
   <string name="PreferencesActivity.HomepageBlank">Пустая страница</string>
   <string name="PreferencesActivity.HomepageCustom">Пользовательская страница</string>
-  <!--0.3.3-->
   <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=en&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
   <string name="Constants.SearchUrlWikipedia">http://en.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
   <string name="PreferencesActivity.SearchUrlPreferenceTitle">URL поисковой системы</string>
@@ -160,7 +157,6 @@
   <string name="PreferencesActivity.UserAgentDefault">По умолчанию</string>
   <string name="PreferencesActivity.UserAgentDesktop">Десктоп</string>
   <string name="PreferencesActivity.UserAgentCustom">Пользовательский</string>
-  <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">Скопировать линк</string>
   <string name="Main.MenuViewImage">Показать картинку</string>
   <string name="Main.MenuDownloadImage">Скачать картинку</string>
@@ -179,7 +175,6 @@
   <string name="Main.MenuExit">Закрыть</string>
   <string name="PreferencesActivity.RestartDialogTitle"> Перезапуск</string>
   <string name="PreferencesActivity.RestartDialogMessage">Эти изменения не вступят в силу до перезапуска приложения. Вы хотите сделать это сейчас?</string>
-  <!--0.3.5-->
   <string name="PreferencesActivity.EnablePluginsTitle">Разрешить плагины</string>
   <string name="PreferencesActivity.PluginsAlwaysOff">Нет</string>
   <string name="PreferencesActivity.PluginsOnDemand">По требованию</string>
@@ -201,7 +196,6 @@
   <string name="Commons.Add">Добавить</string>
   <string name="Commons.Clear">Очистить</string>
   <string name="Commons.Delete">Удалить</string>
-  <!--0.3.6-->
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceTitle">Настройки регулятора громкости</string>
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceSummary">Выбор настроек поведения кнопок громкости</string>
   <string name="PreferencesActivity.VolumeKeysActionDefault">По умолчанию</string>
@@ -209,12 +203,10 @@
   <string name="PreferencesActivity.VolumeKeysActionScroll">Прокрутка вниз/вверх</string>
   <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">Переключать вкладки</string>
   <string name="PreferencesActivity.VolumeKeysActionHistory">Вперед/Назад</string>
-  <!--0.3.7-->
   <string name="Main.ShareChooserTitle">Способ отправки</string>
   <string name="Main.MenuShareLinkUrl">Отправить линк</string>
   <string name="Main.MenuShareImageUrl">Отправить картинку</string>
   <string name="Main.MenuShareEmailUrl">Оправить адрес эл. почты</string>
-  <!--0.3.8-->
   <string name="PreferencesActivity.HideTitleBarPreferenceTitle">Спрятать заголовки окон</string>
   <string name="PreferencesActivity.HideTitleBarPreferenceSummary">Не показывать заголовки окон (требует перезапуска).</string>
   <string name="PreferencesActivity.UseWideViewPortPreferenceTitle">Широкоформатный просмотр</string>
@@ -226,7 +218,6 @@
   <string name="PreferencesActivity.SwitchTabButtons">Кнопкой</string>
   <string name="PreferencesActivity.SwitchTabFling">Щелчком</string>
   <string name="PreferencesActivity.SwitchTabBoth">Оба метода</string>
-  <!--0.3.9-->
   <string name="HistoryListActivity.Today">Сегодня</string>
   <string name="HistoryListActivity.Yesterday">Вчера</string>
   <string name="HistoryListActivity.LastSevenDays">За последнюю неделю</string>
@@ -236,7 +227,6 @@
   <string name="QuickAction.Share">Отправить</string>
   <string name="QuickAction.SelectText">Выделить текст</string>
   <string name="QuickAction.MobileView">Мобильный просмотр</string>
-  <!--0.4.0-->
   <string name="PreferencesActivity.WeavePreferenceTitle">Синхронизация закладок Firefox</string>
   <string name="PreferencesActivity.WeavePreferenceSummary">Настройки синхронизации закладок с сервисом Firefox Sync.</string>
   <string name="PreferencesActivity.UseWeavePreferenceTitle">Использовать Firefox Sync</string>
@@ -297,7 +287,6 @@
   <string name="DownloadListActivity.RemoveCompletedDownloads">Убрать завершенные закачки</string>
   <string name="QuickAction.Find">Найти на странице</string>
   <string name="SearchDialog.Hint">Найти на странице</string>
-  <!--0.4.2-->
   <string name="PreferencesActivity.AdvancedCategoryTitle">Продвинутые настройки</string>
   <string name="PreferencesActivity.BookmarksDatabaseTitle">Хранение закладок</string>
   <string name="PreferencesActivity.BookmarksDatabaseSummary">Выберите метод хранения закладок.</string>
@@ -318,7 +307,6 @@
   <string name="ProxySettings.ProxySettingsEnabled">Настройки прокси успешно включены.</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Восстановить вкладки</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">Восстанавливать вкладки при следующем запуске приложения</string>
-  <!--0.4.3-->
   <string name="VideoLoading">Загрузка видео\u2026</string>
   <string name="PreferencesActivity.DesktopViewCategoryTitle">Настройки полноформатного просмотра</string>
   <string name="PreferencesActivity.DesktopViewListPreferenceTitle">Список сайтов загружаемых в режиме десктоп</string>

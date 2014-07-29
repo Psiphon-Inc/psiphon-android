@@ -142,6 +142,4 @@
   <string name="run_polipo_failed">Kjøring av Polipo feilet: %s</string>
   <string name="wdm_force_iptables_toggle">Påtving tunnel-over-hele-fjøla -modus ved bruk av superbrukerrettigheter.</string>
   <string name="http_prefix_toggle">Masker som HTTP</string>
-  <string name="meek_error">Meek-feil: %s</string>
-  <string name="meek_http_request_error">Feil ved Meek HTTP-forespørsel: %d</string>
 </resources>

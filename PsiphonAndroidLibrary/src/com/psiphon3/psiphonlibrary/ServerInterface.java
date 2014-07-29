@@ -274,6 +274,14 @@ public class ServerInterface
                 MyLog.w(R.string.ServerInterface_FailedToParseStoredServerEntries, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 // skip loading persistent server entries
             }
+            catch (OutOfMemoryError e)
+            {
+                // Some mature client installs have so many server entries they cannot load them without
+                // hitting out-of-memory, so they will not benefit from the MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE
+                // limit added to saveServerEntries(). In this case, we simply ignore the saved list. The client
+                // will proceed with the embedded list only, and going forward the MEMORY_SIZE limit will be
+                // enforced.
+            }
         }
 
         try
@@ -1795,39 +1803,60 @@ public class ServerInterface
         }
     }
 
-    private static final long MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE = 2*1024*1024; // 2MB
+    private static final long MAX_SAVED_SERVER_ENTRIES_LIMIT_MEMORY_SIZE = 4*1024*1024; // 4MB
     
     private synchronized void saveServerEntries()
     {
         synchronized(PsiphonData.getPsiphonData().serverEntryFileLock)
         {
+            FileOutputStream file = null;
             try
             {
-                FileOutputStream file;
-                file = this.ownerContext.openFileOutput(PsiphonConstants.SERVER_ENTRY_FILENAME, Context.MODE_PRIVATE);
-                JSONObject obj = new JSONObject();
-                JSONArray array = new JSONArray();
-                long serializedServerEntrySize = 0;
-                for (int i = 0; i < this.serverEntries.size(); i++)
+                byte[] fileContents = null;
+                long savedServerEntriesLimitMemorySize = MAX_SAVED_SERVER_ENTRIES_LIMIT_MEMORY_SIZE;
+                while (this.serverEntries.size() > 0 &&
+                        savedServerEntriesLimitMemorySize >= this.serverEntries.get(0).encodedEntry.length())
                 {
-                    ServerEntry serverEntry = this.serverEntries.get(i);
-                    if (serializedServerEntrySize > 0 &&
-                            serializedServerEntrySize + serverEntry.encodedEntry.length() > MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE)
+                    try
                     {
-                        // Enforce MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE:
-                        // Don't add this entry when there's already at least one entry (serializedServerEntrySize > 0) and
-                        // adding this one will exceed the memory size limit (serializedServerEntrySize + serverEntry.encodedEntry.length() > MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE)
-                        //
-                        // NOTE: side-effect! we truncate this.serverEntries to match what's serialized                        
-                        this.serverEntries.subList(i, this.serverEntries.size()).clear();
+                        JSONObject obj = new JSONObject();
+                        JSONArray array = new JSONArray();
+                        long serializedServerEntrySize = 0;
+                        for (int i = 0; i < this.serverEntries.size(); i++)
+                        {
+                            ServerEntry serverEntry = this.serverEntries.get(i);
+                            if (serializedServerEntrySize > 0 &&
+                                    serializedServerEntrySize + serverEntry.encodedEntry.length() > savedServerEntriesLimitMemorySize)
+                            {
+                                // Enforce MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE:
+                                // Don't add this entry when there's already at least one entry (serializedServerEntrySize > 0) and
+                                // adding this one will exceed the memory size limit (serializedServerEntrySize + serverEntry.encodedEntry.length() > MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE)
+                                //
+                                // NOTE: side-effect! we truncate this.serverEntries to match what's serialized                        
+                                this.serverEntries.subList(i, this.serverEntries.size()).clear();
+                                break;
+                            }
+                            array.put(serverEntry.encodedEntry);
+                            serializedServerEntrySize += serverEntry.encodedEntry.length();
+                        }
+                        obj.put("serverEntries", array);
+                        fileContents = obj.toString().getBytes();
                         break;
                     }
-                    array.put(serverEntry.encodedEntry);
-                    serializedServerEntrySize += serverEntry.encodedEntry.length();
+                    catch (OutOfMemoryError e)
+                    {
+                        // Try again, with half the memory limit. This is to mitigate crashes we've seen
+                        // reported in production where the MAX_SAVED_SERVER_ENTRIES_LIMIT_MEMORY_SIZE limit
+                        // is not low enough.
+                        fileContents = null;
+                        savedServerEntriesLimitMemorySize /= 2;
+                    }
                 }
-                obj.put("serverEntries", array);
-                file.write(obj.toString().getBytes());
-                file.close();
+                if (fileContents != null)
+                {
+                    file = this.ownerContext.openFileOutput(PsiphonConstants.SERVER_ENTRY_FILENAME, Context.MODE_PRIVATE);
+                    file.write(fileContents);
+                }
             }
             catch (JSONException e)
             {
@@ -1838,6 +1867,16 @@ public class ServerInterface
             {
                 MyLog.w(R.string.ServerInterface_FailedToStoreServerEntries, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 // Proceed, even if file saving fails
+            }
+            finally
+            {
+                if (file != null)
+                {
+                    try
+                    {
+                        file.close();
+                    } catch (IOException e) {}
+                }
             }
         }
     }

@@ -107,12 +107,9 @@
   <string name="Commons.SDCardErrorNoSDMsg">SD Kart bulunamadı.</string>
   <string name="Commons.SDCardErrorSDUnavailable">SD Kart kullanılabilir değil.</string>
   <string name="Commons.Close">Kapat</string>
-  <string name="DATE_FORMAT_ISO8601">yyyy-MM-dd\'T\'HH:mm:ss.SSS</string>
-  <!--0.3.1-->
   <string name="PreferencesActivity.AboutCategoryTitle">Hakkında</string>
   <string name="PreferencesActivity.AboutPreferenceTitle">Hakkında</string>
   <string name="PreferencesActivity.AboutPreferenceSummary">Bu uygulama hakkında bilgi.</string>
-  <!--0.3.2-->
   <string name="BookmarksListActivity.MostUsedSortMode">En sık kullanılan</string>
   <string name="PreferencesActivity.DefaultZoomPreferenceTitle">Öntanımlı yakınlaştırma seviyesi</string>
   <string name="PreferencesActivity.DefaultZoomPreferenceSummary">Öntanımlı yakınlaştırma seviyesini ayarla.</string>
@@ -130,7 +127,6 @@
   <string name="PreferencesActivity.HomepageStart">Başlangıç sayfası</string>
   <string name="PreferencesActivity.HomepageBlank">Boş sayfa</string>
   <string name="PreferencesActivity.HomepageCustom">Özel sayfa</string>
-  <!--0.3.3-->
   <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=tr&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
   <string name="Constants.SearchUrlWikipedia">http://tr.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
   <string name="PreferencesActivity.SearchUrlPreferenceTitle">Arama adresi</string>
@@ -161,7 +157,6 @@
   <string name="PreferencesActivity.UserAgentDefault">Öntanımlı</string>
   <string name="PreferencesActivity.UserAgentDesktop">Masaüstü</string>
   <string name="PreferencesActivity.UserAgentCustom">Özel</string>
-  <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">Bağlantı adresini kopyala</string>
   <string name="Main.MenuViewImage">Resme bak</string>
   <string name="Main.MenuCopyImageUrl">Resim adresini kopyala</string>
@@ -181,7 +176,6 @@
   <string name="Main.MenuExit">Çık</string>
   <string name="PreferencesActivity.RestartDialogTitle">Yeniden başlatma gerekli</string>
   <string name="PreferencesActivity.RestartDialogMessage">Bu değişiklik uygulama yeniden başlatana kadar etkili olmayacak. Şimdi yapmak ister misiniz?</string>
-  <!--0.3.5-->
   <string name="PreferencesActivity.EnablePluginsTitle">Eklentileri etkinleştir</string>
   <string name="PreferencesActivity.PluginsAlwaysOff">Her zaman kapalı</string>
   <string name="PreferencesActivity.PluginsOnDemand">İsteğe göre</string>
@@ -203,7 +197,6 @@
   <string name="Commons.Add">Ekle</string>
   <string name="Commons.Clear">Temizle</string>
   <string name="Commons.Delete">Sil</string>
-  <!--0.3.6-->
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceTitle">Ses tuşları davranışı</string>
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceSummary">Ses tuşu eylemlerini seç.</string>
   <string name="PreferencesActivity.VolumeKeysActionDefault">Öntanımlı davranış</string>
@@ -211,12 +204,10 @@
   <string name="PreferencesActivity.VolumeKeysActionScroll">Yukarı/Aşağı kaydır</string>
   <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">Sekmeleri değiştir</string>
   <string name="PreferencesActivity.VolumeKeysActionHistory">Geri/İleri</string>
-  <!--0.3.7-->
   <string name="Main.ShareChooserTitle">Şununla paylaş</string>
   <string name="Main.MenuShareLinkUrl">Bağlantıyı paylaş</string>
   <string name="Main.MenuShareImageUrl">Resmi paylaş</string>
   <string name="Main.MenuShareEmailUrl">E-postayı paylaş</string>
-  <!--0.3.8-->
   <string name="PreferencesActivity.HideTitleBarPreferenceTitle">Başlık çubuklarını gizle</string>
   <string name="PreferencesActivity.HideTitleBarPreferenceSummary">İşaretlendiğinde, pencere başlık çubukları görüntülenmeyecek (uygulamanın yeniden başlatılmasını gerektirir).</string>
   <string name="PreferencesActivity.UseWideViewPortPreferenceTitle">Geniş görünüm penceresi kullan</string>
@@ -228,7 +219,6 @@
   <string name="PreferencesActivity.SwitchTabButtons">Düğmeler</string>
   <string name="PreferencesActivity.SwitchTabFling">Kaydırma</string>
   <string name="PreferencesActivity.SwitchTabBoth">İkisi de</string>
-  <!--0.3.9-->
   <string name="HistoryListActivity.Today">Bugün</string>
   <string name="HistoryListActivity.Yesterday">Dü</string>
   <string name="HistoryListActivity.LastSevenDays">Son 7 gün</string>
@@ -239,7 +229,6 @@
   <string name="QuickAction.SelectText">Metni seç</string>
   <string name="QuickAction.MobileView">Mobil görünüm</string>
   <string name="AboutActivity.OtherLicenseText">Bu uygulama, GPLv3 altında lisanslanmış Zirco Tarayıcı projesinden (https://code.google.com/p/zirco-browser/) kodlar barındırmaktadır. Ayrıca her biri Apache lisansı sürüm 2 altında lisanslanmış GreenDroid (https://github.com/cyrilmottier/GreenDroid) ve Shaman (https://github.com/emergentdotorg/shaman) projelerinden de kod içerir.</string>
-  <!--0.4.0-->
   <string name="PreferencesActivity.WeavePreferenceTitle">Firefox yer imi eşitleme</string>
   <string name="PreferencesActivity.WeavePreferenceSummary">Firefox Sync ile yer imi eşitleme ayarlarını yönet.</string>
   <string name="PreferencesActivity.UseWeavePreferenceTitle">Firefox Sync Kullan</string>
@@ -300,7 +289,6 @@
   <string name="DownloadListActivity.RemoveCompletedDownloads">Tamamlanmış indirmeleri kaldır</string>
   <string name="QuickAction.Find">Sayfada bul</string>
   <string name="SearchDialog.Hint">Sayfada bul</string>
-  <!--0.4.2-->
   <string name="PreferencesActivity.AdvancedCategoryTitle">Gelişmiş</string>
   <string name="PreferencesActivity.BookmarksDatabaseTitle">Yer imleri depolaması</string>
   <string name="PreferencesActivity.BookmarksDatabaseSummary">Yer imleri depolama kipini seçin.</string>
@@ -321,7 +309,6 @@
   <string name="ProxySettings.ProxySettingsEnabled">Vekil sunucu ayarları başarıyla etkinleştirildi</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Sekmeleri geri yükle</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">İşaretlendiğinde, mümkün olduğu zaman sekmeler geri yüklenecek.</string>
-  <!--0.4.3-->
   <string name="VideoLoading">Video yükleniyor\u2026</string>
   <string name="PreferencesActivity.DesktopViewCategoryTitle">Masaüstü görünümü ayarları</string>
   <string name="PreferencesActivity.DesktopViewListPreferenceTitle">Masaüstü kipi listesi</string>

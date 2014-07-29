@@ -132,10 +132,10 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             return;
         }
 
-        m_parentService.startForeground(R.string.psiphon_service_notification_id, this.createNotification());
+        m_parentService.startForeground(R.string.psiphon_service_notification_id, this.createNotification(false));
     }
 
-    private Notification createNotification()
+    private Notification createNotification(boolean alert)
     {
         if (m_parentService == null)
         {
@@ -204,6 +204,11 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                         iconID,
                         null,
                         System.currentTimeMillis());
+        
+        if (alert)
+        {
+            notification.defaults |= Notification.DEFAULT_VIBRATE | Notification.DEFAULT_SOUND;
+        }
 
         notification.setLatestEventInfo(
             m_parentService,
@@ -237,6 +242,8 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
     private synchronized void setState(State newState)
     {
+        boolean alert = (newState != m_state);
+
         m_state = newState;
 
         if (!this.m_destroyed && m_parentService != null)
@@ -248,7 +255,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             {
                 notificationManager.notify(
                         R.string.psiphon_service_notification_id,
-                        createNotification());
+                        createNotification(alert));
             }
         }
     }

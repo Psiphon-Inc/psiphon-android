@@ -107,11 +107,9 @@
   <string name="Commons.SDCardErrorNoSDMsg">SD-kort ikke funnet</string>
   <string name="Commons.SDCardErrorSDUnavailable">SD-kort ikke tilgjengelig</string>
   <string name="Commons.Close">Lukk</string>
-  <!--0.3.1-->
   <string name="PreferencesActivity.AboutCategoryTitle">Om</string>
   <string name="PreferencesActivity.AboutPreferenceTitle">Om</string>
   <string name="PreferencesActivity.AboutPreferenceSummary">Informasjon om dette programmet</string>
-  <!--0.3.2-->
   <string name="BookmarksListActivity.MostUsedSortMode">Flittigst brukt</string>
   <string name="PreferencesActivity.DefaultZoomPreferenceTitle">Standard skaleringsnivå</string>
   <string name="PreferencesActivity.DefaultZoomPreferenceSummary">Velg standard skaleringsnivå</string>
@@ -129,7 +127,6 @@
   <string name="PreferencesActivity.HomepageStart">Startside</string>
   <string name="PreferencesActivity.HomepageBlank">Blank side</string>
   <string name="PreferencesActivity.HomepageCustom">Tilpasset side</string>
-  <!--0.3.3-->
   <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=en&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
   <string name="Constants.SearchUrlWikipedia">http://en.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
   <string name="PreferencesActivity.SearchUrlPreferenceTitle">Søk etter nettadresse</string>
@@ -160,7 +157,6 @@
   <string name="PreferencesActivity.UserAgentDefault">Standard</string>
   <string name="PreferencesActivity.UserAgentDesktop">Skrivebord</string>
   <string name="PreferencesActivity.UserAgentCustom">Tilpasset</string>
-  <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">Kopier lenkens nettaddresse</string>
   <string name="Main.MenuViewImage">Se bilde</string>
   <string name="Main.MenuCopyImageUrl">Kopier bildets nettadresse </string>
@@ -180,7 +176,6 @@
   <string name="Main.MenuExit">Avslutt</string>
   <string name="PreferencesActivity.RestartDialogTitle">Omstart påkrevt</string>
   <string name="PreferencesActivity.RestartDialogMessage">Denne endringen trår ikke i kraft før programmet starter på nytt. Vil du kjøre omstart nå?</string>
-  <!--0.3.5-->
   <string name="PreferencesActivity.EnablePluginsTitle">Skru på nettleser-tillegg</string>
   <string name="PreferencesActivity.PluginsAlwaysOff">Alltid av</string>
   <string name="PreferencesActivity.PluginsOnDemand">Ved behov</string>
@@ -202,7 +197,6 @@
   <string name="Commons.Add">Legg til</string>
   <string name="Commons.Clear">Slett</string>
   <string name="Commons.Delete">Slett</string>
-  <!--0.3.6-->
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceTitle">Egenskaper for volumtaster</string>
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceSummary">Velg volumtast-funksjoner</string>
   <string name="PreferencesActivity.VolumeKeysActionDefault">Vanlig funksjon</string>
@@ -210,12 +204,10 @@
   <string name="PreferencesActivity.VolumeKeysActionScroll">Rull opp/ned</string>
   <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">Bytt faner</string>
   <string name="PreferencesActivity.VolumeKeysActionHistory">Tilbake/Frem</string>
-  <!--0.3.7-->
   <string name="Main.ShareChooserTitle">Del via</string>
   <string name="Main.MenuShareLinkUrl">Del lenke</string>
   <string name="Main.MenuShareImageUrl">Del bilde</string>
   <string name="Main.MenuShareEmailUrl">Del epost</string>
-  <!--0.3.8-->
   <string name="PreferencesActivity.HideTitleBarPreferenceTitle">Gjem emnefelt</string>
   <string name="PreferencesActivity.HideTitleBarPreferenceSummary">Hvis avkrysset, emnefelt for vindu vil ikke vises (behøver omstart).</string>
   <string name="PreferencesActivity.UseWideViewPortPreferenceTitle">Bruk vid søker</string>
@@ -227,7 +219,6 @@
   <string name="PreferencesActivity.SwitchTabButtons">Knapper</string>
   <string name="PreferencesActivity.SwitchTabFling">Nøkk</string>
   <string name="PreferencesActivity.SwitchTabBoth">Begge</string>
-  <!--0.3.9-->
   <string name="HistoryListActivity.Today">I dag</string>
   <string name="HistoryListActivity.Yesterday">Gårdagen</string>
   <string name="HistoryListActivity.LastSevenDays">Siste 7 dager</string>
@@ -238,7 +229,6 @@
   <string name="QuickAction.SelectText">Velg tekst</string>
   <string name="QuickAction.MobileView">Mobilvisning</string>
   <string name="AboutActivity.OtherLicenseText">Dette programmet inneholder kode fra Zirco-nettleserprosjektet (https://code.google.com/p/zirco-browser/), lisensiert GPLv3, GreenDroid-prosjektet (https://github.com/cyrilmottier/GreenDroid) og Shaman-prosjektet  (https://github.com/emergentdotorg/shaman) De to sistnevnte med lisens: Apache versjon 2.</string>
-  <!--0.4.0-->
   <string name="PreferencesActivity.WeavePreferenceTitle">Synkronisering av bokmerker fra Firefox</string>
   <string name="PreferencesActivity.WeavePreferenceSummary">Behandling av innstillinger for bokmerkesynkronisering med Firefox Sync.</string>
   <string name="PreferencesActivity.UseWeavePreferenceTitle">Bruk Firefox Sync</string>
@@ -299,7 +289,6 @@
   <string name="DownloadListActivity.RemoveCompletedDownloads">Fjern ferdige nedlastninger</string>
   <string name="QuickAction.Find">Find på siden</string>
   <string name="SearchDialog.Hint">Find på siden</string>
-  <!--0.4.2-->
   <string name="PreferencesActivity.AdvancedCategoryTitle">Avansert</string>
   <string name="PreferencesActivity.BookmarksDatabaseTitle">Bokmerke-lagring</string>
   <string name="PreferencesActivity.BookmarksDatabaseSummary">Velg modus for bokmerke-lagring.</string>
@@ -320,7 +309,6 @@
   <string name="ProxySettings.ProxySettingsEnabled">Mellomlagrings-innstillinger skrudd på og i orden.</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Gjenoppretter faner</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">Hvis avkrysset, vil faner bli gjenopprettet når tilgjengelig.</string>
-  <!--0.4.3-->
   <string name="VideoLoading">Laster video\u2026</string>
   <string name="PreferencesActivity.DesktopViewCategoryTitle">Visningsmodus skrivebord</string>
   <string name="PreferencesActivity.DesktopViewListPreferenceTitle">Liste over sider i skrivebordsmodus</string>
