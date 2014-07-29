@@ -107,11 +107,9 @@
   <string name="Commons.SDCardErrorNoSDMsg">کارت اس دی پیدا نشد.</string>
   <string name="Commons.SDCardErrorSDUnavailable">کارت اس دی در دسترس نیست.</string>
   <string name="Commons.Close">بستن</string>
-  <!--0.3.1-->
   <string name="PreferencesActivity.AboutCategoryTitle">درباره</string>
   <string name="PreferencesActivity.AboutPreferenceTitle">درباره</string>
   <string name="PreferencesActivity.AboutPreferenceSummary">اطلاعاتی در مورد این اپلیکیشن </string>
-  <!--0.3.2-->
   <string name="BookmarksListActivity.MostUsedSortMode">پراستفاده ترین </string>
   <string name="PreferencesActivity.DefaultZoomPreferenceTitle">درجه پیش‌فرض زوم</string>
   <string name="PreferencesActivity.DefaultZoomPreferenceSummary">تعیین درجه زوم.</string>
@@ -129,7 +127,6 @@
   <string name="PreferencesActivity.HomepageStart">شروع وبگردی</string>
   <string name="PreferencesActivity.HomepageBlank">صفحه خالی</string>
   <string name="PreferencesActivity.HomepageCustom">صفحه خاص</string>
-  <!--0.3.3-->
   <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=en&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
   <string name="Constants.SearchUrlWikipedia">http://en.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
   <string name="PreferencesActivity.SearchUrlPreferenceTitle">جستجو آدرس</string>
@@ -160,7 +157,6 @@
   <string name="PreferencesActivity.UserAgentDefault">پیش فرض</string>
   <string name="PreferencesActivity.UserAgentDesktop">دسکتاپ</string>
   <string name="PreferencesActivity.UserAgentCustom">تنظیم خاص</string>
-  <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">کپی کردن آدرس</string>
   <string name="Main.MenuViewImage">مشاهده تصویر</string>
   <string name="Main.MenuDownloadImage">ذخیر تصویر</string>
@@ -179,7 +175,6 @@
   <string name="Main.MenuExit">خروج</string>
   <string name="PreferencesActivity.RestartDialogTitle">راه اندازی مجدد مورد نیازاست </string>
   <string name="PreferencesActivity.RestartDialogMessage">این تغییرات تا زمانی که اپلیکیشن دوباره راه اندازی نشود، اعمال نمی‌شوند. آیا تمایل دارید همین حالا این کار را کنید؟</string>
-  <!--0.3.5-->
   <string name="PreferencesActivity.EnablePluginsTitle">فعال کردن پلاگین‌ها</string>
   <string name="PreferencesActivity.PluginsAlwaysOff">همیشه خاموش</string>
   <string name="PreferencesActivity.PluginsOnDemand">در تقاضا</string>
@@ -201,7 +196,6 @@
   <string name="Commons.Add">افزودن</string>
   <string name="Commons.Clear">پاک کردن</string>
   <string name="Commons.Delete">حذف</string>
-  <!--0.3.6-->
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceTitle">تنظیم کلید‌های تنظیم صدا</string>
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceSummary">انتخاب کلید‌های تنظیم صدا</string>
   <string name="PreferencesActivity.VolumeKeysActionDefault">رفتارپیش فرض</string>
@@ -209,12 +203,10 @@
   <string name="PreferencesActivity.VolumeKeysActionScroll">حرکت به بالا/ پایین</string>
   <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">تعویض زبانه‌ها </string>
   <string name="PreferencesActivity.VolumeKeysActionHistory">عقب / جلو</string>
-  <!--0.3.7-->
   <string name="Main.ShareChooserTitle">اشتراک گذاری از طریق</string>
   <string name="Main.MenuShareLinkUrl">به اشتراک گذاشتن این صفحه</string>
   <string name="Main.MenuShareImageUrl">به اشتراک گذاشتن این تصویر</string>
   <string name="Main.MenuShareEmailUrl">به اشتراک گذاشتن این صفحه از طریق ایمیل</string>
-  <!--0.3.8-->
   <string name="PreferencesActivity.HideTitleBarPreferenceTitle">مخفی کردن عنوان</string>
   <string name="PreferencesActivity.HideTitleBarPreferenceSummary">در صورت انتخاب، عنوان پنجره ها نشان داده نمی‌شود (نیاز به راه اندازی مجدد اپلیکیشن دارد ).</string>
   <string name="PreferencesActivity.UseWideViewPortPreferenceTitle">استفاده ازنمای عریض</string>
@@ -226,7 +218,6 @@
   <string name="PreferencesActivity.SwitchTabButtons">دکمه ها</string>
   <string name="PreferencesActivity.SwitchTabFling">تاچ‌پد</string>
   <string name="PreferencesActivity.SwitchTabBoth">هردو</string>
-  <!--0.3.9-->
   <string name="HistoryListActivity.Today">امروز</string>
   <string name="HistoryListActivity.Yesterday">دیروز</string>
   <string name="HistoryListActivity.LastSevenDays">7 روز اخیر</string>
@@ -236,7 +227,6 @@
   <string name="QuickAction.Share">اشتراک گذاری</string>
   <string name="QuickAction.SelectText">انتخاب متن</string>
   <string name="QuickAction.MobileView">نمای موبایل</string>
-  <!--0.4.0-->
   <string name="PreferencesActivity.WeavePreferenceTitle">هماهنگ سازی بوک مارک‌های فایرفاکس</string>
   <string name="PreferencesActivity.WeavePreferenceSummary">مدیریت تنظیمات هماهنگ سازی بوک مارک‌های فایرفاکس </string>
   <string name="PreferencesActivity.UseWeavePreferenceTitle">استفاده از هماهنگ سازی فایرفاکس </string>
@@ -297,7 +287,6 @@
   <string name="DownloadListActivity.RemoveCompletedDownloads">حذف موارد دانلود شده</string>
   <string name="QuickAction.Find">جستجو در صفحه</string>
   <string name="SearchDialog.Hint">جستجو در صفحه</string>
-  <!--0.4.2-->
   <string name="PreferencesActivity.AdvancedCategoryTitle">پیشرفته</string>
   <string name="PreferencesActivity.BookmarksDatabaseTitle">ذخیره بوک مارک‌ها</string>
   <string name="PreferencesActivity.BookmarksDatabaseSummary">حالت ذخیره بوک مارک‌ها را انتخاب کنید.</string>
@@ -318,7 +307,6 @@
   <string name="ProxySettings.ProxySettingsEnabled">تنظیمات پراکسی با موفقیت فعال شد.</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">بازگرداندن زبانه‌ها</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">در صورت انتخاب، زبانه‌ها وقتی در دسترس بودند، باز گردانده می‌شوند. </string>
-  <!--0.4.3-->
   <string name="VideoLoading">در حال بارگذاری ویدیو\u2026</string>
   <string name="PreferencesActivity.DesktopViewCategoryTitle">تنظیمات نمایش دسکتاپ </string>
   <string name="PreferencesActivity.DesktopViewListPreferenceTitle">لیست حالت دسکتاپ</string>
