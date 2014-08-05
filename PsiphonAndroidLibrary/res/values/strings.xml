@@ -144,7 +144,8 @@
     <string name="http_prefix_toggle">Masquerade as HTTP</string>
     <string name="preference_notifications_title">Notifications</string>
     <string name="preference_notifications_with_sound_title">Sound</string>
-    <string name="preference_notifications_with_sound_summary">Play default notification ringtone when connected and disconnected</string>
+    <string name="preference_notifications_with_sound_summary">Play sound when connection status changes</string>
     <string name="preference_notifications_with_vibrate_title">Vibrate</string>
-    <string name="preference_notifications_with_vibrate_summary">Vibrate when connected and disconnected</string>
+    <string name="preference_notifications_with_vibrate_summary">Vibrate when connection status changes</string>
+    <string name="moreOptions">More Options</string>
 </resources>
