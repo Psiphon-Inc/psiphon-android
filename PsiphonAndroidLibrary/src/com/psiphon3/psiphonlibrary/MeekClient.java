@@ -49,8 +49,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 
@@ -109,7 +107,6 @@ public class MeekClient {
     private ServerSocket mServerSocket;
     private int mLocalPort = -1;
     private Set<Socket> mClients;
-    private CountDownLatch mEstablishedFirstServerConnection;
     
     public enum MeekProtocol {FRONTED, UNFRONTED};
 
@@ -170,7 +167,6 @@ public class MeekClient {
         mServerSocket = new ServerSocket(0, 50, InetAddress.getByName("127.0.0.1"));
         mLocalPort = mServerSocket.getLocalPort();
         mClients = new HashSet<Socket>();
-        mEstablishedFirstServerConnection = new CountDownLatch(1);
         mAcceptThread = new Thread(
                 new Runnable() {
                     @Override
@@ -220,15 +216,6 @@ public class MeekClient {
             mServerSocket = null;
             mAcceptThread = null;
             mLocalPort = -1;
-            mEstablishedFirstServerConnection = null;
-        }
-    }
-    
-    public void awaitEstablishedFirstServerConnection(IAbortIndicator abortIndicator) throws InterruptedException {
-        while (!mEstablishedFirstServerConnection.await(ABORT_POLL_MILLISECONDS, TimeUnit.MILLISECONDS)) {
-            if (abortIndicator.shouldAbort()) {
-                break;
-            }
         }
     }
     
@@ -294,18 +281,14 @@ public class MeekClient {
                 // TODO: read in a separate thread (or asynchronously) to allow continuous requests while streaming downloads
                 socket.setSoTimeout(pollIntervalMilliseconds);
                 int payloadLength = 0;
-
-                // We make the very first poll without waiting to read in order to check connection establishment
-                if (mEstablishedFirstServerConnection.getCount() == 0) {
-                    try {
-                        payloadLength = socketInputStream.read(payloadBuffer);
-                    } catch (SocketTimeoutException e) {
-                        // In this case, we POST with no content -- this is for polling the server
-                    }
-                    if (payloadLength == -1) {
-                        // EOF
-                        break;
-                    }
+                try {
+                    payloadLength = socketInputStream.read(payloadBuffer);
+                } catch (SocketTimeoutException e) {
+                    // In this case, we POST with no content -- this is for polling the server
+                }
+                if (payloadLength == -1) {
+                    // EOF
+                    break;
                 }
 
                 HttpPost httpPost = new HttpPost(uri);
@@ -336,9 +319,6 @@ public class MeekClient {
                 } finally {
                     Utils.closeHelper(responseInputStream);
                 }
-                
-                // Signal when first connection is established
-                mEstablishedFirstServerConnection.countDown();
 
                 if (payloadLength > 0 || receivedData) {
                     pollIntervalMilliseconds = MIN_POLL_INTERVAL_MILLISECONDS;
