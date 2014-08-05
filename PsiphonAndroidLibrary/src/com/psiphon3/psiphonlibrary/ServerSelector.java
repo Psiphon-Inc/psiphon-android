@@ -109,6 +109,7 @@ public class ServerSelector implements IAbortIndicator
         boolean responded = false;
         boolean completed = false;
         long responseTime = -1;
+        String sshErrorMessage = "";
         SocketChannel channel = null;
         Connection sshConnection = null;
 
@@ -252,7 +253,7 @@ public class ServerSelector implements IAbortIndicator
                     }
                     catch (IOException e)
                     {
-                        MyLog.e(R.string.ssh_connection_failed, MyLog.Sensitivity.NOT_SENSITIVE);
+                        this.sshErrorMessage = e.getMessage();
                     }
                         
                     this.responded = (this.sshConnection != null);
@@ -636,6 +637,7 @@ public class ServerSelector implements IAbortIndicator
                     "front", worker.entry.front,
                     "responded", worker.responded,
                     "responseTime", worker.responseTime,
+                    "sshErrorMessage", worker.sshErrorMessage,
                     "regionCode", worker.entry.regionCode);
 
                 MyLog.d(
