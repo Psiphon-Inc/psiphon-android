@@ -207,7 +207,14 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         
         if (alert)
         {
-            notification.defaults |= Notification.DEFAULT_VIBRATE | Notification.DEFAULT_SOUND;
+            if (preferences.getBooleanPreference(R.string.preferenceNotificationsWithSound))
+            {
+                notification.defaults |= Notification.DEFAULT_VIBRATE;
+            }
+            if (preferences.getBooleanPreference(R.string.preferenceNotificationsWithVibrate))
+            {
+                notification.defaults |= Notification.DEFAULT_SOUND;
+            }
         }
 
         notification.setLatestEventInfo(

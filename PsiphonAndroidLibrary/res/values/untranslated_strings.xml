@@ -8,4 +8,7 @@
     <string name="UpgradeManager.UpgradeAvailableNotificationId">Psiphon Upgrade Available Notification</string>
     <string name="meek_error">Meek Error: %s</string>
     <string name="meek_http_request_error">Meek HTTP Request Error: %d</string>
+    <string name="preferencesNotifications">preferencesNotifications</string>
+    <string name="preferenceNotificationsWithSound">preferenceNotificationsWithSound</string>
+    <string name="preferenceNotificationsWithVibrate">preferenceNotificationsWithVibrate</string>
 </resources>
