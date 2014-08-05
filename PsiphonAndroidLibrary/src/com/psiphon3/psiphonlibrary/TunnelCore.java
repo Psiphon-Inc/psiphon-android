@@ -369,7 +369,7 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
             return null;
         }
 
-        if (sshConnection.authenticateWithPassword(entry.sshUsername, authParams.toString()))
+        if (!sshConnection.authenticateWithPassword(entry.sshUsername, authParams.toString()))
         {
             MyLog.e(R.string.ssh_authentication_failed, MyLog.Sensitivity.NOT_SENSITIVE);
             return null;
