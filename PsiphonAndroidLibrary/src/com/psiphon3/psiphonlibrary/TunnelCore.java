@@ -50,7 +50,6 @@ import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.util.Pair;
 import ch.ethz.ssh2.Connection;
-import ch.ethz.ssh2.Connection.IStopSignalPending;
 import ch.ethz.ssh2.ConnectionMonitor;
 import ch.ethz.ssh2.DynamicPortForwarder;
 import ch.ethz.ssh2.ServerHostKeyVerifier;
@@ -61,7 +60,7 @@ import com.psiphon3.psiphonlibrary.TransparentProxyConfig.PsiphonTransparentProx
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.stericson.RootTools.RootTools;
 
-public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
+public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IProtectSocket
 {
     public enum State
     {
@@ -113,7 +112,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
     public void onCreate()
     {
         m_interface = new ServerInterface(m_parentContext);
-        m_serverSelector = new ServerSelector(this, m_interface, m_parentContext);
+        m_serverSelector = new ServerSelector(this, this, m_interface, m_parentContext);
         m_upgradeDownloader = new UpgradeManager.UpgradeDownloader(m_parentContext, m_interface);
     }
 
@@ -229,7 +228,7 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         return notification;
     }
 
-    class PsiphonServerHostKeyVerifier implements ServerHostKeyVerifier
+    public static class PsiphonServerHostKeyVerifier implements ServerHostKeyVerifier
     {
         private final String m_expectedHostKey;
 
@@ -334,14 +333,13 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         return m_signalQueue.peek() == Signal.STOP_TUNNEL;
     }
 
-    private Connection establishSshConnection(Socket socket, ServerInterface.ServerEntry entry, boolean quiet)
-            throws IOException, InterruptedException, TunnelVpnServiceUnexpectedDisconnect, TunnelVpnTunnelStop
+    public static Connection establishSshConnection(
+            Connection.IStopSignalPending stopSignalPending,
+            Socket socket,
+            ServerInterface.ServerEntry entry,
+            String clientSessionId,
+            List<Pair<String,String>> extraAuthParams) throws IOException
     {
-        if (!quiet)
-        {
-            MyLog.v(R.string.ssh_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
-        }
-
         // At this point we'll start counting bytes transferred for SSH traffic
         PsiphonData.getPsiphonData().getDataTransferStats().startSession();
 
@@ -356,14 +354,12 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
                 new PsiphonServerHostKeyVerifier(entry.sshHostKey),
                 0,
                 PsiphonConstants.SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS,
-                this);
+                stopSignalPending);
 
-        if (!quiet)
+        if (stopSignalPending.isStopSignalPending())
         {
-            MyLog.v(R.string.ssh_connected, MyLog.Sensitivity.NOT_SENSITIVE);
+            return null;
         }
-
-        checkSignals(0);
 
         // Send auth params as JSON-encoded string in SSH password field
         // Client session ID is used to associate the tunnel with web requests -- for GeoIP region stats
@@ -371,9 +367,9 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
         JSONObject authParams = new JSONObject();
         try
         {
-            authParams.put("SessionId", m_interface.getCurrentClientSessionID());
+            authParams.put("SessionId", clientSessionId);
             authParams.put("SshPassword", entry.sshPassword);
-            for (Pair<String,String> extraAuthParam : m_extraAuthParams)
+            for (Pair<String,String> extraAuthParam : extraAuthParams)
             {
                 authParams.put(extraAuthParam.first, extraAuthParam.second);
             }
@@ -383,21 +379,10 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             return null;
         }
 
-        if (!quiet)
-        {
-            MyLog.v(R.string.ssh_authenticating, MyLog.Sensitivity.NOT_SENSITIVE);
-        }
-
-        boolean isAuthenticated = sshConnection.authenticateWithPassword(entry.sshUsername, authParams.toString());
-        if (isAuthenticated == false)
+        if (!sshConnection.authenticateWithPassword(entry.sshUsername, authParams.toString()))
         {
             MyLog.e(R.string.ssh_authentication_failed, MyLog.Sensitivity.NOT_SENSITIVE);
             return null;
-        }
-
-        if (!quiet)
-        {
-            MyLog.v(R.string.ssh_authenticated, MyLog.Sensitivity.NOT_SENSITIVE);
         }
 
         return sshConnection;
@@ -576,23 +561,27 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
             }
 
             checkSignals(0);
-
+            
             m_serverSelector.Run(
                     tunnelWholeDevice && runVpnService, // protect sockets in whole device mode
-                    m_interface.getCurrentClientSessionID());
+                    m_interface.getCurrentClientSessionID(),
+                    m_extraAuthParams);
+            
+            checkSignals(0);
+
+            MyLog.v(R.string.ssh_connected, MyLog.Sensitivity.NOT_SENSITIVE);
 
             // The preemptive reconnect should be started "preemptiveReconnectTimePeriod" after
             // the last socket connection completed. But we don't know preemptiveReconnectTimePeriod yet.
             // It will be added after the handshake.
             preemptiveReconnectWaitUntil = SystemClock.elapsedRealtime(); // + preemptiveReconnectTimePeriod
 
-            checkSignals(0);
-
             meekClient = m_serverSelector.firstEntryMeekClient;
             usingHTTPProxy = m_serverSelector.firstEntryUsingHTTPProxy;
             socket = m_serverSelector.firstEntrySocket;
+            sshConnection = m_serverSelector.firstEntrySshConnection;
             String ipAddress = m_serverSelector.firstEntryIpAddress;
-            if (socket == null)
+            if (socket == null ||  sshConnection == null)
             {
                 return runAgain;
             }
@@ -604,13 +593,6 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
             // Update resolvers (again) to match underlying network interface used for SSH tunnel
             Utils.updateDnsResolvers(m_parentContext);
-
-            // Connect and authenticate to SSH server
-            // NOTE: establishSshConnection logs progress/errors
-            if ((sshConnection = establishSshConnection(socket, entry, false)) == null)
-            {
-                return runAgain;
-            }
 
             MyLog.v(R.string.socks_starting, MyLog.Sensitivity.NOT_SENSITIVE);
 
@@ -1008,7 +990,12 @@ public class TunnelCore implements IStopSignalPending, Tun2Socks.IProtectSocket
 
                             try
                             {
-                                newSshConnection = establishSshConnection(newSocket, entry, true);
+                                newSshConnection = establishSshConnection(
+                                                        this,
+                                                        newSocket,
+                                                        entry,
+                                                        m_interface.getCurrentClientSessionID(),
+                                                        m_extraAuthParams);
                             }
                             catch (IOException e)
                             {
