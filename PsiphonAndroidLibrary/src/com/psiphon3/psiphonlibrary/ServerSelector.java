@@ -634,7 +634,7 @@ public class ServerSelector implements IAbortIndicator
                 if (worker.completed)
                 {
                     MyLog.g(
-                        "CandidateServer",
+                        "ServerResponseCheck",
                         "ipAddress", worker.entry.ipAddress,
                         "connType", worker.entry.connType,
                         "front", worker.entry.front,
