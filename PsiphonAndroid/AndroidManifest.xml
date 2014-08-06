@@ -37,6 +37,10 @@
             android:name=".FeedbackActivity"
             android:label="@string/app_name">
         </activity>
+        <activity
+            android:name=".psiphonlibrary.MainBase$TabbedActivityBase$MoreOptionsActivity"
+            android:label="@string/app_name">
+        </activity>
         <service
             android:name=".psiphonlibrary.TunnelService"
             android:label="@string/app_name"

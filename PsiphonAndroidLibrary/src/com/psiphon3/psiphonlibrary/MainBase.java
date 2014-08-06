@@ -55,6 +55,7 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
@@ -846,6 +847,19 @@ public abstract class MainBase
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(EmbeddedValues.INFO_LINK_URL));
                 startActivity(browserIntent);
             }
+        }
+        
+        public static class MoreOptionsActivity extends PreferenceActivity {
+            @Override
+            public void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                addPreferencesFromResource(R.xml.preferences);
+            }
+        }
+
+        public void onMoreOptionsClick(View v)
+        {
+            startActivity(new Intent(this, MoreOptionsActivity.class));
         }
         
         public abstract void onFeedbackClick(View v);

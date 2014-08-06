@@ -36,6 +36,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +45,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import android.content.Context;
 import android.os.Build;
 import android.os.SystemClock;
+import android.util.Pair;
+import ch.ethz.ssh2.Connection;
 import ch.ethz.ssh2.HTTPProxyException;
 import ch.ethz.ssh2.crypto.Base64;
 import ch.ethz.ssh2.transport.ClientServerHello;
@@ -63,11 +66,13 @@ public class ServerSelector implements IAbortIndicator
     private final int SHUTDOWN_TIMEOUT_MILLISECONDS = 1000;
     private final int MAX_WORK_TIME_MILLISECONDS = 20000;
 
+    private Connection.IStopSignalPending stopSignalPending = null;
     private Tun2Socks.IProtectSocket protectSocket = null;
     private ServerInterface serverInterface = null;
     private Context context = null;
     private boolean protectSocketsRequired = false;
     private String clientSessionId = null;
+    private List<Pair<String,String>> extraAuthParams = null;
     private Thread thread = null;
     private boolean stopFlag = false;
     private final AtomicBoolean workerPrintedProxyError = new AtomicBoolean(false);
@@ -75,13 +80,16 @@ public class ServerSelector implements IAbortIndicator
     public MeekClient firstEntryMeekClient = null;
     public boolean firstEntryUsingHTTPProxy = false;
     public Socket firstEntrySocket = null;
+    public Connection firstEntrySshConnection = null;
     public String firstEntryIpAddress = null;
 
     ServerSelector(
+            Connection.IStopSignalPending stopSignalPending,
             Tun2Socks.IProtectSocket protectSocket,
             ServerInterface serverInterface,
             Context context)
     {
+        this.stopSignalPending = stopSignalPending;
         this.protectSocket = protectSocket;
         this.serverInterface = serverInterface;
         this.context = context;
@@ -101,7 +109,9 @@ public class ServerSelector implements IAbortIndicator
         boolean responded = false;
         boolean completed = false;
         long responseTime = -1;
+        String sshErrorMessage = "";
         SocketChannel channel = null;
+        Connection sshConnection = null;
 
         CheckServerWorker(ServerEntry entry)
         {
@@ -132,17 +142,13 @@ public class ServerSelector implements IAbortIndicator
                 // 2. Start the meek client, which is a localhost server listening on a OS assigned port
                 // 3. The meek client is a static port forward to the selected Psiphon server, so call
                 //    makeSocketChannelConnection with the meek client address in place of the Psiphon server
-                // 4. The meek client accepts local connections instantly, so the meek protocol has been
-                //    tweaked to immediately poll the meek server -- we wait for that round trip to
-                //    complete, via awaitEstablishedFirstServerConnection, and take that to be the
-                //    response time.
-                //    Note that awaitEstablishedFirstServerConnection only works here because there's a new
-                //    MeekClient instance per server candidate; if we started to reuse MeekClient instances
-                //    then we need more sophisticated signaling.
+
 
                 // Even though the ServerEntry here is a clone, assigning to it
                 // works because ServerSelector merges it back in for the servers
                 // that respond.
+                
+                boolean socketConnected = false;
 
                 if (proxySettings != null)
                 {
@@ -161,7 +167,7 @@ public class ServerSelector implements IAbortIndicator
 
                     makeConnectionViaHTTPProxy(null, null);
 
-                    this.responded = true;
+                    socketConnected = true;
 
                     this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_OSSH;
                 }
@@ -182,11 +188,7 @@ public class ServerSelector implements IAbortIndicator
 
                     makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
 
-                    if (this.channel.finishConnect())
-                    {
-                        this.meekClient.awaitEstablishedFirstServerConnection(ServerSelector.this);
-                        this.responded = true;
-                    }
+                    socketConnected = this.channel.finishConnect();
 
                     this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH;
                     this.entry.front = this.entry.meekFrontingDomain;
@@ -208,11 +210,7 @@ public class ServerSelector implements IAbortIndicator
 
                     makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
 
-                    if (this.channel.finishConnect())
-                    {
-                        this.meekClient.awaitEstablishedFirstServerConnection(ServerSelector.this);
-                        this.responded = true;
-                    }
+                    socketConnected = this.channel.finishConnect();
 
                     this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH;
                 }
@@ -228,9 +226,37 @@ public class ServerSelector implements IAbortIndicator
                             this.entry.ipAddress,
                             this.entry.getPreferredReachablityTestPort());
 
-                    this.responded = this.channel.finishConnect();
+                    socketConnected = this.channel.finishConnect();
 
                     this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_OSSH;
+                }
+
+                if (socketConnected)
+                {
+                    try
+                    {
+                        selector.close();
+                        selector = null;
+                    }
+                    catch (IOException e) {}
+
+                    this.channel.configureBlocking(true);
+
+                    try
+                    {
+                        this.sshConnection = TunnelCore.establishSshConnection(
+                                                    ServerSelector.this.stopSignalPending,
+                                                    this.channel.socket(),
+                                                    entry,
+                                                    ServerSelector.this.clientSessionId,
+                                                    ServerSelector.this.extraAuthParams);
+                    }
+                    catch (IOException e)
+                    {
+                        this.sshErrorMessage = e.getMessage();
+                    }
+                        
+                    this.responded = (this.sshConnection != null);
                 }
             }
             catch (ClosedByInterruptException e) {}
@@ -269,10 +295,6 @@ public class ServerSelector implements IAbortIndicator
                     MyLog.w(R.string.network_proxy_connect_exception, MyLog.Sensitivity.NOT_SENSITIVE, e.getLocalizedMessage());
                 }
             }
-            catch (InterruptedException e)
-            {
-                Thread.currentThread().interrupt();
-            }
             finally
             {
                 if (selector != null)
@@ -283,30 +305,28 @@ public class ServerSelector implements IAbortIndicator
                     }
                     catch (IOException e) {}
                 }
-                if (this.channel != null)
+                if (!this.responded)
                 {
-                    if (!this.responded)
+                    if (this.sshConnection != null)
                     {
-                        if (this.meekClient != null)
-                        {
-                            this.meekClient.stop();
-                            this.meekClient = null;
-                        }
+                        this.sshConnection.close();
+                        this.sshConnection = null;
+                    }
 
+                    if (this.meekClient != null)
+                    {
+                        this.meekClient.stop();
+                        this.meekClient = null;
+                    }
+
+                    if (this.channel != null)
+                    {
                         try
                         {
                             this.channel.close();
                         }
                         catch (IOException e) {}
                         this.channel = null;
-                    }
-                    else
-                    {
-                        try
-                        {
-                            this.channel.configureBlocking(true);
-                        }
-                        catch (IOException e) {}
                     }
                 }
             }
@@ -610,18 +630,23 @@ public class ServerSelector implements IAbortIndicator
 
             for (CheckServerWorker worker : workers)
             {
-                MyLog.g(
-                    "ServerResponseCheck",
-                    "ipAddress", worker.entry.ipAddress,
-                    "connType", worker.entry.connType,
-                    "front", worker.entry.front,
-                    "responded", worker.responded,
-                    "responseTime", worker.responseTime,
-                    "regionCode", worker.entry.regionCode);
-
-                MyLog.d(
-                    String.format("server: %s, responded: %s, response time: %d",
-                            worker.entry.ipAddress, worker.responded ? "Yes" : "No", worker.responseTime));
+                // Only log info for candidates for which a connection was attempted (not all servers in queue)
+                if (worker.completed)
+                {
+                    MyLog.g(
+                        "ServerResponseCheck",
+                        "ipAddress", worker.entry.ipAddress,
+                        "connType", worker.entry.connType,
+                        "front", worker.entry.front,
+                        "responded", worker.responded,
+                        "responseTime", worker.responseTime,
+                        "sshErrorMessage", worker.sshErrorMessage,
+                        "regionCode", worker.entry.regionCode);
+    
+                    MyLog.d(
+                        String.format("server: %s, responded: %s, response time: %d",
+                                worker.entry.ipAddress, worker.responded ? "Yes" : "No", worker.responseTime));
+                }
             }
 
             // Build a list of all servers that responded. We randomly shuffle the
@@ -686,14 +711,25 @@ public class ServerSelector implements IAbortIndicator
 
                         if (worker.entry.ipAddress.equals(firstEntry.ipAddress))
                         {
+                            MyLog.g("SelectedServer",
+                                    "ipAddress", firstEntry.ipAddress,
+                                    "connType", firstEntry.connType,
+                                    "front", firstEntry.front);
+
                             // TODO: getters with mutex?
                             firstEntryMeekClient = worker.meekClient;
                             firstEntryUsingHTTPProxy = worker.usingHTTPProxy;
                             firstEntrySocket = worker.channel.socket();
+                            firstEntrySshConnection = worker.sshConnection;
                             firstEntryIpAddress = worker.entry.ipAddress;
                         }
                         else
                         {
+                            if (worker.sshConnection != null)
+                            {
+                                worker.sshConnection.close();
+                                worker.sshConnection = null;
+                            }
                             if (worker.meekClient != null)
                             {
                                 worker.meekClient.stop();
@@ -736,7 +772,8 @@ public class ServerSelector implements IAbortIndicator
 
     public void Run(
             boolean protectSocketsRequired,
-            String clientSessionId)
+            String clientSessionId,
+            List<Pair<String,String>> extraAuthParams)
     {
         Abort();
 
@@ -750,6 +787,7 @@ public class ServerSelector implements IAbortIndicator
 
         this.protectSocketsRequired = protectSocketsRequired;
         this.clientSessionId = clientSessionId;
+        this.extraAuthParams = extraAuthParams;
 
         this.thread = new Thread(new Coordinator());
         this.thread.start();
