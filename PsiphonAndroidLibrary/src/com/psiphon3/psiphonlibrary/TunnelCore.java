@@ -340,14 +340,6 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
             String clientSessionId,
             List<Pair<String,String>> extraAuthParams) throws IOException
     {
-        // At this point we'll start counting bytes transferred for SSH traffic
-        PsiphonData.getPsiphonData().getDataTransferStats().startSession();
-
-        MyLog.g("ConnectingServer",
-                "ipAddress", entry.ipAddress,
-                "connType", entry.connType,
-                "front", entry.front);
-
         Connection sshConnection = new Connection(entry.ipAddress, entry.sshObfuscatedKey, entry.sshObfuscatedPort);
         sshConnection.connect(
                 socket,
@@ -568,6 +560,9 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
                     m_extraAuthParams);
             
             checkSignals(0);
+
+            // At this point we'll start counting bytes transferred for SSH traffic
+            PsiphonData.getPsiphonData().getDataTransferStats().startSession();
 
             MyLog.v(R.string.ssh_connected, MyLog.Sensitivity.NOT_SENSITIVE);
 

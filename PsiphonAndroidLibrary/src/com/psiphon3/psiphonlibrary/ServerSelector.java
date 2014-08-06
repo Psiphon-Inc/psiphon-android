@@ -630,19 +630,23 @@ public class ServerSelector implements IAbortIndicator
 
             for (CheckServerWorker worker : workers)
             {
-                MyLog.g(
-                    "ServerResponseCheck",
-                    "ipAddress", worker.entry.ipAddress,
-                    "connType", worker.entry.connType,
-                    "front", worker.entry.front,
-                    "responded", worker.responded,
-                    "responseTime", worker.responseTime,
-                    "sshErrorMessage", worker.sshErrorMessage,
-                    "regionCode", worker.entry.regionCode);
-
-                MyLog.d(
-                    String.format("server: %s, responded: %s, response time: %d",
-                            worker.entry.ipAddress, worker.responded ? "Yes" : "No", worker.responseTime));
+                // Only log info for candidates for which a connection was attempted (not all servers in queue)
+                if (worker.completed)
+                {
+                    MyLog.g(
+                        "CandidateServer",
+                        "ipAddress", worker.entry.ipAddress,
+                        "connType", worker.entry.connType,
+                        "front", worker.entry.front,
+                        "responded", worker.responded,
+                        "responseTime", worker.responseTime,
+                        "sshErrorMessage", worker.sshErrorMessage,
+                        "regionCode", worker.entry.regionCode);
+    
+                    MyLog.d(
+                        String.format("server: %s, responded: %s, response time: %d",
+                                worker.entry.ipAddress, worker.responded ? "Yes" : "No", worker.responseTime));
+                }
             }
 
             // Build a list of all servers that responded. We randomly shuffle the
@@ -707,6 +711,11 @@ public class ServerSelector implements IAbortIndicator
 
                         if (worker.entry.ipAddress.equals(firstEntry.ipAddress))
                         {
+                            MyLog.g("SelectedServer",
+                                    "ipAddress", firstEntry.ipAddress,
+                                    "connType", firstEntry.connType,
+                                    "front", firstEntry.front);
+
                             // TODO: getters with mutex?
                             firstEntryMeekClient = worker.meekClient;
                             firstEntryUsingHTTPProxy = worker.usingHTTPProxy;
