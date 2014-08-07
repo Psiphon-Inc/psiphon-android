@@ -188,7 +188,8 @@ public class TransportConnection
         // a fixed-size packet length sequence.
         if (this.obfuscatedOutputStream.isObfuscating() && padd == 0)
         {
-            padd = 4 + this.rnd.nextInt() % 60;
+            // Uniform distribution between 4 and 64.
+            padd = 4 + this.rnd.nextInt() % 61;
         }
         
         if (padd < 4)
