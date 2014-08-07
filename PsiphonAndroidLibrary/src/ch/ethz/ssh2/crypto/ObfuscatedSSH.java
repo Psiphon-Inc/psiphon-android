@@ -302,6 +302,11 @@ public class ObfuscatedSSH
                 os.write((byte) b);
             }
         }
+        
+        public boolean isObfuscating()
+        {
+            return obfuscate;
+        }
 
         public void enableObfuscation()
         {
