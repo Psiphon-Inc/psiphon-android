@@ -22,6 +22,7 @@ package com.psiphon3.psiphonlibrary;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -609,7 +610,7 @@ public class ServerInterface
             MyLog.w(R.string.ServerInterface_FailedToReadLastConnected, MyLog.Sensitivity.NOT_SENSITIVE, e);
             // skip loading persistent server entries
         }
-        
+
         // We have observed blank last_connected values from some Android clients; we don't know what
         // exactly causes this; so, simply default to a valid value. This will now pass the validation
         //  in the connected request, and ultimately LAST_CONNECTED_FILENAME should be overwritten with
@@ -797,12 +798,14 @@ public class ServerInterface
     }
 
     /**
-     * Make the 'feedback' request to the server.
+     * Upload the encrypted feedback package
      * @throws PsiphonServerInterfaceException
      */
-    synchronized public void doFeedbackRequest(String feedbackData)
+    synchronized public void doFeedbackUpload(File feedbackDataFile)
         throws PsiphonServerInterfaceException
     {
+        return;
+        /*
         if(getCurrentServerEntry() == null)
         {
             throw new PsiphonServerInterfaceException();
@@ -824,6 +827,7 @@ public class ServerInterface
         // will fail when stuck in an unsuccessful connecting state.
         makePsiphonRequestWithFailover(
                 null, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, true, urls, additionalHeaders, requestBody, null);
+        */
     }
 
     synchronized public void fetchRemoteServerList(Tun2Socks.IProtectSocket protectSocket)
@@ -1228,7 +1232,7 @@ public class ServerInterface
             return Address.getAllByName(hostname);
         }
     }
-    
+
     public static DnsResolver getDnsResolver(Tun2Socks.IProtectSocket protectSocket, ServerInterface serverInterface)
     {
         if (protectSocket != null)
@@ -1804,7 +1808,7 @@ public class ServerInterface
     }
 
     private static final long MAX_SAVED_SERVER_ENTRIES_LIMIT_MEMORY_SIZE = 4*1024*1024; // 4MB
-    
+
     private synchronized void saveServerEntries()
     {
         synchronized(PsiphonData.getPsiphonData().serverEntryFileLock)
@@ -1832,7 +1836,7 @@ public class ServerInterface
                                 // Don't add this entry when there's already at least one entry (serializedServerEntrySize > 0) and
                                 // adding this one will exceed the memory size limit (serializedServerEntrySize + serverEntry.encodedEntry.length() > MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE)
                                 //
-                                // NOTE: side-effect! we truncate this.serverEntries to match what's serialized                        
+                                // NOTE: side-effect! we truncate this.serverEntries to match what's serialized
                                 this.serverEntries.subList(i, this.serverEntries.size()).clear();
                                 break;
                             }

@@ -20,7 +20,6 @@
 package com.psiphon3;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -30,14 +29,8 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.List;
 import java.util.Locale;
-
-
-import com.psiphon3.psiphonlibrary.Diagnostics;
-import com.psiphon3.psiphonlibrary.EmbeddedValues;
-import com.psiphon3.psiphonlibrary.ServerInterface;
-import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -50,11 +43,16 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
+
 public class FeedbackActivity extends Activity
 {
 
     private WebView webView;
 
+    @Override
     @SuppressLint("SetJavaScriptEnabled")
     public void onCreate(Bundle savedInstanceState)
     {
@@ -76,20 +74,6 @@ public class FeedbackActivity extends Activity
                     Intent intent = new Intent(Intent.ACTION_SEND);
                     intent.setType("message/rfc822");
                     intent.putExtra(Intent.EXTRA_EMAIL, new String[] {MailTo.parse(url).getTo()});
-
-                    // This is a hack to only include the diagnostics attachment when clicking the
-                    // feedback mailto: link.  There is another mailto: link now, the get@ responder,
-                    // which should not include the diagnostics attachment.
-                    // Including the diagnostics attachment will break if the mailto: link changes
-                    // to something that does not include "feedback".
-                    if (url.contains("feedback"))
-                    {
-                        File attachmentFile = Diagnostics.createEmailAttachment(activity);
-                        if (attachmentFile != null)
-                        {
-                            intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(attachmentFile));
-                        }
-                    }
 
                     try
                     {
@@ -120,7 +104,7 @@ public class FeedbackActivity extends Activity
                     }
                     return true;
                 }
-                
+
                 // Else... Open ordinary URLs (like our download page, FAQ, etc.)
                 // in a standard browser. The feedback WebView is not useful
                 // for normal webpages (and doesn't seem to support download).
@@ -137,6 +121,19 @@ public class FeedbackActivity extends Activity
                 return true;
             }
 
+            class FormData
+            {
+                class Response {
+                    public String title;
+                    public String question;
+                    public int answer;
+                }
+                public boolean sendDiagnosticInfo;
+                public String feedback;
+                public String email;
+                public List<Response> responses;
+            }
+
             private boolean submitFeedback(String urlParameters)
             {
                 final String formDataParameterName = "formdata=";
@@ -146,28 +143,44 @@ public class FeedbackActivity extends Activity
                     return false;
                 }
 
-                ServerInterface serverInterface = new ServerInterface(activity);
-                serverInterface.start();
-                serverInterface.setCurrentServerEntry();
-
                 String formData;
+                FormData formDataObj;
                 try
                 {
                     formData = URLDecoder.decode(urlParameters.substring(formDataParameterName.length()), "utf-8");
+
+                    Gson gson = new Gson();
+                    formDataObj = gson.fromJson(formData, FormData.class);
                 }
                 catch (UnsupportedEncodingException e)
                 {
                     MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                     return false;
                 }
+                return true;
+                /*
+
+                File attachmentFile = Diagnostics.createEmailAttachment(activity);
+                if (attachmentFile == null)
+                {
+                    return false;
+                }
+
+
+                //Uri.fromFile(attachmentFile)
+
+
+                ServerInterface serverInterface = new ServerInterface(activity);
+                serverInterface.start();
+                serverInterface.setCurrentServerEntry();
 
                 // Hack to get around network/UI restriction. Still blocks the UI
                 // for the duration of the request until timeout.
                 // TODO: Actually run in the background
                 class FeedbackRequestThread extends Thread
                 {
-                    private ServerInterface m_serverInterface;
-                    private String m_formData;
+                    private final ServerInterface m_serverInterface;
+                    private final String m_formData;
                     private boolean m_success = false;
 
                     FeedbackRequestThread(ServerInterface serverInterface, String formData)
@@ -176,6 +189,7 @@ public class FeedbackActivity extends Activity
                         m_formData = formData;
                     }
 
+                    @Override
                     public void run()
                     {
                         try
@@ -207,6 +221,7 @@ public class FeedbackActivity extends Activity
                     MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                     return false;
                 }
+                */
             }
         });
 
@@ -214,7 +229,7 @@ public class FeedbackActivity extends Activity
         String html = getHTMLContent();
         // Get the current locale
         String language = Locale.getDefault().getLanguage();
-        
+
         StringBuilder argsBuilder = new StringBuilder();
         argsBuilder.append("{ ");
         // We are avoiding any possible conflict with the Play Store policy that apps cannot automatically self-upgrade:
@@ -238,7 +253,7 @@ public class FeedbackActivity extends Activity
             e.printStackTrace();
             assert(false);
         }
-        
+
         StringBuilder urlBuilder = new StringBuilder();
         urlBuilder.append("file:///");
         if (args != null)
@@ -246,7 +261,7 @@ public class FeedbackActivity extends Activity
             urlBuilder.append("?").append(args);
         }
         urlBuilder.append("#").append(language);
-        
+
         webView.loadDataWithBaseURL(urlBuilder.toString(), html, "text/html", "utf-8", null);
     }
 
