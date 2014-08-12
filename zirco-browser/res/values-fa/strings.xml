@@ -159,6 +159,7 @@
   <string name="PreferencesActivity.UserAgentCustom">تنظیم خاص</string>
   <string name="Main.MenuCopyLinkUrl">کپی کردن آدرس</string>
   <string name="Main.MenuViewImage">مشاهده تصویر</string>
+  <string name="Main.MenuCopyImageUrl">کپی کردن لینک عکس </string>
   <string name="Main.MenuDownloadImage">ذخیر تصویر</string>
   <string name="Main.MenuSendEmail">ارسال ایمیل</string>
   <string name="Main.MenuCopyEmailUrl">کپی آدرس برای ایمیل</string>
