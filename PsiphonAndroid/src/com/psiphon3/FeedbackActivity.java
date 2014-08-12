@@ -205,8 +205,7 @@ public class FeedbackActivity extends Activity
 
                 FeedbackRequestThread thread = new FeedbackRequestThread(
                                                     serverInterface,
-                                                    // DEBUG
-                                                    null,//PsiphonState.getPsiphonState().getProtectSocket(),
+                                                    null,
                                                     diagnosticData);
                 thread.start();
 

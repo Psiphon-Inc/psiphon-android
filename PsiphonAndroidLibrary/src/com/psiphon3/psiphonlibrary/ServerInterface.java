@@ -66,6 +66,7 @@ import ch.boye.httpclientandroidlib.HttpResponse;
 import ch.boye.httpclientandroidlib.HttpStatus;
 import ch.boye.httpclientandroidlib.client.ClientProtocolException;
 import ch.boye.httpclientandroidlib.client.methods.HttpGet;
+import ch.boye.httpclientandroidlib.client.methods.HttpPost;
 import ch.boye.httpclientandroidlib.client.methods.HttpPut;
 import ch.boye.httpclientandroidlib.client.methods.HttpRequestBase;
 import ch.boye.httpclientandroidlib.conn.ClientConnectionManager;
@@ -781,6 +782,7 @@ public class ServerInterface
                 PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT,
                 canAbort,
                 useLocalProxy,
+                RequestMethod.INFER,
                 null,
                 EmbeddedValues.UPGRADE_URL,
                 null,
@@ -825,7 +827,7 @@ public class ServerInterface
 
         makeDirectWebRequest(
                 protectSocket, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT,
-                url.toString(), additionalHeaders, feedbackData);
+                RequestMethod.PUT, url.toString(), additionalHeaders, feedbackData);
     }
 
     synchronized public void fetchRemoteServerList(Tun2Socks.IProtectSocket protectSocket)
@@ -1070,6 +1072,7 @@ public class ServerInterface
                             timeout,
                             false,
                             false,
+                            RequestMethod.INFER,
                             psiphonServerCertificate,
                             url,
                             additionalHeaders,
@@ -1126,6 +1129,7 @@ public class ServerInterface
                 timeout,
                 canAbort,
                 useLocalProxy,
+                RequestMethod.INFER,
                 psiphonServerCertificate,
                 url,
                 additionalHeaders,
@@ -1133,23 +1137,29 @@ public class ServerInterface
                 resumableDownload);
     }
 
-    private byte[] makeDirectWebRequest(Tun2Socks.IProtectSocket protectSocket, int timeout, String url)
+    private byte[] makeDirectWebRequest(
+                    Tun2Socks.IProtectSocket protectSocket,
+                    int timeout,
+                    String url)
             throws PsiphonServerInterfaceException
     {
-        return makeRequest(protectSocket, timeout, true, false, null, url, null, null, null);
+        return makeRequest(
+                protectSocket, timeout, true, false, RequestMethod.INFER, null,
+                url, null, null, null);
     }
 
     private byte[] makeDirectWebRequest(
                     Tun2Socks.IProtectSocket protectSocket,
                     int timeout,
+                    RequestMethod requestMethod,
                     String url,
                     List<Pair<String,String>> additionalHeaders,
                     byte[] body)
             throws PsiphonServerInterfaceException
     {
         return makeRequest(
-                protectSocket, timeout, true, false, null, url,
-                additionalHeaders, body, null);
+                protectSocket, timeout, true, false, requestMethod, null,
+                url, additionalHeaders, body, null);
     }
 
     private class FixedCertTrustManager implements X509TrustManager
@@ -1388,11 +1398,14 @@ public class ServerInterface
         boolean appendData(byte[] buffer, int length);
     }
 
+    enum RequestMethod {INFER, GET, POST, PUT};
+
     private byte[] makeRequest(
             Tun2Socks.IProtectSocket protectSocket,
             int timeout,
             boolean canAbort,
             boolean useLocalProxy,
+            RequestMethod requestMethod,
             String serverCertificate,
             String url,
             List<Pair<String,String>> additionalHeaders,
@@ -1461,12 +1474,18 @@ public class ServerInterface
             ClientConnectionManager connManager = new PoolingClientConnectionManager(registry, dnsResolver);
             DefaultHttpClient client = new DefaultHttpClient(connManager, params);
 
-            if (body != null)
+            if (requestMethod == RequestMethod.POST ||
+                (requestMethod == RequestMethod.INFER && body != null))
             {
-                // DEBUG DEBUG DEBUG -- was HttpPost
-                HttpPut post = new HttpPut(url);
+                HttpPost post = new HttpPost(url);
                 post.setEntity(new ByteArrayEntity(body));
                 request = post;
+            }
+            else if (requestMethod == RequestMethod.PUT)
+            {
+                HttpPut put = new HttpPut(url);
+                put.setEntity(new ByteArrayEntity(body));
+                request = put;
             }
             else
             {
