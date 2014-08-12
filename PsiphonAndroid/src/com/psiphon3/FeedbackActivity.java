@@ -29,8 +29,10 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.List;
 import java.util.Locale;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -43,8 +45,11 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
+import com.psiphon3.psiphonlibrary.Diagnostics;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.ServerInterface;
+import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
+import com.psiphon3.psiphonlibrary.Tun2Socks;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 public class FeedbackActivity extends Activity
@@ -121,19 +126,6 @@ public class FeedbackActivity extends Activity
                 return true;
             }
 
-            class FormData
-            {
-                class Response {
-                    public String title;
-                    public String question;
-                    public int answer;
-                }
-                public boolean sendDiagnosticInfo;
-                public String feedback;
-                public String email;
-                public List<Response> responses;
-            }
-
             private boolean submitFeedback(String urlParameters)
             {
                 final String formDataParameterName = "formdata=";
@@ -143,50 +135,53 @@ public class FeedbackActivity extends Activity
                     return false;
                 }
 
-                String formData;
-                FormData formDataObj;
+                String email, feedbackText, surveyResponsesJson;
+                boolean sendDiagnosticInfo;
                 try
                 {
-                    formData = URLDecoder.decode(urlParameters.substring(formDataParameterName.length()), "utf-8");
+                    String formDataJson = URLDecoder.decode(urlParameters.substring(formDataParameterName.length()), "utf-8");
 
-                    Gson gson = new Gson();
-                    formDataObj = gson.fromJson(formData, FormData.class);
+                    JSONObject jsonObj = new JSONObject(formDataJson);
+                    feedbackText = jsonObj.getString("feedback");
+                    email = jsonObj.getString("email");
+                    surveyResponsesJson = jsonObj.getString("responses");
+                    sendDiagnosticInfo = jsonObj.getBoolean("sendDiagnosticInfo");
                 }
                 catch (UnsupportedEncodingException e)
                 {
                     MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                     return false;
-                }
-                return true;
-                /*
-
-                File attachmentFile = Diagnostics.createEmailAttachment(activity);
-                if (attachmentFile == null)
-                {
+                } catch (JSONException e) {
+                    MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                     return false;
                 }
 
-
-                //Uri.fromFile(attachmentFile)
-
+                String diagnosticData = Diagnostics.create(
+                                            activity,
+                                            sendDiagnosticInfo,
+                                            email,
+                                            feedbackText,
+                                            surveyResponsesJson);
 
                 ServerInterface serverInterface = new ServerInterface(activity);
                 serverInterface.start();
-                serverInterface.setCurrentServerEntry();
 
-                // Hack to get around network/UI restriction. Still blocks the UI
-                // for the duration of the request until timeout.
-                // TODO: Actually run in the background
+                // Hack to get around network/UI restriction.
+                // Fire-and-forget thread.
                 class FeedbackRequestThread extends Thread
                 {
-                    private final ServerInterface m_serverInterface;
-                    private final String m_formData;
-                    private boolean m_success = false;
+                    private final ServerInterface mServerInterface;
+                    private final Tun2Socks.IProtectSocket mProtectSocket;
+                    private final String mDiagnosticData;
 
-                    FeedbackRequestThread(ServerInterface serverInterface, String formData)
+                    FeedbackRequestThread(
+                            ServerInterface serverInterface,
+                            Tun2Socks.IProtectSocket protectSocket,
+                            String diagnosticData)
                     {
-                        m_serverInterface = serverInterface;
-                        m_formData = formData;
+                        mServerInterface = serverInterface;
+                        mProtectSocket = protectSocket;
+                        mDiagnosticData = diagnosticData;
                     }
 
                     @Override
@@ -194,34 +189,28 @@ public class FeedbackActivity extends Activity
                     {
                         try
                         {
-                            m_serverInterface.doFeedbackRequest(m_formData);
-                            m_success = true;
+                            mServerInterface.doFeedbackUpload(
+                                    mProtectSocket,
+                                    mDiagnosticData.getBytes("UTF-8"));
                         }
                         catch (PsiphonServerInterfaceException e)
                         {
                             MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                         }
-                    }
-
-                    public boolean getSuccess()
-                    {
-                        return m_success;
+                        catch (UnsupportedEncodingException e) {
+                            MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
+                        }
                     }
                 }
 
-                try
-                {
-                    FeedbackRequestThread thread = new FeedbackRequestThread(serverInterface, formData);
-                    thread.start();
-                    thread.join();
-                    return thread.getSuccess();
-                }
-                catch (InterruptedException e)
-                {
-                    MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
-                    return false;
-                }
-                */
+                FeedbackRequestThread thread = new FeedbackRequestThread(
+                                                    serverInterface,
+                                                    // DEBUG
+                                                    null,//PsiphonState.getPsiphonState().getProtectSocket(),
+                                                    diagnosticData);
+                thread.start();
+
+                return true;
             }
         });
 

@@ -22,7 +22,6 @@ package com.psiphon3.psiphonlibrary;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -56,6 +55,7 @@ import org.json.JSONObject;
 import org.xbill.DNS.Address;
 import org.xbill.DNS.PsiphonState;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.SystemClock;
 import android.util.Pair;
@@ -66,7 +66,7 @@ import ch.boye.httpclientandroidlib.HttpResponse;
 import ch.boye.httpclientandroidlib.HttpStatus;
 import ch.boye.httpclientandroidlib.client.ClientProtocolException;
 import ch.boye.httpclientandroidlib.client.methods.HttpGet;
-import ch.boye.httpclientandroidlib.client.methods.HttpPost;
+import ch.boye.httpclientandroidlib.client.methods.HttpPut;
 import ch.boye.httpclientandroidlib.client.methods.HttpRequestBase;
 import ch.boye.httpclientandroidlib.conn.ClientConnectionManager;
 import ch.boye.httpclientandroidlib.conn.DnsResolver;
@@ -88,6 +88,8 @@ import com.psiphon3.psiphonlibrary.AuthenticatedDataPackage.AuthenticatedDataPac
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
+// We address this warning in Utils.initializeSecureRandom()
+@SuppressLint("TrulyRandom")
 public class ServerInterface
 {
     /**
@@ -801,33 +803,29 @@ public class ServerInterface
      * Upload the encrypted feedback package
      * @throws PsiphonServerInterfaceException
      */
-    synchronized public void doFeedbackUpload(File feedbackDataFile)
+    synchronized public void doFeedbackUpload(
+                                Tun2Socks.IProtectSocket protectSocket,
+                                byte[] feedbackData)
         throws PsiphonServerInterfaceException
     {
-        return;
-        /*
-        if(getCurrentServerEntry() == null)
-        {
-            throw new PsiphonServerInterfaceException();
-        }
-        // NOTE: feedbackData is not being validated here
-        byte[] requestBody = feedbackData.getBytes();
+        SecureRandom rnd = new SecureRandom();
+        byte[] uploadId = new byte[8];
+        rnd.nextBytes(uploadId);
 
-        List<Pair<String,String>> extraParams = new ArrayList<Pair<String,String>>();
+        StringBuilder url = new StringBuilder();
+        url.append("https://");
+        url.append(EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER);
+        url.append(EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_PATH);
+        url.append(Utils.byteArrayToHexString(uploadId));
 
-        extraParams.add(Pair.create("session_id", PsiphonData.getPsiphonData().getTunnelSessionID()));
+        String[] headerPieces = EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER_HEADERS.split(": ");
 
         List<Pair<String,String>> additionalHeaders = new ArrayList<Pair<String,String>>();
-        additionalHeaders.add(Pair.create("Content-Type", "application/json"));
+        additionalHeaders.add(Pair.create(headerPieces[0], headerPieces[1]));
 
-        String urls[] = getRequestURLsWithFailover("feedback", extraParams);
-
-        // NOTE: don't have TunnelCore reference where this function is called, so
-        // not providing an IProtectSocket or hasTunnel flag. This means the feedback
-        // will fail when stuck in an unsuccessful connecting state.
-        makePsiphonRequestWithFailover(
-                null, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, true, urls, additionalHeaders, requestBody, null);
-        */
+        makeDirectWebRequest(
+                protectSocket, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT,
+                url.toString(), additionalHeaders, feedbackData);
     }
 
     synchronized public void fetchRemoteServerList(Tun2Socks.IProtectSocket protectSocket)
@@ -1141,6 +1139,19 @@ public class ServerInterface
         return makeRequest(protectSocket, timeout, true, false, null, url, null, null, null);
     }
 
+    private byte[] makeDirectWebRequest(
+                    Tun2Socks.IProtectSocket protectSocket,
+                    int timeout,
+                    String url,
+                    List<Pair<String,String>> additionalHeaders,
+                    byte[] body)
+            throws PsiphonServerInterfaceException
+    {
+        return makeRequest(
+                protectSocket, timeout, true, false, null, url,
+                additionalHeaders, body, null);
+    }
+
     private class FixedCertTrustManager implements X509TrustManager
     {
         private final X509Certificate expectedServerCertificate;
@@ -1452,7 +1463,8 @@ public class ServerInterface
 
             if (body != null)
             {
-                HttpPost post = new HttpPost(url);
+                // DEBUG DEBUG DEBUG -- was HttpPost
+                HttpPut post = new HttpPut(url);
                 post.setEntity(new ByteArrayEntity(body));
                 request = post;
             }
