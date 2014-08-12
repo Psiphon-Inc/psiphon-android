@@ -330,7 +330,7 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
     @Override
     public boolean isStopSignalPending()
     {
-        return m_signalQueue.peek() == Signal.STOP_TUNNEL;
+        return m_signalQueue == null || m_signalQueue.peek() == Signal.STOP_TUNNEL;
     }
 
     public static Connection establishSshConnection(
