@@ -33,6 +33,7 @@ import android.os.Build;
 import android.util.Log;
 
 import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
+import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 public class Diagnostics
@@ -217,13 +218,13 @@ public class Diagnostics
 
         // Encrypt the file contents
         Utils.RSAEncryptOutput rsaEncryptOutput = null;
-        boolean attachOkay = false;
+        boolean encryptedOkay = false;
         try
         {
             rsaEncryptOutput = Utils.encryptWithRSA(
                     diagnosticJSON.getBytes("UTF-8"),
                     EmbeddedValues.FEEDBACK_ENCRYPTION_PUBLIC_KEY);
-            attachOkay = true;
+            encryptedOkay = true;
         }
         catch (GeneralSecurityException e)
         {
@@ -235,7 +236,7 @@ public class Diagnostics
         }
 
         String result = null;
-        if (attachOkay)
+        if (encryptedOkay)
         {
             StringBuilder encryptedContent = new StringBuilder();
             encryptedContent.append("{\n");
@@ -250,5 +251,114 @@ public class Diagnostics
         }
 
         return result;
+    }
+
+    /**
+     * Create the diagnostic data package and upload it.
+     * @param context
+     * @param sendDiagnosticInfo
+     * @param email
+     * @param feedbackText
+     * @param surveyResponsesJson
+     * @return
+     */
+    static public void send(
+            Context context,
+            boolean sendDiagnosticInfo,
+            String email,
+            String feedbackText,
+            String surveyResponsesJson)
+    {
+        // Fire-and-forget thread.
+        class FeedbackRequestThread extends Thread
+        {
+            private final Context mContext;
+            private final boolean mSendDiagnosticInfo;
+            private final String mEmail;
+            private final String mFeedbackText;
+            private final String mSurveyResponsesJson;
+
+            FeedbackRequestThread(
+                    Context context,
+                    boolean sendDiagnosticInfo,
+                    String email,
+                    String feedbackText,
+                    String surveyResponsesJson)
+            {
+                mContext = context;
+                mSendDiagnosticInfo = sendDiagnosticInfo;
+                mEmail = email;
+                mFeedbackText = feedbackText;
+                mSurveyResponsesJson = surveyResponsesJson;
+            }
+
+            @Override
+            public void run()
+            {
+                String diagnosticData = Diagnostics.create(
+                        mContext,
+                        mSendDiagnosticInfo,
+                        mEmail,
+                        mFeedbackText,
+                        mSurveyResponsesJson);
+
+                if (diagnosticData == null)
+                {
+                    return;
+                }
+
+                byte[] diagnosticDataBytes;
+                try
+                {
+                    diagnosticDataBytes = diagnosticData.getBytes("UTF-8");
+                }
+                catch (UnsupportedEncodingException e)
+                {
+                    MyLog.d("diagnostiData.getBytes failed", e);
+                    // unrecoverable
+                    return;
+                }
+
+                ServerInterface serverInterface = new ServerInterface(mContext);
+                serverInterface.start();
+
+                while (true)
+                {
+                    try
+                    {
+                        serverInterface.doFeedbackUpload(
+                                null,
+                                diagnosticDataBytes);
+
+                        // If that did
+                        break;
+                    }
+                    catch (PsiphonServerInterfaceException e)
+                    {
+                        // Fall through...
+                    }
+
+                    // The upload request failed, so sleep and try again.
+                    try
+                    {
+                        MyLog.g("Diagnostic data send fail; sleeping");
+                        Thread.sleep(5 * 60 * 1000);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        // Bail out of this thread if sleep is interrupted.
+                        return;
+                    }
+                }
+            }
+        }
+
+        FeedbackRequestThread thread = new FeedbackRequestThread(
+                                            context,
+                                            sendDiagnosticInfo,
+                                            email,
+                                            feedbackText,
+                                            surveyResponsesJson);
+        thread.start();
     }
 }

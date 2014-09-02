@@ -47,9 +47,6 @@ import android.widget.Toast;
 
 import com.psiphon3.psiphonlibrary.Diagnostics;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
-import com.psiphon3.psiphonlibrary.ServerInterface;
-import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
-import com.psiphon3.psiphonlibrary.Tun2Socks;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 public class FeedbackActivity extends Activity
@@ -151,63 +148,19 @@ public class FeedbackActivity extends Activity
                 {
                     MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                     return false;
-                } catch (JSONException e) {
+                }
+                catch (JSONException e)
+                {
                     MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
                     return false;
                 }
 
-                String diagnosticData = Diagnostics.create(
-                                            activity,
-                                            sendDiagnosticInfo,
-                                            email,
-                                            feedbackText,
-                                            surveyResponsesJson);
-
-                ServerInterface serverInterface = new ServerInterface(activity);
-                serverInterface.start();
-
-                // Hack to get around network/UI restriction.
-                // Fire-and-forget thread.
-                class FeedbackRequestThread extends Thread
-                {
-                    private final ServerInterface mServerInterface;
-                    private final Tun2Socks.IProtectSocket mProtectSocket;
-                    private final String mDiagnosticData;
-
-                    FeedbackRequestThread(
-                            ServerInterface serverInterface,
-                            Tun2Socks.IProtectSocket protectSocket,
-                            String diagnosticData)
-                    {
-                        mServerInterface = serverInterface;
-                        mProtectSocket = protectSocket;
-                        mDiagnosticData = diagnosticData;
-                    }
-
-                    @Override
-                    public void run()
-                    {
-                        try
-                        {
-                            mServerInterface.doFeedbackUpload(
-                                    mProtectSocket,
-                                    mDiagnosticData.getBytes("UTF-8"));
-                        }
-                        catch (PsiphonServerInterfaceException e)
-                        {
-                            MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
-                        }
-                        catch (UnsupportedEncodingException e) {
-                            MyLog.w(R.string.FeedbackActivity_SubmitFeedbackFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
-                        }
-                    }
-                }
-
-                FeedbackRequestThread thread = new FeedbackRequestThread(
-                                                    serverInterface,
-                                                    null,
-                                                    diagnosticData);
-                thread.start();
+                Diagnostics.send(
+                    activity,
+                    sendDiagnosticInfo,
+                    email,
+                    feedbackText,
+                    surveyResponsesJson);
 
                 return true;
             }
