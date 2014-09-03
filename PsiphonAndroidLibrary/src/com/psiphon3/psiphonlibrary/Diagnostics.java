@@ -311,10 +311,11 @@ public class Diagnostics
                 try
                 {
                     diagnosticDataBytes = diagnosticData.getBytes("UTF-8");
+                    diagnosticData = null;
                 }
                 catch (UnsupportedEncodingException e)
                 {
-                    MyLog.d("diagnostiData.getBytes failed", e);
+                    MyLog.d("diagnosticData.getBytes failed", e);
                     // unrecoverable
                     return;
                 }
@@ -326,6 +327,9 @@ public class Diagnostics
                 {
                     try
                     {
+                        // NOTE: protectSocket (the second argument) *must* be
+                        // null due to design limitation (global state not
+                        // compatible with multiple ServerInterface instances).
                         serverInterface.doFeedbackUpload(
                                 null,
                                 diagnosticDataBytes);
