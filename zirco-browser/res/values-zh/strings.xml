@@ -2,7 +2,8 @@
 <resources>
   <string name="ApplicationName">赛风浏览器</string>
   <string name="ApplicationNameUrl">赛风 - %s</string>
-  <string name="ApplicationDescription">赛风浏览器是一款基于Zirco浏览器，用于安卓设备的开源浏览器\n</string>
+  <string name="ApplicationDescription">赛风浏览器是一款基于Zirco浏览器，用于安卓设备的开源浏览器
+</string>
   <string name="AboutActivity.Title">关于</string>
   <string name="AboutActivity.VersionText">版本:</string>
   <string name="AboutActivity.LicenseText">版权:</string>
