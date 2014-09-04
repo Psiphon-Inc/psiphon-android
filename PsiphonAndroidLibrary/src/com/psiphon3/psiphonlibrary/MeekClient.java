@@ -291,44 +291,67 @@ public class MeekClient {
                     break;
                 }
 
-                HttpPost httpPost = new HttpPost(uri);
-                ByteArrayEntity entity = new ByteArrayEntity(payloadBuffer, 0, payloadLength);
-                entity.setContentType(HTTP_POST_CONTENT_TYPE);
-                httpPost.setEntity(entity);
+                // (comment from meek-client.go)
+                // Retry loop, which assumes entire request failed (underlying
+                // transport protocol such as SSH will fail if extra bytes are
+                // replayed in either direction due to partial request success
+                // followed by retry).
+                // This retry mitigates intermittent failures between the client
+                // and front/server.
+                for (int retry = 1; retry >= 0; retry--) {
+                    HttpPost httpPost = new HttpPost(uri);
+                    ByteArrayEntity entity = new ByteArrayEntity(payloadBuffer, 0, payloadLength);
+                    entity.setContentType(HTTP_POST_CONTENT_TYPE);
+                    httpPost.setEntity(entity);
 
-                if (mFrontingDomain != null) {
-                    httpPost.addHeader("Host", mFrontingHost);
-                }
-                httpPost.addHeader("Cookie", cookie);
-
-                HttpResponse response = httpClient.execute(httpPost);
-                int statusCode = response.getStatusLine().getStatusCode();
-                if (statusCode != HttpStatus.SC_OK) {
-                    MyLog.w(R.string.meek_http_request_error, MyLog.Sensitivity.NOT_SENSITIVE, statusCode);
-                    break;
-                }
-
-                boolean receivedData = false;
-                InputStream responseInputStream = response.getEntity().getContent();
-                try {
-                    int readLength;
-                    while ((readLength = responseInputStream.read(payloadBuffer)) != -1) {
-                        receivedData = true;
-                        socketOutputStream.write(payloadBuffer, 0 , readLength);
+                    if (mFrontingDomain != null) {
+                        httpPost.addHeader("Host", mFrontingHost);
                     }
-                } finally {
-                    Utils.closeHelper(responseInputStream);
-                }
+                    httpPost.addHeader("Cookie", cookie);
+                    
+                    HttpResponse response = null;
+                    try {
+                        response = httpClient.execute(httpPost);
+                    } catch (IOException e) {
+                        MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+                        if (retry > 0) {
+                            continue;
+                        }
+                        break;
+                    }
+                    int statusCode = response.getStatusLine().getStatusCode();
+                    if (statusCode != HttpStatus.SC_OK) {
+                        MyLog.w(R.string.meek_http_request_error, MyLog.Sensitivity.NOT_SENSITIVE, statusCode);
+                        if (retry > 0) {
+                            continue;
+                        }
+                        break;
+                    }
 
-                if (payloadLength > 0 || receivedData) {
-                    pollIntervalMilliseconds = MIN_POLL_INTERVAL_MILLISECONDS;
-                } else if (pollIntervalMilliseconds == MIN_POLL_INTERVAL_MILLISECONDS) {
-                    pollIntervalMilliseconds = IDLE_POLL_INTERVAL_MILLISECONDS;
-                } else {
-                    pollIntervalMilliseconds = (int)(pollIntervalMilliseconds*POLL_INTERVAL_MULTIPLIER);
-                }
-                if (pollIntervalMilliseconds > MAX_POLL_INTERVAL_MILLISECONDS) {
-                    pollIntervalMilliseconds = MAX_POLL_INTERVAL_MILLISECONDS;
+                    boolean receivedData = false;
+                    InputStream responseInputStream = response.getEntity().getContent();
+                    try {
+                        int readLength;
+                        while ((readLength = responseInputStream.read(payloadBuffer)) != -1) {
+                            receivedData = true;
+                            socketOutputStream.write(payloadBuffer, 0 , readLength);
+                        }
+                    } finally {
+                        Utils.closeHelper(responseInputStream);
+                    }
+                    if (payloadLength > 0 || receivedData) {
+                        pollIntervalMilliseconds = MIN_POLL_INTERVAL_MILLISECONDS;
+                    } else if (pollIntervalMilliseconds == MIN_POLL_INTERVAL_MILLISECONDS) {
+                        pollIntervalMilliseconds = IDLE_POLL_INTERVAL_MILLISECONDS;
+                    } else {
+                        pollIntervalMilliseconds = (int)(pollIntervalMilliseconds*POLL_INTERVAL_MULTIPLIER);
+                    }
+                    if (pollIntervalMilliseconds > MAX_POLL_INTERVAL_MILLISECONDS) {
+                        pollIntervalMilliseconds = MAX_POLL_INTERVAL_MILLISECONDS;
+                    }
+
+                    // Success: exit retry loop
+                    break;
                 }
             }
         } catch (IOException e) {
