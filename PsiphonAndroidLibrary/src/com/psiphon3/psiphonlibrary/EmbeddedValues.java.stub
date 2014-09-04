@@ -33,6 +33,9 @@ cog.outl('public static final String CLIENT_VERSION = "%s";' % utils.get_embedde
 cog.outl('public static final String EMBEDDED_SERVER_LIST[] = {"%s"};' % utils.get_embedded_value(buildname, 'EMBEDDED_SERVER_LIST'))
 cog.outl('public static final boolean IGNORE_NON_EMBEDDED_SERVER_ENTRIES = %s;' % ('true' if utils.get_embedded_value(buildname, 'IGNORE_NON_EMBEDDED_SERVER_ENTRIES') else 'false'))
 cog.outl('public static final String FEEDBACK_ENCRYPTION_PUBLIC_KEY = "%s";' % utils.get_embedded_value(buildname, 'FEEDBACK_ENCRYPTION_PUBLIC_KEY'))
+cog.outl('public static final String FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER = "%s";' % utils.get_embedded_value(buildname, 'FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER'))
+cog.outl('public static final String FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_PATH = "%s";' % utils.get_embedded_value(buildname, 'FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_PATH'))
+cog.outl('public static final String FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER_HEADERS = "%s";' % utils.get_embedded_value(buildname, 'FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER_HEADERS'))
 cog.outl('public static final String PROXIED_WEB_APP_HTTP_AUTH_USERNAME = "%s";' % utils.get_embedded_value(buildname, 'PROXIED_WEB_APP_HTTP_AUTH_USERNAME'))
 cog.outl('public static final String PROXIED_WEB_APP_HTTP_AUTH_PASSWORD = "%s";' % utils.get_embedded_value(buildname, 'PROXIED_WEB_APP_HTTP_AUTH_PASSWORD'))
 cog.outl('public static final boolean IS_PLAY_STORE_BUILD = %s;' % ('true' if utils.get_embedded_value(buildname, 'IS_PLAY_STORE_BUILD') else 'false'))
@@ -49,28 +52,32 @@ cog.outl('public static String FAQ_URL = "%s";' % utils.get_embedded_value(build
 cog.outl('public static String DATA_COLLECTION_INFO_URL = "%s";' % utils.get_embedded_value(buildname, 'DATA_COLLECTION_INFO_URL'))
 ]]]*/
     public static final String CLIENT_VERSION = "1";
-    
+
     public static final String[] EMBEDDED_SERVER_LIST = {""};
 
     public static final boolean IGNORE_NON_EMBEDDED_SERVER_ENTRIES = false;
 
-    public static final String FEEDBACK_ENCRYPTION_PUBLIC_KEY = "";    
-    
     public static final String PROXIED_WEB_APP_HTTP_AUTH_USERNAME = "";
 
     public static final String PROXIED_WEB_APP_HTTP_AUTH_PASSWORD = "";
 
     public static final boolean IS_PLAY_STORE_BUILD = false;
-    
+
+    // These values are used when uploading diagnostic info
+    public static String FEEDBACK_ENCRYPTION_PUBLIC_KEY = "";
+    public static String FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER = "";
+    public static String FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_PATH = "";
+    public static String FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER_HEADERS = "";
+
     // Following embedded values may be overridden with values from Preferences. This is to prevent
     // Play Store Build instances from overriding embedded values from previously installed APKS.
     // Non-Play Store Build instances always write their values to persistent Preferences, and
     // Play Store Build instances always use persistent Preference values, if they exist.
-    
+
     public static String PROPAGATION_CHANNEL_ID = "";
-    
+
     public static String SPONSOR_ID = "";
-    
+
     public static String REMOTE_SERVER_LIST_URL = "https://s3.amazonaws.com/invalid_bucket_name/server_entries";
     public static String REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY = "";
 
@@ -86,9 +93,9 @@ cog.outl('public static String DATA_COLLECTION_INFO_URL = "%s";' % utils.get_emb
     public static String FAQ_URL = "https://s3.amazonaws.com/invalid_bucket_name/en/faq.html";
     public static String DATA_COLLECTION_INFO_URL = "https://s3.amazonaws.com/invalid_bucket_name/en/faq.html#information-collected";
 
-    public static final String MEEK_CLIENT_COOKIE_PAYLOAD_ENCRYPTION_PUBLIC_KEY = "";    
-    
-//[[[end]]] 
+    public static final String MEEK_CLIENT_COOKIE_PAYLOAD_ENCRYPTION_PUBLIC_KEY = "";
+
+//[[[end]]]
 
     private static final String PROPAGATION_CHANNEL_ID_PREFERENCE = "propagationChannelIdPreference";
     private static final String SPONSOR_ID_PREFERENCE = "sponsorIdPreference";
@@ -101,7 +108,7 @@ cog.outl('public static String DATA_COLLECTION_INFO_URL = "%s";' % utils.get_emb
     private static final String GET_NEW_VERSION_EMAIL_PREREFENCE = "getNewVersionEmailPreference";
     private static final String FAQ_URL_PREFERENCE = "faqUrlPreference";
     private static final String DATA_COLLECTION_INFO_URL_PREFERENCE = "dataCollectionInfoUrlPreference";
-    
+
     public static void initialize(Context context)
     {
         if (!IS_PLAY_STORE_BUILD)
