@@ -314,18 +314,14 @@ public class MeekClient {
                         response = httpClient.execute(httpPost);
                     } catch (IOException e) {
                         MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
-                        if (retry > 0) {
-                            continue;
-                        }
-                        break;
+                        // Retry (or abort)
+                        continue;
                     }
                     int statusCode = response.getStatusLine().getStatusCode();
                     if (statusCode != HttpStatus.SC_OK) {
                         MyLog.w(R.string.meek_http_request_error, MyLog.Sensitivity.NOT_SENSITIVE, statusCode);
-                        if (retry > 0) {
-                            continue;
-                        }
-                        break;
+                        // Retry (or abort)
+                        continue;
                     }
 
                     boolean receivedData = false;
