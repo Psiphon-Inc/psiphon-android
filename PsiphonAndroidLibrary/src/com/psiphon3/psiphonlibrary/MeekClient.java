@@ -298,7 +298,8 @@ public class MeekClient {
                 // followed by retry).
                 // This retry mitigates intermittent failures between the client
                 // and front/server.
-                for (int retry = 1; retry >= 0; retry--) {
+                int retry;
+                for (retry = 1; retry >= 0; retry--) {
                     HttpPost httpPost = new HttpPost(uri);
                     ByteArrayEntity entity = new ByteArrayEntity(payloadBuffer, 0, payloadLength);
                     entity.setContentType(HTTP_POST_CONTENT_TYPE);
@@ -347,6 +348,10 @@ public class MeekClient {
                     }
 
                     // Success: exit retry loop
+                    break;
+                }
+                if (retry < 0) {
+                    // All retries failed, so abort this meek client session
                     break;
                 }
             }
