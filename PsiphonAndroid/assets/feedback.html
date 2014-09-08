@@ -517,6 +517,14 @@ function setLanguage(langName, args)
 
     e.currentTarget.href = url;
   });
+
+  // Resize the happy/sad buttons to match each other
+  $('.feedback .feedback-choice').css('height', null);
+  var tPad = Number($('.feedback .feedback-choice').css('padding-top').replace('px',''));
+  var bPad = Number($('.feedback .feedback-choice').css('padding-bottom').replace('px',''));
+  var parentHeight = $('.feedback .feedback-choice').parent().height();
+  var targetHeight = parentHeight - tPad - bPad - 1;
+  $('.feedback .feedback-choice').css('height', targetHeight + 'px');
 }
 
 
