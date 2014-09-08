@@ -37,12 +37,15 @@ body {
   padding: 0px;
 }
 
+.feedback td {
+  width: 50%;
+}
+
 .feedback .feedback-choice {
   padding: 2em;
   text-align: center;
   opacity: 0.6;
   filter:alpha(opacity=60); /* For IE8 and earlier */
-  width: 50%;
   border: thin #ccc solid;
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
@@ -157,17 +160,21 @@ html {
       <div>
         <table class="feedback" id="smiley">
           <tr>
-            <td class="happy feedback-choice">
-              <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAkdJREFUeNrsWettgzAQtjKBNygjZIN6g3oEj8AGZQNG8Ai0E9ANSCagG9BO0BrprF5PPM42Dvzgk05UCXXu7e9sIU6cOHECIJ0YJ9ZJ66RzMsBnh0YBSo/K/kxI4+TqpILnoVASxce/aycaDMPv+Xd6eKfYO10sUdww0qsh0RlTTe2hfEdSREbUSk8MeVhEsBfrxLWwIQOkWlZUSPky07o2MKJsXMmP5FjfN4QuhxEdWjxnS87yOwZ5P3cvx5HYLNL9RkXLhUIO01t5f8hVXDOwaONLQpuxcNfqwUfBbLFIsRJyxYiQDNx5bWpBl4wFDKEUcsEZoW1SrznwsrLACzzfV7xKacKcARJ1Gk5avJEoB8Nbr5jcaFhos5RDcfPa/0+V0sq4/Vswa0BFNJEmlp90Yl9UiLEG1cATPD+PPA5eVlroiPtBdL3FdKERXzsr/gzP71gDbgc4NIiKANfzGgothCcZaLmaobw34CPUgDuzPY7fvwZwJQmsVqKNcsk53vvBqayZFFoiisChvi2TX2EaH03mBuY+oNFOrBYMxQcCFSPNkmm8ZVCJKVJnETtVoOwQMFPjqFapHWB2F5yhH/i8hwr36KRBw0zyEFVHDDRa/B3ytqCQYSpTbjlOUhZpRF7gNNx0/sbDSK7BHns+C4HExx2N2G7ApwfFWQ615oaX1BzVpOizKj/F0WOPyDXZ0B555vSvLnDo/cWFWpjE6ok224sd7gioIbWYvmJa2hN6ccD7M38X1s4o34Kxh7srO3HixE74FWAArk8AQckCFBgAAAAASUVORK5CYII=">
-              <br>
-              <span id="smiley_happy">
-              </span>
+            <td>
+              <div class="happy feedback-choice">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAkdJREFUeNrsWettgzAQtjKBNygjZIN6g3oEj8AGZQNG8Ai0E9ANSCagG9BO0BrprF5PPM42Dvzgk05UCXXu7e9sIU6cOHECIJ0YJ9ZJ66RzMsBnh0YBSo/K/kxI4+TqpILnoVASxce/aycaDMPv+Xd6eKfYO10sUdww0qsh0RlTTe2hfEdSREbUSk8MeVhEsBfrxLWwIQOkWlZUSPky07o2MKJsXMmP5FjfN4QuhxEdWjxnS87yOwZ5P3cvx5HYLNL9RkXLhUIO01t5f8hVXDOwaONLQpuxcNfqwUfBbLFIsRJyxYiQDNx5bWpBl4wFDKEUcsEZoW1SrznwsrLACzzfV7xKacKcARJ1Gk5avJEoB8Nbr5jcaFhos5RDcfPa/0+V0sq4/Vswa0BFNJEmlp90Yl9UiLEG1cATPD+PPA5eVlroiPtBdL3FdKERXzsr/gzP71gDbgc4NIiKANfzGgothCcZaLmaobw34CPUgDuzPY7fvwZwJQmsVqKNcsk53vvBqayZFFoiisChvi2TX2EaH03mBuY+oNFOrBYMxQcCFSPNkmm8ZVCJKVJnETtVoOwQMFPjqFapHWB2F5yhH/i8hwr36KRBw0zyEFVHDDRa/B3ytqCQYSpTbjlOUhZpRF7gNNx0/sbDSK7BHns+C4HExx2N2G7ApwfFWQ615oaX1BzVpOizKj/F0WOPyDXZ0B555vSvLnDo/cWFWpjE6ok224sd7gioIbWYvmJa2hN6ccD7M38X1s4o34Kxh7srO3HixE74FWAArk8AQckCFBgAAAAASUVORK5CYII=">
+                <br>
+                <span id="smiley_happy">
+                </span>
+              </div>
             </td>
-            <td class="sad feedback-choice">
-              <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAipJREFUeNrsWYttgzAQJVEHYAQ2KBvUG5QR3A0yAhswQroBI5BOAJmAbOBskDjSWbpaAc722aQqTzoligy+z/N9nCzbsOF/Y5doH4G+D1qur+6YSkurRWm5TUinpdZSvJryuZZ+RvEpY8Taipdajk+UU6BgAx43Xn+I1DKitS04ICmKJ4qPoHBJfIdEdFMOzwVDWjwPoUIOzycz4mh5XDC/N6oRWPljBN52yDF5TOVlxEymkINYOR9beVxLzF6CK9sYr9SJkkSHkgMbdfqEKVqgKBSh3qeEs0EtQj5T8A4OCplCd+DwfrtQiW9Wdppbo4DnS2g4Im+4XxGjNMVbQVgz90wQDxUxc/SwVi4cTJcUGZSNas5MgJziokw/xYA94eF3+PxhNOAEQsUVnSFnA5K3ty7YO3ptLQwcBqw9LP1pAwwu9g9vjpnj5OG5ElXdAeTiGYGLj9UtpLDGoRWuF24kemIVtgtk7hOBM2xGmY4qa8C5QtTOaM0nvOvhmG8tX8Q7Je/7JGopF1afM9fQCRShpbmic2SAdy/UO86ypu2QRPoEtdOUbrTmnJ6s8xfcxrB5Ys2RkhIFzsKlOLg/dVNQJVK+5+7FRORLJ5ydVCy6SrSBYIxunf2+6StjHzB88VQEKm7fryZp4QtrPGwhOgWB4weUInHxk9kKEJYh2JNYxom+aASDvLy+Y47Ig1ofVgf6rCUeYEQ9zQ0rrwKRJfzDYsOGDRvS4i7AAKt+ADTSw7VmAAAAAElFTkSuQmCC">
-              <br>
-              <span id="smiley_sad">
-              </span>
+            <td>
+              <div class="sad feedback-choice">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAipJREFUeNrsWYttgzAQJVEHYAQ2KBvUG5QR3A0yAhswQroBI5BOAJmAbOBskDjSWbpaAc722aQqTzoligy+z/N9nCzbsOF/Y5doH4G+D1qur+6YSkurRWm5TUinpdZSvJryuZZ+RvEpY8Taipdajk+UU6BgAx43Xn+I1DKitS04ICmKJ4qPoHBJfIdEdFMOzwVDWjwPoUIOzycz4mh5XDC/N6oRWPljBN52yDF5TOVlxEymkINYOR9beVxLzF6CK9sYr9SJkkSHkgMbdfqEKVqgKBSh3qeEs0EtQj5T8A4OCplCd+DwfrtQiW9Wdppbo4DnS2g4Im+4XxGjNMVbQVgz90wQDxUxc/SwVi4cTJcUGZSNas5MgJziokw/xYA94eF3+PxhNOAEQsUVnSFnA5K3ty7YO3ptLQwcBqw9LP1pAwwu9g9vjpnj5OG5ElXdAeTiGYGLj9UtpLDGoRWuF24kemIVtgtk7hOBM2xGmY4qa8C5QtTOaM0nvOvhmG8tX8Q7Je/7JGopF1afM9fQCRShpbmic2SAdy/UO86ypu2QRPoEtdOUbrTmnJ6s8xfcxrB5Ys2RkhIFzsKlOLg/dVNQJVK+5+7FRORLJ5ydVCy6SrSBYIxunf2+6StjHzB88VQEKm7fryZp4QtrPGwhOgWB4weUInHxk9kKEJYh2JNYxom+aASDvLy+Y47Ig1ofVgf6rCUeYEQ9zQ0rrwKRJfzDYsOGDRvS4i7AAKt+ADTSw7VmAAAAAElFTkSuQmCC">
+                <br>
+                <span id="smiley_sad">
+                </span>
+              </div>
             </td>
           </tr>
         </table>
@@ -542,8 +549,8 @@ $(function() {
 
   //set onClick listener to the feedback table cells
   $('.feedback .feedback-choice').click(function() {
-    $(this).toggleClass("selected", true);
-    $(this).siblings().toggleClass("selected", false);
+    $('.feedback .feedback-choice').removeClass("selected");
+    $(this).addClass("selected");
   });
 
   //set onChange listener to language dropdown
