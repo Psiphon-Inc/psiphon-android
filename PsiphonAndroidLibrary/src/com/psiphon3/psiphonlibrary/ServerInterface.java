@@ -55,6 +55,7 @@ import org.json.JSONObject;
 import org.xbill.DNS.Address;
 import org.xbill.DNS.PsiphonState;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.SystemClock;
 import android.util.Pair;
@@ -66,6 +67,7 @@ import ch.boye.httpclientandroidlib.HttpStatus;
 import ch.boye.httpclientandroidlib.client.ClientProtocolException;
 import ch.boye.httpclientandroidlib.client.methods.HttpGet;
 import ch.boye.httpclientandroidlib.client.methods.HttpPost;
+import ch.boye.httpclientandroidlib.client.methods.HttpPut;
 import ch.boye.httpclientandroidlib.client.methods.HttpRequestBase;
 import ch.boye.httpclientandroidlib.conn.ClientConnectionManager;
 import ch.boye.httpclientandroidlib.conn.DnsResolver;
@@ -87,6 +89,8 @@ import com.psiphon3.psiphonlibrary.AuthenticatedDataPackage.AuthenticatedDataPac
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
+// We address this warning in Utils.initializeSecureRandom()
+@SuppressLint("TrulyRandom")
 public class ServerInterface
 {
     /**
@@ -609,7 +613,7 @@ public class ServerInterface
             MyLog.w(R.string.ServerInterface_FailedToReadLastConnected, MyLog.Sensitivity.NOT_SENSITIVE, e);
             // skip loading persistent server entries
         }
-        
+
         // We have observed blank last_connected values from some Android clients; we don't know what
         // exactly causes this; so, simply default to a valid value. This will now pass the validation
         //  in the connected request, and ultimately LAST_CONNECTED_FILENAME should be overwritten with
@@ -778,6 +782,7 @@ public class ServerInterface
                 PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT,
                 canAbort,
                 useLocalProxy,
+                RequestMethod.INFER,
                 null,
                 EmbeddedValues.UPGRADE_URL,
                 null,
@@ -797,33 +802,32 @@ public class ServerInterface
     }
 
     /**
-     * Make the 'feedback' request to the server.
+     * Upload the encrypted feedback package
      * @throws PsiphonServerInterfaceException
      */
-    synchronized public void doFeedbackRequest(String feedbackData)
+    synchronized public void doFeedbackUpload(
+                                Tun2Socks.IProtectSocket protectSocket,
+                                byte[] feedbackData)
         throws PsiphonServerInterfaceException
     {
-        if(getCurrentServerEntry() == null)
-        {
-            throw new PsiphonServerInterfaceException();
-        }
-        // NOTE: feedbackData is not being validated here
-        byte[] requestBody = feedbackData.getBytes();
+        SecureRandom rnd = new SecureRandom();
+        byte[] uploadId = new byte[8];
+        rnd.nextBytes(uploadId);
 
-        List<Pair<String,String>> extraParams = new ArrayList<Pair<String,String>>();
+        StringBuilder url = new StringBuilder();
+        url.append("https://");
+        url.append(EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER);
+        url.append(EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_PATH);
+        url.append(Utils.byteArrayToHexString(uploadId));
 
-        extraParams.add(Pair.create("session_id", PsiphonData.getPsiphonData().getTunnelSessionID()));
+        String[] headerPieces = EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER_HEADERS.split(": ");
 
         List<Pair<String,String>> additionalHeaders = new ArrayList<Pair<String,String>>();
-        additionalHeaders.add(Pair.create("Content-Type", "application/json"));
+        additionalHeaders.add(Pair.create(headerPieces[0], headerPieces[1]));
 
-        String urls[] = getRequestURLsWithFailover("feedback", extraParams);
-
-        // NOTE: don't have TunnelCore reference where this function is called, so
-        // not providing an IProtectSocket or hasTunnel flag. This means the feedback
-        // will fail when stuck in an unsuccessful connecting state.
-        makePsiphonRequestWithFailover(
-                null, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, true, urls, additionalHeaders, requestBody, null);
+        makeDirectWebRequest(
+                protectSocket, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT,
+                RequestMethod.PUT, url.toString(), additionalHeaders, feedbackData);
     }
 
     synchronized public void fetchRemoteServerList(Tun2Socks.IProtectSocket protectSocket)
@@ -1068,6 +1072,7 @@ public class ServerInterface
                             timeout,
                             false,
                             false,
+                            RequestMethod.INFER,
                             psiphonServerCertificate,
                             url,
                             additionalHeaders,
@@ -1124,6 +1129,7 @@ public class ServerInterface
                 timeout,
                 canAbort,
                 useLocalProxy,
+                RequestMethod.INFER,
                 psiphonServerCertificate,
                 url,
                 additionalHeaders,
@@ -1131,10 +1137,29 @@ public class ServerInterface
                 resumableDownload);
     }
 
-    private byte[] makeDirectWebRequest(Tun2Socks.IProtectSocket protectSocket, int timeout, String url)
+    private byte[] makeDirectWebRequest(
+                    Tun2Socks.IProtectSocket protectSocket,
+                    int timeout,
+                    String url)
             throws PsiphonServerInterfaceException
     {
-        return makeRequest(protectSocket, timeout, true, false, null, url, null, null, null);
+        return makeRequest(
+                protectSocket, timeout, true, false, RequestMethod.INFER, null,
+                url, null, null, null);
+    }
+
+    private byte[] makeDirectWebRequest(
+                    Tun2Socks.IProtectSocket protectSocket,
+                    int timeout,
+                    RequestMethod requestMethod,
+                    String url,
+                    List<Pair<String,String>> additionalHeaders,
+                    byte[] body)
+            throws PsiphonServerInterfaceException
+    {
+        return makeRequest(
+                protectSocket, timeout, true, false, requestMethod, null,
+                url, additionalHeaders, body, null);
     }
 
     private class FixedCertTrustManager implements X509TrustManager
@@ -1228,7 +1253,7 @@ public class ServerInterface
             return Address.getAllByName(hostname);
         }
     }
-    
+
     public static DnsResolver getDnsResolver(Tun2Socks.IProtectSocket protectSocket, ServerInterface serverInterface)
     {
         if (protectSocket != null)
@@ -1373,11 +1398,14 @@ public class ServerInterface
         boolean appendData(byte[] buffer, int length);
     }
 
+    enum RequestMethod {INFER, GET, POST, PUT};
+
     private byte[] makeRequest(
             Tun2Socks.IProtectSocket protectSocket,
             int timeout,
             boolean canAbort,
             boolean useLocalProxy,
+            RequestMethod requestMethod,
             String serverCertificate,
             String url,
             List<Pair<String,String>> additionalHeaders,
@@ -1446,11 +1474,18 @@ public class ServerInterface
             ClientConnectionManager connManager = new PoolingClientConnectionManager(registry, dnsResolver);
             DefaultHttpClient client = new DefaultHttpClient(connManager, params);
 
-            if (body != null)
+            if (requestMethod == RequestMethod.POST ||
+                (requestMethod == RequestMethod.INFER && body != null))
             {
                 HttpPost post = new HttpPost(url);
                 post.setEntity(new ByteArrayEntity(body));
                 request = post;
+            }
+            else if (requestMethod == RequestMethod.PUT)
+            {
+                HttpPut put = new HttpPut(url);
+                put.setEntity(new ByteArrayEntity(body));
+                request = put;
             }
             else
             {
@@ -1804,7 +1839,7 @@ public class ServerInterface
     }
 
     private static final long MAX_SAVED_SERVER_ENTRIES_LIMIT_MEMORY_SIZE = 4*1024*1024; // 4MB
-    
+
     private synchronized void saveServerEntries()
     {
         synchronized(PsiphonData.getPsiphonData().serverEntryFileLock)
@@ -1832,7 +1867,7 @@ public class ServerInterface
                                 // Don't add this entry when there's already at least one entry (serializedServerEntrySize > 0) and
                                 // adding this one will exceed the memory size limit (serializedServerEntrySize + serverEntry.encodedEntry.length() > MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE)
                                 //
-                                // NOTE: side-effect! we truncate this.serverEntries to match what's serialized                        
+                                // NOTE: side-effect! we truncate this.serverEntries to match what's serialized
                                 this.serverEntries.subList(i, this.serverEntries.size()).clear();
                                 break;
                             }
