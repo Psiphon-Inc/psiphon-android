@@ -66,14 +66,17 @@
   <string name="vpn_service_running">تشغيل خدمة الشبكة الافتراضية الخاصة VPN</string>
   <string name="vpn_service_stopped">توقف خدمة الشبكة الافتراضية الخاصة VPN</string>
   <string name="vpn_service_revoked">إلغاء خدمة الشبكة الافتراضية الخاصة VPN</string>
-  <string name="tun2socks_error">برنامج tun2socks: \n%s</string>
+  <string name="tun2socks_error">برنامج tun2socks: 
+%s</string>
   <string name="tun2socks_failed">فشل عملية تشغيل الشبكة الافتراضية الخاصة VPN على بروتوكول المفتاح الآمن SOCKS</string>
   <string name="tun2socks_running"> الشبكة الافتراضية الخاصة VPN تعمل الآن على بروتوكول المفتاح الآمن SOCKS</string>
   <string name="tun2socks_stopped">توقف عمل  الشبكة الافتراضية الخاصة VPN على بروتوكول المفتاح الآمن SOCKS</string>
   <string name="vpn_service_no_private_address_available">عدم توفر عنوان خاص لخدمة  الشبكة الافتراضية الخاصة VPN</string>
   <string name="psiphon_running_generic">تشغيل...</string>
-  <string name="data_transfer_bytes_sent"> نسبة البايت Bytes  المرسلة: %1$s\n(%2$.2f%%  مضغوطة )</string>
-  <string name="data_transfer_bytes_received"> نسبة البايت Bytes  المستلمة: %1$s\n( %%%2$.2f)  مضغوطة</string>
+  <string name="data_transfer_bytes_sent"> نسبة البايت Bytes  المرسلة: %1$s
+(%2$.2f%%  مضغوطة )</string>
+  <string name="data_transfer_bytes_received"> نسبة البايت Bytes  المستلمة: %1$s
+( %%%2$.2f)  مضغوطة</string>
   <string name="data_transfer_elapsed_time">وقت التواصل: %s</string>
   <string name="check_tunnel_failed">فشل عملية فحص مسار الاتصال. قد يكون جهازك لا يدعم خيار قناة الاتصال للجهاز بأكمله. </string>
   <string name="debug_message">نسبة %s</string>

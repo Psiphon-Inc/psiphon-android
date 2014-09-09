@@ -66,7 +66,8 @@
   <string name="vpn_service_running">سرویس وی پی ان فعال است</string>
   <string name="vpn_service_stopped">سرویس وی پی ان متوقف شد</string>
   <string name="vpn_service_revoked">سرویس وی پی ان لغو شد</string>
-  <string name="tun2socks_error">به ساکس منتقل کن:%s\n</string>
+  <string name="tun2socks_error">به ساکس منتقل کن:%s
+</string>
   <string name="tun2socks_failed">وی پی ان به ساکس نا موفق بود</string>
   <string name="tun2socks_running">وی پی ان به ساکس فعال است</string>
   <string name="tun2socks_stopped">وی پی ان به ساکس متوقف شد</string>
