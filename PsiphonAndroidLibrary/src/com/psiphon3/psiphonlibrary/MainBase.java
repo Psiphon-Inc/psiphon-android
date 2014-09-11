@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Psiphon Inc.
+ * Copyright (c) 2014, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -37,6 +37,7 @@ import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
@@ -73,6 +74,9 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.webkit.URLUtil;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -195,6 +199,7 @@ public abstract class MainBase
         private SharedPreferences m_preferences; 
         private TextView m_statusTabLogLine;
         private TextView m_statusTabVersionLine;
+        protected WebView m_sponsorWebView;
         private LocalBroadcastManager m_localBroadcastManager;
         private Timer m_updateHeaderTimer;
         private Timer m_updateStatusTimer;
@@ -459,7 +464,8 @@ public abstract class MainBase
             animation.setInterpolator(new AccelerateInterpolator());
             return animation;
         }
-
+        
+        @SuppressLint("SetJavaScriptEnabled")
         @Override
         protected void onCreate(Bundle savedInstanceState)
         {
@@ -474,6 +480,10 @@ public abstract class MainBase
             statusTab.setContent(R.id.statusTab);
             statusTab.setIndicator(getText(R.string.status_tab_name));
 
+            TabSpec sponsorTab = m_tabHost.newTabSpec("sponsor");
+            sponsorTab.setContent(R.id.sponsorView);
+            sponsorTab.setIndicator(getText(R.string.sponsor_tab_name));
+
             TabSpec statisticsTab = m_tabHost.newTabSpec("statistics");
             statisticsTab.setContent(R.id.statisticsView);
             statisticsTab.setIndicator(getText(R.string.statistics_tab_name));
@@ -487,6 +497,7 @@ public abstract class MainBase
             logsTab.setIndicator(getText(R.string.logs_tab_name));
 
             m_tabHost.addTab(statusTab);
+            m_tabHost.addTab(sponsorTab);
             m_tabHost.addTab(statisticsTab);
             m_tabHost.addTab(settingsTab);
             m_tabHost.addTab(logsTab);
@@ -513,6 +524,8 @@ public abstract class MainBase
             m_tabHost.setOnTouchListener(onTouchListener);
             m_statusTabToggleButton = (ImageButton)findViewById(R.id.statusTabToggleButton);
             m_statusTabToggleButton.setOnTouchListener(onTouchListener);
+            findViewById(R.id.sponsorView).setOnTouchListener(onTouchListener);
+            findViewById(R.id.sponsorWebView).setOnTouchListener(onTouchListener);
             findViewById(R.id.statisticsView).setOnTouchListener(onTouchListener);
             findViewById(R.id.settingsView).setOnTouchListener(onTouchListener);
             findViewById(R.id.regionSelector).setOnTouchListener(onTouchListener);
@@ -535,6 +548,7 @@ public abstract class MainBase
 
             m_statusTabLogLine = (TextView)findViewById(R.id.lastlogline);
             m_statusTabVersionLine = (TextView)findViewById(R.id.versionline);
+            m_sponsorWebView = (WebView)findViewById(R.id.sponsorWebView);
             m_elapsedConnectionTimeView = (TextView)findViewById(R.id.elapsedConnectionTime);
             m_totalSentView = (TextView)findViewById(R.id.totalSent);
             m_totalReceivedView = (TextView)findViewById(R.id.totalReceived);
@@ -554,6 +568,17 @@ public abstract class MainBase
             /*m_shareProxiesToggle = (CheckBox)findViewById(R.id.shareProxiesToggle);
             m_statusTabSocksPortLine = (TextView)findViewById(R.id.socksportline);
             m_statusTabHttpProxyPortLine = (TextView)findViewById(R.id.httpproxyportline);*/
+            
+            WebSettings webSettings = m_sponsorWebView.getSettings();
+            webSettings.setJavaScriptEnabled(true);
+            webSettings.setDomStorageEnabled(true);
+            m_sponsorWebView.setWebViewClient(new WebViewClient() {
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, String url)
+                {
+                    return false;
+                }
+            });
             
             m_slowSentGraph = new DataTransferGraph(this, R.id.slowSentGraph);
             m_slowReceivedGraph = new DataTransferGraph(this, R.id.slowReceivedGraph);

@@ -107,6 +107,7 @@
     <string name="start">Start</string>
     <string name="stop">Stop</string>
     <string name="status_tab_name">Status</string>
+    <string name="sponsor_tab_name">News</string>
     <string name="settings_tab_name">Options</string>
     <string name="statistics_tab_name">Statistics</string>
     <string name="logs_tab_name">Logs</string>

@@ -68,6 +68,21 @@
         </LinearLayout>
 
         <ScrollView
+            android:id="@+id/sponsorView"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:orientation="vertical"
+            android:scrollbarAlwaysDrawVerticalTrack="false"
+            android:weightSum="1.0" >
+
+            <WebView
+                android:id="@+id/sponsorWebView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        
+        </ScrollView>
+            
+        <ScrollView
             android:id="@+id/settingsView"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
@@ -236,6 +251,7 @@
 
             <include
                 android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 layout="@layout/statistics" />
         </ScrollView>
 

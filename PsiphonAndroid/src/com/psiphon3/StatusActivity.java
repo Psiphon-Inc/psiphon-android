@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Psiphon Inc.
+ * Copyright (c) 2014, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,7 +24,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -34,14 +33,15 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.KeyEvent;
 import android.view.View;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TabHost;
 
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
-import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 
 
 public class StatusActivity 
@@ -114,8 +114,19 @@ public class StatusActivity
             m_firstRun = false;
             startUp();
         }
+        
+        if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected())
+        {
+            loadSponsorTab();
+        }
     }
 
+    private void loadSponsorTab()
+    {
+        WebViewProxySettings.setLocalProxy(m_sponsorWebView.getContext(), PsiphonData.getPsiphonData().getHttpProxyPort());
+        m_sponsorWebView.loadUrl(PsiphonData.getPsiphonData().getHomePages().get(0));
+    }
+    
     @Override
     protected void onNewIntent(Intent intent)
     {
@@ -150,7 +161,10 @@ public class StatusActivity
             if (!PsiphonData.getPsiphonData().getTunnelWholeDevice()
                 || !intent.getBooleanExtra(HANDSHAKE_SUCCESS_IS_RECONNECT, false))
             {
-                Events.displayBrowser(this);
+                m_tabHost.setCurrentTab(1);
+                loadSponsorTab();
+
+                //Events.displayBrowser(this);
             }
             
             // We only want to respond to the HANDSHAKE_SUCCESS action once,
