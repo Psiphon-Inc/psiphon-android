@@ -572,12 +572,27 @@ public abstract class MainBase
             WebSettings webSettings = m_sponsorWebView.getSettings();
             webSettings.setJavaScriptEnabled(true);
             webSettings.setDomStorageEnabled(true);
+            webSettings.setLoadWithOverviewMode(true);
             m_sponsorWebView.setWebViewClient(new WebViewClient() {
+                // HACK to prevent redirects from loading in an external browser:
+                // Don't allow links to load in an external browser until
+                // onPageFinished is called
+                private boolean m_loaded = false;
+                
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, String url)
                 {
-                    m_eventsInterface.displayBrowser(getContext(), Uri.parse(url));
-                    return true;
+                    if (m_loaded)
+                    {
+                        m_eventsInterface.displayBrowser(getContext(), Uri.parse(url));
+                    }
+                    return m_loaded;
+                }
+                
+                @Override
+                public void onPageFinished(WebView webView, String url)
+                {
+                    m_loaded = true;
                 }
             });
             
