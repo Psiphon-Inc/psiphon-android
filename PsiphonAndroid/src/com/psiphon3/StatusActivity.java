@@ -164,7 +164,7 @@ public class StatusActivity
                 m_tabHost.setCurrentTab(1);
                 loadSponsorTab();
 
-                //Events.displayBrowser(this);
+                //m_eventsInterface.displayBrowser(this);
             }
             
             // We only want to respond to the HANDSHAKE_SUCCESS action once,
@@ -186,7 +186,7 @@ public class StatusActivity
 
     public void onOpenBrowserClick(View v)
     {
-        Events.displayBrowser(this);       
+        m_eventsInterface.displayBrowser(this);       
     }
     
     @Override

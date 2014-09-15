@@ -576,7 +576,8 @@ public abstract class MainBase
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, String url)
                 {
-                    return false;
+                    m_eventsInterface.displayBrowser(getContext(), Uri.parse(url));
+                    return true;
                 }
             });
             
