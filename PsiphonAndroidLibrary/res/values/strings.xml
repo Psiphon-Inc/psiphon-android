@@ -109,7 +109,7 @@
     <string name="status_tab_name">Status</string>
     <string name="sponsor_tab_name">News</string>
     <string name="settings_tab_name">Options</string>
-    <string name="statistics_tab_name">Statistics</string>
+    <string name="statistics_tab_name">Stats</string>
     <string name="logs_tab_name">Logs</string>
     <string name="socks_proxy_address">Local SOCKS proxy is running at %s</string>
     <string name="http_proxy_address">Local HTTP proxy is running at %s</string>
