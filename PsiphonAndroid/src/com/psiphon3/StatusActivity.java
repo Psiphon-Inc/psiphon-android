@@ -22,6 +22,7 @@ package com.psiphon3;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -121,8 +122,13 @@ public class StatusActivity
 
     private void loadSponsorTab()
     {
-        WebViewProxySettings.setLocalProxy(m_sponsorWebView.getContext(), PsiphonData.getPsiphonData().getHttpProxyPort());
-        m_sponsorWebView.loadUrl(PsiphonData.getPsiphonData().getHomePages().get(0));
+        ArrayList<String> homepages = PsiphonData.getPsiphonData().getHomePages();
+        if (homepages.size() > 0)
+        {
+            ResetSponsorWebViewClient();
+            WebViewProxySettings.setLocalProxy(m_sponsorWebView.getContext(), PsiphonData.getPsiphonData().getHttpProxyPort());
+            m_sponsorWebView.loadUrl(homepages.get(0));
+        }
     }
     
     @Override

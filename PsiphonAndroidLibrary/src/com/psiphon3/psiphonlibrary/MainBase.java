@@ -573,28 +573,8 @@ public abstract class MainBase
             webSettings.setJavaScriptEnabled(true);
             webSettings.setDomStorageEnabled(true);
             webSettings.setLoadWithOverviewMode(true);
-            m_sponsorWebView.setWebViewClient(new WebViewClient() {
-                // HACK to prevent redirects from loading in an external browser:
-                // Don't allow links to load in an external browser until
-                // onPageFinished is called
-                private boolean m_loaded = false;
-                
-                @Override
-                public boolean shouldOverrideUrlLoading(WebView view, String url)
-                {
-                    if (m_loaded)
-                    {
-                        m_eventsInterface.displayBrowser(getContext(), Uri.parse(url));
-                    }
-                    return m_loaded;
-                }
-                
-                @Override
-                public void onPageFinished(WebView webView, String url)
-                {
-                    m_loaded = true;
-                }
-            });
+            webSettings.setUseWideViewPort(true);
+            m_sponsorWebView.setBackgroundColor(Color.BLACK);
             
             m_slowSentGraph = new DataTransferGraph(this, R.id.slowSentGraph);
             m_slowReceivedGraph = new DataTransferGraph(this, R.id.slowReceivedGraph);
@@ -733,6 +713,37 @@ public abstract class MainBase
             
             // Restore messages previously posted by the service.
             MyLog.restoreLogHistory();
+        }
+        
+        protected void ResetSponsorWebViewClient()
+        {
+            m_sponsorWebView.setWebViewClient(new WebViewClient() {
+                // HACK to prevent redirects from loading in an external browser:
+                // Don't allow links to load in an external browser until
+                // onPageFinished is called
+                private boolean m_loaded = false;
+                
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, String url)
+                {
+                    if (!PsiphonData.getPsiphonData().getDataTransferStats().isConnected())
+                    {
+                        return true;
+                    }
+            
+                    if (m_loaded)
+                    {
+                        m_eventsInterface.displayBrowser(getContext(), Uri.parse(url));
+                    }
+                    return m_loaded;
+                }
+                
+                @Override
+                public void onPageFinished(WebView webView, String url)
+                {
+                    m_loaded = true;
+                }
+            });
         }
         
         private void SetProxySettingsRadioGroupEnabled(boolean enabled)
