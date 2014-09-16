@@ -66,6 +66,7 @@ import android.view.View.OnTouchListener;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.view.animation.TranslateAnimation;
 import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
@@ -562,9 +563,12 @@ public abstract class MainBase
             int currentTab = m_preferences.getInt("currentTab", 0);
             m_tabHost.setCurrentTab(currentTab);
 
+            m_sponsorViewFlipper = (ViewFlipper)findViewById(R.id.sponsorViewFlipper);
+            m_sponsorViewFlipper.setInAnimation(AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left));
+            m_sponsorViewFlipper.setOutAnimation(AnimationUtils.loadAnimation(this, android.R.anim.slide_out_right));
+
             m_statusTabLogLine = (TextView)findViewById(R.id.lastlogline);
             m_statusTabVersionLine = (TextView)findViewById(R.id.versionline);
-            m_sponsorViewFlipper = (ViewFlipper)findViewById(R.id.sponsorViewFlipper);
             m_sponsorWebView = (WebView)findViewById(R.id.sponsorWebView);
             m_sponsorWebViewProgressBar = (ProgressBar)findViewById(R.id.sponsorWebViewProgressBar);
             m_elapsedConnectionTimeView = (TextView)findViewById(R.id.elapsedConnectionTime);
