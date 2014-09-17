@@ -66,6 +66,19 @@ public class PreferencesActivity extends PreferenceActivity {
 		
 		addPreferencesFromResource(R.layout.preferences_activity);
 
+        // PSIPHON
+        // Mitigate http://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2014-6041:
+        // JavaScript cannot be enabled on Android 3.x - 4.3
+        // (19 is Build.VERSION_CODES.KITKAT)
+        boolean disableJS = Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB && Build.VERSION.SDK_INT < 19;
+
+        Preference javaScriptPref = (Preference) findPreference(Constants.PREFERENCES_BROWSER_ENABLE_JAVASCRIPT);
+        if (disableJS)
+        {
+            javaScriptPref.setDefaultValue(false);
+            javaScriptPref.setEnabled(false);
+        }
+		
 		PreferenceCategory browserPreferenceCategory = (PreferenceCategory) findPreference("BrowserPreferenceCategory");
 		Preference enablePluginsEclair = (Preference) findPreference(Constants.PREFERENCES_BROWSER_ENABLE_PLUGINS_ECLAIR);
 		Preference enablePlugins = (Preference) findPreference(Constants.PREFERENCES_BROWSER_ENABLE_PLUGINS);
