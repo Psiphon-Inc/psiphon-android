@@ -736,7 +736,7 @@ public abstract class MainBase
             MyLog.restoreLogHistory();
         }
 
-        protected void ResetSponsorWebViewClient()
+        protected void resetSponsorWebViewClient()
         {
             m_sponsorWebViewProgressBar.setVisibility(View.VISIBLE);
 
@@ -744,6 +744,7 @@ public abstract class MainBase
                 @Override
                 public void onProgressChanged(WebView view, int progress) {
                     m_sponsorWebViewProgressBar.setProgress(progress);
+                    m_sponsorWebViewProgressBar.setVisibility(progress == 100 ? View.GONE : View.VISIBLE);
                 }
             });
 
@@ -753,9 +754,18 @@ public abstract class MainBase
                 // onPageFinished is called
                 private boolean m_loaded = false;
 
+                private Timer m_timer;
+
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, String url)
                 {
+                    if (m_timer != null)
+                    {
+                        m_timer.cancel();
+                        m_timer = null;
+                        MyLog.d("LOAD TIMER: cancelled");
+                    }
+
                     if (!PsiphonData.getPsiphonData().getDataTransferStats().isConnected())
                     {
                         return true;
@@ -771,8 +781,22 @@ public abstract class MainBase
                 @Override
                 public void onPageFinished(WebView webView, String url)
                 {
-                    m_loaded = true;
-                    m_sponsorWebViewProgressBar.setVisibility(View.GONE);
+                    final String _url = url;
+                    if (!m_loaded)
+                    {
+                        MyLog.d(String.format("LOAD TIMER: created; %s", _url));
+                        m_timer = new Timer();
+                        m_timer.schedule(
+                            new TimerTask()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    m_loaded = true;
+                                }
+                            },
+                            500);
+                    }
                 }
             });
         }

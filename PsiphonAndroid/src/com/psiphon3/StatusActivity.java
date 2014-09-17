@@ -125,7 +125,7 @@ public class StatusActivity
         ArrayList<String> homepages = PsiphonData.getPsiphonData().getHomePages();
         if (homepages.size() > 0)
         {
-            ResetSponsorWebViewClient();
+            resetSponsorWebViewClient();
             WebViewProxySettings.setLocalProxy(m_sponsorWebView.getContext(), PsiphonData.getPsiphonData().getHttpProxyPort());
             m_sponsorWebView.loadUrl(homepages.get(0));
         }
