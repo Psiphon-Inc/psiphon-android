@@ -93,12 +93,8 @@ public class CustomWebView extends WebView {
 		// User settings
 		
 		// PSIPHON
-		// Mitigate http://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2014-6041:
-		// JavaScript cannot be enabled on Android 3.x - 4.3
-		// (19 is Build.VERSION_CODES.KITKAT)
-		boolean disableJS = Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB && Build.VERSION.SDK_INT < 19;
-		
-		settings.setJavaScriptEnabled(!disableJS && Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_JAVASCRIPT, true));
+		settings.setJavaScriptEnabled(!Constants.DISABLE_JS && Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_JAVASCRIPT, true));
+
 		settings.setLoadsImagesAutomatically(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_IMAGES, true));
 		settings.setUseWideViewPort(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_USE_WIDE_VIEWPORT, true));
 		settings.setLoadWithOverviewMode(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_LOAD_WITH_OVERVIEW, true));
