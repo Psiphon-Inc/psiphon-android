@@ -40,7 +40,6 @@ import android.widget.TabHost;
 
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
-import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 
 
 public class StatusActivity
@@ -125,9 +124,7 @@ public class StatusActivity
         ArrayList<String> homepages = PsiphonData.getPsiphonData().getHomePages();
         if (homepages.size() > 0)
         {
-            resetSponsorWebViewClient();
-            WebViewProxySettings.setLocalProxy(m_sponsorWebView.getContext(), PsiphonData.getPsiphonData().getHttpProxyPort());
-            m_sponsorWebView.loadUrl(homepages.get(0));
+            resetSponsorHomePage(homepages.get(0));
         }
     }
 

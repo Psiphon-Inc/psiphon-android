@@ -205,8 +205,7 @@ public abstract class MainBase
         private TextView m_statusTabLogLine;
         private TextView m_statusTabVersionLine;
         private LinearLayout m_sponsorLayout;
-        protected WebView m_sponsorWebView;
-        private ProgressBar m_sponsorWebViewProgressBar;
+        private SponsorHomePage m_sponsorHomePage;
         private LocalBroadcastManager m_localBroadcastManager;
         private Timer m_updateHeaderTimer;
         private Timer m_updateStatusTimer;
@@ -569,8 +568,6 @@ public abstract class MainBase
 
             m_statusTabLogLine = (TextView)findViewById(R.id.lastlogline);
             m_statusTabVersionLine = (TextView)findViewById(R.id.versionline);
-            m_sponsorWebView = (WebView)findViewById(R.id.sponsorWebView);
-            m_sponsorWebViewProgressBar = (ProgressBar)findViewById(R.id.sponsorWebViewProgressBar);
             m_elapsedConnectionTimeView = (TextView)findViewById(R.id.elapsedConnectionTime);
             m_totalSentView = (TextView)findViewById(R.id.totalSent);
             m_totalReceivedView = (TextView)findViewById(R.id.totalReceived);
@@ -590,12 +587,6 @@ public abstract class MainBase
             /*m_shareProxiesToggle = (CheckBox)findViewById(R.id.shareProxiesToggle);
             m_statusTabSocksPortLine = (TextView)findViewById(R.id.socksportline);
             m_statusTabHttpProxyPortLine = (TextView)findViewById(R.id.httpproxyportline);*/
-
-            WebSettings webSettings = m_sponsorWebView.getSettings();
-            webSettings.setJavaScriptEnabled(true);
-            webSettings.setDomStorageEnabled(true);
-            webSettings.setLoadWithOverviewMode(true);
-            webSettings.setUseWideViewPort(true);
 
             m_slowSentGraph = new DataTransferGraph(this, R.id.slowSentGraph);
             m_slowReceivedGraph = new DataTransferGraph(this, R.id.slowReceivedGraph);
@@ -736,69 +727,28 @@ public abstract class MainBase
             MyLog.restoreLogHistory();
         }
 
-        protected void resetSponsorWebViewClient()
+        @Override
+        protected void onDestroy()
         {
-            m_sponsorWebViewProgressBar.setVisibility(View.VISIBLE);
+            super.onDestroy();
 
-            m_sponsorWebView.setWebChromeClient(new WebChromeClient() {
-                @Override
-                public void onProgressChanged(WebView view, int progress) {
-                    m_sponsorWebViewProgressBar.setProgress(progress);
-                    m_sponsorWebViewProgressBar.setVisibility(progress == 100 ? View.GONE : View.VISIBLE);
-                }
-            });
+            if (m_sponsorHomePage != null)
+            {
+                m_sponsorHomePage.stop();
+                m_sponsorHomePage = null;
+            }
+        }
 
-            m_sponsorWebView.setWebViewClient(new WebViewClient() {
-                // HACK to prevent redirects from loading in an external browser:
-                // Don't allow links to load in an external browser until
-                // onPageFinished is called
-                private boolean m_loaded = false;
-
-                private Timer m_timer;
-
-                @Override
-                public boolean shouldOverrideUrlLoading(WebView view, String url)
-                {
-                    if (m_timer != null)
-                    {
-                        m_timer.cancel();
-                        m_timer = null;
-                        MyLog.d("LOAD TIMER: cancelled");
-                    }
-
-                    if (!PsiphonData.getPsiphonData().getDataTransferStats().isConnected())
-                    {
-                        return true;
-                    }
-
-                    if (m_loaded)
-                    {
-                        m_eventsInterface.displayBrowser(getContext(), Uri.parse(url));
-                    }
-                    return m_loaded;
-                }
-
-                @Override
-                public void onPageFinished(WebView webView, String url)
-                {
-                    final String _url = url;
-                    if (!m_loaded)
-                    {
-                        MyLog.d(String.format("LOAD TIMER: created; %s", _url));
-                        m_timer = new Timer();
-                        m_timer.schedule(
-                            new TimerTask()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    m_loaded = true;
-                                }
-                            },
-                            500);
-                    }
-                }
-            });
+        protected void resetSponsorHomePage(String url)
+        {
+            if (url != null)
+            {
+                m_sponsorHomePage = new SponsorHomePage(
+                        (WebView)findViewById(R.id.sponsorWebView),
+                        (ProgressBar)findViewById(R.id.sponsorWebViewProgressBar),
+                        m_eventsInterface);
+                m_sponsorHomePage.load(url);
+            }
         }
 
         private void SetProxySettingsRadioGroupEnabled(boolean enabled)
@@ -1715,6 +1665,151 @@ public abstract class MainBase
             if (m_localBroadcastManager != null)
             {
                 m_localBroadcastManager.sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
+            }
+        }
+
+        private class SponsorHomePage
+        {
+            private class SponsorWebChromeClient extends WebChromeClient
+            {
+                private final ProgressBar mProgressBar;
+
+                public SponsorWebChromeClient(ProgressBar progressBar)
+                {
+                    super();
+                    mProgressBar = progressBar;
+                }
+
+                private boolean mStopped = false;
+                public void stop() {
+                    mStopped = true;
+                }
+
+                @Override
+                public void onProgressChanged(WebView webView, int progress)
+                {
+                    if (mStopped)
+                    {
+                        return;
+                    }
+
+                    mProgressBar.setProgress(progress);
+                    mProgressBar.setVisibility(progress == 100 ? View.GONE : View.VISIBLE);
+                }
+            }
+
+            private class SponsorWebViewClient extends WebViewClient
+            {
+                private final IEvents mEventsInterface;
+                private Timer mTimer;
+                private boolean mWebViewLoaded = false;
+
+                public SponsorWebViewClient(IEvents eventsInterface)
+                {
+                    super();
+                    mEventsInterface = eventsInterface;
+                }
+
+                private boolean mStopped = false;
+                public void stop() {
+                    mStopped = true;
+                    if (mTimer != null)
+                    {
+                        mTimer.cancel();
+                        mTimer = null;
+                    }
+                }
+
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView webView, String url)
+                {
+                    if (mStopped)
+                    {
+                        return true;
+                    }
+
+                    if (mTimer != null)
+                    {
+                        mTimer.cancel();
+                        mTimer = null;
+                    }
+
+                    if (!PsiphonData.getPsiphonData().getDataTransferStats().isConnected())
+                    {
+                        return true;
+                    }
+
+                    if (mWebViewLoaded)
+                    {
+                        m_eventsInterface.displayBrowser(getContext(), Uri.parse(url));
+                    }
+                    return mWebViewLoaded;
+                }
+
+                @Override
+                public void onPageFinished(WebView webView, String url)
+                {
+                    if (mStopped)
+                    {
+                        return;
+                    }
+
+                    if (!mWebViewLoaded)
+                    {
+                        mTimer = new Timer();
+                        mTimer.schedule(
+                            new TimerTask()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    if (mStopped)
+                                    {
+                                        return;
+                                    }
+                                    mWebViewLoaded = true;
+                                }
+                            },
+                            1000);
+                    }
+                }
+            }
+
+            private final WebView mWebView;
+            private final SponsorWebViewClient mWebViewClient;
+            private final SponsorWebChromeClient mWebChromeClient;
+            private final ProgressBar mProgressBar;
+
+            public SponsorHomePage(WebView webView,
+                                   ProgressBar progressBar,
+                                   IEvents eventsInterface)
+            {
+                mWebView = webView;
+                mProgressBar = progressBar;
+                mWebChromeClient = new SponsorWebChromeClient(mProgressBar);
+                mWebViewClient = new SponsorWebViewClient(eventsInterface);
+
+                mWebView.setWebChromeClient(mWebChromeClient);
+                mWebView.setWebViewClient(mWebViewClient);
+
+                WebSettings webSettings = mWebView.getSettings();
+                webSettings.setJavaScriptEnabled(true);
+                webSettings.setDomStorageEnabled(true);
+                webSettings.setLoadWithOverviewMode(true);
+                webSettings.setUseWideViewPort(true);
+            }
+
+            public void stop()
+            {
+                mWebViewClient.stop();
+                mWebChromeClient.stop();
+            }
+
+            public void load(String url)
+            {
+                WebViewProxySettings.setLocalProxy(mWebView.getContext(), PsiphonData.getPsiphonData().getHttpProxyPort());
+                mProgressBar.setVisibility(View.VISIBLE);
+                mWebView.loadUrl(url);
             }
         }
     }
