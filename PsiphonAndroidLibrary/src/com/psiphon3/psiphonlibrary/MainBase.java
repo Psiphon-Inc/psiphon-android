@@ -20,6 +20,7 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -204,7 +205,6 @@ public abstract class MainBase
         private LinearLayout m_statusLayout;
         private TextView m_statusTabLogLine;
         private TextView m_statusTabVersionLine;
-        private LinearLayout m_sponsorLayout;
         private SponsorHomePage m_sponsorHomePage;
         private LocalBroadcastManager m_localBroadcastManager;
         private Timer m_updateHeaderTimer;
@@ -246,6 +246,8 @@ public abstract class MainBase
         private boolean m_statusIconSetToConnected = false;
         private void setStatusState(int resId)
         {
+            boolean statusShowing = m_sponsorViewFlipper.getCurrentView() == m_statusLayout;
+
             if (R.drawable.status_icon_connected == resId)
             {
                 if (!m_statusIconSetToConnected)
@@ -254,8 +256,17 @@ public abstract class MainBase
                     m_statusIconSetToConnected = true;
                 }
 
-                // Show the sponsor web view
-                if (m_sponsorViewFlipper.getCurrentView() != m_sponsorLayout)
+                // Show the sponsor web view, but only if there's a home page to
+                // show and it's isn't excluded from being embedded.
+                boolean showHomePage = false;
+                ArrayList<String> homepages = PsiphonData.getPsiphonData().getHomePages();
+                if (homepages.size() > 0)
+                {
+                    showHomePage = !Arrays.asList(EmbeddedValues.HOME_TAB_URL_EXCLUSIONS)
+                                          .contains(homepages.get(0));
+                }
+
+                if (showHomePage && statusShowing)
                 {
                     m_sponsorViewFlipper.showNext();
                 }
@@ -266,7 +277,7 @@ public abstract class MainBase
                 m_statusIconSetToConnected = false;
 
                 // Show the status view
-                if (m_sponsorViewFlipper.getCurrentView() != m_statusLayout)
+                if (!statusShowing)
                 {
                     m_sponsorViewFlipper.showNext();
                 }
@@ -537,7 +548,6 @@ public abstract class MainBase
 
             m_tabHost.setOnTouchListener(onTouchListener);
             m_statusLayout = (LinearLayout)findViewById(R.id.statusLayout);
-            m_sponsorLayout = (LinearLayout)findViewById(R.id.sponsorLayout);
             m_statusViewImage = (ImageButton)findViewById(R.id.statusViewImage);
             m_statusViewImage.setOnTouchListener(onTouchListener);
             findViewById(R.id.sponsorViewFlipper).setOnTouchListener(onTouchListener);
@@ -739,16 +749,32 @@ public abstract class MainBase
             }
         }
 
-        protected void resetSponsorHomePage(String url)
+        protected void resetSponsorHomePage()
         {
-            if (url != null)
+            String url = null;
+            ArrayList<String> homepages = PsiphonData.getPsiphonData().getHomePages();
+            if (homepages.size() > 0)
             {
-                m_sponsorHomePage = new SponsorHomePage(
-                        (WebView)findViewById(R.id.sponsorWebView),
-                        (ProgressBar)findViewById(R.id.sponsorWebViewProgressBar),
-                        m_eventsInterface);
-                m_sponsorHomePage.load(url);
+                url = homepages.get(0);
             }
+            else
+            {
+                return;
+            }
+
+            // Some URLs are excluded from being embedded as home pages.
+            if (Arrays.asList(EmbeddedValues.HOME_TAB_URL_EXCLUSIONS).contains(url))
+            {
+                m_eventsInterface.displayBrowser(getContext(), Uri.parse(url));
+                return;
+            }
+
+            // At this point we're showing the URL in the embedded webview.
+            m_sponsorHomePage = new SponsorHomePage(
+                    (WebView)findViewById(R.id.sponsorWebView),
+                    (ProgressBar)findViewById(R.id.sponsorWebViewProgressBar),
+                    m_eventsInterface);
+            m_sponsorHomePage.load(url);
         }
 
         private void SetProxySettingsRadioGroupEnabled(boolean enabled)
@@ -1741,7 +1767,7 @@ public abstract class MainBase
 
                     if (mWebViewLoaded)
                     {
-                        m_eventsInterface.displayBrowser(getContext(), Uri.parse(url));
+                        mEventsInterface.displayBrowser(getContext(), Uri.parse(url));
                     }
                     return mWebViewLoaded;
                 }

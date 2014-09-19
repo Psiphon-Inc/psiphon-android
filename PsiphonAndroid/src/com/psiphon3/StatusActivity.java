@@ -22,7 +22,6 @@ package com.psiphon3;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -121,11 +120,7 @@ public class StatusActivity
 
     private void loadSponsorTab()
     {
-        ArrayList<String> homepages = PsiphonData.getPsiphonData().getHomePages();
-        if (homepages.size() > 0)
-        {
-            resetSponsorHomePage(homepages.get(0));
-        }
+        resetSponsorHomePage();
     }
 
     @Override
