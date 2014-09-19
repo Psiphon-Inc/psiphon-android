@@ -97,7 +97,7 @@ cog.outl('public static String DATA_COLLECTION_INFO_URL = "%s";' % utils.get_emb
     public static String DATA_COLLECTION_INFO_URL = "https://s3.amazonaws.com/invalid_bucket_name/en/faq.html#information-collected";
 
     public static final String MEEK_CLIENT_COOKIE_PAYLOAD_ENCRYPTION_PUBLIC_KEY = "";
-
+    
 //[[[end]]]
 
     private static final String PROPAGATION_CHANNEL_ID_PREFERENCE = "propagationChannelIdPreference";
