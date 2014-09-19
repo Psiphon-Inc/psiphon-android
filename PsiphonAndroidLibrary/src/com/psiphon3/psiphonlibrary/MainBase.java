@@ -749,7 +749,14 @@ public abstract class MainBase
             }
         }
 
-        protected void resetSponsorHomePage()
+        /**
+         * Show the sponsor home page, either in the embedded view web view or
+         * in the external browser.
+         * @param freshConnect  If false, the home page will not be opened in an
+         *        external browser. This is to prevent the page from opening
+         *        every time the activity is created.
+         */
+        protected void resetSponsorHomePage(boolean freshConnect)
         {
             String url = null;
             ArrayList<String> homepages = PsiphonData.getPsiphonData().getHomePages();
@@ -763,7 +770,8 @@ public abstract class MainBase
             }
 
             // Some URLs are excluded from being embedded as home pages.
-            if (Arrays.asList(EmbeddedValues.HOME_TAB_URL_EXCLUSIONS).contains(url))
+            if (Arrays.asList(EmbeddedValues.HOME_TAB_URL_EXCLUSIONS).contains(url)
+                && freshConnect)
             {
                 m_eventsInterface.displayBrowser(getContext(), Uri.parse(url));
                 return;

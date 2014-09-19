@@ -114,13 +114,13 @@ public class StatusActivity
 
         if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected())
         {
-            loadSponsorTab();
+            loadSponsorTab(false);
         }
     }
 
-    private void loadSponsorTab()
+    private void loadSponsorTab(boolean freshConnect)
     {
-        resetSponsorHomePage();
+        resetSponsorHomePage(freshConnect);
     }
 
     @Override
@@ -158,7 +158,7 @@ public class StatusActivity
                 || !intent.getBooleanExtra(HANDSHAKE_SUCCESS_IS_RECONNECT, false))
             {
                 m_tabHost.setCurrentTabByTag("home");
-                loadSponsorTab();
+                loadSponsorTab(true);
 
                 //m_eventsInterface.displayBrowser(this);
             }
