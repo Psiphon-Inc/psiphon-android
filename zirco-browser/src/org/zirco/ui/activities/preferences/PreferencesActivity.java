@@ -66,6 +66,14 @@ public class PreferencesActivity extends PreferenceActivity {
 		
 		addPreferencesFromResource(R.layout.preferences_activity);
 
+        // PSIPHON
+        Preference javaScriptPref = (Preference) findPreference(Constants.PREFERENCES_BROWSER_ENABLE_JAVASCRIPT);
+        if (Constants.DISABLE_JS)
+        {
+            javaScriptPref.setDefaultValue(false);
+            javaScriptPref.setEnabled(false);
+        }
+		
 		PreferenceCategory browserPreferenceCategory = (PreferenceCategory) findPreference("BrowserPreferenceCategory");
 		Preference enablePluginsEclair = (Preference) findPreference(Constants.PREFERENCES_BROWSER_ENABLE_PLUGINS_ECLAIR);
 		Preference enablePlugins = (Preference) findPreference(Constants.PREFERENCES_BROWSER_ENABLE_PLUGINS);
