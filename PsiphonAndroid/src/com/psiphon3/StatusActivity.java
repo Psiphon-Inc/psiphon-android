@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 2013, Psiphon Inc.
+ * Copyright (c) 2014, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -24,7 +24,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -40,22 +39,20 @@ import android.widget.TabHost;
 
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
-import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
-public class StatusActivity 
+public class StatusActivity
     extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
 {
     public static final String BANNER_FILE_NAME = "bannerImage";
-    
+
     private ImageView m_banner;
     private boolean m_tunnelWholeDevicePromptShown = false;
 
     public StatusActivity()
     {
         super();
-        m_eventsInterface = new Events();        
+        m_eventsInterface = new Events();
     }
 
     @Override
@@ -66,16 +63,16 @@ public class StatusActivity
         m_banner = (ImageView)findViewById(R.id.banner);
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
-                
+
         // NOTE: super class assumes m_tabHost is initialized in its onCreate
-        
+
         super.onCreate(savedInstanceState);
 
         if (m_firstRun)
         {
             EmbeddedValues.initialize(this);
         }
- 
+
         // Play Store Build instances should use existing banner from previously installed APK
         // (if present). To enable this, non-Play Store Build instances write their banner to
         // a private file.
@@ -107,24 +104,34 @@ public class StatusActivity
         }
 
         PsiphonData.getPsiphonData().setDownloadUpgrades(true);
-        
+
         // Auto-start on app first run
         if (m_firstRun)
         {
             m_firstRun = false;
             startUp();
         }
+
+        if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected())
+        {
+            loadSponsorTab(false);
+        }
+    }
+
+    private void loadSponsorTab(boolean freshConnect)
+    {
+        resetSponsorHomePage(freshConnect);
     }
 
     @Override
     protected void onNewIntent(Intent intent)
     {
         super.onNewIntent(intent);
-            
-        // If the app is already foreground (so onNewIntent is being called), 
+
+        // If the app is already foreground (so onNewIntent is being called),
         // the incoming intent is not automatically set as the activity's intent
-        // (i.e., the intent returned by getIntent()). We want this behaviour, 
-        // so we'll set it explicitly. 
+        // (i.e., the intent returned by getIntent()). We want this behaviour,
+        // so we'll set it explicitly.
         setIntent(intent);
 
         // Handle explicit intent that is received when activity is already running
@@ -134,7 +141,7 @@ public class StatusActivity
     protected void HandleCurrentIntent()
     {
         Intent intent = getIntent();
-        
+
         if (intent == null || intent.getAction() == null)
         {
             return;
@@ -150,9 +157,12 @@ public class StatusActivity
             if (!PsiphonData.getPsiphonData().getTunnelWholeDevice()
                 || !intent.getBooleanExtra(HANDSHAKE_SUCCESS_IS_RECONNECT, false))
             {
-                Events.displayBrowser(this);
+                m_tabHost.setCurrentTabByTag("home");
+                loadSponsorTab(true);
+
+                //m_eventsInterface.displayBrowser(this);
             }
-            
+
             // We only want to respond to the HANDSHAKE_SUCCESS action once,
             // so we need to clear it (by setting it to a non-special intent).
             setIntent(new Intent(
@@ -161,10 +171,10 @@ public class StatusActivity
                             this,
                             this.getClass()));
         }
-        
+
         // No explicit action for UNEXPECTED_DISCONNECT, just show the activity
     }
-    
+
     public void onToggleClick(View v)
     {
         doToggle();
@@ -172,9 +182,9 @@ public class StatusActivity
 
     public void onOpenBrowserClick(View v)
     {
-        Events.displayBrowser(this);       
+        m_eventsInterface.displayBrowser(this);
     }
-    
+
     @Override
     public void onFeedbackClick(View v)
     {
@@ -184,12 +194,12 @@ public class StatusActivity
 
     @Override
     protected void startUp()
-    {        
+    {
         // If the user hasn't set a whole-device-tunnel preference, show a prompt
         // (and delay starting the tunnel service until the prompt is completed)
-        
+
         boolean hasPreference = PreferenceManager.getDefaultSharedPreferences(this).contains(TUNNEL_WHOLE_DEVICE_PREFERENCE);
-                
+
         if (m_tunnelWholeDeviceToggle.isEnabled() &&
             !hasPreference &&
             !isServiceRunning())
@@ -202,6 +212,7 @@ public class StatusActivity
                     .setCancelable(false)
                     .setOnKeyListener(
                             new DialogInterface.OnKeyListener() {
+                                @Override
                                 public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
                                     // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
                                     return keyCode == KeyEvent.KEYCODE_SEARCH;
@@ -210,6 +221,7 @@ public class StatusActivity
                     .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
                     .setPositiveButton(R.string.StatusActivity_WholeDeviceTunnelPositiveButton,
                             new DialogInterface.OnClickListener() {
+                                @Override
                                 public void onClick(DialogInterface dialog, int whichButton) {
                                     // Persist the "on" setting
                                     updateWholeDevicePreference(true);
@@ -217,6 +229,7 @@ public class StatusActivity
                                 }})
                     .setNegativeButton(R.string.StatusActivity_WholeDeviceTunnelNegativeButton,
                                 new DialogInterface.OnClickListener() {
+                                    @Override
                                     public void onClick(DialogInterface dialog, int whichButton) {
                                         // Turn off and persist the "off" setting
                                         m_tunnelWholeDeviceToggle.setChecked(false);
@@ -225,6 +238,7 @@ public class StatusActivity
                                     }})
                     .setOnCancelListener(
                             new DialogInterface.OnCancelListener() {
+                                @Override
                                 public void onCancel(DialogInterface dialog) {
                                     // Don't change or persist preference (this prompt may reappear)
                                     startTunnel(context);
@@ -237,13 +251,13 @@ public class StatusActivity
                 // ...there's a prompt already showing (e.g., user hit Home with the
                 // prompt up, then resumed Psiphon)
             }
-            
+
             // ...wait and let onClick handlers will start tunnel
         }
         else
         {
             // No prompt, just start the tunnel (if not already running)
-            
+
             startTunnel(this);
         }
 
