@@ -35,8 +35,12 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TabHost;
 
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 
@@ -47,6 +51,7 @@ public class StatusActivity
     public static final String BANNER_FILE_NAME = "bannerImage";
 
     private ImageView m_banner;
+    private AdView m_bannerAdView;
     private boolean m_tunnelWholeDevicePromptShown = false;
 
     public StatusActivity()
@@ -116,8 +121,30 @@ public class StatusActivity
         {
             loadSponsorTab(false);
         }
+        
+        initAds();
     }
 
+    @Override
+    public void onPause()
+    {
+        super.onPause();
+        m_bannerAdView.pause();
+    }
+    
+    @Override
+    public void onResume()
+    {
+        super.onResume();
+        m_bannerAdView.resume();
+    }
+    
+    @Override
+    public void onDestroy() {
+      m_bannerAdView.destroy();
+      super.onDestroy();
+    }
+    
     private void loadSponsorTab(boolean freshConnect)
     {
         resetSponsorHomePage(freshConnect);
@@ -138,6 +165,23 @@ public class StatusActivity
         HandleCurrentIntent();
     }
 
+    private void initAds()
+    {
+        if (PsiphonData.getPsiphonData().getShowAds() && m_bannerAdView == null)
+        {
+            m_bannerAdView = new AdView(this);
+            m_bannerAdView.setAdSize(AdSize.BANNER);
+            m_bannerAdView.setAdUnitId("");
+            LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
+            layout.removeAllViewsInLayout();
+            layout.addView(m_bannerAdView);
+            AdRequest adRequest = new AdRequest.Builder()
+                .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+                .build();
+            m_bannerAdView.loadAd(adRequest);
+        }
+    }
+    
     protected void HandleCurrentIntent()
     {
         Intent intent = getIntent();
@@ -149,6 +193,8 @@ public class StatusActivity
 
         if (0 == intent.getAction().compareTo(HANDSHAKE_SUCCESS))
         {
+            initAds();
+            
             // Show the home page. Always do this in browser-only mode, even
             // after an automated reconnect -- since the status activity was
             // brought to the front after an unexpected disconnect. In whole
