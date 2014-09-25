@@ -59,6 +59,7 @@ public class PsiphonData
         return m_psiphonData;
     }
 
+    private boolean m_showAds;
     private ArrayList<String> m_homePages;
     private long m_nextFetchRemoteServerList;
     private boolean m_statusActivityForeground;
@@ -97,6 +98,7 @@ public class PsiphonData
         
     private PsiphonData()
     {
+        m_showAds = false;
         m_homePages = new ArrayList<String>();
         m_nextFetchRemoteServerList = -1;
         m_statusActivityForeground = false;
@@ -112,6 +114,16 @@ public class PsiphonData
         m_displayDataTransferStats = false;
         m_downloadUpgrades = false;
         m_egressRegion = ServerInterface.ServerEntry.REGION_CODE_ANY;
+    }
+
+    public synchronized void setShowAds()
+    {
+        m_showAds = true;
+    }
+    
+    public synchronized boolean getShowAds()
+    {
+        return m_showAds;
     }
 
     public synchronized void setHomePages(ArrayList<String> homePages)
