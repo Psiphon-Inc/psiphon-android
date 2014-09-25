@@ -129,19 +129,28 @@ public class StatusActivity
     public void onPause()
     {
         super.onPause();
+        if (m_bannerAdView != null)
+        {
         m_bannerAdView.pause();
+    }
     }
     
     @Override
     public void onResume()
     {
         super.onResume();
+        if (m_bannerAdView != null)
+        {
         m_bannerAdView.resume();
+    }
     }
     
     @Override
     public void onDestroy() {
+        if (m_bannerAdView != null)
+        {
       m_bannerAdView.destroy();
+        }
       super.onDestroy();
     }
     
