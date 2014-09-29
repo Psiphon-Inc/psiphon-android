@@ -29,6 +29,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.KeyEvent;
@@ -146,7 +147,8 @@ public class StatusActivity
     }
     
     @Override
-    public void onDestroy() {
+    public void onDestroy()
+    {
         if (m_bannerAdView != null)
         {
       m_bannerAdView.destroy();
@@ -176,10 +178,16 @@ public class StatusActivity
 
     private void initAds()
     {
+        // Google Play Services are not supported on FROYO
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.FROYO)
+        {
+            return;
+        }
+        
         if (PsiphonData.getPsiphonData().getShowAds() && m_bannerAdView == null)
         {
             m_bannerAdView = new AdView(this);
-            m_bannerAdView.setAdSize(AdSize.BANNER);
+            m_bannerAdView.setAdSize(AdSize.SMART_BANNER);
             m_bannerAdView.setAdUnitId("");
             LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
             layout.removeAllViewsInLayout();
