@@ -10,7 +10,8 @@
   <string name="exit">خروج</string>
   <string name="open_browser">فتح المتصفح</string>
   <string name="browser_task_label">متصفح برنامج Psiphon 3</string>
-  <string name="FeedbackActivity.DefaultText">اذا كانت لديك أي نعليقات محدده٫ آو معلومات آخرى حول مواقع لا تعمل٫ أو إذا كانت هذه الاستماره لا تعمل٫ يرجى أرسال رساله إلى :\n l &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
+  <string name="FeedbackActivity.DefaultText">اذا كانت لديك أي نعليقات محدده٫ آو معلومات آخرى حول مواقع لا تعمل٫ أو إذا كانت هذه الاستماره لا تعمل٫ يرجى أرسال رساله إلى :
+ l &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">نشكرك على إرسال الرد.</string>
   <string name="FeedbackActivity.Failure">فشل الارسال. يرجى معاودة المحاوله.</string>
   <string name="FeedbackActivity.SubmitFeedbackFailed">فشل في إرسال الرد.</string>

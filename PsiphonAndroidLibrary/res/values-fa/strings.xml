@@ -66,7 +66,8 @@
   <string name="vpn_service_running">سرویس وی پی ان فعال است</string>
   <string name="vpn_service_stopped">سرویس وی پی ان متوقف شد</string>
   <string name="vpn_service_revoked">سرویس وی پی ان لغو شد</string>
-  <string name="tun2socks_error">به ساکس منتقل کن:%s\n</string>
+  <string name="tun2socks_error">به ساکس منتقل کن:%s
+</string>
   <string name="tun2socks_failed">وی پی ان به ساکس نا موفق بود</string>
   <string name="tun2socks_running">وی پی ان به ساکس فعال است</string>
   <string name="tun2socks_stopped">وی پی ان به ساکس متوقف شد</string>
@@ -117,6 +118,11 @@
   <string name="share_proxies_prompt_message">برای اعمال این تغییرات، اپلیکیشن نیاز به راه‌اندازی مجدد دارد.</string>
   <string name="share_proxies_prompt_positive">رستارت </string>
   <string name="share_proxies_prompt_negative">لغو</string>
+  <string name="use_proxy_settings_toggle">اتصال به سایفون از طریق پراکسی http </string>
+  <string name="use_system_proxy_settings_radio">از تنظیمات شبکه ی سیستم استفاده کن.  </string>
+  <string name="use_custom_proxy_settings_radio">استفاده از این تنظیمات:</string>
+  <string name="custom_proxy_settings_host">آدرس هاست</string>
+  <string name="custom_proxy_settings_port">پورت </string>
   <string name="region_name_any">بهترین عملکرد</string>
   <string name="region_name_us">ایالات متحده آمریکا</string>
   <string name="region_name_gb">انگلستان</string>
@@ -131,8 +137,16 @@
   <string name="tunnel_whole_device_toggle">تونل تمام گوشی (نیاز به اندروید روت شده یا ورژن ٤.٠ به بالا) </string>
   <string name="region_selector">منطقۀ خود را انتخاب کنید</string>
   <string name="network_proxy_connect_exception">اتصال به شبکه اچ‌تی‌تی‌پی پراکسی امکان پذیر نبود: %s</string>
+  <string name="network_proxy_connect_information">ایجاد اتصال از طریق http پراکسی: %s</string>
+  <string name="network_proxy_connect_invalid_values">تنظمیات http پراکسی نا معتبر است. </string>
   <string name="tunnel_whole_device_exception">گوشی شما امکان تونل تمام گوشی را پشتیبانی نمی‌کند. ببخشید.</string>
   <string name="run_polipo_failed">اجرای پولیپو ناموفق بود: %s</string>
   <string name="wdm_force_iptables_toggle">اجباری کردن استفاده از تونل در تمام گوشی</string>
   <string name="http_prefix_toggle">ترافیک را مثل http نشان بده</string>
+  <string name="preference_notifications_title">اطلاعیه ها</string>
+  <string name="preference_notifications_with_sound_title">صدا </string>
+  <string name="preference_notifications_with_sound_summary">وقتی وضعیت اتصال تغییر میکند صدا پخش شود</string>
+  <string name="preference_notifications_with_vibrate_title">ویبره</string>
+  <string name="preference_notifications_with_vibrate_summary">وقتی وضعیت اتصال تغییر میکند موبایل ویبره کند. </string>
+  <string name="moreOptions">گزینه های بیشتر</string>
 </resources>

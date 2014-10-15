@@ -2,7 +2,8 @@
 <resources>
   <string name="ApplicationName">赛风浏览器</string>
   <string name="ApplicationNameUrl">赛风 - %s</string>
-  <string name="ApplicationDescription">赛风浏览器是一款基于Zirco浏览器，用于安卓设备的开源浏览器\n</string>
+  <string name="ApplicationDescription">赛风浏览器是一款基于Zirco浏览器，用于安卓设备的开源浏览器
+</string>
   <string name="AboutActivity.Title">关于</string>
   <string name="AboutActivity.VersionText">版本:</string>
   <string name="AboutActivity.LicenseText">版权:</string>
@@ -107,11 +108,9 @@
   <string name="Commons.SDCardErrorNoSDMsg">找不到SD卡.</string>
   <string name="Commons.SDCardErrorSDUnavailable">SD卡不能使用.</string>
   <string name="Commons.Close">关闭</string>
-  <!--0.3.1-->
   <string name="PreferencesActivity.AboutCategoryTitle">关于</string>
   <string name="PreferencesActivity.AboutPreferenceTitle">关于</string>
   <string name="PreferencesActivity.AboutPreferenceSummary">此应用程序的信息.</string>
-  <!--0.3.2-->
   <string name="BookmarksListActivity.MostUsedSortMode">最常用的</string>
   <string name="PreferencesActivity.DefaultZoomPreferenceTitle">默认缩放级别</string>
   <string name="PreferencesActivity.DefaultZoomPreferenceSummary">设定默认缩放级别.</string>
@@ -129,7 +128,6 @@
   <string name="PreferencesActivity.HomepageStart">开始页</string>
   <string name="PreferencesActivity.HomepageBlank">空白页</string>
   <string name="PreferencesActivity.HomepageCustom">自定义页</string>
-  <!--0.3.3-->
   <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=en&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
   <string name="Constants.SearchUrlWikipedia">http://en.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
   <string name="PreferencesActivity.SearchUrlPreferenceTitle">搜索URL</string>
@@ -160,7 +158,6 @@
   <string name="PreferencesActivity.UserAgentDefault">默认</string>
   <string name="PreferencesActivity.UserAgentDesktop">桌面</string>
   <string name="PreferencesActivity.UserAgentCustom">自定义</string>
-  <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">复制链接URL</string>
   <string name="Main.MenuViewImage">显示图像</string>
   <string name="Main.MenuDownloadImage">下载图像</string>
@@ -179,7 +176,6 @@
   <string name="Main.MenuExit">退出</string>
   <string name="PreferencesActivity.RestartDialogTitle">需要重新启动</string>
   <string name="PreferencesActivity.RestartDialogMessage">需要重新启动程序才能生效。您是否想立即重启?</string>
-  <!--0.3.5-->
   <string name="PreferencesActivity.EnablePluginsTitle">启用插件</string>
   <string name="PreferencesActivity.PluginsAlwaysOff">关闭</string>
   <string name="PreferencesActivity.PluginsOnDemand">点播</string>
@@ -201,7 +197,6 @@
   <string name="Commons.Add">添加</string>
   <string name="Commons.Clear">清空</string>
   <string name="Commons.Delete">删除</string>
-  <!--0.3.6-->
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceTitle">音量键行为</string>
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceSummary">选择音量键的功能.</string>
   <string name="PreferencesActivity.VolumeKeysActionDefault">默认行为</string>
@@ -209,12 +204,10 @@
   <string name="PreferencesActivity.VolumeKeysActionScroll">向上滚动／向下滚动</string>
   <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">切换选项卡</string>
   <string name="PreferencesActivity.VolumeKeysActionHistory">后退／前进</string>
-  <!--0.3.7-->
   <string name="Main.ShareChooserTitle">共享通道</string>
   <string name="Main.MenuShareLinkUrl">共享链接</string>
   <string name="Main.MenuShareImageUrl">共享图像</string>
   <string name="Main.MenuShareEmailUrl">共享电子邮件</string>
-  <!--0.3.8-->
   <string name="PreferencesActivity.HideTitleBarPreferenceTitle">隐藏标题栏</string>
   <string name="PreferencesActivity.HideTitleBarPreferenceSummary">如果选中，不会显示窗口标题栏(需要重新启动应用程序).</string>
   <string name="PreferencesActivity.UseWideViewPortPreferenceTitle">使用宽频浏览</string>
@@ -226,7 +219,6 @@
   <string name="PreferencesActivity.SwitchTabButtons">按钮</string>
   <string name="PreferencesActivity.SwitchTabFling">滑动</string>
   <string name="PreferencesActivity.SwitchTabBoth">两边都有</string>
-  <!--0.3.9-->
   <string name="HistoryListActivity.Today">今天</string>
   <string name="HistoryListActivity.Yesterday">昨天</string>
   <string name="HistoryListActivity.LastSevenDays">最近7天</string>
@@ -236,7 +228,6 @@
   <string name="QuickAction.Share">共享</string>
   <string name="QuickAction.SelectText">选择文本</string>
   <string name="QuickAction.MobileView">移动视图</string>
-  <!--0.4.0-->
   <string name="PreferencesActivity.WeavePreferenceTitle">火狐书签同步</string>
   <string name="PreferencesActivity.WeavePreferenceSummary">使用火狐同步来管理书签的设置.</string>
   <string name="PreferencesActivity.UseWeavePreferenceTitle">使用火狐同步</string>
@@ -297,7 +288,6 @@
   <string name="DownloadListActivity.RemoveCompletedDownloads">删除已完成的下载</string>
   <string name="QuickAction.Find">在页面查找</string>
   <string name="SearchDialog.Hint">在页面上查找</string>
-  <!--0.4.2-->
   <string name="PreferencesActivity.AdvancedCategoryTitle">高级</string>
   <string name="PreferencesActivity.BookmarksDatabaseTitle">存储书签</string>
   <string name="PreferencesActivity.BookmarksDatabaseSummary">选择存储书签的方式.</string>
@@ -318,7 +308,6 @@
   <string name="ProxySettings.ProxySettingsEnabled">成功启用了代理设置.</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">恢复选项卡</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">如果选中，可以将选项卡恢复.</string>
-  <!--0.4.3-->
   <string name="VideoLoading">加载视频\u2026</string>
   <string name="PreferencesActivity.DesktopViewCategoryTitle">桌面视图设置</string>
   <string name="PreferencesActivity.DesktopViewListPreferenceTitle">桌面模式列表</string>

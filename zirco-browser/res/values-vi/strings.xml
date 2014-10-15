@@ -107,11 +107,9 @@
   <string name="Commons.SDCardErrorNoSDMsg">Không tìm thấy Thẻ SD.</string>
   <string name="Commons.SDCardErrorSDUnavailable">Thẻ SD không khả dụng.</string>
   <string name="Commons.Close">Đóng</string>
-  <!--0.3.1-->
   <string name="PreferencesActivity.AboutCategoryTitle">Giới thiệu</string>
   <string name="PreferencesActivity.AboutPreferenceTitle">Giới thiệu</string>
   <string name="PreferencesActivity.AboutPreferenceSummary">Thông tin về ứng dụng này.</string>
-  <!--0.3.2-->
   <string name="BookmarksListActivity.MostUsedSortMode">Được sử dụng nhiều nhất</string>
   <string name="PreferencesActivity.DefaultZoomPreferenceTitle">Mức thu phóng mặc định</string>
   <string name="PreferencesActivity.DefaultZoomPreferenceSummary">Đặt mức thu phóng mặc định.</string>
@@ -129,7 +127,6 @@
   <string name="PreferencesActivity.HomepageStart">Trang bắt đầu</string>
   <string name="PreferencesActivity.HomepageBlank">Trang trắng</string>
   <string name="PreferencesActivity.HomepageCustom">Trang tùy chỉnh</string>
-  <!--0.3.3-->
   <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=en&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
   <string name="Constants.SearchUrlWikipedia">http://en.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
   <string name="PreferencesActivity.SearchUrlPreferenceTitle">Url tìm kiếm</string>
@@ -160,7 +157,6 @@
   <string name="PreferencesActivity.UserAgentDefault">Mặc định</string>
   <string name="PreferencesActivity.UserAgentDesktop">Desktop</string>
   <string name="PreferencesActivity.UserAgentCustom">Tùy chỉnh</string>
-  <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">Sao chép url liên kết</string>
   <string name="Main.MenuViewImage">Xem hình ảnh</string>
   <string name="Main.MenuDownloadImage">Tải hình ảnh xuống</string>
@@ -179,7 +175,6 @@
   <string name="Main.MenuExit">Thoát</string>
   <string name="PreferencesActivity.RestartDialogTitle">Cần phải khởi động lại</string>
   <string name="PreferencesActivity.RestartDialogMessage">Thay đổi này sẽ không có hiệu lực cho đến khi ứng dụng khởi động lại. Bạn có muốn thực hiện ngay bây giờ không?</string>
-  <!--0.3.5-->
   <string name="PreferencesActivity.EnablePluginsTitle">Cho phép plug-in</string>
   <string name="PreferencesActivity.PluginsAlwaysOff">Luôn tắt</string>
   <string name="PreferencesActivity.PluginsOnDemand">Khi có yêu cầu</string>
@@ -201,7 +196,6 @@
   <string name="Commons.Add">Thêm</string>
   <string name="Commons.Clear">Xóa</string>
   <string name="Commons.Delete">Xóa</string>
-  <!--0.3.6-->
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceTitle">Thao tác các phím âm lượng</string>
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceSummary">Chọn các thao tác phim âm lượng.</string>
   <string name="PreferencesActivity.VolumeKeysActionDefault">Thao tác mặc định</string>
@@ -209,12 +203,10 @@
   <string name="PreferencesActivity.VolumeKeysActionScroll">Cuộn lên/xuống</string>
   <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">Thay đổi các tab</string>
   <string name="PreferencesActivity.VolumeKeysActionHistory">Trở Lại/Tới</string>
-  <!--0.3.7-->
   <string name="Main.ShareChooserTitle">Chia sẻ qua</string>
   <string name="Main.MenuShareLinkUrl">Chia sẻ liên kết</string>
   <string name="Main.MenuShareImageUrl">Chia sẻ hình ảnh</string>
   <string name="Main.MenuShareEmailUrl">Chia sẻ thư điện tử</string>
-  <!--0.3.8-->
   <string name="PreferencesActivity.HideTitleBarPreferenceTitle">Ẩn các thanh tiêu đề</string>
   <string name="PreferencesActivity.HideTitleBarPreferenceSummary">Nếu được chọn, các thanh tiêu đề của cửa sổ sẽ không được hiển thị (cần phải khởi động lại ứng dụng).</string>
   <string name="PreferencesActivity.UseWideViewPortPreferenceTitle">Sử dụng cổng quan sát rộng</string>
@@ -226,7 +218,6 @@
   <string name="PreferencesActivity.SwitchTabButtons">Các nút</string>
   <string name="PreferencesActivity.SwitchTabFling">Fling</string>
   <string name="PreferencesActivity.SwitchTabBoth">Cả hai</string>
-  <!--0.3.9-->
   <string name="HistoryListActivity.Today">Hôm nay</string>
   <string name="HistoryListActivity.Yesterday">Hôm qua</string>
   <string name="HistoryListActivity.LastSevenDays">7 ngày vừa qua</string>
@@ -236,7 +227,6 @@
   <string name="QuickAction.Share">Chia sẻ</string>
   <string name="QuickAction.SelectText">Chọn văn bản</string>
   <string name="QuickAction.MobileView">Xem trên di động</string>
-  <!--0.4.0-->
   <string name="PreferencesActivity.WeavePreferenceTitle">Đồng bộ dấu trang Firefox</string>
   <string name="PreferencesActivity.WeavePreferenceSummary">Quản lý các thiết lập đồng bộ dấu trang bằng Firefox Sync.</string>
   <string name="PreferencesActivity.UseWeavePreferenceTitle">Sử dụng Firefox Sync.</string>
@@ -297,7 +287,6 @@
   <string name="DownloadListActivity.RemoveCompletedDownloads">Xóa các tập tin tải xuống hoàn tất</string>
   <string name="QuickAction.Find">Tìm trên trang</string>
   <string name="SearchDialog.Hint">Tìm trên trang</string>
-  <!--0.4.2-->
   <string name="PreferencesActivity.AdvancedCategoryTitle">Nâng cao</string>
   <string name="PreferencesActivity.BookmarksDatabaseTitle">Lưu dấu trang</string>
   <string name="PreferencesActivity.BookmarksDatabaseSummary">Chọn chế độ lưu dấu trang.</string>
@@ -318,7 +307,6 @@
   <string name="ProxySettings.ProxySettingsEnabled">Đã cho phép thiết lập proxy thành công.</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Khôi phục các tab</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">Nếu được chọn, các tab sẽ được khôi phục khi khả dụng.</string>
-  <!--0.4.3-->
   <string name="VideoLoading">Đang tải video\u2026</string>
   <string name="PreferencesActivity.DesktopViewCategoryTitle">Thiết lập xem trên desktop</string>
   <string name="PreferencesActivity.DesktopViewListPreferenceTitle">Danh sách chế độ desktop</string>

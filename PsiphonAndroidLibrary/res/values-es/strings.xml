@@ -142,6 +142,10 @@
   <string name="run_polipo_failed">La ejecución de Polipo falló: %s</string>
   <string name="wdm_force_iptables_toggle">Forzar método de \'Túnel para el dispositivo completo\' de root</string>
   <string name="http_prefix_toggle">Enmascarar como HTTP</string>
-  <string name="meek_error">Error de componente Meek: %s</string>
-  <string name="meek_http_request_error">Error de petición HTTP del componente Meek: %d</string>
+  <string name="preference_notifications_title">Notificaciones</string>
+  <string name="preference_notifications_with_sound_title">Sonido</string>
+  <string name="preference_notifications_with_sound_summary">Reproduce un sonido cuando cambie el estado de la conexión</string>
+  <string name="preference_notifications_with_vibrate_title">Vibración</string>
+  <string name="preference_notifications_with_vibrate_summary">Vibra cuando el estado de la conexión cambia</string>
+  <string name="moreOptions">Más opciones</string>
 </resources>

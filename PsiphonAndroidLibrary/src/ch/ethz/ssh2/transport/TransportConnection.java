@@ -9,6 +9,7 @@ import java.security.SecureRandom;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 
 import ch.ethz.ssh2.compression.ICompressor;
+import ch.ethz.ssh2.crypto.ObfuscatedSSH;
 import ch.ethz.ssh2.crypto.cipher.BlockCipher;
 import ch.ethz.ssh2.crypto.cipher.CipherInputStream;
 import ch.ethz.ssh2.crypto.cipher.CipherOutputStream;
@@ -36,6 +37,8 @@ public class TransportConnection
     int send_seq_number = 0;
 
     int recv_seq_number = 0;
+    
+    ObfuscatedSSH.ObfuscatedOutputStream obfuscatedOutputStream;
 
     CipherInputStream cis;
 
@@ -89,10 +92,15 @@ public class TransportConnection
     
     PsiphonData.DataTransferStats dataTransferStats;
 
-    public TransportConnection(InputStream is, OutputStream os, SecureRandom rnd)
+    public TransportConnection(InputStream is, ObfuscatedSSH.ObfuscatedOutputStream os, SecureRandom rnd)
     {
         this.cis = new CipherInputStream(new NullCipher(), is);
         this.cos = new CipherOutputStream(new NullCipher(), os);
+
+        // PSIPHON
+        // Keep a reference to ObfuscatedSSH.ObfuscatedOutputStream so we can check the obfuscation state
+        this.obfuscatedOutputStream = os;
+
         this.rnd = rnd;
         this.dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
     }
@@ -174,6 +182,16 @@ public class TransportConnection
         int bytes = 0;
         int overhead_bytes = 0;
         
+        // PSIPHON
+        // Use SSH variable length random padding (http://tools.ietf.org/html/rfc4253#section-6)
+        // in the early stages of the protocol (algorithm negotiation, key exchange) to avoid
+        // a fixed-size packet length sequence.
+        if (this.obfuscatedOutputStream.isObfuscating() && padd == 0)
+        {
+            // Uniform distribution between 4 and 64.
+            padd = 4 + this.rnd.nextInt() % 61;
+        }
+        
         if (padd < 4)
             padd = 4;
         else if (padd > 64)
@@ -207,7 +225,9 @@ public class TransportConnection
 
         int padd_len = packet_len - (5 + len);
 
-        if (useRandomPadding)
+        // PSIPHON
+        // Use random padding values when plaintext messages are obfuscated
+        if (useRandomPadding || this.obfuscatedOutputStream.isObfuscating())
         {
             for (int i = 0; i < padd_len; i = i + 4)
             {

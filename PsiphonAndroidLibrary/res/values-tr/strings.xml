@@ -118,7 +118,7 @@
   <string name="share_proxies_prompt_positive">Şimdi yeniden başlat</string>
   <string name="share_proxies_prompt_negative">İptal</string>
   <string name="use_proxy_settings_toggle">Bir HTTP Vekil Sunucusu aracılığıyla bağlan</string>
-  <string name="use_system_proxy_settings_radio">Sistem ağ ayarlarını kulla</string>
+  <string name="use_system_proxy_settings_radio">Sistem ağ ayarlarını kullan</string>
   <string name="use_custom_proxy_settings_radio">Aşağıdaki ayarları kullan:</string>
   <string name="custom_proxy_settings_host">Makine Adresi</string>
   <string name="custom_proxy_settings_port">Bağl. Noktası</string>
@@ -142,6 +142,10 @@
   <string name="run_polipo_failed">Polipo\'yu çalıştırma başarısız: %s</string>
   <string name="wdm_force_iptables_toggle">Yönetici Tüm Cihazı Tünelle yöntemini zorla</string>
   <string name="http_prefix_toggle">HTTP olarak görün</string>
-  <string name="meek_error">Meek Hatası: %s</string>
-  <string name="meek_http_request_error">Meek HTTP İstek Hatası: %d</string>
+  <string name="preference_notifications_title">Bildirimler</string>
+  <string name="preference_notifications_with_sound_title">Ses</string>
+  <string name="preference_notifications_with_sound_summary">Bağlantı durumu değiştiğinde ses çal</string>
+  <string name="preference_notifications_with_vibrate_title">Titret</string>
+  <string name="preference_notifications_with_vibrate_summary">Bağlantı durumu değiştiğinde titret</string>
+  <string name="moreOptions">Daha Fazla Seçenek</string>
 </resources>

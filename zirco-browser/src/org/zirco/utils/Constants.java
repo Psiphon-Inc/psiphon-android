@@ -18,6 +18,7 @@ package org.zirco.utils;
 import org.zirco.R;
 
 import android.content.Context;
+import android.os.Build;
 
 /**
  * Defines constants.
@@ -60,6 +61,12 @@ public class Constants {
 	/**
 	 * Preferences.
 	 */
+    // PSIPHON
+    // Mitigate http://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2014-6041:
+    // JavaScript cannot be enabled on Android 3.x - 4.3
+    // (19 is Build.VERSION_CODES.KITKAT)
+    public static final boolean DISABLE_JS = Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB && Build.VERSION.SDK_INT < 19;
+
 	public static final String PREFERENCES_GENERAL_HOME_PAGE = "GeneralHomePage";
 	public static final String PREFERENCES_GENERAL_SEARCH_URL = "GeneralSearchUrl";
 	public static final String PREFERENCES_GENERAL_SWITCH_TABS_METHOD = "GeneralSwitchTabMethod";

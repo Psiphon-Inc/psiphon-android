@@ -49,8 +49,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 
@@ -109,7 +107,6 @@ public class MeekClient {
     private ServerSocket mServerSocket;
     private int mLocalPort = -1;
     private Set<Socket> mClients;
-    private CountDownLatch mEstablishedFirstServerConnection;
     
     public enum MeekProtocol {FRONTED, UNFRONTED};
 
@@ -170,7 +167,6 @@ public class MeekClient {
         mServerSocket = new ServerSocket(0, 50, InetAddress.getByName("127.0.0.1"));
         mLocalPort = mServerSocket.getLocalPort();
         mClients = new HashSet<Socket>();
-        mEstablishedFirstServerConnection = new CountDownLatch(1);
         mAcceptThread = new Thread(
                 new Runnable() {
                     @Override
@@ -220,15 +216,6 @@ public class MeekClient {
             mServerSocket = null;
             mAcceptThread = null;
             mLocalPort = -1;
-            mEstablishedFirstServerConnection = null;
-        }
-    }
-    
-    public void awaitEstablishedFirstServerConnection(IAbortIndicator abortIndicator) throws InterruptedException {
-        while (!mEstablishedFirstServerConnection.await(ABORT_POLL_MILLISECONDS, TimeUnit.MILLISECONDS)) {
-            if (abortIndicator.shouldAbort()) {
-                break;
-            }
         }
     }
     
@@ -294,61 +281,78 @@ public class MeekClient {
                 // TODO: read in a separate thread (or asynchronously) to allow continuous requests while streaming downloads
                 socket.setSoTimeout(pollIntervalMilliseconds);
                 int payloadLength = 0;
-
-                // We make the very first poll without waiting to read in order to check connection establishment
-                if (mEstablishedFirstServerConnection.getCount() == 0) {
-                    try {
-                        payloadLength = socketInputStream.read(payloadBuffer);
-                    } catch (SocketTimeoutException e) {
-                        // In this case, we POST with no content -- this is for polling the server
-                    }
-                    if (payloadLength == -1) {
-                        // EOF
-                        break;
-                    }
+                try {
+                    payloadLength = socketInputStream.read(payloadBuffer);
+                } catch (SocketTimeoutException e) {
+                    // In this case, we POST with no content -- this is for polling the server
                 }
-
-                HttpPost httpPost = new HttpPost(uri);
-                ByteArrayEntity entity = new ByteArrayEntity(payloadBuffer, 0, payloadLength);
-                entity.setContentType(HTTP_POST_CONTENT_TYPE);
-                httpPost.setEntity(entity);
-
-                if (mFrontingDomain != null) {
-                    httpPost.addHeader("Host", mFrontingHost);
-                }
-                httpPost.addHeader("Cookie", cookie);
-
-                HttpResponse response = httpClient.execute(httpPost);
-                int statusCode = response.getStatusLine().getStatusCode();
-                if (statusCode != HttpStatus.SC_OK) {
-                    MyLog.w(R.string.meek_http_request_error, MyLog.Sensitivity.NOT_SENSITIVE, statusCode);
+                if (payloadLength == -1) {
+                    // EOF
                     break;
                 }
 
-                boolean receivedData = false;
-                InputStream responseInputStream = response.getEntity().getContent();
-                try {
-                    int readLength;
-                    while ((readLength = responseInputStream.read(payloadBuffer)) != -1) {
-                        receivedData = true;
-                        socketOutputStream.write(payloadBuffer, 0 , readLength);
-                    }
-                } finally {
-                    Utils.closeHelper(responseInputStream);
-                }
-                
-                // Signal when first connection is established
-                mEstablishedFirstServerConnection.countDown();
+                // (comment from meek-client.go)
+                // Retry loop, which assumes entire request failed (underlying
+                // transport protocol such as SSH will fail if extra bytes are
+                // replayed in either direction due to partial request success
+                // followed by retry).
+                // This retry mitigates intermittent failures between the client
+                // and front/server.
+                int retry;
+                for (retry = 1; retry >= 0; retry--) {
+                    HttpPost httpPost = new HttpPost(uri);
+                    ByteArrayEntity entity = new ByteArrayEntity(payloadBuffer, 0, payloadLength);
+                    entity.setContentType(HTTP_POST_CONTENT_TYPE);
+                    httpPost.setEntity(entity);
 
-                if (payloadLength > 0 || receivedData) {
-                    pollIntervalMilliseconds = MIN_POLL_INTERVAL_MILLISECONDS;
-                } else if (pollIntervalMilliseconds == MIN_POLL_INTERVAL_MILLISECONDS) {
-                    pollIntervalMilliseconds = IDLE_POLL_INTERVAL_MILLISECONDS;
-                } else {
-                    pollIntervalMilliseconds = (int)(pollIntervalMilliseconds*POLL_INTERVAL_MULTIPLIER);
+                    if (mFrontingDomain != null) {
+                        httpPost.addHeader("Host", mFrontingHost);
+                    }
+                    httpPost.addHeader("Cookie", cookie);
+                    
+                    HttpResponse response = null;
+                    try {
+                        response = httpClient.execute(httpPost);
+                    } catch (IOException e) {
+                        MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+                        // Retry (or abort)
+                        continue;
+                    }
+                    int statusCode = response.getStatusLine().getStatusCode();
+                    if (statusCode != HttpStatus.SC_OK) {
+                        MyLog.w(R.string.meek_http_request_error, MyLog.Sensitivity.NOT_SENSITIVE, statusCode);
+                        // Retry (or abort)
+                        continue;
+                    }
+
+                    boolean receivedData = false;
+                    InputStream responseInputStream = response.getEntity().getContent();
+                    try {
+                        int readLength;
+                        while ((readLength = responseInputStream.read(payloadBuffer)) != -1) {
+                            receivedData = true;
+                            socketOutputStream.write(payloadBuffer, 0 , readLength);
+                        }
+                    } finally {
+                        Utils.closeHelper(responseInputStream);
+                    }
+                    if (payloadLength > 0 || receivedData) {
+                        pollIntervalMilliseconds = MIN_POLL_INTERVAL_MILLISECONDS;
+                    } else if (pollIntervalMilliseconds == MIN_POLL_INTERVAL_MILLISECONDS) {
+                        pollIntervalMilliseconds = IDLE_POLL_INTERVAL_MILLISECONDS;
+                    } else {
+                        pollIntervalMilliseconds = (int)(pollIntervalMilliseconds*POLL_INTERVAL_MULTIPLIER);
+                    }
+                    if (pollIntervalMilliseconds > MAX_POLL_INTERVAL_MILLISECONDS) {
+                        pollIntervalMilliseconds = MAX_POLL_INTERVAL_MILLISECONDS;
+                    }
+
+                    // Success: exit retry loop
+                    break;
                 }
-                if (pollIntervalMilliseconds > MAX_POLL_INTERVAL_MILLISECONDS) {
-                    pollIntervalMilliseconds = MAX_POLL_INTERVAL_MILLISECONDS;
+                if (retry < 0) {
+                    // All retries failed, so abort this meek client session
+                    break;
                 }
             }
         } catch (IOException e) {

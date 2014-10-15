@@ -107,11 +107,9 @@
   <string name="Commons.SDCardErrorNoSDMsg">No se encontró tarjeta SD.</string>
   <string name="Commons.SDCardErrorSDUnavailable">La tarjeta SD no está disponible.</string>
   <string name="Commons.Close">Cerrar</string>
-  <!--0.3.1-->
   <string name="PreferencesActivity.AboutCategoryTitle">Acerca de</string>
   <string name="PreferencesActivity.AboutPreferenceTitle">Acerca de</string>
   <string name="PreferencesActivity.AboutPreferenceSummary">Información acerca de esta aplicación.</string>
-  <!--0.3.2-->
   <string name="BookmarksListActivity.MostUsedSortMode">El más usado</string>
   <string name="PreferencesActivity.DefaultZoomPreferenceTitle">Nivel de zoom predeterminado</string>
   <string name="PreferencesActivity.DefaultZoomPreferenceSummary">Ajusta el nivel de zoom por defecto.</string>
@@ -129,7 +127,6 @@
   <string name="PreferencesActivity.HomepageStart">Página de inicio</string>
   <string name="PreferencesActivity.HomepageBlank">Página en blanco</string>
   <string name="PreferencesActivity.HomepageCustom">Página personalizada</string>
-  <!--0.3.3-->
   <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=es&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
   <string name="Constants.SearchUrlWikipedia">http://es.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
   <string name="PreferencesActivity.SearchUrlPreferenceTitle">URL de búsqueda</string>
@@ -160,7 +157,6 @@
   <string name="PreferencesActivity.UserAgentDefault">Por defecto</string>
   <string name="PreferencesActivity.UserAgentDesktop">Escritorio</string>
   <string name="PreferencesActivity.UserAgentCustom">Personalizado</string>
-  <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">Copiar URL de enlace</string>
   <string name="Main.MenuViewImage">Ver imagen</string>
   <string name="Main.MenuCopyImageUrl">Copiar URL de la imagen</string>
@@ -180,7 +176,6 @@
   <string name="Main.MenuExit">Salir</string>
   <string name="PreferencesActivity.RestartDialogTitle">Se requiere reinicio</string>
   <string name="PreferencesActivity.RestartDialogMessage">Este cambio no surtirá efecto hasta que se reinicie la aplicación. ¿Quiere hacerlo ahora?</string>
-  <!--0.3.5-->
   <string name="PreferencesActivity.EnablePluginsTitle">Habilitar plug-ins</string>
   <string name="PreferencesActivity.PluginsAlwaysOff">Siempre inactivo</string>
   <string name="PreferencesActivity.PluginsOnDemand">Bajo demanda</string>
@@ -202,7 +197,6 @@
   <string name="Commons.Add">Agregar</string>
   <string name="Commons.Clear">Limpiar</string>
   <string name="Commons.Delete">Borrar</string>
-  <!--0.3.6-->
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceTitle">Comportamiento de las teclas de volumen</string>
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceSummary">Elija las acciones de las teclas de volumen.</string>
   <string name="PreferencesActivity.VolumeKeysActionDefault">Comportamiento por defecto</string>
@@ -210,12 +204,10 @@
   <string name="PreferencesActivity.VolumeKeysActionScroll">Desplazamiento arriba/abajo</string>
   <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">Alternar pestañas</string>
   <string name="PreferencesActivity.VolumeKeysActionHistory">Atrás/Adelante</string>
-  <!--0.3.7-->
   <string name="Main.ShareChooserTitle">Compartir mediante</string>
   <string name="Main.MenuShareLinkUrl">Compartir enlace</string>
   <string name="Main.MenuShareImageUrl">Compartir imagen</string>
   <string name="Main.MenuShareEmailUrl">Compartir correo electrónico</string>
-  <!--0.3.8-->
   <string name="PreferencesActivity.HideTitleBarPreferenceTitle">Ocultar barras de título</string>
   <string name="PreferencesActivity.HideTitleBarPreferenceSummary">Si está marcado, no se mostrarán las barras de título de las ventanas (requiere reinicio de la aplicación).</string>
   <string name="PreferencesActivity.UseWideViewPortPreferenceTitle">Usar ventana ancha</string>
@@ -227,7 +219,6 @@
   <string name="PreferencesActivity.SwitchTabButtons">Botones</string>
   <string name="PreferencesActivity.SwitchTabFling">Fling (gesto de desplazamiento)</string>
   <string name="PreferencesActivity.SwitchTabBoth">Ambos</string>
-  <!--0.3.9-->
   <string name="HistoryListActivity.Today">Hoy</string>
   <string name="HistoryListActivity.Yesterday">Ayer</string>
   <string name="HistoryListActivity.LastSevenDays">Últimos 7 días</string>
@@ -238,7 +229,6 @@
   <string name="QuickAction.SelectText">Seleccionar texto</string>
   <string name="QuickAction.MobileView">Vista de móvil</string>
   <string name="AboutActivity.OtherLicenseText">Esta aplicación incluye código del proyecto Zirco Browser (https://code.google.com/p/zirco-browser/), licenciado bajo GPLv3. También incluye código del proyecto GreenDroid (https://github.com/cyrilmottier/GreenDroid), y del proyecto Shaman (https://github.com/emergentdotorg/shaman), ambos licenciados bajo la licencia Apache, versión 2.</string>
-  <!--0.4.0-->
   <string name="PreferencesActivity.WeavePreferenceTitle">Sincronización con marcadores de Firefox</string>
   <string name="PreferencesActivity.WeavePreferenceSummary">Administra los ajustes de sincronización de marcadores con Firefox Sync.</string>
   <string name="PreferencesActivity.UseWeavePreferenceTitle">Usar Firefox Sync</string>
@@ -299,7 +289,6 @@
   <string name="DownloadListActivity.RemoveCompletedDownloads">Limpiar descargas finalizadas</string>
   <string name="QuickAction.Find">Buscar en la página</string>
   <string name="SearchDialog.Hint">Buscar en la página</string>
-  <!--0.4.2-->
   <string name="PreferencesActivity.AdvancedCategoryTitle">Avanzado</string>
   <string name="PreferencesActivity.BookmarksDatabaseTitle">Almacén de marcadores</string>
   <string name="PreferencesActivity.BookmarksDatabaseSummary">Elija la modalidad de almacenamiento de marcadores.</string>
@@ -320,7 +309,6 @@
   <string name="ProxySettings.ProxySettingsEnabled">Los ajustes del proxy fueron activados con éxito.</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Restaurar pestañas</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">Si está marcado, las pestañas se restaurarán cuando estén disponibles.</string>
-  <!--0.4.3-->
   <string name="VideoLoading">Cargando video\u2026</string>
   <string name="PreferencesActivity.DesktopViewCategoryTitle">Ajustes de la vista de escritorio</string>
   <string name="PreferencesActivity.DesktopViewListPreferenceTitle">Lista de modo de escritorio</string>
