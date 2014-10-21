@@ -203,22 +203,6 @@ public class StatusActivity
         }
     }
     
-    private void loadInterstitialAd()
-    {
-        AdRequest adRequest = new AdRequest.Builder()
-            .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
-            .build();
-        m_interstitialAd.loadAd(adRequest);
-    }
-    
-    private void loadBannerAd()
-    {
-        AdRequest adRequest = new AdRequest.Builder()
-            .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
-            .build();
-        m_bannerAdView.loadAd(adRequest);
-    }
-    
     private void initAds()
     {
         // Google Play Services are not supported on FROYO
@@ -235,14 +219,14 @@ public class StatusActivity
                 @Override
                 public void onAdFailedToLoad(int errorCode)
                 {
-                    if (errorCode == AdRequest.ERROR_CODE_NETWORK_ERROR)
-                    {
-                        // Try again
-                        loadInterstitialAd();
-                    }
+                    // Set to null so it will be re-initialized the next time
+                    m_interstitialAd = null;
                 }
             });
-            loadInterstitialAd();
+            AdRequest adRequest = new AdRequest.Builder()
+                .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+                .build();
+            m_interstitialAd.loadAd(adRequest);
         }
         
         if (PsiphonData.getPsiphonData().getShowAds() && m_bannerAdView == null)
@@ -252,19 +236,26 @@ public class StatusActivity
             m_bannerAdView.setAdUnitId("");
             m_bannerAdView.setAdListener(new AdListener() {
                 @Override
+                public void onAdLoaded()
+                {
+                    LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
+                    layout.removeAllViewsInLayout();
+                    layout.addView(m_bannerAdView);
+                }
+                @Override
                 public void onAdFailedToLoad(int errorCode)
                 {
-                    if (errorCode == AdRequest.ERROR_CODE_NETWORK_ERROR)
-                    {
-                        // Try again
-                        loadBannerAd();
-                    }
+                    LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
+                    layout.removeAllViewsInLayout();
+                    layout.addView(m_banner);
+                    // Set to null so it will be re-initialized the next time
+                    m_bannerAdView = null;
                 }
             });
-            LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
-            layout.removeAllViewsInLayout();
-            layout.addView(m_bannerAdView);
-            loadBannerAd();
+            AdRequest adRequest = new AdRequest.Builder()
+                .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+                .build();
+            m_bannerAdView.loadAd(adRequest);
         }
     }
     
