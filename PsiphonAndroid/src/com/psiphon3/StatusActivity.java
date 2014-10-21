@@ -39,6 +39,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TabHost;
 
+import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
@@ -182,12 +183,40 @@ public class StatusActivity
     @Override
     protected void doToggle()
     {
+        showInterstitialAd();
+        super.doToggle();
+    }
+    
+    @Override
+    public void onTabChanged(String tabId)
+    {
+        showInterstitialAd();
+        super.onTabChanged(tabId);
+    }
+    
+    private void showInterstitialAd()
+    {
         if (m_interstitialAd != null && m_interstitialAd.isLoaded() && !m_interstitialAdShown)
         {
             m_interstitialAd.show();
             m_interstitialAdShown = true;
         }
-        super.doToggle();
+    }
+    
+    private void loadInterstitialAd()
+    {
+        AdRequest adRequest = new AdRequest.Builder()
+            .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+            .build();
+        m_interstitialAd.loadAd(adRequest);
+    }
+    
+    private void loadBannerAd()
+    {
+        AdRequest adRequest = new AdRequest.Builder()
+            .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+            .build();
+        m_bannerAdView.loadAd(adRequest);
     }
     
     private void initAds()
@@ -202,10 +231,18 @@ public class StatusActivity
         {
             m_interstitialAd = new InterstitialAd(this);
             m_interstitialAd.setAdUnitId("");
-            AdRequest adRequest = new AdRequest.Builder()
-                .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
-                .build();
-            m_interstitialAd.loadAd(adRequest);
+            m_interstitialAd.setAdListener(new AdListener() {
+                @Override
+                public void onAdFailedToLoad(int errorCode)
+                {
+                    if (errorCode == AdRequest.ERROR_CODE_NETWORK_ERROR)
+                    {
+                        // Try again
+                        loadInterstitialAd();
+                    }
+                }
+            });
+            loadInterstitialAd();
         }
         
         if (PsiphonData.getPsiphonData().getShowAds() && m_bannerAdView == null)
@@ -213,13 +250,21 @@ public class StatusActivity
             m_bannerAdView = new AdView(this);
             m_bannerAdView.setAdSize(AdSize.SMART_BANNER);
             m_bannerAdView.setAdUnitId("");
+            m_bannerAdView.setAdListener(new AdListener() {
+                @Override
+                public void onAdFailedToLoad(int errorCode)
+                {
+                    if (errorCode == AdRequest.ERROR_CODE_NETWORK_ERROR)
+                    {
+                        // Try again
+                        loadBannerAd();
+                    }
+                }
+            });
             LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
             layout.removeAllViewsInLayout();
             layout.addView(m_bannerAdView);
-            AdRequest adRequest = new AdRequest.Builder()
-                .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
-                .build();
-            m_bannerAdView.loadAd(adRequest);
+            loadBannerAd();
         }
     }
     
