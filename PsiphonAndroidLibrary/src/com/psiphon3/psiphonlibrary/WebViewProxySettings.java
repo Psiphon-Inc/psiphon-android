@@ -67,9 +67,13 @@ public class WebViewProxySettings
         {
             worked = setWebkitProxyICS(ctx, host, port);
         }
-        else
+        else if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT)
         {
             worked = setWebkitProxyKitKat(ctx.getApplicationContext(), host, port);
+        }
+        else
+        {
+            worked = setWebkitProxyLollipop(ctx.getApplicationContext(), host, port);
         }
         
         return worked;
@@ -207,6 +211,60 @@ public class WebViewProxySettings
         return false;
     }
 
+    // http://stackanswers.com/questions/25272393/android-webview-set-proxy-programmatically-on-android-l
+    @TargetApi(Build.VERSION_CODES.KITKAT) // for android.util.ArrayMap methods
+    @SuppressWarnings("rawtypes")
+    private static boolean setWebkitProxyLollipop(Context appContext, String host, int port)
+    {
+        System.setProperty("http.proxyHost", host);
+        System.setProperty("http.proxyPort", port + "");
+        try {
+            Class applictionClass = Class.forName("android.app.Application");
+            Field mLoadedApkField = applictionClass.getDeclaredField("mLoadedApk");
+            mLoadedApkField.setAccessible(true);
+            Object mloadedApk = mLoadedApkField.get(appContext);
+            Class loadedApkClass = Class.forName("android.app.LoadedApk");
+            Field mReceiversField = loadedApkClass.getDeclaredField("mReceivers");
+            mReceiversField.setAccessible(true);
+            ArrayMap receivers = (ArrayMap) mReceiversField.get(mloadedApk);
+            for (Object receiverMap : receivers.values())
+            {
+                for (Object receiver : ((ArrayMap) receiverMap).keySet())
+                {
+                    Class clazz = receiver.getClass();
+                    if (clazz.getName().contains("ProxyChangeListener"))
+                    {
+                        Method onReceiveMethod = clazz.getDeclaredMethod("onReceive", Context.class, Intent.class);
+                        Intent intent = new Intent(Proxy.PROXY_CHANGE_ACTION);
+                        onReceiveMethod.invoke(receiver, appContext, intent);
+                    }
+                }
+            }
+            return true;
+        }
+        catch (ClassNotFoundException e)
+        {
+            MyLog.d("Exception setting WebKit proxy on Lollipop through ProxyChangeListener: " + e.toString());
+        }
+        catch (NoSuchFieldException e)
+        {
+            MyLog.d("Exception setting WebKit proxy on Lollipop through ProxyChangeListener: " + e.toString());
+        }
+        catch (IllegalAccessException e)
+        {
+            MyLog.d("Exception setting WebKit proxy on Lollipop through ProxyChangeListener: " + e.toString());
+        }
+        catch (NoSuchMethodException e)
+        {
+            MyLog.d("Exception setting WebKit proxy on Lollipop through ProxyChangeListener: " + e.toString());
+        }
+        catch (InvocationTargetException e)
+        {
+            MyLog.d("Exception setting WebKit proxy on Lollipop through ProxyChangeListener: " + e.toString());
+        }
+        return false;
+     }
+    
     @SuppressWarnings("rawtypes")
     private static Object GetNetworkInstance(Context ctx) throws ClassNotFoundException
     {
