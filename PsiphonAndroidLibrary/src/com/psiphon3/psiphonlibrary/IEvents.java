@@ -21,10 +21,15 @@ package com.psiphon3.psiphonlibrary;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 
 
 public interface IEvents
 {
+    public void displayBrowser(Context context);
+    
+    public void displayBrowser(Context context, Uri uri);
+    
     public void signalHandshakeSuccess(Context context, boolean isReconnect);
     
     public void signalUnexpectedDisconnect(Context context);

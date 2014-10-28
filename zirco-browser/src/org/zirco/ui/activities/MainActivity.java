@@ -326,6 +326,11 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         // PSIPHON: open home pages if they're not already open (or a blank tab if none)
         ArrayList<String> homePages = intent.getStringArrayListExtra("homePages");
         
+        if (intent.getData() != null)
+        {
+            homePages.add(intent.getDataString());
+        }
+        
         for (String homePage : homePages)
         {
             boolean urlAlreadyOpen = false;

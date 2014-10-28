@@ -120,12 +120,12 @@ public class Events implements com.psiphon3.psiphonlibrary.IEvents
         return intent;
     }
     
-    static public void displayBrowser(Context context)
+    public void displayBrowser(Context context)
     {
         displayBrowser(context, null);
     }
 
-    static public void displayBrowser(Context context, Uri uri)
+    public void displayBrowser(Context context, Uri uri)
     {
         try
         {
@@ -134,11 +134,20 @@ public class Events implements com.psiphon3.psiphonlibrary.IEvents
                 // TODO: support multiple home pages in whole device mode. This is
                 // disabled due to the case where users haven't set a default browser
                 // and will get the prompt once per home page.
-                for (String homePage : PsiphonData.getPsiphonData().getHomePages())
+                
+                if (uri == null)
                 {
-                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(homePage));
+                    for (String homePage : PsiphonData.getPsiphonData().getHomePages())
+                    {
+                        uri = Uri.parse(homePage);
+                        break;
+                    }
+                }
+                
+                if (uri != null)
+                {
+                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
                     context.startActivity(browserIntent);
-                    break; // Only open the first home page
                 }
             }
             else
