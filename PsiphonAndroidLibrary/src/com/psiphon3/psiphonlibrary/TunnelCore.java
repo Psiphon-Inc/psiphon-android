@@ -1637,6 +1637,12 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
 
             m_interface.stop();
 
+            // Note: calling m_serverSelector.Abort() only after m_interface.stop()
+            // has been called is important as the server selector may be waiting for
+            // a fetch remote server list request. Only m_interface.stop() will abort
+            // this request. In the case where ServerInterface.fetchRemoteServerList
+            // is awaiting network connectivity, it could block forever is not
+            // properly cancelled.
             if (m_serverSelector != null)
             {
                 m_serverSelector.Abort();
