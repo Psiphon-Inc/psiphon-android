@@ -56,6 +56,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.ConnectivityManager;
+import android.net.LinkProperties;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.util.Log;
@@ -909,6 +910,7 @@ public class Utils
         return String.format("%02dh %02dm %02ds", hours, minutes, seconds);
     }
     
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public static Collection<InetAddress> getActiveNetworkDnsResolvers(Context context)
     {
         ArrayList<InetAddress> dnsAddresses = new ArrayList<InetAddress>();
@@ -933,7 +935,6 @@ public class Utils
                 }
 
             services/java/com/android/server/ConnectivityService.java:
-
 
                 /*
                  * Return LinkProperties for the active (i.e., connected) default
@@ -977,13 +978,24 @@ public class Utils
 
             Object linkProperties = getActiveLinkPropertiesMethod.invoke(connectivityManager);
             
-            Method getDnsesMethod = LinkPropertiesClass.getMethod("getDnses", new Class []{});
-
-            Collection<?> dnses = (Collection<?>)getDnsesMethod.invoke(linkProperties);
-            
-            for (Object dns : dnses)
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
             {
-                dnsAddresses.add((InetAddress)dns);
+                Method getDnsesMethod = LinkPropertiesClass.getMethod("getDnses", new Class []{});
+    
+                Collection<?> dnses = (Collection<?>)getDnsesMethod.invoke(linkProperties);
+                
+                for (Object dns : dnses)
+                {
+                    dnsAddresses.add((InetAddress)dns);
+                }
+            }
+            else
+            {
+                // LinkProperties is now available in API 21 (and the DNS function signature has changed)
+                for (InetAddress dns : ((LinkProperties)linkProperties).getDnsServers())
+                {
+                    dnsAddresses.add(dns);
+                }
             }
         }
         catch (ClassNotFoundException e)

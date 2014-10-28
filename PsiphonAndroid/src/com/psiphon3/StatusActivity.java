@@ -29,8 +29,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
@@ -208,7 +210,7 @@ public class StatusActivity
             {
                 final Context context = this;
 
-                new AlertDialog.Builder(context)
+                AlertDialog dialog = new AlertDialog.Builder(context)
                     .setCancelable(false)
                     .setOnKeyListener(
                             new DialogInterface.OnKeyListener() {
@@ -244,6 +246,16 @@ public class StatusActivity
                                     startTunnel(context);
                                 }})
                     .show();
+                
+                // Our text no longer fits in the AlertDialog buttons on Lollipop, so force the
+                // font size (on older versions, the text seemed to be scaled down to fit).
+                // TODO: custom layout
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+                {
+                    dialog.getButton(DialogInterface.BUTTON_POSITIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
+                    dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
+                }
+                
                 m_tunnelWholeDevicePromptShown = true;
             }
             else
