@@ -1033,7 +1033,7 @@ public abstract class MainBase
 
             updateEgressRegionPreference(selectedRegionCode);
 
-            if (restart)
+            if (restart && !isServiceRunning())
             {
                 startTunnel(this);
             }
@@ -1069,7 +1069,7 @@ public abstract class MainBase
             boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
             updateWholeDevicePreference(tunnelWholeDevicePreference);
 
-            if (restart)
+            if (restart && !isServiceRunning())
             {
                 startTunnel(this);
             }
@@ -1107,7 +1107,7 @@ public abstract class MainBase
             boolean wdmForceIptablesPreference = m_wdmForceIptablesToggle.isChecked();
             updateWdmForceIptablesPreference(wdmForceIptablesPreference);
 
-            if (restart)
+            if (restart && !isServiceRunning())
             {
                 startTunnel(this);
             }
@@ -1143,7 +1143,7 @@ public abstract class MainBase
             SetProxySettingsRadioGroupEnabled(m_useProxySettingsToggle.isChecked());
             updateProxyPreferences();
 
-            if (restart)
+            if (restart && !isServiceRunning())
             {
                 startTunnel(this);
             }
@@ -1166,7 +1166,7 @@ public abstract class MainBase
                 updateProxyPreferences();
             }
 
-            if (restart)
+            if (restart && !isServiceRunning())
             {
                 startTunnel(this);
             }
@@ -1619,6 +1619,22 @@ public abstract class MainBase
             else
             {
                 stopService(new Intent(context, TunnelService.class));
+            }
+            
+            // Wait up to 5 seconds for the service to stop running before returning
+            for (int i = 0; i < 50; i++)
+            {
+                if (!isServiceRunning())
+                {
+                    break;
+                }
+                try
+                {
+                    Thread.sleep(100);
+                }
+                catch (InterruptedException e)
+                {
+                }
             }
         }
 

@@ -57,6 +57,8 @@ public class WebViewProxySettings
     */
     public static boolean setProxy (Context ctx, String host, int port)
     {
+        PsiphonData.getPsiphonData().saveSystemProxySettings(ctx);
+        
         boolean worked = false;
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH)
@@ -218,6 +220,8 @@ public class WebViewProxySettings
     {
         System.setProperty("http.proxyHost", host);
         System.setProperty("http.proxyPort", port + "");
+        System.setProperty("https.proxyHost", host);
+        System.setProperty("https.proxyPort", port + "");
         try {
             Class applictionClass = Class.forName("android.app.Application");
             Field mLoadedApkField = applictionClass.getDeclaredField("mLoadedApk");
