@@ -228,6 +228,7 @@
   <string name="QuickAction.Share">اشتراک گذاری</string>
   <string name="QuickAction.SelectText">انتخاب متن</string>
   <string name="QuickAction.MobileView">نمای موبایل</string>
+  <string name="AboutActivity.OtherLicenseText">این نرم افزار شامل کدهایی از پروژه مرورگر زیرکو است (https://code.google.com/p/zirco-browser/),بر مبنای GPLv3 مجوز داده شده. این برنامه همچنین شامل کدهایی از پروژه گرین دروید (https://github.com/cyrilmottier/GreenDroid), و پروژه شامان است (https://github.com/emergentdotorg/shaman), که هر دو زیر مجوز آپاچی، نسخه 2 فعالیت می کنند.</string>
   <string name="PreferencesActivity.WeavePreferenceTitle">هماهنگ سازی بوک مارک‌های فایرفاکس</string>
   <string name="PreferencesActivity.WeavePreferenceSummary">مدیریت تنظیمات هماهنگ سازی بوک مارک‌های فایرفاکس </string>
   <string name="PreferencesActivity.UseWeavePreferenceTitle">استفاده از هماهنگ سازی فایرفاکس </string>

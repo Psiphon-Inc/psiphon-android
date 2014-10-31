@@ -106,7 +106,7 @@
   <string name="compression_savings">%s kurtarıldı</string>
   <string name="start">Başlat</string>
   <string name="stop">Durdur</string>
-  <string name="status_tab_name">Durum</string>
+  <string name="home_tab_name">Ev</string>
   <string name="settings_tab_name">Seçenekler</string>
   <string name="statistics_tab_name">İstatistikler</string>
   <string name="logs_tab_name">Günlükler</string>
