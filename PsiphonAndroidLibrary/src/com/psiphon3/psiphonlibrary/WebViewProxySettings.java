@@ -57,6 +57,8 @@ public class WebViewProxySettings
     */
     public static boolean setProxy (Context ctx, String host, int port)
     {
+        PsiphonData.getPsiphonData().saveSystemProxySettings(ctx);
+        
         boolean worked = false;
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH)
