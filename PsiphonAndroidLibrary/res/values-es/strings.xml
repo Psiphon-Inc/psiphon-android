@@ -106,7 +106,7 @@
   <string name="compression_savings">%s guardado</string>
   <string name="start">Iniciar</string>
   <string name="stop">Detener</string>
-  <string name="status_tab_name">Estado</string>
+  <string name="home_tab_name">Principal</string>
   <string name="settings_tab_name">Opciones</string>
   <string name="statistics_tab_name">Estadísticas</string>
   <string name="logs_tab_name">Registros</string>
