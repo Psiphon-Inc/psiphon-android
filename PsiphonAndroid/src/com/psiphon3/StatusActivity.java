@@ -37,8 +37,14 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TabHost;
 
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.InterstitialAd;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 
@@ -49,6 +55,9 @@ public class StatusActivity
     public static final String BANNER_FILE_NAME = "bannerImage";
 
     private ImageView m_banner;
+    private AdView m_bannerAdView;
+    private InterstitialAd m_interstitialAd;
+    private boolean m_interstitialAdShown = false;
     private boolean m_tunnelWholeDevicePromptShown = false;
 
     public StatusActivity()
@@ -118,8 +127,40 @@ public class StatusActivity
         {
             loadSponsorTab(false);
         }
+        
+        initAds();
     }
 
+    @Override
+    public void onPause()
+    {
+        super.onPause();
+        if (m_bannerAdView != null)
+        {
+        m_bannerAdView.pause();
+    }
+    }
+    
+    @Override
+    public void onResume()
+    {
+        super.onResume();
+        if (m_bannerAdView != null)
+        {
+        m_bannerAdView.resume();
+    }
+    }
+    
+    @Override
+    public void onDestroy()
+    {
+        if (m_bannerAdView != null)
+        {
+      m_bannerAdView.destroy();
+        }
+      super.onDestroy();
+    }
+    
     private void loadSponsorTab(boolean freshConnect)
     {
         resetSponsorHomePage(freshConnect);
@@ -140,6 +181,85 @@ public class StatusActivity
         HandleCurrentIntent();
     }
 
+    @Override
+    protected void doToggle()
+    {
+        showInterstitialAd();
+        super.doToggle();
+    }
+    
+    @Override
+    public void onTabChanged(String tabId)
+    {
+        showInterstitialAd();
+        super.onTabChanged(tabId);
+    }
+    
+    private void showInterstitialAd()
+    {
+        if (m_interstitialAd != null && m_interstitialAd.isLoaded() && !m_interstitialAdShown)
+        {
+            m_interstitialAd.show();
+            m_interstitialAdShown = true;
+        }
+    }
+    
+    private void initAds()
+    {
+        // Google Play Services are not supported on FROYO
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.FROYO)
+        {
+            return;
+        }
+        
+        if (PsiphonData.getPsiphonData().getShowAds() && m_interstitialAd == null)
+        {
+            m_interstitialAd = new InterstitialAd(this);
+            m_interstitialAd.setAdUnitId("");
+            m_interstitialAd.setAdListener(new AdListener() {
+                @Override
+                public void onAdFailedToLoad(int errorCode)
+                {
+                    // Set to null so it will be re-initialized the next time
+                    m_interstitialAd = null;
+                }
+            });
+            AdRequest adRequest = new AdRequest.Builder()
+                .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+                .build();
+            m_interstitialAd.loadAd(adRequest);
+        }
+        
+        if (PsiphonData.getPsiphonData().getShowAds() && m_bannerAdView == null)
+        {
+            m_bannerAdView = new AdView(this);
+            m_bannerAdView.setAdSize(AdSize.SMART_BANNER);
+            m_bannerAdView.setAdUnitId("");
+            m_bannerAdView.setAdListener(new AdListener() {
+                @Override
+                public void onAdLoaded()
+                {
+                    LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
+                    layout.removeAllViewsInLayout();
+                    layout.addView(m_bannerAdView);
+                }
+                @Override
+                public void onAdFailedToLoad(int errorCode)
+                {
+                    LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
+                    layout.removeAllViewsInLayout();
+                    layout.addView(m_banner);
+                    // Set to null so it will be re-initialized the next time
+                    m_bannerAdView = null;
+                }
+            });
+            AdRequest adRequest = new AdRequest.Builder()
+                .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+                .build();
+            m_bannerAdView.loadAd(adRequest);
+        }
+    }
+    
     protected void HandleCurrentIntent()
     {
         Intent intent = getIntent();
@@ -151,6 +271,8 @@ public class StatusActivity
 
         if (0 == intent.getAction().compareTo(HANDSHAKE_SUCCESS))
         {
+            initAds();
+            
             // Show the home page. Always do this in browser-only mode, even
             // after an automated reconnect -- since the status activity was
             // brought to the front after an unexpected disconnect. In whole
