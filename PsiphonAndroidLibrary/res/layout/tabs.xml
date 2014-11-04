@@ -72,26 +72,25 @@
                     android:text="" />
             </LinearLayout>
 
-            <LinearLayout
+            <RelativeLayout
                 android:id="@+id/sponsorLayout"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical" >
-
-                <ProgressBar
-                    android:id="@+id/sponsorWebViewProgressBar"
-                    style="?android:attr/progressBarStyleHorizontal"
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="-6dp"
-                    android:layout_marginBottom="-6dp" />
+                android:layout_height="match_parent" >
 
                 <WebView
                     android:id="@+id/sponsorWebView"
                     android:layout_width="fill_parent"
                     android:layout_height="fill_parent" />
 
-            </LinearLayout>
+                <ProgressBar
+                    android:id="@+id/sponsorWebViewProgressBar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentBottom="true"
+                    android:progressDrawable="@drawable/home_progressbar" />
+                
+            </RelativeLayout>
         </ViewFlipper>
             
         <ScrollView

@@ -323,7 +323,8 @@ public class Diagnostics
                 ServerInterface serverInterface = new ServerInterface(mContext);
                 serverInterface.start();
 
-                while (true)
+                // Retry uploading data up to 5 times
+                for (int i = 0; i < 5; i++)
                 {
                     try
                     {

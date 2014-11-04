@@ -106,7 +106,6 @@
   <string name="compression_savings">%s lagret</string>
   <string name="start">Start</string>
   <string name="stop">Stopp</string>
-  <string name="status_tab_name">Status</string>
   <string name="settings_tab_name">Valg</string>
   <string name="statistics_tab_name">Statistikk</string>
   <string name="logs_tab_name">Logg</string>
@@ -142,4 +141,10 @@
   <string name="run_polipo_failed">Kjøring av Polipo feilet: %s</string>
   <string name="wdm_force_iptables_toggle">Påtving tunnel-over-hele-fjøla -modus ved bruk av superbrukerrettigheter.</string>
   <string name="http_prefix_toggle">Masker som HTTP</string>
+  <string name="preference_notifications_title">Kunngjøringer</string>
+  <string name="preference_notifications_with_sound_title">Lyd</string>
+  <string name="preference_notifications_with_sound_summary">Avspill lyd når tilkoblingsstatus endres</string>
+  <string name="preference_notifications_with_vibrate_title">Vibrer</string>
+  <string name="preference_notifications_with_vibrate_summary">Vibrer når tilkoblingsstatus endres</string>
+  <string name="moreOptions">Flere valg</string>
 </resources>
