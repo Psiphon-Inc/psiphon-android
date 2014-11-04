@@ -4,7 +4,7 @@
     <!-- Attributes for the WalletFragment &lt;fragment&gt; tag -->
     <declare-styleable name="WalletFragmentOptions">
         <!-- Theme to be used for the Wallet selector -->
-        <attr name="theme" format="enum">
+        <attr name="appTheme" format="enum">
             <enum name="holo_dark" value="0"/>
             <enum name="holo_light" value="1"/>
         </attr>
