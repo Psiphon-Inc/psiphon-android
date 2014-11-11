@@ -58,6 +58,7 @@ import org.zirco.utils.ApplicationUtils;
 import org.zirco.utils.Constants;
 import org.zirco.utils.UrlUtils;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
@@ -79,6 +80,7 @@ import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -323,6 +325,11 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         
         // PSIPHON: open home pages if they're not already open (or a blank tab if none)
         ArrayList<String> homePages = intent.getStringArrayListExtra("homePages");
+        
+        if (intent.getData() != null)
+        {
+            homePages.add(intent.getDataString());
+        }
         
         for (String homePage : homePages)
         {
@@ -1030,9 +1037,12 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 			    showCustomView(view, -1, callback);
 			}
 
-			@Override
+			@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+            @Override
 			public void onShowCustomView(View view, int requestedOrientation, CustomViewCallback callback) {
-			    super.onShowCustomView(view, requestedOrientation, callback);
+			    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+			        super.onShowCustomView(view, requestedOrientation, callback);
+			    }
 			    showCustomView(view, requestedOrientation, callback);
 			}
 			
@@ -2107,7 +2117,8 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 		}
 	}
 	
-	private void setFullscreen(boolean enabled) {
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+    private void setFullscreen(boolean enabled) {
         Window win = MainActivity.this.getWindow();
         WindowManager.LayoutParams winParams = win.getAttributes();
         final int bits = WindowManager.LayoutParams.FLAG_FULLSCREEN;
@@ -2147,7 +2158,9 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         mFullscreenContainer.addView(view, COVER_SCREEN_PARAMS);
         decor.addView(mFullscreenContainer, COVER_SCREEN_PARAMS);
         mCustomView = view;
-        setFullscreen(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            setFullscreen(true);
+        }
         mCustomViewCallback = callback;
         MainActivity.this.setRequestedOrientation(requestedOrientation);
     }
@@ -2156,8 +2169,9 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 		if (mCustomView == null)
             return;
 		
-		
-		setFullscreen(false);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            setFullscreen(false);
+        }
         FrameLayout decor = (FrameLayout) MainActivity.this.getWindow().getDecorView();
         decor.removeView(mFullscreenContainer);
         mFullscreenContainer = null;

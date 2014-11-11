@@ -90,8 +90,11 @@ public class CustomWebView extends WebView {
 	public void initializeOptions() {
 		WebSettings settings = getSettings();
 		
-		// User settings		
-		settings.setJavaScriptEnabled(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_JAVASCRIPT, true));
+		// User settings
+		
+		// PSIPHON
+		settings.setJavaScriptEnabled(!Constants.DISABLE_JS && Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_JAVASCRIPT, true));
+
 		settings.setLoadsImagesAutomatically(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_ENABLE_IMAGES, true));
 		settings.setUseWideViewPort(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_USE_WIDE_VIEWPORT, true));
 		settings.setLoadWithOverviewMode(Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_BROWSER_LOAD_WITH_OVERVIEW, true));
@@ -118,11 +121,11 @@ public class CustomWebView extends WebView {
 		}
 		*/
 		
-	   int port = Controller.getInstance().getPreferences().getInt("localProxyPort", 0);   
-	   if(port > 0)
-	   {
-	       ProxySettings.setLocalProxy(mContext, port );
-	   }
+        int port = Controller.getInstance().getPreferences().getInt("localProxyPort", 0);   
+        if (port > 0)
+        {
+            ProxySettings.setLocalProxy(mContext, port);
+        }
 				
 		// Technical settings
 		settings.setSupportMultipleWindows(true);						
@@ -169,6 +172,14 @@ public class CustomWebView extends WebView {
 	
 	@Override
 	public void loadUrl(String url) {
+
+        // Repeat proxy configuration -- fixes HTC Sense bug
+        int port = Controller.getInstance().getPreferences().getInt("localProxyPort", 0);   
+        if (port > 0)
+        {
+            ProxySettings.setLocalProxy(mContext, port);
+        }
+
         WebSettings settings = getSettings();
         if(UrlUtils.checkInDesktopViewUrlList(mContext, url) )
         {

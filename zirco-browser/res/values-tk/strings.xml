@@ -5,9 +5,7 @@
   <string name="ApplicationDescription">Psiphon brauzeri Android esasly Zirco brauzer üçin açyk çeşmeli brauzerdir.</string>
   <string name="AboutActivity.Title">Hakynda</string>
   <string name="AboutActivity.VersionText">Wersiýa:</string>
-  <string name="AboutActivity.UrlTextValue">https://bitbucket.org/psiphon/psiphon-circumvention-system/overview</string>
   <string name="AboutActivity.LicenseText">Ygtyýarnama:</string>
-  <string name="AboutActivity.LicenseTextValue">GPL v3</string>
   <string name="Main.MenuAddBookmark">Ýer belligi goş</string>
   <string name="Main.MenuShowBookmarks">Ýer bellikleri</string>
   <string name="Main.MenuShowHistory">Taryh</string>
@@ -80,35 +78,11 @@
   <string name="PreferencesActivity.BarDuration3sec">3 sekunt</string>
   <string name="PreferencesActivity.BarDuration4sec">4 sekunt</string>
   <string name="PreferencesActivity.BarDuration5sec">5 sekunt</string>
-  <string-array name="BarDurationEntries">
-    <item>@string/PreferencesActivity.BarDuration1sec</item>
-    <item>@string/PreferencesActivity.BarDuration2sec</item>
-    <item>@string/PreferencesActivity.BarDuration3sec</item>
-    <item>@string/PreferencesActivity.BarDuration4sec</item>
-    <item>@string/PreferencesActivity.BarDuration5sec</item>
-  </string-array>
-  <string-array name="BarDurationValues">
-    <item>1000</item>
-    <item>2000</item>
-    <item>3000</item>
-    <item>4000</item>
-    <item>5000</item>
-  </string-array>
   <string name="PreferencesActivity.BubblePositionPreferenceTitle">Köpügiň orny</string>
   <string name="PreferencesActivity.BubblePositionPreferenceSummary">\"Köpügiň\" orny.</string>
   <string name="PreferencesActivity.BubbleRight">Sag</string>
   <string name="PreferencesActivity.BubbleLeft">Çep</string>
   <string name="PreferencesActivity.BubbleBoth">Ikisi hem</string>
-  <string-array name="BubblePositionEntries">
-    <item>@string/PreferencesActivity.BubbleRight</item>
-    <item>@string/PreferencesActivity.BubbleLeft</item>
-    <item>@string/PreferencesActivity.BubbleBoth</item>
-  </string-array>
-  <string-array name="BubblePositionValues">
-    <item>right</item>
-    <item>left</item>
-    <item>both</item>
-  </string-array>
   <string name="PreferencesActivity.AdBlockerSettingsCategoryTitle">Mahabatlary bökdeýji sazlamalar</string>
   <string name="PreferencesActivity.EnableAdBlockerPreferenceTitle">Mahabatlary bökdeýjini işjeňleşdir</string>
   <string name="PreferencesActivity.EnableAdBlockerPreferenceSummary">JavaScript işjeňleşdirilmedik bolsa mahabatlary bökdeýji işlemez.</string>
@@ -133,28 +107,15 @@
   <string name="Commons.SDCardErrorNoSDMsg">SD karta tapylmady.</string>
   <string name="Commons.SDCardErrorSDUnavailable">SD karta elýeterli däl.</string>
   <string name="Commons.Close">Ýap</string>
-  <string name="DATE_FORMAT_ISO8601">yyyy-MM-dd\'T\'HH:mm:ss.SSS</string>
-  <!--0.3.1-->
   <string name="PreferencesActivity.AboutCategoryTitle">Hakynda</string>
   <string name="PreferencesActivity.AboutPreferenceTitle">Hakynda</string>
   <string name="PreferencesActivity.AboutPreferenceSummary">Bu amaly programma barada maglumatlar.</string>
-  <!--0.3.2-->
   <string name="BookmarksListActivity.MostUsedSortMode">Iň kän ulanylýan</string>
   <string name="PreferencesActivity.DefaultZoomPreferenceTitle">Öňünden kabul edilen ulaldyş derejesi</string>
   <string name="PreferencesActivity.DefaultZoomPreferenceSummary">Öňünden kabul edilen ulaldyş derejesini sazlaň.</string>
   <string name="PreferencesActivity.DefaultZoomClose">Ýap</string>
   <string name="PreferencesActivity.DefaultZoomMedium">Ortaça</string>
   <string name="PreferencesActivity.DefaultZoomFar">Uzak</string>
-  <string-array name="DefaultZoomEntries">
-    <item>@string/PreferencesActivity.DefaultZoomClose</item>
-    <item>@string/PreferencesActivity.DefaultZoomMedium</item>
-    <item>@string/PreferencesActivity.DefaultZoomFar</item>
-  </string-array>
-  <string-array name="DefaultZoomValues">
-    <item>CLOSE</item>
-    <item>MEDIUM</item>
-    <item>FAR</item>
-  </string-array>
   <string name="StartPage.Welcome">Hoş geldiňiz!</string>
   <string name="StartPage.Bookmarks">Iň kän ulanylýan ýer bellikleri</string>
   <string name="StartPage.History">Golaýda ulanylanlar taryhy</string>
@@ -166,12 +127,6 @@
   <string name="PreferencesActivity.HomepageStart">Başlangyç sahypasy</string>
   <string name="PreferencesActivity.HomepageBlank">Boş sahypa</string>
   <string name="PreferencesActivity.HomepageCustom">Aýratyn sahypa</string>
-  <string-array name="HomepageValues">
-    <item>@string/PreferencesActivity.HomepageStart</item>
-    <item>@string/PreferencesActivity.HomepageBlank</item>
-    <item>@string/PreferencesActivity.HomepageCustom</item>
-  </string-array>
-  <!--0.3.3-->
   <string name="Constants.SearchUrlGoogle">http://www.google.com/m?hl=en&amp;gl=us&amp;client=ms-null&amp;source=android-browser-key&amp;q=%s</string>
   <string name="Constants.SearchUrlWikipedia">http://en.wikipedia.org/w/index.php?search=%s&amp;go=Go</string>
   <string name="PreferencesActivity.SearchUrlPreferenceTitle">Gözleg URL</string>
@@ -181,11 +136,6 @@
   <string name="PreferencesActivity.SearchUrlGoogle">Google</string>
   <string name="PreferencesActivity.SearchUrlWikipedia">Wikipediýa</string>
   <string name="PreferencesActivity.SearchUrlCustom">Aýratyn</string>
-  <string-array name="SearchUrlValues">
-    <item>@string/PreferencesActivity.SearchUrlGoogle</item>
-    <item>@string/PreferencesActivity.SearchUrlWikipedia</item>
-    <item>@string/PreferencesActivity.SearchUrlCustom</item>
-  </string-array>
   <string name="StartPage.Search">Gözleg</string>
   <string name="StartPage.SearchButton">Git</string>
   <string name="PreferencesActivity.StartPageCustomizationPreferenceTitle">Başlangyç sahypasyny laýyklamak</string>
@@ -207,15 +157,8 @@
   <string name="PreferencesActivity.UserAgentDefault">Öňünden kabul edilen</string>
   <string name="PreferencesActivity.UserAgentDesktop">Iş stoly</string>
   <string name="PreferencesActivity.UserAgentCustom">Aýratyn</string>
-  <string-array name="UserAgentValues">
-    <item>@string/PreferencesActivity.UserAgentDefault</item>
-    <item>@string/PreferencesActivity.UserAgentDesktop</item>
-    <item>@string/PreferencesActivity.UserAgentCustom</item>
-  </string-array>
-  <!--0.3.4-->
   <string name="Main.MenuCopyLinkUrl">Baglanyşyk URL-sini göçür</string>
   <string name="Main.MenuViewImage">Şekili görkez</string>
-  <string name="Main.MenuCopyImageUrl">\"Şekil URL-sini göçür</string>
   <string name="Main.MenuDownloadImage">Şekili göçürip al</string>
   <string name="Main.MenuSendEmail">E-poçta iber</string>
   <string name="Main.MenuCopyEmailUrl">E-poçta URL-sini göçür</string>
@@ -232,21 +175,10 @@
   <string name="Main.MenuExit">Çykyş</string>
   <string name="PreferencesActivity.RestartDialogTitle">Täzeden işletmeli bolar</string>
   <string name="PreferencesActivity.RestartDialogMessage">Amaly programma täzeden işledilýänçä bu üýtgetme güýje girmez. Häzir täzeden işletmek isleýärsiňizmi?</string>
-  <!--0.3.5-->
   <string name="PreferencesActivity.EnablePluginsTitle">Goşundylary işjeňleşdir</string>
   <string name="PreferencesActivity.PluginsAlwaysOff">Hemişe öçük</string>
   <string name="PreferencesActivity.PluginsOnDemand">Talaba bagly</string>
   <string name="PreferencesActivity.PluginsAlwaysOn">Hemişe açyk</string>
-  <string-array name="PluginsEntries">
-    <item>@string/PreferencesActivity.PluginsAlwaysOff</item>
-    <item>@string/PreferencesActivity.PluginsOnDemand</item>
-    <item>@string/PreferencesActivity.PluginsAlwaysOn</item>
-  </string-array>
-  <string-array name="PluginsValues">
-    <item>OFF</item>
-    <item>ON_DEMAND</item>
-    <item>ON</item>
-  </string-array>
   <string name="Commons.Continue">Dowam et</string>
   <string name="Commons.SslWarning">Gorag duýduryşy</string>
   <string name="Commons.SslWarningsHeader">Bu saýtyň gorag kepilnamasynda mesele bar.</string>
@@ -264,7 +196,6 @@
   <string name="Commons.Add">Goş</string>
   <string name="Commons.Clear">Arassala</string>
   <string name="Commons.Delete">Ýokla</string>
-  <!--0.3.6-->
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceTitle">Ses klawişleriniň häsiýeti</string>
   <string name="PreferencesActivity.VolumeKeysBehaviourPreferenceSummary">Ses klawişleriniň hereketlerini saýlaň.</string>
   <string name="PreferencesActivity.VolumeKeysActionDefault">Bellenilen häsiýet</string>
@@ -272,26 +203,10 @@
   <string name="PreferencesActivity.VolumeKeysActionScroll">Ýokary/aşak gaýdyr</string>
   <string name="PreferencesActivity.VolumeKeysActionSwitchTabs">Goýmalary çalşyr</string>
   <string name="PreferencesActivity.VolumeKeysActionHistory">Yza/Öňe</string>
-  <string-array name="VolumeKeysActionEntries">
-    <item>@string/PreferencesActivity.VolumeKeysActionDefault</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionZoom</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionScroll</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionSwitchTabs</item>
-    <item>@string/PreferencesActivity.VolumeKeysActionHistory</item>
-  </string-array>
-  <string-array name="VolumeKeysActionValues">
-    <item>DEFAULT</item>
-    <item>ZOOM</item>
-    <item>SCROLL</item>
-    <item>SWITCH_TABS</item>
-    <item>HISTORY</item>
-  </string-array>
-  <!--0.3.7-->
   <string name="Main.ShareChooserTitle">Şunuň üsti bilen paýlaş</string>
   <string name="Main.MenuShareLinkUrl">Baglanyşygy paýlaş</string>
   <string name="Main.MenuShareImageUrl">Şekili paýlaş</string>
   <string name="Main.MenuShareEmailUrl">E-poçtany paýlaş</string>
-  <!--0.3.8-->
   <string name="PreferencesActivity.HideTitleBarPreferenceTitle">Sözbaşy zolaklaryny gizle</string>
   <string name="PreferencesActivity.HideTitleBarPreferenceSummary">Bu bellense, penjireleriň sözbaşy zolaklary görkezilmez (programmany täzeden işletmeli bolýar).</string>
   <string name="PreferencesActivity.UseWideViewPortPreferenceTitle">Giň görkeziş portuny ulan</string>
@@ -303,17 +218,6 @@
   <string name="PreferencesActivity.SwitchTabButtons">Düwmeler</string>
   <string name="PreferencesActivity.SwitchTabFling">Barmak herekedi</string>
   <string name="PreferencesActivity.SwitchTabBoth">Ikisi hem</string>
-  <string-array name="SwitchTabsMethodEntries">
-    <item>@string/PreferencesActivity.SwitchTabButtons</item>
-    <item>@string/PreferencesActivity.SwitchTabFling</item>
-    <item>@string/PreferencesActivity.SwitchTabBoth</item>
-  </string-array>
-  <string-array name="SwitchTabsMethodValues">
-    <item>buttons</item>
-    <item>fling</item>
-    <item>both</item>
-  </string-array>
-  <!--0.3.9-->
   <string name="HistoryListActivity.Today">Şu gün</string>
   <string name="HistoryListActivity.Yesterday">Düýn</string>
   <string name="HistoryListActivity.LastSevenDays">Soňky 7 gün</string>
@@ -323,8 +227,6 @@
   <string name="QuickAction.Share">Paýlaş</string>
   <string name="QuickAction.SelectText">Teksti belle</string>
   <string name="QuickAction.MobileView">Ykjam görkeziş </string>
-  <string name="AboutActivity.OtherLicenseText">Bu amaly programma GPLv3 çäginde ygtyýarlandyrylan Zirco brauzeri taslamasyndan (https://code.google.com/p/zirco-browser/), ikisi hem Apache ygtyýarnamasynyň 2-nji wersiýasy tarapyndan ygtyýarlandyrylan GreenDroid taslamasyndan (https://github.com/cyrilmottier/GreenDroid) we Sharman taslamasyndan (https://github.com/emergentdotorg/shaman) kody öz içine alýar.</string>
-  <!--0.4.0-->
   <string name="PreferencesActivity.WeavePreferenceTitle">Firefox ýer belliklerini sinhronlamak</string>
   <string name="PreferencesActivity.WeavePreferenceSummary">Firefox Sync bilen ýer belliklerini sinhronlamak sazlamalaryny dolandyryň.</string>
   <string name="PreferencesActivity.UseWeavePreferenceTitle">Firefox Sync ulan</string>
@@ -357,10 +259,6 @@
   <string name="WeaveServerPreferenceActivity.Title">Serwer</string>
   <string name="WeaveServerPreferenceActivity.DefaultServer">Firefox Sync serweri</string>
   <string name="WeaveServerPreferenceActivity.CustomServer">Aýratyn serwer</string>
-  <string-array name="WeaveServerValues">
-    <item>@string/WeaveServerPreferenceActivity.DefaultServer</item>
-    <item>@string/WeaveServerPreferenceActivity.CustomServer</item>
-  </string-array>
   <string name="Main.FileChooserPrompt">Ýüklenjek faýly saýlaň</string>
   <string name="Commons.HistoryBookmarksExportSDCardConfirmation">Taryhy we ýer belliklerini eksport et</string>
   <string name="Commons.HistoryBookmarksExportSDCardDoneTitle">Eksport etmek tamamlandy</string>
@@ -389,20 +287,11 @@
   <string name="DownloadListActivity.RemoveCompletedDownloads">Tamamlanan göçürip almagy aýyr</string>
   <string name="QuickAction.Find">Sahypada tap</string>
   <string name="SearchDialog.Hint">Sahypada tap</string>
-  <!--0.4.2-->
   <string name="PreferencesActivity.AdvancedCategoryTitle">Ösen</string>
   <string name="PreferencesActivity.BookmarksDatabaseTitle">Ýer bellikleri ammary</string>
   <string name="PreferencesActivity.BookmarksDatabaseSummary">Ýer bellikleri ammar rejesini saýlaň.</string>
   <string name="PreferencesActivity.BookmarksDatabaseStock">Android ýer bellikleri</string>
   <string name="PreferencesActivity.BookmarksDatabaseInternal">Içerki</string>
-  <string-array name="BookmarksDatabaseEntries">
-    <item>@string/PreferencesActivity.BookmarksDatabaseStock</item>
-    <item>@string/PreferencesActivity.BookmarksDatabaseInternal</item>
-  </string-array>
-  <string-array name="BookmarksDatabaseValues">
-    <item>STOCK</item>
-    <item>INTERNAL</item>
-  </string-array>
   <string name="HistoryListActivity.BookmarkAdded">Ýer belliklerine goşuldy.</string>
   <string name="HistoryListActivity.BookmarkRemoved">Ýer belliklerinden aýryldy.</string>
   <string name="HttpAuthenticationDialog.DialogTitle">%1$s hasabyňyza giriň - %2$s</string>
@@ -416,10 +305,8 @@
   <string name="ProxySettings.ErrorProxyServerNotReachable">Proksi serwer bilen aragatnaşyk gurup bolanok.</string>
   <string name="ProxySettings.ErrorProxyInternetNotReachable">Kesgitlenen proksi serweri arkaly internete girip bolanok.</string>
   <string name="ProxySettings.ProxySettingsEnabled">Proksi sazlamalaryny işjeňleşdirmek şowly.</string>
-  <string name="AboutActivity.ContributorsText">Zirco brauzerine goşan goşanlar:\n• LeChuck (Proksi sazlamalary);\n• Martin (Ses klawişleri bilen gaýdyrmak, nemes diline terjime);\n• Isaac L. (ispan diline terjime);</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceTitle">Goýmalary dikelt</string>
   <string name="PreferencesActivity.EnableRestoreLastPagePreferenceSummary">Bu bellense, elýeterli bolanlarynda goýmalar dikeldiler.</string>
-  <!--0.4.3-->
   <string name="VideoLoading">Wideo ýüklenýär\u2026</string>
   <string name="PreferencesActivity.DesktopViewCategoryTitle">Iş stoly görkezişi sazlamalary</string>
   <string name="PreferencesActivity.DesktopViewListPreferenceTitle">Iş stoly reje sanawy</string>

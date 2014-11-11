@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+ * Copyright (c) 2013, Psiphon Inc.
+ * All rights reserved.
+-->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+    android:id="@+id/viewHeader"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical" 
+    android:scrollbarAlwaysDrawVerticalTrack="false" 
+    android:weightSum="1.0">
+
+    <TextView
+        android:id="@+id/elapsedConnectionTime"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <View 
+        android:background="#ffffff"
+        android:layout_width="fill_parent"
+        android:layout_height="1dip"/>
+
+    <RelativeLayout
+        android:id="@+id/SentStatisticsRow"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/totalSent"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
+        
+
+        <TextView
+            android:id="@+id/compressionSavingsSent"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:layout_alignParentRight="true"
+            android:textAppearance="?android:attr/textAppearanceLarge"/>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/sentLabelRow"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+        
+        <TextView
+            android:id="@+id/labelSent"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:text="@string/label_sent"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        <TextView
+            android:id="@+id/compressionRatioSent"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:layout_alignParentRight="true"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/slowSentGraphsRow"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="1.0"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:id="@+id/slowSentGraph"
+            android:layout_width="0dip"
+            android:layout_height="70dip"
+            android:layout_weight="1.0"
+            android:orientation="horizontal" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/fastSentGraphsRow"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="1.0"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:id="@+id/fastSentGraph"
+            android:layout_width="0dip"
+            android:layout_height="35dip"
+            android:layout_weight="1.0"
+            android:orientation="horizontal" />
+
+    </LinearLayout>
+
+    <View 
+        android:background="#ffffff"
+        android:layout_width="fill_parent"
+        android:layout_height="1dip"/>
+
+    <RelativeLayout
+        android:id="@+id/ReceivedStatisticsRow"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/totalReceived"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
+
+        <TextView
+            android:id="@+id/compressionSavingsReceived"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:layout_alignParentRight="true"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/ReceivedLabelRow"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+
+        <TextView
+            android:id="@+id/labelReceived"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:text="@string/label_received"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        <TextView
+            android:id="@+id/compressionRatioReceived"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:layout_alignParentRight="true"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+        
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/slowReceivedGraphsRow"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="1.0"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:id="@+id/slowReceivedGraph"
+            android:layout_width="0dip"
+            android:layout_height="70dip"
+            android:layout_weight="1.0"
+            android:orientation="horizontal" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/fastReceivedGraphsRow"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="1.0"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:id="@+id/fastReceivedGraph"
+            android:layout_width="0dip"
+            android:layout_height="35dip"
+            android:layout_weight="1.0"
+            android:orientation="horizontal" />
+
+    </LinearLayout>
+    
+</LinearLayout>

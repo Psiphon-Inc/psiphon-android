@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- * Copyright (c) 2012, Psiphon Inc.
+ * Copyright (c) 2013, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,96 +19,69 @@
  *
  -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/viewMain"
+<TabHost xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical" 
-    android:scrollbarAlwaysDrawVerticalTrack="false" 
-    android:weightSum="1.0">
-
+    android:id="@+id/tabHost">
+    
     <LinearLayout
-        android:id="@+id/linearLayout4"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:background="#FFFFFFFF" >
-        
-        <ImageView
-            android:id="@+id/banner"
+        android:orientation="vertical" 
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    
+        <LinearLayout
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:src="@drawable/banner"
-            android:contentDescription="@string/banner_desc" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/linearLayout2"
-        android:layout_width="fill_parent"
-        android:layout_height="0dp"
-        android:orientation="vertical"
-        android:layout_weight="1.0">
-
-        <ScrollView
-            android:id="@+id/messagesScrollView"
+            android:background="#FFFFFFFF" >
+            
+            <ImageView
+                android:id="@+id/banner"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:src="@drawable/banner"
+                android:contentDescription="@string/banner_desc" />
+    
+        </LinearLayout>
+    
+        <LinearLayout
             android:layout_width="fill_parent"
-            android:layout_height="fill_parent" >
-
-            <TableLayout
-                android:id="@+id/messagesTableLayout"
+            android:layout_height="0dp"
+            android:orientation="vertical"
+            android:layout_weight="1.0">
+            
+            <include
+                android:layout_width="fill_parent"
+                android:layout_height="match_parent"
+                layout="@layout/tabs" />
+                                        
+        </LinearLayout>
+    
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2.0">
+    
+            <Button
+                android:id="@+id/toggleButton"
+                android:onClick="onToggleClick"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
-                android:stretchColumns="1"
-                android:shrinkColumns="0">
-            </TableLayout>
-        </ScrollView>
-
+                android:text="@string/start"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:layout_weight="1.0" />
+    
+            <Button
+                android:id="@+id/openBrowserButton"
+                android:onClick="onOpenBrowserClick"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="@string/open_browser"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:layout_weight="1.0" />
+            
+        </LinearLayout>
+    
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/linearLayout3"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_alignParentBottom="true"
-        android:weightSum="4.0">
-
-        <Button
-            android:id="@+id/openBrowserButton"
-            android:onClick="onOpenBrowserClick"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:text="@string/open_browser"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:layout_weight="1.0" />
-
-        <Button
-            android:id="@+id/feedbackButton"
-            android:onClick="onFeedbackClick"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:text="@string/feedback"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:layout_weight="0.95" />
-
-        <Button
-            android:id="@+id/aboutButton"
-            android:onClick="onAboutClick"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:text="@string/about"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:layout_weight="1.0" />
-        
-        <Button
-            android:id="@+id/exitButton"
-            android:onClick="onExitClick"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:text="@string/exit"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:layout_weight="1.05" />
-        
-    </LinearLayout>
-
-</LinearLayout>
+</TabHost>
