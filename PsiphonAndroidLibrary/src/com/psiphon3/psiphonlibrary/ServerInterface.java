@@ -1463,24 +1463,24 @@ public class ServerInterface
             
             DnsResolver dnsResolver = getDnsResolver(protectSocket, this);
 
-			Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder
-					.<ConnectionSocketFactory> create()
-					.register("https", sslSocketFactory)
-					// See
-					// http://mail-archives.apache.org/mod_mbox/hc-dev/201311.mbox/%3C528E1219.8010003@oracle.com%3E
-					// Plain 'http' scheme must be used to establish an
-					// intermediate connection
-					// to the proxy itself before 'https' tunneling could be
-					// employed.
-					//
-					// TODO: investigate if plain socket _may_ need to be
-					// protected if external
-					// HTTP proxy is used
-					.register("http", PlainConnectionSocketFactory.getSocketFactory())
-					.build();
+            Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder
+                .<ConnectionSocketFactory> create()
+                .register("https", sslSocketFactory)
+                // See
+                // http://mail-archives.apache.org/mod_mbox/hc-dev/201311.mbox/%3C528E1219.8010003@oracle.com%3E
+                // Plain 'http' scheme must be used to establish an
+                // intermediate connection
+                // to the proxy itself before 'https' tunneling could be
+                // employed.
+                //
+                // TODO: investigate if plain socket _may_ need to be
+                // protected if external HTTP proxy is used
+                .register("http",   PlainConnectionSocketFactory.getSocketFactory())
+                .build();
 
-            HttpClientConnectionManager poolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry, dnsResolver);
-
+            HttpClientConnectionManager poolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager(
+                    socketFactoryRegistry, dnsResolver);
+			
             CloseableHttpClient client = HttpClientBuilder.create()
                     .setDefaultRequestConfig(requestBuilder.build())
                     .setConnectionManager(poolingHttpClientConnectionManager)
