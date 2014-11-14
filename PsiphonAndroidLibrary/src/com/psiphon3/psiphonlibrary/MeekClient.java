@@ -61,14 +61,12 @@ import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.DnsResolver;
 import org.apache.http.conn.HttpClientConnectionManager;
-import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.ByteArrayEntityHC4;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.pool.ConnPoolControl;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -77,9 +75,6 @@ import ch.ethz.ssh2.crypto.ObfuscatedSSH;
 import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedPlainConnectionSocketFactory;
 import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedSSLConnectionSocketFactory;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-
-//ch.boye.httpclientandroidlib.impl.conn.SingleClientConnManager is deprecated
-@SuppressWarnings("deprecation")
 
 public class MeekClient {
 
@@ -267,8 +262,8 @@ public class MeekClient {
             DnsResolver dnsResolver = ServerInterface.getDnsResolver(mProtectSocket, mServerInterface);
             HttpClientConnectionManager poolingConnManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry, dnsResolver);
             // We're using the pool for its ability to override the DnsResolver. Only need 1 connection.
-            ((ConnPoolControl<HttpRoute>) poolingConnManager).setDefaultMaxPerRoute(1);
-            ((ConnPoolControl<HttpRoute>) poolingConnManager).setMaxTotal(1);
+            ((PoolingHttpClientConnectionManager) poolingConnManager).setDefaultMaxPerRoute(1);
+            ((PoolingHttpClientConnectionManager) poolingConnManager).setMaxTotal(1);
             connManager = poolingConnManager;
 
             RequestConfig.Builder requestBuilder = RequestConfig.custom();
