@@ -1418,9 +1418,6 @@ public class ServerInterface
             requestBuilder = requestBuilder.setConnectTimeout(timeout);
             requestBuilder = requestBuilder.setConnectionRequestTimeout(timeout);
             
-            HttpClientBuilder hcBuilder = HttpClientBuilder.create();
-            
-
             HttpHost httpproxy;
             if (useLocalProxy)
             {
@@ -1433,9 +1430,7 @@ public class ServerInterface
                 if (proxySettings != null)
                 {
                     httpproxy = new HttpHost(proxySettings.proxyHost, proxySettings.proxyPort);
-                    
-                    DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(httpproxy);
-                    hcBuilder.setRoutePlanner(routePlanner);
+                	requestBuilder.setProxy(httpproxy);
                 }
             }
 
@@ -1467,23 +1462,30 @@ public class ServerInterface
                                         SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
             }
             
-            PlainConnectionSocketFactory plainSocketFactory = new ProtectedPlainConnectionSocketFactory(protectSocket);
-
             DnsResolver dnsResolver = getDnsResolver(protectSocket, this);
 
-            Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder
-                    .<ConnectionSocketFactory> create()
-                    .register("https",  sslSocketFactory)
-                    .register("http",   plainSocketFactory)
-                    .build();
+			Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder
+					.<ConnectionSocketFactory> create()
+					.register("https", sslSocketFactory)
+					// See
+					// http://mail-archives.apache.org/mod_mbox/hc-dev/201311.mbox/%3C528E1219.8010003@oracle.com%3E
+					// Plain 'http' scheme must be used to establish an
+					// intermediate connection
+					// to the proxy itself before 'https' tunneling could be
+					// employed.
+					//
+					// TODO: investigate if plain socket _may_ need to be
+					// protected if external
+					// HTTP proxy is used
+					.register("http", PlainConnectionSocketFactory.getSocketFactory())
+					.build();
 
             HttpClientConnectionManager poolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry, dnsResolver);
 
-            CloseableHttpClient client = hcBuilder
+            CloseableHttpClient client = HttpClientBuilder.create()
                     .setDefaultRequestConfig(requestBuilder.build())
                     .setConnectionManager(poolingHttpClientConnectionManager)
                     .build();
-            
 
             if (requestMethod == RequestMethod.POST ||
                 (requestMethod == RequestMethod.INFER && body != null))
