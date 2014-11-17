@@ -1462,6 +1462,8 @@ public class ServerInterface
             }
             
             DnsResolver dnsResolver = getDnsResolver(protectSocket, this);
+            
+            ProtectedPlainConnectionSocketFactory plainSocketFactory = new ProtectedPlainConnectionSocketFactory(protectSocket);
 
             Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder
                 .<ConnectionSocketFactory> create()
@@ -1475,7 +1477,7 @@ public class ServerInterface
                 //
                 // TODO: investigate if plain socket _may_ need to be
                 // protected if external HTTP proxy is used
-                .register("http",   PlainConnectionSocketFactory.getSocketFactory())
+                .register("http", plainSocketFactory)
                 .build();
 
             HttpClientConnectionManager poolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager(
