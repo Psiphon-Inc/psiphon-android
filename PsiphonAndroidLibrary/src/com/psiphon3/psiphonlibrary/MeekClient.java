@@ -260,11 +260,10 @@ public class MeekClient {
 
             // Use ProtectedDnsResolver to resolve the fronting domain outside of the tunnel
             DnsResolver dnsResolver = ServerInterface.getDnsResolver(mProtectSocket, mServerInterface);
-            HttpClientConnectionManager poolingConnManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry, dnsResolver);
+            connManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry, dnsResolver);
             // We're using the pool for its ability to override the DnsResolver. Only need 1 connection.
-            ((PoolingHttpClientConnectionManager) poolingConnManager).setDefaultMaxPerRoute(1);
-            ((PoolingHttpClientConnectionManager) poolingConnManager).setMaxTotal(1);
-            connManager = poolingConnManager;
+            ((PoolingHttpClientConnectionManager) connManager).setDefaultMaxPerRoute(1);
+            ((PoolingHttpClientConnectionManager) connManager).setMaxTotal(1);
 
             RequestConfig.Builder requestBuilder = RequestConfig.custom();
             requestBuilder = requestBuilder.setConnectTimeout(MEEK_SERVER_TIMEOUT_MILLISECONDS);
@@ -275,6 +274,7 @@ public class MeekClient {
                     .create()
                     .setDefaultRequestConfig(requestBuilder.build())
                     .setConnectionManager(connManager)
+                    .disableCookieManagement()
                     .build();
             
             URI uri = null;
