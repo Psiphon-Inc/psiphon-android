@@ -640,7 +640,11 @@ public class PreferencesActivity extends PreferenceActivity {
 		 * Constructor.
 		 */
 		public HistoryClearer() {
-			new Thread(this).start();
+			//new Thread(this).start();
+			// Newer versions of Android (ie. KitKat) throw this exception:
+			// java.lang.RuntimeException: java.lang.Throwable:
+			// A WebView method was called on thread 'Thread-xxxxx'. All WebView methods must be called on the same thread.
+			this.run();
 		}
 
 		@Override
@@ -671,7 +675,11 @@ public class PreferencesActivity extends PreferenceActivity {
 		 * Constructor.
 		 */
 		public FormDataClearer() {
-			new Thread(this).start();
+			//new Thread(this).start();
+			// Newer versions of Android (ie. KitKat) throw this exception:
+			// java.lang.RuntimeException: java.lang.Throwable:
+			// A WebView method was called on thread 'Thread-xxxxx'. All WebView methods must be called on the same thread.
+			this.run();
 		}
 		@Override
 		public void run() {
@@ -696,7 +704,11 @@ public class PreferencesActivity extends PreferenceActivity {
 		 * Constructor.
 		 */
 		public CacheClearer() {
-			new Thread(this).start();
+			//new Thread(this).start();
+			// Newer versions of Android (ie. KitKat) throw this exception:
+			// java.lang.RuntimeException: java.lang.Throwable:
+			// A WebView method was called on thread 'Thread-xxxxx'. All WebView methods must be called on the same thread.
+			this.run();
 		}
 		@Override
 		public void run() {
