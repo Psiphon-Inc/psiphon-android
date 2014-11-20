@@ -106,6 +106,7 @@
   <string name="compression_savings">%s lagret</string>
   <string name="start">Start</string>
   <string name="stop">Stopp</string>
+  <string name="home_tab_name">Hjem</string>
   <string name="settings_tab_name">Valg</string>
   <string name="statistics_tab_name">Statistikk</string>
   <string name="logs_tab_name">Logg</string>
@@ -147,4 +148,5 @@
   <string name="preference_notifications_with_vibrate_title">Vibrer</string>
   <string name="preference_notifications_with_vibrate_summary">Vibrer når tilkoblingsstatus endres</string>
   <string name="moreOptions">Flere valg</string>
+  <string name="root_mode_not_supported">Superbruker-modus er ikke støttet på denne versjonen av Android</string>
 </resources>
