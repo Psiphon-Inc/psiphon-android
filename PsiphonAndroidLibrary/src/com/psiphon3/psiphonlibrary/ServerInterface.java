@@ -49,6 +49,31 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.DnsResolver;
+import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.X509HostnameVerifier;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.impl.conn.SystemDefaultDnsResolver;
+import org.apache.http.params.HttpParams;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -60,30 +85,6 @@ import android.content.Context;
 import android.os.SystemClock;
 import android.util.Pair;
 import android.webkit.URLUtil;
-import ch.boye.httpclientandroidlib.HttpEntity;
-import ch.boye.httpclientandroidlib.HttpHost;
-import ch.boye.httpclientandroidlib.HttpResponse;
-import ch.boye.httpclientandroidlib.HttpStatus;
-import ch.boye.httpclientandroidlib.client.ClientProtocolException;
-import ch.boye.httpclientandroidlib.client.methods.HttpGet;
-import ch.boye.httpclientandroidlib.client.methods.HttpPost;
-import ch.boye.httpclientandroidlib.client.methods.HttpPut;
-import ch.boye.httpclientandroidlib.client.methods.HttpRequestBase;
-import ch.boye.httpclientandroidlib.conn.ClientConnectionManager;
-import ch.boye.httpclientandroidlib.conn.DnsResolver;
-import ch.boye.httpclientandroidlib.conn.params.ConnRoutePNames;
-import ch.boye.httpclientandroidlib.conn.scheme.PlainSocketFactory;
-import ch.boye.httpclientandroidlib.conn.scheme.Scheme;
-import ch.boye.httpclientandroidlib.conn.scheme.SchemeRegistry;
-import ch.boye.httpclientandroidlib.conn.ssl.SSLSocketFactory;
-import ch.boye.httpclientandroidlib.conn.ssl.X509HostnameVerifier;
-import ch.boye.httpclientandroidlib.entity.ByteArrayEntity;
-import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
-import ch.boye.httpclientandroidlib.impl.conn.PoolingClientConnectionManager;
-import ch.boye.httpclientandroidlib.impl.conn.SystemDefaultDnsResolver;
-import ch.boye.httpclientandroidlib.params.BasicHttpParams;
-import ch.boye.httpclientandroidlib.params.HttpConnectionParams;
-import ch.boye.httpclientandroidlib.params.HttpParams;
 
 import com.psiphon3.psiphonlibrary.AuthenticatedDataPackage.AuthenticatedDataPackageException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -1290,11 +1291,11 @@ public class ServerInterface
         }
     }
 
-    public static class ProtectedSSLSocketFactory extends SSLSocketFactory
+    public static class ProtectedSSLConnectionSocketFactory extends SSLConnectionSocketFactory
     {
         Tun2Socks.IProtectSocket protectSocket;
 
-        ProtectedSSLSocketFactory(
+        ProtectedSSLConnectionSocketFactory(
                 Tun2Socks.IProtectSocket protectSocket,
                 SSLContext sslContext,
                 X509HostnameVerifier verifier)
@@ -1318,7 +1319,6 @@ public class ServerInterface
         // - CreateLayeredSocket not overridden: in our usage of it, this will be invoked with
         //   the proxy set to localhost and protect() is not required.
 
-        @Override
         public Socket createSocket(HttpParams params)
                 throws IOException
         {
@@ -1331,7 +1331,6 @@ public class ServerInterface
             return socket;
         }
 
-        @Override
         public Socket createSocket()
                 throws IOException
         {
@@ -1340,7 +1339,6 @@ public class ServerInterface
             return null;
         }
 
-        @Override
         public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
                 throws IOException, UnknownHostException
         {
@@ -1350,11 +1348,11 @@ public class ServerInterface
         }
     }
 
-    public static class ProtectedPlainSocketFactory extends PlainSocketFactory
+    public static class ProtectedPlainConnectionSocketFactory extends PlainConnectionSocketFactory
     {
         Tun2Socks.IProtectSocket protectSocket;
 
-        ProtectedPlainSocketFactory(Tun2Socks.IProtectSocket protectSocket)
+        ProtectedPlainConnectionSocketFactory(Tun2Socks.IProtectSocket protectSocket)
         {
             super();
 
@@ -1364,7 +1362,6 @@ public class ServerInterface
         // NOTE:
         // See comment block in ProtectedSSLSocketFactory
 
-        @Override
         public Socket createSocket(HttpParams params)
         {
             Socket socket = null;
@@ -1383,7 +1380,6 @@ public class ServerInterface
             return socket;
         }
 
-        @Override
         public Socket createSocket()
         {
             // Deprecated - our code will not call this
@@ -1417,15 +1413,15 @@ public class ServerInterface
 
         try
         {
-            HttpParams params = new BasicHttpParams();
-            HttpConnectionParams.setConnectionTimeout(params, timeout);
-            HttpConnectionParams.setSoTimeout(params, timeout);
-
+            RequestConfig.Builder requestBuilder = RequestConfig.custom();
+            requestBuilder = requestBuilder.setConnectTimeout(timeout);
+            requestBuilder = requestBuilder.setConnectionRequestTimeout(timeout);
+            
             HttpHost httpproxy;
             if (useLocalProxy)
             {
                 httpproxy = new HttpHost("127.0.0.1", PsiphonData.getPsiphonData().getHttpProxyPort());
-                params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
+            	requestBuilder.setProxy(httpproxy);
             }
             else
             {
@@ -1433,13 +1429,13 @@ public class ServerInterface
                 if (proxySettings != null)
                 {
                     httpproxy = new HttpHost(proxySettings.proxyHost, proxySettings.proxyPort);
-                    params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
+                	requestBuilder.setProxy(httpproxy);
                 }
             }
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
             TrustManager[] trustManager = null;
-            ProtectedSSLSocketFactory sslSocketFactory = null;
+            ProtectedSSLConnectionSocketFactory sslSocketFactory = null;
 
             if (serverCertificate != null)
             {
@@ -1448,7 +1444,7 @@ public class ServerInterface
 
                 trustManager = new TrustManager[] { new FixedCertTrustManager(serverCertificate) };
                 sslContext.init(null, trustManager, new SecureRandom());
-                sslSocketFactory = new ProtectedSSLSocketFactory(
+                sslSocketFactory = new ProtectedSSLConnectionSocketFactory(
                                         protectSocket,
                                         sslContext,
                                         SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
@@ -1459,20 +1455,38 @@ public class ServerInterface
                 // the default trust manager.
 
                 sslContext.init(null,  null,  null);
-                sslSocketFactory = new ProtectedSSLSocketFactory(
+                sslSocketFactory = new ProtectedSSLConnectionSocketFactory(
                                         protectSocket,
                                         sslContext,
                                         SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
             }
-
-            SchemeRegistry registry = new SchemeRegistry();
-            registry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
-            registry.register(new Scheme("https", 443, sslSocketFactory));
-
+            
             DnsResolver dnsResolver = getDnsResolver(protectSocket, this);
+            
+            ProtectedPlainConnectionSocketFactory plainSocketFactory = new ProtectedPlainConnectionSocketFactory(protectSocket);
 
-            ClientConnectionManager connManager = new PoolingClientConnectionManager(registry, dnsResolver);
-            DefaultHttpClient client = new DefaultHttpClient(connManager, params);
+            Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder
+                .<ConnectionSocketFactory> create()
+                .register("https", sslSocketFactory)
+                // See
+                // http://mail-archives.apache.org/mod_mbox/hc-dev/201311.mbox/%3C528E1219.8010003@oracle.com%3E
+                // Plain 'http' scheme must be used to establish an
+                // intermediate connection
+                // to the proxy itself before 'https' tunneling could be
+                // employed.
+                //
+                // TODO: investigate if plain socket _may_ need to be
+                // protected if external HTTP proxy is used
+                .register("http", plainSocketFactory)
+                .build();
+
+            HttpClientConnectionManager poolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager(
+                    socketFactoryRegistry, dnsResolver);
+			
+            CloseableHttpClient client = HttpClientBuilder.create()
+                    .setDefaultRequestConfig(requestBuilder.build())
+                    .setConnectionManager(poolingHttpClientConnectionManager)
+                    .build();
 
             if (requestMethod == RequestMethod.POST ||
                 (requestMethod == RequestMethod.INFER && body != null))

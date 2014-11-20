@@ -52,32 +52,29 @@ import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.DnsResolver;
+import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.entity.ByteArrayEntityHC4;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import ch.boye.httpclientandroidlib.HttpResponse;
-import ch.boye.httpclientandroidlib.HttpStatus;
-import ch.boye.httpclientandroidlib.client.methods.HttpPost;
-import ch.boye.httpclientandroidlib.client.utils.URIBuilder;
-import ch.boye.httpclientandroidlib.conn.ClientConnectionManager;
-import ch.boye.httpclientandroidlib.conn.DnsResolver;
-import ch.boye.httpclientandroidlib.conn.scheme.Scheme;
-import ch.boye.httpclientandroidlib.conn.scheme.SchemeRegistry;
-import ch.boye.httpclientandroidlib.conn.ssl.SSLSocketFactory;
-import ch.boye.httpclientandroidlib.entity.ByteArrayEntity;
-import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
-import ch.boye.httpclientandroidlib.impl.conn.PoolingClientConnectionManager;
-import ch.boye.httpclientandroidlib.params.BasicHttpParams;
-import ch.boye.httpclientandroidlib.params.HttpConnectionParams;
-import ch.boye.httpclientandroidlib.params.HttpParams;
 import ch.ethz.ssh2.crypto.ObfuscatedSSH;
 
-import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedPlainSocketFactory;
-import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedSSLSocketFactory;
+import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedPlainConnectionSocketFactory;
+import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedSSLConnectionSocketFactory;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-
-//ch.boye.httpclientandroidlib.impl.conn.SingleClientConnManager is deprecated
-@SuppressWarnings("deprecation")
 
 public class MeekClient {
 
@@ -238,7 +235,7 @@ public class MeekClient {
     private void runClient(Socket socket) {
         InputStream socketInputStream = null;
         OutputStream socketOutputStream = null;
-        ClientConnectionManager connManager = null;
+        HttpClientConnectionManager connManager = null;
         try {
             socketInputStream = socket.getInputStream();
             socketOutputStream = socket.getOutputStream();
@@ -246,30 +243,40 @@ public class MeekClient {
             byte[] payloadBuffer = new byte[MAX_PAYLOAD_LENGTH];
             int pollIntervalMilliseconds = MIN_POLL_INTERVAL_MILLISECONDS;
             
-            SchemeRegistry registry = new SchemeRegistry();
+            RegistryBuilder<ConnectionSocketFactory> registryBuilder = RegistryBuilder.<ConnectionSocketFactory> create();
+            
             if (mFrontingDomain != null) {
                 SSLContext sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(null,  null,  null);
-                ProtectedSSLSocketFactory sslSocketFactory = new ProtectedSSLSocketFactory(
+                ProtectedSSLConnectionSocketFactory sslSocketFactory = new ProtectedSSLConnectionSocketFactory(
                         mProtectSocket, sslContext, SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
-                registry.register(new Scheme("https", 443, sslSocketFactory));                
+                registryBuilder.register("https",  sslSocketFactory);                
             } else {
-                ProtectedPlainSocketFactory plainSocketFactory = new ProtectedPlainSocketFactory(mProtectSocket);
-                registry.register(new Scheme("http", 80, plainSocketFactory));                
+                ProtectedPlainConnectionSocketFactory plainSocketFactory = new ProtectedPlainConnectionSocketFactory(mProtectSocket);
+                registryBuilder.register("http",  plainSocketFactory); 
             }
+            
+            Registry<ConnectionSocketFactory> socketFactoryRegistry = registryBuilder.build();
 
             // Use ProtectedDnsResolver to resolve the fronting domain outside of the tunnel
             DnsResolver dnsResolver = ServerInterface.getDnsResolver(mProtectSocket, mServerInterface);
-            PoolingClientConnectionManager poolingConnManager = new PoolingClientConnectionManager(registry, dnsResolver);
+            connManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry, dnsResolver);
             // We're using the pool for its ability to override the DnsResolver. Only need 1 connection.
-            poolingConnManager.setDefaultMaxPerRoute(1);
-            poolingConnManager.setMaxTotal(1);
-            connManager = poolingConnManager;
+            ((PoolingHttpClientConnectionManager) connManager).setDefaultMaxPerRoute(1);
+            ((PoolingHttpClientConnectionManager) connManager).setMaxTotal(1);
 
-            HttpParams httpParams = new BasicHttpParams();
-            HttpConnectionParams.setConnectionTimeout(httpParams, MEEK_SERVER_TIMEOUT_MILLISECONDS);
-            HttpConnectionParams.setSoTimeout(httpParams, MEEK_SERVER_TIMEOUT_MILLISECONDS);
-            DefaultHttpClient httpClient = new DefaultHttpClient(connManager, httpParams);
+            RequestConfig.Builder requestBuilder = RequestConfig.custom();
+            requestBuilder = requestBuilder.setConnectTimeout(MEEK_SERVER_TIMEOUT_MILLISECONDS);
+            requestBuilder = requestBuilder.setConnectionRequestTimeout(MEEK_SERVER_TIMEOUT_MILLISECONDS);
+            
+            
+            CloseableHttpClient httpClient = HttpClientBuilder
+                    .create()
+                    .setDefaultRequestConfig(requestBuilder.build())
+                    .setConnectionManager(connManager)
+                    .disableCookieManagement()
+                    .build();
+            
             URI uri = null;
             if (mFrontingDomain != null) {
                 uri = new URIBuilder().setScheme("https").setHost(mFrontingDomain).setPath("/").build();
@@ -301,7 +308,7 @@ public class MeekClient {
                 int retry;
                 for (retry = 1; retry >= 0; retry--) {
                     HttpPost httpPost = new HttpPost(uri);
-                    ByteArrayEntity entity = new ByteArrayEntity(payloadBuffer, 0, payloadLength);
+                    ByteArrayEntityHC4 entity = new ByteArrayEntityHC4(payloadBuffer, 0, payloadLength);
                     entity.setContentType(HTTP_POST_CONTENT_TYPE);
                     httpPost.setEntity(entity);
 
