@@ -634,16 +634,20 @@ public class PreferencesActivity extends PreferenceActivity {
 	/**
 	 * History clearer thread.
 	 */
-	private class HistoryClearer implements Runnable {
+	private class HistoryClearer /*implements Runnable*/ {
 		
 		/**
 		 * Constructor.
 		 */
 		public HistoryClearer() {
-			new Thread(this).start();
+			//new Thread(this).start();
+			// Newer versions of Android (ie. KitKat) throw this exception:
+			// java.lang.RuntimeException: java.lang.Throwable:
+			// A WebView method was called on thread 'Thread-xxxxx'. All WebView methods must be called on the same thread.
+			this.run();
 		}
 
-		@Override
+		//@Override
 		public void run() {
 			// Clear DB History
 			BookmarksProviderWrapper.clearHistoryAndOrBookmarks(getContentResolver(), true, false);
@@ -666,14 +670,18 @@ public class PreferencesActivity extends PreferenceActivity {
 	/**
 	 * Form data clearer thread.
 	 */
-	private class FormDataClearer implements Runnable {
+	private class FormDataClearer /*implements Runnable*/ {
 		/**
 		 * Constructor.
 		 */
 		public FormDataClearer() {
-			new Thread(this).start();
+			//new Thread(this).start();
+			// Newer versions of Android (ie. KitKat) throw this exception:
+			// java.lang.RuntimeException: java.lang.Throwable:
+			// A WebView method was called on thread 'Thread-xxxxx'. All WebView methods must be called on the same thread.
+			this.run();
 		}
-		@Override
+		//@Override
 		public void run() {
 			for (CustomWebView webView : Controller.getInstance().getWebViewList()) {
 				webView.clearFormData();
@@ -691,14 +699,18 @@ public class PreferencesActivity extends PreferenceActivity {
 	/**
 	 * Cache clearer thread.
 	 */
-	private class CacheClearer implements Runnable {
+	private class CacheClearer /*implements Runnable*/ {
 		/**
 		 * Constructor.
 		 */
 		public CacheClearer() {
-			new Thread(this).start();
+			//new Thread(this).start();
+			// Newer versions of Android (ie. KitKat) throw this exception:
+			// java.lang.RuntimeException: java.lang.Throwable:
+			// A WebView method was called on thread 'Thread-xxxxx'. All WebView methods must be called on the same thread.
+			this.run();
 		}
-		@Override
+		//@Override
 		public void run() {
 			// Only need to clear the cache from one WebView, as it is application-based.
 			CustomWebView webView = Controller.getInstance().getWebViewList().get(0);
