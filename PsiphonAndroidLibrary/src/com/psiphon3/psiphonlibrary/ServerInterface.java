@@ -73,7 +73,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.impl.conn.SystemDefaultDnsResolver;
-import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.HttpContext;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -1319,7 +1319,8 @@ public class ServerInterface
         // - CreateLayeredSocket not overridden: in our usage of it, this will be invoked with
         //   the proxy set to localhost and protect() is not required.
 
-        public Socket createSocket(HttpParams params)
+        @Override
+        public Socket createSocket(HttpContext context)
                 throws IOException
         {
             Socket socket = SocketChannel.open().socket();
@@ -1329,22 +1330,6 @@ public class ServerInterface
             }
 
             return socket;
-        }
-
-        public Socket createSocket()
-                throws IOException
-        {
-            // Deprecated - our code will not call this
-            assert(false);
-            return null;
-        }
-
-        public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
-                throws IOException, UnknownHostException
-        {
-            // Deprecated - our code will not call this
-            assert(false);
-            return null;
         }
     }
 
@@ -1361,8 +1346,8 @@ public class ServerInterface
 
         // NOTE:
         // See comment block in ProtectedSSLSocketFactory
-
-        public Socket createSocket(HttpParams params)
+        @Override
+        public Socket createSocket(HttpContext context)
         {
             Socket socket = null;
             try
@@ -1378,13 +1363,6 @@ public class ServerInterface
             }
 
             return socket;
-        }
-
-        public Socket createSocket()
-        {
-            // Deprecated - our code will not call this
-            assert(false);
-            return null;
         }
     }
 
@@ -1413,9 +1391,10 @@ public class ServerInterface
 
         try
         {
-            RequestConfig.Builder requestBuilder = RequestConfig.custom();
-            requestBuilder = requestBuilder.setConnectTimeout(timeout);
-            requestBuilder = requestBuilder.setConnectionRequestTimeout(timeout);
+            RequestConfig.Builder requestBuilder = RequestConfig.custom()
+                .setConnectTimeout(timeout)
+                .setConnectionRequestTimeout(timeout)
+                .setSocketTimeout(timeout);
             
             HttpHost httpproxy;
             if (useLocalProxy)

@@ -265,10 +265,10 @@ public class MeekClient {
             ((PoolingHttpClientConnectionManager) connManager).setDefaultMaxPerRoute(1);
             ((PoolingHttpClientConnectionManager) connManager).setMaxTotal(1);
 
-            RequestConfig.Builder requestBuilder = RequestConfig.custom();
-            requestBuilder = requestBuilder.setConnectTimeout(MEEK_SERVER_TIMEOUT_MILLISECONDS);
-            requestBuilder = requestBuilder.setConnectionRequestTimeout(MEEK_SERVER_TIMEOUT_MILLISECONDS);
-            
+            RequestConfig.Builder requestBuilder = RequestConfig.custom()
+                    .setConnectTimeout(MEEK_SERVER_TIMEOUT_MILLISECONDS)
+                    .setConnectionRequestTimeout(MEEK_SERVER_TIMEOUT_MILLISECONDS)
+                    .setSocketTimeout(MEEK_SERVER_TIMEOUT_MILLISECONDS);
             
             CloseableHttpClient httpClient = HttpClientBuilder
                     .create()
