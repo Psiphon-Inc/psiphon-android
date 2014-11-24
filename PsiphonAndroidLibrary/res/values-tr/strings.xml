@@ -148,4 +148,5 @@
   <string name="preference_notifications_with_vibrate_title">Titret</string>
   <string name="preference_notifications_with_vibrate_summary">Bağlantı durumu değiştiğinde titret</string>
   <string name="moreOptions">Daha Fazla Seçenek</string>
+  <string name="root_mode_not_supported">Android\'in bu sürümünde root modu desteklenmiyor</string>
 </resources>
