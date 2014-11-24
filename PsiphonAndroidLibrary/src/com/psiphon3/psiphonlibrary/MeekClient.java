@@ -48,14 +48,17 @@ import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
-import org.apache.http.HttpResponse;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPostHC4;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
@@ -67,6 +70,7 @@ import org.apache.http.entity.ByteArrayEntityHC4;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.util.EntityUtilsHC4;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -236,6 +240,7 @@ public class MeekClient {
         InputStream socketInputStream = null;
         OutputStream socketOutputStream = null;
         HttpClientConnectionManager connManager = null;
+        CloseableHttpClient httpClient = null;
         try {
             socketInputStream = socket.getInputStream();
             socketOutputStream = socket.getOutputStream();
@@ -270,11 +275,12 @@ public class MeekClient {
                     .setConnectionRequestTimeout(MEEK_SERVER_TIMEOUT_MILLISECONDS)
                     .setSocketTimeout(MEEK_SERVER_TIMEOUT_MILLISECONDS);
             
-            CloseableHttpClient httpClient = HttpClientBuilder
+            httpClient = HttpClientBuilder
                     .create()
                     .setDefaultRequestConfig(requestBuilder.build())
                     .setConnectionManager(connManager)
                     .disableCookieManagement()
+                    .disableAutomaticRetries()
                     .build();
             
             URI uri = null;
@@ -307,7 +313,7 @@ public class MeekClient {
                 // and front/server.
                 int retry;
                 for (retry = 1; retry >= 0; retry--) {
-                    HttpPost httpPost = new HttpPost(uri);
+                    HttpPostHC4 httpPost = new HttpPostHC4(uri);
                     ByteArrayEntityHC4 entity = new ByteArrayEntityHC4(payloadBuffer, 0, payloadLength);
                     entity.setContentType(HTTP_POST_CONTENT_TYPE);
                     httpPost.setEntity(entity);
@@ -317,7 +323,7 @@ public class MeekClient {
                     }
                     httpPost.addHeader("Cookie", cookie);
                     
-                    HttpResponse response = null;
+                    CloseableHttpResponse response = null;
                     try {
                         response = httpClient.execute(httpPost);
                     } catch (IOException e) {
@@ -329,6 +335,14 @@ public class MeekClient {
                     if (statusCode != HttpStatus.SC_OK) {
                         MyLog.w(R.string.meek_http_request_error, MyLog.Sensitivity.NOT_SENSITIVE, statusCode);
                         // Retry (or abort)
+                        // At this point we need to release the underlying connection
+                        // back to the pool.
+                        // The EntityUtilsHC4.consume call below may be redundant, see
+                        // http://stackoverflow.com/a/15970985
+                        HttpEntity rentity = response.getEntity();
+                        EntityUtilsHC4.consume(rentity);
+                        response.close();
+                        httpPost.releaseConnection();
                         continue;
                     }
 
@@ -362,6 +376,8 @@ public class MeekClient {
                     break;
                 }
             }
+        } catch (ClientProtocolException e) {
+        	MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
         } catch (IOException e) {
             MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
         } catch (URISyntaxException e) {
@@ -383,8 +399,13 @@ public class MeekClient {
         } catch (GeneralSecurityException e) {
             MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());                    
         } finally {
-            if (connManager != null) {
-                connManager.shutdown();
+            if (httpClient != null) {
+                try {
+                    httpClient.close();
+                } catch (IOException e) {
+                    MyLog.w(R.string.meek_error,
+                            MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+                }
             }
             Utils.closeHelper(socketInputStream);
             Utils.closeHelper(socketOutputStream);
