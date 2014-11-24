@@ -11,4 +11,6 @@
     <string name="preferencesNotifications">preferencesNotifications</string>
     <string name="preferenceNotificationsWithSound">preferenceNotificationsWithSound</string>
     <string name="preferenceNotificationsWithVibrate">preferenceNotificationsWithVibrate</string>
+    <string name="make_request_close_http_client">makeRequest error closing HTTP client: %s</string>
+    <string name="make_request_close_http_response">makeRequest error closing HTTP response: %s</string>
 </resources>

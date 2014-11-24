@@ -51,14 +51,14 @@ import javax.net.ssl.X509TrustManager;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGetHC4;
+import org.apache.http.client.methods.HttpPostHC4;
+import org.apache.http.client.methods.HttpPutHC4;
+import org.apache.http.client.methods.HttpRequestBaseHC4;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.DnsResolver;
@@ -226,7 +226,7 @@ public class ServerInterface
 
     /** Array of all outstanding/ongoing requests. Anything in this array will
      * be aborted when {@link#stop()} is called. */
-    private final List<HttpRequestBase> outstandingRequests = new ArrayList<HttpRequestBase>();
+    private final List<HttpRequestBaseHC4> outstandingRequests = new ArrayList<HttpRequestBaseHC4>();
 
     /** This flag is set to true when {@link#stop()} is called, and set back to
      * false when {@link#start()} is called. */
@@ -335,7 +335,7 @@ public class ServerInterface
                 {
                     synchronized(outstandingRequests)
                     {
-                        for (HttpRequestBase request : outstandingRequests)
+                        for (HttpRequestBaseHC4 request : outstandingRequests)
                         {
                             if (!request.isAborted()) request.abort();
                         }
@@ -1387,7 +1387,9 @@ public class ServerInterface
             IResumableDownload resumableDownload)
         throws PsiphonServerInterfaceException
     {
-        HttpRequestBase request = null;
+        HttpRequestBaseHC4 request = null;
+        CloseableHttpResponse response = null;
+        CloseableHttpClient client = null;
 
         try
         {
@@ -1462,28 +1464,29 @@ public class ServerInterface
             HttpClientConnectionManager poolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager(
                     socketFactoryRegistry, dnsResolver);
 			
-            CloseableHttpClient client = HttpClientBuilder.create()
-                    .setDefaultRequestConfig(requestBuilder.build())
+            client = HttpClientBuilder.create()
                     .setConnectionManager(poolingHttpClientConnectionManager)
                     .build();
 
             if (requestMethod == RequestMethod.POST ||
                 (requestMethod == RequestMethod.INFER && body != null))
             {
-                HttpPost post = new HttpPost(url);
+                HttpPostHC4 post = new HttpPostHC4(url);
                 post.setEntity(new ByteArrayEntity(body));
                 request = post;
             }
             else if (requestMethod == RequestMethod.PUT)
             {
-                HttpPut put = new HttpPut(url);
+                HttpPutHC4 put = new HttpPutHC4(url);
                 put.setEntity(new ByteArrayEntity(body));
                 request = put;
             }
             else
             {
-                request = new HttpGet(url);
+                request = new HttpGetHC4(url);
             }
+            
+            request.setConfig(requestBuilder.build());
 
             if (canAbort)
             {
@@ -1508,7 +1511,7 @@ public class ServerInterface
                 request.addHeader("Range", "bytes="+Long.toString(resumableDownload.getResumeOffset()) + "-");
             }
 
-            HttpResponse response = client.execute(request);
+            response = client.execute(request);
 
             int statusCode = response.getStatusLine().getStatusCode();
 
@@ -1639,15 +1642,39 @@ public class ServerInterface
         }
         finally
         {
+            if (response != null) {
+                try
+                {
+                    response.close();
+                }
+                catch (IOException e)
+                {
+                    MyLog.w(R.string.make_request_close_http_response, MyLog.Sensitivity.NOT_SENSITIVE, e);
+                }
+            }
             if (request != null && canAbort)
             {
                 synchronized(this.outstandingRequests)
                 {
                     // Harmless if the request was successful. Necessary clean-up if
                     // the request was interrupted.
-                    if (!request.isAborted()) request.abort();
+                    if (!request.isAborted()){
+                        request.abort();
+                    }
 
+                    request.releaseConnection();
+                    
                     this.outstandingRequests.remove(request);
+                }
+            }
+            if (client != null) {
+                try
+                {
+                    client.close();
+                }
+                catch (IOException e)
+                {
+                    MyLog.w(R.string.make_request_close_http_client, MyLog.Sensitivity.NOT_SENSITIVE, e);
                 }
             }
         }

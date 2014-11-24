@@ -276,7 +276,6 @@ public class MeekClient {
             
             httpClient = HttpClientBuilder
                     .create()
-                    .setDefaultRequestConfig(requestBuilder.build())
                     .setConnectionManager(connManager)
                     .disableCookieManagement()
                     .disableAutomaticRetries()
@@ -316,6 +315,7 @@ public class MeekClient {
                     ByteArrayEntityHC4 entity = new ByteArrayEntityHC4(payloadBuffer, 0, payloadLength);
                     entity.setContentType(HTTP_POST_CONTENT_TYPE);
                     httpPost.setEntity(entity);
+                    httpPost.setConfig(requestBuilder.build());
 
                     if (mFrontingDomain != null) {
                         httpPost.addHeader("Host", mFrontingHost);
