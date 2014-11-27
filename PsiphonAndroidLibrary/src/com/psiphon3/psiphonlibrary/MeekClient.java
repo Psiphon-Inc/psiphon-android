@@ -389,7 +389,7 @@ public class MeekClient {
                             rentity = response.getEntity();
                         }
                         if (rentity != null) {
-                                EntityUtilsHC4.consume(rentity);
+                            EntityUtilsHC4.consume(rentity);
                         }
                         Utils.closeHelper(response);
 
