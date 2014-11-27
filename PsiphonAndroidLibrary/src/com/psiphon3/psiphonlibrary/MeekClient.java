@@ -49,6 +49,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Timer;
 
 import javax.net.ssl.SSLContext;
 
@@ -68,16 +69,20 @@ import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.ByteArrayEntityHC4;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.http.impl.conn.DefaultSchemePortResolver;
+import org.apache.http.impl.conn.ManagedHttpClientConnectionFactory;
 import org.apache.http.util.EntityUtilsHC4;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.os.SystemClock;
 import ch.ethz.ssh2.crypto.ObfuscatedSSH;
 
 import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedPlainConnectionSocketFactory;
 import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedSSLConnectionSocketFactory;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.psiphonlibrary.Utils.RequestTimeoutAbort;
 
 public class MeekClient {
 
@@ -264,10 +269,8 @@ public class MeekClient {
 
             // Use ProtectedDnsResolver to resolve the fronting domain outside of the tunnel
             DnsResolver dnsResolver = ServerInterface.getDnsResolver(mProtectSocket, mServerInterface);
-            connManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry, dnsResolver);
-            // We're using the pool for its ability to override the DnsResolver. Only need 1 connection.
-            ((PoolingHttpClientConnectionManager) connManager).setDefaultMaxPerRoute(1);
-            ((PoolingHttpClientConnectionManager) connManager).setMaxTotal(1);
+            connManager = new BasicHttpClientConnectionManager(socketFactoryRegistry,
+                    ManagedHttpClientConnectionFactory.INSTANCE, DefaultSchemePortResolver.INSTANCE , dnsResolver);
 
             RequestConfig.Builder requestBuilder = RequestConfig.custom()
                     .setConnectTimeout(MEEK_SERVER_TIMEOUT_MILLISECONDS)
@@ -288,7 +291,19 @@ public class MeekClient {
                 uri = new URIBuilder().setScheme("http").setHost(mMeekServerHost).setPort(mMeekServerPort).setPath("/").build();                    
             }
 
+            long previousElapsedRealtime = SystemClock.elapsedRealtime();
             while (true) {
+                long currentElapsedRealtime = SystemClock.elapsedRealtime();
+                if ((currentElapsedRealtime - previousElapsedRealtime) > 2 * MEEK_SERVER_TIMEOUT_MILLISECONDS) {
+                    // If too much time has elapsed between meek requests (ie the device has been in deep sleep),
+                    // the server will expire the meek session. In that case we will continue to get 200 OK responses
+                    // from the server, with empty response payloads. The tunnelled connection may remain in a connected
+                    // state but no data will be transferred.
+                    // Instead, we will abort this meek client session.
+                    break;
+                }
+                previousElapsedRealtime = currentElapsedRealtime;
+                
                 // TODO: read in a separate thread (or asynchronously) to allow continuous requests while streaming downloads
                 socket.setSoTimeout(pollIntervalMilliseconds);
                 int payloadLength = 0;
@@ -323,50 +338,63 @@ public class MeekClient {
                     httpPost.addHeader("Cookie", cookie);
                     
                     CloseableHttpResponse response = null;
+                    HttpEntity rentity = null;
+                    
                     try {
-                        response = httpClient.execute(httpPost);
-                    } catch (IOException e) {
-                        MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
-                        // Retry (or abort)
-                        continue;
-                    }
-                    int statusCode = response.getStatusLine().getStatusCode();
-                    if (statusCode != HttpStatus.SC_OK) {
-                        MyLog.w(R.string.meek_http_request_error, MyLog.Sensitivity.NOT_SENSITIVE, statusCode);
-                        // Retry (or abort)
-                        // At this point we need to release the underlying connection
-                        // back to the pool.
-                        // The EntityUtilsHC4.consume call below may be redundant, see
-                        // http://stackoverflow.com/a/15970985
-                        HttpEntity rentity = response.getEntity();
-                        EntityUtilsHC4.consume(rentity);
-                        response.close();
-                        httpPost.releaseConnection();
-                        continue;
-                    }
-
-                    boolean receivedData = false;
-                    InputStream responseInputStream = response.getEntity().getContent();
-                    try {
-                        int readLength;
-                        while ((readLength = responseInputStream.read(payloadBuffer)) != -1) {
-                            receivedData = true;
-                            socketOutputStream.write(payloadBuffer, 0 , readLength);
+                        RequestTimeoutAbort timeoutAbort = new RequestTimeoutAbort(httpPost);
+                        new Timer(true).schedule(timeoutAbort, MEEK_SERVER_TIMEOUT_MILLISECONDS);
+                        try {
+                            response = httpClient.execute(httpPost);
+                        } catch (IOException e) {
+                            MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+                            // Retry (or abort)
+                            continue;
+                        } finally {
+                            timeoutAbort.cancel();
+                        }
+                        int statusCode = response.getStatusLine().getStatusCode();
+                        if (statusCode != HttpStatus.SC_OK) {
+                            MyLog.w(R.string.meek_http_request_error, MyLog.Sensitivity.NOT_SENSITIVE, statusCode);
+                            // Retry (or abort)
+                            continue;
+                        }
+    
+                        boolean receivedData = false;
+                        rentity = response.getEntity();
+                        if (rentity != null) {
+                            InputStream responseInputStream = rentity.getContent();
+                            try {
+                                int readLength;
+                                while ((readLength = responseInputStream.read(payloadBuffer)) != -1) {
+                                    receivedData = true;
+                                    socketOutputStream.write(payloadBuffer, 0 , readLength);
+                                }
+                            } finally {
+                                Utils.closeHelper(responseInputStream);
+                            }
+                        }
+                        
+                        if (payloadLength > 0 || receivedData) {
+                            pollIntervalMilliseconds = MIN_POLL_INTERVAL_MILLISECONDS;
+                        } else if (pollIntervalMilliseconds == MIN_POLL_INTERVAL_MILLISECONDS) {
+                            pollIntervalMilliseconds = IDLE_POLL_INTERVAL_MILLISECONDS;
+                        } else {
+                            pollIntervalMilliseconds = (int)(pollIntervalMilliseconds*POLL_INTERVAL_MULTIPLIER);
+                        }
+                        if (pollIntervalMilliseconds > MAX_POLL_INTERVAL_MILLISECONDS) {
+                            pollIntervalMilliseconds = MAX_POLL_INTERVAL_MILLISECONDS;
                         }
                     } finally {
-                        Utils.closeHelper(responseInputStream);
-                    }
-                    if (payloadLength > 0 || receivedData) {
-                        pollIntervalMilliseconds = MIN_POLL_INTERVAL_MILLISECONDS;
-                    } else if (pollIntervalMilliseconds == MIN_POLL_INTERVAL_MILLISECONDS) {
-                        pollIntervalMilliseconds = IDLE_POLL_INTERVAL_MILLISECONDS;
-                    } else {
-                        pollIntervalMilliseconds = (int)(pollIntervalMilliseconds*POLL_INTERVAL_MULTIPLIER);
-                    }
-                    if (pollIntervalMilliseconds > MAX_POLL_INTERVAL_MILLISECONDS) {
-                        pollIntervalMilliseconds = MAX_POLL_INTERVAL_MILLISECONDS;
-                    }
+                        if (rentity == null && response != null) {
+                            rentity = response.getEntity();
+                        }
+                        if (rentity != null) {
+                                EntityUtilsHC4.consume(rentity);
+                        }
+                        Utils.closeHelper(response);
 
+                        httpPost.releaseConnection();
+                    }
                     // Success: exit retry loop
                     break;
                 }
@@ -398,14 +426,7 @@ public class MeekClient {
         } catch (GeneralSecurityException e) {
             MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());                    
         } finally {
-            if (httpClient != null) {
-                try {
-                    httpClient.close();
-                } catch (IOException e) {
-                    MyLog.w(R.string.meek_error,
-                            MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
-                }
-            }
+            Utils.closeHelper(httpClient);
             Utils.closeHelper(socketInputStream);
             Utils.closeHelper(socketOutputStream);
             Utils.closeHelper(socket);

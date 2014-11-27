@@ -32,6 +32,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 
@@ -41,13 +42,15 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpRequestBaseHC4;
 import org.apache.http.conn.util.InetAddressUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.xbill.DNS.ResolverConfig;
 
 import de.schildbach.wallet.util.LinuxSecureRandom;
-
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
@@ -1174,5 +1177,35 @@ public class Utils
                 outputStream.close();
             }
         } catch (IOException e) {}
+    }
+    
+    public static void closeHelper(CloseableHttpResponse response) {
+        try {
+            if (response != null) {
+                response.close();
+            }
+        } catch (IOException e) {}
+    }
+    
+    public static void closeHelper(CloseableHttpClient httpClient) {
+        try {
+            if (httpClient != null) {
+                httpClient.close();
+            }
+        } catch (IOException e) {}
+    }
+    
+    public static class RequestTimeoutAbort extends TimerTask {
+        private HttpRequestBaseHC4 httpRequest;
+        RequestTimeoutAbort(HttpRequestBaseHC4 request) {
+            httpRequest = request;
+        }
+        @Override
+        public void run() {
+            if (httpRequest != null)
+            {
+                httpRequest.abort();
+            }
+        }
     }
 }

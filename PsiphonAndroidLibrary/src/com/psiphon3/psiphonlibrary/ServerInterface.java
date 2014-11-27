@@ -43,6 +43,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.SSLContext;
@@ -71,7 +72,9 @@ import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.http.impl.conn.DefaultSchemePortResolver;
+import org.apache.http.impl.conn.ManagedHttpClientConnectionFactory;
 import org.apache.http.impl.conn.SystemDefaultDnsResolver;
 import org.apache.http.protocol.HttpContext;
 import org.json.JSONArray;
@@ -88,6 +91,7 @@ import android.webkit.URLUtil;
 
 import com.psiphon3.psiphonlibrary.AuthenticatedDataPackage.AuthenticatedDataPackageException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.psiphonlibrary.Utils.RequestTimeoutAbort;
 
 
 // We address this warning in Utils.initializeSecureRandom()
@@ -1461,11 +1465,12 @@ public class ServerInterface
                 .register("http", plainSocketFactory)
                 .build();
 
-            HttpClientConnectionManager poolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager(
-                    socketFactoryRegistry, dnsResolver);
+            HttpClientConnectionManager connectionManager = new BasicHttpClientConnectionManager(
+                    socketFactoryRegistry, ManagedHttpClientConnectionFactory.INSTANCE, 
+                    DefaultSchemePortResolver.INSTANCE , dnsResolver);
 			
             client = HttpClientBuilder.create()
-                    .setConnectionManager(poolingHttpClientConnectionManager)
+                    .setConnectionManager(connectionManager)
                     .build();
 
             if (requestMethod == RequestMethod.POST ||
@@ -1511,7 +1516,16 @@ public class ServerInterface
                 request.addHeader("Range", "bytes="+Long.toString(resumableDownload.getResumeOffset()) + "-");
             }
 
-            response = client.execute(request);
+            RequestTimeoutAbort timeoutAbort = new RequestTimeoutAbort(request);
+            new Timer(true).schedule(timeoutAbort, timeout);
+            try
+            {
+                response = client.execute(request);
+            }
+            finally
+            {
+                timeoutAbort.cancel();
+            }
 
             int statusCode = response.getStatusLine().getStatusCode();
 
