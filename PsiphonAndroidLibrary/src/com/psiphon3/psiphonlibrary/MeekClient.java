@@ -291,26 +291,32 @@ public class MeekClient {
                 uri = new URIBuilder().setScheme("http").setHost(mMeekServerHost).setPort(mMeekServerPort).setPath("/").build();                    
             }
 
-            long previousElapsedRealtime = SystemClock.elapsedRealtime();
+            long lastSuccessfulMeekRequest = 0;
+            
             while (true) {
-                long currentElapsedRealtime = SystemClock.elapsedRealtime();
-                if ((currentElapsedRealtime - previousElapsedRealtime) > 2 * MEEK_SERVER_TIMEOUT_MILLISECONDS) {
-                    // If too much time has elapsed between meek requests (ie the device has been in deep sleep),
-                    // the server will expire the meek session. In that case we will continue to get 200 OK responses
-                    // from the server, with empty response payloads. The tunnelled connection may remain in a connected
-                    // state but no data will be transferred.
-                    // Instead, we will abort this meek client session.
-                    break;
-                }
-                previousElapsedRealtime = currentElapsedRealtime;
-                
                 // TODO: read in a separate thread (or asynchronously) to allow continuous requests while streaming downloads
                 socket.setSoTimeout(pollIntervalMilliseconds);
                 int payloadLength = 0;
+                long timeBeforeLocalRead = SystemClock.elapsedRealtime();
                 try {
                     payloadLength = socketInputStream.read(payloadBuffer);
                 } catch (SocketTimeoutException e) {
-                    // In this case, we POST with no content -- this is for polling the server
+                    // If this read took longer to timeout than specified, the device is probably sleeping.
+                    // See https://code.google.com/p/android/issues/detail?id=2782
+                    long timeAfterLocalRead = SystemClock.elapsedRealtime();
+                    long readDuration = timeAfterLocalRead - timeBeforeLocalRead;
+                    if (readDuration > pollIntervalMilliseconds + 1000) {
+                        MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE,
+                                String.format("socket.read() duration: %d ms", readDuration));
+                        // This is a temporary hack to avoid constantly reconnecting while the device is sleeping.
+                        // This basically idles the meek client until read starts behaving properly.
+                        if (lastSuccessfulMeekRequest > 0 &&
+                                (timeAfterLocalRead - lastSuccessfulMeekRequest) > 2 * MEEK_SERVER_TIMEOUT_MILLISECONDS) {
+                            continue;
+                        }
+                    }
+                    
+                    // Otherwise in this case, we POST with no content -- this is for polling the server
                 }
                 if (payloadLength == -1) {
                     // EOF
@@ -341,6 +347,16 @@ public class MeekClient {
                     HttpEntity rentity = null;
                     
                     try {
+                        if (lastSuccessfulMeekRequest > 0 &&
+                                (SystemClock.elapsedRealtime() - lastSuccessfulMeekRequest) > 2 * MEEK_SERVER_TIMEOUT_MILLISECONDS) {
+                            // If too much time has elapsed between successful meek requests (ie the device has been in deep sleep),
+                            // the server will expire the meek session. In that case we will continue to get 200 OK responses
+                            // from the server, with empty response payloads. The tunneled connection may remain in a connected
+                            // state but no data will be transferred.
+                            // Instead, we will abort this meek client session.
+                            return;
+                        }
+                        
                         RequestTimeoutAbort timeoutAbort = new RequestTimeoutAbort(httpPost);
                         new Timer(true).schedule(timeoutAbort, MEEK_SERVER_TIMEOUT_MILLISECONDS);
                         try {
@@ -358,6 +374,8 @@ public class MeekClient {
                             // Retry (or abort)
                             continue;
                         }
+                        
+                        lastSuccessfulMeekRequest = SystemClock.elapsedRealtime();
     
                         boolean receivedData = false;
                         rentity = response.getEntity();
