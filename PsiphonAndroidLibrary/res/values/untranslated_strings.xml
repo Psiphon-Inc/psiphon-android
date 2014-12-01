@@ -9,8 +9,8 @@
     <string name="meek_error">Meek Error: %s</string>
     <string name="meek_http_request_error">Meek HTTP Request Error: %d</string>
     <string name="preferencesNotifications">preferencesNotifications</string>
-    <string name="preferenceNotificationsWithSound">preferenceNotificationsWithSound</string>
-    <string name="preferenceNotificationsWithVibrate">preferenceNotificationsWithVibrate</string>
+    <string name="preferenceNotificationsWithSound">preferenceNotificationsWithSoundDefaultOff</string>
+    <string name="preferenceNotificationsWithVibrate">preferenceNotificationsWithVibrateDefaultOff</string>
     <string name="make_request_close_http_client">makeRequest error closing HTTP client: %s</string>
     <string name="make_request_close_http_response">makeRequest error closing HTTP response: %s</string>
 </resources>
