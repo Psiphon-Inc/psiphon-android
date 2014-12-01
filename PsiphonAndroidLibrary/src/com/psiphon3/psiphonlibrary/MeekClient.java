@@ -48,6 +48,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.Timer;
 
@@ -56,9 +57,11 @@ import javax.net.ssl.SSLContext;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPostHC4;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
@@ -66,17 +69,25 @@ import org.apache.http.conn.DnsResolver;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.cookie.CookieOrigin;
+import org.apache.http.cookie.CookieSpec;
+import org.apache.http.cookie.CookieSpecProvider;
+import org.apache.http.cookie.MalformedCookieException;
 import org.apache.http.entity.ByteArrayEntityHC4;
+import org.apache.http.impl.client.BasicCookieStoreHC4;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.impl.conn.DefaultSchemePortResolver;
 import org.apache.http.impl.conn.ManagedHttpClientConnectionFactory;
+import org.apache.http.impl.cookie.BasicClientCookieHC4;
+import org.apache.http.impl.cookie.BrowserCompatSpecHC4;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtilsHC4;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.os.SystemClock;
 import ch.ethz.ssh2.crypto.ObfuscatedSSH;
 
 import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedPlainConnectionSocketFactory;
@@ -86,7 +97,7 @@ import com.psiphon3.psiphonlibrary.Utils.RequestTimeoutAbort;
 
 public class MeekClient {
 
-    final static int MEEK_PROTOCOL_VERSION = 1;
+    final static int MEEK_PROTOCOL_VERSION = 2;
     final static int MAX_PAYLOAD_LENGTH = 0x10000;
     final static int MIN_POLL_INTERVAL_MILLISECONDS = 1;
     final static int IDLE_POLL_INTERVAL_MILLISECONDS = 100;
@@ -248,7 +259,7 @@ public class MeekClient {
         try {
             socketInputStream = socket.getInputStream();
             socketOutputStream = socket.getOutputStream();
-            String cookie = makeCookie();
+            Cookie cookie = makeCookie();
             byte[] payloadBuffer = new byte[MAX_PAYLOAD_LENGTH];
             int pollIntervalMilliseconds = MIN_POLL_INTERVAL_MILLISECONDS;
             
@@ -272,18 +283,38 @@ public class MeekClient {
             connManager = new BasicHttpClientConnectionManager(socketFactoryRegistry,
                     ManagedHttpClientConnectionFactory.INSTANCE, DefaultSchemePortResolver.INSTANCE , dnsResolver);
 
+            CookieSpecProvider nonValidatingCookieSpecProvider = new CookieSpecProvider() {
+                public CookieSpec create(HttpContext context) {
+                    return new BrowserCompatSpecHC4() {
+                        @Override
+                        public void validate(Cookie cookie, CookieOrigin origin)
+                                throws MalformedCookieException {
+                        }
+                    };
+                }
+            };
+            
+            Registry<CookieSpecProvider> cookieSpecRegistry = RegistryBuilder.<CookieSpecProvider>create()
+                    .register("novalidation", nonValidatingCookieSpecProvider)
+                    .build();
+                
             RequestConfig.Builder requestBuilder = RequestConfig.custom()
                     .setConnectTimeout(MEEK_SERVER_TIMEOUT_MILLISECONDS)
                     .setConnectionRequestTimeout(MEEK_SERVER_TIMEOUT_MILLISECONDS)
-                    .setSocketTimeout(MEEK_SERVER_TIMEOUT_MILLISECONDS);
+                    .setSocketTimeout(MEEK_SERVER_TIMEOUT_MILLISECONDS)
+                    .setCookieSpec("novalidation");
+            
+            CookieStore cookieStore = new BasicCookieStoreHC4();
+            HttpClientContext httpClientContext = HttpClientContext.create();
+            httpClientContext.setCookieStore(cookieStore);
             
             httpClient = HttpClientBuilder
                     .create()
                     .setConnectionManager(connManager)
-                    .disableCookieManagement()
+                    .setDefaultCookieSpecRegistry(cookieSpecRegistry)
                     .disableAutomaticRetries()
                     .build();
-            
+
             URI uri = null;
             if (mFrontingDomain != null) {
                 uri = new URIBuilder().setScheme("https").setHost(mFrontingDomain).setPath("/").build();
@@ -291,32 +322,14 @@ public class MeekClient {
                 uri = new URIBuilder().setScheme("http").setHost(mMeekServerHost).setPort(mMeekServerPort).setPath("/").build();                    
             }
 
-            long lastSuccessfulMeekRequest = 0;
-            
             while (true) {
                 // TODO: read in a separate thread (or asynchronously) to allow continuous requests while streaming downloads
                 socket.setSoTimeout(pollIntervalMilliseconds);
                 int payloadLength = 0;
-                long timeBeforeLocalRead = SystemClock.elapsedRealtime();
                 try {
                     payloadLength = socketInputStream.read(payloadBuffer);
                 } catch (SocketTimeoutException e) {
-                    // If this read took longer to timeout than specified, the device is probably sleeping.
-                    // See https://code.google.com/p/android/issues/detail?id=2782
-                    long timeAfterLocalRead = SystemClock.elapsedRealtime();
-                    long readDuration = timeAfterLocalRead - timeBeforeLocalRead;
-                    if (readDuration > pollIntervalMilliseconds + 1000) {
-                        MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE,
-                                String.format("socket.read() duration: %d ms", readDuration));
-                        // This is a temporary hack to avoid constantly reconnecting while the device is sleeping.
-                        // This basically idles the meek client until read starts behaving properly.
-                        if (lastSuccessfulMeekRequest > 0 &&
-                                (timeAfterLocalRead - lastSuccessfulMeekRequest) > 2 * MEEK_SERVER_TIMEOUT_MILLISECONDS) {
-                            continue;
-                        }
-                    }
-                    
-                    // Otherwise in this case, we POST with no content -- this is for polling the server
+                    // In this case, we POST with no content -- this is for polling the server
                 }
                 if (payloadLength == -1) {
                     // EOF
@@ -341,26 +354,16 @@ public class MeekClient {
                     if (mFrontingDomain != null) {
                         httpPost.addHeader("Host", mFrontingHost);
                     }
-                    httpPost.addHeader("Cookie", cookie);
+                    httpPost.addHeader("Cookie", String.format("%s=%s", cookie.getName(), cookie.getValue()));
                     
                     CloseableHttpResponse response = null;
                     HttpEntity rentity = null;
                     
                     try {
-                        if (lastSuccessfulMeekRequest > 0 &&
-                                (SystemClock.elapsedRealtime() - lastSuccessfulMeekRequest) > 2 * MEEK_SERVER_TIMEOUT_MILLISECONDS) {
-                            // If too much time has elapsed between successful meek requests (ie the device has been in deep sleep),
-                            // the server will expire the meek session. In that case we will continue to get 200 OK responses
-                            // from the server, with empty response payloads. The tunneled connection may remain in a connected
-                            // state but no data will be transferred.
-                            // Instead, we will abort this meek client session.
-                            return;
-                        }
-                        
                         RequestTimeoutAbort timeoutAbort = new RequestTimeoutAbort(httpPost);
                         new Timer(true).schedule(timeoutAbort, MEEK_SERVER_TIMEOUT_MILLISECONDS);
                         try {
-                            response = httpClient.execute(httpPost);
+                            response = httpClient.execute(httpPost, httpClientContext);
                         } catch (IOException e) {
                             MyLog.w(R.string.meek_error, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
                             // Retry (or abort)
@@ -375,8 +378,15 @@ public class MeekClient {
                             continue;
                         }
                         
-                        lastSuccessfulMeekRequest = SystemClock.elapsedRealtime();
-    
+                        List<Cookie> responseCookies = httpClientContext.getCookieStore().getCookies();
+                        for (Cookie responseCookie : responseCookies) {
+                            if (responseCookie.getName().equals(cookie.getName()) &&
+                                    !responseCookie.getValue().equals(cookie.getValue())) {
+                                cookie = responseCookie;
+                                break;
+                            }
+                        }
+                        
                         boolean receivedData = false;
                         rentity = response.getEntity();
                         if (rentity != null) {
@@ -451,7 +461,7 @@ public class MeekClient {
         }
     }
     
-    private String makeCookie()
+    private Cookie makeCookie()
             throws JSONException, GeneralSecurityException, IOException {
 
         JSONObject payload = new JSONObject();
@@ -495,6 +505,6 @@ public class MeekClient {
         final String cookieKeyValues = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         char cookieKey = cookieKeyValues.toCharArray()[Utils.insecureRandRange(0, cookieKeyValues.length()-1)];
 
-        return cookieKey + "=" + cookieValue;
+        return new BasicClientCookieHC4(String.valueOf(cookieKey), cookieValue);
     }
 }
