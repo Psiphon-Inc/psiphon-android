@@ -244,16 +244,20 @@ public class HistoryListActivity extends ExpandableListActivity {
 	/**
 	 * Runnable to clear history.
 	 */
-	private class HistoryClearer implements Runnable {
+	private class HistoryClearer /*implements Runnable*/ {
 
 		/**
 		 * Constructor.
 		 */
 		public HistoryClearer() {
-			new Thread(this).start();
+			//new Thread(this).start();
+			// Newer versions of Android (ie. KitKat) throw this exception:
+			// java.lang.RuntimeException: java.lang.Throwable:
+			// A WebView method was called on thread 'Thread-xxxxx'. All WebView methods must be called on the same thread.
+			this.run();
 		}
 
-		@Override
+		//@Override
 		public void run() {
 			BookmarksProviderWrapper.clearHistoryAndOrBookmarks(getContentResolver(), true, false);
 			

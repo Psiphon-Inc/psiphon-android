@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
   <string name="app_name">Psiphon</string>
-  <string name="banner_desc">bannière de sponsor; cliquez pour visiter le site du sponsor</string>
+  <string name="banner_desc">bannière de sponsor ; cliquez pour visiter le site du sponsor</string>
   <string name="start_desc">connexion à Psiphon; cliquez pour vous connecter</string>
   <string name="message_image_success_desc">icône indiquant un message de réussite</string>
   <string name="message_image_error_desc">icône indiquant un message d\'erreur</string>
@@ -11,13 +11,13 @@
   <string name="open_browser">Ouvrir le navigateur</string>
   <string name="browser_task_label">Navigateur Psiphon</string>
   <string name="FeedbackActivity.DefaultText">Si vous avez des commentaires particuliers à faire, des informations sur les sites qui ne marchent pas, ou si ce formulaire ne fonctionne pas, veuillez envoyer un e-mail à &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
-  <string name="FeedbackActivity.Success">Merci pour avoir soumis votre retour d\'information</string>
-  <string name="FeedbackActivity.Failure">La soumission a échoué. S\'il vous plaît essayez à nouveau.</string>
-  <string name="FeedbackActivity.SubmitFeedbackFailed">Failed to submit feedback</string>
-  <string name="FeedbackActivity.InvalidURLParameters">Invalid URL Parameters in feedback form submission</string>
-  <string name="FeedbackActivity.GetHTMLContentFailed">Failed to get feedback page content</string>
-  <string name="StatusActivity.WholeDeviceTunnelPromptTitle">Tunnel le dispositif entier ?</string>
-  <string name="StatusActivity.WholeDeviceTunnelPromptMessage">L\'option de mise en tunnel du dispositif en entier est disponible pour votre dispositif. \n\nAvec cette option, tout votre trafic Internet pour toutes les applications incluant tous les navigateurs sera passé en tunnel par Psiphon.\n\nAutrement, vous pouvez choisir de passer en tunnel seulement le navigateur Psiphon inclus qui laissera tous les autres applications aller directement à travers votre connexion standard à Internet.</string>
-  <string name="StatusActivity.WholeDeviceTunnelPositiveButton">Dispositif entier via tunnel</string>
-  <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Utiliser navigateur Psiphon seulement</string>
+  <string name="FeedbackActivity.Success">Merci pour vos commentaires</string>
+  <string name="FeedbackActivity.Failure">L\'envoi a échoué. Veuillez réessayer.</string>
+  <string name="FeedbackActivity.SubmitFeedbackFailed">Echec lors de l\'envoi</string>
+  <string name="FeedbackActivity.InvalidURLParameters">Paramètres invalides dans le formulaire de commentaire</string>
+  <string name="FeedbackActivity.GetHTMLContentFailed">Echec lors du chargement de la page de commentaire</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptTitle">Tunneliser tout le trafic de l\'appareil ?</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptMessage">Le tunneling intégral est disponible pour votre appareil.\n\nEn activant cette option, l\'ensemble du trafic Internet de vos applications sera tunnelisé par Psiphon, y compris celui de vos navigateurs.\n\nSi vous n\'activez pas cette option, seul le trafic du navigateur Psiphon sera tunnelisé, et toutes les autres applications se connecteront via votre connexion Internet standard.</string>
+  <string name="StatusActivity.WholeDeviceTunnelPositiveButton">Tunneliser tout le trafic de l\'appareil</string>
+  <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Utiliser seulement le navigateur Psiphon</string>
 </resources>
