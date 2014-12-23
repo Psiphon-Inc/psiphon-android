@@ -210,12 +210,12 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
         if (alert)
         {
             if (PreferenceManager.getDefaultSharedPreferences(m_parentService).getBoolean(
-                    m_parentService.getString(R.string.preferenceNotificationsWithSound), true))
+                    m_parentService.getString(R.string.preferenceNotificationsWithSound), false))
             {
                 notification.defaults |= Notification.DEFAULT_SOUND;
             }
             if (PreferenceManager.getDefaultSharedPreferences(m_parentService).getBoolean(
-                    m_parentService.getString(R.string.preferenceNotificationsWithVibrate), true))
+                    m_parentService.getString(R.string.preferenceNotificationsWithVibrate), false))
             {
                 notification.defaults |= Notification.DEFAULT_VIBRATE;
             }
