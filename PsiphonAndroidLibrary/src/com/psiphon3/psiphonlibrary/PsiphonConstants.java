@@ -57,6 +57,8 @@ public class PsiphonConstants
 
     public final static int SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS = 20000;
 
+    public final static int TARGET_PROTOCOL_ROTATION_SESSION_DURATION_THRESHOLD_MILLISECONDS = 2*60*1000;
+
     public final static String RELAY_PROTOCOL_OSSH = "OSSH";
 
     public final static String RELAY_PROTOCOL_FRONTED_MEEK_OSSH = "FRONTED-MEEK-OSSH";

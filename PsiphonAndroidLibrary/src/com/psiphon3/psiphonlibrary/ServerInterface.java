@@ -172,6 +172,23 @@ public class ServerInterface
         public static final String CAPABILITY_UNFRONTED_MEEK = "UNFRONTED-MEEK";
 
         public static final String REGION_CODE_ANY = "";
+        
+        public boolean supportsProtocol(String protocol)
+        {
+            if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_OSSH))
+            {
+                return hasCapability(CAPABILITY_OSSH);
+            }
+            else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH))
+            {
+                return hasCapability(CAPABILITY_UNFRONTED_MEEK);
+            }
+            else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH))
+            {
+                return hasCapability(CAPABILITY_FRONTED_MEEK);
+            }
+            return false;
+        }
 
         public boolean hasCapability(String capability)
         {
