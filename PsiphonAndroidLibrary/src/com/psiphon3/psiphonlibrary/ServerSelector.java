@@ -178,6 +178,9 @@ public class ServerSelector implements IAbortIndicator
 
                 String protocol = ServerSelector.this.targetProtocolState.selectProtocol(this.entry);
                 
+                // This check is already performed in the coordinator which filters out workers for
+                // server entries that don't support the target protocol, but we're leaving this here
+                // anyways.
                 if (protocol == null)
                 {
                     // The server does not support a target protocol
@@ -619,7 +622,8 @@ public class ServerSelector implements IAbortIndicator
             {
                 if (-1 != entry.getPreferredReachablityTestPort() &&
                         entry.hasOneOfTheseCapabilities(PsiphonConstants.SUFFICIENT_CAPABILITIES_FOR_TUNNEL) &&
-                        entry.inRegion(egressRegion))
+                        entry.inRegion(egressRegion) &&
+                        null != ServerSelector.this.targetProtocolState.selectProtocol(entry))
                 {
                     CheckServerWorker worker = new CheckServerWorker(entry);
                     threadPool.submit(worker);
