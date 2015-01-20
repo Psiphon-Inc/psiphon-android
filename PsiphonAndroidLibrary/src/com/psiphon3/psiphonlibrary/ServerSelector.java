@@ -84,6 +84,7 @@ public class ServerSelector implements IAbortIndicator
         
         public synchronized void rotateTarget()
         {
+            MyLog.w(R.string.rotating_target_protocol_state, MyLog.Sensitivity.NOT_SENSITIVE);
             mCurrentTarget = (mCurrentTarget + 1) % mTargets.size();
         }
         
@@ -97,6 +98,17 @@ public class ServerSelector implements IAbortIndicator
                 }
             }
             return null;
+        }
+        
+        public synchronized String currentProtocols()
+        {
+            StringBuilder currentProtocolsBuilder = new StringBuilder();
+            for (String protocol : mTargets.get(mCurrentTarget))
+            {
+                currentProtocolsBuilder.append(protocol);
+                currentProtocolsBuilder.append(" ");
+            }
+            return currentProtocolsBuilder.toString().trim();
         }
     }
     
@@ -503,6 +515,7 @@ public class ServerSelector implements IAbortIndicator
             while (!stopFlag)
             {
                 MyLog.v(R.string.selecting_server, MyLog.Sensitivity.NOT_SENSITIVE);
+                MyLog.g("TargetProtocols", ServerSelector.this.targetProtocolState.currentProtocols());
 
                 if (runOnce())
                 {
