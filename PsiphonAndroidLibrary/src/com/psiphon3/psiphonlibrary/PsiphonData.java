@@ -79,6 +79,10 @@ public class PsiphonData
     private boolean m_useCustomProxySettings;
     private String m_customProxyHost;
     private String m_customProxyPort;
+    private boolean m_useProxyAuthentication;
+    private String m_proxyUsername;
+    private String m_proxyPassword;
+    private String m_proxyDomain;
     private ProxySettings m_savedSystemProxySettings;
     private boolean m_vpnServiceUnavailable;
     private TunnelCore m_currentTunnelCore;
@@ -106,6 +110,7 @@ public class PsiphonData
         m_useHTTPProxy = false;
         m_useSystemProxySettings = false;
         m_useCustomProxySettings = false;
+        m_useProxyAuthentication = false;
         m_vpnServiceUnavailable = false;
         m_reportedStats = new ReportedStats();
         m_enableReportedStats = true;
@@ -331,10 +336,54 @@ public class PsiphonData
     	return m_customProxyPort;
     }
     
+    public synchronized void setUseProxyAuthentication(boolean useProxyAuthentication)
+    {
+        m_useProxyAuthentication = useProxyAuthentication;
+    }
+
+    public synchronized boolean getUseProxyAuthentication()
+    {
+        return m_useProxyAuthentication;
+    }
+
+    public synchronized void setProxyUsername(String username)
+    {
+    	m_proxyUsername = username;
+    }
+    
+    public synchronized String getProxyUsername()
+    {
+    	return m_proxyUsername;
+    }
+
+    public synchronized void setProxyPassword(String password)
+    {
+    	m_proxyPassword = password;
+    }
+    
+    public synchronized String getProxyPassword()
+    {
+    	return m_proxyPassword;
+    }
+    
+    public synchronized void setProxyDomain(String domain)
+    {
+    	m_proxyDomain = domain;
+    }
+    
+    public synchronized String getProxyDomain()
+    {
+    	return m_proxyDomain;
+    }
+
+    
     public class ProxySettings
     {
         public String proxyHost;
         public int proxyPort;
+        public String proxyUsername;
+        public String proxyPassword;
+        public String proxyDomain;
     }
     
     // Call this before doing anything that could change the system proxy settings
@@ -372,6 +421,12 @@ public class PsiphonData
             catch (NumberFormatException e)
             {
                 settings.proxyPort = -1;
+            }
+            
+            if(getUseProxyAuthentication()) {
+            	settings.proxyUsername = getProxyUsername();
+            	settings.proxyPassword = getProxyPassword();
+            	settings.proxyDomain = getProxyDomain();
             }
         }
         		

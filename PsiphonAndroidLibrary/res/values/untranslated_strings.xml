@@ -13,4 +13,15 @@
     <string name="preferenceNotificationsWithVibrate">preferenceNotificationsWithVibrateDefaultOff</string>
     <string name="make_request_close_http_client">makeRequest error closing HTTP client: %s</string>
     <string name="make_request_close_http_response">makeRequest error closing HTTP response: %s</string>
+    <!-- backwards compatible shared preferences names for new 'More Options' screen with proxy settings  -->
+    <string name="proxySettingsCategoryKey">proxySettingsCategoryKey</string>
+    <string name="useProxySettingsPreference">useProxySettingsPreference</string>
+	<string name="useSystemProxySettingsPreference">useSystemProxySettingsPreference</string>
+	<string name="useCustomProxySettingsPreference">useCustomProxySettingsPreference</string>
+	<string name="useCustomProxySettingsHostPreference">useCustomProxySettingsHostPreference</string>
+	<string name="useCustomProxySettingsPortPreference">useCustomProxySettingsPortPreference</string>
+	<string name="useProxyAuthenticationPreference">useProxyAuthenticationPreference</string>
+	<string name="useProxyUsernamePreference">useProxyUsernamePreference</string>
+	<string name="useProxyPasswordPreference">useProxyPasswordPreference</string>
+	<string name="useProxyDomainPreference">useProxyDomainPreference</string>
 </resources>
