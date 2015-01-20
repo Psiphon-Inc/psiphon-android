@@ -944,22 +944,6 @@ public abstract class MainBase {
 			}
 		}
 
-		public static class MoreOptionsActivity extends PreferenceActivity {
-			@Override
-			@SuppressWarnings("deprecation")
-			public void onCreate(Bundle savedInstanceState) {
-				super.onCreate(savedInstanceState);
-				addPreferencesFromResource(R.xml.preferences);
-				PreferenceScreen preferences = getPreferenceScreen();
-				Preference use_system_proxy = preferences
-						.findPreference("use_system_proxy");
-				Preference use_custom_proxy_settings = preferences
-						.findPreference("use_custom_proxy_settings");
-				use_system_proxy
-						.setWidgetLayoutResource(R.layout.preference_widget_radiobutton);
-			}
-		}
-
 		public void onMoreOptionsClick(View v) {
 			startActivityForResult(new Intent(this,
 					MoreOptionsPreferenceActivity.class),
