@@ -515,7 +515,7 @@ public class ServerSelector implements IAbortIndicator
             while (!stopFlag)
             {
                 MyLog.v(R.string.selecting_server, MyLog.Sensitivity.NOT_SENSITIVE);
-                MyLog.g("TargetProtocols", ServerSelector.this.targetProtocolState.currentProtocols());
+                MyLog.g("TargetProtocols", "protocols", ServerSelector.this.targetProtocolState.currentProtocols());
 
                 if (runOnce())
                 {
