@@ -1,0 +1,195 @@
+package com.psiphon3.psiphonlibrary;
+
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.os.Bundle;
+import android.preference.CheckBoxPreference;
+import android.preference.EditTextPreference;
+import android.preference.Preference;
+import android.preference.Preference.OnPreferenceClickListener;
+import android.preference.PreferenceActivity;
+import android.preference.PreferenceCategory;
+import android.preference.PreferenceScreen;
+
+public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
+		OnSharedPreferenceChangeListener, OnPreferenceClickListener {
+	CheckBoxPreference mUseProxy;
+	RadioButtonPreference mUseSystemProxy;
+	RadioButtonPreference mUseCustomProxy;
+	CheckBoxPreference mUseProxyAuthentication;
+	EditTextPreference mProxyHost;
+	EditTextPreference mProxyPort;
+	EditTextPreference mProxyUsername;
+	EditTextPreference mProxyPassword;
+	EditTextPreference mProxyDomain;
+
+	@SuppressWarnings("deprecation")
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		addPreferencesFromResource(R.xml.preferences);
+		PreferenceScreen preferences = getPreferenceScreen();
+		mUseProxy = (CheckBoxPreference) preferences
+				.findPreference(getString(R.string.useProxySettingsPreference));
+		mUseSystemProxy = (RadioButtonPreference) preferences
+				.findPreference(getString(R.string.useSystemProxySettingsPreference));
+		mUseCustomProxy = (RadioButtonPreference) preferences
+				.findPreference(getString(R.string.useCustomProxySettingsPreference));
+
+		mProxyHost = (EditTextPreference) preferences
+				.findPreference(getString(R.string.useCustomProxySettingsHostPreference));
+		mProxyPort = (EditTextPreference) preferences
+				.findPreference(getString(R.string.useCustomProxySettingsPortPreference));
+
+		mUseProxyAuthentication = (CheckBoxPreference) preferences
+				.findPreference(getString(R.string.useProxyAuthenticationPreference));
+		mProxyUsername = (EditTextPreference) preferences
+				.findPreference(getString(R.string.useProxyUsernamePreference));
+		mProxyPassword = (EditTextPreference) preferences
+				.findPreference(getString(R.string.useProxyPasswordPreference));
+		mProxyDomain = (EditTextPreference) preferences
+				.findPreference(getString(R.string.useProxyDomainPreference));
+
+		mUseSystemProxy.setOnPreferenceClickListener(this);
+		mUseCustomProxy.setOnPreferenceClickListener(this);
+
+		updatePreferencesScreen();
+	}
+
+	private void disableCustomProxySettings() {
+		mProxyHost.setEnabled(false);
+		mProxyPort.setEnabled(false);
+		mUseProxyAuthentication.setEnabled(false);
+		disableProxyAuthenticationSettings();
+	}
+
+	private void enableCustomProxySettings() {
+		mProxyHost.setEnabled(true);
+		mProxyPort.setEnabled(true);
+		mUseProxyAuthentication.setEnabled(true);
+		enableProxyAuthenticationSettings();
+	}
+
+	private void disableProxyAuthenticationSettings() {
+		mProxyUsername.setEnabled(false);
+		mProxyPassword.setEnabled(false);
+		mProxyDomain.setEnabled(false);
+	}
+
+	private void enableProxyAuthenticationSettings() {
+		mProxyUsername.setEnabled(true);
+		mProxyPassword.setEnabled(true);
+		mProxyDomain.setEnabled(true);
+	}
+
+	private void disableProxySettings() {
+		mUseSystemProxy.setEnabled(false);
+		mUseCustomProxy.setEnabled(false);
+		disableCustomProxySettings();
+		disableProxyAuthenticationSettings();
+	}
+
+	private void enableProxySettings() {
+		mUseSystemProxy.setEnabled(true);
+		mUseCustomProxy.setEnabled(true);
+		enableCustomProxySettings();
+		enableProxyAuthenticationSettings();
+	}
+
+	private void updatePreferencesScreen() {
+		if (!mUseProxy.isChecked()) {
+			disableProxySettings();
+		} else {
+			enableProxySettings();
+			if (mUseSystemProxy.isChecked()) {
+				disableCustomProxySettings();
+			} else {
+				enableCustomProxySettings();
+				if (mUseProxyAuthentication.isChecked()) {
+					enableProxyAuthenticationSettings();
+				} else {
+					disableProxyAuthenticationSettings();
+				}
+			}
+		}
+	}
+
+	protected void updatePrefsSummary(SharedPreferences sharedPreferences,
+			Preference pref) {
+		if (pref instanceof EditTextPreference) {
+			// EditPreference
+			EditTextPreference editTextPref = (EditTextPreference) pref;
+			String summary = editTextPref.getText();
+			if (summary != null && !summary.isEmpty()) {
+				editTextPref.setSummary(editTextPref.getText());
+			} else {
+				editTextPref.setSummary((CharSequence) editTextPref.getExtras()
+						.get("default_summary"));
+			}
+		}
+	}
+
+	/*
+	 * Init summary fields
+	 */
+	protected void initSummary() {
+		for (int i = 0; i < getPreferenceScreen().getPreferenceCount(); i++) {
+			initPrefsSummary(getPreferenceManager().getSharedPreferences(),
+					getPreferenceScreen().getPreference(i));
+		}
+	}
+
+	/*
+	 * Init single Preference
+	 */
+	protected void initPrefsSummary(SharedPreferences sharedPreferences,
+			Preference p) {
+		if (p instanceof PreferenceCategory) {
+			PreferenceCategory pCat = (PreferenceCategory) p;
+			for (int i = 0; i < pCat.getPreferenceCount(); i++) {
+				initPrefsSummary(sharedPreferences, pCat.getPreference(i));
+			}
+		} else {
+			p.getExtras().putCharSequence("default_summary", p.getSummary());
+			updatePrefsSummary(sharedPreferences, p);
+		}
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		// Set up a listener whenever a key changes
+		getPreferenceScreen().getSharedPreferences()
+				.registerOnSharedPreferenceChangeListener(this);
+		initSummary();
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		// Unregister the listener whenever a key changes
+		getPreferenceScreen().getSharedPreferences()
+				.unregisterOnSharedPreferenceChangeListener(this);
+	}
+
+	@SuppressWarnings("deprecation")
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+			final String key) {
+		Preference curPref = findPreference(key);
+		updatePrefsSummary(sharedPreferences, curPref);
+		updatePreferencesScreen();
+	}
+
+	@Override
+	public boolean onPreferenceClick(Preference preference) {
+		if (preference == mUseSystemProxy) {
+			mUseSystemProxy.setChecked(true);
+			mUseCustomProxy.setChecked(false);
+		}
+		if (preference == mUseCustomProxy) {
+			mUseSystemProxy.setChecked(false);
+			mUseCustomProxy.setChecked(true);
+		}
+		return false;
+	}
+}
