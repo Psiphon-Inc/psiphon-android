@@ -53,13 +53,17 @@ import javax.net.ssl.X509TrustManager;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGetHC4;
 import org.apache.http.client.methods.HttpPostHC4;
 import org.apache.http.client.methods.HttpPutHC4;
 import org.apache.http.client.methods.HttpRequestBaseHC4;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.DnsResolver;
@@ -70,6 +74,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.BasicCredentialsProviderHC4;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
@@ -1411,6 +1416,7 @@ public class ServerInterface
         HttpRequestBaseHC4 request = null;
         CloseableHttpResponse response = null;
         CloseableHttpClient client = null;
+        HttpClientContext httpClientContext = null;
 
         try
         {
@@ -1418,6 +1424,9 @@ public class ServerInterface
                 .setConnectTimeout(timeout)
                 .setConnectionRequestTimeout(timeout)
                 .setSocketTimeout(timeout);
+            
+            httpClientContext = HttpClientContext.create();
+
             
             HttpHost httpproxy;
             if (useLocalProxy)
@@ -1432,6 +1441,13 @@ public class ServerInterface
                 {
                     httpproxy = new HttpHost(proxySettings.proxyHost, proxySettings.proxyPort);
                 	requestBuilder.setProxy(httpproxy);
+                	Credentials proxyCredentials = PsiphonData.getPsiphonData().getProxyCredentials();
+                	if(proxyCredentials != null)
+                	{
+                		CredentialsProvider credentialsProvider = new BasicCredentialsProviderHC4();
+                		credentialsProvider.setCredentials(AuthScope.ANY, proxyCredentials);
+                		httpClientContext.setCredentialsProvider(credentialsProvider);
+                	}
                 }
             }
 
@@ -1489,6 +1505,7 @@ public class ServerInterface
             client = HttpClientBuilder.create()
                     .setConnectionManager(connectionManager)
                     .build();
+            
 
             if (requestMethod == RequestMethod.POST ||
                 (requestMethod == RequestMethod.INFER && body != null))
@@ -1537,7 +1554,7 @@ public class ServerInterface
             new Timer(true).schedule(timeoutAbort, timeout);
             try
             {
-                response = client.execute(request);
+                response = client.execute(request, httpClientContext);
             }
             finally
             {

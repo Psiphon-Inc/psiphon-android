@@ -19,6 +19,8 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -28,6 +30,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.NTCredentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.json.JSONObject;
 
 import android.content.Context;
@@ -381,9 +386,6 @@ public class PsiphonData
     {
         public String proxyHost;
         public int proxyPort;
-        public String proxyUsername;
-        public String proxyPassword;
-        public String proxyDomain;
     }
     
     // Call this before doing anything that could change the system proxy settings
@@ -422,12 +424,6 @@ public class PsiphonData
             {
                 settings.proxyPort = -1;
             }
-            
-            if(getUseProxyAuthentication()) {
-            	settings.proxyUsername = getProxyUsername();
-            	settings.proxyPassword = getProxyPassword();
-            	settings.proxyDomain = getProxyDomain();
-            }
         }
         		
         if (getUseSystemProxySettings())
@@ -444,6 +440,35 @@ public class PsiphonData
         
         return settings;
     }
+    
+	public synchronized Credentials getProxyCredentials() {
+		if (!getUseProxyAuthentication()) {
+			return null;
+		}
+
+		String username = getProxyUsername();
+		String password = getProxyPassword();
+		String domain = getProxyDomain();
+		
+		if (username == null || username.isEmpty()) {
+			return null;
+		}
+		if (password == null || password.isEmpty()) {
+			return null;
+		}
+		if (domain == null || domain.isEmpty()) {
+			return new UsernamePasswordCredentials(username, password);
+		}
+		
+		String localHost;
+		try {
+			localHost = InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			localHost = "localhost";
+		}
+
+		return new NTCredentials(username, password, localHost, domain);
+	}
     
     private ProxySettings getSystemProxySettings(Context context)
     {

@@ -55,9 +55,13 @@ import java.util.Timer;
 import javax.net.ssl.SSLContext;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CookieStore;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPostHC4;
@@ -76,6 +80,7 @@ import org.apache.http.cookie.CookieSpecProvider;
 import org.apache.http.cookie.MalformedCookieException;
 import org.apache.http.entity.ByteArrayEntityHC4;
 import org.apache.http.impl.client.BasicCookieStoreHC4;
+import org.apache.http.impl.client.BasicCredentialsProviderHC4;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
@@ -88,6 +93,7 @@ import org.apache.http.util.EntityUtilsHC4;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.Context;
 import ch.ethz.ssh2.crypto.ObfuscatedSSH;
 
 import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedPlainConnectionSocketFactory;
@@ -123,6 +129,7 @@ public class MeekClient {
     private ServerSocket mServerSocket;
     private int mLocalPort = -1;
     private Set<Socket> mClients;
+    private final Context mContext;
     
     public enum MeekProtocol {FRONTED, UNFRONTED};
 
@@ -138,7 +145,9 @@ public class MeekClient {
             String cookieEncryptionPublicKey,
             String obfuscationKeyword,
             String frontingDomain,
-            String frontingHost) {
+            String frontingHost,
+    		Context context) {
+    	mContext = context.getApplicationContext();
         mProtocol = MeekProtocol.FRONTED;
         mProtectSocket = protectSocket;
         mServerInterface = serverInterface;
@@ -160,7 +169,9 @@ public class MeekClient {
             String cookieEncryptionPublicKey,
             String obfuscationKeyword,
             String meekServerHost,
-            int meekServerPort) {
+            int meekServerPort,
+            Context context) {
+    	mContext = context.getApplicationContext();
         mProtocol = MeekProtocol.UNFRONTED;
         mProtectSocket = protectSocket;
         mServerInterface = serverInterface;
@@ -307,6 +318,20 @@ public class MeekClient {
             CookieStore cookieStore = new BasicCookieStoreHC4();
             HttpClientContext httpClientContext = HttpClientContext.create();
             httpClientContext.setCookieStore(cookieStore);
+            
+            PsiphonData.ProxySettings proxySettings = PsiphonData.getPsiphonData().getProxySettings(mContext);
+            if (proxySettings != null)
+            {
+            	HttpHost httpproxy = new HttpHost(proxySettings.proxyHost, proxySettings.proxyPort);
+            	requestBuilder.setProxy(httpproxy);
+            	Credentials proxyCredentials = PsiphonData.getPsiphonData().getProxyCredentials();
+            	if(proxyCredentials != null)
+            	{
+            		CredentialsProvider credentialsProvider = new BasicCredentialsProviderHC4();
+            		credentialsProvider.setCredentials(AuthScope.ANY, proxyCredentials);
+            		httpClientContext.setCredentialsProvider(credentialsProvider);
+            	}
+            }
             
             httpClient = HttpClientBuilder
                     .create()

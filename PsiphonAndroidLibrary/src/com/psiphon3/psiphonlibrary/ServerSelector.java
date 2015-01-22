@@ -43,6 +43,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.http.HttpException;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.Credentials;
+
 import android.content.Context;
 import android.os.Build;
 import android.os.SystemClock;
@@ -199,12 +203,6 @@ public class ServerSelector implements IAbortIndicator
                     return;
                 }
 
-                // TODO: Add upstream HTTP proxy support to other protocols.
-                if (proxySettings != null && !protocol.equals(PsiphonConstants.RELAY_PROTOCOL_OSSH))
-                {
-                    return;
-                }
-                
                 // Even though the ServerEntry here is a clone, assigning to it
                 // works because ServerSelector merges it back in for the servers
                 // that respond.
@@ -223,17 +221,28 @@ public class ServerSelector implements IAbortIndicator
 
                     if (proxySettings != null)
                     {
-                        this.usingHTTPProxy = true;
-    
-                        makeSocketChannelConnection(selector, proxySettings.proxyHost, proxySettings.proxyPort);
-                        this.channel.finishConnect();
-                        selector.close();
-                        this.channel.configureBlocking(true);
-    
-                        makeConnectionViaHTTPProxy(null, null);
-    
-                        socketConnected = true;
-                    }
+						this.usingHTTPProxy = true;
+
+						makeSocketChannelConnection(selector,
+								proxySettings.proxyHost,
+								proxySettings.proxyPort);
+						this.channel.finishConnect();
+						selector.close();
+						this.channel.configureBlocking(true);
+
+						HttpHost httpproxy = new HttpHost(
+								proxySettings.proxyHost,
+								proxySettings.proxyPort);
+						HttpHost target = new HttpHost(this.entry.ipAddress,
+								this.entry.getPreferredReachablityTestPort());
+
+						SocketProxyTunneler sockProxyTunneler = new SocketProxyTunneler();
+						sockProxyTunneler.tunnel(this.channel.socket(),
+								httpproxy, target, PsiphonData.getPsiphonData()
+										.getProxyCredentials());
+
+						socketConnected = true;
+					}
                     else
                     {
                         makeSocketChannelConnection(selector,
@@ -258,6 +267,7 @@ public class ServerSelector implements IAbortIndicator
                     // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
 
                     this.meekClient = new MeekClient(
+                    		
                             protectSocketsRequired ? ServerSelector.this.protectSocket : null,
                             ServerSelector.this.serverInterface,
                             ServerSelector.this.clientSessionId,
@@ -265,7 +275,8 @@ public class ServerSelector implements IAbortIndicator
                             this.entry.meekCookieEncryptionPublicKey,
                             this.entry.meekObfuscatedKey,
                             this.entry.ipAddress,
-                            this.entry.meekServerPort);
+                            this.entry.meekServerPort,
+                            context);
                     this.meekClient.start();
 
                     makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
@@ -285,7 +296,8 @@ public class ServerSelector implements IAbortIndicator
                             this.entry.meekCookieEncryptionPublicKey,
                             this.entry.meekObfuscatedKey,
                             this.entry.meekFrontingDomain,
-                            this.entry.meekFrontingHost);
+                            this.entry.meekFrontingHost,
+                            context);
                     this.meekClient.start();
 
                     makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
@@ -358,7 +370,12 @@ public class ServerSelector implements IAbortIndicator
                 {
                     MyLog.w(R.string.network_proxy_connect_exception, MyLog.Sensitivity.NOT_SENSITIVE, e.getLocalizedMessage());
                 }
-            }
+            } catch (HttpException e) {
+                if (proxySettings != null)
+                {
+                    MyLog.w(R.string.network_proxy_connect_exception, MyLog.Sensitivity.NOT_SENSITIVE, e.getLocalizedMessage());
+                }
+			}
             finally
             {
                 if (selector != null)
@@ -413,94 +430,6 @@ public class ServerSelector implements IAbortIndicator
             }
         }
 
-        private void makeConnectionViaHTTPProxy(String proxyUsername, String proxyPassword) throws IOException
-        {
-            Socket sock = this.channel.socket();
-
-            // The following is mostly copied from ch.ethz.ssh2.transport.TransportManager.establishConnection()
-
-            sock.setSoTimeout(0);
-
-            /* OK, now tell the proxy where we actually want to connect to */
-
-            StringBuffer sb = new StringBuffer();
-
-            sb.append("CONNECT ");
-            sb.append(this.entry.ipAddress);
-            sb.append(':');
-            sb.append(this.entry.getPreferredReachablityTestPort());
-            sb.append(" HTTP/1.0\r\n");
-
-            if ((proxyUsername != null) && (proxyPassword != null))
-            {
-                String credentials = proxyUsername + ":" + proxyPassword;
-                char[] encoded = Base64.encode(StringEncoder.GetBytes(credentials));
-                sb.append("Proxy-Authorization: Basic ");
-                sb.append(encoded);
-                sb.append("\r\n");
-            }
-
-            sb.append("\r\n");
-
-            OutputStream out = sock.getOutputStream();
-
-            out.write(StringEncoder.GetBytes(sb.toString()));
-            out.flush();
-
-            /* Now parse the HTTP response */
-
-            byte[] buffer = new byte[1024];
-            InputStream in = sock.getInputStream();
-
-            int len = ClientServerHello.readLineRN(in, buffer);
-
-            String httpResponse = StringEncoder.GetString(buffer, 0, len);
-
-            if (httpResponse.startsWith("HTTP/") == false)
-            {
-                throw new IOException("The proxy did not send back a valid HTTP response.");
-            }
-
-            /* "HTTP/1.X XYZ X" => 14 characters minimum */
-
-            if ((httpResponse.length() < 14) || (httpResponse.charAt(8) != ' ') || (httpResponse.charAt(12) != ' '))
-            {
-                throw new IOException("The proxy did not send back a valid HTTP response.");
-            }
-
-            int errorCode = 0;
-
-            try
-            {
-                errorCode = Integer.parseInt(httpResponse.substring(9, 12));
-            }
-            catch (NumberFormatException ignore)
-            {
-                throw new IOException("The proxy did not send back a valid HTTP response.");
-            }
-
-            if ((errorCode < 0) || (errorCode > 999))
-            {
-                throw new IOException("The proxy did not send back a valid HTTP response.");
-            }
-
-            if (errorCode != 200)
-            {
-                throw new HTTPProxyException(httpResponse.substring(13), errorCode);
-            }
-
-            /* OK, read until empty line */
-
-            while (true)
-            {
-                len = ClientServerHello.readLineRN(in, buffer);
-                if (len == 0)
-                {
-                    break;
-                }
-            }
-            return;
-        }
     }
 
     class Coordinator implements Runnable
