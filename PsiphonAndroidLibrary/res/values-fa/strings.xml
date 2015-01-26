@@ -107,9 +107,9 @@
   <string name="compression_savings">%s ذخیره شد</string>
   <string name="start">شروع کن</string>
   <string name="stop">متوقف کن</string>
-  <string name="status_tab_name">وضعیت</string>
+  <string name="home_tab_name">خانه</string>
   <string name="settings_tab_name">گزینه‌ها </string>
-  <string name="statistics_tab_name">آمار</string>
+  <string name="statistics_tab_name">آمارها</string>
   <string name="logs_tab_name">لاگ</string>
   <string name="socks_proxy_address">ساکس محلی فعال است s%</string>
   <string name="http_proxy_address">پراکسی اچ تی تی پی فعال است در s%</string>

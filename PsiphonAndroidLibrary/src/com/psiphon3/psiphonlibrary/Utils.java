@@ -32,6 +32,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 
@@ -41,13 +42,15 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpRequestBaseHC4;
 import org.apache.http.conn.util.InetAddressUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.xbill.DNS.ResolverConfig;
 
 import de.schildbach.wallet.util.LinuxSecureRandom;
-
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
@@ -56,6 +59,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.ConnectivityManager;
+import android.net.LinkProperties;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.util.Log;
@@ -909,6 +913,7 @@ public class Utils
         return String.format("%02dh %02dm %02ds", hours, minutes, seconds);
     }
     
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public static Collection<InetAddress> getActiveNetworkDnsResolvers(Context context)
     {
         ArrayList<InetAddress> dnsAddresses = new ArrayList<InetAddress>();
@@ -933,7 +938,6 @@ public class Utils
                 }
 
             services/java/com/android/server/ConnectivityService.java:
-
 
                 /*
                  * Return LinkProperties for the active (i.e., connected) default
@@ -977,13 +981,24 @@ public class Utils
 
             Object linkProperties = getActiveLinkPropertiesMethod.invoke(connectivityManager);
             
-            Method getDnsesMethod = LinkPropertiesClass.getMethod("getDnses", new Class []{});
-
-            Collection<?> dnses = (Collection<?>)getDnsesMethod.invoke(linkProperties);
-            
-            for (Object dns : dnses)
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
             {
-                dnsAddresses.add((InetAddress)dns);
+                Method getDnsesMethod = LinkPropertiesClass.getMethod("getDnses", new Class []{});
+    
+                Collection<?> dnses = (Collection<?>)getDnsesMethod.invoke(linkProperties);
+                
+                for (Object dns : dnses)
+                {
+                    dnsAddresses.add((InetAddress)dns);
+                }
+            }
+            else
+            {
+                // LinkProperties is now available in API 21 (and the DNS function signature has changed)
+                for (InetAddress dns : ((LinkProperties)linkProperties).getDnsServers())
+                {
+                    dnsAddresses.add(dns);
+                }
             }
         }
         catch (ClassNotFoundException e)
@@ -1162,5 +1177,35 @@ public class Utils
                 outputStream.close();
             }
         } catch (IOException e) {}
+    }
+    
+    public static void closeHelper(CloseableHttpResponse response) {
+        try {
+            if (response != null) {
+                response.close();
+            }
+        } catch (IOException e) {}
+    }
+    
+    public static void closeHelper(CloseableHttpClient httpClient) {
+        try {
+            if (httpClient != null) {
+                httpClient.close();
+            }
+        } catch (IOException e) {}
+    }
+    
+    public static class RequestTimeoutAbort extends TimerTask {
+        private HttpRequestBaseHC4 httpRequest;
+        RequestTimeoutAbort(HttpRequestBaseHC4 request) {
+            httpRequest = request;
+        }
+        @Override
+        public void run() {
+            if (httpRequest != null)
+            {
+                httpRequest.abort();
+            }
+        }
     }
 }
