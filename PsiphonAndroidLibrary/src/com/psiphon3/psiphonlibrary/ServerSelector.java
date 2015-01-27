@@ -219,30 +219,29 @@ public class ServerSelector implements IAbortIndicator
                         protectSocket.doVpnProtect(this.channel.socket());
                     }
 
-                    if (proxySettings != null)
-                    {
-						this.usingHTTPProxy = true;
+                    if (proxySettings != null) {
+                        this.usingHTTPProxy = true;
 
-						makeSocketChannelConnection(selector,
-								proxySettings.proxyHost,
-								proxySettings.proxyPort);
-						this.channel.finishConnect();
-						selector.close();
-						this.channel.configureBlocking(true);
+                        makeSocketChannelConnection(selector,
+                                proxySettings.proxyHost,
+                                proxySettings.proxyPort);
+                        this.channel.finishConnect();
+                        selector.close();
+                        this.channel.configureBlocking(true);
 
-						HttpHost httpproxy = new HttpHost(
-								proxySettings.proxyHost,
-								proxySettings.proxyPort);
-						HttpHost target = new HttpHost(this.entry.ipAddress,
-								this.entry.getPreferredReachablityTestPort());
+                        HttpHost httpproxy = new HttpHost(
+                                proxySettings.proxyHost,
+                                proxySettings.proxyPort);
+                        HttpHost target = new HttpHost(this.entry.ipAddress,
+                                this.entry.getPreferredReachablityTestPort());
 
-						SocketProxyTunneler sockProxyTunneler = new SocketProxyTunneler();
-						sockProxyTunneler.tunnel(this.channel.socket(),
-								httpproxy, target, PsiphonData.getPsiphonData()
-										.getProxyCredentials());
+                        SocketProxyTunneler sockProxyTunneler = new SocketProxyTunneler();
+                        sockProxyTunneler.tunnel(this.channel.socket(),
+                                httpproxy, target, PsiphonData.getPsiphonData()
+                                .getProxyCredentials());
 
-						socketConnected = true;
-					}
+                        socketConnected = true;
+                    }
                     else
                     {
                         makeSocketChannelConnection(selector,
@@ -370,12 +369,13 @@ public class ServerSelector implements IAbortIndicator
                 {
                     MyLog.w(R.string.network_proxy_connect_exception, MyLog.Sensitivity.NOT_SENSITIVE, e.getLocalizedMessage());
                 }
-            } catch (HttpException e) {
-                if (proxySettings != null)
+            } catch (HttpException e) 
+            {
+                if (proxySettings != null) 
                 {
                     MyLog.w(R.string.network_proxy_connect_exception, MyLog.Sensitivity.NOT_SENSITIVE, e.getLocalizedMessage());
                 }
-			}
+            }
             finally
             {
                 if (selector != null)
