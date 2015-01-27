@@ -32,7 +32,7 @@
             android:title="@string/use_proxy_settings_toggle" >
         </CheckBoxPreference>
         <com.psiphon3.psiphonlibrary.RadioButtonPreference
-            android:defaultValue="false"
+            android:defaultValue="true"
             android:enabled="true"
             android:key="@string/useSystemProxySettingsPreference"
             android:selectable="true"
