@@ -110,7 +110,6 @@ public class SocketProxyTunneler {
             final Credentials credentials) throws IOException, HttpException {
         Args.notNull(proxy, "Proxy host");
         Args.notNull(target, "Target host");
-        Args.notNull(credentials, "Credentials");
         HttpHost host = target;
         if (host.getPort() <= 0) {
             host = new HttpHost(host.getHostName(), 80, host.getSchemeName());
@@ -128,8 +127,6 @@ public class SocketProxyTunneler {
         final HttpRequest connect = new BasicHttpRequest(
                 "CONNECT", host.toHostString(), HttpVersion.HTTP_1_1);
 
-        final BasicCredentialsProviderHC4 credsProvider = new BasicCredentialsProviderHC4();
-        credsProvider.setCredentials(new AuthScope(proxy.getHostName(), proxy.getPort()), credentials);
 
         // Populate the execution context
         context.setAttribute(HttpCoreContext.HTTP_TARGET_HOST, target);
@@ -137,9 +134,14 @@ public class SocketProxyTunneler {
         context.setAttribute(HttpCoreContext.HTTP_REQUEST, connect);
         context.setAttribute(HttpClientContext.HTTP_ROUTE, route);
         context.setAttribute(HttpClientContext.PROXY_AUTH_STATE, this.proxyAuthState);
-        context.setAttribute(HttpClientContext.CREDS_PROVIDER, credsProvider);
         context.setAttribute(HttpClientContext.AUTHSCHEME_REGISTRY, this.authSchemeRegistry);
         context.setAttribute(HttpClientContext.REQUEST_CONFIG, this.requestConfig);
+
+        if(credentials != null) {
+        	final BasicCredentialsProviderHC4 credsProvider = new BasicCredentialsProviderHC4();
+        	credsProvider.setCredentials(new AuthScope(proxy.getHostName(), proxy.getPort()), credentials);
+        	context.setAttribute(HttpClientContext.CREDS_PROVIDER, credsProvider);
+        }
 
         this.requestExec.preProcess(connect, this.httpProcessor, context);
         

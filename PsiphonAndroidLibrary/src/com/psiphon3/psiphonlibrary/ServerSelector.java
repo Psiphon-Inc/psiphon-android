@@ -369,7 +369,8 @@ public class ServerSelector implements IAbortIndicator
                 {
                     MyLog.w(R.string.network_proxy_connect_exception, MyLog.Sensitivity.NOT_SENSITIVE, e.getLocalizedMessage());
                 }
-            } catch (HttpException e) 
+            } 
+            catch (HttpException e) 
             {
                 if (proxySettings != null) 
                 {
@@ -418,7 +419,12 @@ public class ServerSelector implements IAbortIndicator
 
         private void makeSocketChannelConnection(Selector selector, String ipAddress, int port) throws IOException
         {
-            this.channel.connect(new InetSocketAddress(ipAddress, port));
+        	InetSocketAddress sockAddr = new InetSocketAddress(ipAddress, port);
+        	if (sockAddr.isUnresolved())
+        	{
+        		throw new IOException("Cannot resolve network address for "+ ipAddress + ":" + port);
+        	}
+            this.channel.connect(sockAddr);
             this.channel.register(selector, SelectionKey.OP_CONNECT);
 
             while (selector.select(SHUTDOWN_POLL_MILLISECONDS) == 0)

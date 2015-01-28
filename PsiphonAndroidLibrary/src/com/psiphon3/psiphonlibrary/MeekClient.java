@@ -282,11 +282,11 @@ public class MeekClient {
                 ProtectedSSLConnectionSocketFactory sslSocketFactory = new ProtectedSSLConnectionSocketFactory(
                         mProtectSocket, sslContext, SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
                 registryBuilder.register("https",  sslSocketFactory);                
-            } else {
-                ProtectedPlainConnectionSocketFactory plainSocketFactory = new ProtectedPlainConnectionSocketFactory(mProtectSocket);
-                registryBuilder.register("http",  plainSocketFactory); 
-            }
+            } 
             
+            //Always register http scheme for HTTP proxy support
+            ProtectedPlainConnectionSocketFactory plainSocketFactory = new ProtectedPlainConnectionSocketFactory(mProtectSocket);
+            registryBuilder.register("http",  plainSocketFactory); 
             Registry<ConnectionSocketFactory> socketFactoryRegistry = registryBuilder.build();
 
             // Use ProtectedDnsResolver to resolve the fronting domain outside of the tunnel
