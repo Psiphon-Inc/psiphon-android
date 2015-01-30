@@ -29,6 +29,7 @@ import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceScreen;
+import android.text.InputType;
 
 public class MoreOptionsPreferenceActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener,
         OnPreferenceClickListener {
@@ -137,7 +138,19 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
             EditTextPreference editTextPref = (EditTextPreference) pref;
             String summary = editTextPref.getText();
             if (summary != null && !summary.isEmpty()) {
-                editTextPref.setSummary(editTextPref.getText());
+                //hide passwords
+                //http://stackoverflow.com/questions/15044595/preventing-edittextpreference-from-updating-summary-for-inputtype-password
+                int inputType = editTextPref.getEditText().getInputType() & InputType.TYPE_MASK_VARIATION;
+                boolean isPassword = ((inputType  == InputType.TYPE_NUMBER_VARIATION_PASSWORD)
+                        ||(inputType  == InputType.TYPE_TEXT_VARIATION_PASSWORD)
+                        ||(inputType  == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD));
+
+                if (isPassword) {
+                    editTextPref.setSummary(editTextPref.getText().replaceAll(".", "*"));
+                }
+                else {
+                    editTextPref.setSummary(editTextPref.getText());
+                }
             } else {
                 editTextPref.setSummary((CharSequence) editTextPref.getExtras().get("default_summary"));
             }

@@ -1300,17 +1300,14 @@ public abstract class MainBase {
                 startTunnelService(this);
             } else if (request == REQUEST_CODE_PREFERENCE) {
                 // detect if a restart needed due to proxy settings change
-                boolean restart = isProxySettingsRestartRequired();
+                boolean restart = isProxySettingsRestartRequired() && isServiceRunning();
+                
                 if (restart) {
-                    if (isServiceRunning()) {
-                        stopTunnel(this);
-                    }
-
-                    updateProxySettingsFromPreferences();
-
-                    if (restart && !isServiceRunning()) {
-                        startTunnel(this);
-                    }
+                    stopTunnel(this);
+                }
+                updateProxySettingsFromPreferences();
+                if (restart && !isServiceRunning()) {
+                    startTunnel(this);
                 }
             }
         }
