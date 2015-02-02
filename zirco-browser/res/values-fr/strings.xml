@@ -159,6 +159,7 @@
   <string name="PreferencesActivity.UserAgentCustom">Personnalisé</string>
   <string name="Main.MenuCopyLinkUrl">Copier l\'adresse du lien</string>
   <string name="Main.MenuViewImage">Afficher l\'image</string>
+  <string name="Main.MenuCopyImageUrl">Copier l\'URL de l\'image</string>
   <string name="Main.MenuDownloadImage">Télécharger l\'image</string>
   <string name="Main.MenuSendEmail">Envoyer un e-mail</string>
   <string name="Main.MenuCopyEmailUrl">Copier l\'adresse mail</string>
@@ -227,6 +228,7 @@
   <string name="QuickAction.Share">Partager</string>
   <string name="QuickAction.SelectText">Sélectionner le texte</string>
   <string name="QuickAction.MobileView">Vue mobile</string>
+  <string name="AboutActivity.OtherLicenseText">Cette application inclut du code issu du projet Zirco Browser (https://code.google.com/p/zirco-browser/) publié sous licence GPLv3; Elle inclut aussi du code issu du projet GreenDroid (https://github.com/cyrilmottier/GreenDroid), et du projet Shaman (https://github.com/emergentdotorg/shaman), tous les deux publiés sous la licence Apache, version 2.</string>
   <string name="PreferencesActivity.WeavePreferenceTitle">Synchronisation des marques-page de Firefox</string>
   <string name="PreferencesActivity.WeavePreferenceSummary">Gerer la configuration de la synchronisation des marques-page avec Firefox Sync</string>
   <string name="PreferencesActivity.UseWeavePreferenceTitle">Utiliser Firefox Sync</string>
