@@ -183,11 +183,6 @@ public class ServerSelector implements IAbortIndicator
 
             try
             {
-                this.channel = SocketChannel.open();
-
-                this.channel.configureBlocking(false);
-                selector = Selector.open();
-
                 String protocol = ServerSelector.this.targetProtocolState.selectProtocol(this.entry);
                 
                 // This check is already performed in the coordinator which filters out workers for
@@ -211,6 +206,10 @@ public class ServerSelector implements IAbortIndicator
                 
                 this.entry.connType = protocol;
                 
+                this.channel = SocketChannel.open();
+                this.channel.configureBlocking(false);
+                selector = Selector.open();
+
                 boolean socketConnected = false;
 
                 if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_OSSH))
