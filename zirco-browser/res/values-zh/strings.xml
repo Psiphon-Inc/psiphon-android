@@ -160,6 +160,7 @@
   <string name="PreferencesActivity.UserAgentCustom">自定义</string>
   <string name="Main.MenuCopyLinkUrl">复制链接URL</string>
   <string name="Main.MenuViewImage">显示图像</string>
+  <string name="Main.MenuCopyImageUrl">复制图像地址</string>
   <string name="Main.MenuDownloadImage">下载图像</string>
   <string name="Main.MenuSendEmail">发送电子邮件</string>
   <string name="Main.MenuCopyEmailUrl">复制电子邮件URL</string>
@@ -228,6 +229,7 @@
   <string name="QuickAction.Share">共享</string>
   <string name="QuickAction.SelectText">选择文本</string>
   <string name="QuickAction.MobileView">移动视图</string>
+  <string name="AboutActivity.OtherLicenseText">本程序包含来自 Zirco Browser 项目的源代码 (https://code.google.com/p/zirco-browser/), 以 GPLv3 许可授权. 还包含来自 GreenDroid 项目的源代码 (https://github.com/cyrilmottier/GreenDroid), 以及来自 Shaman 项目的源代码 (https://github.com/emergentdotorg/shaman), 两者均以 Apache 第 2 版许可授权.</string>
   <string name="PreferencesActivity.WeavePreferenceTitle">火狐书签同步</string>
   <string name="PreferencesActivity.WeavePreferenceSummary">使用火狐同步来管理书签的设置.</string>
   <string name="PreferencesActivity.UseWeavePreferenceTitle">使用火狐同步</string>
