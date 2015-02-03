@@ -149,4 +149,5 @@
   <string name="preference_notifications_with_vibrate_title">ویبره</string>
   <string name="preference_notifications_with_vibrate_summary">وقتی وضعیت اتصال تغییر میکند موبایل ویبره کند. </string>
   <string name="moreOptions">گزینه های بیشتر</string>
+  <string name="root_mode_not_supported">این نسخه اندروید از حالت روت پشتیبانی نمی کند</string>
 </resources>

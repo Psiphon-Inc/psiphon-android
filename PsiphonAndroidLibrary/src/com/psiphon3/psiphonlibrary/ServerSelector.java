@@ -35,6 +35,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -59,6 +60,58 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 public class ServerSelector implements IAbortIndicator
 {
+    // TargetProtocolState tracks which set of protocols are currently
+    // targeted for the current round of connection attempts. This
+    // class also defines the sequence of targets, and the priority
+    // order of protocols when a server supports multiple protocols.
+    public static class TargetProtocolState
+    {
+        private int mCurrentTarget = 0;
+
+        @SuppressWarnings("unchecked")
+        private List<List<String>> mTargets =
+                Arrays.asList(
+                        Arrays.asList(PsiphonConstants.RELAY_PROTOCOL_OSSH,
+                                      PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH,
+                                      PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH),
+
+                        Arrays.asList(PsiphonConstants.RELAY_PROTOCOL_OSSH),
+
+                        Arrays.asList(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH),
+
+                        Arrays.asList(PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH)
+                        );
+        
+        public synchronized void rotateTarget()
+        {
+            MyLog.w(R.string.rotating_target_protocol_state, MyLog.Sensitivity.NOT_SENSITIVE);
+            mCurrentTarget = (mCurrentTarget + 1) % mTargets.size();
+        }
+        
+        public synchronized String selectProtocol(ServerEntry serverEntry)
+        {
+            for (String protocol : mTargets.get(mCurrentTarget))
+            {
+                if (serverEntry.supportsProtocol(protocol))
+                {
+                    return protocol;
+                }
+            }
+            return null;
+        }
+        
+        public synchronized String currentProtocols()
+        {
+            StringBuilder currentProtocolsBuilder = new StringBuilder();
+            for (String protocol : mTargets.get(mCurrentTarget))
+            {
+                currentProtocolsBuilder.append(protocol);
+                currentProtocolsBuilder.append(" ");
+            }
+            return currentProtocolsBuilder.toString().trim();
+        }
+    }
+    
     private final int NUM_THREADS = 10;
 
     private final int SHUTDOWN_POLL_MILLISECONDS = 50;
@@ -66,6 +119,7 @@ public class ServerSelector implements IAbortIndicator
     private final int SHUTDOWN_TIMEOUT_MILLISECONDS = 1000;
     private final int MAX_WORK_TIME_MILLISECONDS = 20000;
 
+    private TargetProtocolState targetProtocolState = null;
     private Connection.IStopSignalPending stopSignalPending = null;
     private Tun2Socks.IProtectSocket protectSocket = null;
     private ServerInterface serverInterface = null;
@@ -84,11 +138,13 @@ public class ServerSelector implements IAbortIndicator
     public String firstEntryIpAddress = null;
 
     ServerSelector(
+            TargetProtocolState targetProtocolState,
             Connection.IStopSignalPending stopSignalPending,
             Tun2Socks.IProtectSocket protectSocket,
             ServerInterface serverInterface,
             Context context)
     {
+        this.targetProtocolState = targetProtocolState;
         this.stopSignalPending = stopSignalPending;
         this.protectSocket = protectSocket;
         this.serverInterface = serverInterface;
@@ -127,13 +183,65 @@ public class ServerSelector implements IAbortIndicator
 
             try
             {
-                this.channel = SocketChannel.open();
+                String protocol = ServerSelector.this.targetProtocolState.selectProtocol(this.entry);
+                
+                // This check is already performed in the coordinator which filters out workers for
+                // server entries that don't support the target protocol, but we're leaving this here
+                // anyways.
+                if (protocol == null)
+                {
+                    // The server does not support a target protocol
+                    return;
+                }
 
+                // TODO: Add upstream HTTP proxy support to other protocols.
+                if (proxySettings != null && !protocol.equals(PsiphonConstants.RELAY_PROTOCOL_OSSH))
+                {
+                    return;
+                }
+                
+                // Even though the ServerEntry here is a clone, assigning to it
+                // works because ServerSelector merges it back in for the servers
+                // that respond.
+                
+                this.entry.connType = protocol;
+                
+                this.channel = SocketChannel.open();
                 this.channel.configureBlocking(false);
                 selector = Selector.open();
 
-                // TODO: Add HTTP proxy support to MeekClient. Currently, since that support
-                // is lacking, these cases are treated as mutually exclusive.
+                boolean socketConnected = false;
+
+                if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_OSSH))
+                {
+                    if (protectSocketsRequired)
+                    {
+                        // We may need to except this connection from the VpnService tun interface
+                        protectSocket.doVpnProtect(this.channel.socket());
+                    }
+
+                    if (proxySettings != null)
+                    {
+                        this.usingHTTPProxy = true;
+    
+                        makeSocketChannelConnection(selector, proxySettings.proxyHost, proxySettings.proxyPort);
+                        this.channel.finishConnect();
+                        selector.close();
+                        this.channel.configureBlocking(true);
+    
+                        makeConnectionViaHTTPProxy(null, null);
+    
+                        socketConnected = true;
+                    }
+                    else
+                    {
+                        makeSocketChannelConnection(selector,
+                                this.entry.ipAddress,
+                                this.entry.getPreferredReachablityTestPort());
+
+                        socketConnected = this.channel.finishConnect();
+                    }
+                }
 
                 // Meek cases:
                 // 1. Create a new meek client with the selected meek configuration. The meek client
@@ -143,35 +251,28 @@ public class ServerSelector implements IAbortIndicator
                 // 3. The meek client is a static port forward to the selected Psiphon server, so call
                 //    makeSocketChannelConnection with the meek client address in place of the Psiphon server
 
-
-                // Even though the ServerEntry here is a clone, assigning to it
-                // works because ServerSelector merges it back in for the servers
-                // that respond.
                 
-                boolean socketConnected = false;
-
-                if (proxySettings != null)
+                else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH))
                 {
-                    if (protectSocketsRequired)
-                    {
-                        // We may need to except this connection from the VpnService tun interface
-                        protectSocket.doVpnProtect(this.channel.socket());
-                    }
+                    // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
 
-                    this.usingHTTPProxy = true;
+                    this.meekClient = new MeekClient(
+                            protectSocketsRequired ? ServerSelector.this.protectSocket : null,
+                            ServerSelector.this.serverInterface,
+                            ServerSelector.this.clientSessionId,
+                            this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
+                            this.entry.meekCookieEncryptionPublicKey,
+                            this.entry.meekObfuscatedKey,
+                            this.entry.ipAddress,
+                            this.entry.meekServerPort);
+                    this.meekClient.start();
 
-                    makeSocketChannelConnection(selector, proxySettings.proxyHost, proxySettings.proxyPort);
-                    this.channel.finishConnect();
-                    selector.close();
-                    this.channel.configureBlocking(true);
+                    makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
 
-                    makeConnectionViaHTTPProxy(null, null);
-
-                    socketConnected = true;
-
-                    this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_OSSH;
+                    socketConnected = this.channel.finishConnect();
                 }
-                else if (this.entry.hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
+
+                else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH))
                 {
                     // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
 
@@ -190,45 +291,7 @@ public class ServerSelector implements IAbortIndicator
 
                     socketConnected = this.channel.finishConnect();
 
-                    this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH;
                     this.entry.front = this.entry.meekFrontingDomain;
-                }
-                else if (this.entry.hasCapability(ServerEntry.CAPABILITY_UNFRONTED_MEEK))
-                {
-                    // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
-
-                    this.meekClient = new MeekClient(
-                            protectSocketsRequired ? ServerSelector.this.protectSocket : null,
-                            ServerSelector.this.serverInterface,
-                            ServerSelector.this.clientSessionId,
-                            this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
-                            this.entry.meekCookieEncryptionPublicKey,
-                            this.entry.meekObfuscatedKey,
-                            this.entry.ipAddress,
-                            this.entry.meekServerPort);
-                    this.meekClient.start();
-
-                    makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
-
-                    socketConnected = this.channel.finishConnect();
-
-                    this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH;
-                }
-                else
-                {
-                    if (protectSocketsRequired)
-                    {
-                        // We may need to except this connection from the VpnService tun interface
-                        protectSocket.doVpnProtect(this.channel.socket());
-                    }
-
-                    makeSocketChannelConnection(selector,
-                            this.entry.ipAddress,
-                            this.entry.getPreferredReachablityTestPort());
-
-                    socketConnected = this.channel.finishConnect();
-
-                    this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_OSSH;
                 }
 
                 if (socketConnected)
@@ -451,12 +514,17 @@ public class ServerSelector implements IAbortIndicator
             while (!stopFlag)
             {
                 MyLog.v(R.string.selecting_server, MyLog.Sensitivity.NOT_SENSITIVE);
+                MyLog.g("TargetProtocols", "protocols", ServerSelector.this.targetProtocolState.currentProtocols());
 
                 if (runOnce())
                 {
                     // We have a server
                     break;
                 }
+                
+                // After failing to establish a connection, rotate to the next
+                // set of target protocols.
+                ServerSelector.this.targetProtocolState.rotateTarget();
 
                 // After failing to establish a TCP connection, perform the same
                 // steps as we do when an SSH connection fails:
@@ -566,7 +634,8 @@ public class ServerSelector implements IAbortIndicator
             {
                 if (-1 != entry.getPreferredReachablityTestPort() &&
                         entry.hasOneOfTheseCapabilities(PsiphonConstants.SUFFICIENT_CAPABILITIES_FOR_TUNNEL) &&
-                        entry.inRegion(egressRegion))
+                        entry.inRegion(egressRegion) &&
+                        null != ServerSelector.this.targetProtocolState.selectProtocol(entry))
                 {
                     CheckServerWorker worker = new CheckServerWorker(entry);
                     threadPool.submit(worker);
