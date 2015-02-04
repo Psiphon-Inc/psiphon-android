@@ -237,7 +237,7 @@ public class ServerSelector implements IAbortIndicator
                 // that respond.
                 
                 this.entry.connType = protocol;
-                
+
                 if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_OSSH))
                 {
                     if (proxySettings != null) {
