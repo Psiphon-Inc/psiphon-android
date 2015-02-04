@@ -148,4 +148,5 @@
   <string name="preference_notifications_with_vibrate_title">Vibración</string>
   <string name="preference_notifications_with_vibrate_summary">Vibra cuando el estado de la conexión cambia</string>
   <string name="moreOptions">Más opciones</string>
+  <string name="root_mode_not_supported">El modo root no está soportado en esta versión de Android</string>
 </resources>
