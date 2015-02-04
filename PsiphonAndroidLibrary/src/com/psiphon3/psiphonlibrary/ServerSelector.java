@@ -271,8 +271,7 @@ public class ServerSelector implements IAbortIndicator
                 // 3. The meek client is a static port forward to the selected Psiphon server, so call
                 //    makeSocketChannelConnection with the meek client address in place of the Psiphon server
 
-                //Disable meek for testing
-                else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH) && protocol.equals(0))
+                else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH))
                 {
 
                     this.meekClient = new MeekClient(
@@ -292,7 +291,7 @@ public class ServerSelector implements IAbortIndicator
                     this.socket = connectSocket(false, MAX_WORK_TIME_MILLISECONDS, "127.0.0.1", this.meekClient.getLocalPort());
                 }
 
-                else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH) && protocol.equals(0))
+                else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH))
                 {
                     this.meekClient = new MeekClient(
                             protectSocketsRequired ? ServerSelector.this.protectSocket : null,
