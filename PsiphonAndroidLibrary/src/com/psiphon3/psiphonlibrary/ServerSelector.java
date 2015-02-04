@@ -518,7 +518,9 @@ public class ServerSelector implements IAbortIndicator
 					Socket socket = connectSocket(protectSocketsRequired,
 							MAX_WORK_TIME_MILLISECONDS, proxy.getHostName(),
 							proxy.getPort());
-					conn.bind(socket);
+					if(socket != null) {
+						conn.bind(socket);
+					}
 	            }
 
 	            
