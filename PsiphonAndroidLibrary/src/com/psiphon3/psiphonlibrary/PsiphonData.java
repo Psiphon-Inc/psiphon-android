@@ -450,14 +450,14 @@ public class PsiphonData
 		String password = getProxyPassword();
 		String domain = getProxyDomain();
 		
-		if (username == null || username.isEmpty()) {
+		if (username == null || username.trim().equals("")) {
 			return null;
 		}
-		if (password == null || password.isEmpty()) {
+		if (password == null || password.trim().equals("")) {
 			return null;
 		}
-		if (domain == null || domain.isEmpty()) {
-			return new UsernamePasswordCredentials(username, password);
+		if (domain == null || domain.trim().equals("")) {
+			return new NTCredentials(username, password, "", "");
 		}
 		
 		String localHost;
