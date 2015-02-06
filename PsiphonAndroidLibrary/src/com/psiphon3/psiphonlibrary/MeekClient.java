@@ -51,13 +51,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Timer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLContext;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
+import org.apache.http.auth.AuthProtocolState;
+import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.AuthStateHC4;
 import org.apache.http.auth.Credentials;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CookieStore;
@@ -130,6 +134,7 @@ public class MeekClient {
     private int mLocalPort = -1;
     private Set<Socket> mClients;
     private final Context mContext;
+    private final AtomicBoolean mPrintedProxyAuth = new AtomicBoolean(false);
     
     public enum MeekProtocol {FRONTED, UNFRONTED};
 
@@ -401,6 +406,15 @@ public class MeekClient {
                             MyLog.w(R.string.meek_http_request_error, MyLog.Sensitivity.NOT_SENSITIVE, statusCode);
                             // Retry (or abort)
                             continue;
+                        }
+                        
+                        AuthStateHC4 authState = (AuthStateHC4) httpClientContext.getAttribute(HttpClientContext.PROXY_AUTH_STATE);
+                        AuthScheme authScheme = authState.getAuthScheme(); 
+                        
+                        //Log proxy auth only once per meek session 
+                        if (mPrintedProxyAuth.compareAndSet(false, true) && 
+                                authState.getState() == AuthProtocolState.SUCCESS && authScheme != null) {
+                            MyLog.g("ProxyAuthentication", "Scheme", authScheme.getSchemeName());
                         }
                         
                         List<Cookie> responseCookies = httpClientContext.getCookieStore().getCookies();

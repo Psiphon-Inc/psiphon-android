@@ -49,6 +49,8 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
 import org.apache.http.auth.AUTH;
+import org.apache.http.auth.AuthProtocolState;
+import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthSchemeProvider;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.AuthStateHC4;
@@ -569,7 +571,14 @@ public class ServerSelector implements IAbortIndicator
 	            throw new TunnelRefusedException("CONNECT refused by proxy: " +
 	                    response.getStatusLine(), response);
 	        }
-	        	return conn.getSocket();
+	        
+            AuthStateHC4 authState = (AuthStateHC4) context.getAttribute(HttpClientContext.PROXY_AUTH_STATE);
+            AuthScheme authScheme = authState.getAuthScheme();
+            if (authState.getState() == AuthProtocolState.SUCCESS && authScheme != null) {
+                MyLog.g("ProxyAuthentication", "Scheme", authScheme.getSchemeName());
+            }
+	        
+			return conn.getSocket();
 	    }
     }
 
@@ -694,6 +703,10 @@ public class ServerSelector implements IAbortIndicator
 
             if (proxySettings != null)
             {
+            	
+                Credentials proxyCredentials = PsiphonData.getPsiphonData().getProxyCredentials();
+                MyLog.g("ProxyCredentials", "present",
+                		proxyCredentials == null ? "False" : "True");
                 MyLog.i(R.string.network_proxy_connect_information, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS,
                         proxySettings.proxyHost + ":" + proxySettings.proxyPort);
             }
