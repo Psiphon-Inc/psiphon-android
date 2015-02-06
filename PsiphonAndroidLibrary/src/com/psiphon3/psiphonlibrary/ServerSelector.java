@@ -460,126 +460,124 @@ public class ServerSelector implements IAbortIndicator
         	        }
         	    }
 
-        private Socket httpTunnelSocket(boolean protectSocketsRequired, long timeout, HttpHost proxy, HttpHost target, 
-				Credentials credentials) throws IOException, HttpException{
-			HttpConnectionFactory<HttpRoute, ManagedHttpClientConnection> connFactory = ManagedHttpClientConnectionFactory.INSTANCE;
-			ConnectionConfig connectionConfig = ConnectionConfig.DEFAULT;
-			RequestConfig requestConfig = RequestConfig.DEFAULT;
-			HttpProcessor httpProcessor = new ImmutableHttpProcessor(
-					new RequestTargetHostHC4(), new RequestClientConnControl(),
-					new RequestUserAgentHC4());
-			HttpRequestExecutor requestExec = new HttpRequestExecutor();
-			ProxyAuthenticationStrategy proxyAuthStrategy = ProxyAuthenticationStrategy.INSTANCE;
-			HttpAuthenticator authenticator = new HttpAuthenticator();
-			AuthStateHC4 proxyAuthState = new AuthStateHC4();
-			ConnectionReuseStrategy reuseStrategy = DefaultConnectionReuseStrategyHC4.INSTANCE;
+        private Socket httpTunnelSocket(boolean protectSocketsRequired, long timeout, HttpHost proxy, HttpHost target,
+                Credentials credentials) throws IOException, HttpException {
+            HttpConnectionFactory<HttpRoute, ManagedHttpClientConnection> connFactory = ManagedHttpClientConnectionFactory.INSTANCE;
+            ConnectionConfig connectionConfig = ConnectionConfig.DEFAULT;
+            RequestConfig requestConfig = RequestConfig.DEFAULT;
+            HttpProcessor httpProcessor = new ImmutableHttpProcessor(
+                    new RequestTargetHostHC4(), new RequestClientConnControl(),
+                    new RequestUserAgentHC4());
+            HttpRequestExecutor requestExec = new HttpRequestExecutor();
+            ProxyAuthenticationStrategy proxyAuthStrategy = ProxyAuthenticationStrategy.INSTANCE;
+            HttpAuthenticator authenticator = new HttpAuthenticator();
+            AuthStateHC4 proxyAuthState = new AuthStateHC4();
+            ConnectionReuseStrategy reuseStrategy = DefaultConnectionReuseStrategyHC4.INSTANCE;
 
-			Lookup<AuthSchemeProvider> authSchemeRegistry = RegistryBuilder
-					.<AuthSchemeProvider> create()
-					.register(AuthSchemes.BASIC, new BasicSchemeFactoryHC4())
-					.register(AuthSchemes.DIGEST, new DigestSchemeFactoryHC4())
-					.register(AuthSchemes.NTLM, new NTLMSchemeFactory())
-					.build();           
-	        HttpHost host = target;
-	        if (host.getPort() <= 0) {
-	            host = new HttpHost(host.getHostName(), 80, host.getSchemeName());
-	        }
-	        final HttpRoute route = new HttpRoute(
-	                host,
-	                requestConfig.getLocalAddress(),
-	                proxy, false, TunnelType.TUNNELLED, LayerType.PLAIN);
+            Lookup<AuthSchemeProvider> authSchemeRegistry = RegistryBuilder
+                    .<AuthSchemeProvider> create()
+                    .register(AuthSchemes.BASIC, new BasicSchemeFactoryHC4())
+                    .register(AuthSchemes.DIGEST, new DigestSchemeFactoryHC4())
+                    .register(AuthSchemes.NTLM, new NTLMSchemeFactory())
+                    .build();
+            HttpHost host = target;
+            if (host.getPort() <= 0) {
+                host = new HttpHost(host.getHostName(), 80, host.getSchemeName());
+            }
+            final HttpRoute route = new HttpRoute(
+                    host,
+                    requestConfig.getLocalAddress(),
+                    proxy, false, TunnelType.TUNNELLED, LayerType.PLAIN);
 
-	        final ManagedHttpClientConnection conn = connFactory.create(
-	                route, connectionConfig);
-	        final HttpContext context = new BasicHttpContextHC4();
-	        HttpResponse response;
+            final ManagedHttpClientConnection conn = connFactory.create(
+                    route, connectionConfig);
+            final HttpContext context = new BasicHttpContextHC4();
+            HttpResponse response;
 
-	        final HttpRequest connect = new BasicHttpRequest(
-	                "CONNECT", host.toHostString(), HttpVersion.HTTP_1_1);
+            final HttpRequest connect = new BasicHttpRequest(
+                    "CONNECT", host.toHostString(), HttpVersion.HTTP_1_1);
 
+            // Populate the execution context
+            context.setAttribute(HttpCoreContext.HTTP_TARGET_HOST, target);
+            context.setAttribute(HttpCoreContext.HTTP_CONNECTION, conn);
+            context.setAttribute(HttpCoreContext.HTTP_REQUEST, connect);
+            context.setAttribute(HttpClientContext.HTTP_ROUTE, route);
+            context.setAttribute(HttpClientContext.PROXY_AUTH_STATE, proxyAuthState);
+            context.setAttribute(HttpClientContext.AUTHSCHEME_REGISTRY, authSchemeRegistry);
+            context.setAttribute(HttpClientContext.REQUEST_CONFIG, requestConfig);
 
-	        // Populate the execution context
-	        context.setAttribute(HttpCoreContext.HTTP_TARGET_HOST, target);
-	        context.setAttribute(HttpCoreContext.HTTP_CONNECTION, conn);
-	        context.setAttribute(HttpCoreContext.HTTP_REQUEST, connect);
-	        context.setAttribute(HttpClientContext.HTTP_ROUTE, route);
-	        context.setAttribute(HttpClientContext.PROXY_AUTH_STATE, proxyAuthState);
-	        context.setAttribute(HttpClientContext.AUTHSCHEME_REGISTRY, authSchemeRegistry);
-	        context.setAttribute(HttpClientContext.REQUEST_CONFIG, requestConfig);
+            if (credentials != null) {
+                final BasicCredentialsProviderHC4 credsProvider = new BasicCredentialsProviderHC4();
+                credsProvider.setCredentials(AuthScope.ANY, credentials);
+                context.setAttribute(HttpClientContext.CREDS_PROVIDER, credsProvider);
+            }
 
-	        if(credentials != null) {
-	        	final BasicCredentialsProviderHC4 credsProvider = new BasicCredentialsProviderHC4();
-	        	credsProvider.setCredentials(AuthScope.ANY, credentials);
-	        	context.setAttribute(HttpClientContext.CREDS_PROVIDER, credsProvider);
-	        }
+            requestExec.preProcess(connect, httpProcessor, context);
 
-	        requestExec.preProcess(connect, httpProcessor, context);
+            for (;;) {
+                if (!conn.isOpen()) {
+                    Socket socket = connectSocket(protectSocketsRequired,
+                            MAX_WORK_TIME_MILLISECONDS, proxy.getHostName(),
+                            proxy.getPort());
+                    if (socket != null) {
+                        conn.bind(socket);
+                    }
+                }
 
-	        for (;;) {
-	            if (!conn.isOpen()) {
-					Socket socket = connectSocket(protectSocketsRequired,
-							MAX_WORK_TIME_MILLISECONDS, proxy.getHostName(),
-							proxy.getPort());
-					if(socket != null) {
-						conn.bind(socket);
-					}
-	            }
+                authenticator.generateAuthResponse(connect, proxyAuthState, context);
 
-	            
-	            authenticator.generateAuthResponse(connect, proxyAuthState, context);
+                response = requestExec.execute(connect, conn, context);
 
-	            response = requestExec.execute(connect, conn, context);
+                final int status = response.getStatusLine().getStatusCode();
+                if (status < 200) {
+                    throw new HttpException("Unexpected response to CONNECT request: " +
+                            response.getStatusLine());
+                }
+                if (authenticator.isAuthenticationRequested(proxy, response,
+                        proxyAuthStrategy, proxyAuthState, context)) {
+                    if (authenticator.handleAuthChallenge(proxy, response,
+                            proxyAuthStrategy, proxyAuthState, context)) {
+                        // Retry request
+                        if (reuseStrategy.keepAlive(response, context)) {
+                            // Consume response content
+                            final HttpEntity entity = response.getEntity();
+                            EntityUtilsHC4.consume(entity);
+                        } else {
+                            conn.close();
+                        }
+                        // discard previous auth header
+                        connect.removeHeaders(AUTH.PROXY_AUTH_RESP);
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
 
-	            final int status = response.getStatusLine().getStatusCode();
-	            if (status < 200) {
-	                throw new HttpException("Unexpected response to CONNECT request: " +
-	                        response.getStatusLine());
-	            }
-	            if (authenticator.isAuthenticationRequested(proxy, response,
-	                    proxyAuthStrategy, proxyAuthState, context)) {
-	                if (authenticator.handleAuthChallenge(proxy, response,
-	                        proxyAuthStrategy, proxyAuthState, context)) {
-	                	// Retry request
-	                    if (reuseStrategy.keepAlive(response, context)) {
-	                        // Consume response content
-	                        final HttpEntity entity = response.getEntity();
-	                        EntityUtilsHC4.consume(entity);
-	                    } else {
-	                        conn.close();
-	                    }
-	                    // discard previous auth header
-	                    connect.removeHeaders(AUTH.PROXY_AUTH_RESP);
-	                } else {
-	                    break;
-	                }
-	            } else {
-	                break;
-	            }
-	        }
+            final int status = response.getStatusLine().getStatusCode();
 
-	        final int status = response.getStatusLine().getStatusCode();
+            if (status > 299) {
 
-	        if (status > 299) {
+                // Buffer response content
+                final HttpEntity entity = response.getEntity();
+                if (entity != null) {
+                    response.setEntity(new BufferedHttpEntityHC4(entity));
+                }
 
-	            // Buffer response content
-	            final HttpEntity entity = response.getEntity();
-	            if (entity != null) {
-	                response.setEntity(new BufferedHttpEntityHC4(entity));
-	            }
+                conn.close();
+                throw new TunnelRefusedException("CONNECT refused by proxy: " +
+                        response.getStatusLine(), response);
+            }
 
-	            conn.close();
-	            throw new TunnelRefusedException("CONNECT refused by proxy: " +
-	                    response.getStatusLine(), response);
-	        }
-	        
             AuthStateHC4 authState = (AuthStateHC4) context.getAttribute(HttpClientContext.PROXY_AUTH_STATE);
             AuthScheme authScheme = authState.getAuthScheme();
             if (authState.getState() == AuthProtocolState.SUCCESS && authScheme != null) {
                 MyLog.g("ProxyAuthentication", "Scheme", authScheme.getSchemeName());
             }
-	        
-			return conn.getSocket();
-	    }
+
+            return conn.getSocket();
+        }
     }
 
     class Coordinator implements Runnable
