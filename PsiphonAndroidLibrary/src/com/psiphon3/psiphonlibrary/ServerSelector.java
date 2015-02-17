@@ -271,7 +271,7 @@ public class ServerSelector implements IAbortIndicator
                 //    be shutdown by ServerSelector.
                 // 2. Start the meek client, which is a localhost server listening on a OS assigned port
                 // 3. The meek client is a static port forward to the selected Psiphon server, so call
-                //    makeSocketChannelConnection with the meek client address in place of the Psiphon server
+                //    connectSocket with the meek client address in place of the Psiphon server
 
                 else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH))
                 {
@@ -418,14 +418,8 @@ public class ServerSelector implements IAbortIndicator
         	            protectSocket.doVpnProtect(channel.socket());
         	        }
 
-        	        InetSocketAddress sockAddr = new InetSocketAddress(host, port);
-        	        if (sockAddr.isUnresolved())
-        	        {
-        	            throw new IOException("Cannot resolve network address for "+ host + ":" + port);
-        	        }
-
         	        channel.configureBlocking(false);
-        	        channel.connect(sockAddr);
+        	        channel.connect(new InetSocketAddress(host, port));
         	        Selector selector = Selector.open();
         	        channel.register(selector, SelectionKey.OP_CONNECT);
 
