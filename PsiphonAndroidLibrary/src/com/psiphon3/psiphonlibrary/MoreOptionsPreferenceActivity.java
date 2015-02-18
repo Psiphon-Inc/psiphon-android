@@ -42,6 +42,7 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
     EditTextPreference mProxyUsername;
     EditTextPreference mProxyPassword;
     EditTextPreference mProxyDomain;
+    Bundle mDefaultSummaryBundle;
 
     @SuppressWarnings("deprecation")
     public void onCreate(Bundle savedInstanceState) {
@@ -70,6 +71,8 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
 
         mUseSystemProxy.setOnPreferenceClickListener(this);
         mUseCustomProxy.setOnPreferenceClickListener(this);
+        
+        mDefaultSummaryBundle = new Bundle();
 
         updatePreferencesScreen();
     }
@@ -137,7 +140,7 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
             // EditPreference
             EditTextPreference editTextPref = (EditTextPreference) pref;
             String summary = editTextPref.getText();
-            if (summary != null && !summary.isEmpty()) {
+            if (summary != null && !summary.trim().equals("")) {
                 //hide passwords
                 //http://stackoverflow.com/questions/15044595/preventing-edittextpreference-from-updating-summary-for-inputtype-password
                 int inputType = editTextPref.getEditText().getInputType() & InputType.TYPE_MASK_VARIATION;
@@ -152,7 +155,7 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
                     editTextPref.setSummary(editTextPref.getText());
                 }
             } else {
-                editTextPref.setSummary((CharSequence) editTextPref.getExtras().get("default_summary"));
+                editTextPref.setSummary((CharSequence) mDefaultSummaryBundle.get(editTextPref.getKey()));
             }
         }
     }
@@ -178,7 +181,7 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
                 initPrefsSummary(sharedPreferences, pCat.getPreference(i));
             }
         } else {
-            p.getExtras().putCharSequence("default_summary", p.getSummary());
+            mDefaultSummaryBundle.putCharSequence(p.getKey(), p.getSummary());
             updatePrefsSummary(sharedPreferences, p);
         }
     }
