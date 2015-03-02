@@ -47,7 +47,6 @@ import java.util.Timer;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
@@ -91,7 +90,6 @@ import org.xbill.DNS.PsiphonState;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.os.Build;
 import android.os.SystemClock;
 import android.util.Pair;
 import android.webkit.URLUtil;
@@ -1335,16 +1333,27 @@ public class ServerInterface
             javax.net.ssl.SSLSocket sslsock;
             sslsock = (javax.net.ssl.SSLSocket) sf.createSocket();
             String[] allProtocols = sslsock.getSupportedProtocols();
-            final List<String> enabledProtocols = new ArrayList<String>(allProtocols.length);
+            final List<String> safeProtocolsList = new ArrayList<String>(allProtocols.length);
             for (String protocol : allProtocols) {
                 if (!protocol.startsWith("SSL")) {
-                    enabledProtocols.add(protocol);
+                    safeProtocolsList.add(protocol);
                 }
             }
-            if (!enabledProtocols.isEmpty()) {
-                return enabledProtocols.toArray(new String[enabledProtocols.size()]);
+            if(safeProtocolsList.isEmpty()) {
+                return null;
             }
-            return null;
+
+            safeProtocols = safeProtocolsList.toArray(new String[safeProtocolsList.size()]);
+
+            // We've seen at least one reported error case where setEnabledProtocols
+            // would throw IllegalArgument exception when passed a protocol name
+            // reported by getSupportedProtocols. In that case fallback to TLSv1
+            try {
+                sslsock.setEnabledProtocols(enabledProtocols);
+            } catch (IllegalArgumentException e) {
+                safeProtocols = new String[] {"TLSv1"};
+            }
+            return safeProtocols;
         }
 
         Tun2Socks.IProtectSocket protectSocket;
