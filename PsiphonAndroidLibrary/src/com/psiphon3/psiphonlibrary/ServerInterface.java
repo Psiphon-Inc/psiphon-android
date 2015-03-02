@@ -1343,13 +1343,13 @@ public class ServerInterface
                 return null;
             }
 
-            safeProtocols = safeProtocolsList.toArray(new String[safeProtocolsList.size()]);
+            String[] safeProtocols = safeProtocolsList.toArray(new String[safeProtocolsList.size()]);
 
             // We've seen at least one reported error case where setEnabledProtocols
             // would throw IllegalArgument exception when passed a protocol name
             // reported by getSupportedProtocols. In that case fallback to TLSv1
             try {
-                sslsock.setEnabledProtocols(enabledProtocols);
+                sslsock.setEnabledProtocols(safeProtocols);
             } catch (IllegalArgumentException e) {
                 safeProtocols = new String[] {"TLSv1"};
             }
