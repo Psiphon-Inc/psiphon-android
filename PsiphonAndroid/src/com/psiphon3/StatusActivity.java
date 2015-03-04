@@ -192,7 +192,6 @@ public class StatusActivity
         AdBuddiz.setPublisherKey("");
         if (PsiphonData.getPsiphonData().getShowAds())
         {
-            AdBuddiz.setTestModeActive();
             AdBuddiz.cacheAds(this);
         }
     }
