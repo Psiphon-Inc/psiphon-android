@@ -178,7 +178,9 @@ public class StatusActivity
     
     private void showFullScreenAd()
     {
-        if (AdBuddiz.isReadyToShowAd(this) && !m_fullScreenAdShown)
+        if (PsiphonData.getPsiphonData().getShowAds() &&
+                !m_fullScreenAdShown &&
+                AdBuddiz.isReadyToShowAd(this))
         {
             AdBuddiz.showAd(this);
             m_fullScreenAdShown = true;
