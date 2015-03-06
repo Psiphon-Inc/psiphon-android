@@ -22,7 +22,9 @@ package com.psiphon3;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -32,13 +34,22 @@ import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.TypedValue;
+import android.view.Display;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TabHost;
 
+import com.inmobi.commons.InMobi;
+import com.inmobi.monetization.IMBanner;
+import com.inmobi.monetization.IMBannerListener;
+import com.inmobi.monetization.IMErrorCode;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.purplebrain.adbuddiz.sdk.AdBuddiz;
@@ -50,6 +61,8 @@ public class StatusActivity
     public static final String BANNER_FILE_NAME = "bannerImage";
 
     private ImageView m_banner;
+    private IMBanner m_bannerAdView = null;
+    private boolean m_AdBuddizInitialized = false;
     private boolean m_fullScreenAdShown = false;
     private boolean m_tunnelWholeDevicePromptShown = false;
 
@@ -187,12 +200,80 @@ public class StatusActivity
         }
     }
     
+    private static Integer getOptimalInMobiSlotSize(Activity context)
+    {
+        Display display = ((WindowManager)context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        display.getMetrics(displayMetrics);
+        double density = displayMetrics.density;
+        double width = displayMetrics.widthPixels;
+        double height = displayMetrics.heightPixels;
+        int[][] maparray = {{IMBanner.INMOBI_AD_UNIT_728X90, 728, 90},
+                            {IMBanner.INMOBI_AD_UNIT_468X60, 468, 60},
+                            {IMBanner.INMOBI_AD_UNIT_320X50, 320, 50}};
+        for (int i = 0; i < maparray.length; i++)
+        {
+            if (maparray[i][1] * density <= width && maparray[i][2] * density <= height)
+            {
+                return maparray[i][0];
+            }
+        }
+        return IMBanner.INMOBI_AD_UNIT_320X50;
+    }
+    
     private void initAds()
     {
-        AdBuddiz.setPublisherKey("");
         if (PsiphonData.getPsiphonData().getShowAds())
         {
-            AdBuddiz.cacheAds(this);
+            if (!m_AdBuddizInitialized)
+            {
+                AdBuddiz.setPublisherKey("");
+                AdBuddiz.cacheAds(this);
+                m_AdBuddizInitialized = true;
+            }
+            
+            if (m_bannerAdView == null)
+            {
+                InMobi.initialize(this, "");
+                m_bannerAdView = new IMBanner(this, "", getOptimalInMobiSlotSize(this));
+                m_bannerAdView.setIMBannerListener(new IMBannerListener() {
+                    @Override
+                    public void onBannerInteraction(IMBanner arg0, Map<String, String> arg1)
+                    {
+                    }
+                    @Override
+                    public void onBannerRequestFailed(IMBanner arg0, IMErrorCode arg1)
+                    {
+                        Log.d("InMobi", "Banner Request Failed");
+                        LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
+                        layout.removeAllViewsInLayout();
+                        layout.addView(m_banner);
+                        // Set to null so it will be re-initialized the next time
+                        m_bannerAdView = null;
+                    }
+                    @Override
+                    public void onBannerRequestSucceeded(IMBanner arg0)
+                    {
+                        Log.d("InMobi", "Banner Request Succeeded");
+                        LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
+                        layout.removeAllViewsInLayout();
+                        layout.addView(m_bannerAdView);
+                    }
+                    @Override
+                    public void onDismissBannerScreen(IMBanner arg0)
+                    {
+                    }
+                    @Override
+                    public void onLeaveApplication(IMBanner arg0)
+                    {
+                    }
+                    @Override
+                    public void onShowBannerScreen(IMBanner arg0)
+                    {
+                    }
+                });
+                m_bannerAdView.loadBanner();
+            }
         }
     }
     
