@@ -22,6 +22,9 @@ package com.psiphon3;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Locale;
 import java.util.Map;
 
 import android.app.Activity;
@@ -50,9 +53,10 @@ import com.inmobi.commons.InMobi;
 import com.inmobi.monetization.IMBanner;
 import com.inmobi.monetization.IMBannerListener;
 import com.inmobi.monetization.IMErrorCode;
+import com.inmobi.monetization.IMInterstitial;
+import com.inmobi.monetization.IMInterstitialListener;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
-import com.purplebrain.adbuddiz.sdk.AdBuddiz;
 
 
 public class StatusActivity
@@ -61,8 +65,9 @@ public class StatusActivity
     public static final String BANNER_FILE_NAME = "bannerImage";
 
     private ImageView m_banner;
-    private IMBanner m_bannerAdView = null;
-    private boolean m_AdBuddizInitialized = false;
+    private boolean m_inmobiInitialized = false;
+    private IMBanner m_inmobiBannerAdView = null;
+    private IMInterstitial m_inmobiInterstitial = null;
     private boolean m_fullScreenAdShown = false;
     private boolean m_tunnelWholeDevicePromptShown = false;
 
@@ -133,8 +138,6 @@ public class StatusActivity
         {
             loadSponsorTab(false);
         }
-        
-        initAds();
     }
 
     @Override
@@ -147,6 +150,7 @@ public class StatusActivity
     public void onResume()
     {
         super.onResume();
+        initAds();
     }
     
     @Override
@@ -191,12 +195,35 @@ public class StatusActivity
     
     private void showFullScreenAd()
     {
-        if (PsiphonData.getPsiphonData().getShowAds() &&
-                !m_fullScreenAdShown &&
-                AdBuddiz.isReadyToShowAd(this))
+        if (PsiphonData.getPsiphonData().getShowAds() && !m_fullScreenAdShown)
         {
-            AdBuddiz.showAd(this);
-            m_fullScreenAdShown = true;
+            ArrayList<InterstitialAd> interstitialAds = new ArrayList<InterstitialAd>();
+            interstitialAds.add(new InMobiInterstitial());
+            Collections.shuffle(interstitialAds);
+            for (InterstitialAd interstitial : interstitialAds)
+            {
+                interstitial.show();
+            }
+        }
+    }
+    
+    interface InterstitialAd
+    {
+        void show();
+    }
+    
+    private class InMobiInterstitial implements InterstitialAd
+    {
+        @Override
+        public void show()
+        {
+            if (!m_fullScreenAdShown &&
+                    m_inmobiInterstitial != null &&
+                    m_inmobiInterstitial.getState() == IMInterstitial.State.READY)
+            {
+                m_inmobiInterstitial.show();
+                m_fullScreenAdShown = true;
+            }
         }
     }
     
@@ -221,22 +248,58 @@ public class StatusActivity
         return IMBanner.INMOBI_AD_UNIT_320X50;
     }
     
+    static final String INMOBI_BANNER_PROPERTY_ID = "";
+    static final String INMOBI_INTERSTITIAL_PROPERTY_ID = "";
+    
     private void initAds()
     {
         if (PsiphonData.getPsiphonData().getShowAds())
         {
-            if (!m_AdBuddizInitialized)
+            if (!m_inmobiInitialized)
             {
-                AdBuddiz.setPublisherKey("");
-                AdBuddiz.cacheAds(this);
-                m_AdBuddizInitialized = true;
+                InMobi.initialize(this, INMOBI_BANNER_PROPERTY_ID);
+                InMobi.setLanguage(Locale.getDefault().getISO3Language());
+                m_inmobiInitialized = true;
+            }
+
+            if (m_inmobiInterstitial == null)
+            {
+                m_inmobiInterstitial = new IMInterstitial(this, INMOBI_INTERSTITIAL_PROPERTY_ID);
+                m_inmobiInterstitial.setIMInterstitialListener(new IMInterstitialListener() {
+                    @Override
+                    public void onDismissInterstitialScreen(IMInterstitial arg0)
+                    {
+                    }
+                    @Override
+                    public void onInterstitialFailed(IMInterstitial arg0, IMErrorCode arg1)
+                    {
+                        Log.d("InMobi", String.format("Interstitial Request Failed: %s", arg1.toString()));
+                    }
+                    @Override
+                    public void onInterstitialInteraction(IMInterstitial arg0, Map<String, String> arg1)
+                    {
+                    }
+                    @Override
+                    public void onInterstitialLoaded(IMInterstitial arg0)
+                    {
+                    }
+                    @Override
+                    public void onLeaveApplication(IMInterstitial arg0)
+                    {
+                    }
+                    @Override
+                    public void onShowInterstitialScreen(IMInterstitial arg0)
+                    {
+                    }
+                });
+                m_inmobiInterstitial.loadInterstitial();
             }
             
-            if (m_bannerAdView == null)
+            if (m_inmobiBannerAdView == null)
             {
-                InMobi.initialize(this, "");
-                m_bannerAdView = new IMBanner(this, "", getOptimalInMobiSlotSize(this));
-                m_bannerAdView.setIMBannerListener(new IMBannerListener() {
+                m_inmobiBannerAdView = new IMBanner(this, INMOBI_BANNER_PROPERTY_ID, getOptimalInMobiSlotSize(this));
+                m_inmobiBannerAdView.setRefreshInterval(30);
+                m_inmobiBannerAdView.setIMBannerListener(new IMBannerListener() {
                     @Override
                     public void onBannerInteraction(IMBanner arg0, Map<String, String> arg1)
                     {
@@ -244,20 +307,18 @@ public class StatusActivity
                     @Override
                     public void onBannerRequestFailed(IMBanner arg0, IMErrorCode arg1)
                     {
-                        Log.d("InMobi", "Banner Request Failed");
-                        LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
-                        layout.removeAllViewsInLayout();
-                        layout.addView(m_banner);
-                        // Set to null so it will be re-initialized the next time
-                        m_bannerAdView = null;
+                        Log.d("InMobi", String.format("Banner Request Failed: %s", arg1.toString()));
                     }
                     @Override
                     public void onBannerRequestSucceeded(IMBanner arg0)
                     {
                         Log.d("InMobi", "Banner Request Succeeded");
-                        LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
-                        layout.removeAllViewsInLayout();
-                        layout.addView(m_bannerAdView);
+                        if (m_inmobiBannerAdView.getParent() == null)
+                        {
+                            LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
+                            layout.removeAllViewsInLayout();
+                            layout.addView(m_inmobiBannerAdView);
+                        }
                     }
                     @Override
                     public void onDismissBannerScreen(IMBanner arg0)
@@ -272,7 +333,7 @@ public class StatusActivity
                     {
                     }
                 });
-                m_bannerAdView.loadBanner();
+                m_inmobiBannerAdView.loadBanner();
             }
         }
     }
