@@ -810,7 +810,7 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
                 // it starts a thread which runs tun2socks; but even so, when channel.connect
                 // is called won't the VPN route packets to the VPN fd which will be
                 // queued and read when tun2socks eventually starts?
-                for (int retry = 0; !success && retry < 2; retry++)
+                for (int retry = 0; !success && retry < 10; retry++)
                 {
                     SocketChannel channel = null;
                     Selector selector = null;
