@@ -274,6 +274,8 @@ public class StatusActivity
                     public void onInterstitialFailed(IMInterstitial arg0, IMErrorCode arg1)
                     {
                         Log.d("InMobi", String.format("Interstitial Request Failed: %s", arg1.toString()));
+                        // Set to null so it will be recreated the next time
+                        m_inmobiInterstitial = null;
                     }
                     @Override
                     public void onInterstitialInteraction(IMInterstitial arg0, Map<String, String> arg1)
@@ -308,6 +310,8 @@ public class StatusActivity
                     public void onBannerRequestFailed(IMBanner arg0, IMErrorCode arg1)
                     {
                         Log.d("InMobi", String.format("Banner Request Failed: %s", arg1.toString()));
+                        // Leave m_inmobiBannerAdView. If it is not in the layout, we will
+                        // call m_inmobiBannerAdView.loadBanner() again the next time
                     }
                     @Override
                     public void onBannerRequestSucceeded(IMBanner arg0)
@@ -333,6 +337,9 @@ public class StatusActivity
                     {
                     }
                 });
+            }
+            if (m_inmobiBannerAdView.getParent() == null)
+            {
                 m_inmobiBannerAdView.loadBanner();
             }
         }
