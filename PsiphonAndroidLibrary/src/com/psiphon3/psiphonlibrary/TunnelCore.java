@@ -780,12 +780,6 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
             // Don't signal unexpected disconnect until we've started
             sshConnection.addConnectionMonitor(new Monitor(m_signalQueue));
 
-            // Start connection elapsed time
-            PsiphonData.getPsiphonData().getDataTransferStats().startConnected();
-
-            setState(State.CONNECTED);
-            PsiphonData.getPsiphonData().setTunnelRelayProtocol(entry.connType);
-
             checkSignals(0);
             
             // Certain Android devices silently fail to route through the VpnService tun device.
@@ -865,6 +859,12 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
             }
 
             checkSignals(0);
+
+            // Start connection elapsed time
+            PsiphonData.getPsiphonData().getDataTransferStats().startConnected();
+
+            setState(State.CONNECTED);
+            PsiphonData.getPsiphonData().setTunnelRelayProtocol(entry.connType);
 
             try
             {

@@ -53,7 +53,7 @@ public class PsiphonConstants
 
     public final static int CHECK_TUNNEL_SERVER_LAST_PORT = 10000;
 
-    public final static int CHECK_TUNNEL_TIMEOUT_MILLISECONDS = 5000;
+    public final static int CHECK_TUNNEL_TIMEOUT_MILLISECONDS = 500;
 
     public final static int SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS = 20000;
 
