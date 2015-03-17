@@ -71,6 +71,8 @@ public class PsiphonConstants
     public final static int HTTPS_REQUEST_SHORT_TIMEOUT = 5000;
 
     public final static int HTTPS_REQUEST_LONG_TIMEOUT = 20000;
+    
+    public final static int HTTPS_REQUEST_FINAL_REQUEST_TIMEOUT = 1000;
 
     public final static int SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH = 60*60*6;
 
