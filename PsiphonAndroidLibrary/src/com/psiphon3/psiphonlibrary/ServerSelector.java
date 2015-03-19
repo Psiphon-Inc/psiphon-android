@@ -20,9 +20,7 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InterruptedIOException;
-import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -35,6 +33,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -42,15 +41,58 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.http.ConnectionReuseStrategy;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpException;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpVersion;
+import org.apache.http.auth.AUTH;
+import org.apache.http.auth.AuthProtocolState;
+import org.apache.http.auth.AuthScheme;
+import org.apache.http.auth.AuthSchemeProvider;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.AuthStateHC4;
+import org.apache.http.auth.Credentials;
+import org.apache.http.client.config.AuthSchemes;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.client.protocol.RequestClientConnControl;
+import org.apache.http.config.ConnectionConfig;
+import org.apache.http.config.Lookup;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.HttpConnectionFactory;
+import org.apache.http.conn.ManagedHttpClientConnection;
+import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.conn.routing.RouteInfo.LayerType;
+import org.apache.http.conn.routing.RouteInfo.TunnelType;
+import org.apache.http.entity.BufferedHttpEntityHC4;
+import org.apache.http.impl.DefaultConnectionReuseStrategyHC4;
+import org.apache.http.impl.auth.BasicSchemeFactoryHC4;
+import org.apache.http.impl.auth.DigestSchemeFactoryHC4;
+import org.apache.http.impl.auth.HttpAuthenticator;
+import org.apache.http.impl.auth.NTLMSchemeFactory;
+import org.apache.http.impl.client.BasicCredentialsProviderHC4;
+import org.apache.http.impl.client.ProxyAuthenticationStrategy;
+import org.apache.http.impl.conn.ManagedHttpClientConnectionFactory;
+import org.apache.http.impl.execchain.TunnelRefusedException;
+import org.apache.http.message.BasicHttpRequest;
+import org.apache.http.protocol.BasicHttpContextHC4;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpCoreContext;
+import org.apache.http.protocol.HttpProcessor;
+import org.apache.http.protocol.HttpRequestExecutor;
+import org.apache.http.protocol.ImmutableHttpProcessor;
+import org.apache.http.protocol.RequestTargetHostHC4;
+import org.apache.http.protocol.RequestUserAgentHC4;
+import org.apache.http.util.EntityUtilsHC4;
+
 import android.content.Context;
 import android.os.Build;
 import android.os.SystemClock;
 import android.util.Pair;
 import ch.ethz.ssh2.Connection;
-import ch.ethz.ssh2.HTTPProxyException;
-import ch.ethz.ssh2.crypto.Base64;
-import ch.ethz.ssh2.transport.ClientServerHello;
-import ch.ethz.ssh2.util.StringEncoder;
 
 import com.psiphon3.psiphonlibrary.MeekClient.IAbortIndicator;
 import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
@@ -59,6 +101,58 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 public class ServerSelector implements IAbortIndicator
 {
+    // TargetProtocolState tracks which set of protocols are currently
+    // targeted for the current round of connection attempts. This
+    // class also defines the sequence of targets, and the priority
+    // order of protocols when a server supports multiple protocols.
+    public static class TargetProtocolState
+    {
+        private int mCurrentTarget = 0;
+
+        @SuppressWarnings("unchecked")
+        private List<List<String>> mTargets =
+                Arrays.asList(
+                        Arrays.asList(PsiphonConstants.RELAY_PROTOCOL_OSSH,
+                                      PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH,
+                                      PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH),
+
+                        Arrays.asList(PsiphonConstants.RELAY_PROTOCOL_OSSH),
+
+                        Arrays.asList(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH),
+
+                        Arrays.asList(PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH)
+                        );
+        
+        public synchronized void rotateTarget()
+        {
+            MyLog.w(R.string.rotating_target_protocol_state, MyLog.Sensitivity.NOT_SENSITIVE);
+            mCurrentTarget = (mCurrentTarget + 1) % mTargets.size();
+        }
+        
+        public synchronized String selectProtocol(ServerEntry serverEntry)
+        {
+            for (String protocol : mTargets.get(mCurrentTarget))
+            {
+                if (serverEntry.supportsProtocol(protocol))
+                {
+                    return protocol;
+                }
+            }
+            return null;
+        }
+        
+        public synchronized String currentProtocols()
+        {
+            StringBuilder currentProtocolsBuilder = new StringBuilder();
+            for (String protocol : mTargets.get(mCurrentTarget))
+            {
+                currentProtocolsBuilder.append(protocol);
+                currentProtocolsBuilder.append(" ");
+            }
+            return currentProtocolsBuilder.toString().trim();
+        }
+    }
+    
     private final int NUM_THREADS = 10;
 
     private final int SHUTDOWN_POLL_MILLISECONDS = 50;
@@ -66,6 +160,7 @@ public class ServerSelector implements IAbortIndicator
     private final int SHUTDOWN_TIMEOUT_MILLISECONDS = 1000;
     private final int MAX_WORK_TIME_MILLISECONDS = 20000;
 
+    private TargetProtocolState targetProtocolState = null;
     private Connection.IStopSignalPending stopSignalPending = null;
     private Tun2Socks.IProtectSocket protectSocket = null;
     private ServerInterface serverInterface = null;
@@ -84,11 +179,13 @@ public class ServerSelector implements IAbortIndicator
     public String firstEntryIpAddress = null;
 
     ServerSelector(
+            TargetProtocolState targetProtocolState,
             Connection.IStopSignalPending stopSignalPending,
             Tun2Socks.IProtectSocket protectSocket,
             ServerInterface serverInterface,
             Context context)
     {
+        this.targetProtocolState = targetProtocolState;
         this.stopSignalPending = stopSignalPending;
         this.protectSocket = protectSocket;
         this.serverInterface = serverInterface;
@@ -110,7 +207,7 @@ public class ServerSelector implements IAbortIndicator
         boolean completed = false;
         long responseTime = -1;
         String sshErrorMessage = "";
-        SocketChannel channel = null;
+        Socket socket = null;
         Connection sshConnection = null;
 
         CheckServerWorker(ServerEntry entry)
@@ -123,17 +220,50 @@ public class ServerSelector implements IAbortIndicator
         {
             PsiphonData.ProxySettings proxySettings = PsiphonData.getPsiphonData().getProxySettings(context);
             long startTime = SystemClock.elapsedRealtime();
-            Selector selector = null;
 
             try
             {
-                this.channel = SocketChannel.open();
+                String protocol = ServerSelector.this.targetProtocolState.selectProtocol(this.entry);
+                
+                // This check is already performed in the coordinator which filters out workers for
+                // server entries that don't support the target protocol, but we're leaving this here
+                // anyways.
+                if (protocol == null)
+                {
+                    // The server does not support a target protocol
+                    return;
+                }
 
-                this.channel.configureBlocking(false);
-                selector = Selector.open();
+                // Even though the ServerEntry here is a clone, assigning to it
+                // works because ServerSelector merges it back in for the servers
+                // that respond.
+                
+                this.entry.connType = protocol;
 
-                // TODO: Add HTTP proxy support to MeekClient. Currently, since that support
-                // is lacking, these cases are treated as mutually exclusive.
+                if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_OSSH))
+                {
+                    if (proxySettings != null) {
+                        this.usingHTTPProxy = true;
+
+                        HttpHost proxyHttpHost = new HttpHost(proxySettings.proxyHost,
+                                proxySettings.proxyPort);
+                        
+                        HttpHost targetHttpHost = new HttpHost(this.entry.ipAddress,
+                                this.entry.getPreferredReachablityTestPort());
+                        
+						this.socket = httpTunnelSocket(protectSocketsRequired,
+								MAX_WORK_TIME_MILLISECONDS, proxyHttpHost, targetHttpHost, 
+								PsiphonData.getPsiphonData().getProxyCredentials());
+
+                    }
+                    else
+                    {
+                        this.socket = connectSocket(protectSocketsRequired,
+                                MAX_WORK_TIME_MILLISECONDS, this.entry.ipAddress,
+                                this.entry.getPreferredReachablityTestPort());
+
+                    }
+                }
 
                 // Meek cases:
                 // 1. Create a new meek client with the selected meek configuration. The meek client
@@ -141,40 +271,30 @@ public class ServerSelector implements IAbortIndicator
                 //    be shutdown by ServerSelector.
                 // 2. Start the meek client, which is a localhost server listening on a OS assigned port
                 // 3. The meek client is a static port forward to the selected Psiphon server, so call
-                //    makeSocketChannelConnection with the meek client address in place of the Psiphon server
+                //    connectSocket with the meek client address in place of the Psiphon server
 
-
-                // Even though the ServerEntry here is a clone, assigning to it
-                // works because ServerSelector merges it back in for the servers
-                // that respond.
-                
-                boolean socketConnected = false;
-
-                if (proxySettings != null)
+                else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH))
                 {
-                    if (protectSocketsRequired)
-                    {
-                        // We may need to except this connection from the VpnService tun interface
-                        protectSocket.doVpnProtect(this.channel.socket());
-                    }
 
-                    this.usingHTTPProxy = true;
+                    this.meekClient = new MeekClient(
+                    		
+                            protectSocketsRequired ? ServerSelector.this.protectSocket : null,
+                            ServerSelector.this.serverInterface,
+                            ServerSelector.this.clientSessionId,
+                            this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
+                            this.entry.meekCookieEncryptionPublicKey,
+                            this.entry.meekObfuscatedKey,
+                            this.entry.ipAddress,
+                            this.entry.meekServerPort,
+                            context);
+                    this.meekClient.start();
 
-                    makeSocketChannelConnection(selector, proxySettings.proxyHost, proxySettings.proxyPort);
-                    this.channel.finishConnect();
-                    selector.close();
-                    this.channel.configureBlocking(true);
-
-                    makeConnectionViaHTTPProxy(null, null);
-
-                    socketConnected = true;
-
-                    this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_OSSH;
-                }
-                else if (this.entry.hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
-                {
                     // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
+                    this.socket = connectSocket(false, MAX_WORK_TIME_MILLISECONDS, "127.0.0.1", this.meekClient.getLocalPort());
+                }
 
+                else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH))
+                {
                     this.meekClient = new MeekClient(
                             protectSocketsRequired ? ServerSelector.this.protectSocket : null,
                             ServerSelector.this.serverInterface,
@@ -183,70 +303,23 @@ public class ServerSelector implements IAbortIndicator
                             this.entry.meekCookieEncryptionPublicKey,
                             this.entry.meekObfuscatedKey,
                             this.entry.meekFrontingDomain,
-                            this.entry.meekFrontingHost);
+                            this.entry.meekFrontingHost,
+                            context);
                     this.meekClient.start();
 
-                    makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
+                    // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
+                    this.socket = connectSocket(false, MAX_WORK_TIME_MILLISECONDS, "127.0.0.1", this.meekClient.getLocalPort());
 
-                    socketConnected = this.channel.finishConnect();
-
-                    this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH;
                     this.entry.front = this.entry.meekFrontingDomain;
                 }
-                else if (this.entry.hasCapability(ServerEntry.CAPABILITY_UNFRONTED_MEEK))
+
+                if (this.socket != null)
                 {
-                    // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
-
-                    this.meekClient = new MeekClient(
-                            protectSocketsRequired ? ServerSelector.this.protectSocket : null,
-                            ServerSelector.this.serverInterface,
-                            ServerSelector.this.clientSessionId,
-                            this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
-                            this.entry.meekCookieEncryptionPublicKey,
-                            this.entry.meekObfuscatedKey,
-                            this.entry.ipAddress,
-                            this.entry.meekServerPort);
-                    this.meekClient.start();
-
-                    makeSocketChannelConnection(selector, "127.0.0.1", this.meekClient.getLocalPort());
-
-                    socketConnected = this.channel.finishConnect();
-
-                    this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH;
-                }
-                else
-                {
-                    if (protectSocketsRequired)
-                    {
-                        // We may need to except this connection from the VpnService tun interface
-                        protectSocket.doVpnProtect(this.channel.socket());
-                    }
-
-                    makeSocketChannelConnection(selector,
-                            this.entry.ipAddress,
-                            this.entry.getPreferredReachablityTestPort());
-
-                    socketConnected = this.channel.finishConnect();
-
-                    this.entry.connType = PsiphonConstants.RELAY_PROTOCOL_OSSH;
-                }
-
-                if (socketConnected)
-                {
-                    try
-                    {
-                        selector.close();
-                        selector = null;
-                    }
-                    catch (IOException e) {}
-
-                    this.channel.configureBlocking(true);
-
                     try
                     {
                         this.sshConnection = TunnelCore.establishSshConnection(
                                                     ServerSelector.this.stopSignalPending,
-                                                    this.channel.socket(),
+                                                    this.socket,
                                                     entry,
                                                     ServerSelector.this.clientSessionId,
                                                     ServerSelector.this.extraAuthParams);
@@ -294,17 +367,16 @@ public class ServerSelector implements IAbortIndicator
                 {
                     MyLog.w(R.string.network_proxy_connect_exception, MyLog.Sensitivity.NOT_SENSITIVE, e.getLocalizedMessage());
                 }
+            } 
+            catch (HttpException e) 
+            {
+                if (proxySettings != null) 
+                {
+                    MyLog.w(R.string.network_proxy_connect_exception, MyLog.Sensitivity.NOT_SENSITIVE, e.getLocalizedMessage());
+                }
             }
             finally
             {
-                if (selector != null)
-                {
-                    try
-                    {
-                        selector.close();
-                    }
-                    catch (IOException e) {}
-                }
                 if (!this.responded)
                 {
                     if (this.sshConnection != null)
@@ -319,14 +391,14 @@ public class ServerSelector implements IAbortIndicator
                         this.meekClient = null;
                     }
 
-                    if (this.channel != null)
+                    if (this.socket != null)
                     {
                         try
                         {
-                            this.channel.close();
+                            this.socket.close();
                         }
                         catch (IOException e) {}
-                        this.channel = null;
+                        this.socket = null;
                     }
                 }
             }
@@ -335,107 +407,170 @@ public class ServerSelector implements IAbortIndicator
             this.completed = true;
         }
 
-        private void makeSocketChannelConnection(Selector selector, String ipAddress, int port) throws IOException
-        {
-            this.channel.connect(new InetSocketAddress(ipAddress, port));
-            this.channel.register(selector, SelectionKey.OP_CONNECT);
+        private Socket connectSocket(boolean protectSocketsRequired, long timeout, String host, int port)
+        	    throws IOException
+        	    {
+        	        SocketChannel channel = SocketChannel.open();
 
-            while (selector.select(SHUTDOWN_POLL_MILLISECONDS) == 0)
-            {
-                if (stopFlag)
-                {
+        	        if (protectSocketsRequired)
+        	        {
+        	            // We may need to except this connection from the VpnService tun interface
+        	            protectSocket.doVpnProtect(channel.socket());
+        	        }
+
+        	        channel.configureBlocking(false);
+        	        channel.connect(new InetSocketAddress(host, port));
+        	        Selector selector = Selector.open();
+        	        channel.register(selector, SelectionKey.OP_CONNECT);
+
+        	        long startTime = SystemClock.elapsedRealtime();
+
+        	        boolean success = true;
+        	        while (selector.select(SHUTDOWN_POLL_MILLISECONDS) == 0)
+        	        {
+        	            if (startTime + timeout <= SystemClock.elapsedRealtime() || stopFlag)
+        	            {
+        	                success = false;
+        	                break;
+        	            }
+        	        }
+
+        	        if (success)
+        	        {
+        	            success = channel.finishConnect();
+        	        }
+
+        	        selector.close();
+
+        	        if (success)
+        	        {
+        	            channel.configureBlocking(true);
+        	            return channel.socket();
+        	        }
+        	        else
+        	        {
+        	            channel.close();
+        	            return null;
+        	        }
+        	    }
+
+        private Socket httpTunnelSocket(boolean protectSocketsRequired, long timeout, HttpHost proxy, HttpHost target,
+                Credentials credentials) throws IOException, HttpException {
+            HttpConnectionFactory<HttpRoute, ManagedHttpClientConnection> connFactory = ManagedHttpClientConnectionFactory.INSTANCE;
+            ConnectionConfig connectionConfig = ConnectionConfig.DEFAULT;
+            RequestConfig requestConfig = RequestConfig.DEFAULT;
+            HttpProcessor httpProcessor = new ImmutableHttpProcessor(
+                    new RequestTargetHostHC4(), new RequestClientConnControl(),
+                    new RequestUserAgentHC4());
+            HttpRequestExecutor requestExec = new HttpRequestExecutor();
+            ProxyAuthenticationStrategy proxyAuthStrategy = ProxyAuthenticationStrategy.INSTANCE;
+            HttpAuthenticator authenticator = new HttpAuthenticator();
+            AuthStateHC4 proxyAuthState = new AuthStateHC4();
+            ConnectionReuseStrategy reuseStrategy = DefaultConnectionReuseStrategyHC4.INSTANCE;
+
+            Lookup<AuthSchemeProvider> authSchemeRegistry = RegistryBuilder
+                    .<AuthSchemeProvider> create()
+                    .register(AuthSchemes.BASIC, new BasicSchemeFactoryHC4())
+                    .register(AuthSchemes.DIGEST, new DigestSchemeFactoryHC4())
+                    .register(AuthSchemes.NTLM, new NTLMSchemeFactory())
+                    .build();
+            HttpHost host = target;
+            if (host.getPort() <= 0) {
+                host = new HttpHost(host.getHostName(), 80, host.getSchemeName());
+            }
+            final HttpRoute route = new HttpRoute(
+                    host,
+                    requestConfig.getLocalAddress(),
+                    proxy, false, TunnelType.TUNNELLED, LayerType.PLAIN);
+
+            final ManagedHttpClientConnection conn = connFactory.create(
+                    route, connectionConfig);
+            final HttpContext context = new BasicHttpContextHC4();
+            HttpResponse response;
+
+            final HttpRequest connect = new BasicHttpRequest(
+                    "CONNECT", host.toHostString(), HttpVersion.HTTP_1_1);
+
+            // Populate the execution context
+            context.setAttribute(HttpCoreContext.HTTP_TARGET_HOST, target);
+            context.setAttribute(HttpCoreContext.HTTP_CONNECTION, conn);
+            context.setAttribute(HttpCoreContext.HTTP_REQUEST, connect);
+            context.setAttribute(HttpClientContext.HTTP_ROUTE, route);
+            context.setAttribute(HttpClientContext.PROXY_AUTH_STATE, proxyAuthState);
+            context.setAttribute(HttpClientContext.AUTHSCHEME_REGISTRY, authSchemeRegistry);
+            context.setAttribute(HttpClientContext.REQUEST_CONFIG, requestConfig);
+
+            if (credentials != null) {
+                final BasicCredentialsProviderHC4 credsProvider = new BasicCredentialsProviderHC4();
+                credsProvider.setCredentials(AuthScope.ANY, credentials);
+                context.setAttribute(HttpClientContext.CREDS_PROVIDER, credsProvider);
+            }
+
+            requestExec.preProcess(connect, httpProcessor, context);
+
+            for (;;) {
+                if (!conn.isOpen()) {
+                    Socket socket = connectSocket(protectSocketsRequired,
+                            MAX_WORK_TIME_MILLISECONDS, proxy.getHostName(),
+                            proxy.getPort());
+                    if (socket != null) {
+                        conn.bind(socket);
+                    }
+                }
+
+                authenticator.generateAuthResponse(connect, proxyAuthState, context);
+
+                response = requestExec.execute(connect, conn, context);
+
+                final int status = response.getStatusLine().getStatusCode();
+                if (status < 200) {
+                    throw new HttpException("Unexpected response to CONNECT request: " +
+                            response.getStatusLine());
+                }
+                if (authenticator.isAuthenticationRequested(proxy, response,
+                        proxyAuthStrategy, proxyAuthState, context)) {
+                    if (authenticator.handleAuthChallenge(proxy, response,
+                            proxyAuthStrategy, proxyAuthState, context)) {
+                        // Retry request
+                        if (reuseStrategy.keepAlive(response, context)) {
+                            // Consume response content
+                            final HttpEntity entity = response.getEntity();
+                            EntityUtilsHC4.consume(entity);
+                        } else {
+                            conn.close();
+                        }
+                        // discard previous auth header
+                        connect.removeHeaders(AUTH.PROXY_AUTH_RESP);
+                    } else {
+                        break;
+                    }
+                } else {
                     break;
                 }
             }
-        }
 
-        private void makeConnectionViaHTTPProxy(String proxyUsername, String proxyPassword) throws IOException
-        {
-            Socket sock = this.channel.socket();
+            final int status = response.getStatusLine().getStatusCode();
 
-            // The following is mostly copied from ch.ethz.ssh2.transport.TransportManager.establishConnection()
+            if (status > 299) {
 
-            sock.setSoTimeout(0);
-
-            /* OK, now tell the proxy where we actually want to connect to */
-
-            StringBuffer sb = new StringBuffer();
-
-            sb.append("CONNECT ");
-            sb.append(this.entry.ipAddress);
-            sb.append(':');
-            sb.append(this.entry.getPreferredReachablityTestPort());
-            sb.append(" HTTP/1.0\r\n");
-
-            if ((proxyUsername != null) && (proxyPassword != null))
-            {
-                String credentials = proxyUsername + ":" + proxyPassword;
-                char[] encoded = Base64.encode(StringEncoder.GetBytes(credentials));
-                sb.append("Proxy-Authorization: Basic ");
-                sb.append(encoded);
-                sb.append("\r\n");
-            }
-
-            sb.append("\r\n");
-
-            OutputStream out = sock.getOutputStream();
-
-            out.write(StringEncoder.GetBytes(sb.toString()));
-            out.flush();
-
-            /* Now parse the HTTP response */
-
-            byte[] buffer = new byte[1024];
-            InputStream in = sock.getInputStream();
-
-            int len = ClientServerHello.readLineRN(in, buffer);
-
-            String httpResponse = StringEncoder.GetString(buffer, 0, len);
-
-            if (httpResponse.startsWith("HTTP/") == false)
-            {
-                throw new IOException("The proxy did not send back a valid HTTP response.");
-            }
-
-            /* "HTTP/1.X XYZ X" => 14 characters minimum */
-
-            if ((httpResponse.length() < 14) || (httpResponse.charAt(8) != ' ') || (httpResponse.charAt(12) != ' '))
-            {
-                throw new IOException("The proxy did not send back a valid HTTP response.");
-            }
-
-            int errorCode = 0;
-
-            try
-            {
-                errorCode = Integer.parseInt(httpResponse.substring(9, 12));
-            }
-            catch (NumberFormatException ignore)
-            {
-                throw new IOException("The proxy did not send back a valid HTTP response.");
-            }
-
-            if ((errorCode < 0) || (errorCode > 999))
-            {
-                throw new IOException("The proxy did not send back a valid HTTP response.");
-            }
-
-            if (errorCode != 200)
-            {
-                throw new HTTPProxyException(httpResponse.substring(13), errorCode);
-            }
-
-            /* OK, read until empty line */
-
-            while (true)
-            {
-                len = ClientServerHello.readLineRN(in, buffer);
-                if (len == 0)
-                {
-                    break;
+                // Buffer response content
+                final HttpEntity entity = response.getEntity();
+                if (entity != null) {
+                    response.setEntity(new BufferedHttpEntityHC4(entity));
                 }
+
+                conn.close();
+                throw new TunnelRefusedException("CONNECT refused by proxy: " +
+                        response.getStatusLine(), response);
             }
-            return;
+
+            AuthStateHC4 authState = (AuthStateHC4) context.getAttribute(HttpClientContext.PROXY_AUTH_STATE);
+            AuthScheme authScheme = authState.getAuthScheme();
+            if (authState.getState() == AuthProtocolState.SUCCESS && authScheme != null) {
+                MyLog.g("ProxyAuthentication", "Scheme", authScheme.getSchemeName());
+            }
+
+            return conn.getSocket();
         }
     }
 
@@ -451,12 +586,17 @@ public class ServerSelector implements IAbortIndicator
             while (!stopFlag)
             {
                 MyLog.v(R.string.selecting_server, MyLog.Sensitivity.NOT_SENSITIVE);
+                MyLog.g("TargetProtocols", "protocols", ServerSelector.this.targetProtocolState.currentProtocols());
 
                 if (runOnce())
                 {
                     // We have a server
                     break;
                 }
+                
+                // After failing to establish a connection, rotate to the next
+                // set of target protocols.
+                ServerSelector.this.targetProtocolState.rotateTarget();
 
                 // After failing to establish a TCP connection, perform the same
                 // steps as we do when an SSH connection fails:
@@ -555,6 +695,10 @@ public class ServerSelector implements IAbortIndicator
 
             if (proxySettings != null)
             {
+            	
+                Credentials proxyCredentials = PsiphonData.getPsiphonData().getProxyCredentials();
+                MyLog.g("ProxyCredentials", "present",
+                		proxyCredentials == null ? "False" : "True");
                 MyLog.i(R.string.network_proxy_connect_information, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS,
                         proxySettings.proxyHost + ":" + proxySettings.proxyPort);
             }
@@ -566,7 +710,8 @@ public class ServerSelector implements IAbortIndicator
             {
                 if (-1 != entry.getPreferredReachablityTestPort() &&
                         entry.hasOneOfTheseCapabilities(PsiphonConstants.SUFFICIENT_CAPABILITIES_FOR_TUNNEL) &&
-                        entry.inRegion(egressRegion))
+                        entry.inRegion(egressRegion) &&
+                        null != ServerSelector.this.targetProtocolState.selectProtocol(entry))
                 {
                     CheckServerWorker worker = new CheckServerWorker(entry);
                     threadPool.submit(worker);
@@ -707,7 +852,7 @@ public class ServerSelector implements IAbortIndicator
                 {
                     if (worker.responded)
                     {
-                        assert(worker.channel != null);
+                        assert(worker.socket != null);
 
                         if (worker.entry.ipAddress.equals(firstEntry.ipAddress))
                         {
@@ -719,7 +864,7 @@ public class ServerSelector implements IAbortIndicator
                             // TODO: getters with mutex?
                             firstEntryMeekClient = worker.meekClient;
                             firstEntryUsingHTTPProxy = worker.usingHTTPProxy;
-                            firstEntrySocket = worker.channel.socket();
+                            firstEntrySocket = worker.socket;
                             firstEntrySshConnection = worker.sshConnection;
                             firstEntryIpAddress = worker.entry.ipAddress;
                         }
@@ -737,7 +882,7 @@ public class ServerSelector implements IAbortIndicator
                             }
                             try
                             {
-                                worker.channel.close();
+                                worker.socket.close();
                             }
                             catch (IOException e) {}
                         }

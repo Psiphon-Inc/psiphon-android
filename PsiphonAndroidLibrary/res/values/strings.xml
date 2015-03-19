@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <string name="app_name">Psiphon</string>
     <string name="ssh_connecting">SSH connecting…</string>
     <string name="ssh_connected">SSH connected</string>
@@ -149,4 +150,15 @@
     <string name="preference_notifications_with_vibrate_summary">Vibrate when connection status changes</string>
     <string name="moreOptions">More Options</string>
     <string name="root_mode_not_supported">Root mode is not supported on this version of Android</string>
+    <string name="proxySettingsCategoryTitle">Proxy Settings</string>
+    <string name="custom_proxy_host_summary">Proxy server hostname or IP</string>
+    <string name="custom_proxy_port_summary">Proxy server port</string>
+    <string name="use_proxy_authentication_title">Use proxy authentication</string>
+    <string name="proxy_username_title">Proxy username</string>
+    <string name="proxy_username_summary">Username for proxy authentication</string>
+    <string name="proxy_password_title">Proxy password</string>
+    <string name="proxy_password_summary">Password for proxy authentication</string>
+    <string name="proxy_domain_title">Proxy domain</string>
+    <string name="proxy_domain_summary">Domain for proxy authentication</string>
+    
 </resources>

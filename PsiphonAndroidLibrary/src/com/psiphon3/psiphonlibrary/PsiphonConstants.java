@@ -53,9 +53,11 @@ public class PsiphonConstants
 
     public final static int CHECK_TUNNEL_SERVER_LAST_PORT = 10000;
 
-    public final static int CHECK_TUNNEL_TIMEOUT_MILLISECONDS = 5000;
+    public final static int CHECK_TUNNEL_TIMEOUT_MILLISECONDS = 500;
 
     public final static int SESSION_ESTABLISHMENT_TIMEOUT_MILLISECONDS = 20000;
+
+    public final static int TARGET_PROTOCOL_ROTATION_SESSION_DURATION_THRESHOLD_MILLISECONDS = 2*60*1000;
 
     public final static String RELAY_PROTOCOL_OSSH = "OSSH";
 
@@ -69,6 +71,8 @@ public class PsiphonConstants
     public final static int HTTPS_REQUEST_SHORT_TIMEOUT = 5000;
 
     public final static int HTTPS_REQUEST_LONG_TIMEOUT = 20000;
+    
+    public final static int HTTPS_REQUEST_FINAL_REQUEST_TIMEOUT = 1000;
 
     public final static int SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH = 60*60*6;
 
