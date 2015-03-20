@@ -768,7 +768,7 @@ public class ServerInterface
 
             String urls[] = getRequestURLsWithFailover("status", extraParams);
             makePsiphonRequestWithFailover(
-                    protectSocket, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, hasTunnel, urls, additionalHeaders, requestBody, null);
+                    protectSocket, PsiphonConstants.HTTPS_REQUEST_FINAL_REQUEST_TIMEOUT, hasTunnel, urls, additionalHeaders, requestBody, null);
         }
     }
 
@@ -1042,7 +1042,12 @@ public class ServerInterface
     {
         String urls[] = new String[2];
         urls[0] = getRequestURL(path, extraParams);
-        urls[1] = getRequestURL(PsiphonConstants.DEFAULT_WEB_SERVER_PORT, path, extraParams);
+        if (getCurrentServerEntry().hasCapability(ServerEntry.CAPABILITY_HANDSHAKE) &&
+                !getCurrentServerEntry().hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
+        {
+            // FRONTED_MEEK listens on port 443, so there is no port forward on 443 to the web server
+            urls[1] = getRequestURL(PsiphonConstants.DEFAULT_WEB_SERVER_PORT, path, extraParams);
+        }
         return urls;
     }
 

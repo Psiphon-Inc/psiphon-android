@@ -201,6 +201,12 @@ public class DynamicAcceptThread extends Thread implements IChannelWorkerThread 
 				return;
 			}
 
+			// PSIPHON:
+			// Now that we are relaying, don't timeout this session after 3 minutes.
+			// In the case of streaming video, for example, upstream packets may be sparse.
+			// TODO: implement a timeout that detects when both directions are idle to clean up dead sessions?
+			sock.setSoTimeout(0);
+			        
 			try {
 				l2r = new PsiphonStreamForwarder(cn, null, in, cn.stdinStream, "LocalToRemote", destHost);
                 r2l = new PsiphonStreamForwarder(cn, l2r, cn.stdoutStream, out, "RemoteToLocal", destHost);
@@ -209,7 +215,7 @@ public class DynamicAcceptThread extends Thread implements IChannelWorkerThread 
 				try {
 					/*
 					 * This message is only visible during debugging, since we
-					 * discard the channel immediatelly
+					 * discard the channel immediately
 					 */
 					cn.cm.closeChannel(cn,
 							"Weird error during creation of PsiphonStreamForwarder ("
