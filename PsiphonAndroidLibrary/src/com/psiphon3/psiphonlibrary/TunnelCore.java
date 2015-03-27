@@ -208,7 +208,7 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
                         iconID,
                         ticker,
                         System.currentTimeMillis());
-        
+
         if (alert)
         {
             if (PreferenceManager.getDefaultSharedPreferences(m_parentService).getBoolean(
@@ -565,12 +565,12 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
             }
 
             checkSignals(0);
-            
+
             m_serverSelector.Run(
                     tunnelWholeDevice && runVpnService, // protect sockets in whole device mode
                     m_interface.getCurrentClientSessionID(),
                     m_extraAuthParams);
-            
+
             checkSignals(0);
 
             // At this point we'll start counting bytes transferred for SSH traffic
@@ -781,7 +781,7 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
             sshConnection.addConnectionMonitor(new Monitor(m_signalQueue));
 
             checkSignals(0);
-            
+
             // Certain Android devices silently fail to route through the VpnService tun device.
             // Test connecting to a service available only through the tunnel. Stop when the check fails.
 
@@ -1084,7 +1084,7 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
                             }
                             if (socks == null)
                             {
-                                MyLog.v(R.string.preemptive_bind_failed, MyLog.Sensitivity.NOT_SENSITIVE);
+                                MyLog.w(R.string.preemptive_bind_failed, MyLog.Sensitivity.NOT_SENSITIVE);
                             }
 
                             if (tunnelWholeDevice && !runVpnService)
@@ -1219,7 +1219,7 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
                         m_eventsInterface.signalUnexpectedDisconnect(m_parentContext);
                     }
                 }
-                
+
                 if (PsiphonConstants.TARGET_PROTOCOL_ROTATION_SESSION_DURATION_THRESHOLD_MILLISECONDS >=
                         PsiphonData.getPsiphonData().getDataTransferStats().getElapsedTime())
                 {
