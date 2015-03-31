@@ -19,6 +19,8 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -28,6 +30,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.NTCredentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.json.JSONObject;
 
 import android.content.Context;
@@ -79,6 +84,10 @@ public class PsiphonData
     private boolean m_useCustomProxySettings;
     private String m_customProxyHost;
     private String m_customProxyPort;
+    private boolean m_useProxyAuthentication;
+    private String m_proxyUsername;
+    private String m_proxyPassword;
+    private String m_proxyDomain;
     private ProxySettings m_savedSystemProxySettings;
     private boolean m_vpnServiceUnavailable;
     private TunnelCore m_currentTunnelCore;
@@ -106,6 +115,7 @@ public class PsiphonData
         m_useHTTPProxy = false;
         m_useSystemProxySettings = false;
         m_useCustomProxySettings = false;
+        m_useProxyAuthentication = false;
         m_vpnServiceUnavailable = false;
         m_reportedStats = new ReportedStats();
         m_enableReportedStats = true;
@@ -331,6 +341,47 @@ public class PsiphonData
     	return m_customProxyPort;
     }
     
+    public synchronized void setUseProxyAuthentication(boolean useProxyAuthentication)
+    {
+        m_useProxyAuthentication = useProxyAuthentication;
+    }
+
+    public synchronized boolean getUseProxyAuthentication()
+    {
+        return m_useProxyAuthentication;
+    }
+
+    public synchronized void setProxyUsername(String username)
+    {
+    	m_proxyUsername = username;
+    }
+    
+    public synchronized String getProxyUsername()
+    {
+    	return m_proxyUsername;
+    }
+
+    public synchronized void setProxyPassword(String password)
+    {
+    	m_proxyPassword = password;
+    }
+    
+    public synchronized String getProxyPassword()
+    {
+    	return m_proxyPassword;
+    }
+    
+    public synchronized void setProxyDomain(String domain)
+    {
+    	m_proxyDomain = domain;
+    }
+    
+    public synchronized String getProxyDomain()
+    {
+    	return m_proxyDomain;
+    }
+
+    
     public class ProxySettings
     {
         public String proxyHost;
@@ -389,6 +440,35 @@ public class PsiphonData
         
         return settings;
     }
+    
+	public synchronized Credentials getProxyCredentials() {
+		if (!getUseProxyAuthentication()) {
+			return null;
+		}
+
+		String username = getProxyUsername();
+		String password = getProxyPassword();
+		String domain = getProxyDomain();
+		
+		if (username == null || username.trim().equals("")) {
+			return null;
+		}
+		if (password == null || password.trim().equals("")) {
+			return null;
+		}
+		if (domain == null || domain.trim().equals("")) {
+			return new NTCredentials(username, password, "", "");
+		}
+		
+		String localHost;
+		try {
+			localHost = InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			localHost = "localhost";
+		}
+
+		return new NTCredentials(username, password, localHost, domain);
+	}
     
     private ProxySettings getSystemProxySettings(Context context)
     {

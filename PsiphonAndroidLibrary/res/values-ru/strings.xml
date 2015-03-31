@@ -106,7 +106,7 @@
   <string name="compression_savings">%s сохранен</string>
   <string name="start">Старт</string>
   <string name="stop">Стоп</string>
-  <string name="status_tab_name">Статус</string>
+  <string name="home_tab_name">Домой</string>
   <string name="settings_tab_name">Настройки</string>
   <string name="statistics_tab_name">Статистика</string>
   <string name="logs_tab_name">Логи</string>
@@ -117,6 +117,11 @@
   <string name="share_proxies_prompt_message">Для применение этой установки требуется перезапуск приложения</string>
   <string name="share_proxies_prompt_positive">Перезапустить сейчас</string>
   <string name="share_proxies_prompt_negative">Отмена</string>
+  <string name="use_proxy_settings_toggle">Подключение через HTTP Proxy</string>
+  <string name="use_system_proxy_settings_radio">Использовать системные настройки сети</string>
+  <string name="use_custom_proxy_settings_radio">Использовать настройки:</string>
+  <string name="custom_proxy_settings_host">Адрес узла</string>
+  <string name="custom_proxy_settings_port">Порт</string>
   <string name="region_name_any">Оптимальное соединение</string>
   <string name="region_name_us">США</string>
   <string name="region_name_gb">Великобритания</string>
@@ -131,8 +136,17 @@
   <string name="tunnel_whole_device_toggle">Туннелирование всех интернет соединений(требует права root или Android 4.0+)</string>
   <string name="region_selector">Выберите регион</string>
   <string name="network_proxy_connect_exception">Ошибка соединения с HTTP прокси сети: %s</string>
+  <string name="network_proxy_connect_information">Подключение через ваш HTTP Proxy: %s</string>
+  <string name="network_proxy_connect_invalid_values">Неверные настройки HTTP Proxy</string>
   <string name="tunnel_whole_device_exception">Ваше устройство не поддерживает туннелирование всех интернет соединений без прав root.</string>
   <string name="run_polipo_failed">Ошибка запуска Polipo: %s</string>
   <string name="wdm_force_iptables_toggle">Туннелировать все интернет соединения методом root</string>
   <string name="http_prefix_toggle">Симулировать HTTP </string>
+  <string name="preference_notifications_title">Уведомления</string>
+  <string name="preference_notifications_with_sound_title">Звук</string>
+  <string name="preference_notifications_with_sound_summary">Воспроизводить звук при изменении статуса подключения</string>
+  <string name="preference_notifications_with_vibrate_title">Вибрация</string>
+  <string name="preference_notifications_with_vibrate_summary">Вибрировать при изменении статуса подключения</string>
+  <string name="moreOptions">Другие настройки</string>
+  <string name="root_mode_not_supported">Режим root не поддерживается на этой версии Android</string>
 </resources>
