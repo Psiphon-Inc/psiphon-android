@@ -22,7 +22,12 @@ package com.psiphon3;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.Map;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -32,13 +37,24 @@ import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.TypedValue;
+import android.view.Display;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TabHost;
 
+import com.inmobi.commons.InMobi;
+import com.inmobi.monetization.IMBanner;
+import com.inmobi.monetization.IMBannerListener;
+import com.inmobi.monetization.IMErrorCode;
+import com.inmobi.monetization.IMInterstitial;
+import com.inmobi.monetization.IMInterstitialListener;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 
@@ -49,6 +65,10 @@ public class StatusActivity
     public static final String BANNER_FILE_NAME = "bannerImage";
 
     private ImageView m_banner;
+    private boolean m_inmobiInitialized = false;
+    private IMBanner m_inmobiBannerAdView = null;
+    private IMInterstitial m_inmobiInterstitial = null;
+    private boolean m_fullScreenAdShown = false;
     private boolean m_tunnelWholeDevicePromptShown = false;
 
     public StatusActivity()
@@ -120,6 +140,25 @@ public class StatusActivity
         }
     }
 
+    @Override
+    public void onPause()
+    {
+        super.onPause();
+    }
+    
+    @Override
+    public void onResume()
+    {
+        super.onResume();
+        initAds();
+    }
+    
+    @Override
+    public void onDestroy()
+    {
+      super.onDestroy();
+    }
+    
     private void loadSponsorTab(boolean freshConnect)
     {
         resetSponsorHomePage(freshConnect);
@@ -140,6 +179,172 @@ public class StatusActivity
         HandleCurrentIntent();
     }
 
+    @Override
+    protected void doToggle()
+    {
+        showFullScreenAd();
+        super.doToggle();
+    }
+    
+    @Override
+    public void onTabChanged(String tabId)
+    {
+        showFullScreenAd();
+        super.onTabChanged(tabId);
+    }
+    
+    private void showFullScreenAd()
+    {
+        if (PsiphonData.getPsiphonData().getShowAds() && !m_fullScreenAdShown)
+        {
+            ArrayList<InterstitialAd> interstitialAds = new ArrayList<InterstitialAd>();
+            interstitialAds.add(new InMobiInterstitial());
+            Collections.shuffle(interstitialAds);
+            for (InterstitialAd interstitial : interstitialAds)
+            {
+                interstitial.show();
+            }
+        }
+    }
+    
+    interface InterstitialAd
+    {
+        void show();
+    }
+    
+    private class InMobiInterstitial implements InterstitialAd
+    {
+        @Override
+        public void show()
+        {
+            if (!m_fullScreenAdShown &&
+                    m_inmobiInterstitial != null &&
+                    m_inmobiInterstitial.getState() == IMInterstitial.State.READY)
+            {
+                m_inmobiInterstitial.show();
+                m_fullScreenAdShown = true;
+            }
+        }
+    }
+    
+    private static Integer getOptimalInMobiSlotSize(Activity context)
+    {
+        Display display = ((WindowManager)context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        display.getMetrics(displayMetrics);
+        double density = displayMetrics.density;
+        double width = displayMetrics.widthPixels;
+        double height = displayMetrics.heightPixels;
+        int[][] maparray = {{IMBanner.INMOBI_AD_UNIT_728X90, 728, 90},
+                            {IMBanner.INMOBI_AD_UNIT_468X60, 468, 60},
+                            {IMBanner.INMOBI_AD_UNIT_320X50, 320, 50}};
+        for (int i = 0; i < maparray.length; i++)
+        {
+            if (maparray[i][1] * density <= width && maparray[i][2] * density <= height)
+            {
+                return maparray[i][0];
+            }
+        }
+        return IMBanner.INMOBI_AD_UNIT_320X50;
+    }
+    
+    static final String INMOBI_BANNER_PROPERTY_ID = "";
+    static final String INMOBI_INTERSTITIAL_PROPERTY_ID = "";
+    
+    private void initAds()
+    {
+        if (PsiphonData.getPsiphonData().getShowAds())
+        {
+            if (!m_inmobiInitialized)
+            {
+                InMobi.initialize(this, INMOBI_BANNER_PROPERTY_ID);
+                InMobi.setLanguage(Locale.getDefault().getISO3Language());
+                m_inmobiInitialized = true;
+            }
+
+            if (m_inmobiInterstitial == null)
+            {
+                m_inmobiInterstitial = new IMInterstitial(this, INMOBI_INTERSTITIAL_PROPERTY_ID);
+                m_inmobiInterstitial.setIMInterstitialListener(new IMInterstitialListener() {
+                    @Override
+                    public void onDismissInterstitialScreen(IMInterstitial arg0)
+                    {
+                    }
+                    @Override
+                    public void onInterstitialFailed(IMInterstitial arg0, IMErrorCode arg1)
+                    {
+                        Log.d("InMobi", String.format("Interstitial Request Failed: %s", arg1.toString()));
+                        // Set to null so it will be recreated the next time
+                        m_inmobiInterstitial = null;
+                    }
+                    @Override
+                    public void onInterstitialInteraction(IMInterstitial arg0, Map<String, String> arg1)
+                    {
+                    }
+                    @Override
+                    public void onInterstitialLoaded(IMInterstitial arg0)
+                    {
+                    }
+                    @Override
+                    public void onLeaveApplication(IMInterstitial arg0)
+                    {
+                    }
+                    @Override
+                    public void onShowInterstitialScreen(IMInterstitial arg0)
+                    {
+                    }
+                });
+                m_inmobiInterstitial.loadInterstitial();
+            }
+            
+            if (m_inmobiBannerAdView == null)
+            {
+                m_inmobiBannerAdView = new IMBanner(this, INMOBI_BANNER_PROPERTY_ID, getOptimalInMobiSlotSize(this));
+                m_inmobiBannerAdView.setRefreshInterval(30);
+                m_inmobiBannerAdView.setIMBannerListener(new IMBannerListener() {
+                    @Override
+                    public void onBannerInteraction(IMBanner arg0, Map<String, String> arg1)
+                    {
+                    }
+                    @Override
+                    public void onBannerRequestFailed(IMBanner arg0, IMErrorCode arg1)
+                    {
+                        Log.d("InMobi", String.format("Banner Request Failed: %s", arg1.toString()));
+                        // Leave m_inmobiBannerAdView. If it is not in the layout, we will
+                        // call m_inmobiBannerAdView.loadBanner() again the next time
+                    }
+                    @Override
+                    public void onBannerRequestSucceeded(IMBanner arg0)
+                    {
+                        Log.d("InMobi", "Banner Request Succeeded");
+                        if (m_inmobiBannerAdView.getParent() == null)
+                        {
+                            LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
+                            layout.removeAllViewsInLayout();
+                            layout.addView(m_inmobiBannerAdView);
+                        }
+                    }
+                    @Override
+                    public void onDismissBannerScreen(IMBanner arg0)
+                    {
+                    }
+                    @Override
+                    public void onLeaveApplication(IMBanner arg0)
+                    {
+                    }
+                    @Override
+                    public void onShowBannerScreen(IMBanner arg0)
+                    {
+                    }
+                });
+            }
+            if (m_inmobiBannerAdView.getParent() == null)
+            {
+                m_inmobiBannerAdView.loadBanner();
+            }
+        }
+    }
+    
     protected void HandleCurrentIntent()
     {
         Intent intent = getIntent();
@@ -151,6 +356,8 @@ public class StatusActivity
 
         if (0 == intent.getAction().compareTo(HANDSHAKE_SUCCESS))
         {
+            initAds();
+            
             // Show the home page. Always do this in browser-only mode, even
             // after an automated reconnect -- since the status activity was
             // brought to the front after an unexpected disconnect. In whole
