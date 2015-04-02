@@ -47,19 +47,24 @@ import java.util.Timer;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGetHC4;
 import org.apache.http.client.methods.HttpPostHC4;
 import org.apache.http.client.methods.HttpPutHC4;
 import org.apache.http.client.methods.HttpRequestBaseHC4;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.DnsResolver;
@@ -70,6 +75,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.BasicCredentialsProviderHC4;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
@@ -146,6 +152,7 @@ public class ServerInterface
         public String meekObfuscatedKey;
         public String meekFrontingDomain;
         public String meekFrontingHost;
+        public ArrayList<String> meekFrontingAddresses;
 
         // These are determined while connecting.
         public String connType; // Set to one of PsiphonConstants.RELAY_PROTOCOL_*
@@ -172,6 +179,23 @@ public class ServerInterface
         public static final String CAPABILITY_UNFRONTED_MEEK = "UNFRONTED-MEEK";
 
         public static final String REGION_CODE_ANY = "";
+        
+        public boolean supportsProtocol(String protocol)
+        {
+            if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_OSSH))
+            {
+                return hasCapability(CAPABILITY_OSSH);
+            }
+            else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH))
+            {
+                return hasCapability(CAPABILITY_UNFRONTED_MEEK);
+            }
+            else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH))
+            {
+                return hasCapability(CAPABILITY_FRONTED_MEEK);
+            }
+            return false;
+        }
 
         public boolean hasCapability(String capability)
         {
@@ -746,7 +770,7 @@ public class ServerInterface
 
             String urls[] = getRequestURLsWithFailover("status", extraParams);
             makePsiphonRequestWithFailover(
-                    protectSocket, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, hasTunnel, urls, additionalHeaders, requestBody, null);
+                    protectSocket, PsiphonConstants.HTTPS_REQUEST_FINAL_REQUEST_TIMEOUT, hasTunnel, urls, additionalHeaders, requestBody, null);
         }
     }
 
@@ -1020,7 +1044,12 @@ public class ServerInterface
     {
         String urls[] = new String[2];
         urls[0] = getRequestURL(path, extraParams);
-        urls[1] = getRequestURL(PsiphonConstants.DEFAULT_WEB_SERVER_PORT, path, extraParams);
+        if (getCurrentServerEntry().hasCapability(ServerEntry.CAPABILITY_HANDSHAKE) &&
+                !getCurrentServerEntry().hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
+        {
+            // FRONTED_MEEK listens on port 443, so there is no port forward on 443 to the web server
+            urls[1] = getRequestURL(PsiphonConstants.DEFAULT_WEB_SERVER_PORT, path, extraParams);
+        }
         return urls;
     }
 
@@ -1297,15 +1326,51 @@ public class ServerInterface
 
     public static class ProtectedSSLConnectionSocketFactory extends SSLConnectionSocketFactory
     {
+        public static String[] getSupportedProtocols() throws IOException
+        {
+            // Android 2.2.2 SSlSocket.getEnabledProtocols() crash workaround
+            // in org.apache.http.conn.ssl.SSLConnectionSocketFactory
+            // For more details on the bug see
+            // https://code.google.com/p/android/issues/detail?id=21394
+            // This doesn't affect older version of HttpClient,a new call to
+            // SSlSocket.getEnabledProtocols() was introduced by this changeset 
+            // http://markmail.org/message/jvzl5fatgj747fcx in 4.3.5.1
+
+            javax.net.ssl.SSLSocketFactory sf = (javax.net.ssl.SSLSocketFactory) javax.net.ssl.SSLSocketFactory.getDefault();
+            javax.net.ssl.SSLSocket sslsock;
+            sslsock = (javax.net.ssl.SSLSocket) sf.createSocket();
+            String[] allProtocols = sslsock.getSupportedProtocols();
+            final List<String> safeProtocolsList = new ArrayList<String>(allProtocols.length);
+            for (String protocol : allProtocols) {
+                if (!protocol.startsWith("SSL")) {
+                    safeProtocolsList.add(protocol);
+                }
+            }
+            if(safeProtocolsList.isEmpty()) {
+                return null;
+            }
+
+            String[] safeProtocols = safeProtocolsList.toArray(new String[safeProtocolsList.size()]);
+            
+            // We've seen at least one reported error case where setEnabledProtocols
+            // would throw IllegalArgument exception when passed a protocol name
+            // reported by getSupportedProtocols. In that case fallback to TLSv1
+            try {
+                sslsock.setEnabledProtocols(safeProtocols);
+            } catch (IllegalArgumentException e) {
+                safeProtocols = new String[] {"TLSv1"};
+            }
+            return safeProtocols;
+        }
+
         Tun2Socks.IProtectSocket protectSocket;
 
         ProtectedSSLConnectionSocketFactory(
                 Tun2Socks.IProtectSocket protectSocket,
                 SSLContext sslContext,
-                X509HostnameVerifier verifier)
+                X509HostnameVerifier verifier) throws IOException
         {
-            super(sslContext, verifier);
-
+            super(sslContext, ProtectedSSLConnectionSocketFactory.getSupportedProtocols(), null, verifier);
             this.protectSocket = protectSocket;
         }
 
@@ -1334,6 +1399,42 @@ public class ServerInterface
             }
 
             return socket;
+        }
+    }
+    
+    // Disables SNI, no hostname verification
+    public static class FrontingSSLConnectionSocketFactory extends ProtectedSSLConnectionSocketFactory
+    {
+        private javax.net.ssl.SSLSocketFactory socketFactory;
+        
+        FrontingSSLConnectionSocketFactory(
+                Tun2Socks.IProtectSocket protectSocket,
+                SSLContext sslContext,
+                X509HostnameVerifier verifier) throws IOException
+        {
+            super(protectSocket, sslContext, verifier);
+            this.socketFactory = sslContext.getSocketFactory();
+        }
+
+        @Override
+        public Socket createLayeredSocket(
+                final Socket socket,
+                final String target,
+                final int port,
+                final HttpContext context) throws IOException {
+            
+            final SSLSocket sslsock = (SSLSocket) this.socketFactory.createSocket(
+                    socket,
+                    target,
+                    port,
+                    true);
+            String supportedProtocols[] = getSupportedProtocols();
+            if (supportedProtocols != null) {
+                sslsock.setEnabledProtocols(supportedProtocols);
+            }
+            prepareSocket(sslsock);
+            sslsock.startHandshake();
+            return sslsock;
         }
     }
 
@@ -1394,6 +1495,7 @@ public class ServerInterface
         HttpRequestBaseHC4 request = null;
         CloseableHttpResponse response = null;
         CloseableHttpClient client = null;
+        HttpClientContext httpClientContext = null;
 
         try
         {
@@ -1401,6 +1503,9 @@ public class ServerInterface
                 .setConnectTimeout(timeout)
                 .setConnectionRequestTimeout(timeout)
                 .setSocketTimeout(timeout);
+            
+            httpClientContext = HttpClientContext.create();
+
             
             HttpHost httpproxy;
             if (useLocalProxy)
@@ -1415,6 +1520,13 @@ public class ServerInterface
                 {
                     httpproxy = new HttpHost(proxySettings.proxyHost, proxySettings.proxyPort);
                 	requestBuilder.setProxy(httpproxy);
+                	Credentials proxyCredentials = PsiphonData.getPsiphonData().getProxyCredentials();
+                	if(proxyCredentials != null)
+                	{
+                		CredentialsProvider credentialsProvider = new BasicCredentialsProviderHC4();
+                		credentialsProvider.setCredentials(AuthScope.ANY, proxyCredentials);
+                		httpClientContext.setCredentialsProvider(credentialsProvider);
+                	}
                 }
             }
 
@@ -1472,6 +1584,7 @@ public class ServerInterface
             client = HttpClientBuilder.create()
                     .setConnectionManager(connectionManager)
                     .build();
+            
 
             if (requestMethod == RequestMethod.POST ||
                 (requestMethod == RequestMethod.INFER && body != null))
@@ -1520,7 +1633,7 @@ public class ServerInterface
             new Timer(true).schedule(timeoutAbort, timeout);
             try
             {
-                response = client.execute(request);
+                response = client.execute(request, httpClientContext);
             }
             finally
             {
@@ -1786,10 +1899,25 @@ public class ServerInterface
             newEntry.meekObfuscatedKey = "";
         }
 
+        newEntry.meekFrontingAddresses = new ArrayList<String>();
         if (newEntry.hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
         {
             newEntry.meekFrontingDomain = obj.getString("meekFrontingDomain");
             newEntry.meekFrontingHost = obj.getString("meekFrontingHost");
+            if (obj.has("meekFrontingAddresses"))
+            {
+                JSONArray meekFrontingAddressesJSON = obj.getJSONArray("meekFrontingAddresses");
+                for (int i = 0; i < meekFrontingAddressesJSON.length(); i++)
+                {
+                    newEntry.meekFrontingAddresses.add(meekFrontingAddressesJSON.getString(i));
+                }
+            }
+            // We will always use meekFrontingAddresses from now on, so copy meekFrontingDomain in
+            // if no other meekFrontingAddresses are specified
+            if (newEntry.meekFrontingAddresses.size() == 0)
+            {
+                newEntry.meekFrontingAddresses.add(newEntry.meekFrontingDomain);
+            }
         }
         else
         {
