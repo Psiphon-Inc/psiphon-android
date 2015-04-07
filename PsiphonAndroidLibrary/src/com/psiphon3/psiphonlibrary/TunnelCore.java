@@ -208,7 +208,7 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
                         iconID,
                         ticker,
                         System.currentTimeMillis());
-        
+
         if (alert)
         {
             if (PreferenceManager.getDefaultSharedPreferences(m_parentService).getBoolean(
@@ -565,12 +565,12 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
             }
 
             checkSignals(0);
-            
+
             m_serverSelector.Run(
                     tunnelWholeDevice && runVpnService, // protect sockets in whole device mode
                     m_interface.getCurrentClientSessionID(),
                     m_extraAuthParams);
-            
+
             checkSignals(0);
 
             // At this point we'll start counting bytes transferred for SSH traffic
@@ -780,14 +780,8 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
             // Don't signal unexpected disconnect until we've started
             sshConnection.addConnectionMonitor(new Monitor(m_signalQueue));
 
-            // Start connection elapsed time
-            PsiphonData.getPsiphonData().getDataTransferStats().startConnected();
-
-            setState(State.CONNECTED);
-            PsiphonData.getPsiphonData().setTunnelRelayProtocol(entry.connType);
-
             checkSignals(0);
-            
+
             // Certain Android devices silently fail to route through the VpnService tun device.
             // Test connecting to a service available only through the tunnel. Stop when the check fails.
 
@@ -810,7 +804,7 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
                 // it starts a thread which runs tun2socks; but even so, when channel.connect
                 // is called won't the VPN route packets to the VPN fd which will be
                 // queued and read when tun2socks eventually starts?
-                for (int retry = 0; !success && retry < 2; retry++)
+                for (int retry = 0; !success && retry < 10; retry++)
                 {
                     SocketChannel channel = null;
                     Selector selector = null;
@@ -865,6 +859,12 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
             }
 
             checkSignals(0);
+
+            // Start connection elapsed time
+            PsiphonData.getPsiphonData().getDataTransferStats().startConnected();
+
+            setState(State.CONNECTED);
+            PsiphonData.getPsiphonData().setTunnelRelayProtocol(entry.connType);
 
             try
             {
@@ -1084,7 +1084,7 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
                             }
                             if (socks == null)
                             {
-                                MyLog.v(R.string.preemptive_bind_failed, MyLog.Sensitivity.NOT_SENSITIVE);
+                                MyLog.w(R.string.preemptive_bind_failed, MyLog.Sensitivity.NOT_SENSITIVE);
                             }
 
                             if (tunnelWholeDevice && !runVpnService)
@@ -1219,7 +1219,7 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
                         m_eventsInterface.signalUnexpectedDisconnect(m_parentContext);
                     }
                 }
-                
+
                 if (PsiphonConstants.TARGET_PROTOCOL_ROTATION_SESSION_DURATION_THRESHOLD_MILLISECONDS >=
                         PsiphonData.getPsiphonData().getDataTransferStats().getElapsedTime())
                 {

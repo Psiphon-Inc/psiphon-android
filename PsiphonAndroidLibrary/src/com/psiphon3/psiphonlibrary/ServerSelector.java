@@ -295,6 +295,9 @@ public class ServerSelector implements IAbortIndicator
 
                 else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH))
                 {
+                    Collections.shuffle(this.entry.meekFrontingAddresses);
+                    // meekFrontingAddresses is now always populated with at least meekFrontingDomain
+                    String frontingAddress = this.entry.meekFrontingAddresses.get(0);
                     this.meekClient = new MeekClient(
                             protectSocketsRequired ? ServerSelector.this.protectSocket : null,
                             ServerSelector.this.serverInterface,
@@ -302,7 +305,7 @@ public class ServerSelector implements IAbortIndicator
                             this.entry.ipAddress + ":" + Integer.toString(this.entry.getPreferredReachablityTestPort()),
                             this.entry.meekCookieEncryptionPublicKey,
                             this.entry.meekObfuscatedKey,
-                            this.entry.meekFrontingDomain,
+                            frontingAddress,
                             this.entry.meekFrontingHost,
                             context);
                     this.meekClient.start();
@@ -310,7 +313,7 @@ public class ServerSelector implements IAbortIndicator
                     // NOTE: don't call doVpnProtect when using meekClient -- that breaks the localhost connection
                     this.socket = connectSocket(false, MAX_WORK_TIME_MILLISECONDS, "127.0.0.1", this.meekClient.getLocalPort());
 
-                    this.entry.front = this.entry.meekFrontingDomain;
+                    this.entry.front = frontingAddress;
                 }
 
                 if (this.socket != null)

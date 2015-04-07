@@ -91,7 +91,6 @@ import org.xbill.DNS.PsiphonState;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.os.Build;
 import android.os.SystemClock;
 import android.util.Pair;
 import android.webkit.URLUtil;
@@ -153,6 +152,7 @@ public class ServerInterface
         public String meekObfuscatedKey;
         public String meekFrontingDomain;
         public String meekFrontingHost;
+        public ArrayList<String> meekFrontingAddresses;
 
         // These are determined while connecting.
         public String connType; // Set to one of PsiphonConstants.RELAY_PROTOCOL_*
@@ -770,7 +770,7 @@ public class ServerInterface
 
             String urls[] = getRequestURLsWithFailover("status", extraParams);
             makePsiphonRequestWithFailover(
-                    protectSocket, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, hasTunnel, urls, additionalHeaders, requestBody, null);
+                    protectSocket, PsiphonConstants.HTTPS_REQUEST_FINAL_REQUEST_TIMEOUT, hasTunnel, urls, additionalHeaders, requestBody, null);
         }
     }
 
@@ -1044,7 +1044,12 @@ public class ServerInterface
     {
         String urls[] = new String[2];
         urls[0] = getRequestURL(path, extraParams);
-        urls[1] = getRequestURL(PsiphonConstants.DEFAULT_WEB_SERVER_PORT, path, extraParams);
+        if (getCurrentServerEntry().hasCapability(ServerEntry.CAPABILITY_HANDSHAKE) &&
+                !getCurrentServerEntry().hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
+        {
+            // FRONTED_MEEK listens on port 443, so there is no port forward on 443 to the web server
+            urls[1] = getRequestURL(PsiphonConstants.DEFAULT_WEB_SERVER_PORT, path, extraParams);
+        }
         return urls;
     }
 
@@ -1335,16 +1340,27 @@ public class ServerInterface
             javax.net.ssl.SSLSocket sslsock;
             sslsock = (javax.net.ssl.SSLSocket) sf.createSocket();
             String[] allProtocols = sslsock.getSupportedProtocols();
-            final List<String> enabledProtocols = new ArrayList<String>(allProtocols.length);
+            final List<String> safeProtocolsList = new ArrayList<String>(allProtocols.length);
             for (String protocol : allProtocols) {
                 if (!protocol.startsWith("SSL")) {
-                    enabledProtocols.add(protocol);
+                    safeProtocolsList.add(protocol);
                 }
             }
-            if (!enabledProtocols.isEmpty()) {
-                return enabledProtocols.toArray(new String[enabledProtocols.size()]);
+            if(safeProtocolsList.isEmpty()) {
+                return null;
             }
-            return null;
+
+            String[] safeProtocols = safeProtocolsList.toArray(new String[safeProtocolsList.size()]);
+            
+            // We've seen at least one reported error case where setEnabledProtocols
+            // would throw IllegalArgument exception when passed a protocol name
+            // reported by getSupportedProtocols. In that case fallback to TLSv1
+            try {
+                sslsock.setEnabledProtocols(safeProtocols);
+            } catch (IllegalArgumentException e) {
+                safeProtocols = new String[] {"TLSv1"};
+            }
+            return safeProtocols;
         }
 
         Tun2Socks.IProtectSocket protectSocket;
@@ -1383,6 +1399,42 @@ public class ServerInterface
             }
 
             return socket;
+        }
+    }
+    
+    // Disables SNI, no hostname verification
+    public static class FrontingSSLConnectionSocketFactory extends ProtectedSSLConnectionSocketFactory
+    {
+        private javax.net.ssl.SSLSocketFactory socketFactory;
+        
+        FrontingSSLConnectionSocketFactory(
+                Tun2Socks.IProtectSocket protectSocket,
+                SSLContext sslContext,
+                X509HostnameVerifier verifier) throws IOException
+        {
+            super(protectSocket, sslContext, verifier);
+            this.socketFactory = sslContext.getSocketFactory();
+        }
+
+        @Override
+        public Socket createLayeredSocket(
+                final Socket socket,
+                final String target,
+                final int port,
+                final HttpContext context) throws IOException {
+            
+            final SSLSocket sslsock = (SSLSocket) this.socketFactory.createSocket(
+                    socket,
+                    target,
+                    port,
+                    true);
+            String supportedProtocols[] = getSupportedProtocols();
+            if (supportedProtocols != null) {
+                sslsock.setEnabledProtocols(supportedProtocols);
+            }
+            prepareSocket(sslsock);
+            sslsock.startHandshake();
+            return sslsock;
         }
     }
 
@@ -1847,10 +1899,25 @@ public class ServerInterface
             newEntry.meekObfuscatedKey = "";
         }
 
+        newEntry.meekFrontingAddresses = new ArrayList<String>();
         if (newEntry.hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
         {
             newEntry.meekFrontingDomain = obj.getString("meekFrontingDomain");
             newEntry.meekFrontingHost = obj.getString("meekFrontingHost");
+            if (obj.has("meekFrontingAddresses"))
+            {
+                JSONArray meekFrontingAddressesJSON = obj.getJSONArray("meekFrontingAddresses");
+                for (int i = 0; i < meekFrontingAddressesJSON.length(); i++)
+                {
+                    newEntry.meekFrontingAddresses.add(meekFrontingAddressesJSON.getString(i));
+                }
+            }
+            // We will always use meekFrontingAddresses from now on, so copy meekFrontingDomain in
+            // if no other meekFrontingAddresses are specified
+            if (newEntry.meekFrontingAddresses.size() == 0)
+            {
+                newEntry.meekFrontingAddresses.add(newEntry.meekFrontingDomain);
+            }
         }
         else
         {
