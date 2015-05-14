@@ -51,13 +51,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Timer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLContext;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
+import org.apache.http.auth.AuthProtocolState;
+import org.apache.http.auth.AuthScheme;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.AuthStateHC4;
+import org.apache.http.auth.Credentials;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CookieStore;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPostHC4;
@@ -76,6 +84,7 @@ import org.apache.http.cookie.CookieSpecProvider;
 import org.apache.http.cookie.MalformedCookieException;
 import org.apache.http.entity.ByteArrayEntityHC4;
 import org.apache.http.impl.client.BasicCookieStoreHC4;
+import org.apache.http.impl.client.BasicCredentialsProviderHC4;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
@@ -88,10 +97,11 @@ import org.apache.http.util.EntityUtilsHC4;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.Context;
 import ch.ethz.ssh2.crypto.ObfuscatedSSH;
 
+import com.psiphon3.psiphonlibrary.ServerInterface.FrontingSSLConnectionSocketFactory;
 import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedPlainConnectionSocketFactory;
-import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedSSLConnectionSocketFactory;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.psiphonlibrary.Utils.RequestTimeoutAbort;
 
@@ -123,6 +133,8 @@ public class MeekClient {
     private ServerSocket mServerSocket;
     private int mLocalPort = -1;
     private Set<Socket> mClients;
+    private final Context mContext;
+    private final AtomicBoolean mPrintedProxyAuth = new AtomicBoolean(false);
     
     public enum MeekProtocol {FRONTED, UNFRONTED};
 
@@ -138,7 +150,9 @@ public class MeekClient {
             String cookieEncryptionPublicKey,
             String obfuscationKeyword,
             String frontingDomain,
-            String frontingHost) {
+            String frontingHost,
+    		Context context) {
+    	mContext = context.getApplicationContext();
         mProtocol = MeekProtocol.FRONTED;
         mProtectSocket = protectSocket;
         mServerInterface = serverInterface;
@@ -160,7 +174,9 @@ public class MeekClient {
             String cookieEncryptionPublicKey,
             String obfuscationKeyword,
             String meekServerHost,
-            int meekServerPort) {
+            int meekServerPort,
+            Context context) {
+    	mContext = context.getApplicationContext();
         mProtocol = MeekProtocol.UNFRONTED;
         mProtectSocket = protectSocket;
         mServerInterface = serverInterface;
@@ -268,14 +284,18 @@ public class MeekClient {
             if (mFrontingDomain != null) {
                 SSLContext sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(null,  null,  null);
-                ProtectedSSLConnectionSocketFactory sslSocketFactory = new ProtectedSSLConnectionSocketFactory(
-                        mProtectSocket, sslContext, SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
-                registryBuilder.register("https",  sslSocketFactory);                
-            } else {
-                ProtectedPlainConnectionSocketFactory plainSocketFactory = new ProtectedPlainConnectionSocketFactory(mProtectSocket);
-                registryBuilder.register("http",  plainSocketFactory); 
-            }
+                // Don't verify certificate hostname.
+                // With a TLS MiM attack in place, and server certs verified, we'll fail to connect because the client
+                // will refuse to connect. That's not a successful outcome.
+                // See https://github.com/Psiphon-Labs/psiphon-tunnel-core/blob/master/psiphon/meekConn.go for more details
+                FrontingSSLConnectionSocketFactory sslSocketFactory = new FrontingSSLConnectionSocketFactory(
+                        mProtectSocket, sslContext, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+                registryBuilder.register("https",  sslSocketFactory);
+            } 
             
+            //Always register http scheme for HTTP proxy support
+            ProtectedPlainConnectionSocketFactory plainSocketFactory = new ProtectedPlainConnectionSocketFactory(mProtectSocket);
+            registryBuilder.register("http",  plainSocketFactory); 
             Registry<ConnectionSocketFactory> socketFactoryRegistry = registryBuilder.build();
 
             // Use ProtectedDnsResolver to resolve the fronting domain outside of the tunnel
@@ -307,6 +327,20 @@ public class MeekClient {
             CookieStore cookieStore = new BasicCookieStoreHC4();
             HttpClientContext httpClientContext = HttpClientContext.create();
             httpClientContext.setCookieStore(cookieStore);
+            
+            PsiphonData.ProxySettings proxySettings = PsiphonData.getPsiphonData().getProxySettings(mContext);
+            if (proxySettings != null)
+            {
+            	HttpHost httpproxy = new HttpHost(proxySettings.proxyHost, proxySettings.proxyPort);
+            	requestBuilder.setProxy(httpproxy);
+            	Credentials proxyCredentials = PsiphonData.getPsiphonData().getProxyCredentials();
+            	if(proxyCredentials != null)
+            	{
+            		CredentialsProvider credentialsProvider = new BasicCredentialsProviderHC4();
+            		credentialsProvider.setCredentials(AuthScope.ANY, proxyCredentials);
+            		httpClientContext.setCredentialsProvider(credentialsProvider);
+            	}
+            }
             
             httpClient = HttpClientBuilder
                     .create()
@@ -376,6 +410,15 @@ public class MeekClient {
                             MyLog.w(R.string.meek_http_request_error, MyLog.Sensitivity.NOT_SENSITIVE, statusCode);
                             // Retry (or abort)
                             continue;
+                        }
+                        
+                        AuthStateHC4 authState = (AuthStateHC4) httpClientContext.getAttribute(HttpClientContext.PROXY_AUTH_STATE);
+                        AuthScheme authScheme = authState.getAuthScheme(); 
+                        
+                        //Log proxy auth only once per meek session 
+                        if (mPrintedProxyAuth.compareAndSet(false, true) && 
+                                authState.getState() == AuthProtocolState.SUCCESS && authScheme != null) {
+                            MyLog.g("ProxyAuthentication", "Scheme", authScheme.getSchemeName());
                         }
                         
                         List<Cookie> responseCookies = httpClientContext.getCookieStore().getCookies();

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <string name="app_name">Psiphon</string>
     <string name="ssh_connecting">SSH connecting…</string>
     <string name="ssh_connected">SSH connected</string>
@@ -83,11 +84,9 @@
     <string name="transparent_proxy_routing_failed">Failed to start transparent proxy routing: %s</string>
     <string name="transparent_proxy_routing_running">Transparent proxy routing running</string>
     <string name="transparent_proxy_routing_stopped">Transparent proxy routing stopped</string>
-    <string name="final_status_request_failed">Final status request failed</string>
     <string name="current_network_type">Current network: %s</string>
     <string name="dns_resolver">DNS resolver: %s</string>
     <string name="get_active_network_dns_resolvers_failed">Get active network DNS resolvers failed</string>
-    <string name="preemptive_bind_failed">Preemptive bind failed</string>
     <string name="UpgradeManager.CanNotRetrievePackageInfo">Unable to retrieve package info for current app</string>
     <string name="UpgradeManager.UpgradeFileWriteFailed">Failed to write upgrade file</string>
     <string name="UpgradeManager.UpgradeDownloadFailed">Upgrade download failed</string>
@@ -149,4 +148,15 @@
     <string name="preference_notifications_with_vibrate_summary">Vibrate when connection status changes</string>
     <string name="moreOptions">More Options</string>
     <string name="root_mode_not_supported">Root mode is not supported on this version of Android</string>
+    <string name="proxySettingsCategoryTitle">Proxy Settings</string>
+    <string name="custom_proxy_host_summary">Proxy server hostname or IP</string>
+    <string name="custom_proxy_port_summary">Proxy server port</string>
+    <string name="use_proxy_authentication_title">Use proxy authentication</string>
+    <string name="proxy_username_title">Proxy username</string>
+    <string name="proxy_username_summary">Username for proxy authentication</string>
+    <string name="proxy_password_title">Proxy password</string>
+    <string name="proxy_password_summary">Password for proxy authentication</string>
+    <string name="proxy_domain_title">Proxy domain</string>
+    <string name="proxy_domain_summary">Domain for proxy authentication</string>
+
 </resources>
