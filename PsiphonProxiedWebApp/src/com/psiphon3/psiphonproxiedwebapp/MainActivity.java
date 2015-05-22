@@ -26,6 +26,7 @@ cog.outl('package %s;' % packagename)
 package com.psiphon3.psiphonproxiedwebapp;
 //[[[end]]]
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.annotation.SuppressLint;
@@ -389,5 +390,17 @@ public class MainActivity
     public Intent pendingSignalNotification(Context context)
     {
         return null;
+    }
+    
+    @Override
+    public void displayBrowser(Context context)
+    {
+        return;
+    }
+
+    @Override
+    public void displayBrowser(Context context, Uri uri)
+    {
+        return;
     }
 }
