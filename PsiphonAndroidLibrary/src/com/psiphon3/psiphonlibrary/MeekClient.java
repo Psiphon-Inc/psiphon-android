@@ -387,6 +387,7 @@ public class MeekClient {
 
                     if (mFrontingDomain != null) {
                         httpPost.addHeader("Host", mFrontingHost);
+                        httpPost.addHeader("X-Psiphon-Fronting-Address", mFrontingDomain);
                     }
                     httpPost.addHeader("Cookie", String.format("%s=%s", cookie.getName(), cookie.getValue()));
                     
