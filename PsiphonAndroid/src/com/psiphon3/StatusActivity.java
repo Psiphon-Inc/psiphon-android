@@ -29,14 +29,17 @@ import java.util.Map;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -126,6 +129,10 @@ public class StatusActivity
         }
 
         PsiphonData.getPsiphonData().setDownloadUpgrades(true);
+        
+        LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(StatusActivity.this);
+        localBroadcastManager.registerReceiver(new ConnectionStateChangeReceiver(), new IntentFilter(TUNNEL_STOPPING));
+        localBroadcastManager.registerReceiver(new ConnectionStateChangeReceiver(), new IntentFilter(UNEXPECTED_DISCONNECT));
 
         // Auto-start on app first run
         if (m_firstRun)
@@ -150,7 +157,7 @@ public class StatusActivity
     public void onResume()
     {
         super.onResume();
-        initAds();
+        reInitAds();
     }
     
     @Override
@@ -182,7 +189,6 @@ public class StatusActivity
     @Override
     protected void doToggle()
     {
-        showFullScreenAd();
         super.doToggle();
     }
     
@@ -191,6 +197,13 @@ public class StatusActivity
     {
         showFullScreenAd();
         super.onTabChanged(tabId);
+    }
+    
+    public class ConnectionStateChangeReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            reInitAds();
+        }
     }
     
     private void showFullScreenAd()
@@ -345,6 +358,21 @@ public class StatusActivity
         }
     }
     
+    private void reInitAds()
+    {
+        if (PsiphonData.getPsiphonData().getShowAds())
+        {
+            LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
+            layout.removeAllViewsInLayout();
+            layout.addView(m_banner);
+
+            m_inmobiInterstitial = null;
+            m_inmobiBannerAdView = null;
+
+            initAds();
+        }
+    }
+    
     protected void HandleCurrentIntent()
     {
         Intent intent = getIntent();
@@ -356,7 +384,7 @@ public class StatusActivity
 
         if (0 == intent.getAction().compareTo(HANDSHAKE_SUCCESS))
         {
-            initAds();
+            reInitAds();
             
             // Show the home page. Always do this in browser-only mode, even
             // after an automated reconnect -- since the status activity was
