@@ -77,6 +77,7 @@ import org.apache.http.conn.DnsResolver;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.util.InetAddressUtils;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.cookie.CookieOrigin;
 import org.apache.http.cookie.CookieSpec;
@@ -100,8 +101,8 @@ import org.json.JSONObject;
 import android.content.Context;
 import ch.ethz.ssh2.crypto.ObfuscatedSSH;
 
+import com.psiphon3.psiphonlibrary.ServerInterface.FrontingSSLConnectionSocketFactory;
 import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedPlainConnectionSocketFactory;
-import com.psiphon3.psiphonlibrary.ServerInterface.ProtectedSSLConnectionSocketFactory;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.psiphonlibrary.Utils.RequestTimeoutAbort;
 
@@ -284,9 +285,13 @@ public class MeekClient {
             if (mFrontingDomain != null) {
                 SSLContext sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(null,  null,  null);
-                ProtectedSSLConnectionSocketFactory sslSocketFactory = new ProtectedSSLConnectionSocketFactory(
-                        mProtectSocket, sslContext, SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
-                registryBuilder.register("https",  sslSocketFactory);                
+                // Don't verify certificate hostname.
+                // With a TLS MiM attack in place, and server certs verified, we'll fail to connect because the client
+                // will refuse to connect. That's not a successful outcome.
+                // See https://github.com/Psiphon-Labs/psiphon-tunnel-core/blob/master/psiphon/meekConn.go for more details
+                FrontingSSLConnectionSocketFactory sslSocketFactory = new FrontingSSLConnectionSocketFactory(
+                        mProtectSocket, sslContext, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+                registryBuilder.register("https",  sslSocketFactory);
             } 
             
             //Always register http scheme for HTTP proxy support
@@ -383,6 +388,9 @@ public class MeekClient {
 
                     if (mFrontingDomain != null) {
                         httpPost.addHeader("Host", mFrontingHost);
+                        if (!InetAddressUtils.isIPv4Address(mFrontingDomain)) {
+                            httpPost.addHeader("X-Psiphon-Fronting-Address", mFrontingDomain);
+                        }
                     }
                     httpPost.addHeader("Cookie", String.format("%s=%s", cookie.getName(), cookie.getValue()));
                     

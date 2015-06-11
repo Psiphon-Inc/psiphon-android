@@ -84,11 +84,9 @@
     <string name="transparent_proxy_routing_failed">Failed to start transparent proxy routing: %s</string>
     <string name="transparent_proxy_routing_running">Transparent proxy routing running</string>
     <string name="transparent_proxy_routing_stopped">Transparent proxy routing stopped</string>
-    <string name="final_status_request_failed">Final status request failed</string>
     <string name="current_network_type">Current network: %s</string>
     <string name="dns_resolver">DNS resolver: %s</string>
     <string name="get_active_network_dns_resolvers_failed">Get active network DNS resolvers failed</string>
-    <string name="preemptive_bind_failed">Preemptive bind failed</string>
     <string name="UpgradeManager.CanNotRetrievePackageInfo">Unable to retrieve package info for current app</string>
     <string name="UpgradeManager.UpgradeFileWriteFailed">Failed to write upgrade file</string>
     <string name="UpgradeManager.UpgradeDownloadFailed">Upgrade download failed</string>
@@ -160,5 +158,5 @@
     <string name="proxy_password_summary">Password for proxy authentication</string>
     <string name="proxy_domain_title">Proxy domain</string>
     <string name="proxy_domain_summary">Domain for proxy authentication</string>
-    
+
 </resources>

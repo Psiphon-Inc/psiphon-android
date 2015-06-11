@@ -47,9 +47,11 @@ import java.util.Timer;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
@@ -90,7 +92,10 @@ import org.xbill.DNS.PsiphonState;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.util.Pair;
 import android.webkit.URLUtil;
 
@@ -151,6 +156,7 @@ public class ServerInterface
         public String meekObfuscatedKey;
         public String meekFrontingDomain;
         public String meekFrontingHost;
+        public ArrayList<String> meekFrontingAddresses;
 
         // These are determined while connecting.
         public String connType; // Set to one of PsiphonConstants.RELAY_PROTOCOL_*
@@ -814,7 +820,8 @@ public class ServerInterface
                 EmbeddedValues.UPGRADE_URL,
                 null,
                 null,
-                resumableDownload);
+                resumableDownload,
+                null);
     }
 
     synchronized public void doFailedRequest(String error)
@@ -923,10 +930,16 @@ public class ServerInterface
                 MyLog.v(R.string.fetch_remote_server_list, MyLog.Sensitivity.NOT_SENSITIVE);
 
                 // We may need to except this connection from the VpnService tun interface
-                byte[] response = makeDirectWebRequest(protectSocket, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT, EmbeddedValues.REMOTE_SERVER_LIST_URL);
-
+                byte[] response = makeDirectWebRequest(protectSocket, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT,
+                        EmbeddedValues.REMOTE_SERVER_LIST_URL, PsiphonConstants.REMOTE_SERVER_LIST_ETAG_KEY);
+                
                 PsiphonData.getPsiphonData().setNextFetchRemoteServerList(
                         SystemClock.elapsedRealtime() + 1000 * PsiphonConstants.SECONDS_BETWEEN_SUCCESSFUL_REMOTE_SERVER_LIST_FETCH);
+
+                if (response.length == 0)
+                {
+                    return;
+                }
 
                 String serverList = AuthenticatedDataPackage.extractAndVerifyData(
                                         EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY,
@@ -1109,7 +1122,8 @@ public class ServerInterface
                             url,
                             additionalHeaders,
                             body,
-                            resumableDownload);
+                            resumableDownload,
+                            null);
                 }
                 catch (PsiphonServerInterfaceException e2)
                 {
@@ -1166,18 +1180,20 @@ public class ServerInterface
                 url,
                 additionalHeaders,
                 body,
-                resumableDownload);
+                resumableDownload,
+                null);
     }
 
     private byte[] makeDirectWebRequest(
                     Tun2Socks.IProtectSocket protectSocket,
                     int timeout,
-                    String url)
+                    String url,
+                    String etagSharedPreferenceKey)
             throws PsiphonServerInterfaceException
     {
         return makeRequest(
                 protectSocket, timeout, true, false, RequestMethod.INFER, null,
-                url, null, null, null);
+                url, null, null, null, etagSharedPreferenceKey);
     }
 
     private byte[] makeDirectWebRequest(
@@ -1191,7 +1207,7 @@ public class ServerInterface
     {
         return makeRequest(
                 protectSocket, timeout, true, false, requestMethod, null,
-                url, additionalHeaders, body, null);
+                url, additionalHeaders, body, null, null);
     }
 
     private class FixedCertTrustManager implements X509TrustManager
@@ -1349,7 +1365,7 @@ public class ServerInterface
             }
 
             String[] safeProtocols = safeProtocolsList.toArray(new String[safeProtocolsList.size()]);
-
+            
             // We've seen at least one reported error case where setEnabledProtocols
             // would throw IllegalArgument exception when passed a protocol name
             // reported by getSupportedProtocols. In that case fallback to TLSv1
@@ -1397,6 +1413,42 @@ public class ServerInterface
             }
 
             return socket;
+        }
+    }
+    
+    // Disables SNI, no hostname verification
+    public static class FrontingSSLConnectionSocketFactory extends ProtectedSSLConnectionSocketFactory
+    {
+        private javax.net.ssl.SSLSocketFactory socketFactory;
+        
+        FrontingSSLConnectionSocketFactory(
+                Tun2Socks.IProtectSocket protectSocket,
+                SSLContext sslContext,
+                X509HostnameVerifier verifier) throws IOException
+        {
+            super(protectSocket, sslContext, verifier);
+            this.socketFactory = sslContext.getSocketFactory();
+        }
+
+        @Override
+        public Socket createLayeredSocket(
+                final Socket socket,
+                final String target,
+                final int port,
+                final HttpContext context) throws IOException {
+            
+            final SSLSocket sslsock = (SSLSocket) this.socketFactory.createSocket(
+                    socket,
+                    target,
+                    port,
+                    true);
+            String supportedProtocols[] = getSupportedProtocols();
+            if (supportedProtocols != null) {
+                sslsock.setEnabledProtocols(supportedProtocols);
+            }
+            prepareSocket(sslsock);
+            sslsock.startHandshake();
+            return sslsock;
         }
     }
 
@@ -1451,7 +1503,8 @@ public class ServerInterface
             String url,
             List<Pair<String,String>> additionalHeaders,
             byte[] body,
-            IResumableDownload resumableDownload)
+            IResumableDownload resumableDownload,
+            String etagSharedPreferenceKey)
         throws PsiphonServerInterfaceException
     {
         HttpRequestBaseHC4 request = null;
@@ -1590,6 +1643,16 @@ public class ServerInterface
                 // E.g., header "Range:bytes=123-" requests the download to start at byte 123 of the resource
                 request.addHeader("Range", "bytes="+Long.toString(resumableDownload.getResumeOffset()) + "-");
             }
+            // NOTE: for now resumableDownload and etag support are mutually exclusive
+            else if (etagSharedPreferenceKey != null)
+            {
+                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this.ownerContext);
+                String etag = preferences.getString(etagSharedPreferenceKey, "");
+                if (etag.length() > 0)
+                {
+                    request.addHeader("If-None-Match", etag);
+                }
+            }
 
             RequestTimeoutAbort timeoutAbort = new RequestTimeoutAbort(request);
             new Timer(true).schedule(timeoutAbort, timeout);
@@ -1618,10 +1681,27 @@ public class ServerInterface
             }
             else
             {
-                if (statusCode != HttpStatus.SC_OK)
+                if (statusCode != HttpStatus.SC_NOT_MODIFIED &&
+                        statusCode != HttpStatus.SC_OK)
                 {
                     throw new PsiphonServerInterfaceException(
                             this.ownerContext.getString(R.string.ServerInterface_HTTPSRequestFailed) + statusCode);
+                }
+            }
+            
+            if (etagSharedPreferenceKey != null)
+            {
+                Header responseHeaders[] = response.getHeaders("Etag");
+                if (responseHeaders.length > 0)
+                {
+                    String etagValue = responseHeaders[0].getValue();
+                    if (etagValue.length() > 0)
+                    {
+                        Editor editor = PreferenceManager.getDefaultSharedPreferences(this.ownerContext).edit();
+                        editor.putString(etagSharedPreferenceKey, etagValue);
+                        // Ignore failure
+                        editor.commit();
+                    }
                 }
             }
 
@@ -1861,10 +1941,25 @@ public class ServerInterface
             newEntry.meekObfuscatedKey = "";
         }
 
+        newEntry.meekFrontingAddresses = new ArrayList<String>();
         if (newEntry.hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
         {
             newEntry.meekFrontingDomain = obj.getString("meekFrontingDomain");
             newEntry.meekFrontingHost = obj.getString("meekFrontingHost");
+            if (obj.has("meekFrontingAddresses"))
+            {
+                JSONArray meekFrontingAddressesJSON = obj.getJSONArray("meekFrontingAddresses");
+                for (int i = 0; i < meekFrontingAddressesJSON.length(); i++)
+                {
+                    newEntry.meekFrontingAddresses.add(meekFrontingAddressesJSON.getString(i));
+                }
+            }
+            // We will always use meekFrontingAddresses from now on, so copy meekFrontingDomain in
+            // if no other meekFrontingAddresses are specified
+            if (newEntry.meekFrontingAddresses.size() == 0)
+            {
+                newEntry.meekFrontingAddresses.add(newEntry.meekFrontingDomain);
+            }
         }
         else
         {
