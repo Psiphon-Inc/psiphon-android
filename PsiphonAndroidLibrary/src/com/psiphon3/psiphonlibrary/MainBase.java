@@ -89,7 +89,6 @@ import com.psiphon3.psiphonlibrary.PsiphonData.DataTransferStats;
 import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-
 import com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity;
 
 public abstract class MainBase {
@@ -696,8 +695,12 @@ public abstract class MainBase {
             }
 
             // Some URLs are excluded from being embedded as home pages.
-            if (Arrays.asList(EmbeddedValues.HOME_TAB_URL_EXCLUSIONS).contains(url) && freshConnect) {
-                m_eventsInterface.displayBrowser(getContext(), Uri.parse(url));
+            if (Arrays.asList(EmbeddedValues.HOME_TAB_URL_EXCLUSIONS).contains(url))
+            {
+                if (freshConnect)
+                {
+                    m_eventsInterface.displayBrowser(getContext(), Uri.parse(url));
+                }
                 return;
             }
 
