@@ -26,6 +26,7 @@ cog.outl('package %s;' % packagename)
 package com.psiphon3.psiphonproxiedwebapp;
 //[[[end]]]
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.annotation.SuppressLint;
@@ -247,34 +248,41 @@ public class MainActivity
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event)
     {
-        if (m_currentDisplay == Display.PROXIED_WEB_VIEW)
+        if (keyCode == KeyEvent.KEYCODE_BACK)
         {
-            WebView webView = m_proxiedWebView.getWebView();
-            if ((keyCode == KeyEvent.KEYCODE_BACK) && webView.canGoBack())
+            if (m_currentDisplay == Display.PROXIED_WEB_VIEW)
             {
-                webView.goBack();
-                return true;
-            }
-        }
-
-        // Confirm before dismissing app
-        
-        if (mBackPressedToast != null)
-        {
-            View view = mBackPressedToast.getView();
-            if (view != null)
-            {
-                if (view.isShown())
+                WebView webView = m_proxiedWebView.getWebView();
+                if (webView.canGoBack())
                 {
-                    mBackPressedToast.cancel();
-                    return super.onKeyDown(keyCode, event);
+                    webView.goBack();
+                    return true;
                 }
             }
+
+            // Confirm before dismissing app
+            
+            if (mBackPressedToast != null)
+            {
+                View view = mBackPressedToast.getView();
+                if (view != null)
+                {
+                    if (view.isShown())
+                    {
+                        mBackPressedToast.cancel();
+                        return super.onKeyDown(keyCode, event);
+                    }
+                }
+            }
+            String prompt = getString(R.string.back_pressed_confirmation_prompt, getString(R.string.app_name));
+            mBackPressedToast = Toast.makeText(this, prompt, Toast.LENGTH_LONG);
+            mBackPressedToast.show();
+            return true;
         }
-        String prompt = getString(R.string.back_pressed_confirmation_prompt, getString(R.string.app_name));
-        mBackPressedToast = Toast.makeText(this, prompt, Toast.LENGTH_LONG);
-        mBackPressedToast.show();
-        return true;
+        else
+        {
+        	return super.onKeyDown(keyCode,  event);
+        }
     }
 
     /*
@@ -389,5 +397,17 @@ public class MainActivity
     public Intent pendingSignalNotification(Context context)
     {
         return null;
+    }
+    
+    @Override
+    public void displayBrowser(Context context)
+    {
+        return;
+    }
+
+    @Override
+    public void displayBrowser(Context context, Uri uri)
+    {
+        return;
     }
 }

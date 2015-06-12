@@ -81,6 +81,8 @@ public class PsiphonConstants
     public final static String ROOTED = "_rooted";
 
     public final static String PLAY_STORE_BUILD = "_playstore";
+    
+    public final static String REMOTE_SERVER_LIST_ETAG_KEY = "REMOTE_SERVER_LIST_ETAG";
 
     // Only one of these capabilities are needed
     public final static ArrayList<String> SUFFICIENT_CAPABILITIES_FOR_TUNNEL = new ArrayList<String>() {{
