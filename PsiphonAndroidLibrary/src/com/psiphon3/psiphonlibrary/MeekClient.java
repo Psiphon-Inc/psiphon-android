@@ -77,6 +77,7 @@ import org.apache.http.conn.DnsResolver;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.util.InetAddressUtils;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.cookie.CookieOrigin;
 import org.apache.http.cookie.CookieSpec;
@@ -387,6 +388,9 @@ public class MeekClient {
 
                     if (mFrontingDomain != null) {
                         httpPost.addHeader("Host", mFrontingHost);
+                        if (!InetAddressUtils.isIPv4Address(mFrontingDomain)) {
+                            httpPost.addHeader("X-Psiphon-Fronting-Address", mFrontingDomain);
+                        }
                     }
                     httpPost.addHeader("Cookie", String.format("%s=%s", cookie.getName(), cookie.getValue()));
                     
