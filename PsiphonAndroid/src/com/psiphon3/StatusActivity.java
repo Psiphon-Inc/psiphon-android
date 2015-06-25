@@ -24,10 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Locale;
-import java.util.Map;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -40,24 +37,19 @@ import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.TypedValue;
-import android.view.Display;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TabHost;
 
-import com.inmobi.commons.InMobi;
-import com.inmobi.monetization.IMBanner;
-import com.inmobi.monetization.IMBannerListener;
-import com.inmobi.monetization.IMErrorCode;
-import com.inmobi.monetization.IMInterstitial;
-import com.inmobi.monetization.IMInterstitialListener;
+import com.mopub.mobileads.MoPubErrorCode;
+import com.mopub.mobileads.MoPubInterstitial;
+import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
+import com.mopub.mobileads.MoPubView;
+import com.mopub.mobileads.MoPubView.BannerAdListener;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 
@@ -68,9 +60,8 @@ public class StatusActivity
     public static final String BANNER_FILE_NAME = "bannerImage";
 
     private ImageView m_banner;
-    private boolean m_inmobiInitialized = false;
-    private IMBanner m_inmobiBannerAdView = null;
-    private IMInterstitial m_inmobiInterstitial = null;
+    private MoPubView m_moPubBannerAdView = null;
+    private MoPubInterstitial m_moPubInterstitial = null;
     private boolean m_fullScreenAdShown = false;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
@@ -169,7 +160,19 @@ public class StatusActivity
     @Override
     public void onDestroy()
     {
-      super.onDestroy();
+        if (m_moPubBannerAdView != null)
+        {
+            m_moPubBannerAdView.destroy();
+        }
+        m_moPubBannerAdView = null;
+        
+        if (m_moPubInterstitial != null)
+        {
+            m_moPubInterstitial.destroy();
+        }
+        m_moPubInterstitial = null;
+        
+        super.onDestroy();
     }
     
     private void loadSponsorTab(boolean freshConnect)
@@ -217,7 +220,7 @@ public class StatusActivity
         if (PsiphonData.getPsiphonData().getShowAds() && !m_fullScreenAdShown)
         {
             ArrayList<InterstitialAd> interstitialAds = new ArrayList<InterstitialAd>();
-            interstitialAds.add(new InMobiInterstitial());
+            interstitialAds.add(new MoPubInterstitialAd());
             Collections.shuffle(interstitialAds);
             for (InterstitialAd interstitial : interstitialAds)
             {
@@ -231,135 +234,88 @@ public class StatusActivity
         void show();
     }
     
-    private class InMobiInterstitial implements InterstitialAd
+    private class MoPubInterstitialAd implements InterstitialAd
     {
         @Override
         public void show()
         {
             if (!m_fullScreenAdShown &&
-                    m_inmobiInterstitial != null &&
-                    m_inmobiInterstitial.getState() == IMInterstitial.State.READY)
+                    m_moPubInterstitial != null && m_moPubInterstitial.isReady())
             {
-                m_inmobiInterstitial.show();
+                m_moPubInterstitial.show();
                 m_fullScreenAdShown = true;
             }
         }
     }
     
-    private static Integer getOptimalInMobiSlotSize(Activity context)
-    {
-        Display display = ((WindowManager)context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        display.getMetrics(displayMetrics);
-        double density = displayMetrics.density;
-        double width = displayMetrics.widthPixels;
-        double height = displayMetrics.heightPixels;
-        int[][] maparray = {{IMBanner.INMOBI_AD_UNIT_728X90, 728, 90},
-                            {IMBanner.INMOBI_AD_UNIT_468X60, 468, 60},
-                            {IMBanner.INMOBI_AD_UNIT_320X50, 320, 50}};
-        for (int i = 0; i < maparray.length; i++)
-        {
-            if (maparray[i][1] * density <= width && maparray[i][2] * density <= height)
-            {
-                return maparray[i][0];
-            }
-        }
-        return IMBanner.INMOBI_AD_UNIT_320X50;
-    }
-    
-    static final String INMOBI_BANNER_PROPERTY_ID = "";
-    static final String INMOBI_INTERSTITIAL_PROPERTY_ID = "";
+    static final String MOPUB_BANNER_PROPERTY_ID = "";
+    static final String MOPUB_INTERSTITIAL_PROPERTY_ID = "";
     
     private void initAds()
     {
-        if (PsiphonData.getPsiphonData().getShowAds())
+        if (PsiphonData.getPsiphonData().getShowAds() &&
+                Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO)
         {
-            if (!m_inmobiInitialized)
+            if (m_moPubInterstitial == null)
             {
-                InMobi.initialize(this, INMOBI_BANNER_PROPERTY_ID);
-                InMobi.setLanguage(Locale.getDefault().getISO3Language());
-                m_inmobiInitialized = true;
-            }
-
-            if (m_inmobiInterstitial == null)
-            {
-                m_inmobiInterstitial = new IMInterstitial(this, INMOBI_INTERSTITIAL_PROPERTY_ID);
-                m_inmobiInterstitial.setIMInterstitialListener(new IMInterstitialListener() {
+                m_moPubInterstitial = new MoPubInterstitial(this, MOPUB_INTERSTITIAL_PROPERTY_ID);
+                m_moPubInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
                     @Override
-                    public void onDismissInterstitialScreen(IMInterstitial arg0)
-                    {
+                    public void onInterstitialClicked(MoPubInterstitial arg0) {
                     }
                     @Override
-                    public void onInterstitialFailed(IMInterstitial arg0, IMErrorCode arg1)
-                    {
-                        Log.d("InMobi", String.format("Interstitial Request Failed: %s", arg1.toString()));
+                    public void onInterstitialDismissed(MoPubInterstitial arg0) {
+                    }
+                    @Override
+                    public void onInterstitialFailed(MoPubInterstitial arg0,
+                            MoPubErrorCode arg1) {
                         // Set to null so it will be recreated the next time
-                        m_inmobiInterstitial = null;
+                        m_moPubInterstitial = null;
                     }
                     @Override
-                    public void onInterstitialInteraction(IMInterstitial arg0, Map<String, String> arg1)
-                    {
+                    public void onInterstitialLoaded(MoPubInterstitial arg0) {
                     }
                     @Override
-                    public void onInterstitialLoaded(IMInterstitial arg0)
-                    {
-                    }
-                    @Override
-                    public void onLeaveApplication(IMInterstitial arg0)
-                    {
-                    }
-                    @Override
-                    public void onShowInterstitialScreen(IMInterstitial arg0)
-                    {
+                    public void onInterstitialShown(MoPubInterstitial arg0) {
                     }
                 });
-                m_inmobiInterstitial.loadInterstitial();
+                m_moPubInterstitial.load();
             }
             
-            if (m_inmobiBannerAdView == null)
+            if (m_moPubBannerAdView == null)
             {
-                m_inmobiBannerAdView = new IMBanner(this, INMOBI_BANNER_PROPERTY_ID, getOptimalInMobiSlotSize(this));
-                m_inmobiBannerAdView.setRefreshInterval(30);
-                m_inmobiBannerAdView.setIMBannerListener(new IMBannerListener() {
+                m_moPubBannerAdView = new MoPubView(this);
+                m_moPubBannerAdView.setAdUnitId(MOPUB_BANNER_PROPERTY_ID);
+                
+                m_moPubBannerAdView.setBannerAdListener(new BannerAdListener() {
                     @Override
-                    public void onBannerInteraction(IMBanner arg0, Map<String, String> arg1)
+                    public void onBannerLoaded(MoPubView banner)
                     {
-                    }
-                    @Override
-                    public void onBannerRequestFailed(IMBanner arg0, IMErrorCode arg1)
-                    {
-                        Log.d("InMobi", String.format("Banner Request Failed: %s", arg1.toString()));
-                        // Leave m_inmobiBannerAdView. If it is not in the layout, we will
-                        // call m_inmobiBannerAdView.loadBanner() again the next time
-                    }
-                    @Override
-                    public void onBannerRequestSucceeded(IMBanner arg0)
-                    {
-                        Log.d("InMobi", "Banner Request Succeeded");
-                        if (m_inmobiBannerAdView.getParent() == null)
+                        if (m_moPubBannerAdView.getParent() == null)
                         {
                             LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
                             layout.removeAllViewsInLayout();
-                            layout.addView(m_inmobiBannerAdView);
+                            layout.addView(m_moPubBannerAdView);
                         }
                     }
                     @Override
-                    public void onDismissBannerScreen(IMBanner arg0)
-                    {
+                    public void onBannerClicked(MoPubView arg0) {
                     }
                     @Override
-                    public void onLeaveApplication(IMBanner arg0)
-                    {
+                    public void onBannerCollapsed(MoPubView arg0) {
                     }
                     @Override
-                    public void onShowBannerScreen(IMBanner arg0)
-                    {
+                    public void onBannerExpanded(MoPubView arg0) {
+                    }
+                    @Override
+                    public void onBannerFailed(MoPubView arg0,
+                            MoPubErrorCode arg1) {
                     }
                 });
             }
-            if (m_inmobiBannerAdView.getParent() == null)
+            if (m_moPubBannerAdView.getParent() == null)
             {
-                m_inmobiBannerAdView.loadBanner();
+                m_moPubBannerAdView.loadAd();
             }
         }
     }
@@ -372,8 +328,17 @@ public class StatusActivity
             layout.removeAllViewsInLayout();
             layout.addView(m_banner);
 
-            m_inmobiInterstitial = null;
-            m_inmobiBannerAdView = null;
+            if (m_moPubBannerAdView != null)
+            {
+                m_moPubBannerAdView.destroy();
+            }
+            m_moPubBannerAdView = null;
+            
+            if (m_moPubInterstitial != null)
+            {
+                m_moPubInterstitial.destroy();
+            }
+            m_moPubInterstitial = null;
 
             initAds();
         }
