@@ -1,0 +1,61 @@
+// This buildscript will assemble the MoPub SDK into an AAR.
+
+repositories {
+    jcenter()
+}
+
+apply plugin: 'com.android.library'
+
+group = 'com.mopub'
+
+description = '''MoPub SDK'''
+
+android {
+    compileSdkVersion 22
+    buildToolsVersion '22.0.1'
+
+    defaultConfig {
+        versionCode 25
+        versionName "3.8.0"
+        minSdkVersion 9
+        targetSdkVersion 22
+        consumerProguardFiles 'proguard.txt'
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src/main/java']
+            resources.srcDirs = ['src/main/java']
+            aidl.srcDirs = ['src/main']
+            renderscript.srcDirs = ['src/main']
+            res.srcDirs = ['res']
+            assets.srcDirs = ['assets']
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), file('proguard.txt')
+        }
+    }
+
+    // Note: You will also need a local.properties file to set the location of the SDK in the same 
+    // way that the existing SDK requires, using the sdk.dir property.
+    // Alternatively, you can set an environment variable called ANDROID_HOME. There is no 
+    // difference between the two methods, you can use the one you prefer.
+}
+
+dependencies {
+    compile 'com.android.support:support-v4:22.0.0'
+    compile 'com.android.support:support-annotations:22.0.0'
+    compile 'com.mopub.volley:mopub-volley:1.1.0'
+}
+
+// Don't run the Robolectric Unit Tests.
+check.dependsOn.remove("test")
+check.dependsOn.remove("unitTest")
+check.dependsOn.remove("testDebug")
+check.dependsOn.remove("unitTestDebug")
+
