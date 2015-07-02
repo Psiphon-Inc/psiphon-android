@@ -253,7 +253,10 @@ public class StatusActivity
     
     private void initAds()
     {
+        // For now, only show ads when the tunnel is connected, since WebViewProxySettings are
+        // probably set and webviews won't load successfully when the tunnel is not connected
         if (PsiphonData.getPsiphonData().getShowAds() &&
+                PsiphonData.getPsiphonData().getDataTransferStats().isConnected() &&
                 Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO)
         {
             if (m_moPubInterstitial == null)
@@ -316,6 +319,7 @@ public class StatusActivity
             if (m_moPubBannerAdView.getParent() == null)
             {
                 m_moPubBannerAdView.loadAd();
+                m_moPubBannerAdView.setAutorefreshEnabled(true);
             }
         }
     }
