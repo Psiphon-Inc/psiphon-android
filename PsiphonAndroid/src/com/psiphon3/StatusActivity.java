@@ -259,7 +259,7 @@ public class StatusActivity
                 PsiphonData.getPsiphonData().getDataTransferStats().isConnected() &&
                 Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO)
         {
-            if (m_moPubInterstitial == null)
+            if (m_moPubInterstitial == null && !m_fullScreenAdShown)
             {
                 m_moPubInterstitial = new MoPubInterstitial(this, MOPUB_INTERSTITIAL_PROPERTY_ID);
                 m_moPubInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
@@ -272,8 +272,6 @@ public class StatusActivity
                     @Override
                     public void onInterstitialFailed(MoPubInterstitial arg0,
                             MoPubErrorCode arg1) {
-                        // Set to null so it will be recreated the next time
-                        m_moPubInterstitial = null;
                     }
                     @Override
                     public void onInterstitialLoaded(MoPubInterstitial arg0) {
