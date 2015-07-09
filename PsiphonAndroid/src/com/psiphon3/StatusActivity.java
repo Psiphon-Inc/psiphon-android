@@ -22,8 +22,6 @@ package com.psiphon3;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
@@ -214,50 +212,22 @@ public class StatusActivity
             reInitAds();
         }
     }
-    
-    private void showFullScreenAd()
-    {
-        if (PsiphonData.getPsiphonData().getShowAds() && !m_fullScreenAdShown)
-        {
-            ArrayList<InterstitialAd> interstitialAds = new ArrayList<InterstitialAd>();
-            interstitialAds.add(new MoPubInterstitialAd());
-            Collections.shuffle(interstitialAds);
-            for (InterstitialAd interstitial : interstitialAds)
-            {
-                interstitial.show();
-            }
-        }
-    }
-    
-    interface InterstitialAd
-    {
-        void show();
-    }
-    
-    private class MoPubInterstitialAd implements InterstitialAd
-    {
-        @Override
-        public void show()
-        {
-            if (!m_fullScreenAdShown &&
-                    m_moPubInterstitial != null && m_moPubInterstitial.isReady())
-            {
-                m_moPubInterstitial.show();
-                m_fullScreenAdShown = true;
-            }
-        }
-    }
-    
+
     static final String MOPUB_BANNER_PROPERTY_ID = "";
     static final String MOPUB_INTERSTITIAL_PROPERTY_ID = "";
     
-    private void initAds()
+    private boolean shouldShowAds()
     {
         // For now, only show ads when the tunnel is connected, since WebViewProxySettings are
         // probably set and webviews won't load successfully when the tunnel is not connected
-        if (PsiphonData.getPsiphonData().getShowAds() &&
+        return PsiphonData.getPsiphonData().getShowAds() &&
                 PsiphonData.getPsiphonData().getDataTransferStats().isConnected() &&
-                Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO)
+                Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO;
+    }
+    
+    private void showFullScreenAd()
+    {
+        if (shouldShowAds())
         {
             if (m_moPubInterstitial == null && !m_fullScreenAdShown)
             {
@@ -275,14 +245,27 @@ public class StatusActivity
                     }
                     @Override
                     public void onInterstitialLoaded(MoPubInterstitial arg0) {
+                        if (!m_fullScreenAdShown &&
+                                m_moPubInterstitial != null && m_moPubInterstitial.isReady())
+                        {
+                            m_moPubInterstitial.show();
+                            m_fullScreenAdShown = true;
+                        }
                     }
                     @Override
                     public void onInterstitialShown(MoPubInterstitial arg0) {
                     }
                 });
+                
                 m_moPubInterstitial.load();
             }
-            
+        }
+    }
+    
+    private void initBanner()
+    {
+        if (shouldShowAds())
+        {
             if (m_moPubBannerAdView == null)
             {
                 m_moPubBannerAdView = new MoPubView(this);
@@ -313,9 +296,7 @@ public class StatusActivity
                             MoPubErrorCode arg1) {
                     }
                 });
-            }
-            if (m_moPubBannerAdView.getParent() == null)
-            {
+                
                 m_moPubBannerAdView.loadAd();
                 m_moPubBannerAdView.setAutorefreshEnabled(true);
             }
@@ -342,7 +323,7 @@ public class StatusActivity
             }
             m_moPubInterstitial = null;
 
-            initAds();
+            initBanner();
         }
     }
     
@@ -357,8 +338,6 @@ public class StatusActivity
 
         if (0 == intent.getAction().compareTo(HANDSHAKE_SUCCESS))
         {
-            reInitAds();
-            
             // Show the home page. Always do this in browser-only mode, even
             // after an automated reconnect -- since the status activity was
             // brought to the front after an unexpected disconnect. In whole
