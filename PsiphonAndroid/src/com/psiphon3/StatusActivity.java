@@ -63,6 +63,7 @@ public class StatusActivity
     private boolean m_fullScreenAdShown = false;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
+    private boolean m_temporarilyDisableInterstitial = false;
 
     public StatusActivity()
     {
@@ -81,6 +82,10 @@ public class StatusActivity
 
         // NOTE: super class assumes m_tabHost is initialized in its onCreate
 
+        // Don't let this tab change trigger an interstitial ad
+        // OnResume() will reinitialize ads and reset this flag
+        m_temporarilyDisableInterstitial = true;
+        
         super.onCreate(savedInstanceState);
 
         if (m_firstRun)
@@ -227,7 +232,7 @@ public class StatusActivity
     
     private void showFullScreenAd()
     {
-        if (shouldShowAds())
+        if (shouldShowAds() && !m_temporarilyDisableInterstitial)
         {
             if (m_moPubInterstitial == null && !m_fullScreenAdShown)
             {
@@ -322,6 +327,8 @@ public class StatusActivity
                 m_moPubInterstitial.destroy();
             }
             m_moPubInterstitial = null;
+            
+            m_temporarilyDisableInterstitial = false;
 
             initBanner();
         }
@@ -346,6 +353,10 @@ public class StatusActivity
             if (!PsiphonData.getPsiphonData().getTunnelWholeDevice()
                 || !intent.getBooleanExtra(HANDSHAKE_SUCCESS_IS_RECONNECT, false))
             {
+                // Don't let this tab change trigger an interstitial ad
+                // OnResume() will reinitialize ads and reset this flag
+                m_temporarilyDisableInterstitial = true;
+                
                 m_tabHost.setCurrentTabByTag("home");
                 loadSponsorTab(true);
                 m_loadedSponsorTab = true;
