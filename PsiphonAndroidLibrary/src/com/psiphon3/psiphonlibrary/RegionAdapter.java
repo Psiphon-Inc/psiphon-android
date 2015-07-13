@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Psiphon Inc.
+ * Copyright (c) 2015, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,9 +19,9 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import android.content.Context;
-import android.content.SharedPreferences.Editor;
-import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,20 +38,20 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         String code;
         int nameResourceId;
         int flagResourceId;
-        boolean serverExists;
+        AtomicBoolean serverExists = new AtomicBoolean(false);
         
         Region(String code, int nameResourceId, int flagResourceId, boolean serverExists)
         {
             this.code = code;
             this.nameResourceId = nameResourceId;
             this.flagResourceId = flagResourceId;
-            this.serverExists = serverExists;
+            this.serverExists.set(serverExists);
         }
     }
     
     private static Region[] regions =
     {
-        new Region(ServerInterface.ServerEntry.REGION_CODE_ANY, R.string.region_name_any, R.drawable.flag_unknown, true),
+        new Region(PsiphonConstants.REGION_CODE_ANY, R.string.region_name_any, R.drawable.flag_unknown, true),
         new Region("US", R.string.region_name_us, R.drawable.flag_us, false),
         new Region("GB", R.string.region_name_gb, R.drawable.flag_gb, false),
         new Region("CA", R.string.region_name_ca, R.drawable.flag_ca, false),
@@ -62,80 +62,17 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         new Region("NL", R.string.region_name_nl, R.drawable.flag_nl, false),
     };
     
-    private static boolean initialized = false;
-    
-    public static void initialize(Context context)
-    {
-        // Restore a list of known regions that's cached as a preferences
-        // value. This workaround done because the JSON parsing/processing
-        // of the ServerEntry list that's done in ServerInterface is slow:
-        // up to 2-3 seconds on a fast device with a realistic-sized server
-        // list. That's too long to block the UI thread. (We will still
-        // hit that parsing in the UI thread on the first run with this
-        // feature).
-        
-        // NOTE: this caching assumes regions are only added, not removed.
-        
-        // Would use get/setStringSet, but that requires API 11.
-        // Since JSON parsing is what we want to avoid, we store the list
-        // of ISO 3166-1 alpha-2 region codes as a simple comma delimited
-        // string (without escaping).
-
-        String knownRegions = PreferenceManager
-                                        .getDefaultSharedPreferences(context)
-                                        .getString(KNOWN_REGIONS_PREFERENCE, "");
-        if (knownRegions.length() == 0)
-        {
-            // Force setServerExists calls so we can configure the region spinner.
-            // TODO: fix this hack.
-            new ServerInterface(context);
-        }
-        else
-        {
-            for (String region : knownRegions.split(","))
-            {
-                setServerExists(context, region, true);
-            }
-        }
-        
-        initialized = true;
-    }
-    
-    public static void setServerExists(Context context, String regionCode, boolean restoringKnownRegions)
+    public static void setServerExists(String regionCode)
     {
         // TODO: may want to replace linear lookup once there are many regions
 
-        boolean newRegion = false;
-        
         for (Region region : regions)
         {
             if (region.code.equals(regionCode))
             {
-                newRegion = !region.serverExists; 
-                region.serverExists = true;
+                region.serverExists.set(true);
                 break;
             }
-        }
-        
-        if (newRegion && !restoringKnownRegions)
-        {
-            StringBuilder knownRegions = new StringBuilder();
-
-            for (Region region : regions)
-            {
-                if (region.serverExists)
-                {
-                    if (knownRegions.length() > 0)
-                    {
-                        knownRegions.append(",");
-                    }
-                    knownRegions.append(region.code);
-                }
-            }
-
-            Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
-            editor.putString(KNOWN_REGIONS_PREFERENCE, knownRegions.toString());
-            editor.commit();
         }
     }
     
@@ -145,10 +82,6 @@ public class RegionAdapter extends ArrayAdapter<Integer>
     {
         super(context, R.layout.region_row);
         m_context = context;
-        if (!initialized)
-        {
-            throw new RuntimeException("failed to call RegionAdapter.initialize");
-        }
         populate();
     }
     
@@ -159,7 +92,7 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         int count = 0;
         for (int index = 0; index < regions.length; index++)
         {
-            if (regions[index].serverExists)
+            if (regions[index].serverExists.get())
             {
                 count++;
             }
@@ -172,7 +105,7 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         clear();
         for (int index = 0; index < regions.length; index++)
         {
-            if (regions[index].serverExists)
+            if (regions[index].serverExists.get())
             {
                 add(index);
             }
@@ -228,7 +161,7 @@ public class RegionAdapter extends ArrayAdapter<Integer>
 
         // Default to ANY. Might happen if persistent selection is used
         // on different client version which doesn't have a corresponding Region
-        assert(regions[0].code.equals(ServerInterface.ServerEntry.REGION_CODE_ANY));
+        assert(regions[0].code.equals(PsiphonConstants.REGION_CODE_ANY));
         return 0;
     }
 }

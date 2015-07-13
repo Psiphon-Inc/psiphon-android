@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Psiphon Inc.
+ * Copyright (c) 2015, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -33,7 +33,6 @@ import android.os.Build;
 import android.util.Log;
 
 import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
-import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 public class Diagnostics
@@ -320,27 +319,12 @@ public class Diagnostics
                     return;
                 }
 
-                ServerInterface serverInterface = new ServerInterface(mContext);
-                serverInterface.start();
-
                 // Retry uploading data up to 5 times
                 for (int i = 0; i < 5; i++)
                 {
-                    try
+                    if (doFeedbackUpload(diagnosticDataBytes))
                     {
-                        // NOTE: protectSocket (the second argument) *must* be
-                        // null due to design limitation (global state not
-                        // compatible with multiple ServerInterface instances).
-                        serverInterface.doFeedbackUpload(
-                                null,
-                                diagnosticDataBytes);
-
-                        // If that did
                         break;
-                    }
-                    catch (PsiphonServerInterfaceException e)
-                    {
-                        // Fall through...
                     }
 
                     // The upload request failed, so sleep and try again.
@@ -365,5 +349,33 @@ public class Diagnostics
                                             feedbackText,
                                             surveyResponsesJson);
         thread.start();
+    }
+    
+    static private boolean doFeedbackUpload(byte[] feedbackData)
+    {
+        // TODO-TUNNEL-CORE: upstream proxy settings + handle both WDM and non-WDM states. use UrlProxy/direct?
+        
+        /*
+        SecureRandom rnd = new SecureRandom();
+        byte[] uploadId = new byte[8];
+        rnd.nextBytes(uploadId);
+        
+        StringBuilder url = new StringBuilder();
+        url.append("https://");
+        url.append(EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER);
+        url.append(EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_PATH);
+        url.append(Utils.byteArrayToHexString(uploadId));
+        
+        String[] headerPieces = EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER_HEADERS.split(": ");
+        
+        List<Pair<String,String>> additionalHeaders = new ArrayList<Pair<String,String>>();
+        additionalHeaders.add(Pair.create(headerPieces[0], headerPieces[1]));
+        
+        makeDirectWebRequest(
+        protectSocket, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT,
+        RequestMethod.PUT, url.toString(), additionalHeaders, feedbackData);
+        }
+        */
+        return true;
     }
 }

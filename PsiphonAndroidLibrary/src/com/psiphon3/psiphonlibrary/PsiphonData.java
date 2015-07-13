@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Psiphon Inc.
+ * Copyright (c) 2015, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -67,18 +67,11 @@ public class PsiphonData
     private ArrayList<String> m_homePages;
     private long m_nextFetchRemoteServerList;
     private boolean m_statusActivityForeground;
-    private String m_clientSessionID;
-    private String m_tunnelSessionID;
-    private String m_tunnelRelayProtocol;
-    private int m_defaultSocksPort = PsiphonConstants.SOCKS_PORT;
-    private int m_defaultHttpProxyPort = PsiphonConstants.HTTP_PROXY_PORT;
-    private int m_socksPort;
-    private int m_httpProxyPort;
-    private int m_dnsProxyPort;
-    private int m_transparentProxyPort;
-    private boolean m_shareProxies;
+    private int m_configuredLocalSocksProxyPort = 0;
+    private int m_configuredLocalHttpProxyPort = 0;
+    private int m_listeningLocalSocksProxyPort = 0;
+    private int m_listeningLocalHttpProxyPort = 0;
     private boolean m_tunnelWholeDevice;
-    private boolean m_wdmForceIptables;
     private boolean m_useHTTPProxy;
     private boolean m_useSystemProxySettings;
     private boolean m_useCustomProxySettings;
@@ -89,8 +82,7 @@ public class PsiphonData
     private String m_proxyPassword;
     private String m_proxyDomain;
     private ProxySettings m_savedSystemProxySettings;
-    private boolean m_vpnServiceUnavailable;
-    private TunnelCore m_currentTunnelCore;
+    private TunnelManager m_currentTunnelManager;
     private ReportedStats m_reportedStats;
     private boolean m_enableReportedStats;
     private DataTransferStats m_dataTransferStats;
@@ -110,28 +102,34 @@ public class PsiphonData
         m_homePages = new ArrayList<String>();
         m_nextFetchRemoteServerList = -1;
         m_statusActivityForeground = false;
-        m_shareProxies = false;
         m_tunnelWholeDevice = false;
         m_useHTTPProxy = false;
         m_useSystemProxySettings = false;
         m_useCustomProxySettings = false;
         m_useProxyAuthentication = false;
-        m_vpnServiceUnavailable = false;
         m_reportedStats = new ReportedStats();
         m_enableReportedStats = true;
         m_dataTransferStats = new DataTransferStats();
         m_displayDataTransferStats = false;
         m_downloadUpgrades = false;
-        m_egressRegion = ServerInterface.ServerEntry.REGION_CODE_ANY;
+        m_egressRegion = PsiphonConstants.REGION_CODE_ANY;
     }
 
-    public synchronized void setHomePages(ArrayList<String> homePages)
+    public synchronized void clearHomePages()
     {
         m_homePages.clear();
-        for (int i = 0; i < homePages.size(); i++)
+    }
+
+    public synchronized void addHomePage(String url)
+    {
+        for (int i = 0; i < m_homePages.size(); i++)
         {
-            m_homePages.add(homePages.get(i));
+            if (m_homePages.get(i).equals(url))
+            {
+                return;
+            }
         }
+        m_homePages.add(url);
     }
 
     public synchronized ArrayList<String> getHomePages()
@@ -161,104 +159,44 @@ public class PsiphonData
         return m_statusActivityForeground;
     }
     
-    public synchronized void setClientSessionID(String clientSessionID)
+    public synchronized void setConfiguredLocalSocksProxyPort(int configuredLocalSocksProxyPort)
     {
-        m_clientSessionID = clientSessionID;
+        m_configuredLocalSocksProxyPort = configuredLocalSocksProxyPort;
+    }
+
+    public synchronized int getConfiguredLocalSocksProxyPort()
+    {
+        return m_configuredLocalSocksProxyPort;
+    }
+
+    public synchronized void setConfiguredLocalHttpProxyPort(int configuredLocalHttpProxyPort)
+    {
+        m_configuredLocalHttpProxyPort = configuredLocalHttpProxyPort;
+    }
+
+    public synchronized int getConfiguredLocalHttpProxyPort()
+    {
+        return m_configuredLocalHttpProxyPort;
     }
     
-    public synchronized String getClientSessionID()
+    public synchronized void setListeningLocalSocksProxyPort(int listeningLocalSocksProxyPort)
     {
-        return m_clientSessionID;
-    }
-    
-    public synchronized void setTunnelSessionID(String sessionID)
-    {
-        m_tunnelSessionID = sessionID;
-    }
-    
-    public synchronized String getTunnelSessionID()
-    {
-        return m_tunnelSessionID;
-    }
-    
-    public synchronized void setTunnelRelayProtocol(String relayProtocol)
-    {
-        m_tunnelRelayProtocol = relayProtocol;
-    }
-    
-    public synchronized String getTunnelRelayProtocol()
-    {
-        return m_tunnelRelayProtocol;
-    }
-    
-    public synchronized void setDefaultHttpProxyPort(int defaultHttpProxyPort)
-    {
-        m_defaultHttpProxyPort = defaultHttpProxyPort;
+        m_listeningLocalSocksProxyPort = listeningLocalSocksProxyPort;
     }
 
-    public synchronized int getDefaultHttpProxyPort()
+    public synchronized int getListeningLocalSocksProxyPort()
     {
-        return m_defaultHttpProxyPort;
+        return m_listeningLocalSocksProxyPort;
     }
 
-    public synchronized void setDefaultSocksPort(int defaultSocksPort)
+    public synchronized void setListeningLocalHttpProxyPort(int listeningLocalHttpProxyPort)
     {
-        m_defaultSocksPort = defaultSocksPort;
+        m_listeningLocalHttpProxyPort = listeningLocalHttpProxyPort;
     }
 
-    public synchronized int getDefaultSocksPort()
+    public synchronized int getListeningLocalHttpProxyPort()
     {
-        return m_defaultSocksPort;
-    }
-
-    public synchronized void setHttpProxyPort(int httpProxyPort)
-    {
-        m_httpProxyPort = httpProxyPort;
-    }
-
-    public synchronized int getHttpProxyPort()
-    {
-        return m_httpProxyPort;
-    }
-
-    public synchronized void setSocksPort(int socksPort)
-    {
-        m_socksPort = socksPort;
-    }
-
-    public synchronized int getSocksPort()
-    {
-        return m_socksPort;
-    }
-
-    public synchronized void setDnsProxyPort(int dnsProxyPort)
-    {
-        m_dnsProxyPort = dnsProxyPort;
-    }
-
-    public synchronized int getDnsProxyPort()
-    {
-        return m_dnsProxyPort;
-    }
-
-    public synchronized void setTransparentProxyPort(int transparentProxyPort)
-    {
-        m_transparentProxyPort = transparentProxyPort;
-    }
-
-    public synchronized int getTransparentProxyPort()
-    {
-        return m_transparentProxyPort;
-    }
-
-    public synchronized void setShareProxies(boolean shareProxies)
-    {
-        m_shareProxies = shareProxies;
-    }
-
-    public synchronized boolean getShareProxies()
-    {
-        return m_shareProxies;
+        return m_listeningLocalHttpProxyPort;
     }
 
     public synchronized void setTunnelWholeDevice(boolean tunnelWholeDevice)
@@ -269,16 +207,6 @@ public class PsiphonData
     public synchronized boolean getTunnelWholeDevice()
     {
         return m_tunnelWholeDevice;
-    }
-
-    public synchronized void setWdmForceIptables(boolean wdmForceIptables)
-    {
-        m_wdmForceIptables = wdmForceIptables;
-    }
-
-    public synchronized boolean getWdmForceIptables()
-    {
-        return m_wdmForceIptables;
     }
 
     public synchronized void setEgressRegion(String egressRegion)
@@ -494,26 +422,16 @@ public class PsiphonData
         return settings;
     }
 
-    public synchronized void setVpnServiceUnavailable(boolean vpnServiceUnavailable)
+    public synchronized void setCurrentTunnelManager(TunnelManager tunnelManager)
     {
-        m_vpnServiceUnavailable = vpnServiceUnavailable;
-    }
-
-    public synchronized boolean getVpnServiceUnavailable()
-    {
-        return m_vpnServiceUnavailable;
-    }
-
-    public synchronized void setCurrentTunnelCore(TunnelCore tunnelCore)
-    {
-        // TODO: make TunnelCore a singleton; then get rid of this hack.
+        // TODO: make TunnelManager a singleton; then get rid of this hack.
         
-        m_currentTunnelCore = tunnelCore;
+        m_currentTunnelManager = tunnelManager;
     }
 
-    public synchronized TunnelCore getCurrentTunnelCore()
+    public synchronized TunnelManager getCurrentTunnelManager()
     {
-        return m_currentTunnelCore;
+        return m_currentTunnelManager;
     }
 
     public synchronized void setNotificationIcons(
