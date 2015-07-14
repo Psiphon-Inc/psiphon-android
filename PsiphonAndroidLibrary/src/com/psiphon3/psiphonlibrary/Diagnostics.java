@@ -19,10 +19,15 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.Locale;
+
+import javax.net.ssl.HttpsURLConnection;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -351,31 +356,78 @@ public class Diagnostics
         thread.start();
     }
     
+    public final static int FEEDBACK_UPLOAD_TIMEOUT_MS = 30000;
+    
     static private boolean doFeedbackUpload(byte[] feedbackData)
     {
-        // TODO-TUNNEL-CORE: upstream proxy settings + handle both WDM and non-WDM states. use UrlProxy/direct?
-        
-        /*
+        // NOTE: Won't succeed while VpnService routing is enabled but tunnel
+        // is not connected.
+        // TODO: In that situation, use the tunnel-core UrlProxy/direct mode.
+
         SecureRandom rnd = new SecureRandom();
         byte[] uploadId = new byte[8];
         rnd.nextBytes(uploadId);
-        
+
         StringBuilder url = new StringBuilder();
         url.append("https://");
         url.append(EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER);
         url.append(EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_PATH);
         url.append(Utils.byteArrayToHexString(uploadId));
-        
-        String[] headerPieces = EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER_HEADERS.split(": ");
-        
-        List<Pair<String,String>> additionalHeaders = new ArrayList<Pair<String,String>>();
-        additionalHeaders.add(Pair.create(headerPieces[0], headerPieces[1]));
-        
-        makeDirectWebRequest(
-        protectSocket, PsiphonConstants.HTTPS_REQUEST_LONG_TIMEOUT,
-        RequestMethod.PUT, url.toString(), additionalHeaders, feedbackData);
+
+        HttpsURLConnection httpsConn = null;
+        boolean success = false;
+        try
+        {
+            httpsConn = (HttpsURLConnection) new URL(url.toString()).openConnection();
+
+            // URLConnection timeouts are insufficient may be unreliable, so run a timeout
+            // thread to ensure HTTPS connection is terminated after 30 seconds if it
+            // has not already completed.
+            // E.g., http://stackoverflow.com/questions/11329277/why-timeout-value-is-not-respected-by-android-httpurlconnection
+            final HttpsURLConnection finalHttpsConn = httpsConn;
+            new Thread(new Runnable()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        Thread.sleep(FEEDBACK_UPLOAD_TIMEOUT_MS);
+                    }
+                    catch (InterruptedException e)
+                    {
+                    }
+                    finalHttpsConn.disconnect();
+                }
+            }).start();
+            
+            httpsConn.setDoOutput(true);
+            httpsConn.setRequestMethod("PUT");
+            // Note: assumes this is only a single header
+            String[] headerPieces = EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER_HEADERS.split(": ");
+            httpsConn.setRequestProperty(headerPieces[0], headerPieces[1]);
+            httpsConn.setFixedLengthStreamingMode(feedbackData.length);
+
+            httpsConn.connect();
+            httpsConn.getOutputStream().write(feedbackData);
+            
+            success = true;
         }
-        */
-        return true;
+        catch (ProtocolException e)
+        {
+            
+        }
+        catch (IOException e)
+        {
+            
+        }
+        finally
+        {
+            if (httpsConn != null)
+            {
+                httpsConn.disconnect();
+            }
+        }
+
+        return success;
     }
 }
