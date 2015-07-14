@@ -39,6 +39,7 @@ import android.util.Log;
 
 import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.psiphonlibrary.Utils.MyLog.Sensitivity;
 
 public class Diagnostics
 {
@@ -414,11 +415,11 @@ public class Diagnostics
         }
         catch (ProtocolException e)
         {
-            
+            MyLog.g("Diagnostic doFeedbackUpload failed: %s", e.getMessage());
         }
         catch (IOException e)
         {
-            
+            MyLog.g("Diagnostic doFeedbackUpload failed: %s", e.getMessage());
         }
         finally
         {

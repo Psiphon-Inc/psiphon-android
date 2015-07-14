@@ -19,9 +19,15 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -248,6 +254,72 @@ public class TunnelManager implements PsiphonTunnel.HostService
         }
     }
     
+    private final static String LEGACY_SERVER_ENTRY_FILENAME = "psiphon_server_entries.json";
+    private final static int MAX_LEGACY_SERVER_ENTRIES = 100;
+
+    private String getServerEntries()
+    {
+        StringBuilder list = new StringBuilder();
+        
+        for (String encodedServerEntry : EmbeddedValues.EMBEDDED_SERVER_LIST)
+        {
+            list.append(encodedServerEntry);
+            list.append("\n");
+        }
+        
+        // Import legacy server entries
+        try
+        {
+            FileInputStream file = m_parentContext.openFileInput(LEGACY_SERVER_ENTRY_FILENAME);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(file));
+            StringBuilder json = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null)
+            {
+                json.append(line);
+            }
+            file.close();
+            JSONObject obj = new JSONObject(json.toString());
+            JSONArray jsonServerEntries = obj.getJSONArray("serverEntries");
+
+            // MAX_LEGACY_SERVER_ENTRIES ensures the list we pass through to tunnel-core
+            // is unlikely to trigger an OutOfMemoryError
+            for (int i = 0; i < jsonServerEntries.length() && i < MAX_LEGACY_SERVER_ENTRIES; i++)
+            {
+                list.append(jsonServerEntries.getString(i));
+                list.append("\n");
+            }
+            
+            // Don't need to repeat the import again
+            m_parentContext.deleteFile(LEGACY_SERVER_ENTRY_FILENAME);
+        }
+        catch (FileNotFoundException e)
+        {
+            // pass
+        }
+        catch (IOException e)
+        {
+            MyLog.g("prepareServerEntries failed: %s", e.getMessage());
+        }
+        catch (JSONException e)
+        {
+            MyLog.g("prepareServerEntries failed: %s", e.getMessage());
+        }
+        catch (OutOfMemoryError e)
+        {
+            MyLog.g("prepareServerEntries failed: %s", e.getMessage());
+
+            // Comment from legacy code:
+            // Some mature client installs have so many server entries they cannot load them without
+            // hitting out-of-memory, so they will not benefit from the MAX_SAVED_SERVER_ENTRIES_MEMORY_SIZE
+            // limit added to saveServerEntries(). In this case, we simply ignore the saved list. The client
+            // will proceed with the embedded list only, and going forward the MEMORY_SIZE limit will be
+            // enforced.
+        }
+        
+        return list.toString();
+    }
+    
     public void startTunnel()
     {
         Utils.checkSecureRandom();
@@ -293,7 +365,7 @@ public class TunnelManager implements PsiphonTunnel.HostService
                 m_mode = TunnelMode.TUNNEL_ONLY;                
             }
             
-            m_tunnel.startTunneling();
+            m_tunnel.startTunneling(getServerEntries());
         }
         catch (PsiphonTunnel.Exception e)
         {

@@ -119,17 +119,17 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     // Throws an exception in error conditions. In the case of an exception, the routing
     // started by startRouting() is not immediately torn down (this allows the caller to control
     // exactly when VPN routing is stopped); caller should call stop() to clean up.
-    public synchronized void startTunneling() throws Exception {
+    public synchronized void startTunneling(String embeddedServerEntries) throws Exception {
         if (mTunFd == null) {
             // Most likely, startRouting() was not called before this function.
             throw new Exception("startTunneling: missing tun fd");
         }
-        startPsiphon();
+        startPsiphon(embeddedServerEntries);
     }
 
     public synchronized void restartPsiphon() throws Exception {
         stopPsiphon();
-        startPsiphon();
+        startPsiphon("");
     }
 
     public synchronized void stop() {
@@ -265,13 +265,13 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     // Psiphon Tunnel Core
     //----------------------------------------------------------------------------------------------
 
-    private void startPsiphon() throws Exception {
+    private void startPsiphon(String embeddedServerEntries) throws Exception {
         stopPsiphon();
         mHostService.onDiagnosticMessage("starting Psiphon library");
         try {
             Psi.Start(
                 loadPsiphonConfig(mHostService.getVpnService()),
-                "", // TODO: supply embedded server list
+                embeddedServerEntries,
                 this);
         } catch (java.lang.Exception e) {
             throw new Exception("failed to start Psiphon library", e);

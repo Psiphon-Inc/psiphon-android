@@ -27,8 +27,6 @@ public class PsiphonConstants
 
     public final static String TAG = "Psiphon";
 
-    public final static String SERVER_ENTRY_FILENAME = "psiphon_server_entries.json";
-
     public static final String REGION_CODE_ANY = "";
 
     // The character restrictions are dictated by the server.
