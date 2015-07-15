@@ -477,7 +477,7 @@ public class TunnelManager implements PsiphonTunnel.HostService
     public void onAvailableEgressRegions(List<String> regions) {
         for (String region : regions)
         {
-            RegionAdapter.setServerExists(region);
+            RegionAdapter.setServerExists(m_parentContext, region, false);
         }
     }
 

@@ -22,6 +22,8 @@ package com.psiphon3.psiphonlibrary;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.content.Context;
+import android.content.SharedPreferences.Editor;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,14 +40,14 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         String code;
         int nameResourceId;
         int flagResourceId;
-        AtomicBoolean serverExists = new AtomicBoolean(false);
+        AtomicBoolean serverExists;
         
         Region(String code, int nameResourceId, int flagResourceId, boolean serverExists)
         {
             this.code = code;
             this.nameResourceId = nameResourceId;
             this.flagResourceId = flagResourceId;
-            this.serverExists.set(serverExists);
+            this.serverExists = new AtomicBoolean(serverExists);
         }
     }
     
@@ -62,17 +64,76 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         new Region("NL", R.string.region_name_nl, R.drawable.flag_nl, false),
     };
     
-    public static void setServerExists(String regionCode)
+    private static boolean initialized = false;
+    
+    public static void initialize(Context context)
+    {
+        // Restore a list of known regions that's cached as a preferences
+        // value. This workaround done because the JSON parsing/processing
+        // of the ServerEntry list that's done in ServerInterface is slow:
+        // up to 2-3 seconds on a fast device with a realistic-sized server
+        // list. That's too long to block the UI thread. (We will still
+        // hit that parsing in the UI thread on the first run with this
+        // feature).
+        
+        // NOTE: this caching assumes regions are only added, not removed.
+        
+        // Would use get/setStringSet, but that requires API 11.
+        // Since JSON parsing is what we want to avoid, we store the list
+        // of ISO 3166-1 alpha-2 region codes as a simple comma delimited
+        // string (without escaping).
+        
+        // NOTE: retaining this with tunnel-core, as this allows region
+        // display, selection, and restore before the tunnel-core is run
+        // and emits AvailableEgressRegions. The original assumption about
+        // regions only being added, not removed, still applies.
+
+        String knownRegions = PreferenceManager
+                                        .getDefaultSharedPreferences(context)
+                                        .getString(KNOWN_REGIONS_PREFERENCE, "");
+        for (String region : knownRegions.split(","))
+        {
+            setServerExists(context, region, true);
+        }
+        
+        initialized = true;
+    }
+    
+    public static void setServerExists(Context context, String regionCode, boolean restoringKnownRegions)
     {
         // TODO: may want to replace linear lookup once there are many regions
 
+        boolean newRegion = false;
+        
         for (Region region : regions)
         {
             if (region.code.equals(regionCode))
             {
+                newRegion = !region.serverExists.get(); 
                 region.serverExists.set(true);
                 break;
             }
+        }
+        
+        if (newRegion && !restoringKnownRegions)
+        {
+            StringBuilder knownRegions = new StringBuilder();
+
+            for (Region region : regions)
+            {
+                if (region.serverExists.get())
+                {
+                    if (knownRegions.length() > 0)
+                    {
+                        knownRegions.append(",");
+                    }
+                    knownRegions.append(region.code);
+                }
+            }
+
+            Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
+            editor.putString(KNOWN_REGIONS_PREFERENCE, knownRegions.toString());
+            editor.commit();
         }
     }
     
@@ -82,6 +143,10 @@ public class RegionAdapter extends ArrayAdapter<Integer>
     {
         super(context, R.layout.region_row);
         m_context = context;
+        if (!initialized)
+        {
+            throw new RuntimeException("failed to call RegionAdapter.initialize");
+        }
         populate();
     }
     

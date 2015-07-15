@@ -585,6 +585,10 @@ public abstract class MainBase {
 
             PsiphonData.getPsiphonData().setDisplayDataTransferStats(true);
 
+            if (m_firstRun)
+            {
+                RegionAdapter.initialize(this);
+            }
             m_regionAdapter = new RegionAdapter(this);
             m_regionSelector.setAdapter(m_regionAdapter);
             String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE,
