@@ -351,14 +351,14 @@ public class TunnelManager implements PsiphonTunnel.HostService
         {
             if (runVpn)
             {
+                m_mode = TunnelMode.VPN_ROUTING_TUNNEL;
+
                 if (!m_tunnel.startRouting())
                 {
                     throw new PsiphonTunnel.Exception("application is not prepared or revoked");
                 }
                 
                 MyLog.v(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
-
-                m_mode = TunnelMode.VPN_ROUTING_TUNNEL;
             }
             else
             {
@@ -369,10 +369,14 @@ public class TunnelManager implements PsiphonTunnel.HostService
         }
         catch (PsiphonTunnel.Exception e)
         {
-            // TODO: use different string resource in tunnel-only mode?
-            MyLog.e(R.string.vpn_service_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+            MyLog.e(R.string.start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
             
-            stopTunnelHelper();
+            // Cleanup routing/tunnel
+            stopTunnel();
+
+            // Stop service
+            m_parentService.stopForeground(true);
+            m_parentService.stopSelf();
         }
     }
 
@@ -383,11 +387,6 @@ public class TunnelManager implements PsiphonTunnel.HostService
             return;
         }
 
-        stopTunnelHelper();
-    }
-
-    private void stopTunnelHelper()
-    {
         MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
         if (m_eventsInterface != null)

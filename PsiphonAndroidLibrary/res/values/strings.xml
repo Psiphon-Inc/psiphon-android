@@ -163,5 +163,6 @@
     <string name="untunneled_address">Untunneled: %s</string>
     <string name="upstream_proxy_error">Upstream proxy error: %s</string>
     <string name="diagnostic">Diagnostic: %s</string>
+    <string name="start_tunnel_failed">Start tunnel failed: %s</string>
 
 </resources>
