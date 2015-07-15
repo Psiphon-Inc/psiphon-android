@@ -53,6 +53,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
 
     public interface HostService {
         public String getAppName();
+        public Context getContext();
         public VpnService getVpnService();
         public VpnService.Builder newVpnServiceBuilder();
         public String getPsiphonConfig();
@@ -120,10 +121,6 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     // started by startRouting() is not immediately torn down (this allows the caller to control
     // exactly when VPN routing is stopped); caller should call stop() to clean up.
     public synchronized void startTunneling(String embeddedServerEntries) throws Exception {
-        if (mTunFd == null) {
-            // Most likely, startRouting() was not called before this function.
-            throw new Exception("startTunneling: missing tun fd");
-        }
         startPsiphon(embeddedServerEntries);
     }
 
@@ -222,8 +219,10 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
             }
             mTunFd = null;
         }
-        stopTun2Socks();
-        mRoutingThroughTunnel = false;
+        if (mRoutingThroughTunnel) {
+            stopTun2Socks();
+            mRoutingThroughTunnel = false;
+        }
     }
     
     //----------------------------------------------------------------------------------------------
@@ -246,7 +245,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     @Override
     public long HasNetworkConnectivity() {
         // TODO: change to bool return value once gobind supports that type
-        return hasNetworkConnectivity(mHostService.getVpnService()) ? 1 : 0;
+        return hasNetworkConnectivity(mHostService.getContext()) ? 1 : 0;
     }
 
     @Override
@@ -269,10 +268,12 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         stopPsiphon();
         mHostService.onDiagnosticMessage("starting Psiphon library");
         try {
+            boolean useDeviceBinder = (mTunFd != null);
             Psi.Start(
-                loadPsiphonConfig(mHostService.getVpnService()),
+                loadPsiphonConfig(mHostService.getContext()),
                 embeddedServerEntries,
-                this);
+                this,
+                useDeviceBinder);
         } catch (java.lang.Exception e) {
             throw new Exception("failed to start Psiphon library", e);
         }
@@ -324,7 +325,9 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
             if (noticeType.equals("Tunnels")) {
                 int count = notice.getJSONObject("data").getInt("count");
                 if (count > 0) {
-                    routeThroughTunnel();
+                    if (mTunFd != null) {
+                        routeThroughTunnel();
+                    }
                     mHostService.onConnected();
                 } else {
                     mHostService.onConnecting();

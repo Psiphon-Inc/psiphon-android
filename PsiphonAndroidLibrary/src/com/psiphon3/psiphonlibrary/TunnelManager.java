@@ -424,6 +424,11 @@ public class TunnelManager implements PsiphonTunnel.HostService
     }
 
     @Override
+    public Context getContext() {
+        return m_parentContext;
+    }
+
+    @Override
     public VpnService getVpnService() {
         return ((TunnelVpnService)m_parentService);
     }
