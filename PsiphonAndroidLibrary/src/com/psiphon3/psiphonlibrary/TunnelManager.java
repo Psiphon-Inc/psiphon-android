@@ -326,6 +326,9 @@ public class TunnelManager implements PsiphonTunnel.HostService
 
         stopTunnel();
         
+        // Notify if an upgrade has already been downloaded and is waiting for install
+        UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentContext);
+        
         if (m_eventsInterface != null)
         {
             m_eventsInterface.signalTunnelStarting(m_parentContext);
@@ -443,6 +446,16 @@ public class TunnelManager implements PsiphonTunnel.HostService
         try {            
             JSONObject json = new JSONObject();
             
+            if (0 > EmbeddedValues.UPGRADE_URL.length() && 
+                    EmbeddedValues.hasEverBeenSideLoaded(m_parentContext) &&
+                    PsiphonData.getPsiphonData().getDownloadUpgrades())
+            {
+                json.put("UpgradeDownloadUrl", EmbeddedValues.UPGRADE_URL);
+                
+                json.put("UpgradeDownloadFilename",
+                        new UpgradeManager.DownloadedUpgradeFile(m_parentContext).getFilename());                
+            }
+            
             json.put("ClientPlatform", PsiphonConstants.PLATFORM);
             
             json.put("ClientVersion", EmbeddedValues.CLIENT_VERSION);
@@ -557,8 +570,8 @@ public class TunnelManager implements PsiphonTunnel.HostService
     }
 
     @Override
-    public void onClientUpgradeDownloaded() {
-        // TODO-TUNNEL-CORE: implement upgrade download in tunnel-core        
+    public void onClientUpgradeDownloaded(String filename) {
+        UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentContext);      
     }
 
     @Override

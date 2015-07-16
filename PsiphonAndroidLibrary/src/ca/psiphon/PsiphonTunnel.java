@@ -67,7 +67,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         public void onConnecting();
         public void onConnected();
         public void onHomepage(String url);
-        public void onClientUpgradeDownloaded();
+        public void onClientUpgradeDownloaded(String filename);
         public void onSplitTunnelRegion(String region);
         public void onUntunneledAddress(String address);
     }
@@ -359,8 +359,8 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
             } else if (noticeType.equals("UpstreamProxyError")) {
                 mHostService.onUpstreamProxyError(notice.getJSONObject("data").getString("message"));
 
-            //} else if (noticeType.equals("ClientUpgradeDownloaded")) {
-            // TODO-TUNNEL-CORE: implement upgrade download in tunnel-core
+            } else if (noticeType.equals("ClientUpgradeDownloaded")) {
+                mHostService.onHomepage(notice.getJSONObject("data").getString("filename"));
 
             } else if (noticeType.equals("Homepage")) {
                 mHostService.onHomepage(notice.getJSONObject("data").getString("url"));

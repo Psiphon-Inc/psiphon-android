@@ -165,25 +165,6 @@ public interface UpgradeManager
         }
     }
 
-    static class UnverifiedUpgradeFile extends UpgradeFile
-    {
-        public UnverifiedUpgradeFile(Context context)
-        {
-            super(context);
-        }
-        
-        public String getFilename()
-        {
-            return "PsiphonAndroid.apk.unverified";
-        }
-        
-        public boolean isWorldReadable()
-        {
-            // Making the APK world readable so Installer component can access it
-            return true;
-        }
-    }    
-
     static class VerifiedUpgradeFile extends UpgradeFile
     {
         public VerifiedUpgradeFile(Context context)
@@ -194,6 +175,25 @@ public interface UpgradeManager
         public String getFilename()
         {
             return "PsiphonAndroid.apk";
+        }
+        
+        public boolean isWorldReadable()
+        {
+            // Making the APK world readable so Installer component can access it
+            return true;
+        }
+    }    
+
+    static class UnverifiedUpgradeFile extends UpgradeFile
+    {
+        public UnverifiedUpgradeFile(Context context)
+        {
+            super(context);
+        }
+        
+        public String getFilename()
+        {
+            return "PsiphonAndroid.apk.unverified";
         }
         
         public boolean isWorldReadable()
