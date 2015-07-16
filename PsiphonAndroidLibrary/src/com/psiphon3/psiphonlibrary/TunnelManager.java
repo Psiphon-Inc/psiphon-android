@@ -443,6 +443,10 @@ public class TunnelManager implements PsiphonTunnel.HostService
         try {            
             JSONObject json = new JSONObject();
             
+            json.put("ClientPlatform", PsiphonConstants.PLATFORM);
+            
+            json.put("ClientVersion", EmbeddedValues.CLIENT_VERSION);
+            
             json.put("PropagationChannelId", EmbeddedValues.PROPAGATION_CHANNEL_ID);
             
             json.put("SponsorId", EmbeddedValues.SPONSOR_ID);
