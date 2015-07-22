@@ -54,13 +54,6 @@ public class TunnelManager implements PsiphonTunnel.HostService
         CONNECTED
     }
 
-    enum TunnelMode
-    {
-        NONE,
-        TUNNEL_ONLY,
-        VPN_ROUTING_TUNNEL
-    }
-
     private ConnectionState m_state = ConnectionState.CONNECTING;
     private Context m_parentContext = null;
     private Service m_parentService = null;
@@ -69,8 +62,8 @@ public class TunnelManager implements PsiphonTunnel.HostService
     private boolean m_serviceDestroyed = false;
     private IEvents m_eventsInterface = null;
     private final List<Pair<String,String>> m_extraAuthParams = new ArrayList<Pair<String,String>>();
-    private PsiphonTunnel m_tunnel;
-    private TunnelMode m_mode = TunnelMode.NONE;
+    private PsiphonTunnel m_tunnel = null;
+    private boolean m_isTunnelStarted = false;
     private String m_lastUpstreamProxyErrorMessage;
 
 
@@ -320,11 +313,13 @@ public class TunnelManager implements PsiphonTunnel.HostService
         return list.toString();
     }
     
-    public void startTunnel()
+    private void startTunnel()
     {
         Utils.checkSecureRandom();
 
         stopTunnel();
+        
+        m_isTunnelStarted = true;
         
         // Notify if an upgrade has already been downloaded and is waiting for install
         UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentContext);
@@ -354,18 +349,12 @@ public class TunnelManager implements PsiphonTunnel.HostService
         {
             if (runVpn)
             {
-                m_mode = TunnelMode.VPN_ROUTING_TUNNEL;
-
                 if (!m_tunnel.startRouting())
                 {
                     throw new PsiphonTunnel.Exception("application is not prepared or revoked");
                 }
                 
                 MyLog.v(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
-            }
-            else
-            {
-                m_mode = TunnelMode.TUNNEL_ONLY;                
             }
             
             m_tunnel.startTunneling(getServerEntries());
@@ -383,9 +372,9 @@ public class TunnelManager implements PsiphonTunnel.HostService
         }
     }
 
-    public void stopTunnel()
+    private void stopTunnel()
     {
-        if (m_mode == TunnelMode.NONE)
+        if (!m_isTunnelStarted)
         {
             return;
         }
@@ -405,7 +394,7 @@ public class TunnelManager implements PsiphonTunnel.HostService
 
         MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
         
-        m_mode = TunnelMode.NONE;
+        m_isTunnelStarted = false;
     }
 
     // A hack to stop the VpnService, which doesn't respond to normal
