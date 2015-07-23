@@ -47,12 +47,6 @@ import android.net.Uri;
  */
 public interface UpgradeManager
 {
-    // TODO-TUNNEL-CORE:
-    // - tunnel-core downloads to PartialUpgradeFile and renames to DownloadedUpgradeFile and
-    //   then triggers UpgradeManager to take over from there ("UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentContext)")
-    // - Play Store check before downloading:
-    //   PsiphonData.getPsiphonData().getDownloadUpgrades() vs. "0 == EmbeddedValues.UPGRADE_URL.length() || !EmbeddedValues.hasEverBeenSideLoaded(context))"?
-    
     /**
      * To be used by other UpgradeManager classes only.
      */
