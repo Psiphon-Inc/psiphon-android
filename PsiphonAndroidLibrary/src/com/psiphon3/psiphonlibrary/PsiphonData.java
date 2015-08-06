@@ -1129,7 +1129,10 @@ public class PsiphonData
         entry.timestamp = timestamp;
         entry.msg = msg;
         entry.data = data;
-        m_diagnosticHistory.add(entry);
+        synchronized(m_diagnosticHistory) 
+        {
+            m_diagnosticHistory.add(entry);
+        }
     }
     
     static public List<DiagnosticEntry> cloneDiagnosticHistory()
