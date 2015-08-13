@@ -572,4 +572,11 @@ public class TunnelManager implements PsiphonTunnel.HostService
     public void onUntunneledAddress(String address) {
         MyLog.v(R.string.untunneled_address, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, address);
     }
+
+    @Override
+    public void onBytesTransferred(long sent, long received) {
+        PsiphonData.DataTransferStats stats = PsiphonData.getPsiphonData().getDataTransferStats();
+        stats.addBytesSent(sent);
+        stats.addBytesReceived(received);
+    }
 }

@@ -184,10 +184,6 @@ public abstract class MainBase {
         private TextView m_elapsedConnectionTimeView;
         private TextView m_totalSentView;
         private TextView m_totalReceivedView;
-        private TextView m_compressionRatioSentView;
-        private TextView m_compressionRatioReceivedView;
-        private TextView m_compressionSavingsSentView;
-        private TextView m_compressionSavingsReceivedView;
         private DataTransferGraph m_slowSentGraph;
         private DataTransferGraph m_slowReceivedGraph;
         private DataTransferGraph m_fastSentGraph;
@@ -552,10 +548,6 @@ public abstract class MainBase {
             m_elapsedConnectionTimeView = (TextView) findViewById(R.id.elapsedConnectionTime);
             m_totalSentView = (TextView) findViewById(R.id.totalSent);
             m_totalReceivedView = (TextView) findViewById(R.id.totalReceived);
-            m_compressionRatioSentView = (TextView) findViewById(R.id.compressionRatioSent);
-            m_compressionRatioReceivedView = (TextView) findViewById(R.id.compressionRatioReceived);
-            m_compressionSavingsSentView = (TextView) findViewById(R.id.compressionSavingsSent);
-            m_compressionSavingsReceivedView = (TextView) findViewById(R.id.compressionSavingsReceived);
             m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
             m_tunnelWholeDeviceToggle = (CheckBox) findViewById(R.id.tunnelWholeDeviceToggle);
 
@@ -1010,17 +1002,8 @@ public abstract class MainBase {
                     DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
                     m_elapsedConnectionTimeView.setText(dataTransferStats.isConnected() ? getString(R.string.connected_elapsed_time,
                             Utils.elapsedTimeToDisplay(dataTransferStats.getElapsedTime())) : getString(R.string.disconnected));
-                    m_totalSentView.setText(Utils.byteCountToDisplaySize(dataTransferStats.getTotalBytesSent() + dataTransferStats.getTotalOverheadBytesSent(),
-                            false));
-                    m_compressionRatioSentView.setText(getString(R.string.compression_ratio, dataTransferStats.getTotalSentCompressionRatio()));
-                    m_compressionSavingsSentView.setText(getString(R.string.compression_savings,
-                            Utils.byteCountToDisplaySize(dataTransferStats.getTotalSentSaved(), false)));
-                    m_totalReceivedView.setText(Utils.byteCountToDisplaySize(
-                            dataTransferStats.getTotalBytesReceived() + dataTransferStats.getTotalOverheadBytesReceived(), false));
-                    m_compressionRatioReceivedView.setText(getString(R.string.compression_ratio, dataTransferStats.getTotalReceivedCompressionRatio()));
-                    m_compressionSavingsReceivedView.setText(getString(R.string.compression_savings,
-                            Utils.byteCountToDisplaySize(dataTransferStats.getTotalReceivedSaved(), false)));
-
+                    m_totalSentView.setText(Utils.byteCountToDisplaySize(dataTransferStats.getTotalBytesSent(), false));
+                    m_totalReceivedView.setText(Utils.byteCountToDisplaySize(dataTransferStats.getTotalBytesReceived(), false));
                     m_slowSentGraph.update(dataTransferStats.getSlowSentSeries());
                     m_slowReceivedGraph.update(dataTransferStats.getSlowReceivedSeries());
                     m_fastSentGraph.update(dataTransferStats.getFastSentSeries());

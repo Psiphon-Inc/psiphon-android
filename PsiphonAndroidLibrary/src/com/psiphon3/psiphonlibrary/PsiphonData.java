@@ -83,8 +83,6 @@ public class PsiphonData
     private String m_proxyDomain;
     private ProxySettings m_savedSystemProxySettings;
     private TunnelManager m_currentTunnelManager;
-    private ReportedStats m_reportedStats;
-    private boolean m_enableReportedStats;
     private DataTransferStats m_dataTransferStats;
     private boolean m_displayDataTransferStats;
     private boolean m_downloadUpgrades;
@@ -107,8 +105,6 @@ public class PsiphonData
         m_useSystemProxySettings = false;
         m_useCustomProxySettings = false;
         m_useProxyAuthentication = false;
-        m_reportedStats = new ReportedStats();
-        m_enableReportedStats = true;
         m_dataTransferStats = new DataTransferStats();
         m_displayDataTransferStats = false;
         m_downloadUpgrades = false;
@@ -466,141 +462,6 @@ public class PsiphonData
         return m_notificationIconUpgradeAvailable;
     }
 
-    public synchronized void setEnableReportedStats(boolean enableReportedStats)
-    {
-        m_enableReportedStats = enableReportedStats;
-    }
-
-    public synchronized boolean getEnableReportedStats()
-    {
-        return m_enableReportedStats;
-    }
-
-    public synchronized ReportedStats getReportedStats()
-    {
-        if (!m_enableReportedStats)
-        {
-            return null;
-        }
-        return m_reportedStats;
-    }
-
-    public class ReportedStats
-    {
-        private Integer m_bytesTransferred = 0;
-        private Map<String, Integer> m_pageViewEntries;
-        private Map<String, Integer> m_httpsRequestEntries;
-        private List<Pair<Pattern, String>> m_pageViewRegexes;
-        private List<Pair<Pattern, String>> m_httpsRequestRegexes;
-            
-        ReportedStats()
-        {
-            this.m_pageViewEntries = new HashMap<String, Integer>();
-            this.m_httpsRequestEntries = new HashMap<String, Integer>();
-        }
-    
-        public synchronized void setRegexes(
-                List<Pair<Pattern, String>> pageViewRegexes,
-                List<Pair<Pattern, String>> httpsRequestRegexes)
-        {
-            this.m_pageViewRegexes = pageViewRegexes;
-            this.m_httpsRequestRegexes = httpsRequestRegexes;
-        }
-    
-        public synchronized void addBytesSent(int byteCount)
-        {
-            this.m_bytesTransferred += byteCount;
-        }
-    
-        public synchronized void addBytesReceived(int byteCount)
-        {
-            this.m_bytesTransferred += byteCount;
-        }
-        
-        public synchronized void upsertPageView(String entry)
-        {
-            String storeEntry = "(OTHER)";
-            
-            if (this.m_pageViewRegexes != null)
-            {
-                for (Pair<Pattern, String> regexReplace : this.m_pageViewRegexes)
-                {
-                    Matcher matcher = regexReplace.first.matcher(entry);
-                    if (matcher.find())
-                    {
-                        storeEntry = matcher.replaceFirst(regexReplace.second);
-                        break;
-                    }
-                }
-            }
-                
-            if (storeEntry.length() == 0) return;
-            
-            // Add/increment the entry.
-            Integer prevCount = this.m_pageViewEntries.get(storeEntry);
-            if (prevCount == null) prevCount = 0;
-            this.m_pageViewEntries.put(storeEntry, prevCount+1);
-            
-            MyLog.d("upsertPageView: ("+(prevCount+1)+") "+storeEntry);
-        }
-        
-        public synchronized void upsertHttpsRequest(String entry)
-        {
-            // TODO: This is identical code to the function above, because we don't
-            // yet know what a HTTPS "entry" looks like, because we haven't implemented
-            // HTTPS response parsing yet.
-            
-            String storeEntry = "(OTHER)";
-            
-            if (this.m_httpsRequestRegexes != null)
-            {
-                for (Pair<Pattern, String> regexReplace : this.m_httpsRequestRegexes)
-                {
-                    Matcher matcher = regexReplace.first.matcher(entry);
-                    if (matcher.find())
-                    {
-                        storeEntry = matcher.replaceFirst(regexReplace.second);
-                        break;
-                    }
-                }
-            }
-            
-            if (storeEntry.length() == 0) return;
-            
-            // Add/increment the entry.
-            Integer prevCount = this.m_httpsRequestEntries.get(storeEntry);
-            if (prevCount == null) prevCount = 0;
-            this.m_httpsRequestEntries.put(storeEntry, prevCount+1);
-        }
-        
-        public synchronized int getCount()
-        {
-            return this.m_pageViewEntries.size() + this.m_httpsRequestEntries.size();
-        }
-    
-        public synchronized Map<String, Integer> getPageViewEntries()
-        {
-            return this.m_pageViewEntries;
-        }
-    
-        public synchronized Map<String, Integer> getHttpsRequestEntries()
-        {
-            return this.m_httpsRequestEntries;
-        }
-    
-        public synchronized Integer getBytesTransferred()
-        {
-            return this.m_bytesTransferred;
-        }
-    
-        public synchronized void clear()
-        {
-            this.m_bytesTransferred = 0;
-            this.m_pageViewEntries.clear();
-            this.m_httpsRequestEntries.clear();
-        }
-    }
-    
     public synchronized void setDownloadUpgrades(boolean downloadUpgrades)
     {
         m_downloadUpgrades = downloadUpgrades;
@@ -632,18 +493,10 @@ public class PsiphonData
         private long m_connectedTime;
 
         private long m_totalBytesSent;
-        private long m_totalUncompressedBytesSent;
-        private long m_totalOverheadBytesSent;
         private long m_totalBytesReceived;
-        private long m_totalUncompressedBytesReceived;
-        private long m_totalOverheadBytesReceived;
 
         private long m_sessionBytesSent;
-        private long m_sessionUncompressedBytesSent;
-        private long m_sessionOverheadBytesSent;
         private long m_sessionBytesReceived;
-        private long m_sessionUncompressedBytesReceived;
-        private long m_sessionOverheadBytesReceived;
 
         public final static long SLOW_BUCKET_PERIOD_MILLISECONDS = 5*60*1000; 
         public final static long FAST_BUCKET_PERIOD_MILLISECONDS = 1000;
@@ -663,11 +516,7 @@ public class PsiphonData
         DataTransferStats()
         {
             m_totalBytesSent = 0;
-            m_totalUncompressedBytesSent = 0;
-            m_totalOverheadBytesSent = 0;
             m_totalBytesReceived = 0;
-            m_totalUncompressedBytesReceived = 0;
-            m_totalOverheadBytesReceived = 0;
 
             stop();
         }
@@ -694,40 +543,28 @@ public class PsiphonData
         {
             long now = SystemClock.elapsedRealtime();
             this.m_sessionBytesSent = 0;
-            this.m_sessionUncompressedBytesSent = 0;
-            this.m_sessionOverheadBytesSent = 0;
             this.m_sessionBytesReceived = 0;
-            this.m_sessionUncompressedBytesReceived = 0;
-            this.m_sessionOverheadBytesReceived = 0;
             this.m_slowBucketsLastStartTime = bucketStartTime(now, SLOW_BUCKET_PERIOD_MILLISECONDS);
             this.m_slowBuckets = newBuckets();
             this.m_fastBucketsLastStartTime = bucketStartTime(now, FAST_BUCKET_PERIOD_MILLISECONDS);
             this.m_fastBuckets = newBuckets();
         }
 
-        public synchronized void addBytesSent(int bytes, int uncompressedBytes, int overheadBytes)
+        public synchronized void addBytesSent(long bytes)
         {
             this.m_totalBytesSent += bytes;
-            this.m_totalUncompressedBytesSent += uncompressedBytes;
-            this.m_totalOverheadBytesSent += overheadBytes;
             
             this.m_sessionBytesSent += bytes;
-            this.m_sessionUncompressedBytesSent += uncompressedBytes;
-            this.m_sessionOverheadBytesSent += overheadBytes;
             
             manageBuckets();
             addSentToBuckets(bytes);
         }
     
-        public synchronized void addBytesReceived(int bytes, int uncompressedBytes, int overheadBytes)
+        public synchronized void addBytesReceived(long bytes)
         {
             this.m_totalBytesReceived += bytes;
-            this.m_totalUncompressedBytesReceived += uncompressedBytes;
-            this.m_totalOverheadBytesReceived += overheadBytes;
 
             this.m_sessionBytesReceived += bytes;
-            this.m_sessionUncompressedBytesReceived += uncompressedBytes;
-            this.m_sessionOverheadBytesReceived += overheadBytes;
 
             manageBuckets();
             addReceivedToBuckets(bytes);
@@ -799,13 +636,13 @@ public class PsiphonData
             return series;
         }
         
-        private void addSentToBuckets(int bytes)
+        private void addSentToBuckets(long bytes)
         {
             this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesSent += bytes;
             this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesSent += bytes;
         }
         
-        private void addReceivedToBuckets(int bytes)
+        private void addReceivedToBuckets(long bytes)
         {
             this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesReceived += bytes;
             this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesReceived += bytes;
@@ -828,55 +665,9 @@ public class PsiphonData
             return this.m_totalBytesSent;
         }
         
-        public synchronized long getTotalUncompressedBytesSent()
-        {
-            return this.m_totalUncompressedBytesSent;
-        }
-
-        public synchronized long getTotalOverheadBytesSent()
-        {
-            return this.m_totalOverheadBytesSent;
-        }
-
-        public synchronized double getTotalSentCompressionRatio()
-        {
-            if (this.m_totalUncompressedBytesSent == 0) return 0.0;
-            double ratio = 100.0*(1.0-(double)(this.m_totalBytesSent + this.m_totalOverheadBytesSent)/(double)this.m_totalUncompressedBytesSent);
-            return ratio > 0.0 ? ratio : 0.0;
-        }
-        
-        public synchronized long getTotalSentSaved()
-        {
-            long savings = this.m_totalUncompressedBytesSent - (this.m_totalBytesSent + this.m_totalOverheadBytesSent);
-            return savings > 0 ? savings : 0;
-        }
-        
         public synchronized long getTotalBytesReceived()
         {
             return this.m_totalBytesReceived;
-        }
-        
-        public synchronized long getTotalOverheadBytesReceived()
-        {
-            return this.m_totalOverheadBytesReceived;
-        }
-        
-        public synchronized long getTotalUncompressedBytesReceived()
-        {
-            return this.m_totalUncompressedBytesReceived;
-        }
-
-        public synchronized double getTotalReceivedCompressionRatio()
-        {
-            if (this.m_totalUncompressedBytesReceived == 0) return 0.0;
-            double ratio = 100.0*(1.0-(double)(this.m_totalBytesReceived + this.m_totalOverheadBytesReceived)/(double)this.m_totalUncompressedBytesReceived);
-            return ratio > 0.0 ? ratio : 0.0;
-        }
-        
-        public synchronized long getTotalReceivedSaved()
-        {
-            long savings = this.m_totalUncompressedBytesReceived - (this.m_totalBytesReceived + this.m_totalOverheadBytesReceived);
-            return savings > 0 ? savings : 0;
         }
         
         public synchronized long getSessionBytesSent()
@@ -884,57 +675,11 @@ public class PsiphonData
             return this.m_sessionBytesSent;
         }
         
-        public synchronized long getSessionUncompressedBytesSent()
-        {
-            return this.m_sessionUncompressedBytesSent;
-        }
-
-        public synchronized long getSessionOverheadBytesSent()
-        {
-            return this.m_sessionOverheadBytesSent;
-        }
-
-        public synchronized double getSessionSentCompressionRatio()
-        {
-            if (this.m_sessionUncompressedBytesSent == 0) return 0.0;
-            double ratio = 100.0*(1.0-(double)(this.m_sessionBytesSent + this.m_sessionOverheadBytesSent)/(double)this.m_sessionUncompressedBytesSent);
-            return ratio > 0.0 ? ratio : 0.0;
-        }
-        
-        public synchronized long getSessionSentSaved()
-        {
-            long savings = this.m_sessionUncompressedBytesSent - (this.m_sessionBytesSent + this.m_sessionOverheadBytesSent);
-            return savings > 0 ? savings : 0;
-        }
-        
         public synchronized long getSessionBytesReceived()
         {
             return this.m_sessionBytesReceived;
         }
         
-        public synchronized long getSessionlOverheadBytesReceived()
-        {
-            return this.m_sessionOverheadBytesReceived;
-        }
-        
-        public synchronized long getSessionUncompressedBytesReceived()
-        {
-            return this.m_sessionUncompressedBytesReceived;
-        }
-
-        public synchronized double getSessionReceivedCompressionRatio()
-        {
-            if (this.m_sessionUncompressedBytesReceived == 0) return 0.0;
-            double ratio = 100.0*(1.0-(double)(this.m_sessionBytesReceived + this.m_sessionOverheadBytesReceived)/(double)this.m_sessionUncompressedBytesReceived);
-            return ratio > 0.0 ? ratio : 0.0;
-        }
-        
-        public synchronized long getSessionReceivedSaved()
-        {
-            long savings = this.m_sessionUncompressedBytesReceived - (this.m_sessionBytesReceived + this.m_sessionOverheadBytesReceived);
-            return savings > 0 ? savings : 0;
-        }
-
         public synchronized ArrayList<Long> getSlowSentSeries()
         {
             manageBuckets();
