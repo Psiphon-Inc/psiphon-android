@@ -1465,7 +1465,7 @@ public abstract class MainBase {
                                 }
                                 mWebViewLoaded = true;
                             }
-                        }, 1000);
+                        }, 2000);
                     }
                 }
             }
