@@ -559,6 +559,11 @@ public class TunnelManager implements PsiphonTunnel.HostService
     }
 
     @Override
+    public void onClientRegion(String region) {
+        PsiphonData.getPsiphonData().setClientRegion(region);
+    }
+
+    @Override
     public void onClientUpgradeDownloaded(String filename) {
         UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentContext);      
     }

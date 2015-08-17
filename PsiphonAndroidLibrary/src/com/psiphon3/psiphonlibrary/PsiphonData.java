@@ -87,6 +87,7 @@ public class PsiphonData
     private boolean m_displayDataTransferStats;
     private boolean m_downloadUpgrades;
     private String m_egressRegion;
+    private String m_clientRegion;
     
     public int m_notificationIconConnecting = 0;
     public int m_notificationIconConnected = 0;
@@ -213,6 +214,16 @@ public class PsiphonData
     public synchronized String getEgressRegion()
     {
         return m_egressRegion;
+    }
+
+    public synchronized void setClientRegion(String clientRegion)
+    {
+        m_clientRegion = clientRegion;
+    }
+
+    public synchronized String getClientRegion()
+    {
+        return m_clientRegion;
     }
 
     public synchronized void setUseHTTPProxy(boolean useHTTPProxy)
