@@ -326,6 +326,12 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
             // has no effect with restartPsiphon(), a full stop() is necessary.
             json.put("LocalSocksProxyPort", mLocalSocksProxyPort);
         }
+        
+        json.put("UseIndistinguishableTLS", true);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            json.put("SystemCACertificateDirectory", "/system/etc/security/cacerts");
+        }
 
         return json.toString();
     }
