@@ -1947,9 +1947,16 @@ public class ServerInterface
         {
             newEntry.meekFrontingDomain = obj.getString("meekFrontingDomain");
             newEntry.meekFrontingHost = obj.getString("meekFrontingHost");
+            
+            String meekFrontingAddressesRegex = "";
             if (obj.has("meekFrontingAddressesRegex"))
             {
-                newEntry.meekFrontingAddresses.add(new Generex(obj.getString("meekFrontingAddressesRegex")).random());
+                meekFrontingAddressesRegex = obj.getString("meekFrontingAddressesRegex");
+            }
+            
+            if (meekFrontingAddressesRegex.length() > 0)
+            {
+                newEntry.meekFrontingAddresses.add(new Generex(meekFrontingAddressesRegex).random());
             }
             else if (obj.has("meekFrontingAddresses"))
             {
