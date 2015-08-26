@@ -60,7 +60,8 @@ public class StatusActivity
     private ImageView m_banner;
     private MoPubView m_moPubBannerAdView = null;
     private MoPubInterstitial m_moPubInterstitial = null;
-    private boolean m_fullScreenAdShown = false;
+    private int m_fullScreenAdCounter = 0;
+    private boolean m_fullScreenAdPending = false;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
     private boolean m_temporarilyDisableInterstitial = false;
@@ -234,8 +235,14 @@ public class StatusActivity
     {
         if (shouldShowAds() && !m_temporarilyDisableInterstitial)
         {
-            if (m_moPubInterstitial == null && !m_fullScreenAdShown)
+            m_fullScreenAdCounter++;
+
+            if (m_fullScreenAdCounter % 3 == 1)
             {
+                if (m_moPubInterstitial != null)
+                {
+                    m_moPubInterstitial.destroy();
+                }
                 m_moPubInterstitial = new MoPubInterstitial(this, MOPUB_INTERSTITIAL_PROPERTY_ID);
                 m_moPubInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
                     @Override
@@ -249,12 +256,10 @@ public class StatusActivity
                             MoPubErrorCode arg1) {
                     }
                     @Override
-                    public void onInterstitialLoaded(MoPubInterstitial arg0) {
-                        if (!m_fullScreenAdShown &&
-                                m_moPubInterstitial != null && m_moPubInterstitial.isReady())
+                    public void onInterstitialLoaded(MoPubInterstitial interstitial) {
+                        if (interstitial != null && interstitial.isReady())
                         {
-                            m_moPubInterstitial.show();
-                            m_fullScreenAdShown = true;
+                            interstitial.show();
                         }
                     }
                     @Override
@@ -331,6 +336,12 @@ public class StatusActivity
             m_temporarilyDisableInterstitial = false;
 
             initBanner();
+            
+            if (m_fullScreenAdPending)
+            {
+                showFullScreenAd();
+                m_fullScreenAdPending = false;
+            }
         }
     }
     
@@ -356,6 +367,9 @@ public class StatusActivity
                 // Don't let this tab change trigger an interstitial ad
                 // OnResume() will reinitialize ads and reset this flag
                 m_temporarilyDisableInterstitial = true;
+
+                // Show the full screen ad after OnResume() has reinitialized ads
+                m_fullScreenAdPending = true;
                 
                 m_tabHost.setCurrentTabByTag("home");
                 loadSponsorTab(true);
