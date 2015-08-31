@@ -793,7 +793,11 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
             // stream must be a random nonce known to TunnelCore and tun2socks but not known to any
             // external party that could respond, yielding a false positive.
 
-            if (tunnelWholeDevice && runVpnService)
+            // NEW: don't do this check on Lollipop any more, since we have not observed any Lollipop
+            // devices that silently fail to route through the VpnService tun device (but we have
+            // seen the test fail on Lollipop when routing is successful).
+            
+            if (tunnelWholeDevice && runVpnService && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
             {
                 boolean success = false;
 

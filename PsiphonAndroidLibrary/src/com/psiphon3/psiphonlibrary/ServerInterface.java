@@ -99,6 +99,7 @@ import android.preference.PreferenceManager;
 import android.util.Pair;
 import android.webkit.URLUtil;
 
+import com.mifmif.common.regex.Generex;
 import com.psiphon3.psiphonlibrary.AuthenticatedDataPackage.AuthenticatedDataPackageException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.psiphonlibrary.Utils.RequestTimeoutAbort;
@@ -1946,7 +1947,18 @@ public class ServerInterface
         {
             newEntry.meekFrontingDomain = obj.getString("meekFrontingDomain");
             newEntry.meekFrontingHost = obj.getString("meekFrontingHost");
-            if (obj.has("meekFrontingAddresses"))
+            
+            String meekFrontingAddressesRegex = "";
+            if (obj.has("meekFrontingAddressesRegex"))
+            {
+                meekFrontingAddressesRegex = obj.getString("meekFrontingAddressesRegex");
+            }
+            
+            if (meekFrontingAddressesRegex.length() > 0)
+            {
+                newEntry.meekFrontingAddresses.add(new Generex(meekFrontingAddressesRegex).random());
+            }
+            else if (obj.has("meekFrontingAddresses"))
             {
                 JSONArray meekFrontingAddressesJSON = obj.getJSONArray("meekFrontingAddresses");
                 for (int i = 0; i < meekFrontingAddressesJSON.length(); i++)
