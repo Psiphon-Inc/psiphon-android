@@ -42,8 +42,11 @@ public class Events implements com.psiphon3.psiphonlibrary.IEvents
         // some other app.        
         // It's too late to do this check in StatusActivity
         // onNewIntent.
+        // NEW: now we would like to interrupt the user to
+        // show the home tab when Psiphon gets initially
+        // connected.
         
-        if (PsiphonData.getPsiphonData().getStatusActivityForeground())
+        if (PsiphonData.getPsiphonData().getStatusActivityForeground() || !isReconnect)
         {
             Intent intent = new Intent(
                     MainBase.TabbedActivityBase.HANDSHAKE_SUCCESS,

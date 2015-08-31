@@ -50,6 +50,7 @@ public class StatusActivity
 
     private ImageView m_banner;
     private boolean m_tunnelWholeDevicePromptShown = false;
+    private boolean m_loadedSponsorTab = false;
 
     public StatusActivity()
     {
@@ -113,8 +114,13 @@ public class StatusActivity
             m_firstRun = false;
             startUp();
         }
-
-        if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected())
+        
+        m_loadedSponsorTab = false;
+        HandleCurrentIntent();
+        
+        // HandleCurrentIntent() may have already loaded the sponsor tab
+        if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected() &&
+                !m_loadedSponsorTab)
         {
             loadSponsorTab(false);
         }
@@ -161,6 +167,7 @@ public class StatusActivity
             {
                 m_tabHost.setCurrentTabByTag("home");
                 loadSponsorTab(true);
+                m_loadedSponsorTab = true;
 
                 //m_eventsInterface.displayBrowser(this);
             }
@@ -272,8 +279,5 @@ public class StatusActivity
 
             startTunnel(this);
         }
-
-        // Handle the intent that resumed that activity
-        HandleCurrentIntent();
     }
 }
