@@ -478,9 +478,6 @@ public class TunnelManager implements PsiphonTunnel.HostService
     @Override
     public void onDiagnosticMessage(String message) {
         MyLog.g("diagnostic", "msg", message);
-        
-        // TODO-TUNNEL-CORE: temporary:
-        MyLog.v(R.string.diagnostic, MyLog.Sensitivity.NOT_SENSITIVE, message);
     }
 
     @Override
