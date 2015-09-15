@@ -145,14 +145,6 @@
                         android:text="@string/tunnel_whole_device_toggle"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
 
-                    <CheckBox
-                        android:id="@+id/WdmForceIptablesToggle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="left"
-                        android:onClick="onWdmForceIptablesToggle"
-                        android:text="@string/wdm_force_iptables_toggle"
-                        android:textAppearance="?android:attr/textAppearanceSmall" />
                 </LinearLayout>
 
                 <LinearLayout

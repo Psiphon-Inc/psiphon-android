@@ -30,17 +30,4 @@
 		<nature>com.android.ide.eclipse.adt.AndroidNature</nature>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>kalium-src</name>
-			<type>2</type>
-			<locationURI>KALIUM_JNI_SRC</locationURI>
-		</link>
-	</linkedResources>
-	<variableList>
-		<variable>
-			<name>KALIUM_JNI_SRC</name>
-			<value>$%7BPARENT-1-PROJECT_LOC%7D/kalium-jni/src/main/java</value>
-		</variable>
-	</variableList>
 </projectDescription>

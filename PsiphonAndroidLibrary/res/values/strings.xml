@@ -42,7 +42,7 @@
     <string name="ServerInterface.HTTPSRequestFailed">HTTPS request failed with error: </string>
     <string name="socks_ports_failed">Failed to start SOCKS proxy: no available ports found</string>
     <string name="http_proxy_ports_failed">Failed to start HTTP proxy: no available ports found</string>
-    <string name="socks_port_in_use">Port %d is already in use by another app.  Cannot continue.</string>
+    <string name="socks_port_in_use">Requested local SOCKS proxy port %d is already in use by another app.  Cannot continue.</string>
     <string name="transparent_proxy_running">Transparent proxy running on port %d</string>
     <string name="transparent_proxy_ports_failed">Failed to start transparent proxy: no available ports found</string>
     <string name="transparent_proxy_command_failed">Transparent proxy configuration command failed: %s</string>
@@ -158,5 +158,11 @@
     <string name="proxy_password_summary">Password for proxy authentication</string>
     <string name="proxy_domain_title">Proxy domain</string>
     <string name="proxy_domain_summary">Domain for proxy authentication</string>
+    <string name="http_proxy_port_in_use">Requested local HTTP proxy port %d is already in use by another app.  Cannot continue.</string>
+    <string name="split_tunnel_region">Split tunnel region: %s</string>
+    <string name="untunneled_address">Untunneled: %s</string>
+    <string name="upstream_proxy_error">Upstream proxy error: %s</string>
+    <string name="diagnostic">Diagnostic: %s</string>
+    <string name="start_tunnel_failed">Start tunnel failed: %s</string>
 
 </resources>
