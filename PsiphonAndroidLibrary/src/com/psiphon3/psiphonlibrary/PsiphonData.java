@@ -316,7 +316,6 @@ public class PsiphonData
     	return m_proxyDomain;
     }
 
-    
     public class ProxySettings
     {
         public String proxyHost;
@@ -427,6 +426,44 @@ public class PsiphonData
         }
         
         return settings;
+    }
+    
+    // Returns a tunnel-core compatible proxy URL for the
+    // current user configured proxy settings.
+    // e.g., http://NTDOMAIN\NTUser:password@proxyhost:3375,
+    //       http://user:password@proxyhost:8080", etc.
+    public synchronized String getUpstreamProxyUrl(Context context)
+    {
+        ProxySettings proxySettings = getProxySettings(context);
+
+        if (proxySettings == null)
+        {
+            return "";
+        }
+
+        StringBuilder url = new StringBuilder();
+        url.append("http://");
+
+        NTCredentials credentials = (NTCredentials) getProxyCredentials();
+
+        if (credentials != null)
+        {
+            if (credentials.getDomain() != "")
+            {
+                url.append(credentials.getDomain());
+                url.append("\\");
+            }
+            url.append(credentials.getUserName());
+            url.append(":");
+            url.append(credentials.getPassword());
+            url.append("@");
+        }
+
+        url.append(proxySettings.proxyHost);
+        url.append(":");
+        url.append(proxySettings.proxyPort);
+
+        return url.toString();
     }
 
     public synchronized void setCurrentTunnelManager(TunnelManager tunnelManager)
