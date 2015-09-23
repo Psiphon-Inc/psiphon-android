@@ -527,6 +527,8 @@ public class TunnelManager implements PsiphonTunnel.HostService
     public void onConnecting() {
         setState(ConnectionState.CONNECTING);
         
+        MyLog.v(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
+        
         if (m_isReconnect)
         {
             if (m_eventsInterface != null)
@@ -539,6 +541,8 @@ public class TunnelManager implements PsiphonTunnel.HostService
     @Override
     public void onConnected() {
         setState(ConnectionState.CONNECTED);
+        
+        MyLog.v(R.string.tunnel_connected, MyLog.Sensitivity.NOT_SENSITIVE);
         
         PsiphonData.getPsiphonData().getDataTransferStats().startConnected();
         
@@ -580,5 +584,10 @@ public class TunnelManager implements PsiphonTunnel.HostService
         PsiphonData.DataTransferStats stats = PsiphonData.getPsiphonData().getDataTransferStats();
         stats.addBytesSent(sent);
         stats.addBytesReceived(received);
+    }
+
+    @Override
+    public void onStartedWaitingForNetworkConnectivity() {
+        MyLog.v(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);      
     }
 }
