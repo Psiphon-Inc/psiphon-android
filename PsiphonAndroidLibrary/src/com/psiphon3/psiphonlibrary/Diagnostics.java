@@ -411,6 +411,9 @@ public class Diagnostics
             httpsConn.connect();
             httpsConn.getOutputStream().write(feedbackData);
             
+            // getInputStream() checks response status code
+            httpsConn.getInputStream();
+            
             success = true;
         }
         catch (ProtocolException e)
