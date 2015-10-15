@@ -24,21 +24,30 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TabHost;
 
+import com.mopub.mobileads.MoPubErrorCode;
+import com.mopub.mobileads.MoPubInterstitial;
+import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
+import com.mopub.mobileads.MoPubView;
+import com.mopub.mobileads.MoPubView.BannerAdListener;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 
@@ -49,8 +58,13 @@ public class StatusActivity
     public static final String BANNER_FILE_NAME = "bannerImage";
 
     private ImageView m_banner;
+    private MoPubView m_moPubBannerAdView = null;
+    private MoPubInterstitial m_moPubInterstitial = null;
+    private int m_fullScreenAdCounter = 0;
+    private boolean m_fullScreenAdPending = false;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
+    private boolean m_temporarilyDisableInterstitial = false;
 
     public StatusActivity()
     {
@@ -69,6 +83,10 @@ public class StatusActivity
 
         // NOTE: super class assumes m_tabHost is initialized in its onCreate
 
+        // Don't let this tab change trigger an interstitial ad
+        // OnResume() will reinitialize ads and reset this flag
+        m_temporarilyDisableInterstitial = true;
+        
         super.onCreate(savedInstanceState);
 
         if (m_firstRun)
@@ -107,6 +125,10 @@ public class StatusActivity
         }
 
         PsiphonData.getPsiphonData().setDownloadUpgrades(true);
+        
+        LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(StatusActivity.this);
+        localBroadcastManager.registerReceiver(new ConnectionStateChangeReceiver(), new IntentFilter(TUNNEL_STOPPING));
+        localBroadcastManager.registerReceiver(new ConnectionStateChangeReceiver(), new IntentFilter(UNEXPECTED_DISCONNECT));
 
         // Auto-start on app first run
         if (m_firstRun)
@@ -126,6 +148,37 @@ public class StatusActivity
         }
     }
 
+    @Override
+    public void onPause()
+    {
+        super.onPause();
+    }
+    
+    @Override
+    public void onResume()
+    {
+        super.onResume();
+        reInitAds();
+    }
+    
+    @Override
+    public void onDestroy()
+    {
+        if (m_moPubBannerAdView != null)
+        {
+            m_moPubBannerAdView.destroy();
+        }
+        m_moPubBannerAdView = null;
+        
+        if (m_moPubInterstitial != null)
+        {
+            m_moPubInterstitial.destroy();
+        }
+        m_moPubInterstitial = null;
+        
+        super.onDestroy();
+    }
+    
     private void loadSponsorTab(boolean freshConnect)
     {
         resetSponsorHomePage(freshConnect);
@@ -146,6 +199,152 @@ public class StatusActivity
         HandleCurrentIntent();
     }
 
+    @Override
+    protected void doToggle()
+    {
+        super.doToggle();
+    }
+    
+    @Override
+    public void onTabChanged(String tabId)
+    {
+        showFullScreenAd();
+        super.onTabChanged(tabId);
+    }
+    
+    public class ConnectionStateChangeReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            reInitAds();
+        }
+    }
+
+    static final String MOPUB_BANNER_PROPERTY_ID = "";
+    static final String MOPUB_INTERSTITIAL_PROPERTY_ID = "";
+    
+    private boolean shouldShowAds()
+    {
+        // For now, only show ads when the tunnel is connected, since WebViewProxySettings are
+        // probably set and webviews won't load successfully when the tunnel is not connected
+        return PsiphonData.getPsiphonData().getShowAds() &&
+                PsiphonData.getPsiphonData().getDataTransferStats().isConnected() &&
+                Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO;
+    }
+    
+    private void showFullScreenAd()
+    {
+        if (shouldShowAds() && !m_temporarilyDisableInterstitial)
+        {
+            m_fullScreenAdCounter++;
+
+            if (m_fullScreenAdCounter % 3 == 1)
+            {
+                if (m_moPubInterstitial != null)
+                {
+                    m_moPubInterstitial.destroy();
+                }
+                m_moPubInterstitial = new MoPubInterstitial(this, MOPUB_INTERSTITIAL_PROPERTY_ID);
+                m_moPubInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
+                    @Override
+                    public void onInterstitialClicked(MoPubInterstitial arg0) {
+                    }
+                    @Override
+                    public void onInterstitialDismissed(MoPubInterstitial arg0) {
+                    }
+                    @Override
+                    public void onInterstitialFailed(MoPubInterstitial arg0,
+                            MoPubErrorCode arg1) {
+                    }
+                    @Override
+                    public void onInterstitialLoaded(MoPubInterstitial interstitial) {
+                        if (interstitial != null && interstitial.isReady())
+                        {
+                            interstitial.show();
+                        }
+                    }
+                    @Override
+                    public void onInterstitialShown(MoPubInterstitial arg0) {
+                    }
+                });
+                
+                m_moPubInterstitial.load();
+            }
+        }
+    }
+    
+    private void initBanner()
+    {
+        if (shouldShowAds())
+        {
+            if (m_moPubBannerAdView == null)
+            {
+                m_moPubBannerAdView = new MoPubView(this);
+                m_moPubBannerAdView.setAdUnitId(MOPUB_BANNER_PROPERTY_ID);
+                
+                m_moPubBannerAdView.setBannerAdListener(new BannerAdListener() {
+                    @Override
+                    public void onBannerLoaded(MoPubView banner)
+                    {
+                        if (m_moPubBannerAdView.getParent() == null)
+                        {
+                            LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
+                            layout.removeAllViewsInLayout();
+                            layout.addView(m_moPubBannerAdView);
+                        }
+                    }
+                    @Override
+                    public void onBannerClicked(MoPubView arg0) {
+                    }
+                    @Override
+                    public void onBannerCollapsed(MoPubView arg0) {
+                    }
+                    @Override
+                    public void onBannerExpanded(MoPubView arg0) {
+                    }
+                    @Override
+                    public void onBannerFailed(MoPubView arg0,
+                            MoPubErrorCode arg1) {
+                    }
+                });
+                
+                m_moPubBannerAdView.loadAd();
+                m_moPubBannerAdView.setAutorefreshEnabled(true);
+            }
+        }
+    }
+    
+    private void reInitAds()
+    {
+        if (PsiphonData.getPsiphonData().getShowAds())
+        {
+            LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
+            layout.removeAllViewsInLayout();
+            layout.addView(m_banner);
+
+            if (m_moPubBannerAdView != null)
+            {
+                m_moPubBannerAdView.destroy();
+            }
+            m_moPubBannerAdView = null;
+            
+            if (m_moPubInterstitial != null)
+            {
+                m_moPubInterstitial.destroy();
+            }
+            m_moPubInterstitial = null;
+            
+            m_temporarilyDisableInterstitial = false;
+
+            initBanner();
+            
+            if (m_fullScreenAdPending)
+            {
+                showFullScreenAd();
+                m_fullScreenAdPending = false;
+            }
+        }
+    }
+    
     protected void HandleCurrentIntent()
     {
         Intent intent = getIntent();
@@ -165,6 +364,13 @@ public class StatusActivity
             if (!PsiphonData.getPsiphonData().getTunnelWholeDevice()
                 || !intent.getBooleanExtra(HANDSHAKE_SUCCESS_IS_RECONNECT, false))
             {
+                // Don't let this tab change trigger an interstitial ad
+                // OnResume() will reinitialize ads and reset this flag
+                m_temporarilyDisableInterstitial = true;
+
+                // Show the full screen ad after OnResume() has reinitialized ads
+                m_fullScreenAdPending = true;
+                
                 m_tabHost.setCurrentTabByTag("home");
                 loadSponsorTab(true);
                 m_loadedSponsorTab = true;
