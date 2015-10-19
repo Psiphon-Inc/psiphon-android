@@ -32,7 +32,6 @@ import java.util.regex.Pattern;
 
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
 import org.json.JSONObject;
 
 import android.content.Context;
@@ -136,7 +135,7 @@ public class PsiphonData
     {
         return m_showAds;
     }
-
+    
     public synchronized void setHomePages(ArrayList<String> homePages)
     {
         m_homePages.clear();
@@ -152,7 +151,24 @@ public class PsiphonData
         homePages.addAll(m_homePages);
         return homePages;
     }
-
+    
+    public synchronized boolean showFirstHomePageInApp()
+    {
+        boolean showHomePage = false;
+        ArrayList<String> homepages = getHomePages();
+        if (homepages.size() > 0) {
+            showHomePage = true;
+            for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
+                if (homepages.get(0).contains(homeTabUrlExclusion))
+                {
+                    showHomePage = false;
+                    break;
+                }
+            }
+        }
+        return showHomePage;
+    }
+    
     public synchronized long getNextFetchRemoteServerList()
     {
         return m_nextFetchRemoteServerList;
