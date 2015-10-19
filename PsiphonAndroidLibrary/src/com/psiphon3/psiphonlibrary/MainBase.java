@@ -679,6 +679,11 @@ public abstract class MainBase {
          *            time the activity is created.
          */
         protected void resetSponsorHomePage(boolean freshConnect) {
+            if (PsiphonData.getPsiphonData().getSkipHomePage())
+            {
+                return;
+            }
+            
             String url = null;
             ArrayList<String> homepages = PsiphonData.getPsiphonData().getHomePages();
             if (homepages.size() > 0) {

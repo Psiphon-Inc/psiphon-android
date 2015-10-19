@@ -168,7 +168,7 @@ public class PsiphonData
     {
         boolean showHomePage = false;
         ArrayList<String> homepages = getHomePages();
-        if (homepages.size() > 0) {
+        if (!getSkipHomePage() && homepages.size() > 0) {
             showHomePage = true;
             for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
                 if (homepages.get(0).contains(homeTabUrlExclusion))
