@@ -32,6 +32,9 @@ interface NativeAdInterface {
     @Nullable
     Double getStarRating();
 
+    @Nullable
+    String getDaaIconClickthroughUrl();
+
     @NonNull
     Set<String> getImpressionTrackers();
 

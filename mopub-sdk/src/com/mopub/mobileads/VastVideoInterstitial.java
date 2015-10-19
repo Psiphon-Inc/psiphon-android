@@ -3,8 +3,6 @@ package com.mopub.mobileads;
 import com.mopub.common.CacheService;
 import com.mopub.common.DataKeys;
 import com.mopub.mobileads.factories.VastManagerFactory;
-import com.mopub.mobileads.util.vast.VastManager;
-import com.mopub.mobileads.util.vast.VastVideoConfiguration;
 
 import java.util.Map;
 
@@ -12,7 +10,7 @@ class VastVideoInterstitial extends ResponseBodyInterstitial implements VastMana
     private CustomEventInterstitialListener mCustomEventInterstitialListener;
     private String mVastResponse;
     private VastManager mVastManager;
-    private VastVideoConfiguration mVastVideoConfiguration;
+    private VastVideoConfig mVastVideoConfig;
 
     @Override
     protected void extractExtras(Map<String, String> serverExtras) {
@@ -29,12 +27,12 @@ class VastVideoInterstitial extends ResponseBodyInterstitial implements VastMana
         }
 
         mVastManager = VastManagerFactory.create(mContext);
-        mVastManager.prepareVastVideoConfiguration(mVastResponse, this);
+        mVastManager.prepareVastVideoConfiguration(mVastResponse, this, mContext);
     }
 
     @Override
     public void showInterstitial() {
-        MraidVideoPlayerActivity.startVast(mContext, mVastVideoConfiguration, mBroadcastIdentifier);
+        MraidVideoPlayerActivity.startVast(mContext, mVastVideoConfig, mBroadcastIdentifier);
     }
 
     @Override
@@ -51,13 +49,13 @@ class VastVideoInterstitial extends ResponseBodyInterstitial implements VastMana
      */
 
     @Override
-    public void onVastVideoConfigurationPrepared(final VastVideoConfiguration vastVideoConfiguration) {
-        if (vastVideoConfiguration == null) {
+    public void onVastVideoConfigurationPrepared(final VastVideoConfig vastVideoConfig) {
+        if (vastVideoConfig == null) {
             mCustomEventInterstitialListener.onInterstitialFailed(MoPubErrorCode.VIDEO_DOWNLOAD_ERROR);
             return;
         }
 
-        mVastVideoConfiguration = vastVideoConfiguration;
+        mVastVideoConfig = vastVideoConfig;
         mCustomEventInterstitialListener.onInterstitialLoaded();
     }
 

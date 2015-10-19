@@ -6,12 +6,15 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
+import com.mopub.common.event.BaseEvent;
 import com.mopub.common.logging.MoPubLog;
 import com.mopub.common.util.Intents;
 import com.mopub.exceptions.IntentNotResolvableException;
 
 import java.util.EnumSet;
 
+import static com.mopub.common.UrlResolutionTask.UrlResolutionListener;
+import static com.mopub.network.TrackingRequest.makeTrackingHttpRequest;
 
 /**
  * {@code UrlHandler} facilitates handling user clicks on different URLs, allowing configuration
@@ -72,8 +75,7 @@ public class UrlHandler {
          * @param first A {@code UrlAction} for the {@code UrlHandler} to support.
          * @param others An arbitrary number of {@code UrlAction}s for the {@code UrlHandler} to
          * support.
-         * @return A {@link com.mopub.common.UrlHandler.Builder} with the desired supported
-         * {@code UrlAction}s added.
+         * @return A {@link Builder} with the desired supported {@code UrlAction}s added.
          */
         public Builder withSupportedUrlActions(@NonNull final UrlAction first,
                 @Nullable final UrlAction... others) {
@@ -82,12 +84,24 @@ public class UrlHandler {
         }
 
         /**
+         * Sets the {@link UrlAction}s to support in the {@code UrlHandler} to build.
+         *
+         * @param supportedUrlActions An {@code EnumSet} of {@code UrlAction}s for the
+         * {@code UrlHandler} to support.
+         * @return A {@link Builder} with the desired supported {@code UrlAction}s added.
+         */
+        public Builder withSupportedUrlActions(
+                @NonNull final EnumSet<UrlAction> supportedUrlActions) {
+            this.supportedUrlActions = EnumSet.copyOf(supportedUrlActions);
+            return this;
+        }
+        
+        /**
          * Sets the {@link ResultActions} for the {@code UrlHandler} to
          * build.
          *
          * @param resultActions A {@code ClickListener} for the {@code UrlHandler}.
-         * @return A {@link com.mopub.common.UrlHandler.Builder} with the desired
-         * {@code ClickListener} added.
+         * @return A {@link Builder} with the desired {@code ClickListener} added.
          */
         public Builder withResultActions(@NonNull final ResultActions resultActions) {
             this.resultActions = resultActions;
@@ -95,12 +109,10 @@ public class UrlHandler {
         }
 
         /**
-         * Sets the {@link com.mopub.common.UrlHandler.MoPubSchemeListener} for the
-         * {@code UrlHandler} to build.
+         * Sets the {@link MoPubSchemeListener} for the {@code UrlHandler} to build.
          *
          * @param moPubSchemeListener A {@code MoPubSchemeListener} for the {@code UrlHandler}.
-         * @return A {@link com.mopub.common.UrlHandler.Builder} with the desired
-         * {@code MoPubSchemeListener} added.
+         * @return A {@link Builder} with the desired {@code MoPubSchemeListener} added.
          */
         public Builder withMoPubSchemeListener(
                 @NonNull final MoPubSchemeListener moPubSchemeListener) {
@@ -112,8 +124,7 @@ public class UrlHandler {
          * If called, will avoid starting a {@link MoPubBrowser} activity where applicable.
          * (see {@link Intents#showMoPubBrowserForUrl(Context, Uri)})
          *
-         * @return A {@link com.mopub.common.UrlHandler.Builder} that will skip starting a
-         * {@code MoPubBrowser}.
+         * @return A {@link Builder} that will skip starting a {@code MoPubBrowser}.
          */
         public Builder withoutMoPubBrowser() {
             this.skipShowMoPubBrowser = true;
@@ -122,7 +133,7 @@ public class UrlHandler {
 
         /**
          * Creates an immutable {@link UrlHandler} with the desired configuration, according to the
-         * other {@link com.mopub.common.UrlHandler.Builder} methods called before.
+         * other {@link Builder} methods called before.
          *
          * @return An immutable {@code UrlHandler} with the desired configuration.
          */
@@ -155,20 +166,42 @@ public class UrlHandler {
     @NonNull
     private MoPubSchemeListener mMoPubSchemeListener;
     private boolean mSkipShowMoPubBrowser;
+    private boolean mAlreadySucceeded;
+    private boolean mTaskPending;
 
     /**
-     * Do not instantiate UrlHandler directly; use {@link com.mopub.common.UrlHandler.Builder}
-     * instead.
+     * Do not instantiate UrlHandler directly; use {@link Builder} instead.
      */
     private UrlHandler(
             @NonNull final EnumSet<UrlAction> supportedUrlActions,
             @NonNull final ResultActions resultActions,
             @NonNull final MoPubSchemeListener moPubSchemeListener,
             final boolean skipShowMoPubBrowser) {
+        mSupportedUrlActions = EnumSet.copyOf(supportedUrlActions);
         mResultActions = resultActions;
         mMoPubSchemeListener = moPubSchemeListener;
         mSkipShowMoPubBrowser = skipShowMoPubBrowser;
-        mSupportedUrlActions = supportedUrlActions;
+        mAlreadySucceeded = false;
+        mTaskPending = false;
+    }
+
+    @NonNull
+    EnumSet<UrlAction> getSupportedUrlActions() {
+        return EnumSet.copyOf(mSupportedUrlActions);
+    }
+
+    @NonNull
+    ResultActions getResultActions() {
+        return mResultActions;
+    }
+
+    @NonNull
+    MoPubSchemeListener getMoPubSchemeListener() {
+        return mMoPubSchemeListener;
+    }
+
+    boolean shouldSkipShowMoPubBrowser() {
+        return mSkipShowMoPubBrowser;
     }
 
     /**
@@ -179,6 +212,8 @@ public class UrlHandler {
      * @param destinationUrl The URL to handle.
      */
     public void handleUrl(@NonNull final Context context, @NonNull final String destinationUrl) {
+        Preconditions.checkNotNull(context);
+
         handleUrl(context, destinationUrl, true);
     }
 
@@ -192,33 +227,106 @@ public class UrlHandler {
      */
     public void handleUrl(@NonNull final Context context, @NonNull final String destinationUrl,
             final boolean fromUserInteraction) {
-        UrlAction lastFailedUrlAction = UrlAction.NOOP;
+        Preconditions.checkNotNull(context);
+
+        handleUrl(context, destinationUrl, fromUserInteraction, null);
+    }
+
+    /**
+     * Follows any redirects from {@code destinationUrl} and then handles the URL accordingly.
+     *
+     * @param context The activity context.
+     * @param destinationUrl The URL to handle.
+     * @param fromUserInteraction Whether this handling was triggered from a user interaction.
+     * @param trackingUrls Optional tracking URLs to trigger on success
+     */
+    public void handleUrl(@NonNull final Context context, @NonNull final String destinationUrl,
+            final boolean fromUserInteraction, @Nullable final Iterable<String> trackingUrls) {
+        Preconditions.checkNotNull(context);
 
         if (TextUtils.isEmpty(destinationUrl)) {
-            MoPubLog.d("Attempted to handle empty url.");
-        } else {
-            final Uri destinationUri = Uri.parse(destinationUrl);
-            for (final UrlAction urlAction : mSupportedUrlActions) {
-                if (urlAction.shouldTryHandlingUrl(destinationUri)) {
-                    try {
-                        urlAction.handleUrl(context, destinationUri, fromUserInteraction,
-                                mSkipShowMoPubBrowser, mMoPubSchemeListener);
-                        if (!UrlAction.IGNORE_ABOUT_SCHEME.equals(urlAction) &&
-                                !UrlAction.HANDLE_MOPUB_SCHEME.equals(urlAction)) {
-                            mResultActions.urlHandlingSucceeded(destinationUri.toString(),
-                                    urlAction);
-                        }
-                        return;
-                    } catch (IntentNotResolvableException e) {
-                        MoPubLog.d(e.getMessage(), e);
-                        lastFailedUrlAction = urlAction;
-                        // continue trying to match...
-                    }
-                }
-            }
-            MoPubLog.d("Link ignored. Unable to handle url: " + destinationUrl);
+            failUrlHandling(destinationUrl, null, "Attempted to handle empty url.", null);
+            return;
         }
 
-        mResultActions.urlHandlingFailed(destinationUrl, lastFailedUrlAction);
+        final UrlResolutionListener urlResolutionListener = new UrlResolutionListener() {
+            @Override
+            public void onSuccess(@NonNull final String resolvedUrl) {
+                mTaskPending = false;
+                handleResolvedUrl(context, resolvedUrl, fromUserInteraction, trackingUrls);
+            }
+
+            @Override
+            public void onFailure(@NonNull final String message,
+                    @Nullable final Throwable throwable) {
+                mTaskPending = false;
+                failUrlHandling(destinationUrl, null, message, throwable);
+
+            }
+
+        };
+
+        UrlResolutionTask.getResolvedUrl(destinationUrl, urlResolutionListener);
+        mTaskPending = true;
     }
+
+    /**
+     * Performs the actual url handling by verifying that the {@code destinationUrl} is one of
+     * the configured supported {@link UrlAction}s and then handling it accordingly.
+     *
+     * @param context The activity context.
+     * @param url The URL to handle.
+     * @param fromUserInteraction Whether this handling was triggered from a user interaction.
+     * @param trackingUrls Optional tracking URLs to trigger on success
+     * @return true if the given URL was successfully handled; false otherwise
+     */
+    public boolean handleResolvedUrl(@NonNull final Context context,
+            @NonNull final String url, final boolean fromUserInteraction,
+            @Nullable Iterable<String> trackingUrls) {
+        if (TextUtils.isEmpty(url)) {
+            failUrlHandling(url, null, "Attempted to handle empty url.", null);
+            return false;
+        }
+
+        UrlAction lastFailedUrlAction = UrlAction.NOOP;
+        final Uri destinationUri = Uri.parse(url);
+
+        for (final UrlAction urlAction : mSupportedUrlActions) {
+            if (urlAction.shouldTryHandlingUrl(destinationUri)) {
+                try {
+                    urlAction.handleUrl(UrlHandler.this, context, destinationUri,
+                            fromUserInteraction);
+                    if (!mAlreadySucceeded && !mTaskPending
+                            && !UrlAction.IGNORE_ABOUT_SCHEME.equals(urlAction)
+                            && !UrlAction.HANDLE_MOPUB_SCHEME.equals(urlAction)) {
+                        makeTrackingHttpRequest(trackingUrls, context,
+                                BaseEvent.Name.CLICK_REQUEST);
+                        mResultActions.urlHandlingSucceeded(destinationUri.toString(),
+                                urlAction);
+                        mAlreadySucceeded = true;
+                    }
+                    return true;
+                } catch (IntentNotResolvableException e) {
+                    MoPubLog.d(e.getMessage(), e);
+                    lastFailedUrlAction = urlAction;
+                    // continue trying to match...
+                }
+            }
+        }
+        failUrlHandling(url, lastFailedUrlAction, "Link ignored. Unable to handle url: " + url, null);
+        return false;
+    }
+
+    private void failUrlHandling(@Nullable final String url, @Nullable UrlAction urlAction,
+            @NonNull final String message, @Nullable final Throwable throwable) {
+        Preconditions.checkNotNull(message);
+
+        if (urlAction == null) {
+            urlAction = UrlAction.NOOP;
+        }
+
+        MoPubLog.d(message, throwable);
+        mResultActions.urlHandlingFailed(url, urlAction);
+    }
+
 }
