@@ -64,6 +64,7 @@ public class PsiphonData
     }
 
     private boolean m_showAds;
+    private boolean m_skipHomePage;
     private ArrayList<String> m_homePages;
     private long m_nextFetchRemoteServerList;
     private boolean m_statusActivityForeground;
@@ -108,6 +109,7 @@ public class PsiphonData
     private PsiphonData()
     {
         m_showAds = false;
+        m_skipHomePage = false;
         m_homePages = new ArrayList<String>();
         m_nextFetchRemoteServerList = -1;
         m_statusActivityForeground = false;
@@ -136,6 +138,16 @@ public class PsiphonData
         return m_showAds;
     }
     
+    public synchronized void setSkipHomePage()
+    {
+        m_skipHomePage = true;
+    }
+    
+    public synchronized boolean getSkipHomePage()
+    {
+        return m_skipHomePage;
+    }
+
     public synchronized void setHomePages(ArrayList<String> homePages)
     {
         m_homePages.clear();

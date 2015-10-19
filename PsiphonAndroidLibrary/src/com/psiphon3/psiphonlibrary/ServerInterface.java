@@ -537,7 +537,16 @@ public class ServerInterface
 
                     for (int i = 0; i < homepages.length(); i++)
                     {
-                        sessionHomePages.add(homepages.getString(i));
+                        String homepage = homepages.getString(i);
+                        if (homepage.contains("psiphon_show_ads"))
+                        {
+                            PsiphonData.getPsiphonData().setShowAds();
+                        }
+                        if (homepage.contains("psiphon_skip_homepage"))
+                        {
+                            PsiphonData.getPsiphonData().setSkipHomePage();
+                        }
+                        sessionHomePages.add(homepage);
                     }
                     PsiphonData.getPsiphonData().setHomePages(sessionHomePages);
 
