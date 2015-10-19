@@ -39,9 +39,11 @@ import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TabHost;
+import android.widget.TextView;
 
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
@@ -58,7 +60,11 @@ public class StatusActivity
     public static final String BANNER_FILE_NAME = "bannerImage";
 
     private ImageView m_banner;
+    private ImageButton m_statusImage;
+    private TextView m_versionLine;
+    private TextView m_logLine;
     private MoPubView m_moPubBannerAdView = null;
+    private MoPubView m_moPubBannerLargeAdView = null;
     private MoPubInterstitial m_moPubInterstitial = null;
     private int m_fullScreenAdCounter = 0;
     private boolean m_fullScreenAdPending = false;
@@ -78,13 +84,16 @@ public class StatusActivity
         setContentView(R.layout.main);
 
         m_banner = (ImageView)findViewById(R.id.banner);
+        m_statusImage = (ImageButton)findViewById(R.id.statusViewImage);
+        m_versionLine = (TextView)findViewById(R.id.versionline);
+        m_logLine = (TextView)findViewById(R.id.lastlogline);
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
 
         // NOTE: super class assumes m_tabHost is initialized in its onCreate
 
         // Don't let this tab change trigger an interstitial ad
-        // OnResume() will reinitialize ads and reset this flag
+        // OnResume() will reset this flag
         m_temporarilyDisableInterstitial = true;
         
         super.onCreate(savedInstanceState);
@@ -158,30 +167,23 @@ public class StatusActivity
     public void onResume()
     {
         super.onResume();
-        reInitAds();
+        m_temporarilyDisableInterstitial = false;
+        initAds();
     }
     
     @Override
     public void onDestroy()
     {
-        if (m_moPubBannerAdView != null)
-        {
-            m_moPubBannerAdView.destroy();
-        }
-        m_moPubBannerAdView = null;
-        
-        if (m_moPubInterstitial != null)
-        {
-            m_moPubInterstitial.destroy();
-        }
-        m_moPubInterstitial = null;
-        
+        deInitAds();
         super.onDestroy();
     }
     
     private void loadSponsorTab(boolean freshConnect)
     {
-        resetSponsorHomePage(freshConnect);
+        if (!PsiphonData.getPsiphonData().getSkipHomePage())
+        {
+            resetSponsorHomePage(freshConnect);
+        }
     }
 
     @Override
@@ -215,11 +217,12 @@ public class StatusActivity
     public class ConnectionStateChangeReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            reInitAds();
+            deInitAds();
         }
     }
 
     static final String MOPUB_BANNER_PROPERTY_ID = "";
+    static final String MOPUB_LARGE_BANNER_PROPERTY_ID = "";
     static final String MOPUB_INTERSTITIAL_PROPERTY_ID = "";
     
     private boolean shouldShowAds()
@@ -272,7 +275,7 @@ public class StatusActivity
         }
     }
     
-    private void initBanner()
+    private void initBanners()
     {
         if (shouldShowAds())
         {
@@ -310,32 +313,80 @@ public class StatusActivity
                 m_moPubBannerAdView.loadAd();
                 m_moPubBannerAdView.setAutorefreshEnabled(true);
             }
+            
+            if (!PsiphonData.getPsiphonData().showFirstHomePageInApp() && m_moPubBannerLargeAdView == null)
+            {
+                m_moPubBannerLargeAdView = new MoPubView(this);
+                m_moPubBannerLargeAdView.setAdUnitId(MOPUB_LARGE_BANNER_PROPERTY_ID);
+                
+                m_moPubBannerLargeAdView.setBannerAdListener(new BannerAdListener() {
+                    @Override
+                    public void onBannerLoaded(MoPubView banner)
+                    {
+                        if (m_moPubBannerLargeAdView.getParent() == null)
+                        {
+                            LinearLayout layout = (LinearLayout)findViewById(R.id.statusLayout);
+                            layout.removeAllViewsInLayout();
+                            layout.addView(m_moPubBannerLargeAdView);
+                        }
+                    }
+                    @Override
+                    public void onBannerClicked(MoPubView arg0) {
+                    }
+                    @Override
+                    public void onBannerCollapsed(MoPubView arg0) {
+                    }
+                    @Override
+                    public void onBannerExpanded(MoPubView arg0) {
+                    }
+                    @Override
+                    public void onBannerFailed(MoPubView arg0,
+                            MoPubErrorCode arg1) {
+                    }
+                });
+                
+                m_moPubBannerLargeAdView.loadAd();
+                m_moPubBannerLargeAdView.setAutorefreshEnabled(true);
+            }
         }
     }
     
-    private void reInitAds()
+    private void deInitAds()
+    {
+        LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
+        layout.removeAllViewsInLayout();
+        layout.addView(m_banner);
+
+        LinearLayout statusLayout = (LinearLayout)findViewById(R.id.statusLayout);
+        statusLayout.removeAllViewsInLayout();
+        statusLayout.addView(m_statusImage);
+        statusLayout.addView(m_versionLine);
+        statusLayout.addView(m_logLine);
+
+        if (m_moPubBannerAdView != null)
+        {
+            m_moPubBannerAdView.destroy();
+        }
+        m_moPubBannerAdView = null;
+
+        if (m_moPubBannerLargeAdView != null)
+        {
+            m_moPubBannerLargeAdView.destroy();
+        }
+        m_moPubBannerLargeAdView = null;
+
+        if (m_moPubInterstitial != null)
+        {
+            m_moPubInterstitial.destroy();
+        }
+        m_moPubInterstitial = null;
+    }
+    
+    private void initAds()
     {
         if (PsiphonData.getPsiphonData().getShowAds())
         {
-            LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
-            layout.removeAllViewsInLayout();
-            layout.addView(m_banner);
-
-            if (m_moPubBannerAdView != null)
-            {
-                m_moPubBannerAdView.destroy();
-            }
-            m_moPubBannerAdView = null;
-            
-            if (m_moPubInterstitial != null)
-            {
-                m_moPubInterstitial.destroy();
-            }
-            m_moPubInterstitial = null;
-            
-            m_temporarilyDisableInterstitial = false;
-
-            initBanner();
+            initBanners();
             
             if (m_fullScreenAdPending)
             {
@@ -365,17 +416,15 @@ public class StatusActivity
                 || !intent.getBooleanExtra(HANDSHAKE_SUCCESS_IS_RECONNECT, false))
             {
                 // Don't let this tab change trigger an interstitial ad
-                // OnResume() will reinitialize ads and reset this flag
+                // OnResume() will reset this flag
                 m_temporarilyDisableInterstitial = true;
 
-                // Show the full screen ad after OnResume() has reinitialized ads
+                // Show the full screen ad after OnResume() has initialized ads
                 m_fullScreenAdPending = true;
                 
                 m_tabHost.setCurrentTabByTag("home");
                 loadSponsorTab(true);
                 m_loadedSponsorTab = true;
-
-                //m_eventsInterface.displayBrowser(this);
             }
 
             // We only want to respond to the HANDSHAKE_SUCCESS action once,
