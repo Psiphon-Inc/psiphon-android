@@ -11,6 +11,7 @@
         <!-- Google Wallet environment to use -->
         <attr name="environment" format="enum">
             <enum name="production" value="1"/>
+            <enum name="test" value="3"/>
             <enum name="sandbox" value="0"/>
             <enum name="strict_sandbox" value="2"/>
         </attr>
@@ -40,14 +41,27 @@
             <enum name="match_parent" value="-1" />
             <enum name="wrap_content" value="-2" />
         </attr>
-        <!-- Text on the buy button. Must be one of "buy_with_google", "buy_now" and "book_now" -->
+        <!-- The text on the buy button -->
         <attr name="buyButtonText" format="enum">
+            <enum name="buy_with" value="5"/>
+            <enum name="logo_only" value="6"/>
+            <enum name="donate_with" value="7"/>
+            <!-- Deprecated values -->
             <enum name="buy_with_google" value="1"/>
             <enum name="buy_now" value="2"/>
             <enum name="book_now" value="3"/>
+            <enum name="donate_with_google" value="4" />
         </attr>
-        <!-- Appearance of the buy button. Must be one of "classic", "grayscale" and "monochrome" -->
+        <!-- The appearance of the buy button -->
         <attr name="buyButtonAppearance" format="enum">
+            <enum name="google_wallet_classic" value="1"/>
+            <enum name="google_wallet_grayscale" value="2"/>
+            <enum name="google_wallet_monochrome" value="3"/>
+            <!-- TODO(waltercacau): Uncomment when Android Pay is launched to all developers:
+                <enum name="android_pay_dark" value="4"/>
+                <enum name="android_pay_light" value="5"/>
+                <enum name="android_pay_light_with_border" value="6"/> -->
+            <!-- Deprecated values -->
             <enum name="classic" value="1"/>
             <enum name="grayscale" value="2"/>
             <enum name="monochrome" value="3"/>
@@ -66,8 +80,23 @@
         <attr name="maskedWalletDetailsLogoTextColor" format="color"/>
         <!-- Type of the wallet logo image in masked wallet details view -->
         <attr name="maskedWalletDetailsLogoImageType" format="enum">
+            <enum name="google_wallet_classic" value="1"/>
+            <enum name="google_wallet_monochrome" value="2"/>
+            <!-- TODO(waltercacau): Uncomment when Android Pay is launched to all developers:
+                <enum name="android_pay" value="3"/> -->
+            <!-- Deprecated values -->
             <enum name="classic" value="1"/>
             <enum name="monochrome" value="2"/>
         </attr>
     </declare-styleable>
+
+    <!-- Attributes that can be specified to define a custom theme -->
+    <declare-styleable name="CustomWalletTheme" >
+        <!-- Defines the set of transition to be used between activities -->
+        <attr name="windowTransitionStyle" format="enum">
+            <enum name="slide" value="1" />
+            <enum name="none" value="2" />
+        </attr>
+    </declare-styleable>
+
 </resources>
