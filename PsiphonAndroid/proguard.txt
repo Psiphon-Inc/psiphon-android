@@ -1,7 +1,5 @@
--dontobfuscate
-
-# Only process google-play-services_lib
--keep class !com.google.android.gms.** { *; }
+# Only strip these
+-keep class !com.google.android.gms.**,!com.google.ads.**,!android.support.**,!com.mopub.**,!com.inmobi.** { *; }
 
 # From google-play-services_lib proguard.txt
 -keep class * extends java.util.ListResourceBundle {
