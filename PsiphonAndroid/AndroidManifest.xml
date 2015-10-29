@@ -80,8 +80,8 @@
         <activity android:name="org.zirco.ui.activities.preferences.WeavePreferencesActivity"></activity>
         <activity android:name="org.zirco.ui.activities.preferences.WeaveServerPreferenceActivity"></activity>
 
-        <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonzircobookmarkscontentprovider"></provider>
-        <provider android:name="org.zirco.providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonweavecontentprovider"></provider>
+        <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonsubscriptionzircobookmarkscontentprovider"></provider>
+        <provider android:name="org.zirco.providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonsubscriptionweavecontentprovider"></provider>
 
     </application>
 
