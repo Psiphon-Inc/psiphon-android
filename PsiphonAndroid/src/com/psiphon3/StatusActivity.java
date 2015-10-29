@@ -415,6 +415,11 @@ public class StatusActivity
         // try again next time
         deInitIab();
         
+        if (result.getResponse() == IabHelper.IABHELPER_USER_CANCELLED)
+        {
+            return;
+        }
+        
         new AlertDialog.Builder(this)
         .setTitle("IAB Failure")
         .setMessage(result.getMessage())
