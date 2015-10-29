@@ -32,7 +32,6 @@ import java.util.regex.Pattern;
 
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
 import org.json.JSONObject;
 
 import android.content.Context;
@@ -97,6 +96,7 @@ public class PsiphonData
     private boolean m_displayDataTransferStats;
     private boolean m_downloadUpgrades;
     private String m_egressRegion;
+    private boolean m_hasValidSubscription;
     
     public int m_notificationIconConnecting = 0;
     public int m_notificationIconConnected = 0;
@@ -123,6 +123,7 @@ public class PsiphonData
         m_displayDataTransferStats = false;
         m_downloadUpgrades = false;
         m_egressRegion = ServerInterface.ServerEntry.REGION_CODE_ANY;
+        m_hasValidSubscription = false;
     }
 
     public synchronized void setHomePages(ArrayList<String> homePages)
@@ -1222,5 +1223,15 @@ public class PsiphonData
             copy = new ArrayList<DiagnosticEntry>(m_diagnosticHistory);
         }
         return copy;
+    }
+    
+    public synchronized void setHasValidSubscription()
+    {
+        m_hasValidSubscription = true;
+    }
+    
+    public synchronized boolean getHasValidSubscription()
+    {
+        return m_hasValidSubscription;
     }
 }

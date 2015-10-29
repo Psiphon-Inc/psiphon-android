@@ -42,6 +42,10 @@ import android.widget.TabHost;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.subscription.R;
+import com.psiphon3.util.IabHelper;
+import com.psiphon3.util.IabResult;
+import com.psiphon3.util.Inventory;
+import com.psiphon3.util.Purchase;
 
 
 public class StatusActivity
@@ -52,6 +56,7 @@ public class StatusActivity
     private ImageView m_banner;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
+    private IabHelper m_iabHelper = null;
 
     public StatusActivity()
     {
@@ -205,6 +210,19 @@ public class StatusActivity
     @Override
     protected void startUp()
     {
+        if (PsiphonData.getPsiphonData().getHasValidSubscription())
+        {
+            // Don't need to do anything if we already know we have a valid subscription
+            doStartUp();
+        }
+        else
+        {
+            startIab();
+        }
+    }
+    
+    private void doStartUp()
+    {
         // If the user hasn't set a whole-device-tunnel preference, show a prompt
         // (and delay starting the tunnel service until the prompt is completed)
 
@@ -279,6 +297,119 @@ public class StatusActivity
             // No prompt, just start the tunnel (if not already running)
 
             startTunnel(this);
+        }
+    }
+    
+    static final String IAB_PUBLIC_KEY = "";
+    static final String IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU = "";
+    static final int IAB_REQUEST_CODE = 10001;
+    
+    private void startIab()
+    {
+        if (m_iabHelper == null)
+        {
+            m_iabHelper = new IabHelper(this, IAB_PUBLIC_KEY);
+            m_iabHelper.startSetup(m_iabSetupFinishedListener);
+        }
+        else
+        {
+            m_iabHelper.queryInventoryAsync(m_iabQueryInventoryFinishedListener);
+        }
+    }
+    
+    private IabHelper.OnIabSetupFinishedListener m_iabSetupFinishedListener =
+            new IabHelper.OnIabSetupFinishedListener()
+    {
+        @Override
+        public void onIabSetupFinished(IabResult result)
+        {
+            if (result.isFailure())
+            {
+                // try again next time
+                deInitIab();
+                
+                // TODO: print message? retry? exit?
+            }
+            else if (m_iabHelper != null)
+            {
+                m_iabHelper.queryInventoryAsync(m_iabQueryInventoryFinishedListener);
+            }
+        }
+    };
+    
+    private IabHelper.QueryInventoryFinishedListener m_iabQueryInventoryFinishedListener =
+            new IabHelper.QueryInventoryFinishedListener()
+    {
+        @Override
+        public void onQueryInventoryFinished(IabResult result, Inventory inventory)
+        {
+            if (result.isFailure())
+            {
+                // try again next time
+                deInitIab();
+                
+                // TODO: print message? retry? exit?
+            }
+            else if (inventory.hasPurchase(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU))
+            {
+                proceedWithValidSubscription();
+            }
+            else if (m_iabHelper != null)
+            {
+                m_iabHelper.launchSubscriptionPurchaseFlow(StatusActivity.this, IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU,
+                        IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
+            }
+        }
+    };
+    
+    private IabHelper.OnIabPurchaseFinishedListener m_iabPurchaseFinishedListener = 
+            new IabHelper.OnIabPurchaseFinishedListener()
+    {
+        @Override
+        public void onIabPurchaseFinished(IabResult result, Purchase purchase) 
+        {
+            if (result.isFailure())
+            {
+                // try again next time
+                deInitIab();
+                
+                // TODO: print message? retry? exit?
+            }      
+            else if (purchase.getSku().equals(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU))
+            {
+                proceedWithValidSubscription();
+            }
+        }
+    };
+    
+    private void proceedWithValidSubscription()
+    {
+        PsiphonData.getPsiphonData().setHasValidSubscription();
+        doStartUp();
+    }
+    
+    private void deInitIab()
+    {
+        if (m_iabHelper != null)
+        {
+            m_iabHelper.dispose();
+            m_iabHelper = null;
+        }
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        if (requestCode == IAB_REQUEST_CODE)
+        {
+            if (m_iabHelper != null)
+            {
+                m_iabHelper.handleActivityResult(requestCode, resultCode, data);
+            }
+        }
+        else
+        {
+            super.onActivityResult(requestCode, resultCode, data);
         }
     }
 }
