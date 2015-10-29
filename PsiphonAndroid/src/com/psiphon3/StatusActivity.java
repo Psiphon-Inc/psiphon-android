@@ -325,10 +325,7 @@ public class StatusActivity
         {
             if (result.isFailure())
             {
-                // try again next time
-                deInitIab();
-                
-                // TODO: print message? retry? exit?
+                handleIabFailure(result);
             }
             else if (m_iabHelper != null)
             {
@@ -345,10 +342,7 @@ public class StatusActivity
         {
             if (result.isFailure())
             {
-                // try again next time
-                deInitIab();
-                
-                // TODO: print message? retry? exit?
+                handleIabFailure(result);
             }
             else if (inventory.hasPurchase(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU))
             {
@@ -370,10 +364,7 @@ public class StatusActivity
         {
             if (result.isFailure())
             {
-                // try again next time
-                deInitIab();
-                
-                // TODO: print message? retry? exit?
+                handleIabFailure(result);
             }      
             else if (purchase.getSku().equals(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU))
             {
@@ -386,6 +377,23 @@ public class StatusActivity
     {
         PsiphonData.getPsiphonData().setHasValidSubscription();
         doStartUp();
+    }
+    
+    private void handleIabFailure(IabResult result)
+    {
+        // try again next time
+        deInitIab();
+        
+        new AlertDialog.Builder(this)
+        .setTitle("IAB Failure")
+        .setMessage(result.getMessage())
+        .setPositiveButton(R.string.StatusActivity_WholeDeviceTunnelPositiveButton,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        // Do nothing.
+                    }})
+        .show();
     }
     
     private void deInitIab()
