@@ -313,7 +313,7 @@ public class StatusActivity
         }
         else
         {
-            m_iabHelper.queryInventoryAsync(m_iabQueryInventoryFinishedListener);
+            queryInventory();
         }
     }
     
@@ -327,9 +327,9 @@ public class StatusActivity
             {
                 handleIabFailure(result);
             }
-            else if (m_iabHelper != null)
+            else
             {
-                m_iabHelper.queryInventoryAsync(m_iabQueryInventoryFinishedListener);
+                queryInventory();
             }
         }
     };
@@ -348,10 +348,9 @@ public class StatusActivity
             {
                 proceedWithValidSubscription();
             }
-            else if (m_iabHelper != null)
+            else
             {
-                m_iabHelper.launchSubscriptionPurchaseFlow(StatusActivity.this, IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU,
-                        IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
+                launchSubscriptionPurchaseFlow();
             }
         }
     };
@@ -373,6 +372,38 @@ public class StatusActivity
         }
     };
     
+    private void queryInventory()
+    {
+        try
+        {
+            if (m_iabHelper != null)
+            {
+                m_iabHelper.queryInventoryAsync(m_iabQueryInventoryFinishedListener);
+            }
+        }
+        catch (IllegalStateException ex)
+        {
+            // do nothing
+        }
+        
+    }
+    
+    private void launchSubscriptionPurchaseFlow()
+    {
+        try
+        {
+            if (m_iabHelper != null)
+            {
+                m_iabHelper.launchSubscriptionPurchaseFlow(this, IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU,
+                        IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
+            }
+        }
+        catch (IllegalStateException ex)
+        {
+            // do nothing
+        }
+    }
+    
     private void proceedWithValidSubscription()
     {
         PsiphonData.getPsiphonData().setHasValidSubscription();
@@ -387,7 +418,7 @@ public class StatusActivity
         new AlertDialog.Builder(this)
         .setTitle("IAB Failure")
         .setMessage(result.getMessage())
-        .setPositiveButton(R.string.StatusActivity_WholeDeviceTunnelPositiveButton,
+        .setPositiveButton("OK",
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int whichButton) {
