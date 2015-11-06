@@ -1,5 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
+  <string name="app_name">Psiphon</string>
   <string name="ssh_connecting">Conectando mediante SSH...</string>
   <string name="ssh_connected">Conectado mediante SSH</string>
   <string name="ssh_connection_failed">La conexión SSH falló</string>
