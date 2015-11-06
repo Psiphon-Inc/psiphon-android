@@ -287,9 +287,22 @@ public class IabHelper {
     public void dispose() {
         logDebug("Disposing.");
         mSetupDone = false;
+        // PSIPHON
+        // From: https://github.com/ianhanniballake/ContractionTimer/commit/b3643e8fd1d59a508fe6764398cb22de671c4cea
+        // TODO: would a better fix be to check if "mService != null"?
         if (mServiceConn != null) {
             logDebug("Unbinding from service.");
-            if (mContext != null) mContext.unbindService(mServiceConn);
+            // if (mContext != null) mContext.unbindService(mServiceConn);
+            if (mContext != null)
+            {
+                try
+                {
+                    mContext.unbindService(mServiceConn);
+                }
+                catch (final IllegalArgumentException e)
+                {
+                }
+            }
         }
         mDisposed = true;
         mContext = null;
