@@ -1,6 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">سایفون</string>
   <string name="ssh_connecting">در حال اتصال اس‌اس‌اچ ...</string>
   <string name="ssh_connected">اس‌اس‌اچ وصل شد </string>
   <string name="ssh_connection_failed">اتصال به اس‌اس‌اچ موفقیت آمیز نبود</string>
