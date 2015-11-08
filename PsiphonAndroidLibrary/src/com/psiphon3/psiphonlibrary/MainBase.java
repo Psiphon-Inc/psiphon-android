@@ -1434,8 +1434,9 @@ public abstract class MainBase {
         protected boolean isServiceRunning() {
             ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
             for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-                if (TunnelService.class.getName().equals(service.service.getClassName())
-                        || (Utils.hasVpnService() && isVpnService(service.service.getClassName()))) {
+                if (service.pid == android.os.Process.myPid() &&
+                        (TunnelService.class.getName().equals(service.service.getClassName())
+                        || (Utils.hasVpnService() && isVpnService(service.service.getClassName())))) {
                     return true;
                 }
             }
