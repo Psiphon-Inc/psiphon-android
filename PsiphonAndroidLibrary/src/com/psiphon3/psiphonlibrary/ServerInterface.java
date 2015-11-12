@@ -99,7 +99,6 @@ import android.preference.PreferenceManager;
 import android.util.Pair;
 import android.webkit.URLUtil;
 
-import com.mifmif.common.regex.Generex;
 import com.psiphon3.psiphonlibrary.AuthenticatedDataPackage.AuthenticatedDataPackageException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.psiphonlibrary.Utils.RequestTimeoutAbort;
@@ -157,6 +156,7 @@ public class ServerInterface
         public String meekObfuscatedKey;
         public String meekFrontingDomain;
         public String meekFrontingHost;
+        public String meekFrontingAddressesRegex;
         public ArrayList<String> meekFrontingAddresses;
 
         // These are determined while connecting.
@@ -1942,12 +1942,23 @@ public class ServerInterface
             newEntry.meekObfuscatedKey = "";
         }
 
+        newEntry.meekFrontingDomain = "";
+        newEntry.meekFrontingHost = "";
+        newEntry.meekFrontingAddressesRegex = "";
         newEntry.meekFrontingAddresses = new ArrayList<String>();
         if (newEntry.hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
         {
             newEntry.meekFrontingDomain = obj.getString("meekFrontingDomain");
             newEntry.meekFrontingHost = obj.getString("meekFrontingHost");
             
+            if (obj.has("meekFrontingAddressesRegex"))
+            {
+                newEntry.meekFrontingAddressesRegex = obj.getString("meekFrontingAddressesRegex");
+            }
+
+            /* WARNING: don't do this Generex random() here.
+             * This is called from the ServerInterface constructor.
+             * This can be processing intensive, especially with a large embedded server list.
             String meekFrontingAddressesRegex = "";
             if (obj.has("meekFrontingAddressesRegex"))
             {
@@ -1958,7 +1969,8 @@ public class ServerInterface
             {
                 newEntry.meekFrontingAddresses.add(new Generex(meekFrontingAddressesRegex).random());
             }
-            else if (obj.has("meekFrontingAddresses"))
+            else*/
+            if (obj.has("meekFrontingAddresses"))
             {
                 JSONArray meekFrontingAddressesJSON = obj.getJSONArray("meekFrontingAddresses");
                 for (int i = 0; i < meekFrontingAddressesJSON.length(); i++)
@@ -1966,17 +1978,12 @@ public class ServerInterface
                     newEntry.meekFrontingAddresses.add(meekFrontingAddressesJSON.getString(i));
                 }
             }
-            // We will always use meekFrontingAddresses from now on, so copy meekFrontingDomain in
-            // if no other meekFrontingAddresses are specified
+            // We will always use meekFrontingAddresses from now on (unless there is a meekFrontingAddressesRegex),
+            // so copy meekFrontingDomain in if no other meekFrontingAddresses are specified
             if (newEntry.meekFrontingAddresses.size() == 0)
             {
                 newEntry.meekFrontingAddresses.add(newEntry.meekFrontingDomain);
             }
-        }
-        else
-        {
-            newEntry.meekFrontingDomain = "";
-            newEntry.meekFrontingHost = "";
         }
 
         return newEntry;

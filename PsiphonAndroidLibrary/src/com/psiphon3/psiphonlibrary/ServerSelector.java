@@ -94,6 +94,7 @@ import android.os.SystemClock;
 import android.util.Pair;
 import ch.ethz.ssh2.Connection;
 
+import com.mifmif.common.regex.Generex;
 import com.psiphon3.psiphonlibrary.MeekClient.IAbortIndicator;
 import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.ServerInterface.ServerEntry;
@@ -298,6 +299,15 @@ public class ServerSelector implements IAbortIndicator
                     Collections.shuffle(this.entry.meekFrontingAddresses);
                     // meekFrontingAddresses is now always populated with at least meekFrontingDomain
                     String frontingAddress = this.entry.meekFrontingAddresses.get(0);
+                    
+                    // IMPORTANT: This is done at server selection time, not when the (potentially large) embedded
+                    // server list is read and decoded (in the ServerInterface constructor), because that can be CPU
+                    // intensive and can hang the app.
+                    if (this.entry.meekFrontingAddressesRegex.length() > 0)
+                    {
+                        frontingAddress = new Generex(this.entry.meekFrontingAddressesRegex).random();
+                    }
+                    
                     this.meekClient = new MeekClient(
                             protectSocketsRequired ? ServerSelector.this.protectSocket : null,
                             ServerSelector.this.serverInterface,
