@@ -200,6 +200,10 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
 
         return true;
     }
+    
+    private synchronized boolean isVpnMode() {
+        return mTunFd != null;
+    }
 
     private synchronized void setLocalSocksProxyPort(int port) {
         mLocalSocksProxyPort = port;
@@ -289,12 +293,11 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         stopPsiphon();
         mHostService.onDiagnosticMessage("starting Psiphon library");
         try {
-            boolean isVpnMode = (mTunFd != null);
             Psi.Start(
-                loadPsiphonConfig(mHostService.getContext(), isVpnMode),
+                loadPsiphonConfig(mHostService.getContext()),
                 embeddedServerEntries,
                 this,
-                isVpnMode);
+                isVpnMode());
         } catch (java.lang.Exception e) {
             throw new Exception("failed to start Psiphon library", e);
         }
@@ -307,7 +310,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         mHostService.onDiagnosticMessage("Psiphon library stopped");
     }
 
-    private String loadPsiphonConfig(Context context, boolean isVpnMode)
+    private String loadPsiphonConfig(Context context)
             throws IOException, JSONException {
 
         // Load settings from the raw resource JSON config file and
@@ -327,7 +330,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         json.put("EstablishTunnelTimeoutSeconds", 0);
 
         // This parameter is for stats reporting
-        json.put("TunnelWholeDevice", isVpnMode ? 1 : 0);
+        json.put("TunnelWholeDevice", isVpnMode() ? 1 : 0);
 
         json.put("EmitBytesTransferred", true);
 
@@ -366,7 +369,9 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
             if (noticeType.equals("Tunnels")) {
                 int count = notice.getJSONObject("data").getInt("count");
                 if (count > 0) {
-                    routeThroughTunnel();
+                    if (isVpnMode()) {
+                        routeThroughTunnel();
+                    }
                     mHostService.onConnected();
                 } else {
                     mHostService.onConnecting();
