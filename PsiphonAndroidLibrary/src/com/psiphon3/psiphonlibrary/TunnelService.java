@@ -29,7 +29,7 @@ import android.util.Pair;
 
 public class TunnelService extends Service
 {
-    private TunnelCore m_Core = new TunnelCore(this, this);
+    private TunnelManager m_Manager = new TunnelManager(this, this);
 
     public class LocalBinder extends Binder
     {
@@ -49,33 +49,28 @@ public class TunnelService extends Service
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {
-        return m_Core.onStartCommand(intent, flags, startId);
+        return m_Manager.onStartCommand(intent, flags, startId);
     }
 
     @Override
     public void onCreate()
     {
-        m_Core.onCreate();
+        m_Manager.onCreate();
     }
 
     @Override
     public void onDestroy()
     {
-        m_Core.onDestroy();
+        m_Manager.onDestroy();
     }
 
     public void setEventsInterface(IEvents eventsInterface)
     {
-        m_Core.setEventsInterface(eventsInterface);
-    }
-    
-    public ServerInterface getServerInterface()
-    {
-        return m_Core.getServerInterface();
+        m_Manager.setEventsInterface(eventsInterface);
     }
     
     public void setExtraAuthParams(List<Pair<String,String>> extraAuthParams)
     {
-        m_Core.setExtraAuthParams(extraAuthParams);
+        m_Manager.setExtraAuthParams(extraAuthParams);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Psiphon Inc.
+ * Copyright (c) 2015, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,10 +19,15 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.Locale;
+
+import javax.net.ssl.HttpsURLConnection;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -33,8 +38,8 @@ import android.os.Build;
 import android.util.Log;
 
 import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
-import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.psiphonlibrary.Utils.MyLog.Sensitivity;
 
 public class Diagnostics
 {
@@ -320,27 +325,12 @@ public class Diagnostics
                     return;
                 }
 
-                ServerInterface serverInterface = new ServerInterface(mContext);
-                serverInterface.start();
-
                 // Retry uploading data up to 5 times
                 for (int i = 0; i < 5; i++)
                 {
-                    try
+                    if (doFeedbackUpload(diagnosticDataBytes))
                     {
-                        // NOTE: protectSocket (the second argument) *must* be
-                        // null due to design limitation (global state not
-                        // compatible with multiple ServerInterface instances).
-                        serverInterface.doFeedbackUpload(
-                                null,
-                                diagnosticDataBytes);
-
-                        // If that did
                         break;
-                    }
-                    catch (PsiphonServerInterfaceException e)
-                    {
-                        // Fall through...
                     }
 
                     // The upload request failed, so sleep and try again.
@@ -365,5 +355,83 @@ public class Diagnostics
                                             feedbackText,
                                             surveyResponsesJson);
         thread.start();
+    }
+    
+    public final static int FEEDBACK_UPLOAD_TIMEOUT_MS = 30000;
+    
+    static private boolean doFeedbackUpload(byte[] feedbackData)
+    {
+        // NOTE: Won't succeed while VpnService routing is enabled but tunnel
+        // is not connected.
+        // TODO: In that situation, use the tunnel-core UrlProxy/direct mode.
+
+        SecureRandom rnd = new SecureRandom();
+        byte[] uploadId = new byte[8];
+        rnd.nextBytes(uploadId);
+
+        StringBuilder url = new StringBuilder();
+        url.append("https://");
+        url.append(EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER);
+        url.append(EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_PATH);
+        url.append(Utils.byteArrayToHexString(uploadId));
+
+        HttpsURLConnection httpsConn = null;
+        boolean success = false;
+        try
+        {
+            httpsConn = (HttpsURLConnection) new URL(url.toString()).openConnection();
+
+            // URLConnection timeouts are insufficient may be unreliable, so run a timeout
+            // thread to ensure HTTPS connection is terminated after 30 seconds if it
+            // has not already completed.
+            // E.g., http://stackoverflow.com/questions/11329277/why-timeout-value-is-not-respected-by-android-httpurlconnection
+            final HttpsURLConnection finalHttpsConn = httpsConn;
+            new Thread(new Runnable()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        Thread.sleep(FEEDBACK_UPLOAD_TIMEOUT_MS);
+                    }
+                    catch (InterruptedException e)
+                    {
+                    }
+                    finalHttpsConn.disconnect();
+                }
+            }).start();
+            
+            httpsConn.setDoOutput(true);
+            httpsConn.setRequestMethod("PUT");
+            // Note: assumes this is only a single header
+            String[] headerPieces = EmbeddedValues.FEEDBACK_DIAGNOSTIC_INFO_UPLOAD_SERVER_HEADERS.split(": ");
+            httpsConn.setRequestProperty(headerPieces[0], headerPieces[1]);
+            httpsConn.setFixedLengthStreamingMode(feedbackData.length);
+
+            httpsConn.connect();
+            httpsConn.getOutputStream().write(feedbackData);
+            
+            // getInputStream() checks response status code
+            httpsConn.getInputStream();
+            
+            success = true;
+        }
+        catch (ProtocolException e)
+        {
+            MyLog.g("Diagnostic doFeedbackUpload failed: %s", e.getMessage());
+        }
+        catch (IOException e)
+        {
+            MyLog.g("Diagnostic doFeedbackUpload failed: %s", e.getMessage());
+        }
+        finally
+        {
+            if (httpsConn != null)
+            {
+                httpsConn.disconnect();
+            }
+        }
+
+        return success;
     }
 }
