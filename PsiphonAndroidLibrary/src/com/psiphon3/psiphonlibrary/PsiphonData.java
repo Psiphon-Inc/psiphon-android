@@ -543,9 +543,6 @@ public class PsiphonData
         private long m_totalBytesSent;
         private long m_totalBytesReceived;
 
-        private long m_sessionBytesSent;
-        private long m_sessionBytesReceived;
-
         public final static long SLOW_BUCKET_PERIOD_MILLISECONDS = 5*60*1000; 
         public final static long FAST_BUCKET_PERIOD_MILLISECONDS = 1000;
         public final static int MAX_BUCKETS = 24*60/5;
@@ -590,8 +587,6 @@ public class PsiphonData
         private void resetBytesTransferred()
         {
             long now = SystemClock.elapsedRealtime();
-            this.m_sessionBytesSent = 0;
-            this.m_sessionBytesReceived = 0;
             this.m_slowBucketsLastStartTime = bucketStartTime(now, SLOW_BUCKET_PERIOD_MILLISECONDS);
             this.m_slowBuckets = newBuckets();
             this.m_fastBucketsLastStartTime = bucketStartTime(now, FAST_BUCKET_PERIOD_MILLISECONDS);
@@ -602,8 +597,6 @@ public class PsiphonData
         {
             this.m_totalBytesSent += bytes;
             
-            this.m_sessionBytesSent += bytes;
-            
             manageBuckets();
             addSentToBuckets(bytes);
         }
@@ -611,8 +604,6 @@ public class PsiphonData
         public synchronized void addBytesReceived(long bytes)
         {
             this.m_totalBytesReceived += bytes;
-
-            this.m_sessionBytesReceived += bytes;
 
             manageBuckets();
             addReceivedToBuckets(bytes);
@@ -716,16 +707,6 @@ public class PsiphonData
         public synchronized long getTotalBytesReceived()
         {
             return this.m_totalBytesReceived;
-        }
-        
-        public synchronized long getSessionBytesSent()
-        {
-            return this.m_sessionBytesSent;
-        }
-        
-        public synchronized long getSessionBytesReceived()
-        {
-            return this.m_sessionBytesReceived;
         }
         
         public synchronized ArrayList<Long> getSlowSentSeries()
