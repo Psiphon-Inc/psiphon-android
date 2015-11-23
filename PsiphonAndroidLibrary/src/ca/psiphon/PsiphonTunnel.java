@@ -35,6 +35,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -64,9 +65,9 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
 
     public interface HostService {
         public String getAppName();
-        public Context getContext();
-        public VpnService getVpnService();
-        public VpnService.Builder newVpnServiceBuilder();
+        public Context getContext();        
+        public Object getVpnService(); // Object must be a VpnService (Android < 4 cannot reference this class name)
+        public Object newVpnServiceBuilder(); // Object must be a VpnService.Builder (Android < 4 cannot reference this class name)
         public String getPsiphonConfig();
         public void onDiagnosticMessage(String message);
         public void onAvailableEgressRegions(List<String> regions);
@@ -98,7 +99,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     // go.psi.Psi and tun2socks implementations each contain global state.
     private static PsiphonTunnel mPsiphonTunnel;
 
-    public static synchronized PsiphonTunnel newPsiphonVpn(HostService hostService) {
+    public static synchronized PsiphonTunnel newPsiphonTunnel(HostService hostService) {
         if (mPsiphonTunnel != null) {
             mPsiphonTunnel.stop();
         }
@@ -172,7 +173,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
             // Workaround for https://code.google.com/p/android/issues/detail?id=61096
             Locale.setDefault(new Locale("en"));
 
-            mTunFd = mHostService.newVpnServiceBuilder()
+            mTunFd = ((VpnService.Builder) mHostService.newVpnServiceBuilder())
                     .setSession(mHostService.getAppName())
                     .setMtu(VPN_INTERFACE_MTU)
                     .addAddress(mPrivateAddress.mIpAddress, mPrivateAddress.mPrefixLength)
@@ -254,7 +255,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     @Override
     public void BindToDevice(long fileDescriptor) throws Exception {
-        if (!mHostService.getVpnService().protect((int)fileDescriptor)) {
+        if (!((VpnService)mHostService.getVpnService()).protect((int)fileDescriptor)) {
             throw new Exception("protect socket failed");
         }
     }
@@ -277,7 +278,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     public String GetDnsServer() {
         String dnsResolver = null;
         try {
-            dnsResolver = getFirstActiveNetworkDnsResolver(mHostService.getVpnService());
+            dnsResolver = getFirstActiveNetworkDnsResolver(mHostService.getContext());
         } catch (Exception e) {
             mHostService.onDiagnosticMessage("failed to get active network DNS resolver: " + e.getMessage());
             dnsResolver = DEFAULT_DNS_SERVER;
@@ -464,8 +465,21 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
             try {
                 output = new PrintStream(new FileOutputStream(file));
 
-                KeyStore keyStore = KeyStore.getInstance("AndroidCAStore");
-                keyStore.load(null, null);
+                KeyStore keyStore;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+                    keyStore = KeyStore.getInstance("AndroidCAStore");
+                    keyStore.load(null, null);
+                } else {
+                    keyStore = KeyStore.getInstance("BKS");
+                    FileInputStream inputStream = new FileInputStream("/etc/security/cacerts.bks");
+                    try {
+                        keyStore.load(inputStream, "changeit".toCharArray());
+                    } finally {
+                        if (inputStream != null) {
+                            inputStream.close();
+                        }
+                    }
+                }
 
                 Enumeration<String> aliases = keyStore.aliases();
                 while (aliases.hasMoreElements()) {

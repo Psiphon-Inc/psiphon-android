@@ -105,7 +105,7 @@ public class TunnelManager implements PsiphonTunnel.HostService
     // Implementation of android.app.Service.onCreate
     public void onCreate()
     {
-        m_tunnel = PsiphonTunnel.newPsiphonVpn(this);
+        m_tunnel = PsiphonTunnel.newPsiphonTunnel(this);
     }
 
     // Implementation of android.app.Service.onDestroy
