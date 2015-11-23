@@ -132,7 +132,7 @@
     <string name="region_name_nl">Netherlands</string>
     <string name="about">About Psiphon</string>
     <string name="feedback">Feedback</string>
-    <string name="tunnel_whole_device_toggle">Tunnel Whole Device (requires root or Android 4.0+)</string>
+    <string name="tunnel_whole_device_toggle">Tunnel Whole Device (requires Android 4.0+)</string>
     <string name="region_selector">Select region</string>
     <string name="network_proxy_connect_exception">Failed to connect to the network\'s HTTP Proxy: %s</string>
     <string name="network_proxy_connect_information">Connecting via your HTTP Proxy: %s</string>
