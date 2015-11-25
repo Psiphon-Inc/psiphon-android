@@ -174,7 +174,7 @@ public class Events implements com.psiphon3.psiphonlibrary.IEvents
                 // When a uri is specified, it will open as a new tab. This is
                 // independent of the home pages.
                 
-                intent.putExtra("localProxyPort", PsiphonData.getPsiphonData().getHttpProxyPort());
+                intent.putExtra("localProxyPort", PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort());
                 intent.putExtra("homePages", PsiphonData.getPsiphonData().getHomePages());
                 intent.putExtra("serviceClassName", TunnelService.class.getName());        
                 intent.putExtra("statusActivityClassName", StatusActivity.class.getName());

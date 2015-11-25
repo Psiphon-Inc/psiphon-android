@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Psiphon Inc.
+ * Copyright (c) 2015, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,8 @@
  */
 
 package com.psiphon3.psiphonlibrary;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.content.Context;
 import android.content.SharedPreferences.Editor;
@@ -38,20 +40,20 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         String code;
         int nameResourceId;
         int flagResourceId;
-        boolean serverExists;
+        AtomicBoolean serverExists;
         
         Region(String code, int nameResourceId, int flagResourceId, boolean serverExists)
         {
             this.code = code;
             this.nameResourceId = nameResourceId;
             this.flagResourceId = flagResourceId;
-            this.serverExists = serverExists;
+            this.serverExists = new AtomicBoolean(serverExists);
         }
     }
     
     private static Region[] regions =
     {
-        new Region(ServerInterface.ServerEntry.REGION_CODE_ANY, R.string.region_name_any, R.drawable.flag_unknown, true),
+        new Region(PsiphonConstants.REGION_CODE_ANY, R.string.region_name_any, R.drawable.flag_unknown, true),
         new Region("US", R.string.region_name_us, R.drawable.flag_us, false),
         new Region("GB", R.string.region_name_gb, R.drawable.flag_gb, false),
         new Region("CA", R.string.region_name_ca, R.drawable.flag_ca, false),
@@ -80,22 +82,18 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         // Since JSON parsing is what we want to avoid, we store the list
         // of ISO 3166-1 alpha-2 region codes as a simple comma delimited
         // string (without escaping).
+        
+        // NOTE: retaining this with tunnel-core, as this allows region
+        // display, selection, and restore before the tunnel-core is run
+        // and emits AvailableEgressRegions. The original assumption about
+        // regions only being added, not removed, still applies.
 
         String knownRegions = PreferenceManager
                                         .getDefaultSharedPreferences(context)
                                         .getString(KNOWN_REGIONS_PREFERENCE, "");
-        if (knownRegions.length() == 0)
+        for (String region : knownRegions.split(","))
         {
-            // Force setServerExists calls so we can configure the region spinner.
-            // TODO: fix this hack.
-            new ServerInterface(context);
-        }
-        else
-        {
-            for (String region : knownRegions.split(","))
-            {
-                setServerExists(context, region, true);
-            }
+            setServerExists(context, region, true);
         }
         
         initialized = true;
@@ -111,8 +109,8 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         {
             if (region.code.equals(regionCode))
             {
-                newRegion = !region.serverExists; 
-                region.serverExists = true;
+                newRegion = !region.serverExists.get(); 
+                region.serverExists.set(true);
                 break;
             }
         }
@@ -123,7 +121,7 @@ public class RegionAdapter extends ArrayAdapter<Integer>
 
             for (Region region : regions)
             {
-                if (region.serverExists)
+                if (region.serverExists.get())
                 {
                     if (knownRegions.length() > 0)
                     {
@@ -159,7 +157,7 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         int count = 0;
         for (int index = 0; index < regions.length; index++)
         {
-            if (regions[index].serverExists)
+            if (regions[index].serverExists.get())
             {
                 count++;
             }
@@ -172,7 +170,7 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         clear();
         for (int index = 0; index < regions.length; index++)
         {
-            if (regions[index].serverExists)
+            if (regions[index].serverExists.get())
             {
                 add(index);
             }
@@ -228,7 +226,7 @@ public class RegionAdapter extends ArrayAdapter<Integer>
 
         // Default to ANY. Might happen if persistent selection is used
         // on different client version which doesn't have a corresponding Region
-        assert(regions[0].code.equals(ServerInterface.ServerEntry.REGION_CODE_ANY));
+        assert(regions[0].code.equals(PsiphonConstants.REGION_CODE_ANY));
         return 0;
     }
 }

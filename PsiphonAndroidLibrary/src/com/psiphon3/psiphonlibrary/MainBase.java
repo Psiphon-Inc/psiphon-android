@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Psiphon Inc.
+ * Copyright (c) 2015, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -166,7 +166,6 @@ public abstract class MainBase {
         protected static final int REQUEST_CODE_PREFERENCE = 101;
 
         protected static boolean m_firstRun = true;
-        private boolean m_isRooted = false;
         private boolean m_canWholeDevice = false;
 
         protected IEvents m_eventsInterface = null;
@@ -185,10 +184,6 @@ public abstract class MainBase {
         private TextView m_elapsedConnectionTimeView;
         private TextView m_totalSentView;
         private TextView m_totalReceivedView;
-        private TextView m_compressionRatioSentView;
-        private TextView m_compressionRatioReceivedView;
-        private TextView m_compressionSavingsSentView;
-        private TextView m_compressionSavingsReceivedView;
         private DataTransferGraph m_slowSentGraph;
         private DataTransferGraph m_slowReceivedGraph;
         private DataTransferGraph m_fastSentGraph;
@@ -196,7 +191,6 @@ public abstract class MainBase {
         private RegionAdapter m_regionAdapter;
         private SpinnerHelper m_regionSelector;
         protected CheckBox m_tunnelWholeDeviceToggle;
-        private CheckBox m_wdmForceIptablesToggle;
         private Toast m_invalidProxySettingsToast;
 
         /*
@@ -554,21 +548,8 @@ public abstract class MainBase {
             m_elapsedConnectionTimeView = (TextView) findViewById(R.id.elapsedConnectionTime);
             m_totalSentView = (TextView) findViewById(R.id.totalSent);
             m_totalReceivedView = (TextView) findViewById(R.id.totalReceived);
-            m_compressionRatioSentView = (TextView) findViewById(R.id.compressionRatioSent);
-            m_compressionRatioReceivedView = (TextView) findViewById(R.id.compressionRatioReceived);
-            m_compressionSavingsSentView = (TextView) findViewById(R.id.compressionSavingsSent);
-            m_compressionSavingsReceivedView = (TextView) findViewById(R.id.compressionSavingsReceived);
             m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
             m_tunnelWholeDeviceToggle = (CheckBox) findViewById(R.id.tunnelWholeDeviceToggle);
-            m_wdmForceIptablesToggle = (CheckBox) findViewById(R.id.WdmForceIptablesToggle);
-            /*
-             * m_shareProxiesToggle =
-             * (CheckBox)findViewById(R.id.shareProxiesToggle);
-             * m_statusTabSocksPortLine =
-             * (TextView)findViewById(R.id.socksportline);
-             * m_statusTabHttpProxyPortLine =
-             * (TextView)findViewById(R.id.httpproxyportline);
-             */
 
             m_slowSentGraph = new DataTransferGraph(this, R.id.slowSentGraph);
             m_slowReceivedGraph = new DataTransferGraph(this, R.id.slowReceivedGraph);
@@ -596,14 +577,14 @@ public abstract class MainBase {
 
             PsiphonData.getPsiphonData().setDisplayDataTransferStats(true);
 
-            if (m_firstRun) {
+            if (m_firstRun)
+            {
                 RegionAdapter.initialize(this);
             }
-
             m_regionAdapter = new RegionAdapter(this);
             m_regionSelector.setAdapter(m_regionAdapter);
             String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE,
-                    ServerInterface.ServerEntry.REGION_CODE_ANY);
+                    PsiphonConstants.REGION_CODE_ANY);
             PsiphonData.getPsiphonData().setEgressRegion(egressRegionPreference);
             int position = m_regionAdapter.getPositionForRegionCode(egressRegionPreference);
             m_regionSelector.setSelection(position);
@@ -615,43 +596,16 @@ public abstract class MainBase {
             m_regionSelector.getSpinner().setOnTouchListener(regionSpinnerOnTouch);
             m_regionSelector.getSpinner().setOnKeyListener(regionSpinnerOnKey);
 
-            // Transparent proxy-based "Tunnel Whole Device" option is only
-            // available on rooted devices and
-            // defaults to true on rooted devices.
-            // On Android 4+, we offer "Whole Device" via the VpnService
-            // facility, which does not require root.
-            // We prefer VpnService when available, even when the device is
-            // rooted.
-            m_isRooted = Utils.isRooted();
-            boolean canRunVpnService = Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
-            m_canWholeDevice = m_isRooted || canRunVpnService;
+            m_canWholeDevice = Utils.hasVpnService();
 
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
             boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE,
                     m_canWholeDevice);
             m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
 
-            // Use PsiphonData to communicate the setting to the TunnelService
-            // so it doesn't need to
-            // repeat the isRooted check. The preference is retained even if the
-            // device becomes "unrooted"
-            // and that's why setTunnelWholeDevice !=
-            // tunnelWholeDevicePreference.
             PsiphonData.getPsiphonData().setTunnelWholeDevice(m_canWholeDevice && tunnelWholeDevicePreference);
 
-            m_wdmForceIptablesToggle.setEnabled(m_isRooted && PsiphonData.getPsiphonData().getTunnelWholeDevice());
-            boolean wdmForceIptablesPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(WDM_FORCE_IPTABLES_PREFERENCE, false);
-            m_wdmForceIptablesToggle.setChecked(wdmForceIptablesPreference);
-
-            // The preference is retained even if the device becomes "unrooted"
-            // and that's why setWdmForceIptables != wdmForceIptablesPreference.
-            PsiphonData.getPsiphonData().setWdmForceIptables(m_isRooted && wdmForceIptablesPreference);
-
             updateProxySettingsFromPreferences();
-
-            boolean shareProxiesPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(SHARE_PROXIES_PREFERENCE, false);
-            PsiphonData.getPsiphonData().setShareProxies(shareProxiesPreference);
-            /* m_shareProxiesToggle.setChecked(shareProxiesPreference); */
 
             // Note that this must come after the above lines, or else the
             // activity
@@ -876,7 +830,7 @@ public abstract class MainBase {
             String selectedRegionCode = m_regionAdapter.getSelectedRegionCode(position);
 
             String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE,
-                    ServerInterface.ServerEntry.REGION_CODE_ANY);
+                    PsiphonConstants.REGION_CODE_ANY);
             if (selectedRegionCode.equals(egressRegionPreference) && selectedRegionCode.equals(PsiphonData.getPsiphonData().getEgressRegion())) {
                 return;
             }
@@ -939,41 +893,6 @@ public abstract class MainBase {
             editor.commit();
 
             PsiphonData.getPsiphonData().setTunnelWholeDevice(tunnelWholeDevicePreference);
-
-            m_wdmForceIptablesToggle.setEnabled(m_isRooted && PsiphonData.getPsiphonData().getTunnelWholeDevice());
-        }
-
-        public void onWdmForceIptablesToggle(View v) {
-            // Just in case an OnClick message is in transit before setEnabled
-            // is processed...(?)
-            if (!m_wdmForceIptablesToggle.isEnabled()) {
-                return;
-            }
-
-            boolean restart = false;
-
-            if (isServiceRunning()) {
-                doToggle();
-                restart = true;
-            }
-
-            boolean wdmForceIptablesPreference = m_wdmForceIptablesToggle.isChecked();
-            updateWdmForceIptablesPreference(wdmForceIptablesPreference);
-
-            if (restart && !isServiceRunning()) {
-                startTunnel(this);
-            }
-        }
-
-        protected void updateWdmForceIptablesPreference(boolean wdmForceIptablesPreference) {
-            // No isRooted check: the user can specify whatever preference they
-            // wish. Also, CheckBox enabling should cover this (but isn't
-            // required to).
-            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-            editor.putBoolean(WDM_FORCE_IPTABLES_PREFERENCE, wdmForceIptablesPreference);
-            editor.commit();
-
-            PsiphonData.getPsiphonData().setWdmForceIptables(wdmForceIptablesPreference);
         }
 
         // Basic check that the values are populated
@@ -1083,17 +1002,8 @@ public abstract class MainBase {
                     DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
                     m_elapsedConnectionTimeView.setText(dataTransferStats.isConnected() ? getString(R.string.connected_elapsed_time,
                             Utils.elapsedTimeToDisplay(dataTransferStats.getElapsedTime())) : getString(R.string.disconnected));
-                    m_totalSentView.setText(Utils.byteCountToDisplaySize(dataTransferStats.getTotalBytesSent() + dataTransferStats.getTotalOverheadBytesSent(),
-                            false));
-                    m_compressionRatioSentView.setText(getString(R.string.compression_ratio, dataTransferStats.getTotalSentCompressionRatio()));
-                    m_compressionSavingsSentView.setText(getString(R.string.compression_savings,
-                            Utils.byteCountToDisplaySize(dataTransferStats.getTotalSentSaved(), false)));
-                    m_totalReceivedView.setText(Utils.byteCountToDisplaySize(
-                            dataTransferStats.getTotalBytesReceived() + dataTransferStats.getTotalOverheadBytesReceived(), false));
-                    m_compressionRatioReceivedView.setText(getString(R.string.compression_ratio, dataTransferStats.getTotalReceivedCompressionRatio()));
-                    m_compressionSavingsReceivedView.setText(getString(R.string.compression_savings,
-                            Utils.byteCountToDisplaySize(dataTransferStats.getTotalReceivedSaved(), false)));
-
+                    m_totalSentView.setText(Utils.byteCountToDisplaySize(dataTransferStats.getTotalBytesSent(), false));
+                    m_totalReceivedView.setText(Utils.byteCountToDisplaySize(dataTransferStats.getTotalBytesReceived(), false));
                     m_slowSentGraph.update(dataTransferStats.getSlowSentSeries());
                     m_slowReceivedGraph.update(dataTransferStats.getSlowReceivedSeries());
                     m_fastSentGraph.update(dataTransferStats.getFastSentSeries());
@@ -1162,8 +1072,7 @@ public abstract class MainBase {
 
             boolean waitingForPrompt = false;
 
-            if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable()
-                    && !PsiphonData.getPsiphonData().getWdmForceIptables()) {
+            if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService()) {
                 // VpnService backwards compatibility: for lazy class loading
                 // the VpnService
                 // class reference has to be in another function (doVpnPrepare),
@@ -1182,18 +1091,7 @@ public abstract class MainBase {
             } catch (ActivityNotFoundException e) {
                 MyLog.e(R.string.tunnel_whole_device_exception, MyLog.Sensitivity.NOT_SENSITIVE);
 
-                // VpnService is broken. For rooted devices, proceed with
-                // starting Whole Device in root mode.
-
-                if (Utils.isRooted()) {
-                    PsiphonData.getPsiphonData().setVpnServiceUnavailable(true);
-
-                    // false = not waiting for prompt, so service will be
-                    // started immediately
-                    return false;
-                }
-
-                // For non-rooted devices, turn off the option and abort.
+                // Turn off the option and abort.
 
                 m_tunnelWholeDeviceToggle.setChecked(false);
                 m_tunnelWholeDeviceToggle.setEnabled(false);
@@ -1319,13 +1217,11 @@ public abstract class MainBase {
             // Disable service-toggling controls while service is starting up
             // (i.e., while isServiceRunning can't be relied upon)
             m_tunnelWholeDeviceToggle.setEnabled(false);
-            m_wdmForceIptablesToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
         }
 
         protected void onPostStartService() {
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
-            m_wdmForceIptablesToggle.setEnabled(m_isRooted && PsiphonData.getPsiphonData().getTunnelWholeDevice());
             m_regionSelector.setEnabled(true);
         }
 
@@ -1399,11 +1295,11 @@ public abstract class MainBase {
         }
 
         private void doStopVpnTunnel(Context context) {
-            TunnelCore currentTunnelCore = PsiphonData.getPsiphonData().getCurrentTunnelCore();
+            TunnelManager currentTunnelManager = PsiphonData.getPsiphonData().getCurrentTunnelManager();
 
-            if (currentTunnelCore != null) {
+            if (currentTunnelManager != null) {
                 // See comments in stopVpnServiceHelper about stopService.
-                currentTunnelCore.stopVpnServiceHelper();
+                currentTunnelManager.stopVpnServiceHelper();
                 stopService(new Intent(context, TunnelVpnService.class));
             }
         }
@@ -1552,7 +1448,7 @@ public abstract class MainBase {
                                 }
                                 mWebViewLoaded = true;
                             }
-                        }, 1000);
+                        }, 2000);
                     }
                 }
             }
@@ -1562,7 +1458,7 @@ public abstract class MainBase {
             private final SponsorWebChromeClient mWebChromeClient;
             private final ProgressBar mProgressBar;
 
-            public SponsorHomePage(WebView webView, ProgressBar progressBar, IEvents eventsInterface) {
+            @TargetApi(Build.VERSION_CODES.HONEYCOMB) public SponsorHomePage(WebView webView, ProgressBar progressBar, IEvents eventsInterface) {
                 mWebView = webView;
                 mProgressBar = progressBar;
                 mWebChromeClient = new SponsorWebChromeClient(mProgressBar);
@@ -1596,7 +1492,7 @@ public abstract class MainBase {
             }
 
             public void load(String url) {
-                WebViewProxySettings.setLocalProxy(mWebView.getContext(), PsiphonData.getPsiphonData().getHttpProxyPort());
+                WebViewProxySettings.setLocalProxy(mWebView.getContext(), PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort());
                 mProgressBar.setVisibility(View.VISIBLE);
                 mWebView.loadUrl(url);
             }
