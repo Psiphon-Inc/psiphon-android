@@ -435,14 +435,14 @@ public class TunnelManager implements PsiphonTunnel.HostService
         try {            
             JSONObject json = new JSONObject();
             
-            if (0 > EmbeddedValues.UPGRADE_URL.length() && 
+            if (0 < EmbeddedValues.UPGRADE_URL.length() && 
                     EmbeddedValues.hasEverBeenSideLoaded(m_parentContext) &&
                     PsiphonData.getPsiphonData().getDownloadUpgrades())
             {
                 json.put("UpgradeDownloadUrl", EmbeddedValues.UPGRADE_URL);
                 
                 json.put("UpgradeDownloadFilename",
-                        new UpgradeManager.DownloadedUpgradeFile(m_parentContext).getFilename());                
+                        new UpgradeManager.DownloadedUpgradeFile(m_parentContext).getFullPath());                
             }
             
             json.put("ClientPlatform", PsiphonConstants.PLATFORM);

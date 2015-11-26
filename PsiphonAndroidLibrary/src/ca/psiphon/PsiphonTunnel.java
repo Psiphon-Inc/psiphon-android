@@ -405,7 +405,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
                 mHostService.onUpstreamProxyError(notice.getJSONObject("data").getString("message"));
 
             } else if (noticeType.equals("ClientUpgradeDownloaded")) {
-                mHostService.onHomepage(notice.getJSONObject("data").getString("filename"));
+                mHostService.onClientUpgradeDownloaded(notice.getJSONObject("data").getString("filename"));
 
             } else if (noticeType.equals("Homepage")) {
                 mHostService.onHomepage(notice.getJSONObject("data").getString("url"));
