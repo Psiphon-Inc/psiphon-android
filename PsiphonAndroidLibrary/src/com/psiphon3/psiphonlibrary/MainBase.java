@@ -512,6 +512,8 @@ public abstract class MainBase {
             // Set up the list view
             m_statusListManager = new StatusListViewManager(statusListView);
 
+            PsiphonData.getPsiphonData().setCurrentEventsInterface(m_eventsInterface);
+
             // Listen for new messages
             // Using local broad cast
             // (http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html)
@@ -621,7 +623,7 @@ public abstract class MainBase {
         protected void onResume() {
             super.onResume();
             updateProxySettingsFromPreferences();
-
+            
             // From: http://steve.odyfamily.com/?p=12
             m_updateHeaderTimer = new Timer();
             m_updateHeaderTimer.schedule(new TimerTask() {
