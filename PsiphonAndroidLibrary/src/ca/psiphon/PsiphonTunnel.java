@@ -58,6 +58,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import go.psi.Psi;
 
@@ -89,9 +91,9 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
 
     private final HostService mHostService;
     private PrivateAddress mPrivateAddress;
-    private ParcelFileDescriptor mTunFd;
-    private int mLocalSocksProxyPort;
-    private boolean mRoutingThroughTunnel;
+    private AtomicReference<ParcelFileDescriptor> mTunFd;
+    private AtomicInteger mLocalSocksProxyPort;
+    private AtomicBoolean mRoutingThroughTunnel;
     private Thread mTun2SocksThread;
     private AtomicBoolean mIsWaitingForNetworkConnectivity;
 
@@ -111,8 +113,9 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
 
     private PsiphonTunnel(HostService hostService) {
         mHostService = hostService;
-        mLocalSocksProxyPort = 0;
-        mRoutingThroughTunnel = false;
+        mTunFd = new AtomicReference<ParcelFileDescriptor>();
+        mLocalSocksProxyPort = new AtomicInteger(0);
+        mRoutingThroughTunnel = new AtomicBoolean(false);
         mIsWaitingForNetworkConnectivity = new AtomicBoolean(false);
     }
 
@@ -145,11 +148,11 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         stopPsiphon();
         startPsiphon("");
     }
-
+    
     public synchronized void stop() {
         stopVpn();
         stopPsiphon();
-        mLocalSocksProxyPort = 0;
+        mLocalSocksProxyPort.set(0);
     }
 
     //----------------------------------------------------------------------------------------------
@@ -160,6 +163,11 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     private final static int VPN_INTERFACE_MTU = 1500;
     private final static int UDPGW_SERVER_PORT = 7300;
     private final static String DEFAULT_DNS_SERVER = "8.8.4.4";
+    
+    // Note: Atomic variables used for getting/setting local proxy port, routing flag, and
+    // tun fd, as these functions may be called via PsiphonProvider callbacks. Do not use
+    // synchronized functions as stop() is synchronized and a deadlock is possible as callbacks
+    // can be called while stop holds the lock.
 
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     private boolean startVpn() throws Exception {
@@ -173,7 +181,8 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
             // Workaround for https://code.google.com/p/android/issues/detail?id=61096
             Locale.setDefault(new Locale("en"));
 
-            mTunFd = ((VpnService.Builder) mHostService.newVpnServiceBuilder())
+            ParcelFileDescriptor tunFd =
+                ((VpnService.Builder) mHostService.newVpnServiceBuilder())
                     .setSession(mHostService.getAppName())
                     .setMtu(VPN_INTERFACE_MTU)
                     .addAddress(mPrivateAddress.mIpAddress, mPrivateAddress.mPrefixLength)
@@ -181,11 +190,13 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
                     .addRoute(mPrivateAddress.mSubnet, mPrivateAddress.mPrefixLength)
                     .addDnsServer(mPrivateAddress.mRouter)
                     .establish();
-            if (mTunFd == null) {
+            if (tunFd == null) {
                 // As per http://developer.android.com/reference/android/net/VpnService.Builder.html#establish%28%29,
                 // this application is no longer prepared or was revoked.
                 return false;
             }
+            mTunFd.set(tunFd);
+
             mHostService.onDiagnosticMessage("VPN established");
 
         } catch(IllegalArgumentException e) {
@@ -202,23 +213,22 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         return true;
     }
     
-    private synchronized boolean isVpnMode() {
-        return mTunFd != null;
+    private boolean isVpnMode() {
+        return mTunFd.get() != null;
     }
 
-    private synchronized void setLocalSocksProxyPort(int port) {
-        mLocalSocksProxyPort = port;
+    private void setLocalSocksProxyPort(int port) {
+        mLocalSocksProxyPort.set(port);
     }
 
-    private synchronized void routeThroughTunnel() {
-        if (mRoutingThroughTunnel) {
+    private void routeThroughTunnel() {
+        if (!mRoutingThroughTunnel.compareAndSet(false, true)) {
             return;
         }
-        mRoutingThroughTunnel = true;
-        String socksServerAddress = "127.0.0.1:" + Integer.toString(mLocalSocksProxyPort);
+        String socksServerAddress = "127.0.0.1:" + Integer.toString(mLocalSocksProxyPort.get());
         String udpgwServerAddress = "127.0.0.1:" + Integer.toString(UDPGW_SERVER_PORT);
         startTun2Socks(
-                mTunFd,
+                mTunFd.get(),
                 VPN_INTERFACE_MTU,
                 mPrivateAddress.mRouter,
                 VPN_INTERFACE_NETMASK,
@@ -232,15 +242,15 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     }
 
     private void stopVpn() {
-        if (mTunFd != null) {
+        ParcelFileDescriptor tunFd = mTunFd.getAndSet(null);
+        if (tunFd != null) {
             try {
-                mTunFd.close();
+                tunFd.close();
             } catch (IOException e) {
             }
-            mTunFd = null;
         }
         waitStopTun2Socks();
-        mRoutingThroughTunnel = false;
+        mRoutingThroughTunnel.set(false);
     }
     
     //----------------------------------------------------------------------------------------------
@@ -335,7 +345,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
 
         json.put("EmitBytesTransferred", true);
 
-        if (mLocalSocksProxyPort != 0) {
+        if (mLocalSocksProxyPort.get() != 0) {
             // When mLocalSocksProxyPort is set, tun2socks is already configured
             // to use that port value. So we force use of the same port.
             // A side-effect of this is that changing the SOCKS port preference
