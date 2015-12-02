@@ -23,23 +23,17 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
 import org.json.JSONObject;
 
 import android.content.Context;
 import android.os.Build;
 import android.os.SystemClock;
 import android.util.Log;
-import android.util.Pair;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
@@ -82,7 +76,9 @@ public class PsiphonData
     private String m_proxyPassword;
     private String m_proxyDomain;
     private ProxySettings m_savedSystemProxySettings;
-    private TunnelManager m_currentTunnelManager;
+    private boolean m_startingTunnelManager = false;
+    private TunnelManager m_currentTunnelManager = null;
+    private IEvents m_currentEventsInterface = null;
     private DataTransferStats m_dataTransferStats;
     private boolean m_displayDataTransferStats;
     private boolean m_downloadUpgrades;
@@ -466,16 +462,35 @@ public class PsiphonData
         return url.toString();
     }
 
+    public synchronized void setStartingTunnelManager()
+    {
+        m_startingTunnelManager = true;
+    }
+
+    public synchronized boolean getStartingTunnelManager()
+    {
+        return m_startingTunnelManager;
+    }
+
     public synchronized void setCurrentTunnelManager(TunnelManager tunnelManager)
     {
-        // TODO: make TunnelManager a singleton; then get rid of this hack.
-        
+        m_startingTunnelManager = false;
         m_currentTunnelManager = tunnelManager;
     }
 
     public synchronized TunnelManager getCurrentTunnelManager()
     {
         return m_currentTunnelManager;
+    }
+
+    public synchronized void setCurrentEventsInterface(IEvents eventsInterface)
+    {
+        m_currentEventsInterface = eventsInterface;
+    }
+
+    public synchronized IEvents getCurrentEventsInterface()
+    {
+        return m_currentEventsInterface;
     }
 
     public synchronized void setNotificationIcons(

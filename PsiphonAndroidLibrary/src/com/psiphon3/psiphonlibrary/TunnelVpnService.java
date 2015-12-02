@@ -19,8 +19,6 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import java.util.List;
-
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.annotation.TargetApi;
@@ -29,12 +27,11 @@ import android.net.VpnService;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
-import android.util.Pair;
 
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class TunnelVpnService extends VpnService
 {
-    private TunnelManager m_Manager = new TunnelManager(this, this);
+    private TunnelManager m_Manager = new TunnelManager(this);
 
     public class LocalBinder extends Binder
     {
@@ -70,7 +67,6 @@ public class TunnelVpnService extends VpnService
     public void onCreate()
     {
         PsiphonData.getPsiphonData().setCurrentTunnelManager(m_Manager);
-        m_Manager.onCreate();
     }
 
     @Override
@@ -88,16 +84,6 @@ public class TunnelVpnService extends VpnService
         stopSelf();
     }
     
-    public void setEventsInterface(IEvents eventsInterface)
-    {
-        m_Manager.setEventsInterface(eventsInterface);
-    }
-    
-    public void setExtraAuthParams(List<Pair<String,String>> extraAuthParams)
-    {
-        m_Manager.setExtraAuthParams(extraAuthParams);
-    }
-
     public VpnService.Builder newBuilder()
     {
         return new VpnService.Builder();
