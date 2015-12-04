@@ -354,6 +354,10 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         }
 
         json.put("UseIndistinguishableTLS", true);
+        
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            json.put("UseTrustedCACertificatesForStockTLS", true);
+        }
 
         try {
             // Also enable indistinguishable TLS for HTTPS requests that
