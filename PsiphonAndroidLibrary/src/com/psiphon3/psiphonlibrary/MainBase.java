@@ -187,6 +187,7 @@ public abstract class MainBase {
         private SpinnerHelper m_regionSelector;
         protected CheckBox m_tunnelWholeDeviceToggle;
         private Toast m_invalidProxySettingsToast;
+        private Button m_moreOptionsButton;
 
         /*
          * private CheckBox m_shareProxiesToggle; private TextView
@@ -503,6 +504,7 @@ public abstract class MainBase {
             m_totalReceivedView = (TextView) findViewById(R.id.totalReceived);
             m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
             m_tunnelWholeDeviceToggle = (CheckBox) findViewById(R.id.tunnelWholeDeviceToggle);
+            m_moreOptionsButton = (Button) findViewById(R.id.moreOptionsButton);
 
             m_slowSentGraph = new DataTransferGraph(this, R.id.slowSentGraph);
             m_slowReceivedGraph = new DataTransferGraph(this, R.id.slowReceivedGraph);
@@ -531,7 +533,7 @@ public abstract class MainBase {
             updateServiceStateUI();
 
             PsiphonData.getPsiphonData().setDisplayDataTransferStats(true);
-
+            
             if (m_firstRun)
             {
                 RegionAdapter.initialize(this);
@@ -952,14 +954,16 @@ public abstract class MainBase {
         
         protected void enableToggleServiceUI() {
             m_toggleButton.setEnabled(true);
-            m_tunnelWholeDeviceToggle.setEnabled(true);
+            m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
             m_regionSelector.setEnabled(true);
+            m_moreOptionsButton.setEnabled(true);
         }
 
         protected void disableToggleServiceUI() {
             m_toggleButton.setEnabled(false);
             m_tunnelWholeDeviceToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
+            m_moreOptionsButton.setEnabled(false);
         }
 
         private void checkRestartTunnel() {
