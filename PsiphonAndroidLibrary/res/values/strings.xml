@@ -159,9 +159,16 @@
     <string name="proxy_domain_title">Proxy domain</string>
     <string name="proxy_domain_summary">Domain for proxy authentication</string>
     <string name="http_proxy_port_in_use">Requested local HTTP proxy port %d is already in use by another app.  Cannot continue.</string>
+
+    <!-- When the split tunnel option is enabled, the current region is used to determine which requests should and shouldn't be tunneled. This log message tells the user which region (in '%s') is being used for this decision. -->
     <string name="split_tunnel_region">Split tunnel region: %s</string>
+
+    <!-- When the split tunnel option is enabled, this log message is shown when a domain is not tunneled (because it's detected as being in the same region as the user). The '%s' is the domain name. -->
     <string name="untunneled_address">Untunneled: %s</string>
+
+    <!-- The log message is shown to the user if an upstream proxy error occurs. The '%s' is the detail of the error. -->
     <string name="upstream_proxy_error">Upstream proxy error: %s</string>
+
     <string name="diagnostic">Diagnostic: %s</string>
     <string name="start_tunnel_failed">Start tunnel failed: %s</string>
     <string name="tunnel_connecting">Tunnel connecting…</string>
