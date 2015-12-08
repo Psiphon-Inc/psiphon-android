@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Psiphon Inc.
+ * Copyright (c) 2015, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,9 +28,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.zip.GZIPInputStream;
 
-import com.psiphon3.psiphonlibrary.ServerInterface;
 import com.psiphon3.psiphonlibrary.AuthenticatedDataPackage.AuthenticatedDataPackageException;
-import com.psiphon3.psiphonlibrary.ServerInterface.PsiphonServerInterfaceException;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.annotation.SuppressLint;
@@ -161,25 +159,6 @@ public interface UpgradeManager
         }
     }
 
-    static class UnverifiedUpgradeFile extends UpgradeFile
-    {
-        public UnverifiedUpgradeFile(Context context)
-        {
-            super(context);
-        }
-        
-        public String getFilename()
-        {
-            return "PsiphonAndroid.apk.unverified";
-        }
-        
-        public boolean isWorldReadable()
-        {
-            // Making the APK world readable so Installer component can access it
-            return true;
-        }
-    }    
-
     static class VerifiedUpgradeFile extends UpgradeFile
     {
         public VerifiedUpgradeFile(Context context)
@@ -199,22 +178,36 @@ public interface UpgradeManager
         }
     }    
 
-    static class PartialUpgradeFile extends UpgradeFile implements ServerInterface.IResumableDownload
+    static class UnverifiedUpgradeFile extends UpgradeFile
     {
-        private int versionNumber;
-        
-        public PartialUpgradeFile(Context context, int versionNumber)
+        public UnverifiedUpgradeFile(Context context)
         {
             super(context);
-            
-            this.versionNumber = versionNumber;
         }
         
         public String getFilename()
         {
-            return "PsiphonAndroid." + Integer.toString(this.versionNumber) + ".part";
+            return "PsiphonAndroid.apk.unverified";
         }
         
+        public boolean isWorldReadable()
+        {
+            // Making the APK world readable so Installer component can access it
+            return true;
+        }
+    }    
+
+    static class DownloadedUpgradeFile extends UpgradeFile
+    {
+        public DownloadedUpgradeFile(Context context)
+        {
+            super(context);
+        }
+        
+        public String getFilename()
+        {
+            return "PsiphonAndroid.upgrade_package";
+        }
         
         public boolean isWorldReadable()
         {
@@ -226,7 +219,7 @@ public interface UpgradeManager
             return new GZIPInputStream(new BufferedInputStream(super.context.openFileInput(getFilename())));
         }
 
-        public boolean extract()
+        public boolean extractAndVerify()
         {
             InputStream unzipStream = null;
 
@@ -248,9 +241,7 @@ public interface UpgradeManager
                         true, // "data" is Base64 (and is a large value to be streamed)
                         dataDestination);
 
-                unverifiedFile.rename(new VerifiedUpgradeFile(super.context).getFilename());
-                
-                return true;
+                return unverifiedFile.rename(new VerifiedUpgradeFile(super.context).getFilename());
             }
             catch (FileNotFoundException e)
             {
@@ -275,17 +266,32 @@ public interface UpgradeManager
                 }
             }
         }
-
-        @Override
-        public long getResumeOffset()
+    }
+    
+    static class PartialUpgradeFile extends UpgradeFile
+    {
+        private int versionNumber;
+        
+        public PartialUpgradeFile(Context context, int versionNumber)
         {
-            return getSize();
+            super(context);
+            
+            this.versionNumber = versionNumber;
+        }
+        
+        public String getFilename()
+        {
+            return "PsiphonAndroid.upgrade_package." + Integer.toString(this.versionNumber) + ".part";
+        }
+        
+        public boolean isWorldReadable()
+        {
+            return false;
         }
 
-        @Override
-        public boolean appendData(byte[] buffer, int length)
+        public boolean complete()
         {
-            return write(buffer, length, true);
+            return rename(new DownloadedUpgradeFile(super.context).getFilename());
         }
     }
     
@@ -301,6 +307,27 @@ public interface UpgradeManager
          */
         protected static VerifiedUpgradeFile getAvailableCompleteUpgradeFile(Context context)
         {
+            DownloadedUpgradeFile downloadedFile = new DownloadedUpgradeFile(context);
+            
+            if (downloadedFile.exists())
+            {
+                boolean success  = downloadedFile.extractAndVerify();
+
+                // If the extract and verify succeeds, delete it since it's no longer
+                // required and we don't want to re-install it.
+                // If the file isn't working and we think we have the complete file,
+                // there may be corrupt bytes. So delete it and next time we'll start over.
+                // NOTE: this means if the failure was due to not enough free space
+                // to write the extracted file... we still re-download.
+
+                downloadedFile.delete();
+                
+                if (!success)
+                {
+                    return null;
+                }
+            }
+            
             VerifiedUpgradeFile file = new VerifiedUpgradeFile(context);
 
             // Does the file exist?
@@ -404,156 +431,6 @@ public interface UpgradeManager
             {
                 notificationManager.notify(R.string.UpgradeManager_UpgradeAvailableNotificationId, notification);
             }
-        }
-    }
-
-    /**
-     * Used to download upgrades from the server.
-     */
-    static public class UpgradeDownloader
-    {
-        private Context context;
-        private ServerInterface serverInterface;
-        private Thread thread;
-        private int versionNumber;
-        private boolean stopFlag;
-
-        private final int MAX_RETRY_ATTEMPTS = 10;
-        private final int RETRY_DELAY_MILLISECONDS = 30*1000;
-        private final int RETRY_WAIT_MILLISECONDS = 100;
-        
-        public UpgradeDownloader(Context context, ServerInterface serverInterface)
-        {
-            this.context = context;
-            this.serverInterface = serverInterface;
-        }
-
-        /**
-         * Begin downloading the upgrade from the server. Download is done in a
-         * separate thread. 
-         */
-        public void start(int versionNumber)
-        {
-            // Play Store Build instances must not use custom auto-upgrade
-            if (0 == EmbeddedValues.UPGRADE_URL.length() || !EmbeddedValues.hasEverBeenSideLoaded(context))
-            {
-                return;
-            }
-            
-            this.versionNumber = versionNumber;
-            this.stopFlag = false;
-            this.thread = new Thread(
-                    new Runnable()
-                    {
-                        public void run()
-                        {
-                            for (int attempt = 0; !stopFlag && attempt < MAX_RETRY_ATTEMPTS; attempt++)
-                            {
-                                // NOTE: depends on ServerInterface.stop(), not stopFlag, to interrupt requests in progress
-
-                                if (downloadAndExtractUpgrade())
-                                {
-                                    UpgradeManager.UpgradeInstaller.notifyUpgrade(context);
-                                    break;
-                                }
-                                
-                                // After a failure, delay a minute before trying again
-                                // TODO: synchronize with preemptive reconnect? 
-
-                                for (int wait = 0; wait < RETRY_DELAY_MILLISECONDS; wait += RETRY_WAIT_MILLISECONDS)
-                                {
-                                    try
-                                    {
-                                        Thread.sleep(RETRY_WAIT_MILLISECONDS);
-                                    }
-                                    catch (InterruptedException e)
-                                    {
-                                        Thread.currentThread().interrupt();
-                                    }
-                                    if (stopFlag)
-                                    {
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    });
-
-            this.thread.start();
-        }
-
-        /**
-         * Stop an on-going upgrade download.
-         */
-        public void stop()
-        {
-            // The owner of the serverInterface must abort outstanding requests to ensure that
-            // this function does not block.
-            if (this.thread != null)
-            {
-                try
-                {
-                    this.stopFlag = true;
-                    this.thread.join();
-                } 
-                catch (InterruptedException e)
-                {
-                    Thread.currentThread().interrupt();
-                }
-            }
-            this.thread = null;
-        }
-        
-        /**
-         * Download the upgrade file and save it to private storage.
-         */
-        protected boolean downloadAndExtractUpgrade()
-        {
-            PartialUpgradeFile file = new PartialUpgradeFile(context, this.versionNumber);
-            
-            // TODO: delete/cleanup partial downloads of older versions
-            
-            try
-            {
-                // Download the upgrade. Partial chunks of data are written to
-                // the file and the download may be resumed.
-                serverInterface.doUpgradeDownloadRequest(file);
-            }
-            catch (PsiphonServerInterfaceException e)
-            {
-                // Comment from the Windows client:
-                // If the download failed, we simply do nothing.
-                // Rationale:
-                // - The server is (and hopefully will remain) backwards compatible.
-                // - The failure is likely a configuration one, as the handshake worked.
-                // - A configuration failure could be common across all servers, so the
-                //   client will never connect.
-                // - Fail-over exposes new server IPs to hostile networks, so we don't
-                //   like doing it in the case where we know the handshake already succeeded.
-                MyLog.w(R.string.UpgradeManager_UpgradeDownloadFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
-                return false;
-            }
-            
-            // Commit results in a CompleteUpgradeFile.
-            // NOTE: if we fail at this point, there will be at least one more HTTP
-            // request which may return status code 416 since we already have the complete
-            // file but haven't stored the "completed download" state. We're not checking
-            // for completeness by attempting an extract, since that could result in
-            // false error messages.
-            
-            if (!file.extract())
-            {
-                // If the file isn't working and we think we have the complete file,
-                // there may be corrupt bytes. So delete it and next time we'll start over.
-                // NOTE: this means if the failure was due to not enough free space
-                // to write the extracted file... we still re-download.
-                file.delete();
-                return false;
-            }
-            
-            MyLog.v(R.string.UpgradeManager_UpgradeDownloaded, MyLog.Sensitivity.NOT_SENSITIVE);
-            
-            return true;
         }
     }
 }

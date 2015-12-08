@@ -19,8 +19,6 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import java.util.List;
-
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.annotation.TargetApi;
@@ -29,12 +27,11 @@ import android.net.VpnService;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
-import android.util.Pair;
 
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class TunnelVpnService extends VpnService
 {
-    private TunnelCore m_Core = new TunnelCore(this, this);
+    private TunnelManager m_Manager = new TunnelManager(this);
 
     public class LocalBinder extends Binder
     {
@@ -63,21 +60,20 @@ public class TunnelVpnService extends VpnService
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {
-        return m_Core.onStartCommand(intent, flags, startId);
+        return m_Manager.onStartCommand(intent, flags, startId);
     }
 
     @Override
     public void onCreate()
     {
-        PsiphonData.getPsiphonData().setCurrentTunnelCore(m_Core);
-        m_Core.onCreate();
+        PsiphonData.getPsiphonData().setCurrentTunnelManager(m_Manager);
     }
 
     @Override
     public void onDestroy()
     {
-        PsiphonData.getPsiphonData().setCurrentTunnelCore(null);
-        m_Core.onDestroy();
+        PsiphonData.getPsiphonData().setCurrentTunnelManager(null);
+        m_Manager.onDestroy();
     }
 
     @Override
@@ -88,21 +84,6 @@ public class TunnelVpnService extends VpnService
         stopSelf();
     }
     
-    public void setEventsInterface(IEvents eventsInterface)
-    {
-        m_Core.setEventsInterface(eventsInterface);
-    }
-    
-    public ServerInterface getServerInterface()
-    {
-        return m_Core.getServerInterface();
-    }
-    
-    public void setExtraAuthParams(List<Pair<String,String>> extraAuthParams)
-    {
-        m_Core.setExtraAuthParams(extraAuthParams);
-    }
-
     public VpnService.Builder newBuilder()
     {
         return new VpnService.Builder();

@@ -26,28 +26,7 @@
         android:layout_height="1dip"/>
 
     <RelativeLayout
-        android:id="@+id/SentStatisticsRow"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content">
-
-        <TextView
-            android:id="@+id/totalSent"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-        
-
-        <TextView
-            android:id="@+id/compressionSavingsSent"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:layout_alignParentRight="true"
-            android:textAppearance="?android:attr/textAppearanceLarge"/>
-
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:id="@+id/sentLabelRow"
+        android:id="@+id/sentHeaderRow"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content">
         
@@ -59,7 +38,7 @@
             android:textAppearance="?android:attr/textAppearanceSmall" />
 
         <TextView
-            android:id="@+id/compressionRatioSent"
+            android:id="@+id/totalSent"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
             android:layout_alignParentRight="true"
@@ -107,27 +86,7 @@
         android:layout_height="1dip"/>
 
     <RelativeLayout
-        android:id="@+id/ReceivedStatisticsRow"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content">
-
-        <TextView
-            android:id="@+id/totalReceived"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-
-        <TextView
-            android:id="@+id/compressionSavingsReceived"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:layout_alignParentRight="true"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:id="@+id/ReceivedLabelRow"
+        android:id="@+id/receivedHeaderRow"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content" >
 
@@ -139,7 +98,7 @@
             android:textAppearance="?android:attr/textAppearanceSmall" />
 
         <TextView
-            android:id="@+id/compressionRatioReceived"
+            android:id="@+id/totalReceived"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
             android:layout_alignParentRight="true"
