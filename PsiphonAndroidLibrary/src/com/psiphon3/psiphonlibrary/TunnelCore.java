@@ -225,7 +225,7 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
 
         notification.setLatestEventInfo(
             m_parentService,
-            m_parentService.getText(R.string.app_name),
+            m_parentService.getText(R.string.app_name_psiphon_pro),
             m_parentService.getText(contentTextID),
             invokeActivityIntent);
 
@@ -1395,7 +1395,7 @@ public class TunnelCore implements Connection.IStopSignalPending, Tun2Socks.IPro
 
             VpnService.Builder builder = ((TunnelVpnService)m_parentService).newBuilder();
             vpnInterfaceFileDescriptor = builder
-                    .setSession(m_parentService.getString(R.string.app_name))
+                    .setSession(m_parentService.getString(R.string.app_name_psiphon_pro))
                     .setMtu(PsiphonConstants.VPN_INTERFACE_MTU)
                     .addAddress(privateIpAddress, prefixLength)
                     .addRoute("0.0.0.0", 0)

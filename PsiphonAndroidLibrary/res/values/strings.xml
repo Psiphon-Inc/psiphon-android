@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <string name="app_name_psiphon_pro">Psiphon Pro</string>
     <string name="app_name">Psiphon</string>
     <string name="ssh_connecting">SSH connecting…</string>
     <string name="ssh_connected">SSH connected</string>
