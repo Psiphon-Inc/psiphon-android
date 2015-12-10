@@ -22,6 +22,8 @@ package com.psiphon3;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
@@ -320,6 +322,7 @@ public class StatusActivity
     
     static final String IAB_PUBLIC_KEY = "";
     static final String IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU = "";
+    static final String[] OTHER_VALID_IAB_SUBSCRIPTION_SKUS = {};
     static final int IAB_REQUEST_CODE = 10001;
     
     private void startIab()
@@ -361,15 +364,21 @@ public class StatusActivity
             if (result.isFailure())
             {
                 handleIabFailure(result);
+                return;
             }
-            else if (inventory.hasPurchase(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU))
+            
+            List<String> validSubscriptionSkus = Arrays.asList(OTHER_VALID_IAB_SUBSCRIPTION_SKUS);
+            validSubscriptionSkus.add(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU);
+            for (String validSku : validSubscriptionSkus)
             {
-                proceedWithValidSubscription();
+                if (inventory.hasPurchase(validSku))
+                {
+                    proceedWithValidSubscription();
+                    return;
+                }
             }
-            else
-            {
-                launchSubscriptionPurchaseFlow();
-            }
+            
+            launchSubscriptionPurchaseFlow();
         }
     };
     
