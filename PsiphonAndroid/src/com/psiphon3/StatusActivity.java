@@ -22,6 +22,7 @@ package com.psiphon3;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -367,7 +368,7 @@ public class StatusActivity
                 return;
             }
             
-            List<String> validSubscriptionSkus = Arrays.asList(OTHER_VALID_IAB_SUBSCRIPTION_SKUS);
+            List<String> validSubscriptionSkus = new ArrayList<String>(Arrays.asList(OTHER_VALID_IAB_SUBSCRIPTION_SKUS));
             validSubscriptionSkus.add(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU);
             for (String validSku : validSubscriptionSkus)
             {
