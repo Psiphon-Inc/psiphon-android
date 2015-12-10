@@ -24,11 +24,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -163,6 +165,11 @@ public class StatusActivity
 
         if (0 == intent.getAction().compareTo(HANDSHAKE_SUCCESS))
         {
+            if (!PsiphonData.getPsiphonData().getHasValidSubscription())
+            {
+                startIab();
+            }
+            
             // Show the home page. Always do this in browser-only mode, even
             // after an automated reconnect -- since the status activity was
             // brought to the front after an unexpected disconnect. In whole
@@ -188,6 +195,17 @@ public class StatusActivity
         }
 
         // No explicit action for UNEXPECTED_DISCONNECT, just show the activity
+    }
+    
+    @Override
+    protected void onPause()
+    {
+        if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected() &&
+                !PsiphonData.getPsiphonData().getHasValidSubscription())
+        {
+            doToggle();
+        }
+        super.onPause();   
     }
 
     public void onToggleClick(View v)
@@ -383,9 +401,8 @@ public class StatusActivity
         }
         catch (IllegalStateException ex)
         {
-            // do nothing
+            handleIabFailure(null);
         }
-        
     }
     
     private void launchSubscriptionPurchaseFlow()
@@ -400,7 +417,7 @@ public class StatusActivity
         }
         catch (IllegalStateException ex)
         {
-            // do nothing
+            handleIabFailure(null);
         }
     }
     
@@ -410,20 +427,61 @@ public class StatusActivity
         doStartUp();
     }
     
+    // NOTE: result may be null
     private void handleIabFailure(IabResult result)
     {
         // try again next time
         deInitIab();
         
-        if (result.getResponse() == IabHelper.IABHELPER_USER_CANCELLED)
+        if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected())
         {
-            return;
+            // Stop the tunnel
+            doToggle();
+            promptForFreeVersion();
         }
-        
+        else
+        {
+            if (result != null &&
+                    result.getResponse() == IabHelper.IABHELPER_USER_CANCELLED)
+            {
+                promptForFreeVersion();
+            }
+            else
+            {
+                // Start the tunnel anyway, IAB will get checked again once the tunnel is connected
+                doStartUp();
+            }
+        }
+    }
+    
+    private void promptForFreeVersion()
+    {
         new AlertDialog.Builder(this)
-        .setTitle("IAB Failure")
-        .setMessage(result.getMessage())
+        .setTitle("Subscription failed")
+        .setMessage("Try the free version of Psiphon?")
         .setPositiveButton("OK",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        final String psiphonPackageName = "com.psiphon3";
+                        Intent launchIntent = getPackageManager().getLaunchIntentForPackage(psiphonPackageName);
+                        if (launchIntent != null)
+                        {
+                            startActivity(launchIntent);
+                        }
+                        else
+                        {
+                            try
+                            {
+                                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + psiphonPackageName)));
+                            }
+                            catch (ActivityNotFoundException ex)
+                            {
+                                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + psiphonPackageName)));
+                            }
+                        }
+                    }})
+        .setNegativeButton("No Thanks",
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int whichButton) {
