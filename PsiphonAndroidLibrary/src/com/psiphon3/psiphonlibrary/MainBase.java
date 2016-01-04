@@ -1003,9 +1003,13 @@ public abstract class MainBase {
         }
 
         protected boolean doVpnPrepare() {
+            
+            // Devices without VpnService support throw various undocumented
+            // exceptions, including ActivityNotFoundException and ActivityNotFoundException.
+            // For example: http://code.google.com/p/ics-openvpn/source/browse/src/de/blinkt/openvpn/LaunchVPN.java?spec=svn2a81c206204193b14ac0766386980acdc65bee60&name=v0.5.23&r=2a81c206204193b14ac0766386980acdc65bee60#376
             try {
                 return vpnPrepare();
-            } catch (ActivityNotFoundException e) {
+            } catch (Exception e) {
                 MyLog.e(R.string.tunnel_whole_device_exception, MyLog.Sensitivity.NOT_SENSITIVE);
 
                 // Turn off the option and abort.
@@ -1030,9 +1034,6 @@ public abstract class MainBase {
 
             Intent intent = VpnService.prepare(this);
             if (intent != null) {
-                // Catching ActivityNotFoundException as per:
-                // http://code.google.com/p/ics-openvpn/source/browse/src/de/blinkt/openvpn/LaunchVPN.java?spec=svn2a81c206204193b14ac0766386980acdc65bee60&name=v0.5.23&r=2a81c206204193b14ac0766386980acdc65bee60#376
-                //
                 // TODO: can we disable the mode before we reach this this
                 // failure point with
                 // resolveActivity()? We'll need the intent from prepare() or
