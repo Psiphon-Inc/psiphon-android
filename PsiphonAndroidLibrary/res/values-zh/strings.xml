@@ -41,7 +41,7 @@
   <string name="ServerInterface.HTTPSRequestFailed">HTTPS请求失败并出现错误: </string>
   <string name="socks_ports_failed">未能启动SOCKS代理：找不到可用的端口。</string>
   <string name="http_proxy_ports_failed">未能启动HTTP代理：找不到可用的端口。</string>
-  <string name="socks_port_in_use">另一个应用程序正在使用端口%d，不能继续。</string>
+  <string name="socks_port_in_use">请求的本地SOCKS代理端口 %d 已经被其他应用占用。无法继续。</string>
   <string name="transparent_proxy_running">在端口上运行的透明代理%d</string>
   <string name="transparent_proxy_ports_failed">透明代理运行失败：找不到可用的端口。</string>
   <string name="transparent_proxy_command_failed">透明代理配置命令失败：%s</string>
@@ -83,11 +83,9 @@
   <string name="transparent_proxy_routing_failed">启动透明代理路由失败：%s</string>
   <string name="transparent_proxy_routing_running">透明代理路由正在运行</string>
   <string name="transparent_proxy_routing_stopped">透明代理路由停止了</string>
-  <string name="final_status_request_failed">最后状态请求失败</string>
   <string name="current_network_type">当前网络：%s</string>
   <string name="dns_resolver">DNS解析程序：%s</string>
   <string name="get_active_network_dns_resolvers_failed">获取活跃网络的DNS解析程序失败</string>
-  <string name="preemptive_bind_failed">抢先式绑定失败</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">无法检索当前应用程序的信息包</string>
   <string name="UpgradeManager.UpgradeFileWriteFailed">写入升级文件失败</string>
   <string name="UpgradeManager.UpgradeDownloadFailed">下载升级失败</string>
@@ -106,9 +104,9 @@
   <string name="compression_savings">%s 保存</string>
   <string name="start">启动</string>
   <string name="stop">停止</string>
-  <string name="status_tab_name">状况</string>
+  <string name="home_tab_name">主页</string>
   <string name="settings_tab_name">选项</string>
-  <string name="statistics_tab_name">统计数据</string>
+  <string name="statistics_tab_name">状态</string>
   <string name="logs_tab_name">日志</string>
   <string name="socks_proxy_address">本地SOCKS代理正在运行 %s</string>
   <string name="http_proxy_address">本地HTTP代理正在运行 %s</string>
@@ -117,6 +115,11 @@
   <string name="share_proxies_prompt_message">需要重新启动这款应用程序使此设置生效。</string>
   <string name="share_proxies_prompt_positive">现在重新启动</string>
   <string name="share_proxies_prompt_negative">取消</string>
+  <string name="use_proxy_settings_toggle">通过HTTP代理连接</string>
+  <string name="use_system_proxy_settings_radio">使用系统网络设置</string>
+  <string name="use_custom_proxy_settings_radio">使用以下设置：</string>
+  <string name="custom_proxy_settings_host">主机地址</string>
+  <string name="custom_proxy_settings_port">端口</string>
   <string name="region_name_any">最佳性能</string>
   <string name="region_name_us">美国</string>
   <string name="region_name_gb">英国</string>
@@ -128,11 +131,44 @@
   <string name="region_name_nl">荷兰</string>
   <string name="about">关于赛风</string>
   <string name="feedback">反馈</string>
-  <string name="tunnel_whole_device_toggle">全局代理 (需要获取最高权限或安卓4.0+)</string>
+  <string name="tunnel_whole_device_toggle">使整个设备通过隧道（需要安卓4.0以上）</string>
   <string name="region_selector">选择区域</string>
   <string name="network_proxy_connect_exception">无法连接到网络的 HTTP 代理：%s</string>
+  <string name="network_proxy_connect_information">正在通过您的HTTP代理连接：%s</string>
+  <string name="network_proxy_connect_invalid_values">无效的HTTP代理设置</string>
   <string name="tunnel_whole_device_exception">你的设备不支持没有获得最高权限的全局代理选项。</string>
   <string name="run_polipo_failed">运行Polipo失败: %s</string>
   <string name="wdm_force_iptables_toggle">强行获取最高权限进行全局代理的方法</string>
   <string name="http_prefix_toggle">伪装成HTTP</string>
+  <string name="preference_notifications_title">通知</string>
+  <string name="preference_notifications_with_sound_title">声音</string>
+  <string name="preference_notifications_with_sound_summary">当连接状态改变时发出声音</string>
+  <string name="preference_notifications_with_vibrate_title">震动</string>
+  <string name="preference_notifications_with_vibrate_summary">当连接状态改变时震动</string>
+  <string name="moreOptions">更多选项</string>
+  <string name="root_mode_not_supported">您的安卓版本不支持植根设备(root)模式。
+
+</string>
+  <string name="proxySettingsCategoryTitle">代理设置</string>
+  <string name="custom_proxy_host_summary">代理服务器的主机名或IP地址</string>
+  <string name="custom_proxy_port_summary">代理服务器端口</string>
+  <string name="use_proxy_authentication_title">使用代理认证</string>
+  <string name="proxy_username_title">代理用户名</string>
+  <string name="proxy_username_summary">代理认证所用的用户名</string>
+  <string name="proxy_password_title">代理密码</string>
+  <string name="proxy_password_summary">代理认证所用密码</string>
+  <string name="proxy_domain_title">代理域名</string>
+  <string name="proxy_domain_summary">代理认证所用域名</string>
+  <string name="http_proxy_port_in_use">请求的本地HTTP代理端口 %d 已经被其他应用占用。无法继续。</string>
+  <!--When the split tunnel option is enabled, the current region is used to determine which requests should and shouldn't be tunneled. This log message tells the user which region (in '%s') is being used for this decision.-->
+  <string name="split_tunnel_region">分割隧道区：%s</string>
+  <!--When the split tunnel option is enabled, this log message is shown when a domain is not tunneled (because it's detected as being in the same region as the user). The '%s' is the domain name.-->
+  <string name="untunneled_address">取消隧道：%s</string>
+  <!--The log message is shown to the user if an upstream proxy error occurs. The '%s' is the detail of the error.-->
+  <string name="upstream_proxy_error">上游代理错误：%s</string>
+  <string name="diagnostic">诊断：%s</string>
+  <string name="start_tunnel_failed">启动隧道失败：%s</string>
+  <string name="tunnel_connecting">隧道连接中…</string>
+  <string name="tunnel_connected">隧道已连接</string>
+  <string name="waiting">等待中…</string>
 </resources>

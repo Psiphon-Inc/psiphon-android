@@ -41,7 +41,6 @@
   <string name="ServerInterface.HTTPSRequestFailed">HTTPS-forespørsel feilet med følgende melding:</string>
   <string name="socks_ports_failed">Klarte ikke å starte SOCKS-mellomtjener: ingen tilgjengelige porter funnet</string>
   <string name="http_proxy_ports_failed">Klarte ikke å starte HTTP-mellomtjener: ingen tilgjengelige porter funnet</string>
-  <string name="socks_port_in_use">Port %d er allerede i bruk av et annet program. Kan ikke fortsette.</string>
   <string name="transparent_proxy_running">Gjennomsiktig mellomtjener kjører på port %d</string>
   <string name="transparent_proxy_ports_failed">Klarte ikke å starte gjennomsiktig mellomtjener: ingen tilgjengelige porter funnet</string>
   <string name="transparent_proxy_command_failed">Gjennomsiktig mellomtjenerinformmasjons-kommando feilet: %s</string>
@@ -83,11 +82,9 @@
   <string name="transparent_proxy_routing_failed">Klarte ikke å starte gjennomsiktig mellomtjener-ruting: %s</string>
   <string name="transparent_proxy_routing_running">Gjennomsiktig mellomtjener-ruting kjører</string>
   <string name="transparent_proxy_routing_stopped">Gjennomsiktig nettleser-ruting stoppet</string>
-  <string name="final_status_request_failed">Siste statusforespørsel feilet</string>
   <string name="current_network_type">Gjeldende nettverk: %s</string>
   <string name="dns_resolver">DNS oversetter: %s</string>
   <string name="get_active_network_dns_resolvers_failed">Mottak av aktive DNS-oversettere feilet</string>
-  <string name="preemptive_bind_failed">Forebyggende tilknytning feilet</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">Klarte ikke å motta pakkeinfo for gjeldende program</string>
   <string name="UpgradeManager.UpgradeFileWriteFailed">Klarte ikke å skrive oppgraderingsfil</string>
   <string name="UpgradeManager.UpgradeDownloadFailed">Nedlasting av oppgraderinger feilet</string>
@@ -133,7 +130,6 @@
   <string name="region_name_nl">Nederland</string>
   <string name="about">Om Psiphon</string>
   <string name="feedback">Tilbakemeldinger</string>
-  <string name="tunnel_whole_device_toggle">Tunnel over-hele-fjøla (krever superbrukerrettigheter eller Android 4.0+)</string>
   <string name="region_selector">Velg region</string>
   <string name="network_proxy_connect_exception">Klarte ikke å koble til nettverkets HTTP-mellomtjener: %s</string>
   <string name="network_proxy_connect_information">Kobler til via din HTTP-mellomtjener: %s</string>
@@ -149,4 +145,17 @@
   <string name="preference_notifications_with_vibrate_summary">Vibrer når tilkoblingsstatus endres</string>
   <string name="moreOptions">Flere valg</string>
   <string name="root_mode_not_supported">Superbruker-modus er ikke støttet på denne versjonen av Android</string>
+  <string name="proxySettingsCategoryTitle">Innstillinger for mellomtjener</string>
+  <string name="custom_proxy_host_summary">Tjenernavn eller IP-addresse tilhørende mellomtjener</string>
+  <string name="custom_proxy_port_summary">Port brukt av mellomtjener</string>
+  <string name="use_proxy_authentication_title">Bruk gyldighetssjekk for mellomtjener</string>
+  <string name="proxy_username_title">Brukernavn for mellomtjener</string>
+  <string name="proxy_username_summary">Brukernavn for sjekk av gyldighet for mellomtjener</string>
+  <string name="proxy_password_title">Mellomtjener-passord</string>
+  <string name="proxy_password_summary">Passord for sjekk av gyldighet for mellomtjener</string>
+  <string name="proxy_domain_title">Mellomtjener-domene</string>
+  <string name="proxy_domain_summary">Domene for sjekk av gyldighet for mellomtjener</string>
+  <!--When the split tunnel option is enabled, the current region is used to determine which requests should and shouldn't be tunneled. This log message tells the user which region (in '%s') is being used for this decision.-->
+  <!--When the split tunnel option is enabled, this log message is shown when a domain is not tunneled (because it's detected as being in the same region as the user). The '%s' is the domain name.-->
+  <!--The log message is shown to the user if an upstream proxy error occurs. The '%s' is the detail of the error.-->
 </resources>
