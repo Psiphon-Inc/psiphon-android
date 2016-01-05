@@ -800,14 +800,15 @@ public abstract class MainBase {
                 return;
             }
 
+            updateEgressRegionPreference(selectedRegionCode);
+
             // NOTE: reconnects even when Any is selected: we could select a
             // faster server
             if (isServiceRunning()) {
                 m_restartTunnel = true; 
                 stopTunnelService();
+                // The tunnel will get restarted in m_updateServiceStateTimer
             }
-
-            updateEgressRegionPreference(selectedRegionCode);
         }
 
         protected void updateEgressRegionPreference(String egressRegionPreference) {
@@ -828,13 +829,14 @@ public abstract class MainBase {
                 return;
             }
 
+            boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
+            updateWholeDevicePreference(tunnelWholeDevicePreference);
+
             if (isServiceRunning()) {
                 m_restartTunnel = true; 
                 stopTunnelService();
+                // The tunnel will get restarted in m_updateServiceStateTimer
             }
-
-            boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
-            updateWholeDevicePreference(tunnelWholeDevicePreference);
         }
 
         protected void updateWholeDevicePreference(boolean tunnelWholeDevicePreference) {
@@ -970,7 +972,7 @@ public abstract class MainBase {
             if (m_restartTunnel &&
                     !isServiceRunning()) {
                 m_restartTunnel = false;
-                startTunnelService();
+                startTunnel();
             }
         }
         
@@ -1118,11 +1120,12 @@ public abstract class MainBase {
             if (request == REQUEST_CODE_PREPARE_VPN && result == RESULT_OK) {
                 startTunnelService();
             } else if (request == REQUEST_CODE_PREFERENCE) {
+                updateProxySettingsFromPreferences();
                 if (isProxySettingsRestartRequired() && isServiceRunning()) {
                     m_restartTunnel = true;
                     stopTunnelService();
+                    // The tunnel will get restarted in m_updateServiceStateTimer
                 }
-                updateProxySettingsFromPreferences();
             }
         }
 
