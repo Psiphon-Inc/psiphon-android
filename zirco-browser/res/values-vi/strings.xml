@@ -159,6 +159,7 @@
   <string name="PreferencesActivity.UserAgentCustom">Tùy chỉnh</string>
   <string name="Main.MenuCopyLinkUrl">Sao chép url liên kết</string>
   <string name="Main.MenuViewImage">Xem hình ảnh</string>
+  <string name="Main.MenuCopyImageUrl">Sao chép hình ảnh url</string>
   <string name="Main.MenuDownloadImage">Tải hình ảnh xuống</string>
   <string name="Main.MenuSendEmail">Gửi thư điện tử</string>
   <string name="Main.MenuCopyEmailUrl">Sao chép url thư điện tử</string>
@@ -227,6 +228,7 @@
   <string name="QuickAction.Share">Chia sẻ</string>
   <string name="QuickAction.SelectText">Chọn văn bản</string>
   <string name="QuickAction.MobileView">Xem trên di động</string>
+  <string name="AboutActivity.OtherLicenseText">Ứng dụng này bao gồm mã từ các dự án Zirco Browser (https://code.google.com/p/zirco-browser/), được cấp phép theo GPLv3. Nó cũng bao gồm mã từ dự án GreenDroid (https://github.com/cyrilmottier/GreenDroid), và từ  dự án Shaman (https://github.com/emergentdotorg/shaman), cả hai được cấp phép theo giấy phép Apache, phiên bản 2.</string>
   <string name="PreferencesActivity.WeavePreferenceTitle">Đồng bộ dấu trang Firefox</string>
   <string name="PreferencesActivity.WeavePreferenceSummary">Quản lý các thiết lập đồng bộ dấu trang bằng Firefox Sync.</string>
   <string name="PreferencesActivity.UseWeavePreferenceTitle">Sử dụng Firefox Sync.</string>

@@ -90,7 +90,7 @@
   <string name="PreferencesActivity.AdBlockerWhiteListPreferenceSummary">Behandling av hvitliste for reklameblokkering.</string>
   <string name="Commons.Ok">Ok</string>
   <string name="Commons.Cancel">Avbryt</string>
-  <string name="Commons.PleaseWait">Vennligst vent</string>
+  <string name="Commons.PleaseWait">Vent</string>
   <string name="Commons.Yes">Ja</string>
   <string name="Commons.No">Nei</string>
   <string name="Commons.NoUndoMessage">Denne handlingen kan ikke omgjøres. Vil du fortsette?</string>
