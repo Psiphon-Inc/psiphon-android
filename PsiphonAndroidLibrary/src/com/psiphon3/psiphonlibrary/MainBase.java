@@ -1120,11 +1120,18 @@ public abstract class MainBase {
             if (request == REQUEST_CODE_PREPARE_VPN && result == RESULT_OK) {
                 startTunnelService();
             } else if (request == REQUEST_CODE_PREFERENCE) {
-                updateProxySettingsFromPreferences();
+                // Don't call updateProxySettingsFromPreferences() first, because
+                // isProxySettingsRestartRequired() looks at the stored preferences.
+                // But, it should be called before stopping the tunnel, since the tunnel
+                // gets asyncronously restarted, and we want it to be restarted with
+                // the new settings.
                 if (isProxySettingsRestartRequired() && isServiceRunning()) {
+                    updateProxySettingsFromPreferences();
                     m_restartTunnel = true;
                     stopTunnelService();
                     // The tunnel will get restarted in m_updateServiceStateTimer
+                } else {
+                    updateProxySettingsFromPreferences();
                 }
             }
         }
