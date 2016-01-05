@@ -972,7 +972,7 @@ public abstract class MainBase {
             if (m_restartTunnel &&
                     !isServiceRunning()) {
                 m_restartTunnel = false;
-                startTunnel();
+                startTunnel(this);
             }
         }
         
