@@ -17,7 +17,7 @@
   <string name="FeedbackActivity.InvalidURLParameters">在提交的反馈表单中有无效的URL参数。</string>
   <string name="FeedbackActivity.GetHTMLContentFailed">未能获取反馈页面的内容。</string>
   <string name="StatusActivity.WholeDeviceTunnelPromptTitle">隧道加密设备传输的数据？</string>
-  <string name="StatusActivity.WholeDeviceTunnelPromptMessage">我们提供隧道加密整个设备传输数据的选项。使用此选项，你所有应用程序的网络数据交换包括所有的浏览器，将通过赛风进行隧道加密。或者，您也可以只选择将赛风浏览器的数据进行隧道加密，其他应用程序的数据将直接通过你的标准网络接口来传输。</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptMessage">全局代理模式在您的设备上可以使用。\n\n打开这个选项后，赛风将代理您设备上所有程序的网络流量。\n\n当然，您也可以只使用内置的赛风浏览器，让其他程序通过正常的网络流量。</string>
   <string name="StatusActivity.WholeDeviceTunnelPositiveButton">隧道加密设备传输的数据</string>
   <string name="StatusActivity.WholeDeviceTunnelNegativeButton">只使用赛风浏览器</string>
 </resources>
