@@ -16,8 +16,8 @@
   <string name="FeedbackActivity.SubmitFeedbackFailed">Fallo al enviar sus comentarios</string>
   <string name="FeedbackActivity.InvalidURLParameters">Parámetros de URL no válidos en el formulario de envío de comentarios</string>
   <string name="FeedbackActivity.GetHTMLContentFailed">No se pudo obtener el contenido de la página de comentarios</string>
-  <string name="StatusActivity.WholeDeviceTunnelPromptTitle">¿Incluír en un túnel todo el dispositivo?</string>
-  <string name="StatusActivity.WholeDeviceTunnelPromptMessage">La opción de pasar por túnel el dispositivo completo está disponible para su dispositivo.\n\nCon esta opción, todo su tráfico de Internet para todas las aplicaciones, incluyendo todos los navegadores, se pasará por túnel a través de Psiphon.\n\nComo alternativa, puede elegir pasar por túnel sólo el navegador Psiphon del paquete, lo cual dejará a todas las demás aplicaciones yendo directamente a través de su conexión a Internet estándar.</string>
-  <string name="StatusActivity.WholeDeviceTunnelPositiveButton">Dirigir por un túnel todo el dispositivo</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptTitle">¿Tunelizar dispositivo al completo?</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptMessage">La opción de tunelizar el dispositivo al completo está disponible para su dispositivo.\n\nCon esta opción, todo su tráfico de Internet para todas las aplicaciones, incluyendo todos los navegadores, se pasará por túnel a través de Psiphon.\n\nComo alternativa, puede elegir pasar por túnel sólo el navegador Psiphon del paquete, lo cual dejará a todas las demás aplicaciones yendo directamente a través de su conexión a Internet estándar.</string>
+  <string name="StatusActivity.WholeDeviceTunnelPositiveButton">Tunelizar dispositivo al completo</string>
   <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Usar solo el navegador Psiphon</string>
 </resources>

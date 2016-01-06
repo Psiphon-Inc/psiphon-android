@@ -41,7 +41,7 @@
   <string name="ServerInterface.HTTPSRequestFailed">HTTPS talebi hata ile başarısız oldu:</string>
   <string name="socks_ports_failed">SOCKS vekil sunucusu başlatma başarısız: kullanılabilir bağlantı noktası bulunamadı</string>
   <string name="http_proxy_ports_failed">HTTP vekil sunucu başlatılamadı: kullanılabilir bağlantı noktası yok</string>
-  <string name="socks_port_in_use">Bağlantı noktası %d zaten farklı bir uygulama tarafından kullanımda. Devam edilemiyor.</string>
+  <string name="socks_port_in_use">İstenen yerel SOCKS vekil sunucu bağlantı noktası %d başka bir uygulama tarafından kullanılıyor. Devam edilemez.</string>
   <string name="transparent_proxy_running">Saydam vekil sunucu %d bağlantı noktasında çalışıyor</string>
   <string name="transparent_proxy_ports_failed">Saydam vekil sunucu başlatılamadı: kullanılabilir bağlantı noktası yok</string>
   <string name="transparent_proxy_command_failed">Saydam vekil sunucu yapılandırma komutu başarısız: %s</string>
@@ -83,11 +83,9 @@
   <string name="transparent_proxy_routing_failed">Saydam vekil sunucu yönlendirme başlatılamadı: %s</string>
   <string name="transparent_proxy_routing_running">Saydam vekil sunucu yönlendirmesi çalışıyor</string>
   <string name="transparent_proxy_routing_stopped">Saydam vekil sunucu yönlendirmesi durduruldu</string>
-  <string name="final_status_request_failed">Son durum talebi başarısız</string>
   <string name="current_network_type">Geçerli ağ: %s</string>
   <string name="dns_resolver">DNS çözücü: %s</string>
   <string name="get_active_network_dns_resolvers_failed">Etkin ağ DNS çözücülerini alma başarısız</string>
-  <string name="preemptive_bind_failed">Öncelikli atama başarısız</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">Geçerli uygulama için paket bilgisi getirme başarısız</string>
   <string name="UpgradeManager.UpgradeFileWriteFailed">Yükseltme dosyasına yazılamadı</string>
   <string name="UpgradeManager.UpgradeDownloadFailed">Yükseltme indirmesi başarısız</string>
@@ -133,7 +131,7 @@
   <string name="region_name_nl">Hollanda</string>
   <string name="about">Psiphon Hakkında</string>
   <string name="feedback">Geribildirim</string>
-  <string name="tunnel_whole_device_toggle">Tüm Cihazı Tünelle (Root veya Android 4.0+ gerektirir)</string>
+  <string name="tunnel_whole_device_toggle">Tüm Cihazı Tünelle (Android 4.0+ gerektirir)</string>
   <string name="region_selector">Bölgeyi seç</string>
   <string name="network_proxy_connect_exception">Ağın HTTP Vekil Sunucusu\'na bağlanılamadı: %s</string>
   <string name="network_proxy_connect_information">HTTP Vekil Sunucunuz aracılığıyla bağlanılıyor: %s</string>
@@ -149,4 +147,26 @@
   <string name="preference_notifications_with_vibrate_summary">Bağlantı durumu değiştiğinde titret</string>
   <string name="moreOptions">Daha Fazla Seçenek</string>
   <string name="root_mode_not_supported">Android\'in bu sürümünde root modu desteklenmiyor</string>
+  <string name="proxySettingsCategoryTitle">Vekil Sunucu Ayarları</string>
+  <string name="custom_proxy_host_summary">Vekil sunucu makine adı veya IP\'si</string>
+  <string name="custom_proxy_port_summary">Vekil sunucu bağl. nokt.</string>
+  <string name="use_proxy_authentication_title">Vekil sunucu kimlik doğrulaması kullan</string>
+  <string name="proxy_username_title">Vekil sunucu kullanıcı adı</string>
+  <string name="proxy_username_summary">Vekil sunucu kimlik doğrulaması için kullanıcı adı</string>
+  <string name="proxy_password_title">Vekil sunucu parolası</string>
+  <string name="proxy_password_summary">Vekil sunucu kimlik doğrulaması için parola</string>
+  <string name="proxy_domain_title">Vekil sunucu alan adı</string>
+  <string name="proxy_domain_summary">Vekil sunucu kimlik doğrulaması için alan adı</string>
+  <string name="http_proxy_port_in_use">İstenen yerel HTTP vekil sunucu bağlantı noktası %d başka bir uygulama tarafından kullanılıyor. Devam edilemez.</string>
+  <!--When the split tunnel option is enabled, the current region is used to determine which requests should and shouldn't be tunneled. This log message tells the user which region (in '%s') is being used for this decision.-->
+  <string name="split_tunnel_region">Ayrı tünel bölgesi: %s</string>
+  <!--When the split tunnel option is enabled, this log message is shown when a domain is not tunneled (because it's detected as being in the same region as the user). The '%s' is the domain name.-->
+  <string name="untunneled_address">Tünellenmeyen: %s</string>
+  <!--The log message is shown to the user if an upstream proxy error occurs. The '%s' is the detail of the error.-->
+  <string name="upstream_proxy_error">Üst vekil sunucu hatası: %s</string>
+  <string name="diagnostic">Tanı: %s</string>
+  <string name="start_tunnel_failed">Tünel başlatma başarısız: %s</string>
+  <string name="tunnel_connecting">Tünel bağlanıyor...</string>
+  <string name="tunnel_connected">Tünel bağlı</string>
+  <string name="waiting">Bekliyor...</string>
 </resources>

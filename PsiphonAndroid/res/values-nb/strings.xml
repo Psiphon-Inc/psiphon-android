@@ -12,7 +12,7 @@
   <string name="browser_task_label">Psiphon nettleser</string>
   <string name="FeedbackActivity.DefaultText">Hvis du har spesifikke kommentarer, videre informasjon om nettsider som ikke virker, eller hvis dette datafeltet ikke virker for din del, send e-post til &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">Takk for at du sender inn din tilbakemelding</string>
-  <string name="FeedbackActivity.Failure">Innsending feilet. Vennligst prøv igjen.</string>
+  <string name="FeedbackActivity.Failure">Innsending feilet. Prøv igjen.</string>
   <string name="FeedbackActivity.SubmitFeedbackFailed">Klarte ikke å sende inn tilbakemelding</string>
   <string name="FeedbackActivity.InvalidURLParameters">Ugyldig nettadresse-paramater i feltet for innsending av tilbakemelding</string>
   <string name="FeedbackActivity.GetHTMLContentFailed">Klarte ikke å hente innholdet i tilbakemeldingen</string>

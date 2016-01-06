@@ -1,24 +1,24 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">برنامج Psiphon</string>
+  <string name="app_name"> سايفون</string>
   <string name="banner_desc">شعار الشركة الراعية؛ انقر لزيارة الصفحة الرئيسية للشركة الراعية</string>
   <string name="start_desc">الاتصال بسايفون؛ انقر للاتصال</string>
-  <string name="message_image_success_desc">أيقونة تشير إلى رسالة نجاح</string>
+  <string name="message_image_success_desc">أيقونة تشير إلى رسالة النجاح </string>
   <string name="message_image_error_desc">أيقونة تشير إلى رسالة خطأ</string>
   <string name="message_image_debug_desc">أيقونة تشير إلى رسالة تصحيح الخطأ</string>
   <string name="message_image_warning_desc">أيقونة تشير إلى رسالة تحذير</string>
   <string name="exit">خروج</string>
   <string name="open_browser">فتح المتصفح</string>
-  <string name="browser_task_label">متصفح برنامج Psiphon 3</string>
+  <string name="browser_task_label">متصفح سايفون </string>
   <string name="FeedbackActivity.DefaultText">اذا كانت لديك أي نعليقات محدده٫ آو معلومات آخرى حول مواقع لا تعمل٫ أو إذا كانت هذه الاستماره لا تعمل٫ يرجى أرسال رساله إلى :
  l &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
   <string name="FeedbackActivity.Success">نشكرك على إرسال الرد.</string>
   <string name="FeedbackActivity.Failure">فشل الارسال. يرجى معاودة المحاوله.</string>
   <string name="FeedbackActivity.SubmitFeedbackFailed">فشل في إرسال الرد.</string>
-  <string name="FeedbackActivity.InvalidURLParameters">باراميترات خاظئه في استمارة الرد.</string>
+  <string name="FeedbackActivity.InvalidURLParameters">باراميترات خاطئه في استمارة الرد.</string>
   <string name="FeedbackActivity.GetHTMLContentFailed">فشل في الحصول على مضمون صفحة الرد.</string>
-  <string name="StatusActivity.WholeDeviceTunnelPromptTitle">نقل عبر مسار امن للجهاز بأكمله ؟</string>
-  <string name="StatusActivity.WholeDeviceTunnelPromptMessage">خيار النقل عبر مسار امن للجهاز بأكمله متوفر لجهازك\nمع هذا الخيار, جميع بياناتك عبر الانترنت لجميع تطبيقاتك و من ضمنها جميع المتصفحات ستم نقلها عبر مسار امن من خلال سايفون\nبديلاً عن ذلك، يمكنك اختيار النقل عبر مسار امن فقط لمتصفح سايفون والذي سيترك جميع التطبيقات ألاخرى لتنقل مباشرة من خلال اتصالك العادي بالإنترنت.</string>
-  <string name="StatusActivity.WholeDeviceTunnelPositiveButton">نقل عبر مسار امن للجهاز بأكمله </string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptTitle">نقل الجهاز بأكمله عبر النفق؟</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptMessage"> خيار جهاز المسار الآمن متوفر بأكمله لجهازك. \ n \ n مع هذا الخيار ، كل حركة المرور على الإنترنت الخاص بك لجميع التطبيقات، بما في ذلك جميع المتصفحات، ستمر من خلال سايفون . \ n \ يمكنك أيضا اختيار تمرير مجموعة متصفح سايفون فقط وذلك سيترك كل ألتطبيقات ألأخرى لتمر مباشرة من خلالإتصالك العادي بالإنترنت.</string>
+  <string name="StatusActivity.WholeDeviceTunnelPositiveButton">نقل الجهاز بأكمله عبر النفق</string>
   <string name="StatusActivity.WholeDeviceTunnelNegativeButton">استخدم متصفح سايفون فقط</string>
 </resources>

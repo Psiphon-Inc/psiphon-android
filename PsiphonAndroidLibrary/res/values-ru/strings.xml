@@ -41,7 +41,6 @@
   <string name="ServerInterface.HTTPSRequestFailed">Ошибка HTTPS запроса: </string>
   <string name="socks_ports_failed">Не удалось запустить SOCKS прокси: нет свободных портов</string>
   <string name="http_proxy_ports_failed">Не удалось запустить HTTP прокси: нет свободных портов</string>
-  <string name="socks_port_in_use">Ошибка: порт %d уже занят.  </string>
   <string name="transparent_proxy_running">Transparent прокси запущен на порту %d</string>
   <string name="transparent_proxy_ports_failed">Не удалось запустить transparent прокси: нет свободных портов</string>
   <string name="transparent_proxy_command_failed">Ошибка комманды конфигурации transparent прокси: %s</string>
@@ -83,11 +82,9 @@
   <string name="transparent_proxy_routing_failed">Не удалось запустить маршрутизацию transparent прокси: %s</string>
   <string name="transparent_proxy_routing_running">Маршрутизация transparent прокси запущена</string>
   <string name="transparent_proxy_routing_stopped">Маршрутизация transparent прокси остановленa</string>
-  <string name="final_status_request_failed">Ошибка запроса конечного статуса</string>
   <string name="current_network_type">Текущая сеть: %s</string>
   <string name="dns_resolver">DNS распознаватель: %s</string>
   <string name="get_active_network_dns_resolvers_failed">Ошибка определения активных DNS распознавателей сети </string>
-  <string name="preemptive_bind_failed">Ошибка упреждающего bind</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">Ошибка чтения package info данного приложения</string>
   <string name="UpgradeManager.UpgradeFileWriteFailed">Ошибка записи апгрейда</string>
   <string name="UpgradeManager.UpgradeDownloadFailed">Ошибка скачивания апгрейда</string>
@@ -133,7 +130,6 @@
   <string name="region_name_nl">Нидерланды</string>
   <string name="about">Что такое Psiphon</string>
   <string name="feedback">Отзыв</string>
-  <string name="tunnel_whole_device_toggle">Туннелирование всех интернет соединений(требует права root или Android 4.0+)</string>
   <string name="region_selector">Выберите регион</string>
   <string name="network_proxy_connect_exception">Ошибка соединения с HTTP прокси сети: %s</string>
   <string name="network_proxy_connect_information">Подключение через ваш HTTP Proxy: %s</string>
@@ -149,4 +145,7 @@
   <string name="preference_notifications_with_vibrate_summary">Вибрировать при изменении статуса подключения</string>
   <string name="moreOptions">Другие настройки</string>
   <string name="root_mode_not_supported">Режим root не поддерживается на этой версии Android</string>
+  <!--When the split tunnel option is enabled, the current region is used to determine which requests should and shouldn't be tunneled. This log message tells the user which region (in '%s') is being used for this decision.-->
+  <!--When the split tunnel option is enabled, this log message is shown when a domain is not tunneled (because it's detected as being in the same region as the user). The '%s' is the domain name.-->
+  <!--The log message is shown to the user if an upstream proxy error occurs. The '%s' is the detail of the error.-->
 </resources>

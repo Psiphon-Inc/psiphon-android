@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Psiphon Inc.
+ * Copyright (c) 2015, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,23 +23,17 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
 import org.json.JSONObject;
 
 import android.content.Context;
 import android.os.Build;
 import android.os.SystemClock;
 import android.util.Log;
-import android.util.Pair;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
@@ -67,18 +61,11 @@ public class PsiphonData
     private ArrayList<String> m_homePages;
     private long m_nextFetchRemoteServerList;
     private boolean m_statusActivityForeground;
-    private String m_clientSessionID;
-    private String m_tunnelSessionID;
-    private String m_tunnelRelayProtocol;
-    private int m_defaultSocksPort = PsiphonConstants.SOCKS_PORT;
-    private int m_defaultHttpProxyPort = PsiphonConstants.HTTP_PROXY_PORT;
-    private int m_socksPort;
-    private int m_httpProxyPort;
-    private int m_dnsProxyPort;
-    private int m_transparentProxyPort;
-    private boolean m_shareProxies;
+    private int m_configuredLocalSocksProxyPort = 0;
+    private int m_configuredLocalHttpProxyPort = 0;
+    private int m_listeningLocalSocksProxyPort = 0;
+    private int m_listeningLocalHttpProxyPort = 0;
     private boolean m_tunnelWholeDevice;
-    private boolean m_wdmForceIptables;
     private boolean m_useHTTPProxy;
     private boolean m_useSystemProxySettings;
     private boolean m_useCustomProxySettings;
@@ -89,14 +76,14 @@ public class PsiphonData
     private String m_proxyPassword;
     private String m_proxyDomain;
     private ProxySettings m_savedSystemProxySettings;
-    private boolean m_vpnServiceUnavailable;
-    private TunnelCore m_currentTunnelCore;
-    private ReportedStats m_reportedStats;
-    private boolean m_enableReportedStats;
+    private boolean m_startingTunnelManager = false;
+    private TunnelManager m_currentTunnelManager = null;
+    private IEvents m_currentEventsInterface = null;
     private DataTransferStats m_dataTransferStats;
     private boolean m_displayDataTransferStats;
     private boolean m_downloadUpgrades;
     private String m_egressRegion;
+    private String m_clientRegion;
     
     public int m_notificationIconConnecting = 0;
     public int m_notificationIconConnected = 0;
@@ -110,28 +97,32 @@ public class PsiphonData
         m_homePages = new ArrayList<String>();
         m_nextFetchRemoteServerList = -1;
         m_statusActivityForeground = false;
-        m_shareProxies = false;
         m_tunnelWholeDevice = false;
         m_useHTTPProxy = false;
         m_useSystemProxySettings = false;
         m_useCustomProxySettings = false;
         m_useProxyAuthentication = false;
-        m_vpnServiceUnavailable = false;
-        m_reportedStats = new ReportedStats();
-        m_enableReportedStats = true;
         m_dataTransferStats = new DataTransferStats();
         m_displayDataTransferStats = false;
         m_downloadUpgrades = false;
-        m_egressRegion = ServerInterface.ServerEntry.REGION_CODE_ANY;
+        m_egressRegion = PsiphonConstants.REGION_CODE_ANY;
     }
 
-    public synchronized void setHomePages(ArrayList<String> homePages)
+    public synchronized void clearHomePages()
     {
         m_homePages.clear();
-        for (int i = 0; i < homePages.size(); i++)
+    }
+
+    public synchronized void addHomePage(String url)
+    {
+        for (int i = 0; i < m_homePages.size(); i++)
         {
-            m_homePages.add(homePages.get(i));
+            if (m_homePages.get(i).equals(url))
+            {
+                return;
+            }
         }
+        m_homePages.add(url);
     }
 
     public synchronized ArrayList<String> getHomePages()
@@ -161,104 +152,44 @@ public class PsiphonData
         return m_statusActivityForeground;
     }
     
-    public synchronized void setClientSessionID(String clientSessionID)
+    public synchronized void setConfiguredLocalSocksProxyPort(int configuredLocalSocksProxyPort)
     {
-        m_clientSessionID = clientSessionID;
+        m_configuredLocalSocksProxyPort = configuredLocalSocksProxyPort;
+    }
+
+    public synchronized int getConfiguredLocalSocksProxyPort()
+    {
+        return m_configuredLocalSocksProxyPort;
+    }
+
+    public synchronized void setConfiguredLocalHttpProxyPort(int configuredLocalHttpProxyPort)
+    {
+        m_configuredLocalHttpProxyPort = configuredLocalHttpProxyPort;
+    }
+
+    public synchronized int getConfiguredLocalHttpProxyPort()
+    {
+        return m_configuredLocalHttpProxyPort;
     }
     
-    public synchronized String getClientSessionID()
+    public synchronized void setListeningLocalSocksProxyPort(int listeningLocalSocksProxyPort)
     {
-        return m_clientSessionID;
-    }
-    
-    public synchronized void setTunnelSessionID(String sessionID)
-    {
-        m_tunnelSessionID = sessionID;
-    }
-    
-    public synchronized String getTunnelSessionID()
-    {
-        return m_tunnelSessionID;
-    }
-    
-    public synchronized void setTunnelRelayProtocol(String relayProtocol)
-    {
-        m_tunnelRelayProtocol = relayProtocol;
-    }
-    
-    public synchronized String getTunnelRelayProtocol()
-    {
-        return m_tunnelRelayProtocol;
-    }
-    
-    public synchronized void setDefaultHttpProxyPort(int defaultHttpProxyPort)
-    {
-        m_defaultHttpProxyPort = defaultHttpProxyPort;
+        m_listeningLocalSocksProxyPort = listeningLocalSocksProxyPort;
     }
 
-    public synchronized int getDefaultHttpProxyPort()
+    public synchronized int getListeningLocalSocksProxyPort()
     {
-        return m_defaultHttpProxyPort;
+        return m_listeningLocalSocksProxyPort;
     }
 
-    public synchronized void setDefaultSocksPort(int defaultSocksPort)
+    public synchronized void setListeningLocalHttpProxyPort(int listeningLocalHttpProxyPort)
     {
-        m_defaultSocksPort = defaultSocksPort;
+        m_listeningLocalHttpProxyPort = listeningLocalHttpProxyPort;
     }
 
-    public synchronized int getDefaultSocksPort()
+    public synchronized int getListeningLocalHttpProxyPort()
     {
-        return m_defaultSocksPort;
-    }
-
-    public synchronized void setHttpProxyPort(int httpProxyPort)
-    {
-        m_httpProxyPort = httpProxyPort;
-    }
-
-    public synchronized int getHttpProxyPort()
-    {
-        return m_httpProxyPort;
-    }
-
-    public synchronized void setSocksPort(int socksPort)
-    {
-        m_socksPort = socksPort;
-    }
-
-    public synchronized int getSocksPort()
-    {
-        return m_socksPort;
-    }
-
-    public synchronized void setDnsProxyPort(int dnsProxyPort)
-    {
-        m_dnsProxyPort = dnsProxyPort;
-    }
-
-    public synchronized int getDnsProxyPort()
-    {
-        return m_dnsProxyPort;
-    }
-
-    public synchronized void setTransparentProxyPort(int transparentProxyPort)
-    {
-        m_transparentProxyPort = transparentProxyPort;
-    }
-
-    public synchronized int getTransparentProxyPort()
-    {
-        return m_transparentProxyPort;
-    }
-
-    public synchronized void setShareProxies(boolean shareProxies)
-    {
-        m_shareProxies = shareProxies;
-    }
-
-    public synchronized boolean getShareProxies()
-    {
-        return m_shareProxies;
+        return m_listeningLocalHttpProxyPort;
     }
 
     public synchronized void setTunnelWholeDevice(boolean tunnelWholeDevice)
@@ -271,16 +202,6 @@ public class PsiphonData
         return m_tunnelWholeDevice;
     }
 
-    public synchronized void setWdmForceIptables(boolean wdmForceIptables)
-    {
-        m_wdmForceIptables = wdmForceIptables;
-    }
-
-    public synchronized boolean getWdmForceIptables()
-    {
-        return m_wdmForceIptables;
-    }
-
     public synchronized void setEgressRegion(String egressRegion)
     {
         m_egressRegion = egressRegion;
@@ -289,6 +210,16 @@ public class PsiphonData
     public synchronized String getEgressRegion()
     {
         return m_egressRegion;
+    }
+
+    public synchronized void setClientRegion(String clientRegion)
+    {
+        m_clientRegion = clientRegion;
+    }
+
+    public synchronized String getClientRegion()
+    {
+        return m_clientRegion;
     }
 
     public synchronized void setUseHTTPProxy(boolean useHTTPProxy)
@@ -381,7 +312,6 @@ public class PsiphonData
     	return m_proxyDomain;
     }
 
-    
     public class ProxySettings
     {
         public String proxyHost;
@@ -493,27 +423,74 @@ public class PsiphonData
         
         return settings;
     }
-
-    public synchronized void setVpnServiceUnavailable(boolean vpnServiceUnavailable)
+    
+    // Returns a tunnel-core compatible proxy URL for the
+    // current user configured proxy settings.
+    // e.g., http://NTDOMAIN\NTUser:password@proxyhost:3375,
+    //       http://user:password@proxyhost:8080", etc.
+    public synchronized String getUpstreamProxyUrl(Context context)
     {
-        m_vpnServiceUnavailable = vpnServiceUnavailable;
+        ProxySettings proxySettings = getProxySettings(context);
+
+        if (proxySettings == null)
+        {
+            return "";
+        }
+
+        StringBuilder url = new StringBuilder();
+        url.append("http://");
+
+        NTCredentials credentials = (NTCredentials) getProxyCredentials();
+
+        if (credentials != null)
+        {
+            if (credentials.getDomain() != "")
+            {
+                url.append(credentials.getDomain());
+                url.append("\\");
+            }
+            url.append(credentials.getUserName());
+            url.append(":");
+            url.append(credentials.getPassword());
+            url.append("@");
+        }
+
+        url.append(proxySettings.proxyHost);
+        url.append(":");
+        url.append(proxySettings.proxyPort);
+
+        return url.toString();
     }
 
-    public synchronized boolean getVpnServiceUnavailable()
+    public synchronized void setStartingTunnelManager()
     {
-        return m_vpnServiceUnavailable;
+        m_startingTunnelManager = true;
     }
 
-    public synchronized void setCurrentTunnelCore(TunnelCore tunnelCore)
+    public synchronized boolean getStartingTunnelManager()
     {
-        // TODO: make TunnelCore a singleton; then get rid of this hack.
-        
-        m_currentTunnelCore = tunnelCore;
+        return m_startingTunnelManager;
     }
 
-    public synchronized TunnelCore getCurrentTunnelCore()
+    public synchronized void setCurrentTunnelManager(TunnelManager tunnelManager)
     {
-        return m_currentTunnelCore;
+        m_startingTunnelManager = false;
+        m_currentTunnelManager = tunnelManager;
+    }
+
+    public synchronized TunnelManager getCurrentTunnelManager()
+    {
+        return m_currentTunnelManager;
+    }
+
+    public synchronized void setCurrentEventsInterface(IEvents eventsInterface)
+    {
+        m_currentEventsInterface = eventsInterface;
+    }
+
+    public synchronized IEvents getCurrentEventsInterface()
+    {
+        return m_currentEventsInterface;
     }
 
     public synchronized void setNotificationIcons(
@@ -548,141 +525,6 @@ public class PsiphonData
         return m_notificationIconUpgradeAvailable;
     }
 
-    public synchronized void setEnableReportedStats(boolean enableReportedStats)
-    {
-        m_enableReportedStats = enableReportedStats;
-    }
-
-    public synchronized boolean getEnableReportedStats()
-    {
-        return m_enableReportedStats;
-    }
-
-    public synchronized ReportedStats getReportedStats()
-    {
-        if (!m_enableReportedStats)
-        {
-            return null;
-        }
-        return m_reportedStats;
-    }
-
-    public class ReportedStats
-    {
-        private Integer m_bytesTransferred = 0;
-        private Map<String, Integer> m_pageViewEntries;
-        private Map<String, Integer> m_httpsRequestEntries;
-        private List<Pair<Pattern, String>> m_pageViewRegexes;
-        private List<Pair<Pattern, String>> m_httpsRequestRegexes;
-            
-        ReportedStats()
-        {
-            this.m_pageViewEntries = new HashMap<String, Integer>();
-            this.m_httpsRequestEntries = new HashMap<String, Integer>();
-        }
-    
-        public synchronized void setRegexes(
-                List<Pair<Pattern, String>> pageViewRegexes,
-                List<Pair<Pattern, String>> httpsRequestRegexes)
-        {
-            this.m_pageViewRegexes = pageViewRegexes;
-            this.m_httpsRequestRegexes = httpsRequestRegexes;
-        }
-    
-        public synchronized void addBytesSent(int byteCount)
-        {
-            this.m_bytesTransferred += byteCount;
-        }
-    
-        public synchronized void addBytesReceived(int byteCount)
-        {
-            this.m_bytesTransferred += byteCount;
-        }
-        
-        public synchronized void upsertPageView(String entry)
-        {
-            String storeEntry = "(OTHER)";
-            
-            if (this.m_pageViewRegexes != null)
-            {
-                for (Pair<Pattern, String> regexReplace : this.m_pageViewRegexes)
-                {
-                    Matcher matcher = regexReplace.first.matcher(entry);
-                    if (matcher.find())
-                    {
-                        storeEntry = matcher.replaceFirst(regexReplace.second);
-                        break;
-                    }
-                }
-            }
-                
-            if (storeEntry.length() == 0) return;
-            
-            // Add/increment the entry.
-            Integer prevCount = this.m_pageViewEntries.get(storeEntry);
-            if (prevCount == null) prevCount = 0;
-            this.m_pageViewEntries.put(storeEntry, prevCount+1);
-            
-            MyLog.d("upsertPageView: ("+(prevCount+1)+") "+storeEntry);
-        }
-        
-        public synchronized void upsertHttpsRequest(String entry)
-        {
-            // TODO: This is identical code to the function above, because we don't
-            // yet know what a HTTPS "entry" looks like, because we haven't implemented
-            // HTTPS response parsing yet.
-            
-            String storeEntry = "(OTHER)";
-            
-            if (this.m_httpsRequestRegexes != null)
-            {
-                for (Pair<Pattern, String> regexReplace : this.m_httpsRequestRegexes)
-                {
-                    Matcher matcher = regexReplace.first.matcher(entry);
-                    if (matcher.find())
-                    {
-                        storeEntry = matcher.replaceFirst(regexReplace.second);
-                        break;
-                    }
-                }
-            }
-            
-            if (storeEntry.length() == 0) return;
-            
-            // Add/increment the entry.
-            Integer prevCount = this.m_httpsRequestEntries.get(storeEntry);
-            if (prevCount == null) prevCount = 0;
-            this.m_httpsRequestEntries.put(storeEntry, prevCount+1);
-        }
-        
-        public synchronized int getCount()
-        {
-            return this.m_pageViewEntries.size() + this.m_httpsRequestEntries.size();
-        }
-    
-        public synchronized Map<String, Integer> getPageViewEntries()
-        {
-            return this.m_pageViewEntries;
-        }
-    
-        public synchronized Map<String, Integer> getHttpsRequestEntries()
-        {
-            return this.m_httpsRequestEntries;
-        }
-    
-        public synchronized Integer getBytesTransferred()
-        {
-            return this.m_bytesTransferred;
-        }
-    
-        public synchronized void clear()
-        {
-            this.m_bytesTransferred = 0;
-            this.m_pageViewEntries.clear();
-            this.m_httpsRequestEntries.clear();
-        }
-    }
-    
     public synchronized void setDownloadUpgrades(boolean downloadUpgrades)
     {
         m_downloadUpgrades = downloadUpgrades;
@@ -714,18 +556,7 @@ public class PsiphonData
         private long m_connectedTime;
 
         private long m_totalBytesSent;
-        private long m_totalUncompressedBytesSent;
-        private long m_totalOverheadBytesSent;
         private long m_totalBytesReceived;
-        private long m_totalUncompressedBytesReceived;
-        private long m_totalOverheadBytesReceived;
-
-        private long m_sessionBytesSent;
-        private long m_sessionUncompressedBytesSent;
-        private long m_sessionOverheadBytesSent;
-        private long m_sessionBytesReceived;
-        private long m_sessionUncompressedBytesReceived;
-        private long m_sessionOverheadBytesReceived;
 
         public final static long SLOW_BUCKET_PERIOD_MILLISECONDS = 5*60*1000; 
         public final static long FAST_BUCKET_PERIOD_MILLISECONDS = 1000;
@@ -745,11 +576,7 @@ public class PsiphonData
         DataTransferStats()
         {
             m_totalBytesSent = 0;
-            m_totalUncompressedBytesSent = 0;
-            m_totalOverheadBytesSent = 0;
             m_totalBytesReceived = 0;
-            m_totalUncompressedBytesReceived = 0;
-            m_totalOverheadBytesReceived = 0;
 
             stop();
         }
@@ -775,41 +602,23 @@ public class PsiphonData
         private void resetBytesTransferred()
         {
             long now = SystemClock.elapsedRealtime();
-            this.m_sessionBytesSent = 0;
-            this.m_sessionUncompressedBytesSent = 0;
-            this.m_sessionOverheadBytesSent = 0;
-            this.m_sessionBytesReceived = 0;
-            this.m_sessionUncompressedBytesReceived = 0;
-            this.m_sessionOverheadBytesReceived = 0;
             this.m_slowBucketsLastStartTime = bucketStartTime(now, SLOW_BUCKET_PERIOD_MILLISECONDS);
             this.m_slowBuckets = newBuckets();
             this.m_fastBucketsLastStartTime = bucketStartTime(now, FAST_BUCKET_PERIOD_MILLISECONDS);
             this.m_fastBuckets = newBuckets();
         }
 
-        public synchronized void addBytesSent(int bytes, int uncompressedBytes, int overheadBytes)
+        public synchronized void addBytesSent(long bytes)
         {
             this.m_totalBytesSent += bytes;
-            this.m_totalUncompressedBytesSent += uncompressedBytes;
-            this.m_totalOverheadBytesSent += overheadBytes;
-            
-            this.m_sessionBytesSent += bytes;
-            this.m_sessionUncompressedBytesSent += uncompressedBytes;
-            this.m_sessionOverheadBytesSent += overheadBytes;
             
             manageBuckets();
             addSentToBuckets(bytes);
         }
     
-        public synchronized void addBytesReceived(int bytes, int uncompressedBytes, int overheadBytes)
+        public synchronized void addBytesReceived(long bytes)
         {
             this.m_totalBytesReceived += bytes;
-            this.m_totalUncompressedBytesReceived += uncompressedBytes;
-            this.m_totalOverheadBytesReceived += overheadBytes;
-
-            this.m_sessionBytesReceived += bytes;
-            this.m_sessionUncompressedBytesReceived += uncompressedBytes;
-            this.m_sessionOverheadBytesReceived += overheadBytes;
 
             manageBuckets();
             addReceivedToBuckets(bytes);
@@ -881,13 +690,13 @@ public class PsiphonData
             return series;
         }
         
-        private void addSentToBuckets(int bytes)
+        private void addSentToBuckets(long bytes)
         {
             this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesSent += bytes;
             this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesSent += bytes;
         }
         
-        private void addReceivedToBuckets(int bytes)
+        private void addReceivedToBuckets(long bytes)
         {
             this.m_slowBuckets.get(this.m_slowBuckets.size()-1).m_bytesReceived += bytes;
             this.m_fastBuckets.get(this.m_fastBuckets.size()-1).m_bytesReceived += bytes;
@@ -910,113 +719,11 @@ public class PsiphonData
             return this.m_totalBytesSent;
         }
         
-        public synchronized long getTotalUncompressedBytesSent()
-        {
-            return this.m_totalUncompressedBytesSent;
-        }
-
-        public synchronized long getTotalOverheadBytesSent()
-        {
-            return this.m_totalOverheadBytesSent;
-        }
-
-        public synchronized double getTotalSentCompressionRatio()
-        {
-            if (this.m_totalUncompressedBytesSent == 0) return 0.0;
-            double ratio = 100.0*(1.0-(double)(this.m_totalBytesSent + this.m_totalOverheadBytesSent)/(double)this.m_totalUncompressedBytesSent);
-            return ratio > 0.0 ? ratio : 0.0;
-        }
-        
-        public synchronized long getTotalSentSaved()
-        {
-            long savings = this.m_totalUncompressedBytesSent - (this.m_totalBytesSent + this.m_totalOverheadBytesSent);
-            return savings > 0 ? savings : 0;
-        }
-        
         public synchronized long getTotalBytesReceived()
         {
             return this.m_totalBytesReceived;
         }
         
-        public synchronized long getTotalOverheadBytesReceived()
-        {
-            return this.m_totalOverheadBytesReceived;
-        }
-        
-        public synchronized long getTotalUncompressedBytesReceived()
-        {
-            return this.m_totalUncompressedBytesReceived;
-        }
-
-        public synchronized double getTotalReceivedCompressionRatio()
-        {
-            if (this.m_totalUncompressedBytesReceived == 0) return 0.0;
-            double ratio = 100.0*(1.0-(double)(this.m_totalBytesReceived + this.m_totalOverheadBytesReceived)/(double)this.m_totalUncompressedBytesReceived);
-            return ratio > 0.0 ? ratio : 0.0;
-        }
-        
-        public synchronized long getTotalReceivedSaved()
-        {
-            long savings = this.m_totalUncompressedBytesReceived - (this.m_totalBytesReceived + this.m_totalOverheadBytesReceived);
-            return savings > 0 ? savings : 0;
-        }
-        
-        public synchronized long getSessionBytesSent()
-        {
-            return this.m_sessionBytesSent;
-        }
-        
-        public synchronized long getSessionUncompressedBytesSent()
-        {
-            return this.m_sessionUncompressedBytesSent;
-        }
-
-        public synchronized long getSessionOverheadBytesSent()
-        {
-            return this.m_sessionOverheadBytesSent;
-        }
-
-        public synchronized double getSessionSentCompressionRatio()
-        {
-            if (this.m_sessionUncompressedBytesSent == 0) return 0.0;
-            double ratio = 100.0*(1.0-(double)(this.m_sessionBytesSent + this.m_sessionOverheadBytesSent)/(double)this.m_sessionUncompressedBytesSent);
-            return ratio > 0.0 ? ratio : 0.0;
-        }
-        
-        public synchronized long getSessionSentSaved()
-        {
-            long savings = this.m_sessionUncompressedBytesSent - (this.m_sessionBytesSent + this.m_sessionOverheadBytesSent);
-            return savings > 0 ? savings : 0;
-        }
-        
-        public synchronized long getSessionBytesReceived()
-        {
-            return this.m_sessionBytesReceived;
-        }
-        
-        public synchronized long getSessionlOverheadBytesReceived()
-        {
-            return this.m_sessionOverheadBytesReceived;
-        }
-        
-        public synchronized long getSessionUncompressedBytesReceived()
-        {
-            return this.m_sessionUncompressedBytesReceived;
-        }
-
-        public synchronized double getSessionReceivedCompressionRatio()
-        {
-            if (this.m_sessionUncompressedBytesReceived == 0) return 0.0;
-            double ratio = 100.0*(1.0-(double)(this.m_sessionBytesReceived + this.m_sessionOverheadBytesReceived)/(double)this.m_sessionUncompressedBytesReceived);
-            return ratio > 0.0 ? ratio : 0.0;
-        }
-        
-        public synchronized long getSessionReceivedSaved()
-        {
-            long savings = this.m_sessionUncompressedBytesReceived - (this.m_sessionBytesReceived + this.m_sessionOverheadBytesReceived);
-            return savings > 0 ? savings : 0;
-        }
-
         public synchronized ArrayList<Long> getSlowSentSeries()
         {
             manageBuckets();
@@ -1211,7 +918,10 @@ public class PsiphonData
         entry.timestamp = timestamp;
         entry.msg = msg;
         entry.data = data;
-        m_diagnosticHistory.add(entry);
+        synchronized(m_diagnosticHistory) 
+        {
+            m_diagnosticHistory.add(entry);
+        }
     }
     
     static public List<DiagnosticEntry> cloneDiagnosticHistory()
