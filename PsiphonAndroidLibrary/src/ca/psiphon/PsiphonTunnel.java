@@ -162,7 +162,8 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     private final static String VPN_INTERFACE_NETMASK = "255.255.255.0";
     private final static int VPN_INTERFACE_MTU = 1500;
     private final static int UDPGW_SERVER_PORT = 7300;
-    private final static String DEFAULT_DNS_SERVER = "8.8.4.4";
+    private final static String DEFAULT_PRIMARY_DNS_SERVER = "8.8.4.4";
+    private final static String DEFAULT_SECONDARY_DNS_SERVER = "8.8.8.8";
     
     // Note: Atomic variables used for getting/setting local proxy port, routing flag, and
     // tun fd, as these functions may be called via PsiphonProvider callbacks. Do not use
@@ -285,15 +286,20 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     }
 
     @Override
-    public String GetDnsServer() {
+    public String GetPrimaryDnsServer() {
         String dnsResolver = null;
         try {
             dnsResolver = getFirstActiveNetworkDnsResolver(mHostService.getContext());
         } catch (Exception e) {
             mHostService.onDiagnosticMessage("failed to get active network DNS resolver: " + e.getMessage());
-            dnsResolver = DEFAULT_DNS_SERVER;
+            dnsResolver = DEFAULT_PRIMARY_DNS_SERVER;
         }
         return dnsResolver;
+    }
+
+    @Override
+    public String GetSecondaryDnsServer() {
+        return DEFAULT_SECONDARY_DNS_SERVER;
     }
 
     //----------------------------------------------------------------------------------------------
