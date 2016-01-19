@@ -257,6 +257,7 @@ static void udpgw_client_handler_received (void *unused, BAddr local_addr, BAddr
 
 #ifdef PSIPHON
 
+int g_tun_fd = -1;
 JNIEnv* g_env = 0;
 
 void PsiphonLog(const char *levelStr, const char *channelStr, const char *msgStr)
@@ -271,7 +272,7 @@ void PsiphonLog(const char *levelStr, const char *channelStr, const char *msgStr
     jstring channel = (*g_env)->NewStringUTF(g_env, channelStr);
     jstring msg = (*g_env)->NewStringUTF(g_env, msgStr);
 
-    jclass cls = (*g_env)->FindClass(g_env, "com/psiphon3/psiphonlibrary/Tun2Socks");
+    jclass cls = (*g_env)->FindClass(g_env, "ca/psiphon/PsiphonTunnel");
     jmethodID logMethod = (*g_env)->GetStaticMethodID(g_env, cls, "logTun2Socks", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
     (*g_env)->CallStaticVoidMethod(g_env, cls, logMethod, level, channel, msg);
 
@@ -282,7 +283,7 @@ void PsiphonLog(const char *levelStr, const char *channelStr, const char *msgStr
     (*g_env)->DeleteLocalRef(g_env, msg);
 }
 
-JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_runTun2Socks(
+JNIEXPORT jint JNICALL Java_ca_psiphon_PsiphonTunnel_runTun2Socks(
     JNIEnv* env,
     jclass cls,
     jint vpnInterfaceFileDescriptor,
@@ -326,14 +327,6 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_runTun2Socks(
     // TODO: return success/error
 
     return 1;
-}
-
-JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_terminateTun2Socks(
-    jclass cls,
-    JNIEnv* env)
-{
-    terminate();
-    return 0;
 }
 
 // from tcp_helper.c
@@ -455,7 +448,7 @@ void run()
             goto fail2;
         }
     }
-    
+
     // PSIPHON
     if (options.tun_fd) {
         // use supplied file descriptor
@@ -463,6 +456,7 @@ void run()
             BLog(BLOG_ERROR, "BTap_InitWithFD failed");
             goto fail3;
         }
+        g_tun_fd = options.tun_fd;
     } else {
         // init TUN device
         if (!BTap_Init(&device, &ss, options.tundev, device_error_handler, NULL, 1)) {
@@ -594,7 +588,11 @@ fail4a:
     SinglePacketBuffer_Free(&device_read_buffer);
 fail4:
     PacketPassInterface_Free(&device_read_interface);
-    BTap_Free(&device);
+    if (options.tun_fd) {
+        BTap_FreeWithFD(&device);
+    } else {
+        BTap_Free(&device);
+    }
 fail3:
     BSignal_Finish();
 fail2:
@@ -1118,6 +1116,24 @@ void tcp_timer_handler (void *unused)
 {
     ASSERT(!quitting)
     
+    // ==== PSIPHON ====
+
+    // Check if the tun fd has been closed by Psiphon,
+    // which is a signal to stop tun2socks.
+
+    // TODO: instead of piggybacking on this timer,
+    // we could perhaps write to a pipe hooked into
+    // the BReactor event loop, which would eliminate
+    // any shutdown delay due to waiting for this timer.
+
+    if (fcntl(g_tun_fd, F_GETFL) < 0 && errno == EBADF) {
+        BLog(BLOG_NOTICE, "g_tun_fd is closed");
+        terminate();
+        return;
+    }
+
+    // ==== PSIPHON ====
+
     BLog(BLOG_DEBUG, "TCP timer");
     
     // schedule next timer
@@ -1459,6 +1475,10 @@ err_t listener_accept_func (void *arg, struct tcp_pcb *newpcb, err_t err)
     
     // set client not closed
     client->client_closed = 0;
+    
+    // From: https://github.com/shadowsocks/shadowsocks-android/commit/97cfd1f8698d8f59b146bbcf345eec0fe1ca260
+    // enable TCP_NODELAY
+    tcp_nagle_disable(client->pcb);
     
     // setup handler argument
     tcp_arg(client->pcb, client);

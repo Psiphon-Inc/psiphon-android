@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Psiphon Inc.
+ * Copyright (c) 2015, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,6 @@ package com.psiphon3.psiphonlibrary;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -38,11 +37,9 @@ import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.graphics.Color;
@@ -50,11 +47,9 @@ import android.net.Uri;
 import android.net.VpnService;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Pair;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.KeyEvent;
@@ -166,12 +161,10 @@ public abstract class MainBase {
         protected static final int REQUEST_CODE_PREFERENCE = 101;
 
         protected static boolean m_firstRun = true;
-        private boolean m_isRooted = false;
         private boolean m_canWholeDevice = false;
 
         protected IEvents m_eventsInterface = null;
         protected Button m_toggleButton;
-        protected List<Pair<String, String>> m_extraAuthParams = new ArrayList<Pair<String, String>>();
         private StatusListViewManager m_statusListManager = null;
         private SharedPreferences m_preferences;
         private ViewFlipper m_sponsorViewFlipper;
@@ -181,14 +174,11 @@ public abstract class MainBase {
         private SponsorHomePage m_sponsorHomePage;
         private LocalBroadcastManager m_localBroadcastManager;
         private Timer m_updateHeaderTimer;
-        private Timer m_updateStatusTimer;
+        private Timer m_updateServiceStateTimer;
+        private boolean m_restartTunnel = false;
         private TextView m_elapsedConnectionTimeView;
         private TextView m_totalSentView;
         private TextView m_totalReceivedView;
-        private TextView m_compressionRatioSentView;
-        private TextView m_compressionRatioReceivedView;
-        private TextView m_compressionSavingsSentView;
-        private TextView m_compressionSavingsReceivedView;
         private DataTransferGraph m_slowSentGraph;
         private DataTransferGraph m_slowReceivedGraph;
         private DataTransferGraph m_fastSentGraph;
@@ -196,8 +186,8 @@ public abstract class MainBase {
         private RegionAdapter m_regionAdapter;
         private SpinnerHelper m_regionSelector;
         protected CheckBox m_tunnelWholeDeviceToggle;
-        private CheckBox m_wdmForceIptablesToggle;
         private Toast m_invalidProxySettingsToast;
+        private Button m_moreOptionsButton;
 
         /*
          * private CheckBox m_shareProxiesToggle; private TextView
@@ -244,48 +234,6 @@ public abstract class MainBase {
                 }
             }
         }
-
-        private boolean m_boundToTunnelService = false;
-        private final ServiceConnection m_tunnelServiceConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName className, IBinder service) {
-                onPostStartService();
-                TunnelService.LocalBinder binder = (TunnelService.LocalBinder) service;
-                TunnelService tunnelService = binder.getService();
-                m_boundToTunnelService = true;
-                tunnelService.setEventsInterface(m_eventsInterface);
-                tunnelService.setExtraAuthParams(m_extraAuthParams);
-                startService(new Intent(TabbedActivityBase.this, TunnelService.class));
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName arg0) {
-                m_boundToTunnelService = false;
-            }
-        };
-
-        private boolean m_boundToTunnelVpnService = false;
-        private final ServiceConnection m_tunnelVpnServiceConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName className, IBinder service) {
-                onPostStartService();
-
-                // VpnService backwards compatibility: this has sufficient lazy
-                // class loading
-                // as onServiceConnected is only called on bind.
-                TunnelVpnService.LocalBinder binder = (TunnelVpnService.LocalBinder) service;
-                TunnelVpnService tunnelVpnService = binder.getService();
-                m_boundToTunnelVpnService = true;
-                tunnelVpnService.setEventsInterface(m_eventsInterface);
-                tunnelVpnService.setExtraAuthParams(m_extraAuthParams);
-                startService(new Intent(TabbedActivityBase.this, TunnelVpnService.class));
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName arg0) {
-                m_boundToTunnelVpnService = false;
-            }
-        };
 
         // Lateral navigation with TabHost:
         // Adapted from here:
@@ -554,21 +502,9 @@ public abstract class MainBase {
             m_elapsedConnectionTimeView = (TextView) findViewById(R.id.elapsedConnectionTime);
             m_totalSentView = (TextView) findViewById(R.id.totalSent);
             m_totalReceivedView = (TextView) findViewById(R.id.totalReceived);
-            m_compressionRatioSentView = (TextView) findViewById(R.id.compressionRatioSent);
-            m_compressionRatioReceivedView = (TextView) findViewById(R.id.compressionRatioReceived);
-            m_compressionSavingsSentView = (TextView) findViewById(R.id.compressionSavingsSent);
-            m_compressionSavingsReceivedView = (TextView) findViewById(R.id.compressionSavingsReceived);
             m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
             m_tunnelWholeDeviceToggle = (CheckBox) findViewById(R.id.tunnelWholeDeviceToggle);
-            m_wdmForceIptablesToggle = (CheckBox) findViewById(R.id.WdmForceIptablesToggle);
-            /*
-             * m_shareProxiesToggle =
-             * (CheckBox)findViewById(R.id.shareProxiesToggle);
-             * m_statusTabSocksPortLine =
-             * (TextView)findViewById(R.id.socksportline);
-             * m_statusTabHttpProxyPortLine =
-             * (TextView)findViewById(R.id.httpproxyportline);
-             */
+            m_moreOptionsButton = (Button) findViewById(R.id.moreOptionsButton);
 
             m_slowSentGraph = new DataTransferGraph(this, R.id.slowSentGraph);
             m_slowReceivedGraph = new DataTransferGraph(this, R.id.slowReceivedGraph);
@@ -577,6 +513,8 @@ public abstract class MainBase {
 
             // Set up the list view
             m_statusListManager = new StatusListViewManager(statusListView);
+
+            PsiphonData.getPsiphonData().setCurrentEventsInterface(m_eventsInterface);
 
             // Listen for new messages
             // Using local broad cast
@@ -592,18 +530,18 @@ public abstract class MainBase {
 
             m_localBroadcastManager.registerReceiver(new StatusEntryAvailable(), new IntentFilter(STATUS_ENTRY_AVAILABLE));
 
-            initToggleResources();
+            updateServiceStateUI();
 
             PsiphonData.getPsiphonData().setDisplayDataTransferStats(true);
-
-            if (m_firstRun) {
+            
+            if (m_firstRun)
+            {
                 RegionAdapter.initialize(this);
             }
-
             m_regionAdapter = new RegionAdapter(this);
             m_regionSelector.setAdapter(m_regionAdapter);
             String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE,
-                    ServerInterface.ServerEntry.REGION_CODE_ANY);
+                    PsiphonConstants.REGION_CODE_ANY);
             PsiphonData.getPsiphonData().setEgressRegion(egressRegionPreference);
             int position = m_regionAdapter.getPositionForRegionCode(egressRegionPreference);
             m_regionSelector.setSelection(position);
@@ -615,43 +553,16 @@ public abstract class MainBase {
             m_regionSelector.getSpinner().setOnTouchListener(regionSpinnerOnTouch);
             m_regionSelector.getSpinner().setOnKeyListener(regionSpinnerOnKey);
 
-            // Transparent proxy-based "Tunnel Whole Device" option is only
-            // available on rooted devices and
-            // defaults to true on rooted devices.
-            // On Android 4+, we offer "Whole Device" via the VpnService
-            // facility, which does not require root.
-            // We prefer VpnService when available, even when the device is
-            // rooted.
-            m_isRooted = Utils.isRooted();
-            boolean canRunVpnService = Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable();
-            m_canWholeDevice = m_isRooted || canRunVpnService;
+            m_canWholeDevice = Utils.hasVpnService();
 
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
             boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE,
                     m_canWholeDevice);
             m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
 
-            // Use PsiphonData to communicate the setting to the TunnelService
-            // so it doesn't need to
-            // repeat the isRooted check. The preference is retained even if the
-            // device becomes "unrooted"
-            // and that's why setTunnelWholeDevice !=
-            // tunnelWholeDevicePreference.
             PsiphonData.getPsiphonData().setTunnelWholeDevice(m_canWholeDevice && tunnelWholeDevicePreference);
 
-            m_wdmForceIptablesToggle.setEnabled(m_isRooted && PsiphonData.getPsiphonData().getTunnelWholeDevice());
-            boolean wdmForceIptablesPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(WDM_FORCE_IPTABLES_PREFERENCE, false);
-            m_wdmForceIptablesToggle.setChecked(wdmForceIptablesPreference);
-
-            // The preference is retained even if the device becomes "unrooted"
-            // and that's why setWdmForceIptables != wdmForceIptablesPreference.
-            PsiphonData.getPsiphonData().setWdmForceIptables(m_isRooted && wdmForceIptablesPreference);
-
             updateProxySettingsFromPreferences();
-
-            boolean shareProxiesPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(SHARE_PROXIES_PREFERENCE, false);
-            PsiphonData.getPsiphonData().setShareProxies(shareProxiesPreference);
-            /* m_shareProxiesToggle.setChecked(shareProxiesPreference); */
 
             // Note that this must come after the above lines, or else the
             // activity
@@ -714,26 +625,37 @@ public abstract class MainBase {
         protected void onResume() {
             super.onResume();
             updateProxySettingsFromPreferences();
-
+            
             // From: http://steve.odyfamily.com/?p=12
             m_updateHeaderTimer = new Timer();
             m_updateHeaderTimer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    updateHeaderCallback();
+                    TabbedActivityBase.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            updateHeaderCallback();
+                        }
+                    });
                 }
             }, 0, 1000);
 
-            m_updateStatusTimer = new Timer();
-            m_updateStatusTimer.schedule(new TimerTask() {
+            m_updateServiceStateTimer = new Timer();
+            m_updateServiceStateTimer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    updateStatusCallback();
+                    TabbedActivityBase.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            updateServiceStateUI();
+                            checkRestartTunnel();
+                        }
+                    });
                 }
             }, 0, 250);
 
             PsiphonData.getPsiphonData().setStatusActivityForeground(true);
-
+            
             // Don't show the keyboard until edit selected
             getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
         }
@@ -745,67 +667,64 @@ public abstract class MainBase {
             cancelInvalidProxySettingsToast();
 
             m_updateHeaderTimer.cancel();
-            m_updateStatusTimer.cancel();
-
-            unbindTunnelService();
+            m_updateServiceStateTimer.cancel();
 
             PsiphonData.getPsiphonData().setStatusActivityForeground(false);
         }
 
         public class TunnelStartingReceiver extends BroadcastReceiver {
             @Override
-            public void onReceive(Context context, Intent intent) {
-                m_toggleButton.setText(getText(R.string.stop));
-                setStatusState(R.drawable.status_icon_connecting);
+            public void onReceive(Context context, Intent intent) {                
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        updateServiceStateUI();
+                    }
+                });
             }
         }
 
         public class TunnelStoppingReceiver extends BroadcastReceiver {
             @Override
             public void onReceive(Context context, Intent intent) {
-                // When the tunnel self-stops, we also need to unbind to ensure
-                // the service is destroyed
-                unbindTunnelService();
-                m_toggleButton.setText(getText(R.string.start));
-                setStatusState(R.drawable.status_icon_disconnected);
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        updateServiceStateUI();
+                    }
+                });
             }
         }
 
         public class UnexpectedDisconnect extends BroadcastReceiver {
             @Override
             public void onReceive(Context context, Intent intent) {
-                setStatusState(R.drawable.status_icon_connecting);
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        updateServiceStateUI();
+                    }
+                });
             }
         }
 
         public class StatusEntryAvailable extends BroadcastReceiver {
             @Override
             public void onReceive(Context context, Intent intent) {
-                StatusEntry statusEntry = PsiphonData.getPsiphonData().getLastStatusEntryForDisplay();
-
-                if (statusEntry != null) {
-                    String msg = getContext().getString(statusEntry.id(), statusEntry.formatArgs());
-                    m_statusTabLogLine.setText(msg);
-                }
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        StatusEntry statusEntry = PsiphonData.getPsiphonData().getLastStatusEntryForDisplay();
+                        if (statusEntry != null) {
+                            String msg = getContext().getString(statusEntry.id(), statusEntry.formatArgs());
+                            m_statusTabLogLine.setText(msg);
+                        }
+                    }
+                });
             }
         }
 
-        private void initToggleResources() {
-            // Only use this in onCreate. For updating the text when the
-            // activity
-            // is showing and the service is stopping, it's more reliable to
-            // use TunnelStoppingReceiver.
-            m_toggleButton.setText(isServiceRunning() ? getText(R.string.stop) : getText(R.string.start));
-            setStatusState(isServiceRunning() ? R.drawable.status_icon_connecting : R.drawable.status_icon_disconnected);
-        }
-
         protected void doToggle() {
-            // TODO: use TunnelStartingReceiver/TunnelStoppingReceiver to track
-            // state?
             if (!isServiceRunning()) {
                 startUp();
             } else {
-                stopTunnel(this);
+                stopTunnelService();
             }
         }
 
@@ -876,24 +795,19 @@ public abstract class MainBase {
             String selectedRegionCode = m_regionAdapter.getSelectedRegionCode(position);
 
             String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE,
-                    ServerInterface.ServerEntry.REGION_CODE_ANY);
+                    PsiphonConstants.REGION_CODE_ANY);
             if (selectedRegionCode.equals(egressRegionPreference) && selectedRegionCode.equals(PsiphonData.getPsiphonData().getEgressRegion())) {
                 return;
             }
 
-            boolean restart = false;
+            updateEgressRegionPreference(selectedRegionCode);
 
             // NOTE: reconnects even when Any is selected: we could select a
             // faster server
             if (isServiceRunning()) {
-                doToggle();
-                restart = true;
-            }
-
-            updateEgressRegionPreference(selectedRegionCode);
-
-            if (restart && !isServiceRunning()) {
-                startTunnel(this);
+                m_restartTunnel = true; 
+                stopTunnelService();
+                // The tunnel will get restarted in m_updateServiceStateTimer
             }
         }
 
@@ -915,18 +829,13 @@ public abstract class MainBase {
                 return;
             }
 
-            boolean restart = false;
-
-            if (isServiceRunning()) {
-                doToggle();
-                restart = true;
-            }
-
             boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
             updateWholeDevicePreference(tunnelWholeDevicePreference);
 
-            if (restart && !isServiceRunning()) {
-                startTunnel(this);
+            if (isServiceRunning()) {
+                m_restartTunnel = true; 
+                stopTunnelService();
+                // The tunnel will get restarted in m_updateServiceStateTimer
             }
         }
 
@@ -939,41 +848,6 @@ public abstract class MainBase {
             editor.commit();
 
             PsiphonData.getPsiphonData().setTunnelWholeDevice(tunnelWholeDevicePreference);
-
-            m_wdmForceIptablesToggle.setEnabled(m_isRooted && PsiphonData.getPsiphonData().getTunnelWholeDevice());
-        }
-
-        public void onWdmForceIptablesToggle(View v) {
-            // Just in case an OnClick message is in transit before setEnabled
-            // is processed...(?)
-            if (!m_wdmForceIptablesToggle.isEnabled()) {
-                return;
-            }
-
-            boolean restart = false;
-
-            if (isServiceRunning()) {
-                doToggle();
-                restart = true;
-            }
-
-            boolean wdmForceIptablesPreference = m_wdmForceIptablesToggle.isChecked();
-            updateWdmForceIptablesPreference(wdmForceIptablesPreference);
-
-            if (restart && !isServiceRunning()) {
-                startTunnel(this);
-            }
-        }
-
-        protected void updateWdmForceIptablesPreference(boolean wdmForceIptablesPreference) {
-            // No isRooted check: the user can specify whatever preference they
-            // wish. Also, CheckBox enabling should cover this (but isn't
-            // required to).
-            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-            editor.putBoolean(WDM_FORCE_IPTABLES_PREFERENCE, wdmForceIptablesPreference);
-            editor.commit();
-
-            PsiphonData.getPsiphonData().setWdmForceIptables(wdmForceIptablesPreference);
         }
 
         // Basic check that the values are populated
@@ -981,50 +855,6 @@ public abstract class MainBase {
             PsiphonData.ProxySettings proxySettings = PsiphonData.getPsiphonData().getProxySettings(this);
             return proxySettings != null && proxySettings.proxyHost.length() > 0 && proxySettings.proxyPort >= 1 && proxySettings.proxyPort <= 65535;
         }
-
-        /*
-         * public void onShareProxiesToggle(View v) { new
-         * AlertDialog.Builder(this) .setOnKeyListener( new
-         * DialogInterface.OnKeyListener() { public boolean
-         * onKey(DialogInterface dialog, int keyCode, KeyEvent event) { // Don't
-         * dismiss when hardware search button is clicked (Android 2.3 and
-         * earlier) return keyCode == KeyEvent.KEYCODE_SEARCH; }})
-         * .setTitle(R.string.share_proxies_prompt_title)
-         * .setMessage(R.string.share_proxies_prompt_message)
-         * .setPositiveButton(R.string.share_proxies_prompt_positive, new
-         * DialogInterface.OnClickListener() { public void
-         * onClick(DialogInterface dialog, int whichButton) {
-         * applyShareProxies(); }})
-         * .setNegativeButton(R.string.share_proxies_prompt_negative, new
-         * DialogInterface.OnClickListener() { public void
-         * onClick(DialogInterface dialog, int whichButton) {
-         * m_shareProxiesToggle.setChecked(!m_shareProxiesToggle.isChecked());
-         * }}) .setOnCancelListener( new DialogInterface.OnCancelListener() {
-         * 
-         * @Override public void onCancel(DialogInterface dialog) {
-         * m_shareProxiesToggle.setChecked(!m_shareProxiesToggle.isChecked());
-         * }}) .show(); }
-         * 
-         * private void applyShareProxies() { boolean shareProxies =
-         * m_shareProxiesToggle.isChecked();
-         * 
-         * PsiphonData.getPsiphonData().setShareProxies(shareProxies);
-         * 
-         * Editor editor =
-         * PreferenceManager.getDefaultSharedPreferences(this).edit();
-         * editor.putBoolean(SHARE_PROXIES_PREFERENCE, shareProxies);
-         * editor.commit();
-         * 
-         * stopTunnel(this);
-         * 
-         * AlarmManager alm = (AlarmManager)
-         * this.getSystemService(Context.ALARM_SERVICE);
-         * alm.set(AlarmManager.RTC, System.currentTimeMillis() + 1000,
-         * PendingIntent.getActivity(this, 0, new Intent(this, this.getClass()),
-         * 0));
-         * 
-         * android.os.Process.killProcess(android.os.Process.myPid()); }
-         */
 
         private class DataTransferGraph {
             private final Activity m_activity;
@@ -1077,63 +907,15 @@ public abstract class MainBase {
         }
 
         private void updateHeaderCallback() {
-            this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
-                    m_elapsedConnectionTimeView.setText(dataTransferStats.isConnected() ? getString(R.string.connected_elapsed_time,
-                            Utils.elapsedTimeToDisplay(dataTransferStats.getElapsedTime())) : getString(R.string.disconnected));
-                    m_totalSentView.setText(Utils.byteCountToDisplaySize(dataTransferStats.getTotalBytesSent() + dataTransferStats.getTotalOverheadBytesSent(),
-                            false));
-                    m_compressionRatioSentView.setText(getString(R.string.compression_ratio, dataTransferStats.getTotalSentCompressionRatio()));
-                    m_compressionSavingsSentView.setText(getString(R.string.compression_savings,
-                            Utils.byteCountToDisplaySize(dataTransferStats.getTotalSentSaved(), false)));
-                    m_totalReceivedView.setText(Utils.byteCountToDisplaySize(
-                            dataTransferStats.getTotalBytesReceived() + dataTransferStats.getTotalOverheadBytesReceived(), false));
-                    m_compressionRatioReceivedView.setText(getString(R.string.compression_ratio, dataTransferStats.getTotalReceivedCompressionRatio()));
-                    m_compressionSavingsReceivedView.setText(getString(R.string.compression_savings,
-                            Utils.byteCountToDisplaySize(dataTransferStats.getTotalReceivedSaved(), false)));
-
-                    m_slowSentGraph.update(dataTransferStats.getSlowSentSeries());
-                    m_slowReceivedGraph.update(dataTransferStats.getSlowReceivedSeries());
-                    m_fastSentGraph.update(dataTransferStats.getFastSentSeries());
-                    m_fastReceivedGraph.update(dataTransferStats.getFastReceivedSeries());
-                }
-            });
-        }
-
-        /* private boolean proxyInfoDisplayed = false; */
-        private void updateStatusCallback() {
-            this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
-                    if (dataTransferStats.isConnected()) {
-                        setStatusState(R.drawable.status_icon_connected);
-                        /*
-                         * if (!proxyInfoDisplayed) {
-                         * m_statusTabSocksPortLine.setText(
-                         * getContext().getString(R.string.socks_proxy_address,
-                         * (PsiphonData.getPsiphonData().getShareProxies() ?
-                         * Utils.getIPv4Address() : "127.0.0.1") + ":" +
-                         * PsiphonData.getPsiphonData().getSocksPort()));
-                         * m_statusTabHttpProxyPortLine.setText(
-                         * getContext().getString(R.string.http_proxy_address,
-                         * (PsiphonData.getPsiphonData().getShareProxies() ?
-                         * Utils.getIPv4Address() : "127.0.0.1") + ":" +
-                         * PsiphonData.getPsiphonData().getHttpProxyPort()));
-                         * proxyInfoDisplayed = true; }
-                         */
-                    } else {
-                        /*
-                         * if (proxyInfoDisplayed) {
-                         * m_statusTabSocksPortLine.setText("");
-                         * m_statusTabHttpProxyPortLine.setText("");
-                         * proxyInfoDisplayed = false; }
-                         */
-                    }
-                }
-            });
+            DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
+            m_elapsedConnectionTimeView.setText(dataTransferStats.isConnected() ? getString(R.string.connected_elapsed_time,
+                    Utils.elapsedTimeToDisplay(dataTransferStats.getElapsedTime())) : getString(R.string.disconnected));
+            m_totalSentView.setText(Utils.byteCountToDisplaySize(dataTransferStats.getTotalBytesSent(), false));
+            m_totalReceivedView.setText(Utils.byteCountToDisplaySize(dataTransferStats.getTotalBytesReceived(), false));
+            m_slowSentGraph.update(dataTransferStats.getSlowSentSeries());
+            m_slowReceivedGraph.update(dataTransferStats.getSlowReceivedSeries());
+            m_fastSentGraph.update(dataTransferStats.getFastSentSeries());
+            m_fastReceivedGraph.update(dataTransferStats.getFastReceivedSeries());
         }
 
         private void cancelInvalidProxySettingsToast() {
@@ -1147,6 +929,53 @@ public abstract class MainBase {
             }
         }
 
+        private void updateServiceStateUI() {
+            TunnelManager tunnelManager = PsiphonData.getPsiphonData().getCurrentTunnelManager();
+            
+            if (tunnelManager == null) {
+                setStatusState(R.drawable.status_icon_disconnected);
+                m_toggleButton.setText(getText(R.string.start));
+                enableToggleServiceUI();
+                
+            } else if (tunnelManager.signalledStop()) {
+                setStatusState(R.drawable.status_icon_disconnected);
+                m_toggleButton.setText(getText(R.string.waiting));
+                disableToggleServiceUI();
+                
+            } else {
+                if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected()) {
+                    setStatusState(R.drawable.status_icon_connected);
+                } else {
+                    setStatusState(R.drawable.status_icon_connecting);
+                }
+                m_toggleButton.setText(getText(R.string.stop));
+                enableToggleServiceUI();
+                
+            }
+        }
+        
+        protected void enableToggleServiceUI() {
+            m_toggleButton.setEnabled(true);
+            m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
+            m_regionSelector.setEnabled(true);
+            m_moreOptionsButton.setEnabled(true);
+        }
+
+        protected void disableToggleServiceUI() {
+            m_toggleButton.setEnabled(false);
+            m_tunnelWholeDeviceToggle.setEnabled(false);
+            m_regionSelector.setEnabled(false);
+            m_moreOptionsButton.setEnabled(false);
+        }
+
+        private void checkRestartTunnel() {
+            if (m_restartTunnel &&
+                    !isServiceRunning()) {
+                m_restartTunnel = false;
+                startTunnel(this);
+            }
+        }
+        
         protected void startTunnel(Context context) {
             // Don't start if custom proxy settings is selected and values are
             // invalid
@@ -1162,8 +991,7 @@ public abstract class MainBase {
 
             boolean waitingForPrompt = false;
 
-            if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService() && !PsiphonData.getPsiphonData().getVpnServiceUnavailable()
-                    && !PsiphonData.getPsiphonData().getWdmForceIptables()) {
+            if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService()) {
                 // VpnService backwards compatibility: for lazy class loading
                 // the VpnService
                 // class reference has to be in another function (doVpnPrepare),
@@ -1172,28 +1000,21 @@ public abstract class MainBase {
                 waitingForPrompt = doVpnPrepare();
             }
             if (!waitingForPrompt) {
-                startTunnelService(this);
+                startTunnelService();
             }
         }
 
         protected boolean doVpnPrepare() {
+            
+            // Devices without VpnService support throw various undocumented
+            // exceptions, including ActivityNotFoundException and ActivityNotFoundException.
+            // For example: http://code.google.com/p/ics-openvpn/source/browse/src/de/blinkt/openvpn/LaunchVPN.java?spec=svn2a81c206204193b14ac0766386980acdc65bee60&name=v0.5.23&r=2a81c206204193b14ac0766386980acdc65bee60#376
             try {
                 return vpnPrepare();
-            } catch (ActivityNotFoundException e) {
+            } catch (Exception e) {
                 MyLog.e(R.string.tunnel_whole_device_exception, MyLog.Sensitivity.NOT_SENSITIVE);
 
-                // VpnService is broken. For rooted devices, proceed with
-                // starting Whole Device in root mode.
-
-                if (Utils.isRooted()) {
-                    PsiphonData.getPsiphonData().setVpnServiceUnavailable(true);
-
-                    // false = not waiting for prompt, so service will be
-                    // started immediately
-                    return false;
-                }
-
-                // For non-rooted devices, turn off the option and abort.
+                // Turn off the option and abort.
 
                 m_tunnelWholeDeviceToggle.setChecked(false);
                 m_tunnelWholeDeviceToggle.setEnabled(false);
@@ -1215,9 +1036,6 @@ public abstract class MainBase {
 
             Intent intent = VpnService.prepare(this);
             if (intent != null) {
-                // Catching ActivityNotFoundException as per:
-                // http://code.google.com/p/ics-openvpn/source/browse/src/de/blinkt/openvpn/LaunchVPN.java?spec=svn2a81c206204193b14ac0766386980acdc65bee60&name=v0.5.23&r=2a81c206204193b14ac0766386980acdc65bee60#376
-                //
                 // TODO: can we disable the mode before we reach this this
                 // failure point with
                 // resolveActivity()? We'll need the intent from prepare() or
@@ -1226,7 +1044,7 @@ public abstract class MainBase {
 
                 startActivityForResult(intent, REQUEST_CODE_PREPARE_VPN);
 
-                // startTunnelService will be called in onActivityResult
+                // bindAndStartTunnelService will be called in onActivityResult
                 return true;
             }
 
@@ -1300,131 +1118,61 @@ public abstract class MainBase {
         @Override
         protected void onActivityResult(int request, int result, Intent data) {
             if (request == REQUEST_CODE_PREPARE_VPN && result == RESULT_OK) {
-                startTunnelService(this);
+                startTunnelService();
             } else if (request == REQUEST_CODE_PREFERENCE) {
-                // detect if a restart needed due to proxy settings change
-                boolean restart = isProxySettingsRestartRequired() && isServiceRunning();
-                
-                if (restart) {
-                    stopTunnel(this);
-                }
-                updateProxySettingsFromPreferences();
-                if (restart && !isServiceRunning()) {
-                    startTunnel(this);
+                // Don't call updateProxySettingsFromPreferences() first, because
+                // isProxySettingsRestartRequired() looks at the stored preferences.
+                // But, it should be called before stopping the tunnel, since the tunnel
+                // gets asyncronously restarted, and we want it to be restarted with
+                // the new settings.
+                if (isProxySettingsRestartRequired() && isServiceRunning()) {
+                    updateProxySettingsFromPreferences();
+                    m_restartTunnel = true;
+                    stopTunnelService();
+                    // The tunnel will get restarted in m_updateServiceStateTimer
+                } else {
+                    updateProxySettingsFromPreferences();
                 }
             }
         }
 
-        protected void onPreStartService() {
+        protected void startTunnelService() {
+
+            if (isServiceRunning()) {
+                MyLog.g("startTunnelService(): already running service");
+                return;
+            }
+
             // Disable service-toggling controls while service is starting up
             // (i.e., while isServiceRunning can't be relied upon)
-            m_tunnelWholeDeviceToggle.setEnabled(false);
-            m_wdmForceIptablesToggle.setEnabled(false);
-            m_regionSelector.setEnabled(false);
-        }
-
-        protected void onPostStartService() {
-            m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
-            m_wdmForceIptablesToggle.setEnabled(m_isRooted && PsiphonData.getPsiphonData().getTunnelWholeDevice());
-            m_regionSelector.setEnabled(true);
-        }
-
-        protected void startTunnelService(Context context) {
-            // TODO: onResume calls this and when there was only one kind of
-            // service
-            // it was safe to call through to bindService, which would start
-            // that
-            // service if it was not already running. Now we have two types of
-            // services,
-            // can we rely on blindly rebinding? What if the
-            // getTunnelWholeDevice()
-            // value changed, can we end up with two running services? For now,
-            // we have some asserts.
+            disableToggleServiceUI();
 
             if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService()) {
-                if (m_boundToTunnelService != false) {
-                    MyLog.g("already bound to TunnelService");
-                    return;
-                }
-
-                onPreStartService();
-                // VpnService backwards compatibility: doStartTunnelVpnService
-                // is a wrapper
-                // function so we don't reference the undefined class when this
-                // function
-                // is loaded.
-                if (!doStartTunnelVpnService(context)) {
-                    // Service won't start, so allow handler to clean up
-                    onPostStartService();
-                }
+                doStartTunnelVpnService(this);
             } else {
-                if (m_boundToTunnelVpnService != false) {
-                    MyLog.g("already bound to TunnelVpnService");
-                    return;
-                }
-
-                onPreStartService();
-                Intent intent = new Intent(context, TunnelService.class);
-                if (!bindService(intent, m_tunnelServiceConnection, Context.BIND_AUTO_CREATE)) {
-                    // Service won't start, so allow handler to clean up
-                    onPostStartService();
+                if (null == startService(new Intent(this, TunnelService.class))) {
+                    PsiphonData.getPsiphonData().setStartingTunnelManager();
                 }
             }
         }
 
-        private boolean doStartTunnelVpnService(Context context) {
-            Intent intent = new Intent(context, TunnelVpnService.class);
-            return bindService(intent, m_tunnelVpnServiceConnection, Context.BIND_AUTO_CREATE);
-        }
-
-        private void stopTunnel(Context context) {
-            unbindTunnelService();
-            if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService()) {
-                doStopVpnTunnel(context);
-            } else {
-                stopService(new Intent(context, TunnelService.class));
-            }
-
-            // Wait up to 5 seconds for the service to stop running before
-            // returning
-            for (int i = 0; i < 50; i++) {
-                if (!isServiceRunning()) {
-                    break;
-                }
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                }
+        private void doStartTunnelVpnService(Context context) {
+            if (null == startService(new Intent(context, TunnelVpnService.class))) {
+                PsiphonData.getPsiphonData().setStartingTunnelManager();
             }
         }
 
-        private void doStopVpnTunnel(Context context) {
-            TunnelCore currentTunnelCore = PsiphonData.getPsiphonData().getCurrentTunnelCore();
+        private void stopTunnelService() {
 
-            if (currentTunnelCore != null) {
-                // See comments in stopVpnServiceHelper about stopService.
-                currentTunnelCore.stopVpnServiceHelper();
-                stopService(new Intent(context, TunnelVpnService.class));
-            }
-        }
-
-        private void unbindTunnelService() {
-            if (m_boundToTunnelService) {
-                try {
-                    unbindService(m_tunnelServiceConnection);
-                }
-                // Ignore
-                // "java.lang.IllegalArgumentException: Service not registered"
-                catch (java.lang.IllegalArgumentException e) {
-                }
-                m_boundToTunnelService = false;
-            }
-            if (m_boundToTunnelVpnService) {
-                try {
-                    unbindService(m_tunnelVpnServiceConnection);
-                } catch (java.lang.IllegalArgumentException e) {
-                }
-                m_boundToTunnelVpnService = false;
+            // Use signalStopService to asynchronously stop the service.
+            // 1. VpnService doesn't respond to stopService calls
+            // 2. The UI will not block while waiting for stopService to return
+            // This scheme assumes that the UI will monitor that the service is
+            // running while the Activity is not bound to it. This is the state
+            // while the tunnel is shutting down.
+            TunnelManager currentTunnelManager = PsiphonData.getPsiphonData().getCurrentTunnelManager();
+            if (currentTunnelManager != null) {
+                currentTunnelManager.signalStopService();
             }
         }
 
@@ -1437,10 +1185,24 @@ public abstract class MainBase {
          * @return True if the service is already running, false otherwise.
          */
         protected boolean isServiceRunning() {
+
+            // getStartingTunnelManager is set to true by the UI thread as soon
+            // as it knows startService will start the service. It remains set
+            // until the service starts (asynchronously, which is why we have
+            // the starting flag) after which point the service onCreate will
+            // populate setCurrentTunnelManager.
+            if (PsiphonData.getPsiphonData().getStartingTunnelManager() ||
+                    PsiphonData.getPsiphonData().getCurrentTunnelManager() != null) {
+                return true;
+            }
+
+            // TODO: the getRunningServices logic is likely no longer necessary.
+
             ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
             for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-                if (TunnelService.class.getName().equals(service.service.getClassName())
-                        || (Utils.hasVpnService() && isVpnService(service.service.getClassName()))) {
+                if (service.pid == android.os.Process.myPid() &&
+                        (TunnelService.class.getName().equals(service.service.getClassName())
+                        || (Utils.hasVpnService() && isVpnService(service.service.getClassName())))) {
                     return true;
                 }
             }
@@ -1552,7 +1314,7 @@ public abstract class MainBase {
                                 }
                                 mWebViewLoaded = true;
                             }
-                        }, 1000);
+                        }, 2000);
                     }
                 }
             }
@@ -1562,7 +1324,7 @@ public abstract class MainBase {
             private final SponsorWebChromeClient mWebChromeClient;
             private final ProgressBar mProgressBar;
 
-            public SponsorHomePage(WebView webView, ProgressBar progressBar, IEvents eventsInterface) {
+            @TargetApi(Build.VERSION_CODES.HONEYCOMB) public SponsorHomePage(WebView webView, ProgressBar progressBar, IEvents eventsInterface) {
                 mWebView = webView;
                 mProgressBar = progressBar;
                 mWebChromeClient = new SponsorWebChromeClient(mProgressBar);
@@ -1596,7 +1358,7 @@ public abstract class MainBase {
             }
 
             public void load(String url) {
-                WebViewProxySettings.setLocalProxy(mWebView.getContext(), PsiphonData.getPsiphonData().getHttpProxyPort());
+                WebViewProxySettings.setLocalProxy(mWebView.getContext(), PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort());
                 mProgressBar.setVisibility(View.VISIBLE);
                 mWebView.loadUrl(url);
             }

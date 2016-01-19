@@ -41,7 +41,7 @@
   <string name="ServerInterface.HTTPSRequestFailed">درخواست اچ‌تی‌تی‌پی‌اس به دلیل خطا نا موفق بود  </string>
   <string name="socks_ports_failed">شروع پراکسی ساکس نا موفق بود: هیچ پورتی در دسترس نبود </string>
   <string name="http_proxy_ports_failed">شروع پراکسی اچ‌تی‌تی‌پی نا موفق بود: هیچ پورتی در دسترس نبود </string>
-  <string name="socks_port_in_use">یک اپلیکیشن دیگری درحال استفاده از پورت %d است. ادامه کار امکان پذیر نیست.</string>
+  <string name="socks_port_in_use">پورت محلی ساکس %d در حال استفاده یک برنامه دیگر است. ادامه امکان پذیر نیست.</string>
   <string name="transparent_proxy_running">پراکسی شفاف بر روی پورت %d در حال اجراست</string>
   <string name="transparent_proxy_ports_failed">شروع پراکسی شفاف نا موفق بود: هیچ پورتی در دسترس نبود </string>
   <string name="transparent_proxy_command_failed">دستور تنظیمات پورت شفاف ناموفق بود: %s</string>
@@ -84,11 +84,9 @@
   <string name="transparent_proxy_routing_failed">شروع پراکسی شفاف ناموفق بود: %s</string>
   <string name="transparent_proxy_routing_running">پراکسی شفاف در حال اجراست </string>
   <string name="transparent_proxy_routing_stopped">پراکسی شفاف متوفق شد </string>
-  <string name="final_status_request_failed">درخواست وضعیت نهایی ناموفقیت آمیز بود</string>
   <string name="current_network_type">شبکه کنونی: %s</string>
   <string name="dns_resolver">تحلیلگر سامانه نام دامنه: %s</string>
   <string name="get_active_network_dns_resolvers_failed">دریافت تحلیلگرهای فعال نا‌موفق بود   </string>
-  <string name="preemptive_bind_failed">اتصال پیشگیرانه شکست خورد</string>
   <string name="UpgradeManager.CanNotRetrievePackageInfo">بازیابی اطلاعات بسته برای برنامه جاری امکان پذیر نیست  </string>
   <string name="UpgradeManager.UpgradeFileWriteFailed">خطا در نوشتن فایل ارتقا</string>
   <string name="UpgradeManager.UpgradeDownloadFailed">دانلود بروزرسانی ناموفقیت آمیز بود</string>
@@ -134,7 +132,7 @@
   <string name="region_name_nl">هلند</string>
   <string name="about">درباره سایفون</string>
   <string name="feedback">بازخوردها</string>
-  <string name="tunnel_whole_device_toggle">تونل تمام گوشی (نیاز به اندروید روت شده یا ورژن ٤.٠ به بالا) </string>
+  <string name="tunnel_whole_device_toggle">تونل تمام دستگاه «نیاز به اندروید ۴.۰ به بالا دارد»</string>
   <string name="region_selector">منطقۀ خود را انتخاب کنید</string>
   <string name="network_proxy_connect_exception">اتصال به شبکه اچ‌تی‌تی‌پی پراکسی امکان پذیر نبود: %s</string>
   <string name="network_proxy_connect_information">ایجاد اتصال از طریق http پراکسی: %s</string>
@@ -150,4 +148,26 @@
   <string name="preference_notifications_with_vibrate_summary">وقتی وضعیت اتصال تغییر میکند موبایل ویبره کند. </string>
   <string name="moreOptions">گزینه های بیشتر</string>
   <string name="root_mode_not_supported">این نسخه اندروید از حالت روت پشتیبانی نمی کند</string>
+  <string name="proxySettingsCategoryTitle">تنظیمات پروکسی</string>
+  <string name="custom_proxy_host_summary">نام هاست پروکسی سرور و یا IP</string>
+  <string name="custom_proxy_port_summary">پورت پروکسی سرور</string>
+  <string name="use_proxy_authentication_title">احراز هویت استفاده از پروکسی</string>
+  <string name="proxy_username_title">نام کاربری پروکسی</string>
+  <string name="proxy_username_summary">نام کاربری برای احراز هویت پروکسی</string>
+  <string name="proxy_password_title">رمز عبور پروکسی</string>
+  <string name="proxy_password_summary">رمز عبور برای احراز هویت پروکسی</string>
+  <string name="proxy_domain_title">دامنه پروکسی</string>
+  <string name="proxy_domain_summary">دامنه برای احراز هویت پروکسی</string>
+  <string name="http_proxy_port_in_use">پورت محلی اچ تی تی پی %d در حال استفاده یک برنامه دیگر است. ادامه امکان پذیر نیست.</string>
+  <!--When the split tunnel option is enabled, the current region is used to determine which requests should and shouldn't be tunneled. This log message tells the user which region (in '%s') is being used for this decision.-->
+  <string name="split_tunnel_region">تقسیم تونل منطقه: %s</string>
+  <!--When the split tunnel option is enabled, this log message is shown when a domain is not tunneled (because it's detected as being in the same region as the user). The '%s' is the domain name.-->
+  <string name="untunneled_address">تونل نشده است: %s</string>
+  <!--The log message is shown to the user if an upstream proxy error occurs. The '%s' is the detail of the error.-->
+  <string name="upstream_proxy_error">ارور پراکسی آپستریم: %s</string>
+  <string name="diagnostic">امکانات عیب شناسی %s</string>
+  <string name="start_tunnel_failed">اجرای تونل امکان پذیر نبود: %s</string>
+  <string name="tunnel_connecting">در حال اتصال به تونل...</string>
+  <string name="tunnel_connected">متصل شد</string>
+  <string name="waiting">منتظر...</string>
 </resources>
