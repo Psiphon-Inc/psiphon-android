@@ -182,6 +182,7 @@ public class ServerInterface
         public static final String CAPABILITY_SSH = "SSH";
         public static final String CAPABILITY_FRONTED_MEEK = "FRONTED-MEEK";
         public static final String CAPABILITY_UNFRONTED_MEEK = "UNFRONTED-MEEK";
+        public static final String CAPABILITY_UNFRONTED_MEEK_HTTPS = "UNFRONTED-MEEK-HTTPS";
 
         public static final String REGION_CODE_ANY = "";
         
@@ -194,6 +195,10 @@ public class ServerInterface
             else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH))
             {
                 return hasCapability(CAPABILITY_UNFRONTED_MEEK);
+            }
+            else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_HTTPS_OSSH))
+            {
+                return hasCapability(CAPABILITY_UNFRONTED_MEEK_HTTPS);
             }
             else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH))
             {
@@ -223,7 +228,8 @@ public class ServerInterface
         {
             if (hasCapability(CAPABILITY_OSSH) ||
                 hasCapability(CAPABILITY_FRONTED_MEEK) ||
-                hasCapability(CAPABILITY_UNFRONTED_MEEK))
+                hasCapability(CAPABILITY_UNFRONTED_MEEK) ||
+                hasCapability(CAPABILITY_UNFRONTED_MEEK_HTTPS))
             {
                 return this.sshObfuscatedPort;
             }
@@ -1930,6 +1936,7 @@ public class ServerInterface
         }
 
         if (newEntry.hasCapability(ServerEntry.CAPABILITY_UNFRONTED_MEEK) ||
+                newEntry.hasCapability(ServerEntry.CAPABILITY_UNFRONTED_MEEK_HTTPS) ||
                 newEntry.hasCapability(ServerEntry.CAPABILITY_FRONTED_MEEK))
         {
             newEntry.meekServerPort = obj.getInt("meekServerPort");

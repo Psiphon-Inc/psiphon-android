@@ -115,11 +115,14 @@ public class ServerSelector implements IAbortIndicator
                 Arrays.asList(
                         Arrays.asList(PsiphonConstants.RELAY_PROTOCOL_OSSH,
                                       PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH,
+                                      PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_HTTPS_OSSH,
                                       PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH),
 
                         Arrays.asList(PsiphonConstants.RELAY_PROTOCOL_OSSH),
 
                         Arrays.asList(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH),
+
+                        Arrays.asList(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_HTTPS_OSSH),
 
                         Arrays.asList(PsiphonConstants.RELAY_PROTOCOL_FRONTED_MEEK_OSSH)
                         );
@@ -274,7 +277,8 @@ public class ServerSelector implements IAbortIndicator
                 // 3. The meek client is a static port forward to the selected Psiphon server, so call
                 //    connectSocket with the meek client address in place of the Psiphon server
 
-                else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH))
+                else if (protocol.equals(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH) ||
+                        protocol.equals(PsiphonConstants.RELAY_PROTOCOL_UNFRONTED_MEEK_HTTPS_OSSH))
                 {
 
                     this.meekClient = new MeekClient(
