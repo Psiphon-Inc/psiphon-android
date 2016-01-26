@@ -64,6 +64,8 @@ public class PsiphonConstants
     public final static String RELAY_PROTOCOL_FRONTED_MEEK_OSSH = "FRONTED-MEEK-OSSH";
 
     public final static String RELAY_PROTOCOL_UNFRONTED_MEEK_OSSH = "UNFRONTED-MEEK-OSSH";
+    
+    public final static String RELAY_PROTOCOL_UNFRONTED_MEEK_HTTPS_OSSH = "UNFRONTED-MEEK-HTTPS-OSSH";
 
     // The character restrictions are dictated by the server.
     public final static String PLATFORM = ("Android_" + Build.VERSION.RELEASE).replaceAll("[^\\w\\-\\.]", "_");
@@ -88,7 +90,8 @@ public class PsiphonConstants
     public final static ArrayList<String> SUFFICIENT_CAPABILITIES_FOR_TUNNEL = new ArrayList<String>() {{
         add(ServerInterface.ServerEntry.CAPABILITY_OSSH);
         add(ServerInterface.ServerEntry.CAPABILITY_FRONTED_MEEK);
-        add(ServerInterface.ServerEntry.CAPABILITY_UNFRONTED_MEEK);}};
+        add(ServerInterface.ServerEntry.CAPABILITY_UNFRONTED_MEEK);
+        add(ServerInterface.ServerEntry.CAPABILITY_UNFRONTED_MEEK_HTTPS);}};
 
     public final static String VPN_INTERFACE_NETMASK = "255.255.255.0";
 

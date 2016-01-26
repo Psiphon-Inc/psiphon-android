@@ -76,7 +76,9 @@ import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.DnsResolver;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.conn.util.InetAddressUtils;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.cookie.CookieOrigin;
@@ -292,7 +294,14 @@ public class MeekClient {
                 FrontingSSLConnectionSocketFactory sslSocketFactory = new FrontingSSLConnectionSocketFactory(
                         mProtectSocket, sslContext, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
                 registryBuilder.register("https",  sslSocketFactory);
-            } 
+            } else if (mMeekServerPort == 443) {
+                SSLContextBuilder sslContextBuilder = new SSLContextBuilder();
+                sslContextBuilder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+                // Don't verify certificate hostname, and allow self-signed certs
+                FrontingSSLConnectionSocketFactory sslSocketFactory = new FrontingSSLConnectionSocketFactory(
+                        mProtectSocket, sslContextBuilder.build(), SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+                registryBuilder.register("https",  sslSocketFactory);
+            }
             
             //Always register http scheme for HTTP proxy support
             ProtectedPlainConnectionSocketFactory plainSocketFactory = new ProtectedPlainConnectionSocketFactory(mProtectSocket);
@@ -353,6 +362,8 @@ public class MeekClient {
             URI uri = null;
             if (mFrontingDomain != null) {
                 uri = new URIBuilder().setScheme("https").setHost(mFrontingDomain).setPath("/").build();
+            } else if (mMeekServerPort == 443) {
+                uri = new URIBuilder().setScheme("https").setHost(mMeekServerHost).setPath("/").build();
             } else {
                 uri = new URIBuilder().setScheme("http").setHost(mMeekServerHost).setPort(mMeekServerPort).setPath("/").build();                    
             }
