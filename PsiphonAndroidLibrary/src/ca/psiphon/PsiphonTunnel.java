@@ -27,6 +27,7 @@ import android.net.NetworkInfo;
 import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
+import android.telephony.TelephonyManager;
 import android.util.Base64;
 
 import org.apache.http.conn.util.InetAddressUtils;
@@ -374,6 +375,8 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         } catch (Exception e) {
             mHostService.onDiagnosticMessage(e.getMessage());
         }
+        
+        json.put("DeviceRegion", getDeviceRegion(mHostService.getContext()));
 
         return json.toString();
     }
@@ -537,6 +540,24 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         }
     }
 
+    private static String getDeviceRegion(Context context) {
+        String region = "";
+        TelephonyManager telephonyManager = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
+        if (telephonyManager != null) {
+            region = telephonyManager.getSimCountryIso();
+            if (region.length() == 0 && telephonyManager.getPhoneType() != TelephonyManager.PHONE_TYPE_CDMA) {
+                region = telephonyManager.getNetworkCountryIso();
+            }
+        }
+        if (region.length() == 0) {
+            Locale defaultLocale = Locale.getDefault();
+            if (defaultLocale != null) {
+                region = defaultLocale.getCountry();
+            }
+        }
+        return region.toUpperCase();
+    }
+    
     //----------------------------------------------------------------------------------------------
     // Tun2Socks
     //----------------------------------------------------------------------------------------------
