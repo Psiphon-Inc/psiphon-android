@@ -31,6 +31,8 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.psiphon3.R;
+
 public class RegionAdapter extends ArrayAdapter<Integer>
 {
     public static final String KNOWN_REGIONS_PREFERENCE = "knownRegionsPreference";

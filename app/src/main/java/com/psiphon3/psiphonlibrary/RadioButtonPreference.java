@@ -4,6 +4,8 @@ import android.content.Context;
 import android.preference.CheckBoxPreference;
 import android.util.AttributeSet;
 
+import com.psiphon3.R;
+
 public class RadioButtonPreference extends CheckBoxPreference {
 
 	public RadioButtonPreference(Context context, AttributeSet attrs,

@@ -40,6 +40,8 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import android.util.Log;
 
+import com.psiphon3.R;
+
 
 public class Utils
 {

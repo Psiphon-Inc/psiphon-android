@@ -42,6 +42,8 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 
+import com.psiphon3.R;
+
 /**
  * Contains logic relating to downloading and applying upgrades.
  */

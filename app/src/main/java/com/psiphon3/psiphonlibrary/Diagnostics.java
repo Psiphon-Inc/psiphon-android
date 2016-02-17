@@ -39,7 +39,8 @@ import android.util.Log;
 
 import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-import com.psiphon3.psiphonlibrary.Utils.MyLog.Sensitivity;
+
+import com.psiphon3.R;
 
 public class Diagnostics
 {

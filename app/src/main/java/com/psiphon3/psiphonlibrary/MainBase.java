@@ -86,6 +86,8 @@ import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity;
 
+import com.psiphon3.R;
+
 public abstract class MainBase {
     public static abstract class SupportFragmentActivity extends FragmentActivity implements MyLog.ILogger {
         public SupportFragmentActivity() {

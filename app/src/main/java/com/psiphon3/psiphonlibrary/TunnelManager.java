@@ -47,6 +47,8 @@ import ca.psiphon.PsiphonTunnel;
 import com.psiphon3.psiphonlibrary.UpgradeManager.VerifiedUpgradeFile;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
+import com.psiphon3.R;
+
 public class TunnelManager implements PsiphonTunnel.HostService {
 
     public enum NotificationState {

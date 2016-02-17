@@ -31,6 +31,8 @@ import android.preference.PreferenceCategory;
 import android.preference.PreferenceScreen;
 import android.text.InputType;
 
+import com.psiphon3.R;
+
 public class MoreOptionsPreferenceActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener,
         OnPreferenceClickListener {
     CheckBoxPreference mUseProxy;
