@@ -15,7 +15,7 @@
 
 package org.zirco.model.adapters;
 
-import org.zirco.R;
+import com.psiphon3.R;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;

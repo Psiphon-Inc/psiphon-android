@@ -18,7 +18,7 @@ package org.greendroid;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.zirco.R;
+import com.psiphon3.R;
 
 import android.content.Context;
 import android.graphics.Color;

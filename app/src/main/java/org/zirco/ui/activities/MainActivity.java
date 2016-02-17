@@ -39,7 +39,7 @@ import org.greendroid.QuickActionWidget;
 import org.greendroid.QuickActionWidget.OnQuickActionClickListener;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.zirco.R;
+import com.psiphon3.R;
 import org.zirco.controllers.Controller;
 import org.zirco.events.EventConstants;
 import org.zirco.events.EventController;

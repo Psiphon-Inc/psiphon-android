@@ -15,7 +15,7 @@
 
 package org.zirco.model.adapters;
 
-import org.zirco.R;
+import com.psiphon3.R;
 import org.zirco.model.items.HistoryItem;
 
 import android.content.Context;

@@ -15,7 +15,7 @@
 
 package org.zirco.ui.components;
 
-import org.zirco.R;
+import com.psiphon3.R;
 import org.zirco.controllers.Controller;
 import org.zirco.ui.activities.MainActivity;
 import org.zirco.utils.ApplicationUtils;

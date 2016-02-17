@@ -21,7 +21,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 
-import org.zirco.R;
+import com.psiphon3.R;
 import org.zirco.model.items.BookmarkItem;
 import org.zirco.model.items.HistoryItem;
 import org.zirco.providers.BookmarksProviderWrapper;

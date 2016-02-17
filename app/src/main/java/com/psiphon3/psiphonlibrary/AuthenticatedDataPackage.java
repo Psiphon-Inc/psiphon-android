@@ -43,7 +43,7 @@ import com.fasterxml.jackson.core.Base64Variants;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.psiphon3.psiphonlibrary.R;
+import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 
