@@ -22,11 +22,12 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
-import android.provider.Browser;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.SimpleCursorAdapter;
+
+import org.zirco.providers.BookmarksProviderWrapper;
 
 /**
  * Cursor adapter for bookmarks.
@@ -54,7 +55,7 @@ public class BookmarksCursorAdapter extends SimpleCursorAdapter {
 
 		ImageView thumbnailView = (ImageView) superView.findViewById(R.id.BookmarkRow_Thumbnail);
 		
-		byte[] favicon = getCursor().getBlob(getCursor().getColumnIndex(Browser.BookmarkColumns.FAVICON));
+		byte[] favicon = getCursor().getBlob(getCursor().getColumnIndex(BookmarksProviderWrapper.BookmarkColumns.FAVICON));
 		if (favicon != null) {
 			BitmapDrawable icon = new BitmapDrawable(BitmapFactory.decodeByteArray(favicon, 0, favicon.length));
 			

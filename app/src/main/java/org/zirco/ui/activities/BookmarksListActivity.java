@@ -30,7 +30,6 @@ import android.content.SharedPreferences.Editor;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.provider.Browser;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -124,7 +123,7 @@ public class BookmarksListActivity extends Activity {
 				PreferenceManager.getDefaultSharedPreferences(this).getInt(Constants.PREFERENCES_BOOKMARKS_SORT_MODE, 0));
     	startManagingCursor(mCursor);
     	
-    	String[] from = new String[] { Browser.BookmarkColumns.TITLE, Browser.BookmarkColumns.URL};
+    	String[] from = new String[] { BookmarksProviderWrapper.BookmarkColumns.TITLE, BookmarksProviderWrapper.BookmarkColumns.URL};
     	int[] to = new int[] {R.id.BookmarkRow_Title, R.id.BookmarkRow_Url};
     	
     	mCursorAdapter = new BookmarksCursorAdapter(this,

@@ -32,7 +32,6 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.Browser;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -98,7 +97,7 @@ public class HistoryListActivity extends ExpandableListActivity {
 				this,
 				mBookmarkStarChangeListener,
 				c,
-				c.getColumnIndex(Browser.BookmarkColumns.DATE),
+				c.getColumnIndex(BookmarksProviderWrapper.BookmarkColumns.DATE),
 				ApplicationUtils.getFaviconSizeForBookmarks(this));
 		
         setListAdapter(mAdapter);

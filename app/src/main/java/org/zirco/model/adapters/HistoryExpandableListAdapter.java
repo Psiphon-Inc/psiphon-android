@@ -17,6 +17,7 @@ package org.zirco.model.adapters;
 
 import com.psiphon3.R;
 import org.zirco.model.items.HistoryItem;
+import org.zirco.providers.BookmarksProviderWrapper;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -24,7 +25,6 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.provider.BaseColumns;
-import android.provider.Browser;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -205,11 +205,11 @@ public class HistoryExpandableListAdapter extends BaseExpandableListAdapter {
 	public Object getChild(int groupPosition, int childPosition) {
 		moveCursorToChildPosition(groupPosition, childPosition);
 
-		return new HistoryItem(mCursor.getLong(mCursor.getColumnIndex(Browser.BookmarkColumns._ID)),
-				mCursor.getString(mCursor.getColumnIndex(Browser.BookmarkColumns.TITLE)),
-				mCursor.getString(mCursor.getColumnIndex(Browser.BookmarkColumns.URL)),
-				mCursor.getInt(mCursor.getColumnIndex(Browser.BookmarkColumns.BOOKMARK)) >= 1 ? true : false,
-				mCursor.getBlob(mCursor.getColumnIndex(Browser.BookmarkColumns.FAVICON)));
+		return new HistoryItem(mCursor.getLong(mCursor.getColumnIndex(BookmarksProviderWrapper.BookmarkColumns._ID)),
+				mCursor.getString(mCursor.getColumnIndex(BookmarksProviderWrapper.BookmarkColumns.TITLE)),
+				mCursor.getString(mCursor.getColumnIndex(BookmarksProviderWrapper.BookmarkColumns.URL)),
+				mCursor.getInt(mCursor.getColumnIndex(BookmarksProviderWrapper.BookmarkColumns.BOOKMARK)) >= 1 ? true : false,
+				mCursor.getBlob(mCursor.getColumnIndex(BookmarksProviderWrapper.BookmarkColumns.FAVICON)));
 	}
 
 	@Override

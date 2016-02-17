@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.net.URLEncoder;
 
 import com.psiphon3.R;
+
+import org.zirco.providers.BookmarksProviderWrapper;
 import org.zirco.utils.ApplicationUtils;
 import org.zirco.utils.IOUtils;
 
@@ -14,7 +16,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.Browser;
 import android.util.Log;
 
 /**
@@ -56,12 +57,12 @@ public class XmlHistoryBookmarksExporter implements Runnable {
 			
 			if (mCursor.moveToFirst()) {
 				
-				int titleIndex = mCursor.getColumnIndex(Browser.BookmarkColumns.TITLE);
-				int urlIndex = mCursor.getColumnIndex(Browser.BookmarkColumns.URL);
-				int visitsIndex = mCursor.getColumnIndex(Browser.BookmarkColumns.VISITS);
-				int dateIndex = mCursor.getColumnIndex(Browser.BookmarkColumns.DATE);
-				int createdIndex = mCursor.getColumnIndex(Browser.BookmarkColumns.CREATED);
-				int bookmarkIndex = mCursor.getColumnIndex(Browser.BookmarkColumns.BOOKMARK);
+				int titleIndex = mCursor.getColumnIndex(BookmarksProviderWrapper.BookmarkColumns.TITLE);
+				int urlIndex = mCursor.getColumnIndex(BookmarksProviderWrapper.BookmarkColumns.URL);
+				int visitsIndex = mCursor.getColumnIndex(BookmarksProviderWrapper.BookmarkColumns.VISITS);
+				int dateIndex = mCursor.getColumnIndex(BookmarksProviderWrapper.BookmarkColumns.DATE);
+				int createdIndex = mCursor.getColumnIndex(BookmarksProviderWrapper.BookmarkColumns.CREATED);
+				int bookmarkIndex = mCursor.getColumnIndex(BookmarksProviderWrapper.BookmarkColumns.BOOKMARK);
 				
 				while (!mCursor.isAfterLast()) {
 					

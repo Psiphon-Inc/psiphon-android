@@ -26,7 +26,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
-import android.provider.Browser;
 
 public class ZircoBookmarksContentProvider extends ContentProvider {
 	
@@ -41,14 +40,14 @@ public class ZircoBookmarksContentProvider extends ContentProvider {
 	public static final String BOOKMARKS_TABLE = "bookmarks";
 	
 	private static final String BOOKMARKS_TABLE_CREATE = "CREATE TABLE " + BOOKMARKS_TABLE + " (" + 
-			Browser.BookmarkColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-			Browser.BookmarkColumns.TITLE + " TEXT, " +
-			Browser.BookmarkColumns.URL + " TEXT, " +
-			Browser.BookmarkColumns.VISITS + " INTEGER, " +
-			Browser.BookmarkColumns.DATE + " LONG, " +
-			Browser.BookmarkColumns.CREATED + " LONG, " +
-			Browser.BookmarkColumns.BOOKMARK + " INTEGER, " +
-			Browser.BookmarkColumns.FAVICON + " BLOB DEFAULT NULL);";
+			BookmarksProviderWrapper.BookmarkColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            BookmarksProviderWrapper.BookmarkColumns.TITLE + " TEXT, " +
+            BookmarksProviderWrapper.BookmarkColumns.URL + " TEXT, " +
+            BookmarksProviderWrapper.BookmarkColumns.VISITS + " INTEGER, " +
+            BookmarksProviderWrapper.BookmarkColumns.DATE + " LONG, " +
+            BookmarksProviderWrapper.BookmarkColumns.CREATED + " LONG, " +
+            BookmarksProviderWrapper.BookmarkColumns.BOOKMARK + " INTEGER, " +
+            BookmarksProviderWrapper.BookmarkColumns.FAVICON + " BLOB DEFAULT NULL);";
 	
 	private static final int BOOKMARKS = 1;
 	private static final int BOOKMARKS_BY_ID = 2;

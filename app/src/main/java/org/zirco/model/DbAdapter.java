@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.zirco.providers.BookmarksProviderWrapper;
 import org.zirco.ui.runnables.XmlHistoryBookmarksExporter;
 import org.zirco.utils.ApplicationUtils;
 import org.zirco.utils.DateUtils;
@@ -29,7 +30,6 @@ import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.provider.Browser;
 import android.util.Log;
 
 /**
@@ -475,12 +475,12 @@ public class DbAdapter {
 						if (c.moveToFirst()) {
 
 							cursor = new MatrixCursor(new String[] {
-									Browser.BookmarkColumns.TITLE,
-									Browser.BookmarkColumns.URL,
-									Browser.BookmarkColumns.VISITS,
-									Browser.BookmarkColumns.DATE,
-									Browser.BookmarkColumns.CREATED,
-									Browser.BookmarkColumns.BOOKMARK
+                                    BookmarksProviderWrapper.BookmarkColumns.TITLE,
+                                    BookmarksProviderWrapper.BookmarkColumns.URL,
+                                    BookmarksProviderWrapper.BookmarkColumns.VISITS,
+                                    BookmarksProviderWrapper.BookmarkColumns.DATE,
+                                    BookmarksProviderWrapper.BookmarkColumns.CREATED,
+                                    BookmarksProviderWrapper.BookmarkColumns.BOOKMARK
 							});
 
 							int titleColumn = c.getColumnIndex("title");
