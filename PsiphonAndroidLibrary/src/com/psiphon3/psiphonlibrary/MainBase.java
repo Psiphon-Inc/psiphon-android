@@ -20,7 +20,6 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -215,13 +214,7 @@ public abstract class MainBase {
 
                 // Show the sponsor web view, but only if there's a home page to
                 // show and it's isn't excluded from being embedded.
-                boolean showHomePage = false;
-                ArrayList<String> homepages = PsiphonData.getPsiphonData().getHomePages();
-                if (homepages.size() > 0) {
-                    showHomePage = !Arrays.asList(EmbeddedValues.HOME_TAB_URL_EXCLUSIONS).contains(homepages.get(0));
-                }
-
-                if (showHomePage && statusShowing) {
+                if (PsiphonData.getPsiphonData().showFirstHomePageInApp() && statusShowing) {
                     m_sponsorViewFlipper.showNext();
                 }
             } else {
@@ -597,6 +590,11 @@ public abstract class MainBase {
          *            time the activity is created.
          */
         protected void resetSponsorHomePage(boolean freshConnect) {
+            if (PsiphonData.getPsiphonData().getSkipHomePage())
+            {
+                return;
+            }
+            
             String url = null;
             ArrayList<String> homepages = PsiphonData.getPsiphonData().getHomePages();
             if (homepages.size() > 0) {
@@ -605,11 +603,8 @@ public abstract class MainBase {
                 return;
             }
 
-            // Some URLs are excluded from being embedded as home pages.
-            if (Arrays.asList(EmbeddedValues.HOME_TAB_URL_EXCLUSIONS).contains(url))
-            {
-                if (freshConnect)
-                {
+            if (!PsiphonData.getPsiphonData().showFirstHomePageInApp()) {
+                if (freshConnect) {
                     m_eventsInterface.displayBrowser(getContext(), Uri.parse(url));
                 }
                 return;
@@ -1324,7 +1319,8 @@ public abstract class MainBase {
             private final SponsorWebChromeClient mWebChromeClient;
             private final ProgressBar mProgressBar;
 
-            @TargetApi(Build.VERSION_CODES.HONEYCOMB) public SponsorHomePage(WebView webView, ProgressBar progressBar, IEvents eventsInterface) {
+            @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+            public SponsorHomePage(WebView webView, ProgressBar progressBar, IEvents eventsInterface) {
                 mWebView = webView;
                 mProgressBar = progressBar;
                 mWebChromeClient = new SponsorWebChromeClient(mProgressBar);
