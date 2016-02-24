@@ -315,6 +315,8 @@ JNIEXPORT jint JNICALL Java_ca_psiphon_PsiphonTunnel_runTun2Socks(
 
     BLog_InitPsiphon();
 
+    __sync_bool_compare_and_swap(&g_terminate, 1, 0);
+
     run();
 
     (*env)->ReleaseStringUTFChars(env, vpnIpAddress, vpnIpAddressStr);
