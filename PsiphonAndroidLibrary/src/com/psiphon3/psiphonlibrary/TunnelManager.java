@@ -483,7 +483,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     public void onUpstreamProxyError(String message) {
         // Display the error message only once, and continue trying to connect in
         // case the issue is temporary.
-        if (m_lastUpstreamProxyErrorMessage != null && !m_lastUpstreamProxyErrorMessage.equals(message)) {
+        if (m_lastUpstreamProxyErrorMessage == null || !m_lastUpstreamProxyErrorMessage.equals(message)) {
             MyLog.v(R.string.upstream_proxy_error, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, message);
             m_lastUpstreamProxyErrorMessage = message;
         }        
