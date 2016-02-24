@@ -288,7 +288,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     
     private void runTunnel() {
 
-        Utils.checkSecureRandom();
+        Utils.initializeSecureRandom();
 
         m_isStopping.set(false);
         m_isReconnect.set(false);
