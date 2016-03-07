@@ -257,7 +257,7 @@ static void udpgw_client_handler_received (void *unused, BAddr local_addr, BAddr
 
 #ifdef PSIPHON
 
-int g_tun_fd = -1;
+int g_terminate = 0;
 JNIEnv* g_env = 0;
 
 void PsiphonLog(const char *levelStr, const char *channelStr, const char *msgStr)
@@ -315,6 +315,8 @@ JNIEXPORT jint JNICALL Java_ca_psiphon_PsiphonTunnel_runTun2Socks(
 
     BLog_InitPsiphon();
 
+    __sync_bool_compare_and_swap(&g_terminate, 1, 0);
+
     run();
 
     (*env)->ReleaseStringUTFChars(env, vpnIpAddress, vpnIpAddressStr);
@@ -327,6 +329,14 @@ JNIEXPORT jint JNICALL Java_ca_psiphon_PsiphonTunnel_runTun2Socks(
     // TODO: return success/error
 
     return 1;
+}
+
+JNIEXPORT jint JNICALL Java_ca_psiphon_PsiphonTunnel_terminateTun2Socks(
+    jclass cls,
+    JNIEnv* env)
+{
+    __sync_bool_compare_and_swap(&g_terminate, 0, 1);
+    return 0;
 }
 
 // from tcp_helper.c
@@ -456,7 +466,6 @@ void run()
             BLog(BLOG_ERROR, "BTap_InitWithFD failed");
             goto fail3;
         }
-        g_tun_fd = options.tun_fd;
     } else {
         // init TUN device
         if (!BTap_Init(&device, &ss, options.tundev, device_error_handler, NULL, 1)) {
@@ -588,11 +597,7 @@ fail4a:
     SinglePacketBuffer_Free(&device_read_buffer);
 fail4:
     PacketPassInterface_Free(&device_read_interface);
-    if (options.tun_fd) {
-        BTap_FreeWithFD(&device);
-    } else {
-        BTap_Free(&device);
-    }
+    BTap_Free(&device);
 fail3:
     BSignal_Finish();
 fail2:
@@ -1118,16 +1123,15 @@ void tcp_timer_handler (void *unused)
     
     // ==== PSIPHON ====
 
-    // Check if the tun fd has been closed by Psiphon,
-    // which is a signal to stop tun2socks.
+    // Check if the terminate flag has been set by Psiphon.
 
     // TODO: instead of piggybacking on this timer,
     // we could perhaps write to a pipe hooked into
     // the BReactor event loop, which would eliminate
     // any shutdown delay due to waiting for this timer.
 
-    if (fcntl(g_tun_fd, F_GETFL) < 0 && errno == EBADF) {
-        BLog(BLOG_NOTICE, "g_tun_fd is closed");
+    if (__sync_bool_compare_and_swap(&g_terminate, 1, 1)) {
+        BLog(BLOG_NOTICE, "g_terminate is set");
         terminate();
         return;
     }

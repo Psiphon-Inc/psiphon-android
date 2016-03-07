@@ -17,7 +17,6 @@ package org.zirco.ui.components;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Iterator;
 
 import org.zirco.controllers.Controller;
 import org.zirco.utils.ApplicationUtils;
@@ -121,11 +120,7 @@ public class CustomWebView extends WebView {
 		}
 		*/
 		
-        int port = Controller.getInstance().getPreferences().getInt("localProxyPort", 0);   
-        if (port > 0)
-        {
-            ProxySettings.setLocalProxy(mContext, port);
-        }
+        ProxySettings.setLocalProxy(mContext);
 				
 		// Technical settings
 		settings.setSupportMultipleWindows(true);						
@@ -174,11 +169,7 @@ public class CustomWebView extends WebView {
 	public void loadUrl(String url) {
 
         // Repeat proxy configuration -- fixes HTC Sense bug
-        int port = Controller.getInstance().getPreferences().getInt("localProxyPort", 0);   
-        if (port > 0)
-        {
-            ProxySettings.setLocalProxy(mContext, port);
-        }
+        ProxySettings.setLocalProxy(mContext);
 
         WebSettings settings = getSettings();
         if(UrlUtils.checkInDesktopViewUrlList(mContext, url) )

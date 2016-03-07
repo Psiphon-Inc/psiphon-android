@@ -163,13 +163,8 @@ public class ProxySettings
 		return _proxyStatus;
 	}
 	
-	public static void setLocalProxy(Context ctx, int port)
+	public static void setLocalProxy(Context ctx)
 	{
 	    WebViewProxySettings.setLocalProxy(ctx, PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort());
 	}
-	
-    public static boolean setProxy(Context ctx, String host, int port)
-    {
-        return WebViewProxySettings.setProxy(ctx, host, PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort());
-    }
 }

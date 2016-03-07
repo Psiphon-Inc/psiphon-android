@@ -91,6 +91,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     }
 
     private final HostService mHostService;
+    private AtomicBoolean mVpnMode;
     private PrivateAddress mPrivateAddress;
     private AtomicReference<ParcelFileDescriptor> mTunFd;
     private AtomicInteger mLocalSocksProxyPort;
@@ -114,6 +115,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
 
     private PsiphonTunnel(HostService hostService) {
         mHostService = hostService;
+        mVpnMode = new AtomicBoolean(false);
         mTunFd = new AtomicReference<ParcelFileDescriptor>();
         mLocalSocksProxyPort = new AtomicInteger(0);
         mRoutingThroughTunnel = new AtomicBoolean(false);
@@ -153,6 +155,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     public synchronized void stop() {
         stopVpn();
         stopPsiphon();
+        mVpnMode.set(false);
         mLocalSocksProxyPort.set(0);
     }
 
@@ -174,6 +177,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     private boolean startVpn() throws Exception {
 
+        mVpnMode.set(true);
         mPrivateAddress = selectPrivateAddress();
 
         Locale previousLocale = Locale.getDefault();
@@ -198,6 +202,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
                 return false;
             }
             mTunFd.set(tunFd);
+            mRoutingThroughTunnel.set(false);
 
             mHostService.onDiagnosticMessage("VPN established");
 
@@ -214,9 +219,9 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
 
         return true;
     }
-    
+
     private boolean isVpnMode() {
-        return mTunFd.get() != null;
+        return mVpnMode.get();
     }
 
     private void setLocalSocksProxyPort(int port) {
@@ -227,10 +232,14 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         if (!mRoutingThroughTunnel.compareAndSet(false, true)) {
             return;
         }
+        ParcelFileDescriptor tunFd = mTunFd.getAndSet(null);
+        if (tunFd == null) {
+            return;
+        }
         String socksServerAddress = "127.0.0.1:" + Integer.toString(mLocalSocksProxyPort.get());
         String udpgwServerAddress = "127.0.0.1:" + Integer.toString(UDPGW_SERVER_PORT);
         startTun2Socks(
-                mTunFd.get(),
+                tunFd,
                 VPN_INTERFACE_MTU,
                 mPrivateAddress.mRouter,
                 VPN_INTERFACE_NETMASK,
@@ -244,6 +253,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     }
 
     private void stopVpn() {
+        stopTun2Socks();
         ParcelFileDescriptor tunFd = mTunFd.getAndSet(null);
         if (tunFd != null) {
             try {
@@ -251,7 +261,6 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
             } catch (IOException e) {
             }
         }
-        waitStopTun2Socks();
         mRoutingThroughTunnel.set(false);
     }
     
@@ -555,7 +564,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
                 region = defaultLocale.getCountry();
             }
         }
-        return region.toUpperCase();
+        return region.toUpperCase(Locale.US);
     }
     
     //----------------------------------------------------------------------------------------------
@@ -571,11 +580,14 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
             final String socksServerAddress,
             final String udpgwServerAddress,
             final boolean udpgwTransparentDNS) {
+        if (mTun2SocksThread != null) {
+            return;
+        }
         mTun2SocksThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 runTun2Socks(
-                        vpnInterfaceFileDescriptor.getFd(),
+                        vpnInterfaceFileDescriptor.detachFd(),
                         vpnInterfaceMTU,
                         vpnIpAddress,
                         vpnNetMask,
@@ -588,10 +600,10 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         mHostService.onDiagnosticMessage("tun2socks started");
     }
 
-    private void waitStopTun2Socks() {
+    private void stopTun2Socks() {
         if (mTun2SocksThread != null) {
             try {
-                // Assumes mTunFd has been closed, which signals tun2socks to exit
+                terminateTun2Socks();
                 mTun2SocksThread.join();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -614,6 +626,8 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
             String socksServerAddress,
             String udpgwServerAddress,
             int udpgwTransparentDNS);
+    
+    private native static int terminateTun2Socks();
 
     static {
         System.loadLibrary("tun2socks");
