@@ -41,6 +41,7 @@ import android.content.Intent;
 import android.net.VpnService;
 import android.net.VpnService.Builder;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
 
 import ca.psiphon.PsiphonTunnel;
 
@@ -56,6 +57,8 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         CONNECTED
     }
 
+    private NotificationManager mNotificationManager = null;
+    private NotificationCompat.Builder mNotificationBuilder = null;
     private NotificationState m_state = NotificationState.CONNECTING;
     private Service m_parentService = null;
     private boolean m_serviceDestroyed = false;
@@ -67,13 +70,15 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     private AtomicBoolean m_isStopping;
     private PsiphonTunnel m_tunnel = null;
     private String m_lastUpstreamProxyErrorMessage;
-
     
     public TunnelManager(Service parentService) {
         m_parentService = parentService;
         m_isReconnect = new AtomicBoolean(false);
         m_isStopping = new AtomicBoolean(false);
         m_tunnel = PsiphonTunnel.newPsiphonTunnel(this);
+
+        mNotificationManager = (NotificationManager)parentService.getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationBuilder = new NotificationCompat.Builder(parentService);
     }
 
     // Implementation of android.app.Service.onStartCommand
@@ -91,6 +96,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             });
             m_tunnelThread.start();
         }
+
         return android.app.Service.START_NOT_STICKY;
     }
 
@@ -187,11 +193,14 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                     activityIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Notification notification =
-                new Notification(
-                        iconID,
-                        ticker,
-                        System.currentTimeMillis());
+        mNotificationBuilder
+                .setSmallIcon(iconID)
+                .setContentTitle(m_parentService.getText(R.string.app_name))
+                .setContentText(m_parentService.getText(contentTextID))
+                .setTicker(ticker)
+                .setContentIntent(invokeActivityIntent);
+
+        Notification notification = mNotificationBuilder.build();
 
         if (alert) {
             if (PreferenceManager.getDefaultSharedPreferences(m_parentService).getBoolean(
@@ -203,12 +212,6 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 notification.defaults |= Notification.DEFAULT_VIBRATE;
             }
         }
-
-        notification.setLatestEventInfo(
-            m_parentService,
-            m_parentService.getText(R.string.app_name),
-            m_parentService.getText(contentTextID),
-            invokeActivityIntent);
 
         return notification;
     }
@@ -225,11 +228,8 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         boolean alert = (newState != m_state);
         m_state = newState;
 
-        String ns = Context.NOTIFICATION_SERVICE;
-        NotificationManager notificationManager =
-                (NotificationManager)m_parentService.getSystemService(ns);
-        if (notificationManager != null) {
-            notificationManager.notify(
+        if (mNotificationManager != null) {
+            mNotificationManager.notify(
                     R.string.psiphon_service_notification_id,
                     createNotification(alert));
         }

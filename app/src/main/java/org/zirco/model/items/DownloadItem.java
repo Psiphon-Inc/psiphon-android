@@ -30,6 +30,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.support.v4.app.NotificationCompat;
 
 /**
  * Represent a download item.
@@ -51,7 +52,7 @@ public class DownloadItem {
 	private boolean mIsAborted;
 	
 	private NotificationManager mNotificationManager;
-	private Notification mNotification;
+	private NotificationCompat.Builder mNotificationBuilder;
 	private int mNotificationId;
 	
 	/**
@@ -81,8 +82,8 @@ public class DownloadItem {
 		
 		Random r = new Random();
 		mNotificationId = r.nextInt();
-		mNotification = null;
 		mNotificationManager = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+		mNotificationBuilder = new NotificationCompat.Builder(mContext.getApplicationContext());
 	}
 	
 	/**
@@ -203,24 +204,25 @@ public class DownloadItem {
 	 * Create the download notification.
 	 */
 	private void createNotification() {
-		mNotification = new Notification(R.drawable.download_anim, mContext.getString(R.string.DownloadNotification_DownloadStart), System.currentTimeMillis());		
-
 		Intent notificationIntent = new Intent(mContext.getApplicationContext(), DownloadsListActivity.class);
 		PendingIntent contentIntent = PendingIntent.getActivity(mContext.getApplicationContext(), 0, notificationIntent, 0);
 
-		mNotification.setLatestEventInfo(mContext.getApplicationContext(), mContext.getString(R.string.DownloadNotification_DownloadInProgress), mFileName, contentIntent);
+		mNotificationBuilder
+				.setAutoCancel(false)
+				.setSmallIcon(R.drawable.download_anim)
+				.setContentTitle(mContext.getString(R.string.DownloadNotification_DownloadInProgress))
+				.setContentText(mFileName)
+				.setContentIntent(contentIntent);
 
-		mNotificationManager.notify(mNotificationId, mNotification);
+		mNotificationManager.notify(mNotificationId, mNotificationBuilder.build());
 	}
 	
 	/**
 	 * Update the download notification at the end of download.
 	 */
 	private void updateNotificationOnEnd() {
-		if (mNotification != null) {
-			mNotificationManager.cancel(mNotificationId);			
-		}
-		
+		mNotificationManager.cancel(mNotificationId);
+
 		String message;
 		if (mIsAborted) {
 			message = mContext.getString(R.string.DownloadNotification_DownloadCanceled);
@@ -228,15 +230,17 @@ public class DownloadItem {
 			message = mContext.getString(R.string.DownloadNotification_DownloadComplete);
 		}
 
-		mNotification = new Notification(R.drawable.stat_sys_download, mContext.getString(R.string.DownloadNotification_DownloadComplete), System.currentTimeMillis());
-		mNotification.flags |= Notification.FLAG_AUTO_CANCEL;
-
 		Intent notificationIntent = new Intent(mContext.getApplicationContext(), DownloadsListActivity.class);
 		PendingIntent contentIntent = PendingIntent.getActivity(mContext.getApplicationContext(), 0, notificationIntent, 0);
 
-		mNotification.setLatestEventInfo(mContext.getApplicationContext(), mFileName, message, contentIntent);
+		mNotificationBuilder
+				.setAutoCancel(true)
+				.setSmallIcon(R.drawable.stat_sys_download)
+				.setContentTitle(mFileName)
+				.setContentText(message)
+				.setContentIntent(contentIntent);
 
-		mNotificationManager.notify(mNotificationId, mNotification);		
+		mNotificationManager.notify(mNotificationId, mNotificationBuilder.build());
 	}
 
 }

@@ -41,6 +41,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
+import android.support.v4.app.NotificationCompat;
 
 import com.psiphon3.R;
 
@@ -302,6 +303,9 @@ public interface UpgradeManager
      */
     static public class UpgradeInstaller
     {
+        private static NotificationManager mNotificationManager;
+        private static NotificationCompat.Builder mNotificationBuilder;
+
         /**
          * Check if an upgrade file is available, and if it's actually a higher
          * version.
@@ -405,33 +409,34 @@ public interface UpgradeManager
                         
             PendingIntent invokeUpgradeIntent = 
                     PendingIntent.getActivity(
-                        context,
-                        0,
-                        upgradeIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT);
+                            context,
+                            0,
+                            upgradeIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT);
         
-            int iconID = PsiphonData.getPsiphonData().getNotificationIconUpgradeAvailable();
-            if (iconID == 0)
+            if (mNotificationBuilder == null)
             {
-                iconID = R.drawable.notification_icon_upgrade_available;
-            }
-            
-            Notification notification =
-                    new Notification(
-                            iconID,
-                            context.getText(R.string.UpgradeManager_UpgradePromptTitle),
-                            System.currentTimeMillis());
+                int iconID = PsiphonData.getPsiphonData().getNotificationIconUpgradeAvailable();
+                if (iconID == 0)
+                {
+                    iconID = R.drawable.notification_icon_upgrade_available;
+                }
 
-            notification.setLatestEventInfo(
-                    context,
-                    context.getText(R.string.UpgradeManager_UpgradePromptTitle),
-                    context.getText(R.string.UpgradeManager_UpgradePromptMessage),
-                    invokeUpgradeIntent); 
-            
-            NotificationManager notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
-            if (notificationManager != null)
+                mNotificationBuilder = new NotificationCompat.Builder(context)
+                        .setSmallIcon(iconID)
+                        .setContentTitle(context.getString(R.string.UpgradeManager_UpgradePromptTitle))
+                        .setContentText(context.getString(R.string.UpgradeManager_UpgradePromptMessage))
+                        .setContentIntent(invokeUpgradeIntent);
+            }
+
+            if (mNotificationManager == null)
             {
-                notificationManager.notify(R.string.UpgradeManager_UpgradeAvailableNotificationId, notification);
+                mNotificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+            }
+
+            if (mNotificationManager != null)
+            {
+                mNotificationManager.notify(R.string.UpgradeManager_UpgradeAvailableNotificationId, mNotificationBuilder.build());
             }
         }
     }
