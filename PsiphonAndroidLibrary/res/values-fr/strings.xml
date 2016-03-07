@@ -53,7 +53,7 @@
   <string name="iptables_binary_not_found">Impossible de trouver la version «\u00A0iptables\u00A0» exigée pour le mandataire transparent</string>
   <string name="root_access_denied">Accès root refusé</string>
   <string name="psiphon_stopped">Arrêté</string>
-  <string name="psiphon_running_whole_device">Exécution en mode tout l\'appareil</string>
+  <string name="psiphon_running_whole_device">Exécution en mode Tout l\'appareil</string>
   <string name="psiphon_running_browser_only">Exécution en mode navigateur seulement</string>
   <string name="waiting_for_network_connectivity">En attente de connectivité réseau...</string>
   <string name="checking_for_root_access">Vérification de l\'accès root...</string>
@@ -130,7 +130,7 @@
   <string name="region_name_sg">Singapour</string>
   <string name="region_name_nl">Pays-Bas</string>
   <string name="about">À propos de Psiphon</string>
-  <string name="feedback">Réactions</string>
+  <string name="feedback">Rétroaction</string>
   <string name="tunnel_whole_device_toggle">Tunnelliser tout l\'appareil (Android 4.0+ exigé)</string>
   <string name="region_selector">Choisir une région</string>
   <string name="network_proxy_connect_exception">Échec de connexion au mandataire HTTP du réseau\u00A0: %s </string>

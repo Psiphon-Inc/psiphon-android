@@ -317,5 +317,5 @@
   <string name="DesktopViewListActivity.ListEmpty">La liste est vide.</string>
   <string name="DesktopViewListActivity.AddMessage">Ajouter un site Web</string>
   <string name="DesktopViewListActivity.ClearMessage">Effacer tous les sites</string>
-  <string name="Main.MenuFeedback">Réactions</string>
+  <string name="Main.MenuFeedback">Rétroaction</string>
 </resources>
