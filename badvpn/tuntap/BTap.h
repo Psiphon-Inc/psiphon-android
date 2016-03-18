@@ -30,6 +30,10 @@
  * 
  * TAP device abstraction.
  */
+/*
+ * Psiphon customizations: Copyright (C) Psiphon Inc.
+ * Released under badvpn licence: https://github.com/ambrop72/badvpn#license
+ */
 
 #ifndef BADVPN_TUNTAP_BTAP_H
 #define BADVPN_TUNTAP_BTAP_H
