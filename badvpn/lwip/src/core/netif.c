@@ -35,6 +35,10 @@
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
+/*
+ * Psiphon customizations: Copyright (C) Psiphon Inc.
+ * Released under badvpn licence: https://github.com/ambrop72/badvpn#license
+ */
 
 #include "lwip/opt.h"
 
