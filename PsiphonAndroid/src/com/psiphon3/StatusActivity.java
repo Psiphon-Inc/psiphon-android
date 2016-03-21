@@ -248,6 +248,8 @@ public class StatusActivity
                     m_moPubInterstitial.destroy();
                 }
                 m_moPubInterstitial = new MoPubInterstitial(this, MOPUB_INTERSTITIAL_PROPERTY_ID);
+                m_moPubInterstitial.setKeywords("client_region:" + PsiphonData.getPsiphonData().getClientRegion());
+                
                 m_moPubInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
                     @Override
                     public void onInterstitialClicked(MoPubInterstitial arg0) {
@@ -284,6 +286,7 @@ public class StatusActivity
             {
                 m_moPubBannerAdView = new MoPubView(this);
                 m_moPubBannerAdView.setAdUnitId(MOPUB_BANNER_PROPERTY_ID);
+                m_moPubBannerAdView.setKeywords("client_region:" + PsiphonData.getPsiphonData().getClientRegion());
                 
                 m_moPubBannerAdView.setBannerAdListener(new BannerAdListener() {
                     @Override
@@ -319,6 +322,7 @@ public class StatusActivity
             {
                 m_moPubBannerLargeAdView = new MoPubView(this);
                 m_moPubBannerLargeAdView.setAdUnitId(MOPUB_LARGE_BANNER_PROPERTY_ID);
+                m_moPubBannerLargeAdView.setKeywords("client_region:" + PsiphonData.getPsiphonData().getClientRegion());
                 
                 m_moPubBannerLargeAdView.setBannerAdListener(new BannerAdListener() {
                     @Override
