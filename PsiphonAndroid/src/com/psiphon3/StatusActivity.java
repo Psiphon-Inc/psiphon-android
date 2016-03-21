@@ -52,6 +52,7 @@ import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
+import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 
 
 public class StatusActivity
@@ -386,6 +387,9 @@ public class StatusActivity
     {
         if (PsiphonData.getPsiphonData().getShowAds())
         {
+            // make sure WebView proxy settings are up to date
+            WebViewProxySettings.setLocalProxy(this, PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort());
+            
             initBanners();
             
             if (m_fullScreenAdPending)
