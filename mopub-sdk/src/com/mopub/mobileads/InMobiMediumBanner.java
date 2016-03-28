@@ -134,6 +134,7 @@ public class InMobiMediumBanner extends CustomEventBanner implements BannerAdLis
 		map.put("tp-ver", MoPub.SDK_VERSION);
 		imbanner.setExtras(map);
         imbanner.setLayoutParams(new LinearLayout.LayoutParams(Math.round(300*dm.density), Math.round(250*dm.density)));
+        AdViewController.setShouldHonorServerDimensions(imbanner);
         imbanner.load();
     }
 

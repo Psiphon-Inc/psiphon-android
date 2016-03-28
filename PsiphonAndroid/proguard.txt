@@ -37,5 +37,6 @@
 
 # Needed when building against the Marshmallow SDK
 -dontwarn org.apache.http.**
+-dontwarn com.inmobi.**
 -dontwarn com.google.android.gms.**
 -dontwarn android.webkit.WebSettings
