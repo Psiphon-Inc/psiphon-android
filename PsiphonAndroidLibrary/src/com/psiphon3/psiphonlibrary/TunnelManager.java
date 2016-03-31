@@ -288,7 +288,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     
     private void runTunnel() {
 
-        Utils.checkSecureRandom();
+        Utils.initializeSecureRandom();
 
         m_isStopping.set(false);
         m_isReconnect.set(false);
@@ -410,6 +410,8 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 PsiphonData.getPsiphonData().getDownloadUpgrades()) {
                 json.put("UpgradeDownloadUrl", EmbeddedValues.UPGRADE_URL);
                 
+                json.put("UpgradeDownloadClientVersionHeader", "x-amz-meta-psiphon-client-version");
+                
                 json.put("UpgradeDownloadFilename",
                         new UpgradeManager.DownloadedUpgradeFile(m_parentService).getFullPath());                
             }
@@ -435,6 +437,8 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             String egressRegion = PsiphonData.getPsiphonData().getEgressRegion();
             MyLog.g("EgressRegion", "regionCode", egressRegion);
             json.put("EgressRegion", egressRegion);
+            
+            json.put("EmitDiagnosticNotices", true);
             
             return json.toString();
 
@@ -483,7 +487,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     public void onUpstreamProxyError(String message) {
         // Display the error message only once, and continue trying to connect in
         // case the issue is temporary.
-        if (m_lastUpstreamProxyErrorMessage != null && !m_lastUpstreamProxyErrorMessage.equals(message)) {
+        if (m_lastUpstreamProxyErrorMessage == null || !m_lastUpstreamProxyErrorMessage.equals(message)) {
             MyLog.v(R.string.upstream_proxy_error, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, message);
             m_lastUpstreamProxyErrorMessage = message;
         }        

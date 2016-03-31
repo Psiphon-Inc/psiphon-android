@@ -14,7 +14,6 @@ import java.util.Date;
 import java.util.IllegalFormatException;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -56,38 +55,6 @@ public class Utils
             new LinuxSecureRandom();
             m_initializedSecureRandom = true;
         }
-    }
-    
-    public static void checkSecureRandom()
-    {
-        // Checks that initializeSecureRandom() was called by the Psiphon library consumer.
-        
-        if (!m_initializedSecureRandom)
-        {
-            throw new RuntimeException("failed to call Utils.initializeSecureRandom");
-        }
-    }
-    
-    private static SecureRandom s_secureRandom = new SecureRandom();
-    public static byte[] generateSecureRandomBytes(int byteCount)
-    {
-        byte bytes[] = new byte[byteCount];
-        s_secureRandom.nextBytes(bytes);
-        return bytes;
-    }
-
-    private static Random s_insecureRandom = new Random();
-    public static byte[] generateInsecureRandomBytes(int byteCount)
-    {
-        byte bytes[] = new byte[byteCount];
-        s_insecureRandom.nextBytes(bytes);
-        return bytes;
-    }
-
-    public static int insecureRandRange(int min, int max)
-    {
-        // Returns [min, max]; e.g., inclusive of both min and max.
-        return min + (int)(Math.random() * ((max - min) + 1));
     }
     
     // from:
