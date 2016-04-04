@@ -58,6 +58,8 @@ import org.zirco.utils.ApplicationUtils;
 import org.zirco.utils.Constants;
 import org.zirco.utils.UrlUtils;
 
+import com.psiphon3.psiphonlibrary.PsiphonData;
+
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -69,7 +71,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Configuration;
 import android.database.Cursor;
@@ -246,12 +247,6 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         
         Constants.initializeConstantsFromResources(this);
         
-        // PSIPHON: explicitly set proxy preference
-        int localProxyPort = intent.getIntExtra("localProxyPort", 0);
-        Editor e = PreferenceManager.getDefaultSharedPreferences(this).edit();
-        e.putInt("localProxyPort", localProxyPort);
-        e.commit();
-        
         Controller.getInstance().setPreferences(PreferenceManager.getDefaultSharedPreferences(this));    
         
         if (Controller.getInstance().getPreferences().getBoolean(Constants.PREFERENCES_SHOW_FULL_SCREEN, false)) {        	
@@ -343,7 +338,6 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
                 // an open tab really matches a home page, we'll need to collect
                 // that home page's redirect URLs.
                 List<String> homePageEquivs = findEquivalentUrls(
-                        localProxyPort,
                         mWebViews.get(0).getSettings().getUserAgentString(),
                         homePage);
                 
@@ -2376,14 +2370,12 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 	/**
 	 * Discover other URLs that are equivalent to the given URL, where a URL is
 	 * "equivalent" if it is in the given URL's redirection chain. 
-	 * @param proxyPort  The port that the local proxy runs on.
 	 * @param url  The URL that we want to find equivalents for.
 	 * @return An array of equivalent URLs, which will contain the original URL.
 	 *         (E.g., it's guaranteed to be at least size 1.)
 	 */
     @SuppressWarnings("unchecked")
 	private List<String> findEquivalentUrls(
-	        final int proxyPort, 
 	        final String userAgentString, 
 	        final String url) 
 	{
@@ -2409,7 +2401,9 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
                     HttpParams params = new BasicHttpParams();
                     HttpConnectionParams.setConnectionTimeout(params, 5000);
                     HttpConnectionParams.setSoTimeout(params, 5000);
-                    HttpHost httpproxy = new HttpHost("localhost", proxyPort);
+                    HttpHost httpproxy = new HttpHost(
+                            "localhost",
+                            PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort());
                     params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
                     DefaultHttpClient client = new DefaultHttpClient(params);
                     HttpContext context = new BasicHttpContext();

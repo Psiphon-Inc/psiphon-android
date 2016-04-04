@@ -1,20 +1,8 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -22,19 +10,12 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.X509EncodedKeySpec;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.IllegalFormatException;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Random;
 import java.util.TimeZone;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
-import java.io.IOException;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -42,13 +23,8 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpRequestBaseHC4;
-import org.apache.http.conn.util.InetAddressUtils;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.xbill.DNS.ResolverConfig;
 
 import de.schildbach.wallet.util.LinuxSecureRandom;
 import android.annotation.TargetApi;
@@ -59,7 +35,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.ConnectivityManager;
-import android.net.LinkProperties;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.util.Log;
@@ -80,38 +55,6 @@ public class Utils
             new LinuxSecureRandom();
             m_initializedSecureRandom = true;
         }
-    }
-    
-    public static void checkSecureRandom()
-    {
-        // Checks that initializeSecureRandom() was called by the Psiphon library consumer.
-        
-        if (!m_initializedSecureRandom)
-        {
-            throw new RuntimeException("failed to call Utils.initializeSecureRandom");
-        }
-    }
-    
-    private static SecureRandom s_secureRandom = new SecureRandom();
-    public static byte[] generateSecureRandomBytes(int byteCount)
-    {
-        byte bytes[] = new byte[byteCount];
-        s_secureRandom.nextBytes(bytes);
-        return bytes;
-    }
-
-    private static Random s_insecureRandom = new Random();
-    public static byte[] generateInsecureRandomBytes(int byteCount)
-    {
-        byte bytes[] = new byte[byteCount];
-        s_insecureRandom.nextBytes(bytes);
-        return bytes;
-    }
-
-    public static int insecureRandRange(int min, int max)
-    {
-        // Returns [min, max]; e.g., inclusive of both min and max.
-        return min + (int)(Math.random() * ((max - min) + 1));
     }
     
     // from:
@@ -647,237 +590,12 @@ public class Utils
         return getISO8601String(new Date());
     }
 
-    public static boolean isPortAvailable(int port)
-    {
-        Socket socket = new Socket();
-        SocketAddress sockaddr = new InetSocketAddress("127.0.0.1", port);
-        
-        try 
-        {
-            socket.connect(sockaddr, 1000);
-            // The connect succeeded, so there is already something running on that port
-            return false;
-        }
-        catch (SocketTimeoutException e)
-        {
-            // The socket is in use, but the server didn't respond quickly enough
-            return false;
-        }
-        catch (IOException e)
-        {
-            // The connect failed, so the port is available
-            return true;
-        }
-        finally
-        {
-            if (socket != null)
-            {
-                try 
-                {
-                    socket.close();
-                } 
-                catch (IOException e) 
-                {
-                    /* should not be thrown */
-                }
-            }
-        }
-    }
-
-    public static int findAvailablePort(int start_port, int max_increment)
-    {
-        for(int port = start_port; port < (start_port + max_increment); port++)
-        {
-            if (isPortAvailable(port))
-            {
-                return port;
-            }
-        }
-
-        return 0;
-    }
-    
-    public static boolean hasNetworkConnectivity(Context context)
-    {
-        ConnectivityManager connectivityManager =
-                (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-        return networkInfo != null && networkInfo.isConnected();
-    }
-
     public static String getNetworkTypeName(Context context)
     {
         ConnectivityManager connectivityManager =
                 (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
         return networkInfo == null ? "" : networkInfo.getTypeName();
-    }
-
-    public static String getIPv4Address()
-    {
-        List<NetworkInterface> netInterfaces;
-        try
-        {
-            netInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-        }
-        catch (SocketException e)
-        {
-            return "";
-        }
-
-        for (NetworkInterface netInterface : netInterfaces)
-        {
-            for (InetAddress inetAddress : Collections.list(netInterface.getInetAddresses()))
-            {
-                if (!inetAddress.isLoopbackAddress())
-                {
-                    String ipAddress = inetAddress.getHostAddress();
-                    if (InetAddressUtils.isIPv4Address(ipAddress))
-                    {
-                        return ipAddress;
-                    }
-                }
-            }
-        }
-        return "";
-    }
-    
-    private static final String CANDIDATE_10_SLASH_8 = "10.0.0.1";
-    private static final String SUBNET_10_SLASH_8 = "10.0.0.0";
-    private static final int PREFIX_LENGTH_10_SLASH_8 = 8;
-    private static final String ROUTER_10_SLASH_8 = "10.0.0.2";
-
-    private static final String CANDIDATE_172_16_SLASH_12 = "172.16.0.1";
-    private static final String SUBNET_172_16_SLASH_12 = "172.16.0.0";
-    private static final int PREFIX_LENGTH_172_16_SLASH_12 = 12;
-    private static final String ROUTER_172_16_SLASH_12 = "172.16.0.2";
-
-    private static final String CANDIDATE_192_168_SLASH_16 = "192.168.0.1";        
-    private static final String SUBNET_192_168_SLASH_16 = "192.168.0.0";
-    private static final int PREFIX_LENGTH_192_168_SLASH_16 = 16;
-    private static final String ROUTER_192_168_SLASH_16 = "192.168.0.2";
-    
-    private static final String CANDIDATE_169_254_1_SLASH_24 = "169.254.1.1";        
-    private static final String SUBNET_169_254_1_SLASH_24 = "169.254.1.0";
-    private static final int PREFIX_LENGTH_169_254_1_SLASH_24 = 24;
-    private static final String ROUTER_169_254_1_SLASH_24 = "169.254.1.2";
-    
-    public static String selectPrivateAddress()
-    {
-        // Select one of 10.0.0.1, 172.16.0.1, or 192.168.0.1 depending on
-        // which private address range isn't in use.
-
-        ArrayList<String> candidates = new ArrayList<String>();
-        candidates.add(CANDIDATE_10_SLASH_8);
-        candidates.add(CANDIDATE_172_16_SLASH_12);
-        candidates.add(CANDIDATE_192_168_SLASH_16);
-        candidates.add(CANDIDATE_169_254_1_SLASH_24);
-        
-        List<NetworkInterface> netInterfaces;
-        try
-        {
-            netInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-        }
-        catch (SocketException e)
-        {
-            return null;
-        }
-
-        for (NetworkInterface netInterface : netInterfaces)
-        {
-            for (InetAddress inetAddress : Collections.list(netInterface.getInetAddresses()))
-            {
-                String ipAddress = inetAddress.getHostAddress();
-                if (InetAddressUtils.isIPv4Address(ipAddress))
-                {
-                    if (ipAddress.startsWith("10."))
-                    {
-                        candidates.remove(CANDIDATE_10_SLASH_8);
-                    }
-                    else if (
-                        ipAddress.length() >= 6 &&
-                        ipAddress.substring(0, 6).compareTo("172.16") >= 0 && 
-                        ipAddress.substring(0, 6).compareTo("172.31") <= 0)
-                    {
-                        candidates.remove(CANDIDATE_172_16_SLASH_12);
-                    }
-                    else if (ipAddress.startsWith("192.168"))
-                    {
-                        candidates.remove(CANDIDATE_192_168_SLASH_16);
-                    }
-                }
-            }
-        }
-        
-        if (candidates.size() > 0)
-        {
-            return candidates.get(0);
-        }
-        
-        return null;
-    }
-    
-    public static String getPrivateAddressSubnet(String privateIpAddress)
-    {
-        if (0 == privateIpAddress.compareTo(CANDIDATE_10_SLASH_8))
-        {
-            return SUBNET_10_SLASH_8;
-        }
-        else if (0 == privateIpAddress.compareTo(CANDIDATE_172_16_SLASH_12))
-        {
-            return SUBNET_172_16_SLASH_12;
-        }
-        else if (0 == privateIpAddress.compareTo(CANDIDATE_192_168_SLASH_16))
-        {
-            return SUBNET_192_168_SLASH_16;
-        }
-        else if (0 == privateIpAddress.compareTo(CANDIDATE_169_254_1_SLASH_24))
-        {
-            return SUBNET_169_254_1_SLASH_24;
-        }
-        return null;
-    }
-    
-    public static int getPrivateAddressPrefixLength(String privateIpAddress)
-    {
-        if (0 == privateIpAddress.compareTo(CANDIDATE_10_SLASH_8))
-        {
-            return PREFIX_LENGTH_10_SLASH_8;
-        }
-        else if (0 == privateIpAddress.compareTo(CANDIDATE_172_16_SLASH_12))
-        {
-            return PREFIX_LENGTH_172_16_SLASH_12;
-        }
-        else if (0 == privateIpAddress.compareTo(CANDIDATE_192_168_SLASH_16))
-        {
-            return PREFIX_LENGTH_192_168_SLASH_16;
-        }
-        else if (0 == privateIpAddress.compareTo(CANDIDATE_169_254_1_SLASH_24))
-        {
-            return PREFIX_LENGTH_169_254_1_SLASH_24;
-        }
-        return 0;        
-    }
-    
-    public static String getPrivateAddressRouter(String privateIpAddress)
-    {
-        if (0 == privateIpAddress.compareTo(CANDIDATE_10_SLASH_8))
-        {
-            return ROUTER_10_SLASH_8;
-        }
-        else if (0 == privateIpAddress.compareTo(CANDIDATE_172_16_SLASH_12))
-        {
-            return ROUTER_172_16_SLASH_12;
-        }
-        else if (0 == privateIpAddress.compareTo(CANDIDATE_192_168_SLASH_16))
-        {
-            return ROUTER_192_168_SLASH_16;
-        }
-        else if (0 == privateIpAddress.compareTo(CANDIDATE_169_254_1_SLASH_24))
-        {
-            return ROUTER_169_254_1_SLASH_24;
-        }
-        return null;
     }
 
     public static String byteCountToDisplaySize(long bytes, boolean si)
@@ -911,153 +629,6 @@ public class Utils
         }
         
         return String.format("%02dh %02dm %02ds", hours, minutes, seconds);
-    }
-    
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public static Collection<InetAddress> getActiveNetworkDnsResolvers(Context context)
-    {
-        ArrayList<InetAddress> dnsAddresses = new ArrayList<InetAddress>();
-        
-        try
-        {
-            /*
-
-            Hidden API
-            - only available in Android 4.0+
-            - no guarantee will be available beyond 4.2, or on all vendor devices 
-
-            core/java/android/net/ConnectivityManager.java:
-
-                /** {@hide} * /
-                public LinkProperties getActiveLinkProperties() {
-                    try {
-                        return mService.getActiveLinkProperties();
-                    } catch (RemoteException e) {
-                        return null;
-                    }
-                }
-
-            services/java/com/android/server/ConnectivityService.java:
-
-                /*
-                 * Return LinkProperties for the active (i.e., connected) default
-                 * network interface.  It is assumed that at most one default network
-                 * is active at a time. If more than one is active, it is indeterminate
-                 * which will be returned.
-                 * @return the ip properties for the active network, or {@code null} if
-                 * none is active
-                 * /
-                @Override
-                public LinkProperties getActiveLinkProperties() {
-                    return getLinkProperties(mActiveDefaultNetwork);
-                }
-                
-                @Override
-                public LinkProperties getLinkProperties(int networkType) {
-                    enforceAccessPermission();
-                    if (isNetworkTypeValid(networkType)) {
-                        final NetworkStateTracker tracker = mNetTrackers[networkType];
-                        if (tracker != null) {
-                            return tracker.getLinkProperties();
-                        }
-                    }
-                    return null;
-                }
-
-            core/java/android/net/LinkProperties.java:
-
-                public Collection<InetAddress> getDnses() {
-                    return Collections.unmodifiableCollection(mDnses);
-                }
-
-            */
-
-            ConnectivityManager connectivityManager =
-                    (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
-            
-            Class<?> LinkPropertiesClass = Class.forName("android.net.LinkProperties");
-
-            Method getActiveLinkPropertiesMethod = ConnectivityManager.class.getMethod("getActiveLinkProperties", new Class []{});
-
-            Object linkProperties = getActiveLinkPropertiesMethod.invoke(connectivityManager);
-            
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
-            {
-                Method getDnsesMethod = LinkPropertiesClass.getMethod("getDnses", new Class []{});
-    
-                Collection<?> dnses = (Collection<?>)getDnsesMethod.invoke(linkProperties);
-                
-                for (Object dns : dnses)
-                {
-                    dnsAddresses.add((InetAddress)dns);
-                }
-            }
-            else
-            {
-                // LinkProperties is now available in API 21 (and the DNS function signature has changed)
-                for (InetAddress dns : ((LinkProperties)linkProperties).getDnsServers())
-                {
-                    dnsAddresses.add(dns);
-                }
-            }
-        }
-        catch (ClassNotFoundException e)
-        {
-            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
-        }
-        catch (NoSuchMethodException e)
-        {
-            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
-        }
-        catch (IllegalArgumentException e)
-        {
-            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
-        }
-        catch (IllegalAccessException e)
-        {
-            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
-        }
-        catch (InvocationTargetException e)
-        {
-            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
-        }
-        catch (NullPointerException e)
-        {
-            MyLog.w(R.string.get_active_network_dns_resolvers_failed, MyLog.Sensitivity.NOT_SENSITIVE, e);
-        }
-        
-        return dnsAddresses;
-    }
-    
-    static void updateDnsResolvers(Context context)
-    {
-        // Custom DNS resolver only used in VpnService mode. Also, note
-        // that getActiveNetworkDnsResolvers uses hidden APIs available
-        // only in Android 4.0+.
-
-        if (!Utils.hasVpnService())
-        {
-            return;
-        }
-        
-        // Update DNS resolver settings. These settings are used outside the tunnel
-        // but while the VpnService tun device is still up. We try to use the correct
-        // resolver for the active underlying network.            
-
-        String dnsResolver;
-        ArrayList<String> dnsResolvers = new ArrayList<String>();
-        for (InetAddress activeNetworkResolver : Utils.getActiveNetworkDnsResolvers(context))
-        {
-            dnsResolver = activeNetworkResolver.getHostAddress();
-            dnsResolvers.add(dnsResolver);
-            // Disabled for now -- too noisy (not changing to Log.g since it's SENSITIVE)
-            //MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
-        }
-        dnsResolver = PsiphonConstants.TUNNEL_WHOLE_DEVICE_DNS_RESOLVER_ADDRESS;
-        dnsResolvers.add(dnsResolver);
-        // Disabled for now -- too noisy (not changing to Log.g since it's SENSITIVE)
-        //MyLog.v(R.string.dns_resolver, MyLog.Sensitivity.SENSITIVE_LOG, dnsResolver);
-        ResolverConfig.refresh(dnsResolvers);        
     }
     
     public static class RSAEncryptOutput {
@@ -1145,67 +716,5 @@ public class Utils
         wrappedMacKey = rsaCipher.wrap(macKey);
         
         return new RSAEncryptOutput(contentCiphertext, iv, wrappedEncryptionKey, contentMac, wrappedMacKey);
-    }
-
-    public static void closeHelper(Socket socket) {
-        try {
-            if (socket != null) {
-                socket.close();
-            }
-        } catch (IOException e) {}
-    }
-    
-    public static void closeHelper(ServerSocket serverSocket) {
-        try {
-            if (serverSocket != null) {
-                serverSocket.close();
-            }
-        } catch (IOException e) {}
-    }
-    
-    public static void closeHelper(InputStream inputStream) {
-        try {
-            if (inputStream != null) {
-                inputStream.close();
-            }
-        } catch (IOException e) {}
-    }
-    
-    public static void closeHelper(OutputStream outputStream) {
-        try {
-            if (outputStream != null) {
-                outputStream.close();
-            }
-        } catch (IOException e) {}
-    }
-    
-    public static void closeHelper(CloseableHttpResponse response) {
-        try {
-            if (response != null) {
-                response.close();
-            }
-        } catch (IOException e) {}
-    }
-    
-    public static void closeHelper(CloseableHttpClient httpClient) {
-        try {
-            if (httpClient != null) {
-                httpClient.close();
-            }
-        } catch (IOException e) {}
-    }
-    
-    public static class RequestTimeoutAbort extends TimerTask {
-        private HttpRequestBaseHC4 httpRequest;
-        RequestTimeoutAbort(HttpRequestBaseHC4 request) {
-            httpRequest = request;
-        }
-        @Override
-        public void run() {
-            if (httpRequest != null)
-            {
-                httpRequest.abort();
-            }
-        }
     }
 }

@@ -25,6 +25,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Psiphon customizations: Copyright (C) Psiphon Inc.
+ * Released under badvpn licence: https://github.com/ambrop72/badvpn#license
+ */
 
 #include <stdint.h>
 #include <stdio.h>
@@ -257,6 +261,7 @@ static void udpgw_client_handler_received (void *unused, BAddr local_addr, BAddr
 
 #ifdef PSIPHON
 
+int g_terminate = 0;
 JNIEnv* g_env = 0;
 
 void PsiphonLog(const char *levelStr, const char *channelStr, const char *msgStr)
@@ -271,7 +276,7 @@ void PsiphonLog(const char *levelStr, const char *channelStr, const char *msgStr
     jstring channel = (*g_env)->NewStringUTF(g_env, channelStr);
     jstring msg = (*g_env)->NewStringUTF(g_env, msgStr);
 
-    jclass cls = (*g_env)->FindClass(g_env, "com/psiphon3/psiphonlibrary/Tun2Socks");
+    jclass cls = (*g_env)->FindClass(g_env, "ca/psiphon/PsiphonTunnel");
     jmethodID logMethod = (*g_env)->GetStaticMethodID(g_env, cls, "logTun2Socks", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
     (*g_env)->CallStaticVoidMethod(g_env, cls, logMethod, level, channel, msg);
 
@@ -282,7 +287,7 @@ void PsiphonLog(const char *levelStr, const char *channelStr, const char *msgStr
     (*g_env)->DeleteLocalRef(g_env, msg);
 }
 
-JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_runTun2Socks(
+JNIEXPORT jint JNICALL Java_ca_psiphon_PsiphonTunnel_runTun2Socks(
     JNIEnv* env,
     jclass cls,
     jint vpnInterfaceFileDescriptor,
@@ -314,6 +319,8 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_runTun2Socks(
 
     BLog_InitPsiphon();
 
+    __sync_bool_compare_and_swap(&g_terminate, 1, 0);
+
     run();
 
     (*env)->ReleaseStringUTFChars(env, vpnIpAddress, vpnIpAddressStr);
@@ -328,11 +335,11 @@ JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_runTun2Socks(
     return 1;
 }
 
-JNIEXPORT jint JNICALL Java_com_psiphon3_psiphonlibrary_Tun2Socks_terminateTun2Socks(
+JNIEXPORT jint JNICALL Java_ca_psiphon_PsiphonTunnel_terminateTun2Socks(
     jclass cls,
     JNIEnv* env)
 {
-    terminate();
+    __sync_bool_compare_and_swap(&g_terminate, 0, 1);
     return 0;
 }
 
@@ -455,7 +462,7 @@ void run()
             goto fail2;
         }
     }
-    
+
     // PSIPHON
     if (options.tun_fd) {
         // use supplied file descriptor
@@ -1118,6 +1125,23 @@ void tcp_timer_handler (void *unused)
 {
     ASSERT(!quitting)
     
+    // ==== PSIPHON ====
+
+    // Check if the terminate flag has been set by Psiphon.
+
+    // TODO: instead of piggybacking on this timer,
+    // we could perhaps write to a pipe hooked into
+    // the BReactor event loop, which would eliminate
+    // any shutdown delay due to waiting for this timer.
+
+    if (__sync_bool_compare_and_swap(&g_terminate, 1, 1)) {
+        BLog(BLOG_NOTICE, "g_terminate is set");
+        terminate();
+        return;
+    }
+
+    // ==== PSIPHON ====
+
     BLog(BLOG_DEBUG, "TCP timer");
     
     // schedule next timer
@@ -1459,6 +1483,10 @@ err_t listener_accept_func (void *arg, struct tcp_pcb *newpcb, err_t err)
     
     // set client not closed
     client->client_closed = 0;
+    
+    // From: https://github.com/shadowsocks/shadowsocks-android/commit/97cfd1f8698d8f59b146bbcf345eec0fe1ca260
+    // enable TCP_NODELAY
+    tcp_nagle_disable(client->pcb);
     
     // setup handler argument
     tcp_arg(client->pcb, client);

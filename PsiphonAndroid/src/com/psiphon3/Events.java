@@ -163,18 +163,16 @@ public class Events implements com.psiphon3.psiphonlibrary.IEvents
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         
                 // This intent displays the Zirco browser.
-                // We use "extras" to communicate Psiphon settings to Zirco, which
-                // is packaged as an independent component (so it's can't access,
-                // e.g., PsiphonConstants or PsiphonData). Note that the Zirco code
-                // is customized. When Zirco is first created, it will use the localProxyPort
-                // and homePages extras to set the proxy preference and open tabs for
-                // each home page, respectively. When the intent triggers an existing
-                // Zirco instance (and it's a singleton) the extras are ignored and the
-                // browser is displayed as-is.
+                // We use "extras" to communicate Psiphon settings to Zirco.
+                // When Zirco is first created, it will use the homePages
+                // extras to open tabs for each home page, respectively. When the intent
+                // triggers an existing Zirco instance (and it's a singleton) this extra
+                // is ignored and the browser is displayed as-is.
                 // When a uri is specified, it will open as a new tab. This is
                 // independent of the home pages.
+                // Note: Zirco now directly accesses PsiphonData to get the current
+                // local HTTP proxy port for WebView tunneling.
                 
-                intent.putExtra("localProxyPort", PsiphonData.getPsiphonData().getHttpProxyPort());
                 intent.putExtra("homePages", PsiphonData.getPsiphonData().getHomePages());
                 intent.putExtra("serviceClassName", TunnelService.class.getName());        
                 intent.putExtra("statusActivityClassName", StatusActivity.class.getName());
