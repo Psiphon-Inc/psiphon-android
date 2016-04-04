@@ -83,6 +83,12 @@
         <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonsubscriptionzircobookmarkscontentprovider"></provider>
         <provider android:name="org.zirco.providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonsubscriptionweavecontentprovider"></provider>
 
+        <activity android:name="com.mopub.mobileads.MoPubActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
+        <activity android:name="com.mopub.mobileads.MraidActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
+        <activity android:name="com.mopub.common.MoPubBrowser" android:configChanges="keyboardHidden|orientation|screenSize"/>
+        <activity android:name="com.mopub.mobileads.MraidVideoPlayerActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
+        <activity android:name="com.google.ads.AdActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
+
     </application>
 
 </manifest>
