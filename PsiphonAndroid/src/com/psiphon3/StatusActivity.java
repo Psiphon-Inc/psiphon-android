@@ -27,15 +27,14 @@ import java.util.Arrays;
 import java.util.List;
 
 import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.TypedValue;
 import android.view.KeyEvent;
@@ -44,6 +43,9 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TabHost;
 
+import com.mopub.mobileads.MoPubErrorCode;
+import com.mopub.mobileads.MoPubInterstitial;
+import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.subscription.R;
@@ -62,6 +64,7 @@ public class StatusActivity
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
     private IabHelper m_iabHelper = null;
+    private MoPubInterstitial m_moPubInterstitial = null;
 
     public StatusActivity()
     {
@@ -210,6 +213,13 @@ public class StatusActivity
         }
         super.onPause();   
     }
+    
+    @Override
+    public void onDestroy()
+    {
+        deInitAds();
+        super.onDestroy();
+    }
 
     public void onToggleClick(View v)
     {
@@ -244,6 +254,9 @@ public class StatusActivity
     
     private void doStartUp()
     {
+        // Abort any outstanding ad requests
+        deInitAds();
+        
         // If the user hasn't set a whole-device-tunnel preference, show a prompt
         // (and delay starting the tunnel service until the prompt is completed)
 
@@ -464,32 +477,29 @@ public class StatusActivity
         }
     }
     
+    private Handler delayHandler = new Handler();
+    private Runnable enableFreeTrial = new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            m_toggleButton.setEnabled(true);
+            PsiphonData.getPsiphonData().startFreeTrial();
+        }
+    };
+    
     private void promptForFreeVersion()
     {
         new AlertDialog.Builder(this)
-        .setTitle("Subscription failed")
-        .setMessage("Try the free version of Psiphon?")
+        .setTitle("Free Trial")
+        .setMessage("Try Psiphon for free for 30 minutes? After 30 minutes you will be automatically disconnected.")
         .setPositiveButton("OK",
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int whichButton) {
-                        final String psiphonPackageName = "com.psiphon3";
-                        Intent launchIntent = getPackageManager().getLaunchIntentForPackage(psiphonPackageName);
-                        if (launchIntent != null)
-                        {
-                            startActivity(launchIntent);
-                        }
-                        else
-                        {
-                            try
-                            {
-                                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + psiphonPackageName)));
-                            }
-                            catch (ActivityNotFoundException ex)
-                            {
-                                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + psiphonPackageName)));
-                            }
-                        }
+                        m_toggleButton.setEnabled(false);
+                        delayHandler.postDelayed(enableFreeTrial, 10000);
+                        showFullScreenAd();
                     }})
         .setNegativeButton("No Thanks",
                 new DialogInterface.OnClickListener() {
@@ -523,5 +533,50 @@ public class StatusActivity
         {
             super.onActivityResult(requestCode, resultCode, data);
         }
+    }
+    
+    static final String MOPUB_INTERSTITIAL_PROPERTY_ID = "";
+    
+    private void showFullScreenAd()
+    {
+        if (m_moPubInterstitial != null)
+        {
+            m_moPubInterstitial.destroy();
+        }
+        m_moPubInterstitial = new MoPubInterstitial(this, MOPUB_INTERSTITIAL_PROPERTY_ID);
+        
+        m_moPubInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
+            @Override
+            public void onInterstitialClicked(MoPubInterstitial arg0) {
+            }
+            @Override
+            public void onInterstitialDismissed(MoPubInterstitial arg0) {
+            }
+            @Override
+            public void onInterstitialFailed(MoPubInterstitial interstitial,
+                    MoPubErrorCode errorCode) {
+            }
+            @Override
+            public void onInterstitialLoaded(MoPubInterstitial interstitial) {
+                if (interstitial != null && interstitial.isReady())
+                {
+                    interstitial.show();
+                }
+            }
+            @Override
+            public void onInterstitialShown(MoPubInterstitial arg0) {
+            }
+        });
+        
+        m_moPubInterstitial.load();
+    }
+    
+    private void deInitAds()
+    {
+        if (m_moPubInterstitial != null)
+        {
+            m_moPubInterstitial.destroy();
+        }
+        m_moPubInterstitial = null;
     }
 }

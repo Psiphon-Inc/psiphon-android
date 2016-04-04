@@ -97,6 +97,7 @@ public class PsiphonData
     private boolean m_downloadUpgrades;
     private String m_egressRegion;
     private boolean m_hasValidSubscription;
+    private boolean m_freeTrialActive;
     
     public int m_notificationIconConnecting = 0;
     public int m_notificationIconConnected = 0;
@@ -124,6 +125,7 @@ public class PsiphonData
         m_downloadUpgrades = false;
         m_egressRegion = ServerInterface.ServerEntry.REGION_CODE_ANY;
         m_hasValidSubscription = false;
+        m_freeTrialActive = false;
     }
 
     public synchronized void setHomePages(ArrayList<String> homePages)
@@ -1232,6 +1234,11 @@ public class PsiphonData
     
     public synchronized boolean getHasValidSubscription()
     {
-        return m_hasValidSubscription;
+        return m_hasValidSubscription || m_freeTrialActive;
+    }
+    
+    public synchronized void startFreeTrial()
+    {
+        m_freeTrialActive = true;
     }
 }
