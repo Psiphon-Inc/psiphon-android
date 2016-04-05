@@ -36,12 +36,15 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.net.VpnService;
 import android.net.VpnService.Builder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
 import ca.psiphon.PsiphonTunnel;
 
@@ -394,35 +397,15 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     public String getPsiphonConfig() {        
         try {            
             JSONObject json = new JSONObject();
-            
-            // Don't re-download the upgrade package when a verified upgrade file is
-            // awaiting application by the user. A previous upgrade download will have
-            // completed and have been extracted to this verified upgrade file.
-            // Without this check, tunnel-core won't know that the upgrade is already
-            // downloaded, as the file name differs from UpgradeDownloadFilename, and
-            // so the entire upgrade will be re-downloaded on each tunnel connect until
-            // the user actually applies the upgrade.
-            // As a result of this check, a user that delays applying an upgrade until
-            // after a subsequent upgrade is released will first apply a stale upgrade
-            // and then download the next upgrade.
-            // Note: depends on getAvailableCompleteUpgradeFile deleting VerifiedUpgradeFile
-            // after upgrade is complete. Otherwise, no further upgrades would download. 
-            // TODO: implement version tracking for the verified upgrade file so that
-            // we can proceed with downloading a newer upgrade when             
-            boolean hasUpgradePending = (new VerifiedUpgradeFile(m_parentService)).exists();
-            
-            if (!hasUpgradePending &&
-                0 < EmbeddedValues.UPGRADE_URL.length() && 
-                EmbeddedValues.hasEverBeenSideLoaded(m_parentService) &&
-                PsiphonData.getPsiphonData().getDownloadUpgrades()) {
+
+            if (UpgradeChecker.upgradeCheckNeeded(m_parentService)) {
                 json.put("UpgradeDownloadUrl", EmbeddedValues.UPGRADE_URL);
-                
                 json.put("UpgradeDownloadFilename",
                         new UpgradeManager.DownloadedUpgradeFile(m_parentService).getFullPath());                
             }
             
             json.put("ClientPlatform", PsiphonConstants.PLATFORM);
-            
+
             json.put("ClientVersion", EmbeddedValues.CLIENT_VERSION);
             
             json.put("PropagationChannelId", EmbeddedValues.PROPAGATION_CHANNEL_ID);
@@ -454,7 +437,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
     @Override
     public void onDiagnosticMessage(String message) {
-        MyLog.g("diagnostic", "msg", message);
+        MyLog.g(message, "msg", message);
     }
 
     @Override

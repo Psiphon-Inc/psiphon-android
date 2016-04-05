@@ -311,20 +311,49 @@ public class Utils
         {
             MyLog.logger.clear();
         }
-        
+
         static public void restoreLogHistory()
         {
-            // Trigger the UI to refresh its status display
             if (logger.get() != null)
             {
+                // Check if LoggingProvider has any stored logs for us
+                LoggingProvider.restoreLogs(logger.get().getContext());
+
+                // Trigger the UI to refresh its status display
                 logger.get().statusEntryAdded();
             }
+        }
+
+        /**
+         * To be called only from LoggingProvider.
+         * @return True if successful, false if LoggingProvider should store the log for later.
+         */
+        static public boolean logFromProvider(
+                int stringResID,
+                Sensitivity sensitivity,
+                int priority,
+                Object[] formatArgs,
+                Date timestamp) {
+            if (logger.get() == null) {
+                // Not yet ready to receive provider logs.
+                return false;
+            }
+
+            println(
+                stringResID,
+                sensitivity,
+                formatArgs,
+                null,
+                priority,
+                timestamp);
+
+            return true;
         }
         
         // TODO: Add sensitivity to debug logs
         static public void d(String msg)
         {
-            Object[] formatArgs = { msg };
+            Object[] formatArgs = {msg};
             MyLog.println(R.string.debug_message, Sensitivity.NOT_SENSITIVE, formatArgs, null, Log.DEBUG);
         }
 

@@ -309,6 +309,7 @@ public interface UpgradeManager
         /**
          * Check if an upgrade file is available, and if it's actually a higher
          * version.
+         * Side-effect: May delete existing upgrade file if it's invalid or an old version.
          * @return true if upgrade file is available to be applied.
          */
         protected static VerifiedUpgradeFile getAvailableCompleteUpgradeFile(Context context)
@@ -385,19 +386,21 @@ public interface UpgradeManager
         
         /**
          * Create an Android notification to launch the upgrade, if available
+         * @param context
+         * @return true if an upgrade is available and the notification was shown
          */
-        public static void notifyUpgrade(Context context)
+        public static boolean notifyUpgrade(Context context)
         {
             // Play Store Build instances must not use custom auto-upgrade
             if (!EmbeddedValues.hasEverBeenSideLoaded(context))
             {
-                return;
+                return false;
             }
             
             VerifiedUpgradeFile file = getAvailableCompleteUpgradeFile(context); 
             if (file == null)
             {
-                return;
+                return false;
             }
             
             // This intent triggers the upgrade. It's launched if the user clicks the notification.
@@ -438,6 +441,8 @@ public interface UpgradeManager
             {
                 mNotificationManager.notify(R.string.UpgradeManager_UpgradeAvailableNotificationId, mNotificationBuilder.build());
             }
+
+            return true;
         }
     }
 }

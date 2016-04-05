@@ -52,6 +52,30 @@
             android:permission="android.permission.BIND_VPN_SERVICE"
             android:exported="false" >
         </service>
+
+        <provider
+            android:name=".psiphonlibrary.LoggingProvider"
+            android:authorities="com.psiphon3.psiphonlibrary.LoggingProvider"
+            android:exported="false">
+        </provider>
+
+        <!-- UpgradeChecker receives intents (direct, alarm, boot) that trigger upgrade checking. -->
+        <receiver
+            android:name=".psiphonlibrary.UpgradeChecker"
+            android:process=":UpgradeChecker"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"></action>
+            </intent-filter>
+        </receiver>
+        <!-- The service that UpgradeChecker uses to do work -->
+        <service
+            android:name=".psiphonlibrary.UpgradeChecker$UpgradeCheckerService"
+            android:label="@string/upgrade_checker_service_name"
+            android:exported="false"
+            android:process=":UpgradeChecker" >
+        </service>
+
         <activity
             android:name="org.zirco.ui.activities.MainActivity"
             android:label="@string/browser_task_label"
