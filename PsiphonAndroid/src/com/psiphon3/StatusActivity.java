@@ -218,6 +218,7 @@ public class StatusActivity
     public void onDestroy()
     {
         deInitAds();
+        delayHandler.removeCallbacks(enableFreeTrial);
         super.onDestroy();
     }
 
@@ -483,10 +484,20 @@ public class StatusActivity
         @Override
         public void run()
         {
-            m_toggleButton.setEnabled(true);
+            if (freeTrialCountdown > 0)
+            {
+                m_toggleButton.setText(String.valueOf(freeTrialCountdown));
+                freeTrialCountdown--;
+                delayHandler.postDelayed(this, 1000);
+            }
+            else
+            {
+                resumeServiceStateUI();
             PsiphonData.getPsiphonData().startFreeTrial();
         }
+        }
     };
+    private int freeTrialCountdown;
     
     private void promptForFreeVersion()
     {
@@ -497,8 +508,9 @@ public class StatusActivity
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int whichButton) {
-                        m_toggleButton.setEnabled(false);
-                        delayHandler.postDelayed(enableFreeTrial, 10000);
+                        pauseServiceStateUI();
+                        freeTrialCountdown = 10;
+                        delayHandler.postDelayed(enableFreeTrial, 1000);
                         showFullScreenAd();
                     }})
         .setNegativeButton("No Thanks",

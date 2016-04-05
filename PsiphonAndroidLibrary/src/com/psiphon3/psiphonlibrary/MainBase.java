@@ -188,6 +188,7 @@ public abstract class MainBase {
         protected CheckBox m_tunnelWholeDeviceToggle;
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
+        private boolean m_serviceStateUIPaused = false;
 
         /*
          * private CheckBox m_shareProxiesToggle; private TextView
@@ -930,6 +931,10 @@ public abstract class MainBase {
         }
 
         private void updateServiceStateUI() {
+            if (m_serviceStateUIPaused) {
+                return;
+            }
+            
             TunnelManager tunnelManager = PsiphonData.getPsiphonData().getCurrentTunnelManager();
             
             if (tunnelManager == null) {
@@ -966,6 +971,16 @@ public abstract class MainBase {
             m_tunnelWholeDeviceToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
             m_moreOptionsButton.setEnabled(false);
+        }
+        
+        protected void pauseServiceStateUI() {
+            m_serviceStateUIPaused = true;
+            disableToggleServiceUI();
+        }
+        
+        protected void resumeServiceStateUI() {
+            m_serviceStateUIPaused = false;
+            updateServiceStateUI();
         }
 
         private void checkRestartTunnel() {
