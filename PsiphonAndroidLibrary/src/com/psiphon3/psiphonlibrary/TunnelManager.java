@@ -365,7 +365,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
     @Override
     public String getAppName() {
-        return m_parentService.getString(R.string.app_name);
+        return m_parentService.getString(R.string.app_name_psiphon_pro);
     }
 
     @Override
