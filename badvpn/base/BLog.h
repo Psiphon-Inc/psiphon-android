@@ -30,6 +30,10 @@
  * 
  * A global object for logging.
  */
+/*
+ * Psiphon customizations: Copyright (C) Psiphon Inc.
+ * Released under badvpn licence: https://github.com/ambrop72/badvpn#license
+ */
 
 #ifndef BADVPN_BLOG_H
 #define BADVPN_BLOG_H
