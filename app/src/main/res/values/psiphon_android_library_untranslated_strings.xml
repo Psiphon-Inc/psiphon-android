@@ -40,4 +40,11 @@
     <string name="upgrade_checker_alarm_exists">UpgradeChecker.createAlarm: alarmExists; aborting</string>
     <string name="upgrade_checker_creating_alarm">UpgradeChecker.createAlarm: creating alarm</string>
     <string name="upgrade_checker_start_service">UpgradeChecker.checkForUpgrade: starting service for upgrade check</string>
+    <string name="upgrade_checker_start_tunnel_failed">UpgradeCheckerService: start tunnel failed: %s</string>
+    <string name="upgrade_checker_check_start">UpgradeCheckerService: check starting</string>
+    <string name="upgrade_checker_already_in_progress">UpgradeCheckerService: check already in progress</string>
+    <string name="upgrade_checker_done">UpgradeCheckerService: check done</string>
+    <string name="upgrade_checker_client_is_latest_version">UpgradeCheckerService: client is latest version</string>
+    <string name="upgrade_checker_client_upgrade_downloaded">UpgradeCheckerService: client upgrade downloaded</string>
+    <string name="upgrade_checker_tunnel_exiting">UpgradeCheckerService: tunnel exiting</string>
 </resources>

@@ -68,7 +68,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
 
     public interface HostService {
         public String getAppName();
-        public Context getContext();        
+        public Context getContext();
         public Object getVpnService(); // Object must be a VpnService (Android < 4 cannot reference this class name)
         public Object newVpnServiceBuilder(); // Object must be a VpnService.Builder (Android < 4 cannot reference this class name)
         public String getPsiphonConfig();
@@ -84,10 +84,12 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         public void onHomepage(String url);
         public void onClientRegion(String region);
         public void onClientUpgradeDownloaded(String filename);
+        public void onClientIsLatestVersion();
         public void onSplitTunnelRegion(String region);
         public void onUntunneledAddress(String address);
         public void onBytesTransferred(long sent, long received);
         public void onStartedWaitingForNetworkConnectivity();
+        public void onExiting();
     }
 
     private final HostService mHostService;
@@ -344,24 +346,29 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         // update as necessary. Then write JSON to disk for the Go client.
         JSONObject json = new JSONObject(mHostService.getPsiphonConfig());
         
-        // On Android, these directories must be set to the app private storage area.
+        // On Android, this directory must be set to the app private storage area.
         // The Psiphon library won't be able to use its current working directory
         // and the standard temporary directories do not exist.
-        json.put("DataStoreDirectory", context.getFilesDir());
-        json.put("DataStoreTempDirectory", context.getCacheDir());
+        if (!json.has("DataStoreDirectory")) {
+            json.put("DataStoreDirectory", context.getFilesDir());
+        }
 
         // Note: onConnecting/onConnected logic assumes 1 tunnel connection
         json.put("TunnelPoolSize", 1);
 
         // Continue to run indefinitely until connected
-        json.put("EstablishTunnelTimeoutSeconds", 0);
+        if (!json.has("EstablishTunnelTimeoutSeconds")) {
+            json.put("EstablishTunnelTimeoutSeconds", 0);
+        }
 
         // This parameter is for stats reporting
-        json.put("TunnelWholeDevice", isVpnMode() ? 1 : 0);
+        if (!json.has("TunnelWholeDevice")) {
+            json.put("TunnelWholeDevice", isVpnMode() ? 1 : 0);
+        }
 
         json.put("EmitBytesTransferred", true);
 
-        if (mLocalSocksProxyPort.get() != 0) {
+        if (mLocalSocksProxyPort.get() != 0 && !json.has("LocalSocksProxyPort")) {
             // When mLocalSocksProxyPort is set, tun2socks is already configured
             // to use that port value. So we force use of the same port.
             // A side-effect of this is that changing the SOCKS port preference
@@ -417,44 +424,37 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
                     regions.add(egressRegions.getString(i));
                 }
                 mHostService.onAvailableEgressRegions(regions);
-                
             } else if (noticeType.equals("SocksProxyPortInUse")) {
                 mHostService.onSocksProxyPortInUse(notice.getJSONObject("data").getInt("port"));
-
             } else if (noticeType.equals("HttpProxyPortInUse")) {
                 mHostService.onHttpProxyPortInUse(notice.getJSONObject("data").getInt("port"));
-
             } else if (noticeType.equals("ListeningSocksProxyPort")) {
                 int port = notice.getJSONObject("data").getInt("port");
                 setLocalSocksProxyPort(port);
                 mHostService.onListeningSocksProxyPort(port);
-
             } else if (noticeType.equals("ListeningHttpProxyPort")) {
                 int port = notice.getJSONObject("data").getInt("port");
                 mHostService.onListeningHttpProxyPort(port);
-
             } else if (noticeType.equals("UpstreamProxyError")) {
                 mHostService.onUpstreamProxyError(notice.getJSONObject("data").getString("message"));
-
             } else if (noticeType.equals("ClientUpgradeDownloaded")) {
                 mHostService.onClientUpgradeDownloaded(notice.getJSONObject("data").getString("filename"));
-
+            } else if (noticeType.equals("ClientIsLatestVersion")) {
+                mHostService.onClientIsLatestVersion();
             } else if (noticeType.equals("Homepage")) {
                 mHostService.onHomepage(notice.getJSONObject("data").getString("url"));
-
             } else if (noticeType.equals("ClientRegion")) {
                 mHostService.onClientRegion(notice.getJSONObject("data").getString("region"));
-
             } else if (noticeType.equals("SplitTunnelRegion")) {
                 mHostService.onSplitTunnelRegion(notice.getJSONObject("data").getString("region"));
-
             } else if (noticeType.equals("UntunneledAddress")) {
                 mHostService.onUntunneledAddress(notice.getJSONObject("data").getString("address"));
-
             } else if (noticeType.equals("BytesTransferred")) {
                 diagnostic = false;
                 JSONObject data = notice.getJSONObject("data");
                 mHostService.onBytesTransferred(data.getLong("sent"), data.getLong("received"));
+            } else if (noticeType.equals("NoticeExiting")) {
+                mHostService.onExiting();
             }
 
             if (diagnostic) {

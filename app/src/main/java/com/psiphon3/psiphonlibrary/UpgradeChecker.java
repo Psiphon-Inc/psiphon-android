@@ -39,9 +39,39 @@ import java.util.List;
 
 import ca.psiphon.PsiphonTunnel;
 
-/**
- * Created by Adam on 2016-03-09.
+/*
+ * Self-upgrading notes.
+ * - UpgradeChecker is responsible for processing downloaded upgrade files (authenticate package,
+ *   check APK version), notifying users of upgrades, and invoking the OS installer. Only
+ *   UpgradeChecker will do these things, so we ensure there’s only one upgrade notification, etc.
+ * - Every X hours, an alarm will wake up UpgradeChecker and it will launch its own tunnel-core and
+ *   download an upgrade if no upgrade is pending. This achieves the Google Play-like
+ *   upgrade-when-not-running.
+ * - The Psiphon app tunnel-core will also download upgrades, if no upgrade is pending. It will make
+ *   an untunneled check when it can’t connect. Or it will download when handshake indicates an
+ *   upgrade is available.
+ * - An upgrade is pending if a valid upgrade has been downloaded and is awaiting install. Both
+ *   tunnel-cores need to be configured to skip upgrades when there’s a pending upgrade. In fact,
+ *   the UpgradeChecker tunnel-core need not be started at all in this case.
+ * - When the Psiphon app tunnel-core downloads an upgrade, it notifies UpgradeChecker with an
+ *   intent. UpgradeChecker takes ownership of the downloaded file and proceeds as if it downloaded
+ *   the file.
+ *
+ *
+ *
+ *
+ *
+We accept an edge condition that the upgrade checker process tunnel-core and the Psiphon app tunnel-core may both download the upgrade file at the exact same time. Only the upgrade monitor will process the file and notify the user.
+I don’t think we should skip an upgrade monitor 24 hourly run if the Psiphon app is running. The Psiphon app won’t check for upgrades if it’s happily connected, so it gives us more coverage to let the daily check always run.
+We will add a persistent last-check-timestamp to tunnel-core so that the 6 hour throttle persists across toggles. For that matter, we can do the same with fetch remote server list. Aside from that enhancement, the logic remains: only do an untunneled upgrade check after 30 seconds of failing to connect; once a successful check has been made, don’t check again for 6 hours. For the tunnel-core in the upgrade monitor process, the 6 hour throttle will be a no-op.
+
+
+
+- set EstablishTunnelTimeoutSeconds in tunnel-core options to limit connection attempt time. (How long?)
+
+
  */
+
 public class UpgradeChecker extends WakefulBroadcastReceiver {
     private final int ALARM_FREQUENCY_MS = 3000; // TODO: more like 7*60*60*1000 -- use an odd number of hours so it's not the same time every day
     private final int ALARM_INTENT_REQUEST_CODE = 0;
@@ -105,12 +135,13 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
             return false;
         }
 
-        if (new UpgradeManager.VerifiedUpgradeFile(appContext).exists()) {
+        if (UpgradeManager.UpgradeInstaller.upgradeFileAvailable(appContext)) {
             log(context, R.string.upgrade_checker_upgrade_file_exists, MyLog.Sensitivity.NOT_SENSITIVE, Log.INFO);
             // We know there's an upgrade file available, so send an intent about it.
             Intent intent = new Intent(appContext, UpgradeChecker.class);
             intent.setAction(UPGRADE_FILE_AVAILABLE_INTENT_ACTION);
             appContext.sendBroadcast(intent);
+            return false;
         }
 
         log(appContext, R.string.upgrade_checker_check_needed, MyLog.Sensitivity.NOT_SENSITIVE, Log.INFO);
@@ -188,16 +219,49 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
     }
 
 
-
     public static class UpgradeCheckerService extends IntentService implements PsiphonTunnel.HostService {
+        private PsiphonTunnel mTunnel;
+        private Intent mWakefulIntent;
+
         public UpgradeCheckerService() {
             super("UpgradeCheckerService");
+
+            mTunnel = PsiphonTunnel.newPsiphonTunnel(this);
         }
 
         @Override
         protected void onHandleIntent(Intent intent) {
-            UpgradeChecker.completeWakefulIntent(intent);
+            log(this, R.string.upgrade_checker_check_start, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
+
+            if (mWakefulIntent != null) {
+                // Already processing an intent.
+                log(this, R.string.upgrade_checker_already_in_progress, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
+                UpgradeChecker.completeWakefulIntent(intent);
+                return;
+            }
+
+            mWakefulIntent = intent;
+
+            Utils.initializeSecureRandom();
+
+            try {
+                mTunnel.startTunneling(TunnelManager.getServerEntries(this));
+            } catch (PsiphonTunnel.Exception e) {
+                log(this, R.string.upgrade_checker_start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, Log.ERROR, e.getMessage());
+                done();
+                return;
+            }
         }
+
+        protected void done() {
+            log(this, R.string.upgrade_checker_done, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
+            UpgradeChecker.completeWakefulIntent(mWakefulIntent);
+            mWakefulIntent = null;
+        }
+
+        /*
+         * PsiphonTunnel.HostService implementation
+         */
 
         @Override
         public String getAppName() {
@@ -211,18 +275,46 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
 
         @Override
         public String getPsiphonConfig() {
-            return null;
+            String config = TunnelManager.buildTunnelCoreConfig(
+                    this,                       // context
+                    "upgradechecker",           // tempTunnelName
+                    "Psiphon_UpgradeChecker_"); // clientPlatformPrefix
+            return config == null ? "" : config;
         }
 
         @Override
-        public void onDiagnosticMessage(String message) {
+        public void onClientIsLatestVersion() {
+            log(this, R.string.upgrade_checker_client_is_latest_version, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
 
+            mTunnel.stop();
+            done();
         }
 
         @Override
         public void onClientUpgradeDownloaded(String filename) {
+            log(this, R.string.upgrade_checker_client_upgrade_downloaded, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
 
+            mTunnel.stop();
+
+            Intent intent = new Intent(this, UpgradeChecker.class);
+            intent.setAction(UPGRADE_FILE_AVAILABLE_INTENT_ACTION);
+            this.sendBroadcast(intent);
+
+            done();
         }
+
+        @Override
+        public void onExiting() {
+            // Likely due to connection timeout
+            log(this, R.string.upgrade_checker_tunnel_exiting, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
+            done();
+        }
+
+        @Override
+        public void onConnected() {}
+
+        @Override
+        public void onDiagnosticMessage(String message) {}
 
         @Override
         public Object getVpnService() {
@@ -235,73 +327,42 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         }
 
         @Override
-        public void onAvailableEgressRegions(List<String> regions) {
-
-        }
+        public void onAvailableEgressRegions(List<String> regions) {}
 
         @Override
-        public void onSocksProxyPortInUse(int port) {
-
-        }
+        public void onSocksProxyPortInUse(int port) {}
 
         @Override
-        public void onHttpProxyPortInUse(int port) {
-
-        }
+        public void onHttpProxyPortInUse(int port) {}
 
         @Override
-        public void onListeningSocksProxyPort(int port) {
-
-        }
+        public void onListeningSocksProxyPort(int port) {}
 
         @Override
-        public void onListeningHttpProxyPort(int port) {
-
-        }
+        public void onListeningHttpProxyPort(int port) {}
 
         @Override
-        public void onUpstreamProxyError(String message) {
-
-        }
+        public void onUpstreamProxyError(String message) {}
 
         @Override
-        public void onConnecting() {
-
-        }
+        public void onConnecting() {}
 
         @Override
-        public void onConnected() {
-
-        }
+        public void onHomepage(String url) {}
 
         @Override
-        public void onHomepage(String url) {
-
-        }
+        public void onClientRegion(String region) {}
 
         @Override
-        public void onClientRegion(String region) {
-
-        }
+        public void onSplitTunnelRegion(String region) {}
 
         @Override
-        public void onSplitTunnelRegion(String region) {
-
-        }
+        public void onUntunneledAddress(String address) {}
 
         @Override
-        public void onUntunneledAddress(String address) {
-
-        }
+        public void onBytesTransferred(long sent, long received) {}
 
         @Override
-        public void onBytesTransferred(long sent, long received) {
-
-        }
-
-        @Override
-        public void onStartedWaitingForNetworkConnectivity() {
-
-        }
+        public void onStartedWaitingForNetworkConnectivity() {}
     }
 }

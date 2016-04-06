@@ -383,6 +383,16 @@ public interface UpgradeManager
             
             return file;
         }
+
+        /**
+         * Checks if a valid upgrade file is available for install.
+         * Note that this is not a zero-cost function call, as package verification is done.
+         * @param context
+         * @return true if an upgrade file is available
+         */
+        public static boolean upgradeFileAvailable(Context context) {
+            return getAvailableCompleteUpgradeFile(context) != null;
+        }
         
         /**
          * Create an Android notification to launch the upgrade, if available
