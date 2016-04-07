@@ -86,6 +86,7 @@ public class PsiphonData
     private String m_clientRegion;
     private boolean m_hasValidSubscription;
     private boolean m_freeTrialActive;
+    private long m_freeTrialExpiresAt;
     
     public int m_notificationIconConnecting = 0;
     public int m_notificationIconConnected = 0;
@@ -110,6 +111,7 @@ public class PsiphonData
         m_egressRegion = PsiphonConstants.REGION_CODE_ANY;
         m_hasValidSubscription = false;
         m_freeTrialActive = false;
+        m_freeTrialExpiresAt = 0;
     }
 
     public synchronized void clearHomePages()
@@ -945,11 +947,33 @@ public class PsiphonData
     
     public synchronized boolean getHasValidSubscription()
     {
-        return m_hasValidSubscription || m_freeTrialActive;
+        return m_hasValidSubscription || getFreeTrialActive();
     }
     
     public synchronized void startFreeTrial()
     {
         m_freeTrialActive = true;
+        m_freeTrialExpiresAt = System.currentTimeMillis() + 60 * 60 * 1000;
+    }
+    
+    public synchronized void endFreeTrial()
+    {
+        m_freeTrialActive = false;
+    }
+
+    public synchronized boolean getFreeTrialActive()
+    {
+        return m_freeTrialActive && getFreeTrialRemainingMillis() > 0;
+    }
+
+    public synchronized long getFreeTrialRemainingMillis()
+    {
+        long currentTime = System.currentTimeMillis();
+        if (m_freeTrialExpiresAt > currentTime)
+        {
+            return m_freeTrialExpiresAt - currentTime;
+        }
+
+        return 0;
     }
 }

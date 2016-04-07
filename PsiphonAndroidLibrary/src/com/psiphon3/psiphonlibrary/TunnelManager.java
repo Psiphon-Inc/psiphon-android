@@ -40,8 +40,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.VpnService;
 import android.net.VpnService.Builder;
+import android.os.Handler;
 import android.preference.PreferenceManager;
-
 import ca.psiphon.PsiphonTunnel;
 
 import com.psiphon3.psiphonlibrary.UpgradeManager.VerifiedUpgradeFile;
@@ -286,6 +286,24 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         return list.toString();
     }
     
+    private Handler checkFreeTrialDelayHandler = new Handler();
+    private final long checkFreeTrialInterval = 30 * 1000; 
+    private Runnable checkFreeTrial = new Runnable() {
+        @Override
+        public void run() {
+            if (PsiphonData.getPsiphonData().getFreeTrialRemainingMillis() > 0) {
+                checkFreeTrialDelayHandler.postDelayed(this, checkFreeTrialInterval);
+            } else {
+                signalStopService();
+                PsiphonData.getPsiphonData().endFreeTrial();
+                IEvents events = PsiphonData.getPsiphonData().getCurrentEventsInterface();
+                if (events != null) {
+                    events.signalDisconnectRaiseActivity(m_parentService);
+                }
+            }
+        }
+    };
+    
     private void runTunnel() {
 
         Utils.initializeSecureRandom();
@@ -330,6 +348,10 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             
             m_tunnel.startTunneling(getServerEntries());
             
+            if (PsiphonData.getPsiphonData().getFreeTrialActive()) {
+                checkFreeTrialDelayHandler.postDelayed(checkFreeTrial, checkFreeTrialInterval);
+            }
+                
             try {
                 m_tunnelThreadStopSignal.await();
             } catch (InterruptedException e) {
@@ -341,6 +363,8 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         } catch (PsiphonTunnel.Exception e) {
             MyLog.e(R.string.start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
         } finally {
+            
+            checkFreeTrialDelayHandler.removeCallbacks(checkFreeTrial);
             
             MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
             

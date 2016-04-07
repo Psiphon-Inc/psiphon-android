@@ -393,7 +393,7 @@ public class StatusActivity
                 }
             }
             
-            launchSubscriptionPurchaseFlow();
+            promptForSubscription();
         }
     };
     
@@ -461,14 +461,14 @@ public class StatusActivity
         {
             // Stop the tunnel
             doToggle();
-            promptForFreeVersion();
+            promptForSubscription();
         }
         else
         {
             if (result != null &&
                     result.getResponse() == IabHelper.IABHELPER_USER_CANCELLED)
             {
-                promptForFreeVersion();
+                promptForSubscription();
             }
             else
             {
@@ -493,18 +493,25 @@ public class StatusActivity
             else
             {
                 resumeServiceStateUI();
-            PsiphonData.getPsiphonData().startFreeTrial();
-        }
+                PsiphonData.getPsiphonData().startFreeTrial();
+            }
         }
     };
     private int freeTrialCountdown;
     
-    private void promptForFreeVersion()
+    private void promptForSubscription()
     {
         new AlertDialog.Builder(this)
-        .setTitle("Free Trial")
-        .setMessage("Try Psiphon for free for 30 minutes? After 30 minutes you will be automatically disconnected.")
-        .setPositiveButton("OK",
+        .setTitle("Subscription Required")
+        .setMessage("Subscribe now. Or you can try Psiphon Pro for free for 60 minutes. " +
+                    "After 60 minutes you will be automatically disconnected.")
+        .setPositiveButton("Subscribe",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        launchSubscriptionPurchaseFlow();
+                    }})
+        .setNegativeButton("Free Trial",
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int whichButton) {
@@ -512,12 +519,6 @@ public class StatusActivity
                         freeTrialCountdown = 10;
                         delayHandler.postDelayed(enableFreeTrial, 1000);
                         showFullScreenAd();
-                    }})
-        .setNegativeButton("No Thanks",
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        // Do nothing.
                     }})
         .show();
     }
