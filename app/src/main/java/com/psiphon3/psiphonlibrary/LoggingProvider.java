@@ -11,6 +11,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Debug;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -103,6 +104,19 @@ public class LoggingProvider extends ContentProvider {
     @Override
     public Uri insert(Uri uri, ContentValues values) {
         LogDatabaseHelper.insertLog(this.getContext(), values);
+
+        // If we're a debug build, output something to LogCat right now so we can see it.
+        if (PsiphonConstants.DEBUG) {
+            try {
+                JSONObject jsonObj = new JSONObject(values.getAsString(LOG_JSON_KEY));
+                int stringResID = jsonObj.getInt("stringResID");
+                String logString = getContext().getString(stringResID);
+                MyLog.d(logString);
+            } catch (JSONException e) {
+                // pass
+            }
+        }
+
         return null;
     }
 

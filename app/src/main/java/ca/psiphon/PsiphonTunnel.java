@@ -453,7 +453,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
                 diagnostic = false;
                 JSONObject data = notice.getJSONObject("data");
                 mHostService.onBytesTransferred(data.getLong("sent"), data.getLong("received"));
-            } else if (noticeType.equals("NoticeExiting")) {
+            } else if (noticeType.equals("Exiting")) {
                 mHostService.onExiting();
             }
 

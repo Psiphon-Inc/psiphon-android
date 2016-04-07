@@ -401,13 +401,7 @@ public interface UpgradeManager
          */
         public static boolean notifyUpgrade(Context context)
         {
-            // Play Store Build instances must not use custom auto-upgrade
-            if (!EmbeddedValues.hasEverBeenSideLoaded(context))
-            {
-                return false;
-            }
-            
-            VerifiedUpgradeFile file = getAvailableCompleteUpgradeFile(context); 
+            VerifiedUpgradeFile file = getAvailableCompleteUpgradeFile(context);
             if (file == null)
             {
                 return false;

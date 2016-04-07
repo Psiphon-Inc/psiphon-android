@@ -73,9 +73,9 @@ We will add a persistent last-check-timestamp to tunnel-core so that the 6 hour 
  */
 
 public class UpgradeChecker extends WakefulBroadcastReceiver {
-    private final int ALARM_FREQUENCY_MS = 3000; // TODO: more like 7*60*60*1000 -- use an odd number of hours so it's not the same time every day
-    private final int ALARM_INTENT_REQUEST_CODE = 0;
-    private final String ALARM_INTENT_ACTION = UpgradeChecker.class.getName()+":ALARM";
+    private static final int ALARM_FREQUENCY_MS = 3000; // TODO: more like 7*60*60*1000 -- use an odd number of hours so it's not the same time every day
+    private static final int ALARM_INTENT_REQUEST_CODE = 0;
+    private static final String ALARM_INTENT_ACTION = UpgradeChecker.class.getName()+":ALARM";
     private static final String CREATE_ALARM_INTENT_ACTION = UpgradeChecker.class.getName()+":CREATE_ALARM";
 
     public static final String UPGRADE_FILE_AVAILABLE_INTENT_ACTION = UpgradeChecker.class.getName()+":UPGRADE_AVAILABLE";
@@ -100,6 +100,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
      * Checks whether an upgrade check should be performed. False will be returned if there's already
      * an upgrade file downloaded.
      * Side-effect: If an existing upgrade file is detected, the upgrade notification will be displayed.
+     * Side-effect: Creates the UpgradeChecker alarm.
      * TODO: Is the notification showing too aggressive? What if it has been swiped away?
      * @param context
      * @return true if upgrade check is needed.
@@ -109,9 +110,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
 
         // The main process will call this when it tries to connect, so we will use this opportunity
         // to make sure our alarm is created.
-        Intent createAlarmIntent = new Intent(appContext, UpgradeChecker.class);
-        createAlarmIntent.setAction(CREATE_ALARM_INTENT_ACTION);
-        appContext.sendBroadcast(createAlarmIntent);
+        createAlarm(appContext);
 
         // Don't re-download the upgrade package when a verified upgrade file is
         // awaiting application by the user. A previous upgrade download will have
@@ -130,7 +129,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         // on disk.
 
         if (EmbeddedValues.UPGRADE_URL.length() == 0 ||
-            EmbeddedValues.hasEverBeenSideLoaded(appContext)) {
+            !EmbeddedValues.hasEverBeenSideLoaded(appContext)) {  // Play Store Build instances must not use custom auto-upgrade
             log(context, R.string.upgrade_checker_no_upgrading, MyLog.Sensitivity.NOT_SENSITIVE, Log.INFO);
             return false;
         }
@@ -151,6 +150,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        Debug.waitForDebugger(); // DEBUG
         // Make sure the alarm is created, regardless of which intent we received.
         createAlarm(context.getApplicationContext());
 
@@ -183,7 +183,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
      * handles cases when the alarm is already created.
      * @param appContext The application context.
      */
-    private void createAlarm(Context appContext) {
+    private static void createAlarm(Context appContext) {
         Intent intent = new Intent(appContext, UpgradeChecker.class);
         intent.setAction(ALARM_INTENT_ACTION);
 
@@ -214,7 +214,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
     private void checkForUpgrade(Context context) {
         log(context, R.string.upgrade_checker_start_service, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
 
-        Intent service = new Intent(context, UpgradeChecker.class);
+        Intent service = new Intent(context, UpgradeCheckerService.class);
         startWakefulService(context, service);
     }
 
@@ -314,7 +314,10 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         public void onConnected() {}
 
         @Override
-        public void onDiagnosticMessage(String message) {}
+        public void onDiagnosticMessage(String message) {
+            // DEBUG
+            Log.d("PsiphonUpgradeChecker", message);
+        }
 
         @Override
         public Object getVpnService() {

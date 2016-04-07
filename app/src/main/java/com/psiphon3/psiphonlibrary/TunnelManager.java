@@ -411,8 +411,13 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         JSONObject json = new JSONObject();
 
         try {
-            if (UpgradeChecker.upgradeCheckNeeded(context)) {
+            if (UpgradeChecker.upgradeCheckNeeded(context)
+            && tempTunnelName != null // DEBUG
+             ) {
                 json.put("UpgradeDownloadUrl", EmbeddedValues.UPGRADE_URL);
+
+                json.put("UpgradeDownloadClientVersionHeader", "x-amz-meta-psiphon-client-version");
+
                 json.put("UpgradeDownloadFilename",
                         new UpgradeManager.DownloadedUpgradeFile(context).getFullPath());
             }
