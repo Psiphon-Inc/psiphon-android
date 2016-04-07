@@ -156,6 +156,7 @@ public abstract class MainBase {
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.PsiphonAndroidActivity.STATUS_ENTRY_AVAILABLE";
         public static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
         public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
+        public static final String DISABLE_TIMEOUTS_PREFERENCE = "disableTimeoutsPreference";
         public static final String WDM_FORCE_IPTABLES_PREFERENCE = "wdmForceIptablesPreference";
         public static final String SHARE_PROXIES_PREFERENCE = "shareProxiesPreference";
 
@@ -188,6 +189,7 @@ public abstract class MainBase {
         private RegionAdapter m_regionAdapter;
         private SpinnerHelper m_regionSelector;
         protected CheckBox m_tunnelWholeDeviceToggle;
+        protected CheckBox m_disableTimeoutsToggle;
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
 
@@ -506,6 +508,7 @@ public abstract class MainBase {
             m_totalReceivedView = (TextView) findViewById(R.id.totalReceived);
             m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
             m_tunnelWholeDeviceToggle = (CheckBox) findViewById(R.id.tunnelWholeDeviceToggle);
+            m_disableTimeoutsToggle = (CheckBox) findViewById(R.id.disableTimeoutsToggle);
             m_moreOptionsButton = (Button) findViewById(R.id.moreOptionsButton);
 
             m_slowSentGraph = new DataTransferGraph(this, R.id.slowSentGraph);
@@ -561,8 +564,12 @@ public abstract class MainBase {
             boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE,
                     m_canWholeDevice);
             m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
-
             PsiphonData.getPsiphonData().setTunnelWholeDevice(m_canWholeDevice && tunnelWholeDevicePreference);
+
+            boolean disableTimeoutsPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(DISABLE_TIMEOUTS_PREFERENCE, false);
+            m_disableTimeoutsToggle.setChecked(disableTimeoutsPreference);
+            PsiphonData.getPsiphonData().setDisableTimeouts(disableTimeoutsPreference);
+
 
             updateProxySettingsFromPreferences();
 
@@ -852,6 +859,25 @@ public abstract class MainBase {
             PsiphonData.getPsiphonData().setTunnelWholeDevice(tunnelWholeDevicePreference);
         }
 
+        public void onDisableTimeoutsToggle(View v) {
+            boolean disableTimeoutsChecked = m_disableTimeoutsToggle.isChecked();
+            updateDisableTimeoutsPreference(disableTimeoutsChecked);
+
+            if (isServiceRunning()) {
+                m_restartTunnel = true;
+                stopTunnelService();
+                // The tunnel will get restarted in m_updateServiceStateTimer
+            }
+
+        }
+        protected void updateDisableTimeoutsPreference(boolean disableTimeoutsPreference) {
+            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+            editor.putBoolean(DISABLE_TIMEOUTS_PREFERENCE, disableTimeoutsPreference);
+            editor.commit();
+            PsiphonData.getPsiphonData().setDisableTimeouts(disableTimeoutsPreference);
+        }
+
+
         // Basic check that the values are populated
         private boolean customProxySettingsValuesValid() {
             PsiphonData.ProxySettings proxySettings = PsiphonData.getPsiphonData().getProxySettings(this);
@@ -959,6 +985,7 @@ public abstract class MainBase {
         protected void enableToggleServiceUI() {
             m_toggleButton.setEnabled(true);
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
+            m_disableTimeoutsToggle.setEnabled(true);
             m_regionSelector.setEnabled(true);
             m_moreOptionsButton.setEnabled(true);
         }
@@ -966,6 +993,7 @@ public abstract class MainBase {
         protected void disableToggleServiceUI() {
             m_toggleButton.setEnabled(false);
             m_tunnelWholeDeviceToggle.setEnabled(false);
+            m_disableTimeoutsToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
             m_moreOptionsButton.setEnabled(false);
         }

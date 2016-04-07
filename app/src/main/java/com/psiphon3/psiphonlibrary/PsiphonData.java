@@ -84,6 +84,7 @@ public class PsiphonData
     private boolean m_downloadUpgrades;
     private String m_egressRegion;
     private String m_clientRegion;
+    private boolean m_disableTimeouts;
     
     public int m_notificationIconConnecting = 0;
     public int m_notificationIconConnected = 0;
@@ -201,6 +202,10 @@ public class PsiphonData
     {
         return m_tunnelWholeDevice;
     }
+
+    public synchronized boolean getDisableTimeouts() { return m_disableTimeouts; }
+
+    public synchronized void setDisableTimeouts(boolean disableTimeouts) { m_disableTimeouts = disableTimeouts; }
 
     public synchronized void setEgressRegion(String egressRegion)
     {
