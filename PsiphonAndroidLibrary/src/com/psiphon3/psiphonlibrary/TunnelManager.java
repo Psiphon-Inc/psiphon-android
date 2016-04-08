@@ -190,7 +190,8 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         
         if (PsiphonData.getPsiphonData().getFreeTrialActive()) {
             long minutesLeft = PsiphonData.getPsiphonData().getFreeTrialRemainingMillis() / 1000 / 60;
-            String minutesLeftText = " (" + minutesLeft + " minutes remaining)";
+            String minutesLeftText = " (" + minutesLeft + " minute" +
+                    (minutesLeft == 1 ? "" : "s") + " remaining)";
 
             notificationTitle += " (FREE TRIAL)";
             notificationText += minutesLeftText;
