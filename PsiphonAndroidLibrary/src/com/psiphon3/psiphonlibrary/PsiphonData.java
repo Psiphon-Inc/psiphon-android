@@ -947,7 +947,8 @@ public class PsiphonData
     
     public synchronized boolean getHasValidSubscription()
     {
-        return m_hasValidSubscription || getFreeTrialActive();
+        return m_hasValidSubscription ||
+                (getFreeTrialActive() && getFreeTrialRemainingMillis() > 0);
     }
     
     public synchronized void startFreeTrial()
@@ -963,7 +964,7 @@ public class PsiphonData
 
     public synchronized boolean getFreeTrialActive()
     {
-        return m_freeTrialActive && getFreeTrialRemainingMillis() > 0;
+        return m_freeTrialActive;
     }
 
     public synchronized long getFreeTrialRemainingMillis()

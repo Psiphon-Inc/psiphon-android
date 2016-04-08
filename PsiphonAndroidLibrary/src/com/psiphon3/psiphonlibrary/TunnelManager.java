@@ -185,6 +185,21 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                     activityIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT);
 
+        String notificationTitle = m_parentService.getText(R.string.app_name_psiphon_pro).toString();
+        String notificationText = m_parentService.getText(contentTextID).toString();
+        
+        if (PsiphonData.getPsiphonData().getFreeTrialActive()) {
+            long minutesLeft = PsiphonData.getPsiphonData().getFreeTrialRemainingMillis() / 1000 / 60;
+            String minutesLeftText = " (" + minutesLeft + " minutes remaining)";
+
+            notificationTitle += " (FREE TRIAL)";
+            notificationText += minutesLeftText;
+            
+            if (ticker == null) {
+                ticker = m_parentService.getText(R.string.app_name_psiphon_pro) + " " + notificationText;
+            }
+        }
+        
         Notification notification =
                 new Notification(
                         iconID,
@@ -204,8 +219,8 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
         notification.setLatestEventInfo(
             m_parentService,
-            m_parentService.getText(R.string.app_name_psiphon_pro),
-            m_parentService.getText(contentTextID),
+            notificationTitle,
+            notificationText,
             invokeActivityIntent);
 
         return notification;
@@ -222,7 +237,11 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         
         boolean alert = (newState != m_state);
         m_state = newState;
+        
+        doNotify(alert);
+    }
 
+    private synchronized void doNotify(boolean alert) {
         String ns = Context.NOTIFICATION_SERVICE;
         NotificationManager notificationManager =
                 (NotificationManager)m_parentService.getSystemService(ns);
@@ -292,6 +311,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         @Override
         public void run() {
             if (PsiphonData.getPsiphonData().getFreeTrialRemainingMillis() > 0) {
+                doNotify(false);
                 checkFreeTrialDelayHandler.postDelayed(this, checkFreeTrialInterval);
             } else {
                 signalStopService();
