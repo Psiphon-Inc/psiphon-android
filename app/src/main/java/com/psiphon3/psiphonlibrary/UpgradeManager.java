@@ -32,7 +32,6 @@ import com.psiphon3.psiphonlibrary.AuthenticatedDataPackage.AuthenticatedDataPac
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.annotation.SuppressLint;
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;

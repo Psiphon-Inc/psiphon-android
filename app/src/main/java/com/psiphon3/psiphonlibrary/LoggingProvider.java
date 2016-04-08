@@ -21,6 +21,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.IllegalFormatException;
 import java.util.List;
 import java.util.Locale;
 
@@ -110,7 +111,23 @@ public class LoggingProvider extends ContentProvider {
             try {
                 JSONObject jsonObj = new JSONObject(values.getAsString(LOG_JSON_KEY));
                 int stringResID = jsonObj.getInt("stringResID");
-                String logString = getContext().getString(stringResID);
+
+                JSONArray formatArgsJSONArray = jsonObj.getJSONArray("formatArgs");
+                Object[] formatArgs = new Object[formatArgsJSONArray.length()];
+                for (int i = 0; i < formatArgsJSONArray.length(); i++) {
+                    formatArgs[i] = formatArgsJSONArray.get(i);
+                }
+
+                String logString;
+                try
+                {
+                    logString = getContext().getString(stringResID, formatArgs);
+                }
+                catch (IllegalFormatException e)
+                {
+                    logString = getContext().getString(stringResID);
+                }
+
                 MyLog.d(logString);
             } catch (JSONException e) {
                 // pass
