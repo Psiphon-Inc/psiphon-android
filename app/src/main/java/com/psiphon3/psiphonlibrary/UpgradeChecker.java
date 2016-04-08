@@ -315,8 +315,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
 
         @Override
         public void onDiagnosticMessage(String message) {
-            // DEBUG
-            Log.d("PsiphonUpgradeChecker", message);
+            log(this, R.string.upgrade_checker_tunnel_diagnostic_message, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE, message);
         }
 
         @Override

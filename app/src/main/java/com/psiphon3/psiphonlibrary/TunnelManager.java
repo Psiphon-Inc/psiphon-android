@@ -440,6 +440,8 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
             json.put("UpstreamProxyUrl", PsiphonData.getPsiphonData().getUpstreamProxyUrl(context));
 
+            json.put("EmitDiagnosticNotices", true);
+
             // If this is a temporary tunnel (like for UpgradeChecker) we need to override some of
             // the implicit config values.
             if (temporaryTunnel) {
@@ -464,8 +466,6 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 json.put("LocalSocksProxyPort", 0);
 
                 json.put("EgressRegion", "");
-
-                json.put("EmitDiagnosticNotices", false);
             } else {
                 json.put("LocalHttpProxyPort", PsiphonData.getPsiphonData().getConfiguredLocalHttpProxyPort());
 
@@ -474,8 +474,6 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 String egressRegion = PsiphonData.getPsiphonData().getEgressRegion();
                 MyLog.g("EgressRegion", "regionCode", egressRegion);
                 json.put("EgressRegion", egressRegion);
-
-                json.put("EmitDiagnosticNotices", true);
             }
 
             return json.toString();
