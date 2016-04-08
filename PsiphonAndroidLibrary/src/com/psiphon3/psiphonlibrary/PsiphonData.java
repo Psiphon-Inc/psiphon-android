@@ -406,7 +406,7 @@ public class PsiphonData
 		return new NTCredentials(username, password, localHost, domain);
 	}
     
-    private ProxySettings getSystemProxySettings(Context context)
+    public ProxySettings getSystemProxySettings(Context context)
     {
         ProxySettings settings = m_savedSystemProxySettings;
         

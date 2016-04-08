@@ -625,6 +625,11 @@ public abstract class MainBase {
         @Override
         protected void onResume() {
             super.onResume();
+            
+            if (!isServiceRunning()) {
+                WebViewProxySettings.resetLocalProxy(this);
+            }
+            
             updateProxySettingsFromPreferences();
             
             // From: http://steve.odyfamily.com/?p=12
@@ -690,6 +695,7 @@ public abstract class MainBase {
                 runOnUiThread(new Runnable() {
                     public void run() {
                         updateServiceStateUI();
+                        WebViewProxySettings.resetLocalProxy(getContext());
                     }
                 });
             }
