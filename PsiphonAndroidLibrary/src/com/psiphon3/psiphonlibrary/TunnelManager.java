@@ -196,7 +196,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             notificationTitle += " (FREE TRIAL)";
             notificationText += minutesLeftText;
             
-            if (ticker == null) {
+            if (ticker == null && minutesLeft <= 10) {
                 ticker = m_parentService.getText(R.string.app_name_psiphon_pro) + " " + notificationText;
             }
         }
