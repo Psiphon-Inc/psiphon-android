@@ -189,6 +189,7 @@ public abstract class MainBase {
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
         private boolean m_serviceStateUIPaused = false;
+        private boolean m_localProxySettingsHaveBeenReset = false;
 
         /*
          * private CheckBox m_shareProxiesToggle; private TextView
@@ -626,9 +627,7 @@ public abstract class MainBase {
         protected void onResume() {
             super.onResume();
             
-            if (!isServiceRunning()) {
-                WebViewProxySettings.resetLocalProxy(this);
-            }
+            m_localProxySettingsHaveBeenReset = false;
             
             updateProxySettingsFromPreferences();
             
@@ -695,7 +694,6 @@ public abstract class MainBase {
                 runOnUiThread(new Runnable() {
                     public void run() {
                         updateServiceStateUI();
-                        WebViewProxySettings.resetLocalProxy(getContext());
                     }
                 });
             }
@@ -948,10 +946,20 @@ public abstract class MainBase {
                 m_toggleButton.setText(getText(R.string.start));
                 enableToggleServiceUI();
                 
+                if (!m_localProxySettingsHaveBeenReset) {
+                    WebViewProxySettings.resetLocalProxy(this);
+                    m_localProxySettingsHaveBeenReset = true;
+                }
+                
             } else if (tunnelManager.signalledStop()) {
                 setStatusState(R.drawable.status_icon_disconnected);
                 m_toggleButton.setText(getText(R.string.waiting));
                 disableToggleServiceUI();
+                
+                if (!m_localProxySettingsHaveBeenReset) {
+                    WebViewProxySettings.resetLocalProxy(this);
+                    m_localProxySettingsHaveBeenReset = true;
+                }
                 
             } else {
                 if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected()) {
@@ -962,6 +970,7 @@ public abstract class MainBase {
                 m_toggleButton.setText(getText(R.string.stop));
                 enableToggleServiceUI();
                 
+                m_localProxySettingsHaveBeenReset = false;
             }
         }
         
@@ -1379,6 +1388,7 @@ public abstract class MainBase {
             }
 
             public void load(String url) {
+                m_localProxySettingsHaveBeenReset = false;
                 WebViewProxySettings.setLocalProxy(mWebView.getContext(), PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort());
                 mProgressBar.setVisibility(View.VISIBLE);
                 mWebView.loadUrl(url);
