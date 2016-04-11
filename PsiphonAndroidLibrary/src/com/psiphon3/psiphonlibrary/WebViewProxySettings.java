@@ -129,17 +129,31 @@ public class WebViewProxySettings
             if (webViewCoreClass != null && proxyPropertiesClass != null) 
             {
                 Method m = webViewCoreClass.getDeclaredMethod("sendStaticMessage", Integer.TYPE, Object.class);
-                Constructor c = proxyPropertiesClass.getConstructor(String.class, Integer.TYPE, String.class);
-                
-                if (m != null && c != null)
+                if (proxySettingsAreEmpty(host, port))
                 {
-                    m.setAccessible(true);
-                    c.setAccessible(true);
-                    Object properties = c.newInstance(host, port, null);
-                
-                    // android.webkit.WebViewCore.EventHub.PROXY_CHANGED = 193;
-                    m.invoke(null, 193, properties);
-                    return true;
+                    if (m != null)
+                    {
+                        m.setAccessible(true);
+                    
+                        // android.webkit.WebViewCore.EventHub.PROXY_CHANGED = 193;
+                        m.invoke(null, 193, null);
+                        return true;
+                    }
+                }
+                else
+                {
+                    Constructor c = proxyPropertiesClass.getConstructor(String.class, Integer.TYPE, String.class);
+                    
+                    if (m != null && c != null)
+                    {
+                        m.setAccessible(true);
+                        c.setAccessible(true);
+                        Object properties = c.newInstance(host, port, null);
+                    
+                        // android.webkit.WebViewCore.EventHub.PROXY_CHANGED = 193;
+                        m.invoke(null, 193, properties);
+                        return true;
+                    }
                 }
             }
         }
