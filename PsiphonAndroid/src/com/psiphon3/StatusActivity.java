@@ -507,8 +507,8 @@ public class StatusActivity
     {
         new AlertDialog.Builder(this)
         .setTitle("Subscription Required")
-        .setMessage("Subscribe now. Or you can try Psiphon Pro for free for 60 minutes. " +
-                    "After 60 minutes you will be automatically disconnected. You can enjoy a message from our advertisers in a moment.")
+        .setMessage("Subscribe now for Ad-Free Psiphon Pro. Or you can try Psiphon Pro for free for 60 minutes after a short message from our advertisers. " +
+                    "After 60 minutes you will be automatically disconnected.")
         .setPositiveButton("Subscribe",
                 new DialogInterface.OnClickListener() {
                     @Override
