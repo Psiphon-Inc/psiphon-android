@@ -149,6 +149,7 @@ public abstract class MainBase {
         public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
         public static final String HANDSHAKE_SUCCESS_IS_RECONNECT = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS_IS_RECONNECT";
         public static final String UNEXPECTED_DISCONNECT = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT";
+        public static final String UNEXPECTED_DISCONNECT_RESTART = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT_RESTART";
         public static final String TUNNEL_STARTING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STARTING";
         public static final String TUNNEL_STOPPING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STOPPING";
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.PsiphonAndroidActivity.STATUS_ENTRY_AVAILABLE";
@@ -529,6 +530,8 @@ public abstract class MainBase {
             m_localBroadcastManager.registerReceiver(new TunnelStoppingReceiver(), new IntentFilter(TUNNEL_STOPPING));
 
             m_localBroadcastManager.registerReceiver(new UnexpectedDisconnect(), new IntentFilter(UNEXPECTED_DISCONNECT));
+
+            m_localBroadcastManager.registerReceiver(new UnexpectedDisconnect(), new IntentFilter(UNEXPECTED_DISCONNECT_RESTART));
 
             m_localBroadcastManager.registerReceiver(new StatusEntryAvailable(), new IntentFilter(STATUS_ENTRY_AVAILABLE));
 

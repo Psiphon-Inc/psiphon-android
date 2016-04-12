@@ -319,7 +319,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 PsiphonData.getPsiphonData().endFreeTrial();
                 IEvents events = PsiphonData.getPsiphonData().getCurrentEventsInterface();
                 if (events != null) {
-                    events.signalDisconnectRaiseActivity(m_parentService);
+                    events.signalDisconnectRaiseActivityAutostart(m_parentService);
                 }
             }
         }

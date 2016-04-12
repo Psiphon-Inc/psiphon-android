@@ -201,6 +201,10 @@ public class StatusActivity
         }
 
         // No explicit action for UNEXPECTED_DISCONNECT, just show the activity
+        if (0 == intent.getAction().compareTo(UNEXPECTED_DISCONNECT_RESTART))
+        {
+            startUp();
+        }
     }
     
     @Override
@@ -504,7 +508,7 @@ public class StatusActivity
         new AlertDialog.Builder(this)
         .setTitle("Subscription Required")
         .setMessage("Subscribe now. Or you can try Psiphon Pro for free for 60 minutes. " +
-                    "After 60 minutes you will be automatically disconnected.")
+                    "After 60 minutes you will be automatically disconnected. You can enjoy a message from our advertisers in a moment.")
         .setPositiveButton("Subscribe",
                 new DialogInterface.OnClickListener() {
                     @Override
