@@ -433,14 +433,10 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
      */
     private boolean ensurePsiphonRunning()
     {
-        // See com.psiphon3.StatusActivity#isServiceRunning() for details.
-        ActivityManager manager = (ActivityManager)getSystemService(ACTIVITY_SERVICE);
-        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
-        {
-            if (this.mPsiphonServiceClassName.equals(service.service.getClassName()))
-            {
-                return true;
-            }
+        // See com.psiphon3.psiphonlibrary.MainBase#isServiceRunning() for details.
+        if (PsiphonData.getPsiphonData().getStartingTunnelManager() ||
+                PsiphonData.getPsiphonData().getCurrentTunnelManager() != null) {
+            return true;
         }
         
         Class psiphonStatusActivityClass;
