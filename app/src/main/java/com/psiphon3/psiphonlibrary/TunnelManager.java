@@ -417,6 +417,8 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 PsiphonData.getPsiphonData().getDownloadUpgrades()) {
                 json.put("UpgradeDownloadUrl", EmbeddedValues.UPGRADE_URL);
                 
+                json.put("UpgradeDownloadClientVersionHeader", "x-amz-meta-psiphon-client-version");
+                
                 json.put("UpgradeDownloadFilename",
                         new UpgradeManager.DownloadedUpgradeFile(m_parentService).getFullPath());                
             }

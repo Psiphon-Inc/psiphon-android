@@ -29,6 +29,11 @@
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
+/*
+ * Psiphon customizations: Copyright (C) Psiphon Inc.
+ * Released under badvpn licence: https://github.com/ambrop72/badvpn#license
+ */
+
 #ifndef __LWIP_ARCH_H__
 #define __LWIP_ARCH_H__
 
