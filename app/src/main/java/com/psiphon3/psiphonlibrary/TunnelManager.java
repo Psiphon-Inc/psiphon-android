@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Psiphon Inc.
+ * Copyright (c) 2016, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -408,9 +408,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         JSONObject json = new JSONObject();
 
         try {
-            if (UpgradeChecker.upgradeCheckNeeded(context)
-            && tempTunnelName != null // DEBUG
-             ) {
+            if (UpgradeChecker.upgradeCheckNeeded(context)) {
                 json.put("UpgradeDownloadUrl", EmbeddedValues.UPGRADE_URL);
 
                 json.put("UpgradeDownloadClientVersionHeader", "x-amz-meta-psiphon-client-version");

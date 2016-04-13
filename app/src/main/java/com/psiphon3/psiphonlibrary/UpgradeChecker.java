@@ -28,7 +28,6 @@ import android.app.PendingIntent;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Debug;
 import android.os.Handler;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
@@ -40,7 +39,7 @@ import ca.psiphon.PsiphonTunnel;
 /*
  * Self-upgrading notes.
  * - UpgradeChecker is responsible for processing downloaded upgrade files (authenticate package,
- *   check APK version), notifying users of upgrades, and invoking the OS installer. Only
+ *   check APK version -- via UpgradeManager), notifying users of upgrades, and invoking the OS installer. Only
  *   UpgradeChecker will do these things, so we ensure there’s only one upgrade notification, etc.
  * - Every X hours, an alarm will wake up UpgradeChecker and it will launch its own tunnel-core and
  *   download an upgrade if no upgrade is pending. This achieves the Google Play-like
@@ -54,30 +53,25 @@ import ca.psiphon.PsiphonTunnel;
  * - When the Psiphon app tunnel-core downloads an upgrade, it notifies UpgradeChecker with an
  *   intent. UpgradeChecker takes ownership of the downloaded file and proceeds as if it downloaded
  *   the file.
- *
- *
- *
- *
- *
-We accept an edge condition that the upgrade checker process tunnel-core and the Psiphon app tunnel-core may both download the upgrade file at the exact same time. Only the upgrade monitor will process the file and notify the user.
-I don’t think we should skip an upgrade monitor 24 hourly run if the Psiphon app is running. The Psiphon app won’t check for upgrades if it’s happily connected, so it gives us more coverage to let the daily check always run.
-We will add a persistent last-check-timestamp to tunnel-core so that the 6 hour throttle persists across toggles. For that matter, we can do the same with fetch remote server list. Aside from that enhancement, the logic remains: only do an untunneled upgrade check after 30 seconds of failing to connect; once a successful check has been made, don’t check again for 6 hours. For the tunnel-core in the upgrade monitor process, the 6 hour throttle will be a no-op.
-
-
-
-- set EstablishTunnelTimeoutSeconds in tunnel-core options to limit connection attempt time. (How long?)
-
-
  */
 
 public class UpgradeChecker extends WakefulBroadcastReceiver {
-    private static final int ALARM_FREQUENCY_MS = 3000; // TODO: more like 7*60*60*1000 -- use an odd number of hours so it's not the same time every day
+    private static final int ALARM_FREQUENCY_MS = 11*60*60*1000; // use an odd number of hours so it's not the same time every day
     private static final int ALARM_INTENT_REQUEST_CODE = 0;
     private static final String ALARM_INTENT_ACTION = UpgradeChecker.class.getName()+":ALARM";
     private static final String CREATE_ALARM_INTENT_ACTION = UpgradeChecker.class.getName()+":CREATE_ALARM";
 
     public static final String UPGRADE_FILE_AVAILABLE_INTENT_ACTION = UpgradeChecker.class.getName()+":UPGRADE_AVAILABLE";
 
+    /**
+     * Provides loggging functionality to the :UpgradeChecker process. Utilizes LoggingProvider.
+     * May be called from any process or thread.
+     * @param context
+     * @param stringResID String resource ID.
+     * @param sensitivity Log sensitivity level.
+     * @param priority One of the log priority levels supported by MyLog. Like: Log.DEBUG, Log.INFO, Log.WARN, Log.ERROR, Log.VERBOSE
+     * @param formatArgs Arguments to be formatted into the log string.
+     */
     private static void log(Context context, int stringResID, MyLog.Sensitivity sensitivity, int priority, Object... formatArgs) {
         String logJSON = LoggingProvider.makeLogJSON(stringResID, sensitivity, priority, formatArgs);
         if (logJSON == null) {
@@ -97,9 +91,9 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
     /**
      * Checks whether an upgrade check should be performed. False will be returned if there's already
      * an upgrade file downloaded.
+     * May be called from any process or thread.
      * Side-effect: If an existing upgrade file is detected, the upgrade notification will be displayed.
      * Side-effect: Creates the UpgradeChecker alarm.
-     * TODO: Is the notification showing too aggressive? What if it has been swiped away?
      * @param context
      * @return true if upgrade check is needed.
      */
@@ -184,7 +178,9 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         Intent intent = new Intent(appContext, UpgradeChecker.class);
         intent.setAction(ALARM_INTENT_ACTION);
 
-        boolean alarmExists = (PendingIntent.getBroadcast(appContext, ALARM_INTENT_REQUEST_CODE,
+        boolean alarmExists = (PendingIntent.getBroadcast(
+                appContext,
+                ALARM_INTENT_REQUEST_CODE,
                 intent,
                 PendingIntent.FLAG_NO_CREATE) != null);
 
@@ -208,6 +204,9 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
                 alarmIntent);
     }
 
+    /**
+     * Launches the upgrade checking service. Returns immediately.
+     */
     private void checkForUpgrade(Context context) {
         log(context, R.string.upgrade_checker_start_service, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
 
@@ -216,17 +215,41 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
     }
 
 
+    /**
+     * The service that does the upgrade checking, via tunnel-core.
+     */
     public static class UpgradeCheckerService extends IntentService implements PsiphonTunnel.HostService {
+        /**
+         * The tunnel-core instance.
+         */
         private PsiphonTunnel mTunnel;
+
+        /**
+         * The wakeful intent that was received to launch the upgrade checking. We hold on to it so
+         * that we can release the wakelock when we're done.
+         */
         private Intent mWakefulIntent;
+
+        /**
+         * Used to post back to stop the tunnel, to avoid locking the thread.
+         */
         Handler mStopHandler = new Handler();
+
+        /**
+         * Used to keep track of whether we've already sent the intent indicating that the
+         * upgrade is available.
+         */
+        private boolean mUpgradeDownloaded;
 
         public UpgradeCheckerService() {
             super("UpgradeCheckerService");
-
             mTunnel = PsiphonTunnel.newPsiphonTunnel(this);
         }
 
+        /**
+         * Entry point for starting the upgrade service.
+         * @param intent Must be passed to UpgradeChecker.completeWakefulIntent when the check is done.
+         */
         @Override
         protected void onHandleIntent(Intent intent) {
             log(this, R.string.upgrade_checker_check_start, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
@@ -234,12 +257,13 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
             if (mWakefulIntent != null) {
                 // Already processing an intent.
                 log(this, R.string.upgrade_checker_already_in_progress, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
-                // Not calling done() because we don't want to affect the currently running request.
+                // Not calling shutDownTunnel() because we don't want to interfere with the currently running request.
                 UpgradeChecker.completeWakefulIntent(intent);
                 return;
             }
 
-            mWakefulIntent = intent;
+            setWakefulIntent(intent);
+            mUpgradeDownloaded = false;
 
             Utils.initializeSecureRandom();
 
@@ -247,12 +271,17 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
                 mTunnel.startTunneling(TunnelManager.getServerEntries(this));
             } catch (PsiphonTunnel.Exception e) {
                 log(this, R.string.upgrade_checker_start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, Log.ERROR, e.getMessage());
-                done();
+                // No need to call shutDownTunnel().
+                releaseWakefulIntent();
                 return;
             }
         }
 
-        protected void done() {
+        /**
+         * Called when tunnel-core upgrade processing is finished (one way or another).
+         * May be called more than once.
+         */
+        protected void shutDownTunnel() {
             final Context context = this;
             mStopHandler.post(new Runnable() {
                 @Override
@@ -263,9 +292,83 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
             });
         }
 
+        protected void setWakefulIntent(Intent intent) {
+            assert(mWakefulIntent == null);
+            mWakefulIntent = intent;
+        }
+
+        /**
+         * Complete the current wakeful intent. Note that this releases the wakelock and should be
+         * called only when everything else is finished.
+         */
+        protected void releaseWakefulIntent() {
+            if (mWakefulIntent != null) {
+                UpgradeChecker.completeWakefulIntent(mWakefulIntent);
+            }
+            mWakefulIntent = null;
+        }
+
         /*
          * PsiphonTunnel.HostService implementation
          */
+
+        @Override
+        public String getPsiphonConfig() {
+            // Build a temporary tunnel config to use
+            String config = TunnelManager.buildTunnelCoreConfig(
+                    this,                       // context
+                    "upgradechecker",           // tempTunnelName
+                    "Psiphon_UpgradeChecker_"); // clientPlatformPrefix
+            return config == null ? "" : config;
+        }
+
+        /**
+         * Called when the tunnel discovers that we're already on the latest version. This indicates
+         * that we can start shutting down.
+         */
+        @Override
+        public void onClientIsLatestVersion() {
+            log(this, R.string.upgrade_checker_client_is_latest_version, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
+            shutDownTunnel();
+        }
+
+        /**
+         * Called when the tunnel discovers that an upgrade has been downloaded. This indicates that
+         * we should send an intent about it and start shutting down.
+         */
+        @Override
+        public void onClientUpgradeDownloaded(String filename) {
+            log(this, R.string.upgrade_checker_client_upgrade_downloaded, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
+
+            if (mUpgradeDownloaded) {
+                // Because tunnel-core may create multiple server connections and do multiple
+                // handshakes, onClientUpgradeDownloaded may get called multiple times.
+                // We want to avoid sending the intent each time.
+                return;
+            }
+            mUpgradeDownloaded = true;
+
+            Intent intent = new Intent(this, UpgradeChecker.class);
+            intent.setAction(UPGRADE_FILE_AVAILABLE_INTENT_ACTION);
+            this.sendBroadcast(intent);
+
+            shutDownTunnel();
+        }
+
+        /**
+         * Called when the tunnel has finished shutting down. We'll all done and can release the wakeful intent.
+         * May be due to a connection timeout, or simply an exit triggered by one of the shutDownTunnel() calls.
+         */
+        @Override
+        public void onExiting() {
+            log(this, R.string.upgrade_checker_tunnel_exiting, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
+            releaseWakefulIntent();
+        }
+
+        @Override
+        public void onDiagnosticMessage(String message) {
+            log(this, R.string.upgrade_checker_tunnel_diagnostic_message, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE, message);
+        }
 
         @Override
         public String getAppName() {
@@ -275,47 +378,6 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         @Override
         public Context getContext() {
             return this;
-        }
-
-        @Override
-        public String getPsiphonConfig() {
-            String config = TunnelManager.buildTunnelCoreConfig(
-                    this,                       // context
-                    "upgradechecker",           // tempTunnelName
-                    "Psiphon_UpgradeChecker_"); // clientPlatformPrefix
-            return config == null ? "" : config;
-        }
-
-        @Override
-        public void onClientIsLatestVersion() {
-            log(this, R.string.upgrade_checker_client_is_latest_version, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
-            done();
-        }
-
-        @Override
-        public void onClientUpgradeDownloaded(String filename) {
-            log(this, R.string.upgrade_checker_client_upgrade_downloaded, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
-
-            Intent intent = new Intent(this, UpgradeChecker.class);
-            intent.setAction(UPGRADE_FILE_AVAILABLE_INTENT_ACTION);
-            this.sendBroadcast(intent);
-
-            done();
-        }
-
-        @Override
-        public void onExiting() {
-            // May be due to a connection timeout, or simply an exit triggered by one of the done() calls.
-            log(this, R.string.upgrade_checker_tunnel_exiting, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE);
-            if (mWakefulIntent != null) {
-                UpgradeChecker.completeWakefulIntent(mWakefulIntent);
-            }
-            mWakefulIntent = null;
-        }
-
-        @Override
-        public void onDiagnosticMessage(String message) {
-            log(this, R.string.upgrade_checker_tunnel_diagnostic_message, MyLog.Sensitivity.NOT_SENSITIVE, Log.VERBOSE, message);
         }
 
         @Override

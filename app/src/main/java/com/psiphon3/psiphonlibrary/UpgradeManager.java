@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Psiphon Inc.
+ * Copyright (c) 2016, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -327,7 +327,7 @@ public interface UpgradeManager
                 // to write the extracted file... we still re-download.
 
                 downloadedFile.delete();
-                
+
                 if (!success)
                 {
                     return null;
@@ -341,7 +341,7 @@ public interface UpgradeManager
             {
                 return null;
             }
-            
+
             // Is it a higher version than the current app?
             
             final PackageManager pm = context.getPackageManager();

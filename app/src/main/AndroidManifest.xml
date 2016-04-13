@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.psiphon3"
-    android:versionCode="0"
-    android:versionName="0.0"
     android:installLocation="auto">
-
-    <uses-sdk android:minSdkVersion="9" android:targetSdkVersion="23"/>
 
     <supports-screens
                   android:smallScreens="true"
@@ -13,13 +9,13 @@
                   android:largeScreens="true"
                   android:xlargeScreens="true" />
 
-    <uses-permission android:name="android.permission.INTERNET"></uses-permission>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"></uses-permission>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"></uses-permission>
-    <uses-permission android:name="android.permission.GET_TASKS"></uses-permission>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
-    <uses-permission android:name="android.permission.VIBRATE"></uses-permission>
-    <uses-permission android:name="android.permission.WAKE_LOCK"></uses-permission>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.GET_TASKS"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <application
         android:hardwareAccelerated="true"
@@ -66,7 +62,7 @@
             android:process=":UpgradeChecker"
             android:enabled="true">
             <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"></action>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
         <!-- The service that UpgradeChecker uses to do work -->
@@ -86,26 +82,26 @@
             android:theme="@style/ZircoTheme"
             android:exported="false">
         </activity>
-        <activity android:name="org.zirco.ui.activities.AboutActivity" ></activity>
-        <activity android:name="org.zirco.ui.activities.EditBookmarkActivity"></activity>
-        <activity android:name="org.zirco.ui.activities.BookmarksListActivity"></activity>
-        <activity android:name="org.zirco.ui.activities.HistoryListActivity"></activity>
-        <activity android:name="org.zirco.ui.activities.DownloadsListActivity"></activity>
-        <activity android:name="org.zirco.ui.activities.AdBlockerWhiteListActivity"></activity>
-        <activity android:name="org.zirco.ui.activities.BookmarksHistoryActivity"></activity>
-        <activity android:name="org.zirco.ui.activities.ChangelogActivity"></activity>
-        <activity android:name="org.zirco.ui.activities.preferences.PreferencesActivity"></activity>
-        <activity android:name="org.zirco.ui.activities.preferences.HomepagePreferenceActivity"></activity>
-        <activity android:name="org.zirco.ui.activities.preferences.SearchUrlPreferenceActivity"></activity>
-        <activity android:name="org.zirco.ui.activities.preferences.UserAgentPreferenceActivity"></activity>
-        <activity android:name="org.zirco.ui.activities.MobileViewListActivity"></activity>
-        <activity android:name="org.zirco.ui.activities.DesktopViewListActivity"></activity>
-        <activity android:name="org.zirco.ui.activities.WeaveBookmarksListActivity"></activity>
-        <activity android:name="org.zirco.ui.activities.preferences.WeavePreferencesActivity"></activity>
-        <activity android:name="org.zirco.ui.activities.preferences.WeaveServerPreferenceActivity"></activity>
+        <activity android:name="org.zirco.ui.activities.AboutActivity" />
+        <activity android:name="org.zirco.ui.activities.EditBookmarkActivity"/>
+        <activity android:name="org.zirco.ui.activities.BookmarksListActivity"/>
+        <activity android:name="org.zirco.ui.activities.HistoryListActivity"/>
+        <activity android:name="org.zirco.ui.activities.DownloadsListActivity"/>
+        <activity android:name="org.zirco.ui.activities.AdBlockerWhiteListActivity"/>
+        <activity android:name="org.zirco.ui.activities.BookmarksHistoryActivity"/>
+        <activity android:name="org.zirco.ui.activities.ChangelogActivity"/>
+        <activity android:name="org.zirco.ui.activities.preferences.PreferencesActivity"/>
+        <activity android:name="org.zirco.ui.activities.preferences.HomepagePreferenceActivity"/>
+        <activity android:name="org.zirco.ui.activities.preferences.SearchUrlPreferenceActivity"/>
+        <activity android:name="org.zirco.ui.activities.preferences.UserAgentPreferenceActivity"/>
+        <activity android:name="org.zirco.ui.activities.MobileViewListActivity"/>
+        <activity android:name="org.zirco.ui.activities.DesktopViewListActivity"/>
+        <activity android:name="org.zirco.ui.activities.WeaveBookmarksListActivity"/>
+        <activity android:name="org.zirco.ui.activities.preferences.WeavePreferencesActivity"/>
+        <activity android:name="org.zirco.ui.activities.preferences.WeaveServerPreferenceActivity"/>
 
-        <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonzircobookmarkscontentprovider"></provider>
-        <provider android:name="org.zirco.providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonweavecontentprovider"></provider>
+        <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonzircobookmarkscontentprovider"/>
+        <provider android:name="org.zirco.providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonweavecontentprovider"/>
 
     </application>
 

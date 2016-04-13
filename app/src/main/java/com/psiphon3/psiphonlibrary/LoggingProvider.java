@@ -1,6 +1,24 @@
+/*
+ * Copyright (c) 2016, Psiphon Inc.
+ * All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package com.psiphon3.psiphonlibrary;
 
-import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.content.ContentProvider;
@@ -11,25 +29,21 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Debug;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.IllegalFormatException;
-import java.util.List;
-import java.util.Locale;
 
 /**
- *
+ * Can be used by secondary processes (like UpgradeChecker) to create logs that will be included in
+ * the diagnostic package (and possibly UI).
  */
 public class LoggingProvider extends ContentProvider {
-    public static final Uri INSERT_URI = Uri.parse("content://com.psiphon3.psiphonlibrary.LoggingProvider/");
+    public static final Uri INSERT_URI = Uri.parse("content://"+LoggingProvider.class.getCanonicalName()+"/");
     public static final String LOG_JSON_KEY = "logJSON";
 
     /**
@@ -91,14 +105,9 @@ public class LoggingProvider extends ContentProvider {
     }
 
     /**
-     * LOG_JSON_KEY value must have the form:
-     * {
-     *     stringResID int
-     *     sensitivity string -- corresponding to MyLog.Sensitivity value
-     *     formatArgs string array -- arguments formatted into string
-     * }
+     * Called when a content provider consumer wants to create a log.
      * @param uri Ignored.
-     * @param values Must have LOG_JSON_KEY value.
+     * @param values Must have LOG_JSON_KEY value, created by makeLogJSON().
      * @return Always returns null.
      */
     @Nullable
@@ -149,9 +158,10 @@ public class LoggingProvider extends ContentProvider {
         return 0;
     }
 
+    /**
+     * The database where logs are stored until they can be consumed by the app.
+     */
     public static class LogDatabaseHelper extends SQLiteOpenHelper {
-        private static final Object mDbLock = new Object();
-
         private static final String DATABASE_NAME = "loggingprovider.db";
         private static final int DATABASE_VERSION = 1;
 
@@ -163,6 +173,37 @@ public class LoggingProvider extends ContentProvider {
                         COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                         COLUMN_NAME_LOGJSON + " TEXT NOT NULL" +
                 ");";
+
+        /**
+         * The database object. Note that SQLite is thread-safe (by default).
+         */
+        private SQLiteDatabase mDB;
+
+        // Singleton pattern
+        private static LogDatabaseHelper mLogDatabaseHelper;
+        public Object clone() throws CloneNotSupportedException
+        {
+            throw new CloneNotSupportedException();
+        }
+        public static synchronized LogDatabaseHelper get(Context context)
+        {
+            if (mLogDatabaseHelper == null)
+            {
+                mLogDatabaseHelper = new LogDatabaseHelper(context);
+            }
+
+            return mLogDatabaseHelper;
+        }
+
+        public synchronized SQLiteDatabase getDB()
+        {
+            if (mDB == null)
+            {
+                mDB = mLogDatabaseHelper.getWritableDatabase();
+            }
+
+            return mDB;
+        }
 
         public LogDatabaseHelper(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -196,20 +237,23 @@ public class LoggingProvider extends ContentProvider {
             protected Void doInBackground(ContentValues... params) {
                 // DO NOT LOG WITHIN THIS FUNCTION
 
-                synchronized (mDbLock) {
-                    LogDatabaseHelper dbHelper = new LogDatabaseHelper(mContext);
-                    SQLiteDatabase db = dbHelper.getWritableDatabase();
+                SQLiteDatabase db = LogDatabaseHelper.get(mContext).getDB();
 
-                    for (int i = 0; i < params.length; i++) {
-                        db.insert(TABLE_NAME, null, params[i]);
-                    }
+                db.beginTransaction();
+
+                for (int i = 0; i < params.length; i++) {
+                    db.insert(TABLE_NAME, null, params[i]);
                 }
+
+                db.setTransactionSuccessful();
+                db.endTransaction();
+
                 return null;
             }
         }
 
         /**
-         * To be called by MyLog at a time when it's appropriate to create logs that were stored
+         * To be called by MyLog at a time when it's appropriate to consume logs that were stored
          * by the provider.
          */
         public static void restoreLogs(Context context) {
@@ -229,79 +273,79 @@ public class LoggingProvider extends ContentProvider {
 
                 // We will cursor through DB records, passing them off to MyLog and deleting them.
 
-                synchronized (mDbLock) {
-                    LogDatabaseHelper dbHelper = new LogDatabaseHelper(mContext);
-                    SQLiteDatabase db = dbHelper.getWritableDatabase();
+                SQLiteDatabase db = LogDatabaseHelper.get(mContext).getDB();
 
-                    String[] projection = {
-                            COLUMN_NAME_ID,
-                            COLUMN_NAME_LOGJSON
-                    };
+                String[] projection = {
+                        COLUMN_NAME_ID,
+                        COLUMN_NAME_LOGJSON
+                };
 
-                    String sortOrder = COLUMN_NAME_ID + " ASC";
+                String sortOrder = COLUMN_NAME_ID + " ASC";
 
-                    String limit = "1";
+                String limit = "1";
 
-                    // We will do repeated limit-1-query + delete transactions.
-                    while (true) {
-                        db.beginTransaction();
+                // We will do repeated limit-1-query + delete transactions.
+                while (true) {
+                    db.beginTransaction();
 
-                        Cursor cursor = db.query(
-                                TABLE_NAME,
-                                projection,
-                                null, null,
-                                null, null,
-                                sortOrder,
-                                limit);
+                    Cursor cursor = db.query(
+                            TABLE_NAME,
+                            projection,
+                            null, null,
+                            null, null,
+                            sortOrder,
+                            limit);
 
-                        cursor.moveToFirst();
-                        if (cursor.isAfterLast()) {
-                            // No records left.
+                    cursor.moveToFirst();
+                    if (cursor.isAfterLast()) {
+                        // No records left.
+                        cursor.close();
+                        db.endTransaction();
+                        break;
+                    }
+
+                    long recId = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_NAME_ID));
+                    String logJSON = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_LOGJSON));
+
+                    // Don't need the cursor any longer
+                    cursor.close();
+
+                    // Extract log args from JSON.
+                    int stringResID, priority;
+                    MyLog.Sensitivity sensitivity;
+                    Object[] formatArgs;
+                    Date timestamp;
+                    try {
+                        JSONObject jsonObj = new JSONObject(logJSON);
+                        stringResID = jsonObj.getInt("stringResID");
+                        sensitivity = MyLog.Sensitivity.valueOf(jsonObj.getString("sensitivity"));
+                        priority = jsonObj.getInt("priority");
+                        timestamp = new Date(jsonObj.getInt("timestamp"));
+
+                        JSONArray formatArgsJSONArray = jsonObj.getJSONArray("formatArgs");
+                        formatArgs = new Object[formatArgsJSONArray.length()];
+                        for (int i = 0; i < formatArgsJSONArray.length(); i++) {
+                            formatArgs[i] = formatArgsJSONArray.get(i);
+                        }
+
+                        // Pass the log info on to MyLog.
+                        // Keep this call in the try block so it gets skipped if there's an exception above.
+                        if (!MyLog.logFromProvider(stringResID, sensitivity, priority, formatArgs, timestamp)) {
+                            // MyLog is not in a state to receive logs. Abort.
                             db.endTransaction();
                             break;
                         }
-
-                        long recId = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_NAME_ID));
-                        String logJSON = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_LOGJSON));
-
-                        // Extract log args from JSON.
-                        int stringResID, priority;
-                        MyLog.Sensitivity sensitivity;
-                        Object[] formatArgs;
-                        Date timestamp;
-                        try {
-                            JSONObject jsonObj = new JSONObject(logJSON);
-                            stringResID = jsonObj.getInt("stringResID");
-                            sensitivity = MyLog.Sensitivity.valueOf(jsonObj.getString("sensitivity"));
-                            priority = jsonObj.getInt("priority");
-                            timestamp = new Date(jsonObj.getInt("timestamp"));
-
-                            JSONArray formatArgsJSONArray = jsonObj.getJSONArray("formatArgs");
-                            formatArgs = new Object[formatArgsJSONArray.length()];
-                            for (int i = 0; i < formatArgsJSONArray.length(); i++) {
-                                formatArgs[i] = formatArgsJSONArray.get(i);
-                            }
-
-                            // Pass the log info on to MyLog.
-                            // Keep this call in the try block so it gets skipped if there's an exception above.
-                            if (!MyLog.logFromProvider(stringResID, sensitivity, priority, formatArgs, timestamp)) {
-                                // MyLog is not in a state to receive logs. Abort.
-                                db.endTransaction();
-                                break;
-                            }
-                        } catch (JSONException e) {
-                            // Carry on with the deletion from DB
-                            int i = 0;
-                        }
-
-                        // MyLog was in a state to receive the data, so delete the row.
-                        String selection = COLUMN_NAME_ID + " = ?";
-                        String[] selectionArgs = { String.valueOf(recId) };
-                        db.delete(TABLE_NAME, selection, selectionArgs);
-
-                        db.setTransactionSuccessful();
-                        db.endTransaction();
+                    } catch (JSONException e) {
+                        // Carry on with the deletion from DB
                     }
+
+                    // MyLog was in a state to receive the data, so delete the row.
+                    String selection = COLUMN_NAME_ID + " = ?";
+                    String[] selectionArgs = { String.valueOf(recId) };
+                    db.delete(TABLE_NAME, selection, selectionArgs);
+
+                    db.setTransactionSuccessful();
+                    db.endTransaction();
                 }
 
                 return null;
