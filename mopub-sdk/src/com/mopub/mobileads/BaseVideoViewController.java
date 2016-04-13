@@ -32,7 +32,7 @@ public abstract class BaseVideoViewController {
     }
 
     protected BaseVideoViewController(final Context context, @Nullable final Long broadcastIdentifier, final BaseVideoViewControllerListener baseVideoViewControllerListener) {
-        mContext = context.getApplicationContext();
+        mContext = context;
         mBroadcastIdentifier = broadcastIdentifier;
         mBaseVideoViewControllerListener = baseVideoViewControllerListener;
         mLayout = new RelativeLayout(mContext);
@@ -51,7 +51,8 @@ public abstract class BaseVideoViewController {
     protected abstract void onResume();
     protected abstract void onDestroy();
     protected abstract void onSaveInstanceState(@NonNull Bundle outState);
-    protected abstract void onConfigurationChanged(@Nullable Configuration configuration);
+    protected abstract void onConfigurationChanged(Configuration configuration);
+    protected abstract void onBackPressed();
 
     public boolean backButtonEnabled() {
         return true;
@@ -89,9 +90,9 @@ public abstract class BaseVideoViewController {
 
     void broadcastAction(final String action) {
         if (mBroadcastIdentifier != null) {
-            EventForwardingBroadcastReceiver.broadcastAction(mContext, mBroadcastIdentifier, action);
+            BaseBroadcastReceiver.broadcastAction(mContext, mBroadcastIdentifier, action);
         } else {
-            MoPubLog.w("Tried to broadcast a video event without a braodcast identifier to send to.");
+            MoPubLog.w("Tried to broadcast a video event without a broadcast identifier to send to.");
         }
     }
 }
