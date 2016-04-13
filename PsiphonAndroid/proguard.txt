@@ -1,28 +1,6 @@
--keepattributes SourceFile,LineNumberTable,InnerClasses
-
 # Only strip these
 -keep class !com.google.android.gms.**,!com.google.ads.**,!android.support.** { *; }
 
-# From google-play-services_lib proguard.txt
--keep class * extends java.util.ListResourceBundle {
-    protected java.lang.Object[][] getContents();
-}
-# Keep SafeParcelable value, needed for reflection. This is required to support backwards
-# compatibility of some classes.
--keep public class com.google.android.gms.common.internal.safeparcel.SafeParcelable {
-    public static final *** NULL;
-}
-# Keep the names of classes/members we need for client functionality.
--keepnames @com.google.android.gms.common.annotation.KeepName class *
--keepclassmembernames class * {
-    @com.google.android.gms.common.annotation.KeepName *;
-}
-# Needed for Parcelable/SafeParcelable Creators to not get stripped
--keepnames class * implements android.os.Parcelable {
-    public static final ** CREATOR;
-}
-
-# Support for Android Advertiser ID.
 -keep class com.google.android.gms.common.api.GoogleApiClient { public *; }
 -keep class com.google.android.gms.common.api.GoogleApiClient$* {public *;}
 -keep class com.google.android.gms.location.LocationServices {public *;}
@@ -31,12 +9,13 @@
 -keep class com.google.android.gms.location.ActivityRecognitionApi {public *;}
 -keep class com.google.android.gms.location.ActivityRecognitionResult {public *;}
 -keep class com.google.android.gms.location.DetectedActivity {public *;}
--keep class com.google.android.gms.common.GooglePlayServicesUtil {*;}
--keep class com.google.android.gms.ads.identifier.AdvertisingIdClient {*;}
--keep class com.google.android.gms.ads.identifier.AdvertisingIdClient$Info {*;}
+-keep class com.google.android.gms.ads.identifier.AdvertisingIdClient{public *;}
+-keep class com.google.android.gms.ads.identifier.AdvertisingIdClient$Info{public *;}
 
-# Needed when building against the Marshmallow SDK
--dontwarn org.apache.http.**
+-keepattributes SourceFile,LineNumberTable,InnerClasses
+-keep class com.inmobi.** { *; }
 -dontwarn com.inmobi.**
--dontwarn com.google.android.gms.**
+-dontwarn com.google.android.gms**
+
 -dontwarn android.webkit.WebSettings
+-dontwarn com.google.android.exoplayer.**
