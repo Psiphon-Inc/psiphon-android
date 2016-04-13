@@ -57,10 +57,9 @@
             <enum name="google_wallet_classic" value="1"/>
             <enum name="google_wallet_grayscale" value="2"/>
             <enum name="google_wallet_monochrome" value="3"/>
-            <!-- TODO(waltercacau): Uncomment when Android Pay is launched to all developers:
-                <enum name="android_pay_dark" value="4"/>
-                <enum name="android_pay_light" value="5"/>
-                <enum name="android_pay_light_with_border" value="6"/> -->
+            <enum name="android_pay_dark" value="4"/>
+            <enum name="android_pay_light" value="5"/>
+            <enum name="android_pay_light_with_border" value="6"/>
             <!-- Deprecated values -->
             <enum name="classic" value="1"/>
             <enum name="grayscale" value="2"/>
@@ -82,8 +81,7 @@
         <attr name="maskedWalletDetailsLogoImageType" format="enum">
             <enum name="google_wallet_classic" value="1"/>
             <enum name="google_wallet_monochrome" value="2"/>
-            <!-- TODO(waltercacau): Uncomment when Android Pay is launched to all developers:
-                <enum name="android_pay" value="3"/> -->
+            <enum name="android_pay" value="3"/>
             <!-- Deprecated values -->
             <enum name="classic" value="1"/>
             <enum name="monochrome" value="2"/>
