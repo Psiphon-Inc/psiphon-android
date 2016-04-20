@@ -640,6 +640,13 @@ public class Utils
         return getISO8601String(new Date());
     }
 
+    public static boolean isOnWiFi(Context context) {
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        return networkInfo.getType() == ConnectivityManager.TYPE_WIFI;
+    }
+
     public static String getNetworkTypeName(Context context)
     {
         ConnectivityManager connectivityManager =

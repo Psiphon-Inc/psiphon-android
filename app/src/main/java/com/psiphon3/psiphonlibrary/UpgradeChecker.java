@@ -29,6 +29,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
 
@@ -132,6 +133,15 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
             Intent intent = new Intent(appContext, UpgradeChecker.class);
             intent.setAction(UPGRADE_FILE_AVAILABLE_INTENT_ACTION);
             appContext.sendBroadcast(intent);
+            return false;
+        }
+
+        // Verify if 'Download upgrades on WiFi only' user preference is on
+        // but current network is not WiFi
+        if (PreferenceManager.getDefaultSharedPreferences(appContext).getBoolean(
+                context.getString(R.string.downloadWiFiOnlyPreference), true) == true &&
+                Utils.isOnWiFi(appContext) == false) {
+            log(context, R.string.upgrade_checker_upgrade_wifi_only, MyLog.Sensitivity.NOT_SENSITIVE, Log.INFO);
             return false;
         }
 

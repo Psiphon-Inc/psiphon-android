@@ -25,6 +25,9 @@
     <string name="useProxyUsernamePreference">useProxyUsernamePreference</string>
     <string name="useProxyPasswordPreference">useProxyPasswordPreference</string>
     <string name="useProxyDomainPreference">useProxyDomainPreference</string>
+    <string name="preferencesDownloading">preferencesDownloading</string>
+    <string name="downloadWiFiOnlyPreference">downloadWiFiOnlyPreference</string>
+
     <!-- When Psiphon disconnects it sends a one last ("final") status request. This message is shown if that request fails. -->
     <string name="final_status_request_failed">Final status request failed</string>
     <string name="preemptive_bind_failed">Preemptive bind failed</string>
@@ -33,6 +36,7 @@
     <string name="upgrade_checker_no_upgrading">UpgradeChecker.upgradeCheckNeeded: install does not support upgrading</string>
     <string name="upgrade_checker_upgrade_file_exists">UpgradeChecker.upgradeCheckNeeded: upgrade file already exists</string>
     <string name="upgrade_checker_check_needed">UpgradeChecker.upgradeCheckNeeded: upgrade check needed</string>
+    <string name="upgrade_checker_upgrade_wifi_only">UpgradeChecker.upgradeCheckNeeded: WiFi only user preference</string>
     <string name="upgrade_checker_alarm_intent_received">UpgradeChecker.onReceive: ALARM_INTENT_ACTION received</string>
     <string name="upgrade_checker_upgrade_file_available_intent_received">UpgradeChecker.onReceive: UPGRADE_FILE_AVAILABLE_INTENT_ACTION received</string>
     <string name="upgrade_checker_boot_completed_intent_received">UpgradeChecker.onReceive: ACTION_BOOT_COMPLETED received</string>
