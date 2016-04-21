@@ -51,21 +51,32 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Check if value for 'Download upgrade on WIFI only' preference exists
-        // and set it to DOWNLOAD_WIFI_ONLY_PREFERENCE_DEFAULT if not
+        // If not a Play Store build then
+        // check if value for 'Download upgrade on WIFI only' preference exists
+        // and set it to DOWNLOAD_WIFI_ONLY_PREFERENCE_DEFAULT if it is not there
+        //
+        // If Play Store build then remove the preference from the screen
+        boolean b_hasEverBeenSideloaded = EmbeddedValues.hasEverBeenSideLoaded(this.getApplicationContext());
+
         boolean b_setDownloadWiFiOnlyPreferenceDefault = false;
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext());
-        if (!sharedPref.contains(getResources().getString(R.string.downloadWiFiOnlyPreference))) {
+        if (!sharedPref.contains(getResources().getString(R.string.downloadWiFiOnlyPreference)) && b_hasEverBeenSideloaded) {
             b_setDownloadWiFiOnlyPreferenceDefault = true;
         }
 
         addPreferencesFromResource(R.xml.preferences);
         PreferenceScreen preferences = getPreferenceScreen();
 
-        if (b_setDownloadWiFiOnlyPreferenceDefault) {
-            CheckBoxPreference cb = (CheckBoxPreference) preferences
-                    .findPreference(getString(R.string.downloadWiFiOnlyPreference));
-            cb.setChecked(PsiphonConstants.DOWNLOAD_WIFI_ONLY_PREFERENCE_DEFAULT);
+        if (b_hasEverBeenSideloaded) {
+            if (b_setDownloadWiFiOnlyPreferenceDefault) {
+                CheckBoxPreference cb = (CheckBoxPreference) preferences
+                        .findPreference(getString(R.string.downloadWiFiOnlyPreference));
+                cb.setChecked(PsiphonConstants.DOWNLOAD_WIFI_ONLY_PREFERENCE_DEFAULT);
+            }
+        } else {
+            PreferenceCategory pc = (PreferenceCategory) preferences
+                    .findPreference(getString(R.string.preferencesDownloading));
+            preferences.removePreference(pc);
         }
 
         mUseProxy = (CheckBoxPreference) preferences.findPreference(getString(R.string.useProxySettingsPreference));
