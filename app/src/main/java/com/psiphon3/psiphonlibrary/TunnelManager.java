@@ -471,6 +471,18 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 json.put("EgressRegion", egressRegion);
             }
 
+            if (PsiphonData.getPsiphonData().getDisableTimeouts() == true) {
+                //disable timeouts
+                json.put("TunnelConnectTimeoutSeconds", 0);
+                json.put("TunnelPortForwardTimeoutSeconds", 0);
+                json.put("TunnelSshKeepAliveProbeTimeoutSeconds", 0);
+                json.put("TunnelSshKeepAlivePeriodicTimeoutSeconds", 0);
+                json.put("FetchRemoteServerListTimeoutSeconds", 0);
+                json.put("PsiphonApiServerTimeoutSeconds", 0);
+                json.put("FetchRoutesTimeoutSeconds", 0);
+                json.put("HttpProxyOriginServerTimeoutSeconds", 0);
+            }
+
             return json.toString();
         } catch (JSONException e) {
             return null;
