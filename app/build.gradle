@@ -65,8 +65,6 @@ android {
         throw new GradleException('signing.properties not found!')
     }
 
-=======
->>>>>>> other
 }
 
 dependencies {
