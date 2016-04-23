@@ -189,6 +189,7 @@ public abstract class MainBase {
         private RegionAdapter m_regionAdapter;
         private SpinnerHelper m_regionSelector;
         protected CheckBox m_tunnelWholeDeviceToggle;
+        protected CheckBox m_downloadOnWifiOnlyToggle;
         protected CheckBox m_disableTimeoutsToggle;
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
@@ -509,6 +510,7 @@ public abstract class MainBase {
             m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
             m_tunnelWholeDeviceToggle = (CheckBox) findViewById(R.id.tunnelWholeDeviceToggle);
             m_disableTimeoutsToggle = (CheckBox) findViewById(R.id.disableTimeoutsToggle);
+            m_downloadOnWifiOnlyToggle = (CheckBox) findViewById(R.id.downloadOnWifiOnlyToggle);
             m_moreOptionsButton = (Button) findViewById(R.id.moreOptionsButton);
 
             m_slowSentGraph = new DataTransferGraph(this, R.id.slowSentGraph);
@@ -565,6 +567,20 @@ public abstract class MainBase {
                     m_canWholeDevice);
             m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
             PsiphonData.getPsiphonData().setTunnelWholeDevice(m_canWholeDevice && tunnelWholeDevicePreference);
+
+            // Show download-wifi-only preference only in not Play Store build
+            if(EmbeddedValues.hasEverBeenSideLoaded(getContext())) {
+                boolean downLoadWifiOnlyPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
+                        getString(R.string.downloadWifiOnlyPreference),
+                        PsiphonConstants.DOWNLOAD_WIFI_ONLY_PREFERENCE_DEFAULT);
+                m_downloadOnWifiOnlyToggle.setChecked(downLoadWifiOnlyPreference);
+                PsiphonData.getPsiphonData().setDownloadWifiOnly(downLoadWifiOnlyPreference);
+            }
+            else {
+                m_downloadOnWifiOnlyToggle.setEnabled(false);
+                m_downloadOnWifiOnlyToggle.setVisibility(View.INVISIBLE);
+            }
+
 
             boolean disableTimeoutsPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(DISABLE_TIMEOUTS_PREFERENCE, false);
             m_disableTimeoutsToggle.setChecked(disableTimeoutsPreference);
@@ -877,6 +893,13 @@ public abstract class MainBase {
             PsiphonData.getPsiphonData().setDisableTimeouts(disableTimeoutsPreference);
         }
 
+        public void onDownloadOnWifiOnlyToggle(View v) {
+            boolean downloadWifiOnly = m_downloadOnWifiOnlyToggle.isChecked();
+            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+            editor.putBoolean(getString(R.string.downloadWifiOnlyPreference), downloadWifiOnly);
+            editor.commit();
+            PsiphonData.getPsiphonData().setDisableTimeouts(downloadWifiOnly);
+        }
 
         // Basic check that the values are populated
         private boolean customProxySettingsValuesValid() {

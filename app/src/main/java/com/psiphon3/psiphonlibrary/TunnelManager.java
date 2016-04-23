@@ -473,6 +473,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
             if (PsiphonData.getPsiphonData().getDisableTimeouts() == true) {
                 //disable timeouts
+                MyLog.g("DisableTimeouts", "disableTimeouts", true);
                 json.put("TunnelConnectTimeoutSeconds", 0);
                 json.put("TunnelPortForwardTimeoutSeconds", 0);
                 json.put("TunnelSshKeepAliveProbeTimeoutSeconds", 0);

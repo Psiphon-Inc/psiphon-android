@@ -66,6 +66,7 @@ public class PsiphonData
     private int m_listeningLocalSocksProxyPort = 0;
     private int m_listeningLocalHttpProxyPort = 0;
     private boolean m_tunnelWholeDevice;
+    private boolean m_downloadWifiOnly;
     private boolean m_useHTTPProxy;
     private boolean m_useSystemProxySettings;
     private boolean m_useCustomProxySettings;
@@ -204,6 +205,10 @@ public class PsiphonData
     public synchronized boolean getDisableTimeouts() { return m_disableTimeouts; }
 
     public synchronized void setDisableTimeouts(boolean disableTimeouts) { m_disableTimeouts = disableTimeouts; }
+
+    public synchronized boolean getDownloadWifiOnly() { return m_downloadWifiOnly; }
+
+    public synchronized void setDownloadWifiOnly(boolean downloadWifiOnly) { m_downloadWifiOnly = downloadWifiOnly; }
 
     public synchronized void setEgressRegion(String egressRegion)
     {

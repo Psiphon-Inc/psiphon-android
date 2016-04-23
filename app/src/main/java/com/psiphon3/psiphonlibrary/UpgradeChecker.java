@@ -139,8 +139,8 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         // Verify if 'Download upgrades on WiFi only' user preference is on
         // but current network is not WiFi
         if (PreferenceManager.getDefaultSharedPreferences(appContext).getBoolean(
-                context.getString(R.string.downloadWiFiOnlyPreference), PsiphonConstants.DOWNLOAD_WIFI_ONLY_PREFERENCE_DEFAULT) == true &&
-                Utils.isOnWiFi(appContext) == false) {
+                context.getString(R.string.downloadWifiOnlyPreference), PsiphonConstants.DOWNLOAD_WIFI_ONLY_PREFERENCE_DEFAULT) &&
+                !Utils.isOnWiFi(appContext)) {
             log(context, R.string.upgrade_checker_upgrade_wifi_only, MyLog.Sensitivity.NOT_SENSITIVE, Log.INFO);
             return false;
         }

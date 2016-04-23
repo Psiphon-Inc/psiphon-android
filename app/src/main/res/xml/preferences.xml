@@ -20,14 +20,6 @@
             android:title="@string/preference_notifications_with_vibrate_title" />
     </PreferenceCategory>
     <PreferenceCategory
-        android:key="@string/preferencesDownloading"
-        android:title="@string/preference_downloading_title" >
-        <CheckBoxPreference
-            android:key="@string/downloadWiFiOnlyPreference"
-            android:summary="@string/preference_download_wifi_only_summary"
-            android:title="@string/preference_download_wifi_only_title" />
-    </PreferenceCategory>
-    <PreferenceCategory
         android:key="@string/proxySettingsCategoryKey"
         android:title="@string/proxySettingsCategoryTitle" >
         <CheckBoxPreference

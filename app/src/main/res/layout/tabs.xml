@@ -146,6 +146,15 @@
                         android:textAppearance="?android:attr/textAppearanceSmall" />
 
                     <CheckBox
+                        android:id="@+id/downloadOnWifiOnlyToggle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="left"
+                        android:onClick="onDownloadOnWifiOnlyToggle"
+                        android:text="@string/preference_download_wifi_only_toggle"
+                        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+                    <CheckBox
                         android:id="@+id/disableTimeoutsToggle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
