@@ -578,7 +578,7 @@ public abstract class MainBase {
             }
             else {
                 m_downloadOnWifiOnlyToggle.setEnabled(false);
-                m_downloadOnWifiOnlyToggle.setVisibility(View.INVISIBLE);
+                m_downloadOnWifiOnlyToggle.setVisibility(View.GONE);
             }
 
 
