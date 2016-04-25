@@ -106,8 +106,6 @@ public class StatusActivity
             // Ignore failure
         }
 
-        PsiphonData.getPsiphonData().setDownloadUpgrades(true);
-
         // Auto-start on app first run
         if (m_firstRun)
         {
