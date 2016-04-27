@@ -505,26 +505,31 @@ public class StatusActivity
     
     private void promptForSubscription()
     {
-        new AlertDialog.Builder(this)
-        .setTitle("Subscription Required")
-        .setMessage("Subscribe now for Ad-Free Psiphon Pro. Or you can try Psiphon Pro for free for 60 minutes after a short message from our advertisers. " +
-                    "After 60 minutes you will be automatically disconnected.")
-        .setPositiveButton("Subscribe",
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        launchSubscriptionPurchaseFlow();
-                    }})
-        .setNegativeButton("Free Trial",
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        pauseServiceStateUI();
-                        freeTrialCountdown = 10;
-                        delayHandler.postDelayed(enableFreeTrial, 1000);
-                        showFullScreenAd();
-                    }})
-        .show();
+        if (!this.isFinishing())
+        {
+            new AlertDialog.Builder(this)
+            .setTitle("Purchase ad-free subscription")
+            .setMessage("Subscribe now for unlimited ad-free use of Psiphon Pro. " +
+                        "Or you can use ad-supported Psiphon Pro for free. " +
+                        "In ad-supported mode you will be disconnected and shown an ad every 60 minutes. " +
+                        "Thank you for supporting Psiphon!")
+            .setPositiveButton("Subscribe",
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            launchSubscriptionPurchaseFlow();
+                        }})
+            .setNegativeButton("Ad-Supported",
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            pauseServiceStateUI();
+                            freeTrialCountdown = 10;
+                            delayHandler.postDelayed(enableFreeTrial, 1000);
+                            showFullScreenAd();
+                        }})
+            .show();
+        }
     }
     
     private void deInitIab()
@@ -582,6 +587,10 @@ public class StatusActivity
             }
             @Override
             public void onInterstitialShown(MoPubInterstitial arg0) {
+                // Enable the free trial right away
+                delayHandler.removeCallbacks(enableFreeTrial);
+                resumeServiceStateUI();
+                PsiphonData.getPsiphonData().startFreeTrial();
             }
         });
         
