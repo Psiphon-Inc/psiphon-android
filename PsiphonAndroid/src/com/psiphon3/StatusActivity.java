@@ -508,18 +508,15 @@ public class StatusActivity
         if (!this.isFinishing())
         {
             new AlertDialog.Builder(this)
-            .setTitle("Purchase ad-free subscription")
-            .setMessage("Subscribe now for unlimited ad-free use of Psiphon Pro. " +
-                        "Or you can use ad-supported Psiphon Pro for free. " +
-                        "In ad-supported mode you will be disconnected and shown an ad every 60 minutes. " +
-                        "Thank you for supporting Psiphon!")
-            .setPositiveButton("Subscribe",
+            .setTitle(R.string.SubscriptionPromptTitle)
+            .setMessage(R.string.SubscriptionPromptMessage)
+            .setPositiveButton(R.string.SubscriptionPromptSubscribe,
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int whichButton) {
                             launchSubscriptionPurchaseFlow();
                         }})
-            .setNegativeButton("Ad-Supported",
+            .setNegativeButton(R.string.SubscriptionPromptAdSupported,
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int whichButton) {
