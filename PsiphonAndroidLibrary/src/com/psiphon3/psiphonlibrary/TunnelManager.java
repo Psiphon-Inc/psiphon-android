@@ -42,6 +42,7 @@ import android.net.VpnService;
 import android.net.VpnService.Builder;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
 import ca.psiphon.PsiphonTunnel;
 
 import com.psiphon3.psiphonlibrary.UpgradeManager.VerifiedUpgradeFile;
@@ -193,7 +194,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             String minutesLeftText = " (" + minutesLeft + " minute" +
                     (minutesLeft == 1 ? "" : "s") + " remaining)";
 
-            notificationTitle += " (FREE TRIAL)";
+            notificationTitle += " (AD SUPPORTED)";
             notificationText += minutesLeftText;
             
             if (ticker == null && minutesLeft <= 10) {
@@ -201,12 +202,17 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             }
         }
         
-        Notification notification =
-                new Notification(
-                        iconID,
-                        ticker,
-                        System.currentTimeMillis());
+        NotificationCompat.Builder notificationBuilder =
+                new NotificationCompat.Builder(m_parentService)
+                .setSmallIcon(iconID)
+                .setContentTitle(notificationTitle)
+                .setContentText(notificationText)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationText))
+                .setTicker(ticker)
+                .setContentIntent(invokeActivityIntent);
 
+        Notification notification = notificationBuilder.build();
+        
         if (alert) {
             if (PreferenceManager.getDefaultSharedPreferences(m_parentService).getBoolean(
                     m_parentService.getString(R.string.preferenceNotificationsWithSound), false)) {
@@ -217,12 +223,6 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 notification.defaults |= Notification.DEFAULT_VIBRATE;
             }
         }
-
-        notification.setLatestEventInfo(
-            m_parentService,
-            notificationTitle,
-            notificationText,
-            invokeActivityIntent);
 
         return notification;
     }
