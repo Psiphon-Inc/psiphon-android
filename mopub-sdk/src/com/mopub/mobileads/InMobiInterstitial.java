@@ -9,6 +9,7 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Build;
 import android.util.Log;
 
 import com.inmobi.ads.InMobiAdRequestStatus;
@@ -33,6 +34,13 @@ public class InMobiInterstitial extends CustomEventInterstitial implements Inter
 			Map<String, Object> localExtras, Map<String, String> serverExtras) {
 		Log.v("InMobiInterstitialCustomEvent","Reached Interstitial adapter");
 		mInterstitialListener = interstitialListener;
+		
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            mInterstitialListener
+                    .onInterstitialFailed(MoPubErrorCode.UNSPECIFIED);
+            return;
+        }
+        
 		try {
 		    serverParams = new JSONObject(serverExtras);
 		} catch (Exception e) {
