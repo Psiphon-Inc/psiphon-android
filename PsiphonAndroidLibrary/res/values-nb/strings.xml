@@ -1,6 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">Psiphon</string>
   <string name="ssh_connecting">SSH kobler til...</string>
   <string name="ssh_connected">SSH tilkoblet</string>
   <string name="ssh_connection_failed">SSH tilkobling feilet</string>
@@ -41,6 +40,7 @@
   <string name="ServerInterface.HTTPSRequestFailed">HTTPS-forespørsel feilet med følgende melding:</string>
   <string name="socks_ports_failed">Klarte ikke å starte SOCKS-mellomtjener: ingen tilgjengelige porter funnet</string>
   <string name="http_proxy_ports_failed">Klarte ikke å starte HTTP-mellomtjener: ingen tilgjengelige porter funnet</string>
+  <string name="socks_port_in_use">Forespurt lokal SOCKS-mellomtjenerport %d er allerede i bruk av et annet program. Kan ikke fortsette.</string>
   <string name="transparent_proxy_running">Gjennomsiktig mellomtjener kjører på port %d</string>
   <string name="transparent_proxy_ports_failed">Klarte ikke å starte gjennomsiktig mellomtjener: ingen tilgjengelige porter funnet</string>
   <string name="transparent_proxy_command_failed">Gjennomsiktig mellomtjenerinformmasjons-kommando feilet: %s</string>
@@ -130,6 +130,7 @@
   <string name="region_name_nl">Nederland</string>
   <string name="about">Om Psiphon</string>
   <string name="feedback">Tilbakemeldinger</string>
+  <string name="tunnel_whole_device_toggle">Tunnel over hele fjøla (krever Android 4.0+)</string>
   <string name="region_selector">Velg region</string>
   <string name="network_proxy_connect_exception">Klarte ikke å koble til nettverkets HTTP-mellomtjener: %s</string>
   <string name="network_proxy_connect_information">Kobler til via din HTTP-mellomtjener: %s</string>
@@ -155,7 +156,16 @@
   <string name="proxy_password_summary">Passord for sjekk av gyldighet for mellomtjener</string>
   <string name="proxy_domain_title">Mellomtjener-domene</string>
   <string name="proxy_domain_summary">Domene for sjekk av gyldighet for mellomtjener</string>
+  <string name="http_proxy_port_in_use">Forespurt lokal HTTP-mellomtjenerport %d er allerede i bruk av et annet program. Kan ikke fortsette.</string>
   <!--When the split tunnel option is enabled, the current region is used to determine which requests should and shouldn't be tunneled. This log message tells the user which region (in '%s') is being used for this decision.-->
+  <string name="split_tunnel_region">Splittet tunnelregion: %s</string>
   <!--When the split tunnel option is enabled, this log message is shown when a domain is not tunneled (because it's detected as being in the same region as the user). The '%s' is the domain name.-->
+  <string name="untunneled_address">Ikke tunnelert: %s</string>
   <!--The log message is shown to the user if an upstream proxy error occurs. The '%s' is the detail of the error.-->
+  <string name="upstream_proxy_error">Oppstrøms mellomtjenerfeil: %s</string>
+  <string name="diagnostic">Diagnostikk: %s</string>
+  <string name="start_tunnel_failed">Oppstart av tunnel feilet: %s</string>
+  <string name="tunnel_connecting">Kobler til tunnel</string>
+  <string name="tunnel_connected">Tunnel tilkoblet</string>
+  <string name="waiting">Venter …</string>
 </resources>

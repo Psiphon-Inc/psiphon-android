@@ -40,8 +40,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.VpnService;
 import android.net.VpnService.Builder;
+import android.os.Handler;
 import android.preference.PreferenceManager;
-
+import android.support.v4.app.NotificationCompat;
 import ca.psiphon.PsiphonTunnel;
 
 import com.psiphon3.psiphonlibrary.UpgradeManager.VerifiedUpgradeFile;
@@ -185,12 +186,33 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                     activityIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Notification notification =
-                new Notification(
-                        iconID,
-                        ticker,
-                        System.currentTimeMillis());
+        String notificationTitle = m_parentService.getText(R.string.app_name_psiphon_pro).toString();
+        String notificationText = m_parentService.getText(contentTextID).toString();
+        
+        if (PsiphonData.getPsiphonData().getFreeTrialActive()) {
+            long minutesLeft = PsiphonData.getPsiphonData().getFreeTrialRemainingMillis() / 1000 / 60;
+            String minutesLeftText = " (" + minutesLeft + " minute" +
+                    (minutesLeft == 1 ? "" : "s") + " remaining)";
 
+            notificationTitle += " (AD SUPPORTED)";
+            notificationText += minutesLeftText;
+            
+            if (ticker == null && minutesLeft <= 10) {
+                ticker = m_parentService.getText(R.string.app_name_psiphon_pro) + " " + notificationText;
+            }
+        }
+        
+        NotificationCompat.Builder notificationBuilder =
+                new NotificationCompat.Builder(m_parentService)
+                .setSmallIcon(iconID)
+                .setContentTitle(notificationTitle)
+                .setContentText(notificationText)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationText))
+                .setTicker(ticker)
+                .setContentIntent(invokeActivityIntent);
+
+        Notification notification = notificationBuilder.build();
+        
         if (alert) {
             if (PreferenceManager.getDefaultSharedPreferences(m_parentService).getBoolean(
                     m_parentService.getString(R.string.preferenceNotificationsWithSound), false)) {
@@ -201,12 +223,6 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 notification.defaults |= Notification.DEFAULT_VIBRATE;
             }
         }
-
-        notification.setLatestEventInfo(
-            m_parentService,
-            m_parentService.getText(R.string.app_name),
-            m_parentService.getText(contentTextID),
-            invokeActivityIntent);
 
         return notification;
     }
@@ -222,7 +238,11 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         
         boolean alert = (newState != m_state);
         m_state = newState;
+        
+        doNotify(alert);
+    }
 
+    private synchronized void doNotify(boolean alert) {
         String ns = Context.NOTIFICATION_SERVICE;
         NotificationManager notificationManager =
                 (NotificationManager)m_parentService.getSystemService(ns);
@@ -286,6 +306,25 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         return list.toString();
     }
     
+    private Handler checkFreeTrialDelayHandler = new Handler();
+    private final long checkFreeTrialInterval = 30 * 1000; 
+    private Runnable checkFreeTrial = new Runnable() {
+        @Override
+        public void run() {
+            if (PsiphonData.getPsiphonData().getFreeTrialRemainingMillis() > 0) {
+                doNotify(false);
+                checkFreeTrialDelayHandler.postDelayed(this, checkFreeTrialInterval);
+            } else {
+                signalStopService();
+                PsiphonData.getPsiphonData().endFreeTrial();
+                IEvents events = PsiphonData.getPsiphonData().getCurrentEventsInterface();
+                if (events != null) {
+                    events.signalDisconnectRaiseActivityAutostart(m_parentService);
+                }
+            }
+        }
+    };
+    
     private void runTunnel() {
 
         Utils.initializeSecureRandom();
@@ -330,6 +369,10 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             
             m_tunnel.startTunneling(getServerEntries());
             
+            if (PsiphonData.getPsiphonData().getFreeTrialActive()) {
+                checkFreeTrialDelayHandler.postDelayed(checkFreeTrial, checkFreeTrialInterval);
+            }
+                
             try {
                 m_tunnelThreadStopSignal.await();
             } catch (InterruptedException e) {
@@ -341,6 +384,8 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         } catch (PsiphonTunnel.Exception e) {
             MyLog.e(R.string.start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
         } finally {
+            
+            checkFreeTrialDelayHandler.removeCallbacks(checkFreeTrial);
             
             MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
             
@@ -365,7 +410,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
     @Override
     public String getAppName() {
-        return m_parentService.getString(R.string.app_name);
+        return m_parentService.getString(R.string.app_name_psiphon_pro);
     }
 
     @Override

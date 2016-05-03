@@ -84,6 +84,9 @@ public class PsiphonData
     private boolean m_downloadUpgrades;
     private String m_egressRegion;
     private String m_clientRegion;
+    private boolean m_hasValidSubscription;
+    private boolean m_freeTrialActive;
+    private long m_freeTrialExpiresAt;
     
     public int m_notificationIconConnecting = 0;
     public int m_notificationIconConnected = 0;
@@ -106,6 +109,9 @@ public class PsiphonData
         m_displayDataTransferStats = false;
         m_downloadUpgrades = false;
         m_egressRegion = PsiphonConstants.REGION_CODE_ANY;
+        m_hasValidSubscription = false;
+        m_freeTrialActive = false;
+        m_freeTrialExpiresAt = 0;
     }
 
     public synchronized void clearHomePages()
@@ -400,7 +406,7 @@ public class PsiphonData
 		return new NTCredentials(username, password, localHost, domain);
 	}
     
-    private ProxySettings getSystemProxySettings(Context context)
+    public ProxySettings getSystemProxySettings(Context context)
     {
         ProxySettings settings = m_savedSystemProxySettings;
         
@@ -932,5 +938,43 @@ public class PsiphonData
             copy = new ArrayList<DiagnosticEntry>(m_diagnosticHistory);
         }
         return copy;
+    }
+    
+    public synchronized void setHasValidSubscription()
+    {
+        m_hasValidSubscription = true;
+    }
+    
+    public synchronized boolean getHasValidSubscription()
+    {
+        return m_hasValidSubscription ||
+                (getFreeTrialActive() && getFreeTrialRemainingMillis() > 0);
+    }
+    
+    public synchronized void startFreeTrial()
+    {
+        m_freeTrialActive = true;
+        m_freeTrialExpiresAt = System.currentTimeMillis() + 60 * 60 * 1000;
+    }
+    
+    public synchronized void endFreeTrial()
+    {
+        m_freeTrialActive = false;
+    }
+
+    public synchronized boolean getFreeTrialActive()
+    {
+        return m_freeTrialActive;
+    }
+
+    public synchronized long getFreeTrialRemainingMillis()
+    {
+        long currentTime = System.currentTimeMillis();
+        if (m_freeTrialExpiresAt > currentTime)
+        {
+            return m_freeTrialExpiresAt - currentTime;
+        }
+
+        return 0;
     }
 }
