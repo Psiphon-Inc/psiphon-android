@@ -149,6 +149,7 @@ public abstract class MainBase {
         public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
         public static final String HANDSHAKE_SUCCESS_IS_RECONNECT = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS_IS_RECONNECT";
         public static final String UNEXPECTED_DISCONNECT = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT";
+        public static final String UNEXPECTED_DISCONNECT_RESTART = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT_RESTART";
         public static final String TUNNEL_STARTING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STARTING";
         public static final String TUNNEL_STOPPING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STOPPING";
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.PsiphonAndroidActivity.STATUS_ENTRY_AVAILABLE";
@@ -188,6 +189,8 @@ public abstract class MainBase {
         protected CheckBox m_tunnelWholeDeviceToggle;
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
+        private boolean m_serviceStateUIPaused = false;
+        private boolean m_localProxySettingsHaveBeenReset = false;
 
         /*
          * private CheckBox m_shareProxiesToggle; private TextView
@@ -528,6 +531,8 @@ public abstract class MainBase {
 
             m_localBroadcastManager.registerReceiver(new UnexpectedDisconnect(), new IntentFilter(UNEXPECTED_DISCONNECT));
 
+            m_localBroadcastManager.registerReceiver(new UnexpectedDisconnect(), new IntentFilter(UNEXPECTED_DISCONNECT_RESTART));
+
             m_localBroadcastManager.registerReceiver(new StatusEntryAvailable(), new IntentFilter(STATUS_ENTRY_AVAILABLE));
 
             updateServiceStateUI();
@@ -624,6 +629,9 @@ public abstract class MainBase {
         @Override
         protected void onResume() {
             super.onResume();
+            
+            m_localProxySettingsHaveBeenReset = false;
+            
             updateProxySettingsFromPreferences();
             
             // From: http://steve.odyfamily.com/?p=12
@@ -930,6 +938,10 @@ public abstract class MainBase {
         }
 
         private void updateServiceStateUI() {
+            if (m_serviceStateUIPaused) {
+                return;
+            }
+            
             TunnelManager tunnelManager = PsiphonData.getPsiphonData().getCurrentTunnelManager();
             
             if (tunnelManager == null) {
@@ -937,10 +949,20 @@ public abstract class MainBase {
                 m_toggleButton.setText(getText(R.string.start));
                 enableToggleServiceUI();
                 
+                if (!m_localProxySettingsHaveBeenReset) {
+                    WebViewProxySettings.resetLocalProxy(this);
+                    m_localProxySettingsHaveBeenReset = true;
+                }
+                
             } else if (tunnelManager.signalledStop()) {
                 setStatusState(R.drawable.status_icon_disconnected);
                 m_toggleButton.setText(getText(R.string.waiting));
                 disableToggleServiceUI();
+                
+                if (!m_localProxySettingsHaveBeenReset) {
+                    WebViewProxySettings.resetLocalProxy(this);
+                    m_localProxySettingsHaveBeenReset = true;
+                }
                 
             } else {
                 if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected()) {
@@ -951,6 +973,7 @@ public abstract class MainBase {
                 m_toggleButton.setText(getText(R.string.stop));
                 enableToggleServiceUI();
                 
+                m_localProxySettingsHaveBeenReset = false;
             }
         }
         
@@ -966,6 +989,16 @@ public abstract class MainBase {
             m_tunnelWholeDeviceToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
             m_moreOptionsButton.setEnabled(false);
+        }
+        
+        protected void pauseServiceStateUI() {
+            m_serviceStateUIPaused = true;
+            disableToggleServiceUI();
+        }
+        
+        protected void resumeServiceStateUI() {
+            m_serviceStateUIPaused = false;
+            updateServiceStateUI();
         }
 
         private void checkRestartTunnel() {
@@ -1358,6 +1391,7 @@ public abstract class MainBase {
             }
 
             public void load(String url) {
+                m_localProxySettingsHaveBeenReset = false;
                 WebViewProxySettings.setLocalProxy(mWebView.getContext(), PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort());
                 mProgressBar.setVisibility(View.VISIBLE);
                 mWebView.loadUrl(url);

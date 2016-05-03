@@ -26,6 +26,7 @@ import java.lang.reflect.Method;
 
 import org.apache.http.HttpHost;
 
+import com.psiphon3.psiphonlibrary.PsiphonData.ProxySettings;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.annotation.TargetApi;
@@ -38,6 +39,18 @@ import android.util.ArrayMap;
 
 public class WebViewProxySettings 
 {
+    public static void resetLocalProxy(Context ctx)
+    {
+        ProxySettings systemProxySettings = PsiphonData.getPsiphonData().getSystemProxySettings(ctx);
+        setProxy(ctx, systemProxySettings.proxyHost, systemProxySettings.proxyPort);
+    }
+    
+    private static boolean proxySettingsAreEmpty(String host, int port)
+    {
+        return (host == null ||
+                host.length() == 0 ||
+                port <= 0);
+    }
 
     public static void setLocalProxy(Context ctx, int port)
     {
@@ -88,7 +101,10 @@ public class WebViewProxySettings
             Object requestQueueObject = getRequestQueue(ctx);
             if (requestQueueObject != null) {
                 //Create Proxy config object and set it into request Q
-                HttpHost httpHost = new HttpHost(host, port, "http");   
+                HttpHost httpHost = null;
+                if (!proxySettingsAreEmpty(host, port)){
+                    httpHost = new HttpHost(host, port, "http");
+                }
                 setDeclaredField(requestQueueObject, "mProxyHost", httpHost);
                 
                 return true;
@@ -113,17 +129,31 @@ public class WebViewProxySettings
             if (webViewCoreClass != null && proxyPropertiesClass != null) 
             {
                 Method m = webViewCoreClass.getDeclaredMethod("sendStaticMessage", Integer.TYPE, Object.class);
-                Constructor c = proxyPropertiesClass.getConstructor(String.class, Integer.TYPE, String.class);
-                
-                if (m != null && c != null)
+                if (proxySettingsAreEmpty(host, port))
                 {
-                    m.setAccessible(true);
-                    c.setAccessible(true);
-                    Object properties = c.newInstance(host, port, null);
-                
-                    // android.webkit.WebViewCore.EventHub.PROXY_CHANGED = 193;
-                    m.invoke(null, 193, properties);
-                    return true;
+                    if (m != null)
+                    {
+                        m.setAccessible(true);
+                    
+                        // android.webkit.WebViewCore.EventHub.PROXY_CHANGED = 193;
+                        m.invoke(null, 193, null);
+                        return true;
+                    }
+                }
+                else
+                {
+                    Constructor c = proxyPropertiesClass.getConstructor(String.class, Integer.TYPE, String.class);
+                    
+                    if (m != null && c != null)
+                    {
+                        m.setAccessible(true);
+                        c.setAccessible(true);
+                        Object properties = c.newInstance(host, port, null);
+                    
+                        // android.webkit.WebViewCore.EventHub.PROXY_CHANGED = 193;
+                        m.invoke(null, 193, properties);
+                        return true;
+                    }
                 }
             }
         }
@@ -145,10 +175,20 @@ public class WebViewProxySettings
     @SuppressWarnings("rawtypes")
     private static boolean setWebkitProxyKitKat(Context appContext, String host, int port)
     {
-        System.setProperty("http.proxyHost", host);
-        System.setProperty("http.proxyPort", port + "");
-        System.setProperty("https.proxyHost", host);
-        System.setProperty("https.proxyPort", port + "");
+        if (proxySettingsAreEmpty(host, port))
+        {
+            System.clearProperty("http.proxyHost");
+            System.clearProperty("http.proxyPort");
+            System.clearProperty("https.proxyHost");
+            System.clearProperty("https.proxyPort");
+        }
+        else
+        {
+            System.setProperty("http.proxyHost", host);
+            System.setProperty("http.proxyPort", port + "");
+            System.setProperty("https.proxyHost", host);
+            System.setProperty("https.proxyPort", port + "");
+        }
         try
         {
             Class applicationClass = Class.forName("android.app.Application");
@@ -218,10 +258,20 @@ public class WebViewProxySettings
     @SuppressWarnings("rawtypes")
     private static boolean setWebkitProxyLollipop(Context appContext, String host, int port)
     {
-        System.setProperty("http.proxyHost", host);
-        System.setProperty("http.proxyPort", port + "");
-        System.setProperty("https.proxyHost", host);
-        System.setProperty("https.proxyPort", port + "");
+        if (proxySettingsAreEmpty(host, port))
+        {
+            System.clearProperty("http.proxyHost");
+            System.clearProperty("http.proxyPort");
+            System.clearProperty("https.proxyHost");
+            System.clearProperty("https.proxyPort");
+        }
+        else
+        {
+            System.setProperty("http.proxyHost", host);
+            System.setProperty("http.proxyPort", port + "");
+            System.setProperty("https.proxyHost", host);
+            System.setProperty("https.proxyPort", port + "");
+        }
         try {
             Class applictionClass = Class.forName("android.app.Application");
             Field mLoadedApkField = applictionClass.getDeclaredField("mLoadedApk");
