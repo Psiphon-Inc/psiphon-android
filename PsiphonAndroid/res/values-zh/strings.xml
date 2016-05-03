@@ -7,17 +7,17 @@
   <string name="message_image_error_desc">表示错误消息的图标</string>
   <string name="message_image_debug_desc">表示调试消息的图标</string>
   <string name="message_image_warning_desc">表示警告消息的图标</string>
-  <string name="exit">停止</string>
+  <string name="exit">退出</string>
   <string name="open_browser">打开浏览器</string>
   <string name="browser_task_label">赛风浏览器</string>
   <string name="FeedbackActivity.DefaultText">如果您有任何具体建议，有任何网站失效的信息或者此表单无法使用的情况，请发邮件至 &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;。</string>
-  <string name="FeedbackActivity.Success">感谢您提交的反馈意见。</string>
+  <string name="FeedbackActivity.Success">感谢您提交反馈意见</string>
   <string name="FeedbackActivity.Failure">提交失败。请再试一次。</string>
-  <string name="FeedbackActivity.SubmitFeedbackFailed">提交反馈失败。</string>
-  <string name="FeedbackActivity.InvalidURLParameters">在提交的反馈表单中有无效的URL参数。</string>
-  <string name="FeedbackActivity.GetHTMLContentFailed">未能获取反馈页面的内容。</string>
-  <string name="StatusActivity.WholeDeviceTunnelPromptTitle">隧道加密设备传输的数据？</string>
-  <string name="StatusActivity.WholeDeviceTunnelPromptMessage">全局代理模式在您的设备上可以使用。\n\n打开这个选项后，赛风将代理您设备上所有程序的网络流量。\n\n当然，您也可以只使用内置的赛风浏览器，让其他程序通过正常的网络流量。</string>
-  <string name="StatusActivity.WholeDeviceTunnelPositiveButton">隧道加密设备传输的数据</string>
+  <string name="FeedbackActivity.SubmitFeedbackFailed">提交反馈失败</string>
+  <string name="FeedbackActivity.InvalidURLParameters">提交的反馈表单中有无效的网址参数</string>
+  <string name="FeedbackActivity.GetHTMLContentFailed">获取反馈页面的内容失败</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptTitle">全局代理本设备？</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptMessage">全局代理模式在您的设备上可用。\n\n打开此选项后，赛风将代理所有程序的网络流量，包括所有浏览器。\n\n另外，您也可以选择只代理附带的赛风浏览器，让其他程序通过平常的网络连接。</string>
+  <string name="StatusActivity.WholeDeviceTunnelPositiveButton">全局代理设备</string>
   <string name="StatusActivity.WholeDeviceTunnelNegativeButton">只使用赛风浏览器</string>
 </resources>
