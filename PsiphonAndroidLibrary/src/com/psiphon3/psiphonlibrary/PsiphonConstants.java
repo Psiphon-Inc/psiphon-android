@@ -35,4 +35,5 @@ public class PsiphonConstants
     public final static String ROOTED = "_rooted";
 
     public final static String PLAY_STORE_BUILD = "_playstore";
+
 }
