@@ -829,11 +829,7 @@ public abstract class MainBase {
 
             // NOTE: reconnects even when Any is selected: we could select a
             // faster server
-            if (isServiceRunning()) {
-                m_restartTunnel = true; 
-                stopTunnelService();
-                // The tunnel will get restarted in m_updateServiceStateTimer
-            }
+            scheduleRunningTunnelServiceRestart();
         }
 
         protected void updateEgressRegionPreference(String egressRegionPreference) {
@@ -856,12 +852,7 @@ public abstract class MainBase {
 
             boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
             updateWholeDevicePreference(tunnelWholeDevicePreference);
-
-            if (isServiceRunning()) {
-                m_restartTunnel = true; 
-                stopTunnelService();
-                // The tunnel will get restarted in m_updateServiceStateTimer
-            }
+            scheduleRunningTunnelServiceRestart();
         }
 
         protected void updateWholeDevicePreference(boolean tunnelWholeDevicePreference) {
@@ -878,13 +869,7 @@ public abstract class MainBase {
         public void onDisableTimeoutsToggle(View v) {
             boolean disableTimeoutsChecked = m_disableTimeoutsToggle.isChecked();
             updateDisableTimeoutsPreference(disableTimeoutsChecked);
-
-            if (isServiceRunning()) {
-                m_restartTunnel = true;
-                stopTunnelService();
-                // The tunnel will get restarted in m_updateServiceStateTimer
-            }
-
+            scheduleRunningTunnelServiceRestart();
         }
         protected void updateDisableTimeoutsPreference(boolean disableTimeoutsPreference) {
             Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
@@ -895,10 +880,14 @@ public abstract class MainBase {
 
         public void onDownloadOnWifiOnlyToggle(View v) {
             boolean downloadWifiOnly = m_downloadOnWifiOnlyToggle.isChecked();
+
+            // There is no need to restart the service if the value of downloadWifiOnly
+            // has changed because upgrade downloads happen in a different, temp tunnel
+
             Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
             editor.putBoolean(getString(R.string.downloadWifiOnlyPreference), downloadWifiOnly);
             editor.commit();
-            PsiphonData.getPsiphonData().setDisableTimeouts(downloadWifiOnly);
+            PsiphonData.getPsiphonData().setDownloadWifiOnly(downloadWifiOnly);
         }
 
         // Basic check that the values are populated
@@ -1026,6 +1015,14 @@ public abstract class MainBase {
                     !isServiceRunning()) {
                 m_restartTunnel = false;
                 startTunnel(this);
+            }
+        }
+
+        private void scheduleRunningTunnelServiceRestart() {
+            if (isServiceRunning()) {
+                m_restartTunnel = true;
+                stopTunnelService();
+                // The tunnel will get restarted in m_updateServiceStateTimer
             }
         }
         
@@ -1178,11 +1175,9 @@ public abstract class MainBase {
                 // But, it should be called before stopping the tunnel, since the tunnel
                 // gets asyncronously restarted, and we want it to be restarted with
                 // the new settings.
-                if (isProxySettingsRestartRequired() && isServiceRunning()) {
+                if (isProxySettingsRestartRequired()) {
                     updateProxySettingsFromPreferences();
-                    m_restartTunnel = true;
-                    stopTunnelService();
-                    // The tunnel will get restarted in m_updateServiceStateTimer
+                    scheduleRunningTunnelServiceRestart();
                 } else {
                     updateProxySettingsFromPreferences();
                 }

@@ -643,8 +643,11 @@ public class Utils
     public static boolean isOnWiFi(Context context) {
         ConnectivityManager connectivityManager =
                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) {
+            return false;
+        }
         NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-        return networkInfo.getType() == ConnectivityManager.TYPE_WIFI;
+        return networkInfo != null && networkInfo.getType() == ConnectivityManager.TYPE_WIFI;
     }
 
     public static String getNetworkTypeName(Context context)

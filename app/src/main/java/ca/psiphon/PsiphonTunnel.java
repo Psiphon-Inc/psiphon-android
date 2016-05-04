@@ -640,6 +640,9 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
     private static boolean hasNetworkConnectivity(Context context) {
         ConnectivityManager connectivityManager =
                 (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) {
+            return false;
+        }
         NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
         return networkInfo != null && networkInfo.isConnected();
     }
