@@ -270,33 +270,6 @@ public interface UpgradeManager
         }
     }
     
-    static class PartialUpgradeFile extends UpgradeFile
-    {
-        private int versionNumber;
-        
-        public PartialUpgradeFile(Context context, int versionNumber)
-        {
-            super(context);
-            
-            this.versionNumber = versionNumber;
-        }
-        
-        public String getFilename()
-        {
-            return "PsiphonAndroid.upgrade_package." + Integer.toString(this.versionNumber) + ".part";
-        }
-        
-        public boolean isWorldReadable()
-        {
-            return false;
-        }
-
-        public boolean complete()
-        {
-            return rename(new DownloadedUpgradeFile(super.context).getFilename());
-        }
-    }
-    
     /**
      * Used for checking if an upgrade has been downloaded and installing it.
      */
