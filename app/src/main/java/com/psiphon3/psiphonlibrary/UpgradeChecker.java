@@ -54,6 +54,11 @@ import ca.psiphon.PsiphonTunnel;
  * - When the Psiphon app tunnel-core downloads an upgrade, it notifies UpgradeChecker with an
  *   intent. UpgradeChecker takes ownership of the downloaded file and proceeds as if it downloaded
  *   the file.
+ *     - Because the app tunnel-core and UpgradeChecker download to the same filename, there's a
+ *       race condition to access the files -- partial download file, unverified file, verified file.
+ *       We will rely on file locking and package verification to keep the files sane. There is a
+ *       very tiny chance that a file could get deleted right before it's replaced, causing an error
+ *       when the user clicks the notification, but very tiny.
  */
 
 public class UpgradeChecker extends WakefulBroadcastReceiver {
