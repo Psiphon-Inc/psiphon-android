@@ -440,10 +440,9 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             // If this is a temporary tunnel (like for UpgradeChecker) we need to override some of
             // the implicit config values.
             if (temporaryTunnel) {
-                String datastorePath = context.getFilesDir().getAbsolutePath() + "/" + tempTunnelName;
-                File datastoreDir = new File(datastorePath);
-                if (!datastoreDir.exists()
-                        && !datastoreDir.mkdirs()) {
+                File tempTunnelDir = new File(context.getFilesDir(), tempTunnelName);
+                if (!tempTunnelDir.exists()
+                        && !tempTunnelDir.mkdirs()) {
                     // Failed to create DB directory
                     return null;
                 }
@@ -451,7 +450,10 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 // On Android, these directories must be set to the app private storage area.
                 // The Psiphon library won't be able to use its current working directory
                 // and the standard temporary directories do not exist.
-                json.put("DataStoreDirectory", datastoreDir.getAbsolutePath());
+                json.put("DataStoreDirectory", tempTunnelDir.getAbsolutePath());
+
+                File remoteServerListDownload = new File(tempTunnelDir, "remote_server_list");
+                json.put("RemoteServerListDownloadFilename", remoteServerListDownload.getAbsolutePath());
 
                 json.put("EstablishTunnelTimeoutSeconds", 300); // TODO: decide on optimal value (note that untunneled upgrade download doesn't start for 30 secs)
 

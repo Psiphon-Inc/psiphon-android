@@ -353,6 +353,11 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
             json.put("DataStoreDirectory", context.getFilesDir());
         }
 
+        if (!json.has("RemoteServerListDownloadFilename")) {
+            File remoteServerListDownload = new File(context.getFilesDir(), "remote_server_list");
+            json.put("RemoteServerListDownloadFilename", remoteServerListDownload.getAbsolutePath());
+        }
+
         // Note: onConnecting/onConnected logic assumes 1 tunnel connection
         json.put("TunnelPoolSize", 1);
 
