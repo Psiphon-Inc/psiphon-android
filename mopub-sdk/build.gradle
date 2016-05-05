@@ -107,7 +107,7 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:23.1.1'
     compile 'com.mopub.volley:mopub-volley:1.1.0'
     compile 'com.google.android.exoplayer:exoplayer:r1.5.6'
-    compile 'com.inmobi.monetization:inmobi-ads:5.2.3'
+    compile 'com.inmobi.monetization:inmobi-ads:5.3.0'
     compile(name: 'mm-ad-sdk-6.0.0', ext: 'aar')
 
     javadocDeps 'com.google.android.exoplayer:exoplayer:r1.5.6:sources'
