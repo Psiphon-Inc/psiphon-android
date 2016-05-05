@@ -39,6 +39,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.net.VpnService;
 import android.net.VpnService.Builder;
 import android.preference.PreferenceManager;
@@ -408,15 +409,6 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         JSONObject json = new JSONObject();
 
         try {
-            if (UpgradeChecker.upgradeCheckNeeded(context)) {
-                json.put("UpgradeDownloadUrl", EmbeddedValues.UPGRADE_URL);
-
-                json.put("UpgradeDownloadClientVersionHeader", "x-amz-meta-psiphon-client-version");
-
-                json.put("UpgradeDownloadFilename",
-                        new UpgradeManager.DownloadedUpgradeFile(context).getFullPath());
-            }
-
             String clientPlatform = PsiphonConstants.PLATFORM;
             if (clientPlatformPrefix != null && !clientPlatformPrefix.isEmpty()) {
                 clientPlatform += clientPlatformPrefix;
@@ -424,6 +416,21 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             json.put("ClientPlatform", clientPlatform);
 
             json.put("ClientVersion", EmbeddedValues.CLIENT_VERSION);
+
+            if (UpgradeChecker.upgradeCheckNeeded(context)) {
+                Uri upgradeDownloadUrl = Uri.parse(EmbeddedValues.UPGRADE_URL);
+                upgradeDownloadUrl = upgradeDownloadUrl.buildUpon()
+                        .appendQueryParameter("tunnel_name", tempTunnelName == null ? "main" : tempTunnelName)
+                        .appendQueryParameter("client_version", EmbeddedValues.CLIENT_VERSION)
+                        .appendQueryParameter("client_platform", clientPlatform)
+                        .build();
+                json.put("UpgradeDownloadUrl", upgradeDownloadUrl.toString());
+
+                json.put("UpgradeDownloadClientVersionHeader", "x-amz-meta-psiphon-client-version");
+
+                json.put("UpgradeDownloadFilename",
+                        new UpgradeManager.DownloadedUpgradeFile(context).getFullPath());
+            }
 
             json.put("PropagationChannelId", EmbeddedValues.PROPAGATION_CHANNEL_ID);
 
@@ -453,7 +460,11 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 // and the standard temporary directories do not exist.
                 json.put("DataStoreDirectory", datastoreDir.getAbsolutePath());
 
-                json.put("EstablishTunnelTimeoutSeconds", 300); // TODO: decide on optimal value (note that untunneled upgrade download doesn't start for 30 secs)
+                // This number is an arbitrary guess at what might be the "best" balance between
+                // wake-lock-battery-burning and successful upgrade downloading.
+                // Note that the fall-back untunneled upgrade download doesn't start for 30 secs,
+                // so we should be waiting longer than that.
+                json.put("EstablishTunnelTimeoutSeconds", 300);
 
                 json.put("TunnelWholeDevice", 0);
 
