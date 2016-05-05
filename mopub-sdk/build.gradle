@@ -41,7 +41,7 @@ version = '4.6.0'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion '23.0.2'
+    buildToolsVersion '23.0.3'
     lintOptions { abortOnError false }
     useLibrary 'org.apache.http.legacy'
 
