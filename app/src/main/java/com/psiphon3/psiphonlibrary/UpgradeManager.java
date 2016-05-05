@@ -43,7 +43,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 
 /**
  * Contains logic relating to downloading and applying upgrades.

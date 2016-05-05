@@ -17,7 +17,7 @@ android {
             defaultConfig {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
                 applicationId "com.psiphon3"
-                minSdkVersion 8
+                minSdkVersion 9
                 targetSdkVersion 23
                 versionCode verCode
                 versionName verName
@@ -67,12 +67,21 @@ android {
 
 }
 
+repositories {
+    jcenter()
+    flatDir {
+        dirs project(':mopub-sdk').file('libs')
+    }
+}
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.google.android.gms:play-services:8.4.0'
     compile 'com.android.support:appcompat-v7:23.2.0'
     compile files('libs/jackson-core-2.2.0.jar')
     compile files('libs/achartengine-1.0.0.jar')
     compile files('libs/snakeyaml-1.10-android.jar')
     compile files('libs/classes.jar')
+    compile project(':mopub-sdk')
 }
 

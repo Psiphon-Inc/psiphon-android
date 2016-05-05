@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.psiphon3"
+    package="com.psiphon3.subscription"
+    xmlns:tools="http://schemas.android.com/tools"
     android:versionCode="0"
     android:versionName="0.0"
     android:installLocation="auto">
 
-    <uses-sdk android:minSdkVersion="9" android:targetSdkVersion="23"/>
+    <uses-sdk android:minSdkVersion="9" android:targetSdkVersion="23"
+        tools:overrideLibrary="com.mopub.mobileads,com.millennialmedia" />
 
     <supports-screens
                   android:smallScreens="true"
@@ -19,14 +21,16 @@
     <uses-permission android:name="android.permission.GET_TASKS"></uses-permission>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
     <uses-permission android:name="android.permission.VIBRATE"></uses-permission>
+    <uses-permission android:name="com.android.vending.BILLING"></uses-permission>
 
     <application
         android:hardwareAccelerated="true"
         android:icon="@drawable/ic_launcher"
-        android:label="@string/app_name">
+        tools:replace="android:label"
+        android:label="@string/app_name_psiphon_pro">
         <activity
-            android:name=".StatusActivity"
-            android:label="@string/app_name"
+            android:name="com.psiphon3.StatusActivity"
+            android:label="@string/app_name_psiphon_pro"
             android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -34,21 +38,21 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".FeedbackActivity"
-            android:label="@string/app_name">
+            android:name="com.psiphon3.FeedbackActivity"
+            android:label="@string/app_name_psiphon_pro">
         </activity>
         <activity
-            android:name=".psiphonlibrary.MoreOptionsPreferenceActivity"
-            android:label="@string/app_name">
+            android:name="com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity"
+            android:label="@string/app_name_psiphon_pro">
         </activity>
         <service
-            android:name=".psiphonlibrary.TunnelService"
-            android:label="@string/app_name"
+            android:name="com.psiphon3.psiphonlibrary.TunnelService"
+            android:label="@string/app_name_psiphon_pro"
             android:exported="false" >
         </service>
         <service
-            android:name=".psiphonlibrary.TunnelVpnService"
-            android:label="@string/app_name"
+            android:name="com.psiphon3.psiphonlibrary.TunnelVpnService"
+            android:label="@string/app_name_psiphon_pro"
             android:permission="android.permission.BIND_VPN_SERVICE"
             android:exported="false" >
         </service>
@@ -79,8 +83,40 @@
         <activity android:name="org.zirco.ui.activities.preferences.WeavePreferencesActivity"></activity>
         <activity android:name="org.zirco.ui.activities.preferences.WeaveServerPreferenceActivity"></activity>
 
-        <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonzircobookmarkscontentprovider"></provider>
-        <provider android:name="org.zirco.providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonweavecontentprovider"></provider>
+        <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonsubscriptionzircobookmarkscontentprovider"></provider>
+        <provider android:name="org.zirco.providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonsubscriptionweavecontentprovider"></provider>
+
+        <meta-data android:name="com.google.android.gms.version"
+                          android:value="@integer/google_play_services_version" />
+        
+        <activity android:name="com.inmobi.rendering.InMobiAdActivity"
+                android:configChanges="keyboardHidden|orientation|keyboard|smallestScreenSize|screenSize"
+                android:theme="@android:style/Theme.Translucent.NoTitleBar"
+                android:hardwareAccelerated="true" />
+        
+        <receiver
+                android:name="com.inmobi.commons.core.utilities.uid.ImIdShareBroadCastReceiver"
+                android:enabled="true"
+                android:exported="true" >
+            <intent-filter>
+                <action android:name="com.inmobi.share.id" />
+            </intent-filter>
+        </receiver>
+        
+        <activity
+            android:name="com.millennialmedia.internal.MMActivity"
+            tools:replace="android:label"
+            android:label="@string/app_name_psiphon_pro"
+            android:theme="@style/Theme.MMTransparent" />
+        <activity
+            android:name="com.millennialmedia.internal.MMIntentWrapperActivity"
+            android:label="sdk" />
+        
+        <activity android:name="com.mopub.mobileads.MoPubActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
+        <activity android:name="com.mopub.mobileads.MraidActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
+        <activity android:name="com.mopub.common.MoPubBrowser" android:configChanges="keyboardHidden|orientation|screenSize"/>
+        <activity android:name="com.mopub.mobileads.MraidVideoPlayerActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
+        <activity android:name="com.google.android.gms.ads.AdActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
 
     </application>
 

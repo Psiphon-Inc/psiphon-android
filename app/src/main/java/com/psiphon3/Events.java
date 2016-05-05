@@ -96,6 +96,17 @@ public class Events implements com.psiphon3.psiphonlibrary.IEvents
         localBroadcastManager.sendBroadcast(intent);
     }
     
+    public void signalDisconnectRaiseActivityAutostart(Context context)
+    {
+        Intent intent = new Intent(
+                MainBase.TabbedActivityBase.UNEXPECTED_DISCONNECT_RESTART,
+                null,
+                context,
+                com.psiphon3.StatusActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);
+    }
+    
     public void signalTunnelStarting(Context context)
     {
         // Local broadcast to any existing status screen
