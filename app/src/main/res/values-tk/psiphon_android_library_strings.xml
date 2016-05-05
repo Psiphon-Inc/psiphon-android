@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <string name="ssh_connecting">SSH birikdirilýär</string>
+  <string name="ssh_connected">SSH birikdirildi</string>
+  <string name="ssh_connection_failed">SSH birikdirmek şowsuz</string>
+  <string name="ssh_authenticating">SSH tassyklanýar...</string>
+  <string name="ssh_authentication_failed">SSH tassyklamak şowsuz</string>
+  <string name="ssh_authenticated">SSH tassyklandy</string>
+  <string name="socks_starting">SOCKS başlaýar...</string>
+  <string name="socks_running">SOCKS işleýär %d</string>
+  <string name="socks_stopped">SOCKS durdy</string>
+  <string name="ssh_stopped">SSH durdy</string>
+  <string name="error_message">Säwlik ýüze çykdy:</string>
+  <string name="http_proxy_starting">HTTP proksi başlaýar...</string>
+  <string name="http_proxy_running">HTTP proksi işleýär %d</string>
+  <string name="http_proxy_stopped">HTTP proksi durdy</string>
+  <string name="http_proxy_stopped_unexpectedly">HTTP proksi birdenkä durdy</string>
+  <string name="ServerInterface.FailedToCreateServerEntries">Saklamak üçin serwer girizmelerini döretmek şowsuz.</string>
+  <string name="ServerInterface.FailedToStoreServerEntries">Serwer girizmelerini saklamak şowsuz.</string>
+  <string name="ServerInterface.FailedToReadStoredServerEntries">Saklanan serwer elementlerini okamak şowsuz.</string>
+  <string name="ServerInterface.FailedToParseStoredServerEntries">Saklanan serwer elementlerini çözmek şowsuz.</string>
+  <string name="ServerInterface.FailedToParseEmbeddedServerEntries">Ornaşdyrylan serwer elementlerini çözmek şowsuz.</string>
+  <string name="ServerInterface.FailedToParseHandshake">Tassyklaýyşy çözmek şowsuz.</string>
+  <string name="ServerInterface.FailedToStoreLastConnected">Iň soňky birikme wagtyny saklamak şowsuz.</string>
+  <string name="ServerInterface.FailedToReadLastConnected">Iň soňky birikme wagtyny okamak şowsuz.</string>
+  <string name="PsiphonAndroidService.HandshakeRequestFailed">Tassyklaýyş islegi şowsuz.</string>
+  <string name="ssh_disconnected_unexpectedly">SSH birikmesi birdenkä kesildi</string>
+  <string name="client_version">Müşderi wersiýasy %s</string>
+  <string name="no_server_entries">Birikmek üçin serwer ýok</string>
+  <string name="ServerInterface.InvalidRemoteServerList">Nädogry uzakdaky serwer sanawy</string>
+  <string name="starting_tunnel">Ötük başladylýar...</string>
+  <string name="stopping_tunnel">Ötük duruzylýar...</string>
+  <string name="stopped_tunnel">Ötük durzuldy</string>
+  <string name="ServerInterface.StopRequested">Duruzmak soraldy</string>
+  <string name="ServerInterface.HTTPSRequestFailed">HTTPS islegi säwlik bilen şowsuz:</string>
+  <string name="psiphon_service_notification_id">Psiphon hyzmat habarnamasy</string>
+  <string name="UpgradeManager.CanNotRetrievePackageInfo">Häzirki amaly programma üçin toplum maglumatlaryny alyp bolanok</string>
+  <string name="UpgradeManager.UpgradeFileWriteFailed">Beýgeldiş faýlyny ýazmak şowsuz</string>
+  <string name="UpgradeManager.UpgradeDownloadFailed">Beýgeldişi göçürip almak şowsuz</string>
+  <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Beýgeldiş şowsuz. Beýgeldiş faýlyndan toplum maglumatlaryny çykaryp alyp bolanok.</string>
+  <string name="UpgradeManager.UpgradeFileNotFound">Beýgeldiş faýly tapylmady</string>
+  <string name="UpgradeManager.UpgradePromptTitle">Psiphon beýgeldiş</string>
+  <string name="share_proxies_prompt_negative">Bes et</string>
+  <string name="about">Psiphon hakynda</string>
+  <string name="feedback">Seslenme</string>
+  <!--When the split tunnel option is enabled, the current region is used to determine which requests should and shouldn't be tunneled. This log message tells the user which region (in '%s') is being used for this decision.-->
+  <!--When the split tunnel option is enabled, this log message is shown when a domain is not tunneled (because it's detected as being in the same region as the user). The '%s' is the domain name.-->
+  <!--The log message is shown to the user if an upstream proxy error occurs. The '%s' is the detail of the error.-->
+</resources>

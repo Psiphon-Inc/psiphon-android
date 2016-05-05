@@ -1,0 +1,87 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
+    useLibrary 'org.apache.http.legacy'
+
+    def versionPropsFile = new File('version.properties')
+
+    if (versionPropsFile.canRead()) {
+        def Properties props = new Properties()
+
+        props.load(new FileInputStream(versionPropsFile))
+        if (props != null && props.containsKey('VERSION_CODE')) {
+            def verName = props['VERSION_CODE']
+            def verCode = verName.toInteger()
+            defaultConfig {
+                project.ext.set("archivesBaseName", "PsiphonAndroid");
+                applicationId "com.psiphon3"
+                minSdkVersion 9
+                targetSdkVersion 23
+                versionCode verCode
+                versionName verName
+            }
+        } else {
+            throw new GradleException('version.properties found but entries are missing')
+        }
+    } else {
+        throw new GradleException("Could not read version.properties!")
+    }
+
+    signingConfigs {
+        release
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+    lintOptions {
+        checkReleaseBuilds false
+        // Or, if you prefer, you can continue to check for errors in release builds,
+        // but continue the build even when errors are found:
+        abortOnError false
+    }
+
+    def propFile = new File('signing.properties')
+    if (propFile.canRead()) {
+        def Properties props = new Properties()
+        props.load(new FileInputStream(propFile))
+
+        if (props != null && props.containsKey('STORE_FILE') && props.containsKey('STORE_PASSWORD') &&
+            props.containsKey('KEY_ALIAS') && props.containsKey('KEY_PASSWORD')) {
+            android.signingConfigs.release.storeFile = file(props['STORE_FILE'])
+            android.signingConfigs.release.storePassword = props['STORE_PASSWORD']
+            android.signingConfigs.release.keyAlias = props['KEY_ALIAS']
+            android.signingConfigs.release.keyPassword = props['KEY_PASSWORD']
+        } else {
+            throw new GradleException('signing.properties found but some entries are missing')
+        }
+    } else {
+        throw new GradleException('signing.properties not found!')
+    }
+
+}
+
+repositories {
+    jcenter()
+    flatDir {
+        dirs project(':mopub-sdk').file('libs')
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.google.android.gms:play-services:8.4.0'
+    compile 'com.android.support:appcompat-v7:23.2.0'
+    compile files('libs/jackson-core-2.2.0.jar')
+    compile files('libs/achartengine-1.0.0.jar')
+    compile files('libs/snakeyaml-1.10-android.jar')
+    compile files('libs/classes.jar')
+    compile project(':mopub-sdk')
+}
+
