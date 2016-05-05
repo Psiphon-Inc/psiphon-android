@@ -66,6 +66,7 @@ public class PsiphonData
     private int m_listeningLocalSocksProxyPort = 0;
     private int m_listeningLocalHttpProxyPort = 0;
     private boolean m_tunnelWholeDevice;
+    private boolean m_downloadWifiOnly;
     private boolean m_useHTTPProxy;
     private boolean m_useSystemProxySettings;
     private boolean m_useCustomProxySettings;
@@ -81,9 +82,9 @@ public class PsiphonData
     private IEvents m_currentEventsInterface = null;
     private DataTransferStats m_dataTransferStats;
     private boolean m_displayDataTransferStats;
-    private boolean m_downloadUpgrades;
     private String m_egressRegion;
     private String m_clientRegion;
+    private boolean m_disableTimeouts;
     
     public int m_notificationIconConnecting = 0;
     public int m_notificationIconConnected = 0;
@@ -104,7 +105,6 @@ public class PsiphonData
         m_useProxyAuthentication = false;
         m_dataTransferStats = new DataTransferStats();
         m_displayDataTransferStats = false;
-        m_downloadUpgrades = false;
         m_egressRegion = PsiphonConstants.REGION_CODE_ANY;
     }
 
@@ -201,6 +201,14 @@ public class PsiphonData
     {
         return m_tunnelWholeDevice;
     }
+
+    public synchronized boolean getDisableTimeouts() { return m_disableTimeouts; }
+
+    public synchronized void setDisableTimeouts(boolean disableTimeouts) { m_disableTimeouts = disableTimeouts; }
+
+    public synchronized boolean getDownloadWifiOnly() { return m_downloadWifiOnly; }
+
+    public synchronized void setDownloadWifiOnly(boolean downloadWifiOnly) { m_downloadWifiOnly = downloadWifiOnly; }
 
     public synchronized void setEgressRegion(String egressRegion)
     {
@@ -523,16 +531,6 @@ public class PsiphonData
     public synchronized int getNotificationIconUpgradeAvailable()
     {
         return m_notificationIconUpgradeAvailable;
-    }
-
-    public synchronized void setDownloadUpgrades(boolean downloadUpgrades)
-    {
-        m_downloadUpgrades = downloadUpgrades;
-    }
-
-    public synchronized boolean getDownloadUpgrades()
-    {
-        return m_downloadUpgrades;
     }
 
     public synchronized void setDisplayDataTransferStats(boolean displayDataTransferStats)

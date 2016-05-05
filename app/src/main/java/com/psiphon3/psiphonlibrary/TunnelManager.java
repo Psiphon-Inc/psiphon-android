@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Psiphon Inc.
+ * Copyright (c) 2016, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -38,6 +39,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.net.VpnService;
 import android.net.VpnService.Builder;
 import android.preference.PreferenceManager;
@@ -45,7 +47,6 @@ import android.support.v4.app.NotificationCompat;
 
 import ca.psiphon.PsiphonTunnel;
 
-import com.psiphon3.psiphonlibrary.UpgradeManager.VerifiedUpgradeFile;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import com.psiphon3.R;
@@ -70,7 +71,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     private AtomicBoolean m_isStopping;
     private PsiphonTunnel m_tunnel = null;
     private String m_lastUpstreamProxyErrorMessage;
-    
+
     public TunnelManager(Service parentService) {
         m_parentService = parentService;
         m_isReconnect = new AtomicBoolean(false);
@@ -94,10 +95,10 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             m_firstStart = false;
             m_tunnelThreadStopSignal = new CountDownLatch(1);
             m_tunnelThread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        runTunnel();
-                    }
+                @Override
+                public void run() {
+                    runTunnel();
+                }
             });
             m_tunnelThread.start();
         }
@@ -108,7 +109,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     // Implementation of android.app.Service.onDestroy
     public void onDestroy() {
         m_serviceDestroyed = true;
-        
+
         if (m_tunnelThread == null) {
             return;
         }
@@ -138,7 +139,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             m_tunnelThreadStopSignal.countDown();
         }
     }
-    
+
     public boolean signalledStop() {
         return m_signalledStop;
     }
@@ -149,31 +150,30 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         CharSequence ticker = null;
 
         switch (getNotificationState()) {
-        case CONNECTING:
-            contentTextID = R.string.psiphon_service_notification_message_connecting;
-            ticker = m_parentService.getText(R.string.psiphon_service_notification_message_connecting);
-            iconID = PsiphonData.getPsiphonData().getNotificationIconConnecting();
-            if (iconID == 0) {
-                iconID = R.drawable.notification_icon_connecting_animation;
-            }
-            break;
+            case CONNECTING:
+                contentTextID = R.string.psiphon_service_notification_message_connecting;
+                ticker = m_parentService.getText(R.string.psiphon_service_notification_message_connecting);
+                iconID = PsiphonData.getPsiphonData().getNotificationIconConnecting();
+                if (iconID == 0) {
+                    iconID = R.drawable.notification_icon_connecting_animation;
+                }
+                break;
 
-        case CONNECTED:
-            if (PsiphonData.getPsiphonData().getTunnelWholeDevice()) {
-                contentTextID = R.string.psiphon_running_whole_device;
-            }
-            else {
-                contentTextID = R.string.psiphon_running_browser_only;
-            }
+            case CONNECTED:
+                if (PsiphonData.getPsiphonData().getTunnelWholeDevice()) {
+                    contentTextID = R.string.psiphon_running_whole_device;
+                } else {
+                    contentTextID = R.string.psiphon_running_browser_only;
+                }
 
-            iconID = PsiphonData.getPsiphonData().getNotificationIconConnected();
-            if (iconID == 0) {
-                iconID = R.drawable.notification_icon_connected;
-            }
-            break;
+                iconID = PsiphonData.getPsiphonData().getNotificationIconConnected();
+                if (iconID == 0) {
+                    iconID = R.drawable.notification_icon_connected;
+                }
+                break;
 
-        default:
-            assert(false);
+            default:
+                assert (false);
         }
 
         Intent activityIntent = null;
@@ -193,10 +193,10 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
         PendingIntent invokeActivityIntent =
                 PendingIntent.getActivity(
-                    m_parentService,
-                    0,
-                    activityIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT);
+                        m_parentService,
+                        0,
+                        activityIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT);
 
         mNotificationBuilder
                 .setSmallIcon(iconID)
@@ -229,7 +229,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         if (m_serviceDestroyed) {
             return;
         }
-        
+
         boolean alert = (newState != m_state);
         m_state = newState;
 
@@ -239,21 +239,21 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                     createNotification(alert));
         }
     }
-    
+
     private final static String LEGACY_SERVER_ENTRY_FILENAME = "psiphon_server_entries.json";
     private final static int MAX_LEGACY_SERVER_ENTRIES = 100;
 
-    private String getServerEntries() {
+    public static String getServerEntries(Context context) {
         StringBuilder list = new StringBuilder();
-        
+
         for (String encodedServerEntry : EmbeddedValues.EMBEDDED_SERVER_LIST) {
             list.append(encodedServerEntry);
             list.append("\n");
         }
-        
+
         // Import legacy server entries
         try {
-            FileInputStream file = m_parentService.openFileInput(LEGACY_SERVER_ENTRY_FILENAME);
+            FileInputStream file = context.openFileInput(LEGACY_SERVER_ENTRY_FILENAME);
             BufferedReader reader = new BufferedReader(new InputStreamReader(file));
             StringBuilder json = new StringBuilder();
             String line;
@@ -270,9 +270,9 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 list.append(jsonServerEntries.getString(i));
                 list.append("\n");
             }
-            
+
             // Don't need to repeat the import again
-            m_parentService.deleteFile(LEGACY_SERVER_ENTRY_FILENAME);
+            context.deleteFile(LEGACY_SERVER_ENTRY_FILENAME);
         } catch (FileNotFoundException e) {
             // pass
         } catch (IOException e) {
@@ -289,20 +289,20 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             // will proceed with the embedded list only, and going forward the MEMORY_SIZE limit will be
             // enforced.
         }
-        
+
         return list.toString();
     }
-    
+
     private void runTunnel() {
 
         Utils.initializeSecureRandom();
 
         m_isStopping.set(false);
         m_isReconnect.set(false);
-        
+
         // Notify if an upgrade has already been downloaded and is waiting for install
         UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentService);
-        
+
         {
             // Don't hold a reference to the events object for long -- a new
             // Activity may register a new one and we ought to release the old
@@ -316,16 +316,16 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         MyLog.v(R.string.current_network_type, MyLog.Sensitivity.NOT_SENSITIVE, Utils.getNetworkTypeName(m_parentService));
 
         MyLog.v(R.string.starting_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
-        
+
         PsiphonData.getPsiphonData().clearHomePages();
-        
+
         PsiphonData.getPsiphonData().getDataTransferStats().startSession();
-        
+
         boolean runVpn =
-            PsiphonData.getPsiphonData().getTunnelWholeDevice() &&
-            Utils.hasVpnService() &&
-            // Guard against trying to start WDM mode when the global option flips while starting a TunnelService
-            (m_parentService instanceof TunnelVpnService);
+                PsiphonData.getPsiphonData().getTunnelWholeDevice() &&
+                        Utils.hasVpnService() &&
+                        // Guard against trying to start WDM mode when the global option flips while starting a TunnelService
+                        (m_parentService instanceof TunnelVpnService);
 
         try {
             if (runVpn) {
@@ -334,23 +334,23 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 }
                 MyLog.v(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
             }
-            
-            m_tunnel.startTunneling(getServerEntries());
-            
+
+            m_tunnel.startTunneling(getServerEntries(m_parentService));
+
             try {
                 m_tunnelThreadStopSignal.await();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            
+
             m_isStopping.set(true);
 
         } catch (PsiphonTunnel.Exception e) {
             MyLog.e(R.string.start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
         } finally {
-            
+
             MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
-            
+
             {
                 IEvents events = PsiphonData.getPsiphonData().getCurrentEventsInterface();
                 if (events != null) {
@@ -359,9 +359,9 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             }
 
             m_tunnel.stop();
-            
+
             PsiphonData.getPsiphonData().getDataTransferStats().stop();
-            
+
             MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
             // Stop service
@@ -382,81 +382,136 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
     @Override
     public VpnService getVpnService() {
-        return ((TunnelVpnService)m_parentService);
+        return ((TunnelVpnService) m_parentService);
     }
 
     @Override
     public Builder newVpnServiceBuilder() {
-        return ((TunnelVpnService)m_parentService).newBuilder();
+        return ((TunnelVpnService) m_parentService).newBuilder();
     }
 
-    @Override
-    public String getPsiphonConfig() {        
-        try {            
-            JSONObject json = new JSONObject();
-            
-            // Don't re-download the upgrade package when a verified upgrade file is
-            // awaiting application by the user. A previous upgrade download will have
-            // completed and have been extracted to this verified upgrade file.
-            // Without this check, tunnel-core won't know that the upgrade is already
-            // downloaded, as the file name differs from UpgradeDownloadFilename, and
-            // so the entire upgrade will be re-downloaded on each tunnel connect until
-            // the user actually applies the upgrade.
-            // As a result of this check, a user that delays applying an upgrade until
-            // after a subsequent upgrade is released will first apply a stale upgrade
-            // and then download the next upgrade.
-            // Note: depends on getAvailableCompleteUpgradeFile deleting VerifiedUpgradeFile
-            // after upgrade is complete. Otherwise, no further upgrades would download. 
-            // TODO: implement version tracking for the verified upgrade file so that
-            // we can proceed with downloading a newer upgrade when             
-            boolean hasUpgradePending = (new VerifiedUpgradeFile(m_parentService)).exists();
-            
-            if (!hasUpgradePending &&
-                0 < EmbeddedValues.UPGRADE_URL.length() && 
-                EmbeddedValues.hasEverBeenSideLoaded(m_parentService) &&
-                PsiphonData.getPsiphonData().getDownloadUpgrades()) {
-                json.put("UpgradeDownloadUrl", EmbeddedValues.UPGRADE_URL);
-                
-                json.put("UpgradeDownloadClientVersionHeader", "x-amz-meta-psiphon-client-version");
-                
-                json.put("UpgradeDownloadFilename",
-                        new UpgradeManager.DownloadedUpgradeFile(m_parentService).getFullPath());                
+    /**
+     * Create a tunnel-core config suitable for different tunnel types (i.e., the main Psiphon app
+     * tunnel and the UpgradeChecker temp tunnel).
+     *
+     * @param context
+     * @param tempTunnelName       null if not a temporary tunnel. If set, must be a valid to use in file path.
+     * @param clientPlatformPrefix null if not applicable (i.e., for main Psiphon app); should be provided
+     *                             for temp tunnels. Will be prepended to standard client platform value.
+     * @return JSON string of config. null on error.
+     */
+    public static String buildTunnelCoreConfig(
+            Context context,
+            String tempTunnelName,
+            String clientPlatformPrefix) {
+        boolean temporaryTunnel = tempTunnelName != null && !tempTunnelName.isEmpty();
+
+        JSONObject json = new JSONObject();
+
+        try {
+            String clientPlatform = PsiphonConstants.PLATFORM;
+            if (clientPlatformPrefix != null && !clientPlatformPrefix.isEmpty()) {
+                clientPlatform += clientPlatformPrefix;
             }
-            
-            json.put("ClientPlatform", PsiphonConstants.PLATFORM);
-            
+            json.put("ClientPlatform", clientPlatform);
+
             json.put("ClientVersion", EmbeddedValues.CLIENT_VERSION);
-            
+
+            if (UpgradeChecker.upgradeCheckNeeded(context)) {
+                Uri upgradeDownloadUrl = Uri.parse(EmbeddedValues.UPGRADE_URL);
+                upgradeDownloadUrl = upgradeDownloadUrl.buildUpon()
+                        .appendQueryParameter("tunnel_name", tempTunnelName == null ? "main" : tempTunnelName)
+                        .appendQueryParameter("client_version", EmbeddedValues.CLIENT_VERSION)
+                        .appendQueryParameter("client_platform", clientPlatform)
+                        .build();
+                json.put("UpgradeDownloadUrl", upgradeDownloadUrl.toString());
+
+                json.put("UpgradeDownloadClientVersionHeader", "x-amz-meta-psiphon-client-version");
+
+                json.put("UpgradeDownloadFilename",
+                        new UpgradeManager.DownloadedUpgradeFile(context).getFullPath());
+            }
+
             json.put("PropagationChannelId", EmbeddedValues.PROPAGATION_CHANNEL_ID);
-            
+
             json.put("SponsorId", EmbeddedValues.SPONSOR_ID);
 
             json.put("RemoteServerListUrl", EmbeddedValues.REMOTE_SERVER_LIST_URL);
 
             json.put("RemoteServerListSignaturePublicKey", EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY);
 
-            json.put("LocalHttpProxyPort", PsiphonData.getPsiphonData().getConfiguredLocalHttpProxyPort());
+            json.put("UpstreamProxyUrl", PsiphonData.getPsiphonData().getUpstreamProxyUrl(context));
 
-            json.put("LocalSocksProxyPort", PsiphonData.getPsiphonData().getConfiguredLocalSocksProxyPort());
-
-            json.put("UpstreamProxyUrl", PsiphonData.getPsiphonData().getUpstreamProxyUrl(m_parentService));            
-            
-            String egressRegion = PsiphonData.getPsiphonData().getEgressRegion();
-            MyLog.g("EgressRegion", "regionCode", egressRegion);
-            json.put("EgressRegion", egressRegion);
-            
             json.put("EmitDiagnosticNotices", true);
-            
-            return json.toString();
 
+            // If this is a temporary tunnel (like for UpgradeChecker) we need to override some of
+            // the implicit config values.
+            if (temporaryTunnel) {
+                File tempTunnelDir = new File(context.getFilesDir(), tempTunnelName);
+                if (!tempTunnelDir.exists()
+                        && !tempTunnelDir.mkdirs()) {
+                    // Failed to create DB directory
+                    return null;
+                }
+
+                // On Android, these directories must be set to the app private storage area.
+                // The Psiphon library won't be able to use its current working directory
+                // and the standard temporary directories do not exist.
+                json.put("DataStoreDirectory", tempTunnelDir.getAbsolutePath());
+
+                File remoteServerListDownload = new File(tempTunnelDir, "remote_server_list");
+                json.put("RemoteServerListDownloadFilename", remoteServerListDownload.getAbsolutePath());
+
+                // This number is an arbitrary guess at what might be the "best" balance between
+                // wake-lock-battery-burning and successful upgrade downloading.
+                // Note that the fall-back untunneled upgrade download doesn't start for 30 secs,
+                // so we should be waiting longer than that.
+                json.put("EstablishTunnelTimeoutSeconds", 300);
+
+                json.put("TunnelWholeDevice", 0);
+
+                json.put("LocalHttpProxyPort", 0);
+                json.put("LocalSocksProxyPort", 0);
+
+                json.put("EgressRegion", "");
+            } else {
+                json.put("LocalHttpProxyPort", PsiphonData.getPsiphonData().getConfiguredLocalHttpProxyPort());
+
+                json.put("LocalSocksProxyPort", PsiphonData.getPsiphonData().getConfiguredLocalSocksProxyPort());
+
+                String egressRegion = PsiphonData.getPsiphonData().getEgressRegion();
+                MyLog.g("EgressRegion", "regionCode", egressRegion);
+                json.put("EgressRegion", egressRegion);
+            }
+
+            if (PsiphonData.getPsiphonData().getDisableTimeouts() == true) {
+                //disable timeouts
+                MyLog.g("DisableTimeouts", "disableTimeouts", true);
+                json.put("TunnelConnectTimeoutSeconds", 0);
+                json.put("TunnelPortForwardTimeoutSeconds", 0);
+                json.put("TunnelSshKeepAliveProbeTimeoutSeconds", 0);
+                json.put("TunnelSshKeepAlivePeriodicTimeoutSeconds", 0);
+                json.put("FetchRemoteServerListTimeoutSeconds", 0);
+                json.put("PsiphonApiServerTimeoutSeconds", 0);
+                json.put("FetchRoutesTimeoutSeconds", 0);
+                json.put("HttpProxyOriginServerTimeoutSeconds", 0);
+            }
+
+            return json.toString();
         } catch (JSONException e) {
-            return "";
+            return null;
         }
     }
 
     @Override
+    public String getPsiphonConfig() {
+        String config = buildTunnelCoreConfig(m_parentService, null, null);
+        return config == null ? "" : config;
+    }
+
+    @Override
     public void onDiagnosticMessage(String message) {
-        MyLog.g("diagnostic", "msg", message);
+        MyLog.g(message, "msg", message);
     }
 
     @Override
@@ -497,20 +552,20 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         if (m_lastUpstreamProxyErrorMessage == null || !m_lastUpstreamProxyErrorMessage.equals(message)) {
             MyLog.v(R.string.upstream_proxy_error, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, message);
             m_lastUpstreamProxyErrorMessage = message;
-        }        
+        }
     }
 
     @Override
     public void onConnecting() {
-        
+
         PsiphonData.getPsiphonData().getDataTransferStats().stop();
 
         // Don't update notification to CONNECTING, etc., when a stop was commanded.
         if (!m_isStopping.get()) {
             setNotificationState(NotificationState.CONNECTING);
-            
+
             MyLog.v(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
-            
+
             if (m_isReconnect.get()) {
                 IEvents events = PsiphonData.getPsiphonData().getCurrentEventsInterface();
                 if (events != null) {
@@ -523,11 +578,11 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     @Override
     public void onConnected() {
         setNotificationState(NotificationState.CONNECTED);
-        
+
         MyLog.v(R.string.tunnel_connected, MyLog.Sensitivity.NOT_SENSITIVE);
-        
+
         PsiphonData.getPsiphonData().getDataTransferStats().startConnected();
-        
+
         IEvents events = PsiphonData.getPsiphonData().getCurrentEventsInterface();
         if (events != null) {
             events.signalHandshakeSuccess(m_parentService, m_isReconnect.get());
@@ -539,7 +594,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
     @Override
     public void onHomepage(String url) {
-        PsiphonData.getPsiphonData().addHomePage(url);        
+        PsiphonData.getPsiphonData().addHomePage(url);
     }
 
     @Override
@@ -549,7 +604,11 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
     @Override
     public void onClientUpgradeDownloaded(String filename) {
-        UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentService);      
+        UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentService);
+    }
+
+    @Override
+    public void onClientIsLatestVersion() {
     }
 
     @Override
@@ -571,6 +630,9 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
     @Override
     public void onStartedWaitingForNetworkConnectivity() {
-        MyLog.v(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);      
+        MyLog.v(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);
     }
+
+    @Override
+    public void onExiting() {}
 }

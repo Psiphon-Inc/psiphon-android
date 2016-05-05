@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2016, Psiphon Inc.
+ * All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package com.psiphon3.psiphonlibrary;
 
 import java.io.File;
@@ -248,7 +267,7 @@ public class Utils
         } 
         catch (UnsupportedEncodingException e)
         {
-            Log.e(PsiphonConstants.TAG, e.getMessage());
+            MyLog.d("urlEncode failed", e);
 
             // Call the deprecated form of the function, which doesn't throw.
             return URLEncoder.encode(s);
@@ -311,20 +330,49 @@ public class Utils
         {
             MyLog.logger.clear();
         }
-        
+
         static public void restoreLogHistory()
         {
-            // Trigger the UI to refresh its status display
             if (logger.get() != null)
             {
+                // Check if LoggingProvider has any stored logs for us
+                LoggingProvider.restoreLogs(logger.get().getContext());
+
+                // Trigger the UI to refresh its status display
                 logger.get().statusEntryAdded();
             }
+        }
+
+        /**
+         * To be called only from LoggingProvider.
+         * @return True if successful, false if LoggingProvider should store the log for later.
+         */
+        static public boolean logFromProvider(
+                int stringResID,
+                Sensitivity sensitivity,
+                int priority,
+                Object[] formatArgs,
+                Date timestamp) {
+            if (logger.get() == null) {
+                // Not yet ready to receive provider logs.
+                return false;
+            }
+
+            println(
+                stringResID,
+                sensitivity,
+                formatArgs,
+                null,
+                priority,
+                timestamp);
+
+            return true;
         }
         
         // TODO: Add sensitivity to debug logs
         static public void d(String msg)
         {
-            Object[] formatArgs = { msg };
+            Object[] formatArgs = {msg};
             MyLog.println(R.string.debug_message, Sensitivity.NOT_SENSITIVE, formatArgs, null, Log.DEBUG);
         }
 
@@ -590,6 +638,16 @@ public class Utils
     public static String getISO8601String()
     {
         return getISO8601String(new Date());
+    }
+
+    public static boolean isOnWiFi(Context context) {
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) {
+            return false;
+        }
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        return networkInfo != null && networkInfo.getType() == ConnectivityManager.TYPE_WIFI;
     }
 
     public static String getNetworkTypeName(Context context)
