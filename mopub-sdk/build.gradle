@@ -108,6 +108,7 @@ dependencies {
     compile 'com.mopub.volley:mopub-volley:1.1.0'
     compile 'com.google.android.exoplayer:exoplayer:r1.5.6'
     // anchor: additional dependencies
+    compile 'com.inmobi.monetization:inmobi-ads:5.3.0'
 
     javadocDeps 'com.google.android.exoplayer:exoplayer:r1.5.6:sources'
     javadocDeps 'com.mopub.volley:mopub-volley:1.1.0:sources'
