@@ -35,7 +35,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
@@ -75,5 +75,6 @@ dependencies {
     compile files('libs/achartengine-1.0.0.jar')
     compile files('libs/snakeyaml-1.10-android.jar')
     compile files('libs/classes.jar')
+    compile project(':mopub-sdk')
 }
 
