@@ -16,7 +16,7 @@ android {
             def verCode = verName.toInteger()
             defaultConfig {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
-                applicationId "com.psiphon3"
+                applicationId "com.psiphon3.subscription"
                 minSdkVersion 9
                 targetSdkVersion 23
                 versionCode verCode
