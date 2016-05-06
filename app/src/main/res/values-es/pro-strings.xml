@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="SubscriptionPromptTitle">Compra suscripción sin la publicidad</string>
+    <string name="SubscriptionPromptMessage">Suscríbete ahora para usar Psiphon Pro sin límites, o puedes usar la versión de Psiphon Pro financiado por la publicidad, gratuitamente.\n\nEn el modo financiado por la publicidad, estarás desconectado y se te mostrará un anuncio cada 60 minutos.\n\nGracias por apoyar a Psiphon!</string>
+    <string name="SubscriptionPromptSubscribe">Suscríbete</string>
+    <string name="SubscriptionPromptAdSupported">Financiado por la publicidad</string>
+</resources>
