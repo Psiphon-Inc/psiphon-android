@@ -70,7 +70,9 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     private AtomicBoolean m_isStopping;
     private PsiphonTunnel m_tunnel = null;
     private String m_lastUpstreamProxyErrorMessage;
-    
+    private GoogleSafetyNetApiWrapper m_safetyNetwrapper;
+
+
     public TunnelManager(Service parentService) {
         m_parentService = parentService;
         m_isReconnect = new AtomicBoolean(false);
@@ -136,6 +138,10 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         m_signalledStop = true;
         if (m_tunnelThreadStopSignal != null) {
             m_tunnelThreadStopSignal.countDown();
+        }
+
+        if (m_safetyNetwrapper != null) {
+            m_safetyNetwrapper.disconnect();
         }
     }
     
@@ -532,6 +538,13 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         if (events != null) {
             events.signalHandshakeSuccess(m_parentService, m_isReconnect.get());
         }
+
+        //Perform safetyNet check
+        if(m_safetyNetwrapper == null) {
+            m_safetyNetwrapper = new GoogleSafetyNetApiWrapper(getContext());
+        }
+        m_safetyNetwrapper.connect();
+
 
         // Any subsequent onConnecting after this first onConnect will be a reconnect.
         m_isReconnect.set(true);
