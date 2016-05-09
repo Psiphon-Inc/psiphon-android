@@ -285,7 +285,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
             try {
                 mTunnel.startTunneling(TunnelManager.getServerEntries(this));
             } catch (PsiphonTunnel.Exception e) {
-                log(this, R.string.upgrade_checker_start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, Log.ERROR, e.getMessage());
+                log(this, R.string.upgrade_checker_start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING, e.getMessage());
                 // No need to call shutDownTunnel().
                 releaseWakefulIntent();
                 return;
