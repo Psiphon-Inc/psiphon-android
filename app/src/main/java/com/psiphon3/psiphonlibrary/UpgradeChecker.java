@@ -128,12 +128,12 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
 
         if (EmbeddedValues.UPGRADE_URL.length() == 0 ||
             !EmbeddedValues.hasEverBeenSideLoaded(appContext)) {  // Play Store Build instances must not use custom auto-upgrade
-            log(context, R.string.upgrade_checker_no_upgrading, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+            log(context, R.string.upgrade_checker_no_upgrading, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
             return false;
         }
 
         if (UpgradeManager.UpgradeInstaller.upgradeFileAvailable(appContext)) {
-            log(context, R.string.upgrade_checker_upgrade_file_exists, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+            log(context, R.string.upgrade_checker_upgrade_file_exists, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
             // We know there's an upgrade file available, so send an intent about it.
             Intent intent = new Intent(appContext, UpgradeChecker.class);
             intent.setAction(UPGRADE_FILE_AVAILABLE_INTENT_ACTION);
@@ -146,11 +146,11 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         if (PreferenceManager.getDefaultSharedPreferences(appContext).getBoolean(
                 context.getString(R.string.downloadWifiOnlyPreference), PsiphonConstants.DOWNLOAD_WIFI_ONLY_PREFERENCE_DEFAULT) &&
                 !Utils.isOnWiFi(appContext)) {
-            log(context, R.string.upgrade_checker_upgrade_wifi_only, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+            log(context, R.string.upgrade_checker_upgrade_wifi_only, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
             return false;
         }
 
-        log(appContext, R.string.upgrade_checker_check_needed, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+        log(appContext, R.string.upgrade_checker_check_needed, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
 
         return true;
     }
@@ -163,23 +163,23 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         String action = intent.getAction();
 
         if (action.equals(ALARM_INTENT_ACTION)) {
-            log(context, R.string.upgrade_checker_alarm_intent_received, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+            log(context, R.string.upgrade_checker_alarm_intent_received, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
             if (!upgradeCheckNeeded(context)) {
                 return;
             }
             checkForUpgrade(context);
         }
         else if (action.equals(UPGRADE_FILE_AVAILABLE_INTENT_ACTION)) {
-            log(context, R.string.upgrade_checker_upgrade_file_available_intent_received, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+            log(context, R.string.upgrade_checker_upgrade_file_available_intent_received, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
             // Create upgrade notification. User clicking the notification will trigger the install.
             UpgradeManager.UpgradeInstaller.notifyUpgrade(context.getApplicationContext());
         }
         else if (action.equals(Intent.ACTION_BOOT_COMPLETED)) {
-            log(context, R.string.upgrade_checker_boot_completed_intent_received, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+            log(context, R.string.upgrade_checker_boot_completed_intent_received, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
             // Pass. We created the alarm above, so nothing else to do (until the alarm runs).
         }
         else if (action.equals(CREATE_ALARM_INTENT_ACTION)) {
-            log(context, R.string.upgrade_checker_create_alarm_intent_received, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+            log(context, R.string.upgrade_checker_create_alarm_intent_received, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
             // Pass. We created the alarm above, so nothing else to do (until the alarm runs).
         }
     }
@@ -200,11 +200,11 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
                 PendingIntent.FLAG_NO_CREATE) != null);
 
         if (alarmExists) {
-            log(appContext, R.string.upgrade_checker_alarm_exists, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+            log(appContext, R.string.upgrade_checker_alarm_exists, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
             return;
         }
 
-        log(appContext, R.string.upgrade_checker_creating_alarm, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+        log(appContext, R.string.upgrade_checker_creating_alarm, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
 
         PendingIntent alarmIntent = PendingIntent.getBroadcast(
                 appContext,
@@ -223,7 +223,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
      * Launches the upgrade checking service. Returns immediately.
      */
     private void checkForUpgrade(Context context) {
-        log(context, R.string.upgrade_checker_start_service, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+        log(context, R.string.upgrade_checker_start_service, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
 
         Intent service = new Intent(context, UpgradeCheckerService.class);
         startWakefulService(context, service);
@@ -267,11 +267,11 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
          */
         @Override
         protected void onHandleIntent(Intent intent) {
-            log(this, R.string.upgrade_checker_check_start, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+            log(this, R.string.upgrade_checker_check_start, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
 
             if (mWakefulIntent != null) {
                 // Already processing an intent.
-                log(this, R.string.upgrade_checker_already_in_progress, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+                log(this, R.string.upgrade_checker_already_in_progress, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
                 // Not calling shutDownTunnel() because we don't want to interfere with the currently running request.
                 UpgradeChecker.completeWakefulIntent(intent);
                 return;
@@ -285,7 +285,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
             try {
                 mTunnel.startTunneling(TunnelManager.getServerEntries(this));
             } catch (PsiphonTunnel.Exception e) {
-                log(this, R.string.upgrade_checker_start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING, e.getMessage());
+                log(this, R.string.upgrade_checker_start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN, e.getMessage());
                 // No need to call shutDownTunnel().
                 releaseWakefulIntent();
                 return;
@@ -301,7 +301,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
             mStopHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    log(context, R.string.upgrade_checker_done, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+                    log(context, R.string.upgrade_checker_done, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
                     mTunnel.stop();
                 }
             });
@@ -343,7 +343,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
          */
         @Override
         public void onClientIsLatestVersion() {
-            log(this, R.string.upgrade_checker_client_is_latest_version, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+            log(this, R.string.upgrade_checker_client_is_latest_version, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
             shutDownTunnel();
         }
 
@@ -353,7 +353,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
          */
         @Override
         public void onClientUpgradeDownloaded(String filename) {
-            log(this, R.string.upgrade_checker_client_upgrade_downloaded, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+            log(this, R.string.upgrade_checker_client_upgrade_downloaded, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
 
             if (mUpgradeDownloaded) {
                 // Because tunnel-core may create multiple server connections and do multiple
@@ -376,13 +376,13 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
          */
         @Override
         public void onExiting() {
-            log(this, R.string.upgrade_checker_tunnel_exiting, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING);
+            log(this, R.string.upgrade_checker_tunnel_exiting, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
             releaseWakefulIntent();
         }
 
         @Override
         public void onDiagnosticMessage(String message) {
-            log(this, R.string.upgrade_checker_tunnel_diagnostic_message, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARNING, message);
+            log(this, R.string.upgrade_checker_tunnel_diagnostic_message, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN, message);
         }
 
         @Override
