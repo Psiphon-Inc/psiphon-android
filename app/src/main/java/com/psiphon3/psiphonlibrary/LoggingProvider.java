@@ -320,7 +320,7 @@ public class LoggingProvider extends ContentProvider {
                         stringResID = jsonObj.getInt("stringResID");
                         sensitivity = MyLog.Sensitivity.valueOf(jsonObj.getString("sensitivity"));
                         priority = jsonObj.getInt("priority");
-                        timestamp = new Date(jsonObj.getInt("timestamp"));
+                        timestamp = new Date(jsonObj.getLong("timestamp"));
 
                         JSONArray formatArgsJSONArray = jsonObj.getJSONArray("formatArgs");
                         formatArgs = new Object[formatArgsJSONArray.length()];
