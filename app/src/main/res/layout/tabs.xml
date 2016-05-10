@@ -145,6 +145,23 @@
                         android:text="@string/tunnel_whole_device_toggle"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
 
+                    <CheckBox
+                        android:id="@+id/downloadOnWifiOnlyToggle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="left"
+                        android:onClick="onDownloadOnWifiOnlyToggle"
+                        android:text="@string/preference_download_wifi_only_toggle"
+                        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+                    <CheckBox
+                        android:id="@+id/disableTimeoutsToggle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="left"
+                        android:onClick="onDisableTimeoutsToggle"
+                        android:text="@string/disable_timeouts"
+                        android:textAppearance="?android:attr/textAppearanceSmall" />
                 </LinearLayout>
 
                 <LinearLayout

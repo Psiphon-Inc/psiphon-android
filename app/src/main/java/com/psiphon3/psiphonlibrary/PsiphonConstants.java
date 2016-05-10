@@ -35,4 +35,6 @@ public class PsiphonConstants
     public final static String ROOTED = "_rooted";
 
     public final static String PLAY_STORE_BUILD = "_playstore";
+
+    public final static Boolean DOWNLOAD_WIFI_ONLY_PREFERENCE_DEFAULT = false;
 }

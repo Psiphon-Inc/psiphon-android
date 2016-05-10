@@ -28,6 +28,7 @@ import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
+import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
 import android.text.InputType;
 
@@ -51,6 +52,7 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.preferences);
         PreferenceScreen preferences = getPreferenceScreen();
+
         mUseProxy = (CheckBoxPreference) preferences.findPreference(getString(R.string.useProxySettingsPreference));
         mUseSystemProxy = (RadioButtonPreference) preferences
                 .findPreference(getString(R.string.useSystemProxySettingsPreference));
