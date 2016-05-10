@@ -43,12 +43,11 @@ import ca.psiphon.PsiphonTunnel;
 
 public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnectionFailedListener{
     private static final int API_REQUEST_OK = 0x00;
-    public static final int API_REQUEST_FAILED = 0x01;
-    public static final int API_CONNECT_FAILED = 0x02;
+    private static final int API_REQUEST_FAILED = 0x01;
+    private static final int API_CONNECT_FAILED = 0x02;
 
 
     private GoogleApiClient mGoogleApiClient;
-    private String mLastResponse;
     private PsiphonTunnel m_tunnel;
 
     public  GoogleSafetyNetApiWrapper(Context context, PsiphonTunnel tunnel) {
@@ -86,7 +85,6 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
                         //JSON Web Signature format
                         final String jwsResult = result.getJwsResult();
                         if (status.isSuccess() && !TextUtils.isEmpty(jwsResult)) {
-                            mLastResponse = jwsResult;
                             onSafetyNetCheckNotify(API_REQUEST_OK, jwsResult);
                         } else {
                             // An error occurred while communicating with the SafetyNet Api
