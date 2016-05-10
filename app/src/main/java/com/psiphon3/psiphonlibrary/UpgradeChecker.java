@@ -33,6 +33,7 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
 
+import java.util.Date;
 import java.util.List;
 
 import ca.psiphon.PsiphonTunnel;
@@ -215,7 +216,8 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         AlarmManager alarmMgr = (AlarmManager)appContext.getSystemService(Context.ALARM_SERVICE);
         alarmMgr.setInexactRepeating(
                 AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                ALARM_FREQUENCY_MS, ALARM_FREQUENCY_MS,
+                new Date().getTime() + ALARM_FREQUENCY_MS,
+                ALARM_FREQUENCY_MS,
                 alarmIntent);
     }
 
