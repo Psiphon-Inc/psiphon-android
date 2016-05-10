@@ -29,11 +29,11 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
 
-import java.util.Date;
 import java.util.List;
 
 import ca.psiphon.PsiphonTunnel;
@@ -63,7 +63,6 @@ import ca.psiphon.PsiphonTunnel;
  */
 
 public class UpgradeChecker extends WakefulBroadcastReceiver {
-    private static final int ALARM_FREQUENCY_MS = 11*60*60*1000; // use an odd number of hours so it's not the same time every day
     private static final int ALARM_INTENT_REQUEST_CODE = 0;
     private static final String ALARM_INTENT_ACTION = UpgradeChecker.class.getName()+":ALARM";
     private static final String CREATE_ALARM_INTENT_ACTION = UpgradeChecker.class.getName()+":CREATE_ALARM";
@@ -216,8 +215,8 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         AlarmManager alarmMgr = (AlarmManager)appContext.getSystemService(Context.ALARM_SERVICE);
         alarmMgr.setInexactRepeating(
                 AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                new Date().getTime() + ALARM_FREQUENCY_MS,
-                ALARM_FREQUENCY_MS,
+                SystemClock.elapsedRealtime() + AlarmManager.INTERVAL_FIFTEEN_MINUTES,
+                AlarmManager.INTERVAL_HALF_DAY,
                 alarmIntent);
     }
 
