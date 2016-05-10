@@ -18,7 +18,7 @@ android {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
                 applicationId "com.psiphon3"
                 minSdkVersion 9
-                targetSdkVersion 23
+                targetSdkVersion 21
                 versionCode verCode
                 versionName verName
             }
