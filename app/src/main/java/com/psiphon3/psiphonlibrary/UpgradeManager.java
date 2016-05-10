@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Psiphon Inc.
+ * Copyright (c) 2016, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,7 +32,6 @@ import com.psiphon3.psiphonlibrary.AuthenticatedDataPackage.AuthenticatedDataPac
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.annotation.SuppressLint;
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -271,33 +270,6 @@ public interface UpgradeManager
         }
     }
     
-    static class PartialUpgradeFile extends UpgradeFile
-    {
-        private int versionNumber;
-        
-        public PartialUpgradeFile(Context context, int versionNumber)
-        {
-            super(context);
-            
-            this.versionNumber = versionNumber;
-        }
-        
-        public String getFilename()
-        {
-            return "PsiphonAndroid.upgrade_package." + Integer.toString(this.versionNumber) + ".part";
-        }
-        
-        public boolean isWorldReadable()
-        {
-            return false;
-        }
-
-        public boolean complete()
-        {
-            return rename(new DownloadedUpgradeFile(super.context).getFilename());
-        }
-    }
-    
     /**
      * Used for checking if an upgrade has been downloaded and installing it.
      */
@@ -309,6 +281,7 @@ public interface UpgradeManager
         /**
          * Check if an upgrade file is available, and if it's actually a higher
          * version.
+         * Side-effect: May delete existing upgrade file if it's invalid or an old version.
          * @return true if upgrade file is available to be applied.
          */
         protected static VerifiedUpgradeFile getAvailableCompleteUpgradeFile(Context context)
@@ -327,7 +300,7 @@ public interface UpgradeManager
                 // to write the extracted file... we still re-download.
 
                 downloadedFile.delete();
-                
+
                 if (!success)
                 {
                     return null;
@@ -341,7 +314,7 @@ public interface UpgradeManager
             {
                 return null;
             }
-            
+
             // Is it a higher version than the current app?
             
             final PackageManager pm = context.getPackageManager();
@@ -382,22 +355,28 @@ public interface UpgradeManager
             
             return file;
         }
+
+        /**
+         * Checks if a valid upgrade file is available for install.
+         * Note that this is not a zero-cost function call, as package verification is done.
+         * @param context
+         * @return true if an upgrade file is available
+         */
+        public static boolean upgradeFileAvailable(Context context) {
+            return getAvailableCompleteUpgradeFile(context) != null;
+        }
         
         /**
          * Create an Android notification to launch the upgrade, if available
+         * @param context
+         * @return true if an upgrade is available and the notification was shown
          */
-        public static void notifyUpgrade(Context context)
+        public static boolean notifyUpgrade(Context context)
         {
-            // Play Store Build instances must not use custom auto-upgrade
-            if (!EmbeddedValues.hasEverBeenSideLoaded(context))
-            {
-                return;
-            }
-            
-            VerifiedUpgradeFile file = getAvailableCompleteUpgradeFile(context); 
+            VerifiedUpgradeFile file = getAvailableCompleteUpgradeFile(context);
             if (file == null)
             {
-                return;
+                return false;
             }
             
             // This intent triggers the upgrade. It's launched if the user clicks the notification.
@@ -438,6 +417,8 @@ public interface UpgradeManager
             {
                 mNotificationManager.notify(R.string.UpgradeManager_UpgradeAvailableNotificationId, mNotificationBuilder.build());
             }
+
+            return true;
         }
     }
 }
