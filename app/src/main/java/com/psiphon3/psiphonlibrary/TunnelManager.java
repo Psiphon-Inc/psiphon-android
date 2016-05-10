@@ -541,7 +541,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
         //Perform safetyNet check
         if(m_safetyNetwrapper == null) {
-            m_safetyNetwrapper = new GoogleSafetyNetApiWrapper(getContext());
+            m_safetyNetwrapper = new GoogleSafetyNetApiWrapper(getContext(), m_tunnel);
         }
         m_safetyNetwrapper.connect();
 

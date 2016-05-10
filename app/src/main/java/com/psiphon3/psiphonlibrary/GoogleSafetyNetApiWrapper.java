@@ -34,7 +34,12 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.safetynet.SafetyNet;
 import com.google.android.gms.safetynet.SafetyNetApi;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.security.SecureRandom;
+
+import ca.psiphon.PsiphonTunnel;
 
 public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnectionFailedListener{
     private static final int API_REQUEST_OK = 0x00;
@@ -44,14 +49,16 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
 
     private GoogleApiClient mGoogleApiClient;
     private String mLastResponse;
+    private PsiphonTunnel m_tunnel;
 
-    public  GoogleSafetyNetApiWrapper(Context context) {
+    public  GoogleSafetyNetApiWrapper(Context context, PsiphonTunnel tunnel) {
         // Create the Google API Client.
         mGoogleApiClient = new GoogleApiClient.Builder(context)
                 .addApi(SafetyNet.API)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
+        m_tunnel = tunnel;
     }
 
     public void connect() {
@@ -107,7 +114,18 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     }
 
     private void onSafetyNetCheckNotify(int status, String payload) {
-        Utils.MyLog.g("onSafetyNetCheckNotify", new Object[]{"status", status, "payload", payload});
+        //Utils.MyLog.g("onSafetyNetCheckNotify", new Object[]{"status", status, "payload", payload});
+        JSONObject checkData = new JSONObject();
+        try
+        {
+            checkData.put("status", status);
+            checkData.put("payload", payload);
+        }
+        catch (JSONException e)
+        {
+            throw new RuntimeException(e);
+        }
+        m_tunnel.makeServerAPIRequest("1", "/validate", checkData.toString(), 30);
     }
 
 }
