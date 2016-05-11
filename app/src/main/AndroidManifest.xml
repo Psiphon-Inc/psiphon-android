@@ -56,14 +56,14 @@
         </service>
 
         <provider
-            android:name=".psiphonlibrary.LoggingProvider"
-            android:authorities="com.psiphon3.psiphonlibrary.LoggingProvider"
+            android:name="com.psiphon3.psiphonlibrary.LoggingProvider"
+            android:authorities="com.psiphon3.psiphonlibrary.PsiphonSubscriptionLoggingProvider"
             android:exported="false">
         </provider>
 
         <!-- UpgradeChecker receives intents (direct, alarm, boot) that trigger upgrade checking. -->
         <receiver
-            android:name=".psiphonlibrary.UpgradeChecker"
+            android:name="com.psiphon3.psiphonlibrary.UpgradeChecker"
             android:process=":UpgradeChecker"
             android:enabled="true">
             <intent-filter>
@@ -72,7 +72,7 @@
         </receiver>
         <!-- The service that UpgradeChecker uses to do work -->
         <service
-            android:name=".psiphonlibrary.UpgradeChecker$UpgradeCheckerService"
+            android:name="com.psiphon3.psiphonlibrary.UpgradeChecker$UpgradeCheckerService"
             android:label="@string/upgrade_checker_service_name"
             android:exported="false"
             android:process=":UpgradeChecker" >
