@@ -19,7 +19,7 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import android.app.AlarmManager;
