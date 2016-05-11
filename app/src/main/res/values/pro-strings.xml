@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="SubscriptionPromptTitle">Purchase ad-free subscription</string>
+    <string name="SubscriptionPromptMessage">Subscribe now for unlimited ad-free use of Psiphon Pro. Or you can use ad-supported Psiphon Pro for free.\n\nIn ad-supported mode you will be disconnected and shown an ad every 60 minutes.\n\nThank you for supporting Psiphon!</string>
+    <string name="SubscriptionPromptSubscribe">Subscribe</string>
+    <string name="SubscriptionPromptAdSupported">Ad-Supported</string>
+</resources>

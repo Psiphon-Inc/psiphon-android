@@ -34,6 +34,8 @@ public interface IEvents
     
     public void signalUnexpectedDisconnect(Context context);
     
+    public void signalDisconnectRaiseActivityAutostart(Context context);
+    
     public void signalTunnelStarting(Context context);
 
     public void signalTunnelStopping(Context context);
