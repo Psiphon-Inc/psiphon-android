@@ -168,17 +168,13 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         startPsiphon("");
     }
 
-    // Call through to tunnel-core Controller.MakeServerAPIRequest. See description in
-    // Controller.MakeServerAPIRequest.
+    // Call through to tunnel-core Controller.SetClientVerificationPayload. See description in
+    // Controller.SetClientVerificationPayload.
     // Note: same deadlock note as stop().
     // Note: this function only has an effect after Psi.Start() and before Psi.Stop(),
     // so call it after startTunneling() and before stop().
-    public synchronized void makeServerAPIRequest(
-            String requestID,
-            String requestName,
-            String requestPayload,
-            int retryDelaySeconds) {
-        Psi.MakeServerAPIRequest(requestID, requestName, requestPayload, retryDelaySeconds);
+    public synchronized void setClientVerificationPayload (String requestPayload) {
+        Psi.SetClientVerificationPayload(requestPayload);
     }
 
     //----------------------------------------------------------------------------------------------

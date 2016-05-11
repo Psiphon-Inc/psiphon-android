@@ -112,7 +112,6 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     }
 
     private void onSafetyNetCheckNotify(int status, String payload) {
-        //Utils.MyLog.g("onSafetyNetCheckNotify", new Object[]{"status", status, "payload", payload});
         JSONObject checkData = new JSONObject();
         try
         {
@@ -123,7 +122,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         {
             throw new RuntimeException(e);
         }
-        m_tunnel.makeServerAPIRequest("1", "/validate", checkData.toString(), 30);
+        m_tunnel.setClientVerificationPayload(checkData.toString());
     }
 
 }
