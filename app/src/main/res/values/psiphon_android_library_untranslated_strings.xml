@@ -43,6 +43,7 @@
     <string name="upgrade_checker_create_alarm_intent_received">UpgradeChecker.onReceive: CREATE_ALARM_INTENT_ACTION received</string>
     <string name="upgrade_checker_alarm_exists">UpgradeChecker.createAlarm: alarmExists; aborting</string>
     <string name="upgrade_checker_creating_alarm">UpgradeChecker.createAlarm: creating alarm</string>
+    <string name="upgrade_checker_no_alarm_no_selfupgrading">UpgradeChecker.createAlarm: build does not allow self-upgrading; not creating alarm</string>
     <string name="upgrade_checker_start_service">UpgradeChecker.checkForUpgrade: starting service for upgrade check</string>
     <string name="upgrade_checker_start_tunnel_failed">UpgradeCheckerService: start tunnel failed: %s</string>
     <string name="upgrade_checker_check_start">UpgradeCheckerService: check starting</string>
