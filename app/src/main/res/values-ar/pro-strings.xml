@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="SubscriptionPromptTitle">إشتري إشتراك خالي من الإعلانات</string>
-    <string name="SubscriptionPromptMessage">إشترك الآن لإستعمال مفتوح من دون إعلانات لسايفون برو أو يمكنك إستعمال نسختنا المجانية التي تتضمن إعلانات.\n\nفي النسخة المجانية سينقطع الإتصال كل ستون دقيقة لمشاهدة إعلان.\n\nشكرالإستعمالكم سايفون!</string>
-    <string name="SubscriptionPromptSubscribe">إشترك</string>
-    <string name="SubscriptionPromptAdSupported">تتضمن إعلانات</string>
+    <string name="SubscriptionPromptTitle">إشتري نسخة خالية من الإعلانات</string>
+    <string name="SubscriptionPromptMessage">لديكم خيارين لإستعمال سايفون برو:\n\n١- خيار إشتراك مدفوع من دون الإعلانات\n٢-خيار مجاني مع إعلانات\n\nشكرا لإستخدامكم سايفون!</string>
+    <string name="SubscriptionPromptSubscribe">إشتراك</string>
+    <string name="SubscriptionPromptAdSupported">مجاني</string>
 
 </resources>
