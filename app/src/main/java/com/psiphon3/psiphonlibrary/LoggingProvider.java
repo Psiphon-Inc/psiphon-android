@@ -29,6 +29,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Looper;
 import android.support.annotation.Nullable;
 
 import org.json.JSONArray;
@@ -220,13 +221,24 @@ public class LoggingProvider extends ContentProvider {
         }
 
         /**
-         * Async call to insert log values.
+         * Insert a new log. May execute asynchronously.
          */
         public static void insertLog(Context context, ContentValues values) {
-            InsertLogTask task = new InsertLogTask(context);
-            task.execute(values);
+            // If this function is being called in the UI thread, then we need to do the work in an
+            // async task. Otherwise we'll do the work directly.
+            // For info about content provider thread use: http://stackoverflow.com/a/3571583
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                InsertLogTask task = new InsertLogTask(context);
+                task.execute(values);
+            }
+            else {
+                LogDatabaseHelper.insertLogHelper(context, values);
+            }
         }
 
+        /**
+         * Task to do the async work.
+         */
         private static class InsertLogTask extends AsyncTask<ContentValues, Void, Void> {
             private Context mContext;
             public InsertLogTask (Context context){
@@ -237,30 +249,54 @@ public class LoggingProvider extends ContentProvider {
             protected Void doInBackground(ContentValues... params) {
                 // DO NOT LOG WITHIN THIS FUNCTION
 
-                SQLiteDatabase db = LogDatabaseHelper.get(mContext).getDB();
-
-                db.beginTransaction();
-
+                // There will only ever be one item in the array, but...
                 for (int i = 0; i < params.length; i++) {
-                    db.insert(TABLE_NAME, null, params[i]);
+                    LogDatabaseHelper.insertLogHelper(mContext, params[i]);
                 }
-
-                db.setTransactionSuccessful();
-                db.endTransaction();
 
                 return null;
             }
         }
 
         /**
-         * To be called by MyLog at a time when it's appropriate to consume logs that were stored
-         * by the provider.
+         * Inserts a new log. Should be called via insertLog or InsertLogTask.
+         * @param context
+         * @param values
          */
-        public static void restoreLogs(Context context) {
-            RestoreLogsTask task = new RestoreLogsTask(context);
-            task.execute();
+        private static void insertLogHelper(Context context, ContentValues values) {
+            // DO NOT LOG WITHIN THIS FUNCTION
+
+            SQLiteDatabase db = LogDatabaseHelper.get(context).getDB();
+
+            db.beginTransaction();
+
+            db.insert(TABLE_NAME, null, values);
+
+            db.setTransactionSuccessful();
+            db.endTransaction();
         }
 
+        /**
+         * To be called by MyLog at a time when it's appropriate to consume logs that were stored
+         * by the provider. May execute asynchronously.
+         */
+        public static void restoreLogs(Context context) {
+            // If this function is being called in the UI thread, then we need to do the work in an
+            // async task. Otherwise we'll do the work directly.
+            // For info about content provider thread use: http://stackoverflow.com/a/3571583
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                RestoreLogsTask task = new RestoreLogsTask(context);
+                task.execute();
+            }
+            else {
+                LogDatabaseHelper.restoreLogsHelper(context);
+            }
+
+        }
+
+        /**
+         * Task to do the async work.
+         */
         private static class RestoreLogsTask extends AsyncTask<Void, Void, Void> {
             private Context mContext;
             public RestoreLogsTask (Context context){
@@ -271,84 +307,94 @@ public class LoggingProvider extends ContentProvider {
             protected Void doInBackground(Void... params) {
                 // DO NOT LOG WITHIN THIS FUNCTION
 
-                // We will cursor through DB records, passing them off to MyLog and deleting them.
+                LogDatabaseHelper.restoreLogsHelper(mContext);
 
-                SQLiteDatabase db = LogDatabaseHelper.get(mContext).getDB();
+                return null;
+            }
+        }
 
-                String[] projection = {
-                        COLUMN_NAME_ID,
-                        COLUMN_NAME_LOGJSON
-                };
+        /**
+         * Does the log restore work. Should be called via restoreLogs or RestoreLogsTask.
+         * @param context
+         */
+        private static void restoreLogsHelper(Context context) {
+            // DO NOT LOG WITHIN THIS FUNCTION
 
-                String sortOrder = COLUMN_NAME_ID + " ASC";
+            // We will cursor through DB records, passing them off to MyLog and deleting them.
 
-                String limit = "1";
+            SQLiteDatabase db = LogDatabaseHelper.get(context).getDB();
 
-                // We will do repeated limit-1-query + delete transactions.
-                while (true) {
-                    db.beginTransaction();
+            String[] projection = {
+                    COLUMN_NAME_ID,
+                    COLUMN_NAME_LOGJSON
+            };
 
-                    Cursor cursor = db.query(
-                            TABLE_NAME,
-                            projection,
-                            null, null,
-                            null, null,
-                            sortOrder,
-                            limit);
+            String sortOrder = COLUMN_NAME_ID + " ASC";
 
-                    cursor.moveToFirst();
-                    if (cursor.isAfterLast()) {
-                        // No records left.
-                        cursor.close();
+            String limit = "1";
+
+            // We will do repeated limit-1-query + delete transactions.
+            while (true) {
+                db.beginTransaction();
+
+                Cursor cursor = db.query(
+                        TABLE_NAME,
+                        projection,
+                        null, null,
+                        null, null,
+                        sortOrder,
+                        limit);
+
+                cursor.moveToFirst();
+                if (cursor.isAfterLast()) {
+                    // No records left.
+                    cursor.close();
+                    db.endTransaction();
+                    break;
+                }
+
+                long recId = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_NAME_ID));
+                String logJSON = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_LOGJSON));
+
+                // Don't need the cursor any longer
+                cursor.close();
+
+                // Extract log args from JSON.
+                int stringResID, priority;
+                MyLog.Sensitivity sensitivity;
+                Object[] formatArgs;
+                Date timestamp;
+                try {
+                    JSONObject jsonObj = new JSONObject(logJSON);
+                    stringResID = jsonObj.getInt("stringResID");
+                    sensitivity = MyLog.Sensitivity.valueOf(jsonObj.getString("sensitivity"));
+                    priority = jsonObj.getInt("priority");
+                    timestamp = new Date(jsonObj.getLong("timestamp"));
+
+                    JSONArray formatArgsJSONArray = jsonObj.getJSONArray("formatArgs");
+                    formatArgs = new Object[formatArgsJSONArray.length()];
+                    for (int i = 0; i < formatArgsJSONArray.length(); i++) {
+                        formatArgs[i] = formatArgsJSONArray.get(i);
+                    }
+
+                    // Pass the log info on to MyLog.
+                    // Keep this call in the try block so it gets skipped if there's an exception above.
+                    if (!MyLog.logFromProvider(stringResID, sensitivity, priority, formatArgs, timestamp)) {
+                        // MyLog is not in a state to receive logs. Abort.
                         db.endTransaction();
                         break;
                     }
-
-                    long recId = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_NAME_ID));
-                    String logJSON = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_LOGJSON));
-
-                    // Don't need the cursor any longer
-                    cursor.close();
-
-                    // Extract log args from JSON.
-                    int stringResID, priority;
-                    MyLog.Sensitivity sensitivity;
-                    Object[] formatArgs;
-                    Date timestamp;
-                    try {
-                        JSONObject jsonObj = new JSONObject(logJSON);
-                        stringResID = jsonObj.getInt("stringResID");
-                        sensitivity = MyLog.Sensitivity.valueOf(jsonObj.getString("sensitivity"));
-                        priority = jsonObj.getInt("priority");
-                        timestamp = new Date(jsonObj.getLong("timestamp"));
-
-                        JSONArray formatArgsJSONArray = jsonObj.getJSONArray("formatArgs");
-                        formatArgs = new Object[formatArgsJSONArray.length()];
-                        for (int i = 0; i < formatArgsJSONArray.length(); i++) {
-                            formatArgs[i] = formatArgsJSONArray.get(i);
-                        }
-
-                        // Pass the log info on to MyLog.
-                        // Keep this call in the try block so it gets skipped if there's an exception above.
-                        if (!MyLog.logFromProvider(stringResID, sensitivity, priority, formatArgs, timestamp)) {
-                            // MyLog is not in a state to receive logs. Abort.
-                            db.endTransaction();
-                            break;
-                        }
-                    } catch (JSONException e) {
-                        // Carry on with the deletion from DB
-                    }
-
-                    // MyLog was in a state to receive the data, so delete the row.
-                    String selection = COLUMN_NAME_ID + " = ?";
-                    String[] selectionArgs = { String.valueOf(recId) };
-                    db.delete(TABLE_NAME, selection, selectionArgs);
-
-                    db.setTransactionSuccessful();
-                    db.endTransaction();
+                } catch (JSONException e) {
+                    // Carry on with the deletion from DB
                 }
 
-                return null;
+                // MyLog was in a state to receive the data, so delete the row.
+                String selection = COLUMN_NAME_ID + " = ?";
+                String[] selectionArgs = { String.valueOf(recId) };
+                db.delete(TABLE_NAME, selection, selectionArgs);
+
+                db.setTransactionSuccessful();
+                db.endTransaction();
             }
         }
     }

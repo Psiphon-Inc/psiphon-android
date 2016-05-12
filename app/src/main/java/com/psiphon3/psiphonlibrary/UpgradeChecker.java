@@ -126,8 +126,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         // we can proceed with downloading a newer upgrade when an outdated upgrade exists
         // on disk.
 
-        if (EmbeddedValues.UPGRADE_URL.length() == 0 ||
-            !EmbeddedValues.hasEverBeenSideLoaded(appContext)) {  // Play Store Build instances must not use custom auto-upgrade
+        if (!allowedToSelfUpgrade(context)) {
             log(context, R.string.upgrade_checker_no_upgrading, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
             return false;
         }
@@ -151,6 +150,25 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         }
 
         log(appContext, R.string.upgrade_checker_check_needed, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
+
+        return true;
+    }
+
+    /**
+     * Checks if the current app installation is allowed to upgrade itself.
+     * @param appContext The application context.
+     * @return true if the app is allowed to self-upgrade, false otherwise.
+     */
+    private static boolean allowedToSelfUpgrade(Context appContext) {
+        if (EmbeddedValues.UPGRADE_URL.length() == 0) {
+            // We don't know where to find an upgrade.
+            return false;
+        }
+        else if (!EmbeddedValues.hasEverBeenSideLoaded(appContext)) {
+            // If the app hasn't been side-loaded, then it's a Play Store build.
+            // Play Store Build instances must not use custom auto-upgrade, as it's a ToS violation.
+            return false;
+        }
 
         return true;
     }
@@ -190,6 +208,12 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
      * @param appContext The application context.
      */
     private static void createAlarm(Context appContext) {
+        if (!allowedToSelfUpgrade(appContext)) {
+            // Don't waste resources with an alarm if we can't possibly self-upgrade.
+            log(appContext, R.string.upgrade_checker_no_alarm_no_selfupgrading, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
+            return;
+        }
+
         Intent intent = new Intent(appContext, UpgradeChecker.class);
         intent.setAction(ALARM_INTENT_ACTION);
 
