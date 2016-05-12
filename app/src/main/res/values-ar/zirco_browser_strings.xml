@@ -2,8 +2,8 @@
 <resources>
   <string name="ApplicationName">متصفح سايفون </string>
   <string name="ApplicationNameUrl">سايفون - %s </string>
-  <string name="ApplicationDescription"> متصفح سايفون هو متصفح مفتوح المصدر لنظام أندرويد وهو يعتمد على المتصفح زيركو.</string>
-  <string name="AboutActivity.Title">نبذة عن</string>
+  <string name="ApplicationDescription"> متصفح سايفون هو متصفح مفتوح المصدر لنظام أندرويد وهو يرتكز على المتصفح زيركو.</string>
+  <string name="AboutActivity.Title">حول سايفون </string>
   <string name="AboutActivity.VersionText">الإصدار:</string>
   <string name="AboutActivity.LicenseText">الترخيص:</string>
   <string name="Main.MenuAddBookmark">إضافة إشارة مرجعية </string>
@@ -19,8 +19,8 @@
   <string name="Main.DownloadErrorMsg">خطأ في التنزيل: %s</string>
   <string name="Main.ToastTabSwitchMessage">صفحة %s</string>
   <string name="Main.ToastTabSwitchFullMessage"> صفحات %1$s: %2$s</string>
-  <string name="Main.VndErrorTitle">تعذر فتح عنوان url</string>
-  <string name="Main.VndErrorMessage">قد لا يكون لديك تطبيق يمكنه فتح عنوان url هذا: %s.</string>
+  <string name="Main.VndErrorTitle">تعذر فتح عنوان الرابط </string>
+  <string name="Main.VndErrorMessage">قد لا يكون لديك تطبيق يمكنه فتح عنوان الرابط هذا: %s.</string>
   <string name="BookmarksListActivity.Title">متصفح سايفون - الإشارات المرجعية</string>
   <string name="BookmarksListActivity.MenuSortMode">فرز حسب</string>
   <string name="BookmarksListActivity.MenuAddBookmark">إضافة إشارة مرجعية</string>
@@ -34,7 +34,7 @@
   <string name="EditBookmarkActivity.TitleAdd">إضافة إشارة مرجعية</string>
   <string name="EditBookmarkActivity.TitleLabel">الاسم:</string>
   <string name="EditBookmarkActivity.UrlLabel">الموقع:</string>
-  <string name="HistoryListActivity.Title">مستعرض سايفون  - المحفوظات</string>
+  <string name="HistoryListActivity.Title">متصفح سايفون  - المحفوظات</string>
   <string name="HistoryListActivity.MenuOpenInTab">فتح في صفحة جديدة</string>
   <string name="HistoryListActivity.MenuDelete">حذف</string>
   <string name="DownloadListActivity.Title">متصفح سايفون - التنزيلات</string>
@@ -51,7 +51,7 @@
   <string name="PreferencesActivity.FullScreenPreferenceTitle">كل الشاشة</string>
   <string name="PreferencesActivity.FullScreenPreferenceSummary">عرض متصفح في وضع كل الشاشة (يحتاج إلى إعادة تشغيل التطبيق).</string>
   <string name="PreferencesActivity.ShowToastOnTabSwitchPreferenceTitle">عرض تنبيه عند تبديل الصفحة</string>
-  <string name="PreferencesActivity.ShowToastOnTabSwitchPreferenceSummary">إذا تم نقره، سيظهر تنبيه صغير لفترة وجيزة عند المرور من صفحة إلى أخرى.</string>
+  <string name="PreferencesActivity.ShowToastOnTabSwitchPreferenceSummary">إذا تم تأشيره، سيظهر تنبيه صغير لفترة وجيزة عند المرور من صفحة إلى أخرى.</string>
   <string name="PreferencesActivity.BrowserSettingsCategoryTitle">إعدادات المتصفح</string>
   <string name="PreferencesActivity.HistorySizePreferenceTitle">حجم المحفوظات</string>
   <string name="PreferencesActivity.HistorySizePreferenceSummary">حجم المحفوظات بالأيام.</string>
@@ -59,7 +59,7 @@
   <string name="PreferencesActivity.EnableJavascriptPreferenceSummary">تمكين أو تعطيل جافا سيكربت.</string>
   <string name="PreferencesActivity.LoadImagesPreferenceTitle">تحميل الصور</string>
   <string name="PreferencesActivity.LoadImagesPreferenceSummary">تمكين أو تعطيل تحميل الصور.</string>
-  <string name="PreferencesActivity.PrivacyPreferenceTitle">الإعدادات الخصوصية</string>
+  <string name="PreferencesActivity.PrivacyPreferenceTitle">إعدادات الخصوصية</string>
   <string name="PreferencesActivity.PrivacyPreferenceSummary">إدارة إعدادات الخصوصية.</string>
   <string name="PreferencesActivity.EnableFormDataPreferenceTitle">حفظ بيانات النماذج</string>
   <string name="PreferencesActivity.EnableFormDataPreferenceSummary">تمكين أو تعطيل حفظ بيانات النماذج.</string>
