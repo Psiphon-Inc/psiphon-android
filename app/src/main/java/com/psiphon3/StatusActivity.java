@@ -134,7 +134,6 @@ public class StatusActivity
             // Ignore failure
         }
 
-        PsiphonData.getPsiphonData().setDownloadUpgrades(true);
         
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(StatusActivity.this);
         localBroadcastManager.registerReceiver(new ConnectionStateChangeReceiver(), new IntentFilter(TUNNEL_STOPPING));
