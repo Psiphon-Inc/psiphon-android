@@ -26,10 +26,10 @@
   <string name="ServerInterface.FailedToReadLastConnected">فشل في قراءة وقت الاتصال الأخير.</string>
   <string name="PsiphonAndroidService.HandshakeRequestFailed">فشل طلب تأكيد الاتصال.</string>
   <string name="ssh_disconnected_unexpectedly">تم قطع اتصال بروتوكل القشرة الآمنة (SSH) بشكل غير متوقع</string>
-  <string name="client_version">إصدار العميل %s</string>
+  <string name="client_version">نسخة العميل %s</string>
   <string name="no_server_entries">لا توجد خوادم كي يتم الاتصال بها</string>
   <string name="ServerInterface.InvalidRemoteServerList">قائمة السيرفر البعيد غير صالحة</string>
-  <string name="AuthenticatedDataPackage.WrongPublicKey"> تمً الدخول إلى حزمة البيانات الموثقة بمفتاح عام مختلف</string>
+  <string name="AuthenticatedDataPackage.WrongPublicKey"> تمً تأكيد حزمة البيانات الموثقة بمفتاح عام مختلف</string>
   <string name="AuthenticatedDataPackage.InvalidSignature">التوقيع المستخدم للدخول لحزمة البيانات الموثقة  غير صالح أو لا يعمل</string>
   <string name="AuthenticatedDataPackage.FailedToParseRemoteServerEntry">فشل عملية تحليل حزمة البيانات الموثقة </string>
   <string name="AuthenticatedDataPackage.MissingValue">قيم أو معلومات مفقودة في حزمة البيانات الموثقة </string>
@@ -61,16 +61,16 @@
   <string name="preferred_servers">السيرفرات المفضلة: %d</string>
   <string name="selecting_server">اختيار السيرفر ...</string>
   <string name="fetch_remote_server_list">جلب قائمة السيرفر server عن بعد... </string>
-  <string name="vpn_service_failed">فشل خدمة VPN  الشبكة الافتراضية الخاصة: %s</string>
-  <string name="vpn_service_running">تشغيل خدمة الشبكة الافتراضية الخاصة VPN</string>
-  <string name="vpn_service_stopped">توقف خدمة الشبكة الافتراضية الخاصة VPN</string>
-  <string name="vpn_service_revoked">إلغاء خدمة الشبكة الافتراضية الخاصة VPN</string>
+  <string name="vpn_service_failed">فشل خدمة الشبكة الافتراضية الخاصة: %s</string>
+  <string name="vpn_service_running">تشغيل خدمة الشبكة الافتراضية الخاصة</string>
+  <string name="vpn_service_stopped">توقف خدمة الشبكة الافتراضية الخاصة</string>
+  <string name="vpn_service_revoked">إلغاء خدمة الشبكة الافتراضية الخاصة </string>
   <string name="tun2socks_error">برنامج tun2socks: 
 %s</string>
-  <string name="tun2socks_failed">فشل عملية تشغيل الشبكة الافتراضية الخاصة VPN على بروتوكول المفتاح الآمن SOCKS</string>
-  <string name="tun2socks_running"> الشبكة الافتراضية الخاصة VPN تعمل الآن على بروتوكول المفتاح الآمن SOCKS</string>
-  <string name="tun2socks_stopped">توقف عمل  الشبكة الافتراضية الخاصة VPN على بروتوكول المفتاح الآمن SOCKS</string>
-  <string name="vpn_service_no_private_address_available">عدم توفر عنوان خاص لخدمة  الشبكة الافتراضية الخاصة VPN</string>
+  <string name="tun2socks_failed">فشل عملية تشغيل الشبكة الخاصة الافتراضية على بروتوكول المفتاح الآمن SOCKS</string>
+  <string name="tun2socks_running"> الشبكة الافتراضية الخاصة تعمل الآن على بروتوكول المفتاح الآمن SOCKS</string>
+  <string name="tun2socks_stopped">توقف عمل  الشبكة الافتراضية الخاصة على بروتوكول المفتاح الآمن SOCKS</string>
+  <string name="vpn_service_no_private_address_available">عدم توفر عنوان خاص لخدمة  الشبكة الافتراضية الخاصة</string>
   <string name="psiphon_running_generic">تشغيل...</string>
   <string name="data_transfer_bytes_sent"> نسبة البايت  المرسلة: %1$s
 (%2$.2f%%  مضغوطة )</string>
@@ -91,7 +91,7 @@
   <string name="UpgradeManager.CanNotRetrievePackageInfo">يتعذر استرجاع معلومات الحزمة للتطبيق الحالي</string>
   <string name="UpgradeManager.UpgradeFileWriteFailed">فشل كتابة ملف التحديث</string>
   <string name="UpgradeManager.UpgradeDownloadFailed">فشل تنزيل التحديث</string>
-  <string name="UpgradeManager.UpgradeDownloaded">تم تنزيل النسخة الجديدة. من الأقضل تحميل النسخة الجديدة فور.  بعد التحميل, سوف يستوجب تشغيل سايفون مرة أخرى.</string>
+  <string name="UpgradeManager.UpgradeDownloaded">تم تنزيل النسخة الجديدة. من الأقضل تحميل النسخة الجديدة فورا. بعد التحميل, سوف يستوجب تشغيل سايفون مرة أخرى.</string>
   <string name="UpgradeManager.CannotExtractUpgradePackageInfo">فشل التحديث. تعذر استخراج معلومات الحزمة من ملف التحديث.</string>
   <string name="UpgradeManager.UpgradeFileNotFound">لم يتم العثور على ملف التحديث</string>
   <string name="UpgradeManager.UpgradePromptTitle">تحديث برنامج سايفون</string>
@@ -107,14 +107,14 @@
   <string name="start">إبدأ</string>
   <string name="stop">توقف</string>
   <string name="home_tab_name">الرئيسية </string>
-  <string name="settings_tab_name">الخيارات</string>
-  <string name="statistics_tab_name">إحصائيات </string>
+  <string name="settings_tab_name">الإعدادات </string>
+  <string name="statistics_tab_name">البيانات </string>
   <string name="logs_tab_name">السجلات </string>
   <string name="socks_proxy_address">وكيل بروتوكول SOCKS المحلي يعمل بنسبة  %s</string>
   <string name="http_proxy_address">بروكسي HTTP المحلي يشتغل بنسبة %s</string>
   <string name="share_proxies_toggle">السماح لأجهزة الشبكة الأخرى بإستخدام وكلاء البروكسي المحليين</string>
   <string name="share_proxies_prompt_title">يتطلب إعادة تشغيل البرنامج</string>
-  <string name="share_proxies_prompt_message">التطبيق بحاجة ٍالى إلى إعادة التشغيل لتثبيت هذه الإعدادات </string>
+  <string name="share_proxies_prompt_message">التطبيق بحاجة ٍالى إلى إعادة تشغيل لتثبيت هذه الإعدادات </string>
   <string name="share_proxies_prompt_positive">إعادة التشغيل الآن</string>
   <string name="share_proxies_prompt_negative">إلغاء</string>
   <string name="use_proxy_settings_toggle">إتصل عبر بروكسي  HTTP </string>
@@ -131,15 +131,19 @@
   <string name="region_name_hk">هونج كونج</string>
   <string name="region_name_sg">سنغافورة</string>
   <string name="region_name_nl">هولندا</string>
-  <string name="about">حول برنامج سايفون</string>
+  <string name="about">من نحن؟</string>
   <string name="feedback">الردود </string>
   <string name="tunnel_whole_device_toggle">تمرير الجهاز بأكمله عبر النفق (يتطلب أندرويد 4.0+) </string>
+  <string name="disable_timeouts">إبطال الانقطاعات للإتصالات البطيئة </string>
   <string name="region_selector">اختر المنطقة</string>
-  <string name="network_proxy_connect_exception"> فشل عملية الاتصال مع بروكسي HTTP للشبكات: %s </string>
-  <string name="network_proxy_connect_information">جاري الإتصال عبر بروكسي  HTTP : %s</string>
+  <string name="network_proxy_connect_exception"> فشل عملية الاتصال مع شبكة  بروكسي HTTP : 
+%s </string>
+  <string name="network_proxy_connect_information">جاري الإتصال عبر بروكسي  HTTP 
+ : %s</string>
   <string name="network_proxy_connect_invalid_values">إعدادات بروكسي HTTP غير صالحة </string>
-  <string name="tunnel_whole_device_exception">جهازك لا يدعم خيار \"عدم استخدام الجذر non-root  لتمرير الجهاز بأكمله بالنفق\" </string>
-  <string name="run_polipo_failed">فشل عملية تشغيل Polipo  تطبيق   : %s</string>
+  <string name="tunnel_whole_device_exception">جهازك لا يدعم خيار \"عدم استخدام الجذر  لتمرير الجهاز بأكمله بالنفق\" </string>
+  <string name="run_polipo_failed">فشل عملية تشغيل  تطبيق  Polipo :
+ %s</string>
   <string name="wdm_force_iptables_toggle">فرض جذر وضعية \"نقل الجهاز بأكمله عبر نفق\" </string>
   <string name="http_prefix_toggle">التنكر بصورة بروتوكول HTTP </string>
   <string name="preference_notifications_title">الإعلامات </string>
@@ -147,7 +151,8 @@
   <string name="preference_notifications_with_sound_summary">إصدار صوت عند تغير حالة الإتصال </string>
   <string name="preference_notifications_with_vibrate_title">إهتزاز </string>
   <string name="preference_notifications_with_vibrate_summary">الإهتزاز عند تغير حالة الإتصال </string>
-  <string name="moreOptions">خيارات أخرى </string>
+  <string name="preference_download_wifi_only_toggle">تنزيل التحديثات على شبكة ألواي فاي فقط </string>
+  <string name="moreOptions">إعدادات أخرى </string>
   <string name="root_mode_not_supported">النمط الجذري  \"الروت مود\" غير مدعوم على هذا الإصدار من أندرويد </string>
   <string name="proxySettingsCategoryTitle">إعدادات البروكسي </string>
   <string name="custom_proxy_host_summary">اسم ألمضيف  أو عنوان بروتوكول الإنترنت لسيرفر البروكسي </string>
@@ -168,7 +173,7 @@
   <string name="upstream_proxy_error">خطأ في الأبستريم بروكسي: %s</string>
   <string name="diagnostic">تشخيص: %s</string>
   <string name="start_tunnel_failed">فشل في تشغيل النفق: %s</string>
-  <string name="tunnel_connecting">النفق يحاول الإتصال </string>
+  <string name="tunnel_connecting">النفق يحاول الإتصال... </string>
   <string name="tunnel_connected">النفق متصل </string>
   <string name="waiting">جاري الإنتظار ...</string>
 </resources>
