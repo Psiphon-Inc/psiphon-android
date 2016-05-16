@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="SubscriptionPromptTitle">Comprar assinatura sem anúncios</string>
+    <string name="SubscriptionPromptMessage">Assine agora para obter uso ilimitado sem anúncios do Psiphon Pro. Ou você pode usar a versão com anúncios gratuitamente.\n\nNo modo que inclui anúncios, você será desconectado e verá um anúncio a cada 60 minutos.\n\nObrigado por apoiar o Psiphon Pro!</string>
+    <string name="SubscriptionPromptSubscribe">Assinar</string>
+    <string name="SubscriptionPromptAdSupported">Com anúncios</string>
+</resources>
