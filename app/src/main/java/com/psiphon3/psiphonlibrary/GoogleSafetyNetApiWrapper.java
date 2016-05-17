@@ -38,29 +38,45 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.security.SecureRandom;
-
-import ca.psiphon.PsiphonTunnel;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnectionFailedListener{
     private static final int API_REQUEST_OK = 0x00;
     private static final int API_REQUEST_FAILED = 0x01;
     private static final int API_CONNECT_FAILED = 0x02;
 
+    private static GoogleSafetyNetApiWrapper mInstance;
+    private AtomicBoolean mCheckInFlight;
 
     private GoogleApiClient mGoogleApiClient;
-    private PsiphonTunnel m_tunnel;
 
-    public  GoogleSafetyNetApiWrapper(Context context, PsiphonTunnel tunnel) {
+    public Object clone() throws CloneNotSupportedException
+    {
+        throw new CloneNotSupportedException();
+    }
+
+    private  GoogleSafetyNetApiWrapper(Context context) {
         // Create the Google API Client.
         mGoogleApiClient = new GoogleApiClient.Builder(context)
                 .addApi(SafetyNet.API)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
-        m_tunnel = tunnel;
+        mCheckInFlight = new AtomicBoolean(false);
+    }
+
+    public static synchronized  GoogleSafetyNetApiWrapper getInstance(Context context) {
+        if(mInstance == null) {
+            mInstance = new GoogleSafetyNetApiWrapper(context);
+        }
+        return mInstance;
     }
 
     public void connect() {
+        if (!mCheckInFlight.compareAndSet(false, true)) {
+            return;
+        }
+
         if (!mGoogleApiClient.isConnecting() && !mGoogleApiClient.isConnected()) {
             mGoogleApiClient.connect();
         }
@@ -70,9 +86,10 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         if (mGoogleApiClient.isConnected()) {
             mGoogleApiClient.disconnect();
         }
+        mCheckInFlight.set(false);
     }
 
-    private void doSafetyNetCheck() {
+    private void  doSafetyNetCheck() {
         SecureRandom rnd = new SecureRandom();
         byte[] nonce = new byte[32];
         rnd.nextBytes(nonce);
@@ -82,6 +99,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
                     @Override
                     public void onResult(final SafetyNetApi.AttestationResult result) {
                         Status status = result.getStatus();
+
                         //JSON Web Signature format
                         final String jwsResult = result.getJwsResult();
                         if (status.isSuccess() && !TextUtils.isEmpty(jwsResult)) {
@@ -93,7 +111,6 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
                     }
                 });
     }
-
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
@@ -122,7 +139,10 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         {
             throw new RuntimeException(e);
         }
-        m_tunnel.setClientVerificationPayload(checkData.toString());
-    }
 
+        TunnelManager tunnelManager = PsiphonData.getPsiphonData().getCurrentTunnelManager();
+        tunnelManager.setClientVerificationResult(checkData.toString());
+
+        mCheckInFlight.set(false);
+    }
 }

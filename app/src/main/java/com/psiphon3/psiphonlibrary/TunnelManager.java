@@ -593,13 +593,6 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             events.signalHandshakeSuccess(m_parentService, m_isReconnect.get());
         }
 
-        //Perform safetyNet check
-        if(m_safetyNetwrapper == null) {
-            m_safetyNetwrapper = new GoogleSafetyNetApiWrapper(getContext(), m_tunnel);
-        }
-        m_safetyNetwrapper.connect();
-
-
         // Any subsequent onConnecting after this first onConnect will be a reconnect.
         m_isReconnect.set(true);
     }
@@ -646,5 +639,20 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     }
 
     @Override
+    public void onClientVerificationRequired() {
+        //Perform safetyNet check
+        m_safetyNetwrapper =  GoogleSafetyNetApiWrapper.getInstance(getContext());
+        m_safetyNetwrapper.connect();
+
+    }
+
+    @Override
     public void onExiting() {}
+
+    public void setClientVerificationResult(String payload) {
+        if (m_tunnel != null) {
+            m_tunnel.setClientVerificationPayload(payload);
+        }
+    }
+
 }
