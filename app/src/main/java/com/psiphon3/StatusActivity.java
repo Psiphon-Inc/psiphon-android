@@ -65,6 +65,7 @@ public class StatusActivity
     private boolean m_loadedSponsorTab = false;
     private IabHelper m_iabHelper = null;
     private MoPubInterstitial m_moPubInterstitial = null;
+    private boolean m_moPubInterstitialShowWhenLoaded = false;
 
     public StatusActivity()
     {
@@ -505,6 +506,8 @@ public class StatusActivity
     {
         if (!this.isFinishing())
         {
+            loadFullScreenAd();
+
             new AlertDialog.Builder(this)
             .setTitle(R.string.SubscriptionPromptTitle)
             .setMessage(R.string.SubscriptionPromptMessage)
@@ -554,7 +557,7 @@ public class StatusActivity
     
     static final String MOPUB_INTERSTITIAL_PROPERTY_ID = "";
     
-    private void showFullScreenAd()
+    private void loadFullScreenAd()
     {
         if (m_moPubInterstitial != null)
         {
@@ -575,7 +578,8 @@ public class StatusActivity
             }
             @Override
             public void onInterstitialLoaded(MoPubInterstitial interstitial) {
-                if (interstitial != null && interstitial.isReady())
+                if (interstitial != null && interstitial.isReady() &&
+                        m_moPubInterstitialShowWhenLoaded)
                 {
                     interstitial.show();
                 }
@@ -588,8 +592,24 @@ public class StatusActivity
                 PsiphonData.getPsiphonData().startFreeTrial();
             }
         });
-        
+
+        m_moPubInterstitialShowWhenLoaded = false;
         m_moPubInterstitial.load();
+    }
+
+    private void showFullScreenAd()
+    {
+        if (m_moPubInterstitial != null)
+        {
+            if (m_moPubInterstitial.isReady())
+            {
+                m_moPubInterstitial.show();
+            }
+            else
+            {
+                m_moPubInterstitialShowWhenLoaded = true;
+            }
+        }
     }
     
     private void deInitAds()
