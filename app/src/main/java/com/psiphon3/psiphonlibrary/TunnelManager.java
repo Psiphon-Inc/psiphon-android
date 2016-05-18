@@ -19,6 +19,26 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.net.VpnService;
+import android.net.VpnService.Builder;
+import android.os.Handler;
+import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
+
+import com.psiphon3.R;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,27 +49,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.app.Service;
-import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
-import android.net.VpnService;
-import android.net.VpnService.Builder;
-import android.preference.PreferenceManager;
-import android.support.v4.app.NotificationCompat;
-
 import ca.psiphon.PsiphonTunnel;
-
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
-
-import com.psiphon3.R;
 
 public class TunnelManager implements PsiphonTunnel.HostService {
 
@@ -71,6 +71,9 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     private AtomicBoolean m_isStopping;
     private PsiphonTunnel m_tunnel = null;
     private String m_lastUpstreamProxyErrorMessage;
+    private Handler m_Handler = new Handler();
+    private GoogleSafetyNetApiWrapper m_safetyNetwrapper;
+
 
     public TunnelManager(Service parentService) {
         m_parentService = parentService;
@@ -137,6 +140,10 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         m_signalledStop = true;
         if (m_tunnelThreadStopSignal != null) {
             m_tunnelThreadStopSignal.countDown();
+        }
+
+        if (m_safetyNetwrapper != null) {
+            m_safetyNetwrapper.disconnect();
         }
     }
 
@@ -634,5 +641,23 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     }
 
     @Override
+    public void onClientVerificationRequired() {
+        // Perform safetyNet check
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                m_safetyNetwrapper =  GoogleSafetyNetApiWrapper.getInstance(getContext());
+                m_safetyNetwrapper.connect();
+            }
+        });
+    }
+
+    @Override
     public void onExiting() {}
+
+    public void setClientVerificationResult(String payload) {
+        if (m_tunnel != null) {
+            m_tunnel.setClientVerificationPayload(payload);
+        }
+    }
 }
