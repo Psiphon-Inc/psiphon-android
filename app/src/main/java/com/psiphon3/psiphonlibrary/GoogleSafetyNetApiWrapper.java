@@ -47,8 +47,8 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
 
     private static GoogleSafetyNetApiWrapper mInstance;
     private AtomicBoolean mCheckInFlight;
-
     private GoogleApiClient mGoogleApiClient;
+    private String mLastPayload;
 
     public Object clone() throws CloneNotSupportedException
     {
@@ -74,6 +74,11 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
 
     public void connect() {
         if (!mCheckInFlight.compareAndSet(false, true)) {
+            return;
+        }
+
+        if(!TextUtils.isEmpty(mLastPayload)) {
+            setPayload(mLastPayload);
             return;
         }
 
@@ -139,10 +144,15 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         {
             throw new RuntimeException(e);
         }
+        setPayload(checkData.toString());
+    }
 
+    private void setPayload(String payload) {
+        mLastPayload = payload;
         TunnelManager tunnelManager = PsiphonData.getPsiphonData().getCurrentTunnelManager();
-        tunnelManager.setClientVerificationResult(checkData.toString());
-
+        if(tunnelManager != null) {
+            tunnelManager.setClientVerificationResult(payload);
+        }
         mCheckInFlight.set(false);
     }
 }

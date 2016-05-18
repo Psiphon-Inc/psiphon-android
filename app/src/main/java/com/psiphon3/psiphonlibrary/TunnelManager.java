@@ -28,6 +28,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.net.VpnService;
 import android.net.VpnService.Builder;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 
@@ -70,6 +71,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     private AtomicBoolean m_isStopping;
     private PsiphonTunnel m_tunnel = null;
     private String m_lastUpstreamProxyErrorMessage;
+    private Handler m_Handler = new Handler();
     private GoogleSafetyNetApiWrapper m_safetyNetwrapper;
 
 
@@ -640,10 +642,14 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
     @Override
     public void onClientVerificationRequired() {
-        //Perform safetyNet check
-        m_safetyNetwrapper =  GoogleSafetyNetApiWrapper.getInstance(getContext());
-        m_safetyNetwrapper.connect();
-
+        // Perform safetyNet check
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                m_safetyNetwrapper =  GoogleSafetyNetApiWrapper.getInstance(getContext());
+                m_safetyNetwrapper.connect();
+            }
+        });
     }
 
     @Override
@@ -654,5 +660,4 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             m_tunnel.setClientVerificationPayload(payload);
         }
     }
-
 }
