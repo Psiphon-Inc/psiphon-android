@@ -96,10 +96,10 @@ public class Events implements com.psiphon3.psiphonlibrary.IEvents
         localBroadcastManager.sendBroadcast(intent);
     }
     
-    public void signalDisconnectRaiseActivityAutostart(Context context)
+    public void signalDisconnectRaiseActivity(Context context)
     {
         Intent intent = new Intent(
-                MainBase.TabbedActivityBase.UNEXPECTED_DISCONNECT_RESTART,
+                MainBase.TabbedActivityBase.UNEXPECTED_DISCONNECT,
                 null,
                 context,
                 com.psiphon3.StatusActivity.class);

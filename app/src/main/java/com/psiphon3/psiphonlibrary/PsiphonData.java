@@ -942,17 +942,29 @@ public class PsiphonData
     {
         m_hasValidSubscription = true;
     }
-    
+
     public synchronized boolean getHasValidSubscription()
+    {
+        return m_hasValidSubscription;
+    }
+
+    public synchronized boolean getHasValidSubscriptionOrFreeTime()
     {
         return m_hasValidSubscription ||
                 (getFreeTrialActive() && getFreeTrialRemainingMillis() > 0);
     }
     
-    public synchronized void startFreeTrial()
+    public synchronized void startFreeTrial(int minutes)
     {
         m_freeTrialActive = true;
-        m_freeTrialExpiresAt = System.currentTimeMillis() + 60 * 60 * 1000;
+        if (getFreeTrialRemainingMillis() > 0)
+        {
+            m_freeTrialExpiresAt += minutes * 60 * 1000;
+        }
+        else
+        {
+            m_freeTrialExpiresAt = System.currentTimeMillis() + minutes * 60 * 1000;
+        }
     }
     
     public synchronized void endFreeTrial()
