@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="SubscriptionPromptTitle">Reklamsız abonelik satın alın</string>
+    <string name="SubscriptionPromptMessage">Psiphon Pro\'nun reklam içermeyen sınırsız kullanımı için hemen abone olun. Ya da reklam destekli Psiphon Pro\'yu ücretsiz olarak kullanabilirsiniz.\n\nReklam destekli modda her 60 dakikada bir bağlantınız kesilecek ve bir reklam gösterilecektir.\n\nPsiphon\'ı desteklediğiniz için teşekkürler!</string>
+    <string name="SubscriptionPromptSubscribe">Abone olun</string>
+    <string name="SubscriptionPromptAdSupported">Reklam Destekli</string>
+</resources>
