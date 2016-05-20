@@ -137,8 +137,8 @@ public class StatusActivity
     @Override
     protected void onResume()
     {
-        super.onResume();
         startIab();
+        super.onResume();
     }
 
     private void loadSponsorTab(boolean freshConnect)
@@ -520,9 +520,19 @@ public class StatusActivity
     };
     private int freeTrialCountdown;
 
+    // updateSubscriptionAndAdOptions() gets called once in onCreate().
+    // Don't show these options during the first few calls, to allow time for IAB to check
+    // for a valid subscription.
+    private int updateSubscriptionAndAdOptionsFlickerHackCountdown = 3;
     @Override
     protected void updateSubscriptionAndAdOptions(boolean show)
     {
+        if (updateSubscriptionAndAdOptionsFlickerHackCountdown > 0)
+        {
+            show = false;
+            updateSubscriptionAndAdOptionsFlickerHackCountdown--;
+        }
+
         if (PsiphonData.getPsiphonData().getHasValidSubscription())
         {
             show = false;
