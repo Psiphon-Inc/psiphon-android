@@ -23,6 +23,7 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
     private Supersonic mMediationAgent;
     private  String mPlacement;
     private WeakReference<Activity> mWeakActivity;
+    private boolean mIsVideoAvailable = false;
 
     private AsyncTask mGAIDRequestTask;
 
@@ -34,6 +35,7 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
         mWeakActivity = new WeakReference<Activity>(activity);
         mMediationAgent = SupersonicFactory.getInstance();
         mMediationAgent.setRewardedVideoListener(SupersonicRewardedVideoWrapper.this);
+
         initialize();
     }
 
@@ -46,6 +48,7 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
             mGAIDRequestTask.cancel(false);
         }
         mGAIDRequestTask = new UserIdRequestTask().execute();
+        mIsVideoAvailable = mMediationAgent.isRewardedVideoAvailable();
     }
 
     public void setRewardedVideoListener(RewardedVideoListener listener) {
@@ -59,7 +62,7 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
     }
 
     public boolean isRewardedVideoAvailable() {
-        return (mMediationAgent != null && mMediationAgent.isRewardedVideoAvailable());
+        return mMediationAgent != null && mIsVideoAvailable;
     }
 
     @Override
@@ -84,7 +87,7 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
 
     @Override
     public void onVideoAvailabilityChanged(boolean b) {
-
+        mIsVideoAvailable = b;
     }
 
     @Override
