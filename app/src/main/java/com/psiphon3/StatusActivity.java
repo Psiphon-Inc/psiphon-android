@@ -43,11 +43,15 @@ import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonData;
+import com.psiphon3.psiphonlibrary.SupersonicRewardedVideoWrapper;
 import com.psiphon3.subscription.R;
 import com.psiphon3.util.IabHelper;
 import com.psiphon3.util.IabResult;
 import com.psiphon3.util.Inventory;
 import com.psiphon3.util.Purchase;
+import com.supersonic.mediationsdk.logger.SupersonicError;
+import com.supersonic.mediationsdk.model.Placement;
+import com.supersonic.mediationsdk.sdk.RewardedVideoListener;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -58,7 +62,7 @@ import java.util.List;
 
 
 public class StatusActivity
-    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
+    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase implements RewardedVideoListener
 {
     public static final String BANNER_FILE_NAME = "bannerImage";
 
@@ -68,6 +72,7 @@ public class StatusActivity
     private IabHelper m_iabHelper = null;
     private MoPubInterstitial m_moPubInterstitial = null;
     private boolean m_moPubInterstitialShowWhenLoaded = false;
+    private SupersonicRewardedVideoWrapper m_supersonicWrapper;
 
     public StatusActivity()
     {
@@ -84,9 +89,17 @@ public class StatusActivity
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
 
+
+
         // NOTE: super class assumes m_tabHost is initialized in its onCreate
 
         super.onCreate(savedInstanceState);
+
+        if(m_supersonicWrapper == null) {
+            m_supersonicWrapper = new SupersonicRewardedVideoWrapper(this, "PsiphonProVideoPlacement");
+        }
+        m_supersonicWrapper.setRewardedVideoListener(this);
+        findViewById(R.id.watchRewardedVideoButton).setEnabled(m_supersonicWrapper.isRewardedVideoAvailable());
 
         if (m_firstRun)
         {
@@ -138,6 +151,7 @@ public class StatusActivity
     protected void onResume()
     {
         super.onResume();
+        m_supersonicWrapper.onResume();
         startIab();
     }
 
@@ -212,7 +226,8 @@ public class StatusActivity
         {
             doToggle();
         }
-        super.onPause();   
+        m_supersonicWrapper.onPause();
+        super.onPause();
     }
     
     @Override
@@ -220,6 +235,7 @@ public class StatusActivity
     {
         deInitAds();
         delayHandler.removeCallbacks(enableFreeTrial);
+        m_supersonicWrapper.onDestroy();
         super.onDestroy();
     }
 
@@ -558,7 +574,9 @@ public class StatusActivity
     @Override
     public void onWatchRewardedVideoButtonClick(View v)
     {
-        PsiphonData.getPsiphonData().startFreeTrial(VIDEO_REWARD_MINUTES);
+        if(m_supersonicWrapper != null) {
+            m_supersonicWrapper.playVideo();
+        }
     }
 
     synchronized
@@ -654,5 +672,54 @@ public class StatusActivity
             m_moPubInterstitial.destroy();
         }
         m_moPubInterstitial = null;
+    }
+
+    @Override
+    public void onRewardedVideoInitSuccess() {
+
+    }
+
+    @Override
+    public void onRewardedVideoInitFail(SupersonicError supersonicError) {
+
+    }
+
+    @Override
+    public void onRewardedVideoAdOpened() {
+
+    }
+
+    @Override
+    public void onRewardedVideoAdClosed() {
+
+    }
+
+    @Override
+    public void onVideoAvailabilityChanged(final boolean b) {
+        this.runOnUiThread(new Runnable() {
+            public void run() {
+                findViewById(R.id.watchRewardedVideoButton).setEnabled(b);
+            }
+        });
+    }
+
+    @Override
+    public void onVideoStart() {
+
+    }
+
+    @Override
+    public void onVideoEnd() {
+
+    }
+
+    @Override
+    public void onRewardedVideoAdRewarded(Placement placement) {
+        PsiphonData.getPsiphonData().startFreeTrial(VIDEO_REWARD_MINUTES);
+    }
+
+    @Override
+    public void onRewardedVideoShowFail(SupersonicError supersonicError) {
+
     }
 }
