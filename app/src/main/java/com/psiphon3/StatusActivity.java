@@ -49,9 +49,6 @@ import com.psiphon3.util.IabHelper;
 import com.psiphon3.util.IabResult;
 import com.psiphon3.util.Inventory;
 import com.psiphon3.util.Purchase;
-import com.supersonic.mediationsdk.logger.SupersonicError;
-import com.supersonic.mediationsdk.model.Placement;
-import com.supersonic.mediationsdk.sdk.RewardedVideoListener;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -62,7 +59,7 @@ import java.util.List;
 
 
 public class StatusActivity
-    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase implements RewardedVideoListener
+    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
 {
     public static final String BANNER_FILE_NAME = "bannerImage";
 
@@ -94,12 +91,6 @@ public class StatusActivity
         // NOTE: super class assumes m_tabHost is initialized in its onCreate
 
         super.onCreate(savedInstanceState);
-
-        if(m_supersonicWrapper == null) {
-            m_supersonicWrapper = new SupersonicRewardedVideoWrapper(this, "PsiphonProVideoPlacement");
-        }
-        m_supersonicWrapper.setRewardedVideoListener(this);
-        findViewById(R.id.watchRewardedVideoButton).setEnabled(m_supersonicWrapper.isRewardedVideoAvailable());
 
         if (m_firstRun)
         {
@@ -152,7 +143,9 @@ public class StatusActivity
     {
         startIab();
         super.onResume();
-        m_supersonicWrapper.onResume();
+        if(m_supersonicWrapper != null) {
+            m_supersonicWrapper.onResume();
+        }
     }
 
     private void loadSponsorTab(boolean freshConnect)
@@ -226,7 +219,9 @@ public class StatusActivity
         {
             doToggle();
         }
-        m_supersonicWrapper.onPause();
+        if(m_supersonicWrapper != null) {
+            m_supersonicWrapper.onPause();
+        }
         super.onPause();
     }
     
@@ -235,7 +230,9 @@ public class StatusActivity
     {
         deInitAds();
         delayHandler.removeCallbacks(enableFreeTrial);
-        m_supersonicWrapper.onDestroy();
+        if(m_supersonicWrapper != null) {
+            m_supersonicWrapper.onDestroy();
+        }
         super.onDestroy();
     }
 
@@ -514,7 +511,6 @@ public class StatusActivity
     }
 
     static final int INTERSTITIAL_REWARD_MINUTES = 60;
-    static final int VIDEO_REWARD_MINUTES = 100;
     private Handler delayHandler = new Handler();
     private Runnable enableFreeTrial = new Runnable()
     {
@@ -572,6 +568,12 @@ public class StatusActivity
         findViewById(R.id.subscriptionPromptMessage).setVisibility(show ? View.VISIBLE : View.GONE);
         findViewById(R.id.subscribeButton).setVisibility(show ? View.VISIBLE : View.GONE);
         findViewById(R.id.watchRewardedVideoButton).setVisibility(show ? View.VISIBLE : View.GONE);
+
+        if(m_supersonicWrapper == null) {
+            m_supersonicWrapper = new SupersonicRewardedVideoWrapper(this, "PsiphonProVideoPlacement");
+        }
+        findViewById(R.id.watchRewardedVideoButton).setEnabled(m_supersonicWrapper.isRewardedVideoAvailable());
+
         textViewRemainingMinutes.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
@@ -682,54 +684,5 @@ public class StatusActivity
             m_moPubInterstitial.destroy();
         }
         m_moPubInterstitial = null;
-    }
-
-    @Override
-    public void onRewardedVideoInitSuccess() {
-
-    }
-
-    @Override
-    public void onRewardedVideoInitFail(SupersonicError supersonicError) {
-
-    }
-
-    @Override
-    public void onRewardedVideoAdOpened() {
-
-    }
-
-    @Override
-    public void onRewardedVideoAdClosed() {
-
-    }
-
-    @Override
-    public void onVideoAvailabilityChanged(final boolean b) {
-        this.runOnUiThread(new Runnable() {
-            public void run() {
-                findViewById(R.id.watchRewardedVideoButton).setEnabled(b);
-            }
-        });
-    }
-
-    @Override
-    public void onVideoStart() {
-
-    }
-
-    @Override
-    public void onVideoEnd() {
-
-    }
-
-    @Override
-    public void onRewardedVideoAdRewarded(Placement placement) {
-        PsiphonData.getPsiphonData().startFreeTrial(VIDEO_REWARD_MINUTES);
-    }
-
-    @Override
-    public void onRewardedVideoShowFail(SupersonicError supersonicError) {
-
     }
 }

@@ -6,6 +6,8 @@ import android.os.AsyncTask;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.supersonic.mediationsdk.logger.SupersonicError;
+import com.supersonic.mediationsdk.model.Placement;
 import com.supersonic.mediationsdk.sdk.RewardedVideoListener;
 import com.supersonic.mediationsdk.sdk.Supersonic;
 import com.supersonic.mediationsdk.sdk.SupersonicFactory;
@@ -13,7 +15,10 @@ import com.supersonic.mediationsdk.sdk.SupersonicFactory;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 
-public class SupersonicRewardedVideoWrapper {
+public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
+
+    static final int VIDEO_REWARD_MINUTES = 100;
+
     private boolean mIsInitialized = false;
     private Supersonic mMediationAgent;
     private  String mPlacement;
@@ -28,7 +33,7 @@ public class SupersonicRewardedVideoWrapper {
         mPlacement = placement;
         mWeakActivity = new WeakReference<Activity>(activity);
         mMediationAgent = SupersonicFactory.getInstance();
-//        mMediationAgent.setRewardedVideoListener(SupersonicRewardedVideoWrapper.this);
+        mMediationAgent.setRewardedVideoListener(SupersonicRewardedVideoWrapper.this);
         initialize();
     }
 
@@ -55,6 +60,51 @@ public class SupersonicRewardedVideoWrapper {
 
     public boolean isRewardedVideoAvailable() {
         return (mMediationAgent != null && mMediationAgent.isRewardedVideoAvailable());
+    }
+
+    @Override
+    public void onRewardedVideoInitSuccess() {
+
+    }
+
+    @Override
+    public void onRewardedVideoInitFail(SupersonicError supersonicError) {
+
+    }
+
+    @Override
+    public void onRewardedVideoAdOpened() {
+
+    }
+
+    @Override
+    public void onRewardedVideoAdClosed() {
+
+    }
+
+    @Override
+    public void onVideoAvailabilityChanged(boolean b) {
+
+    }
+
+    @Override
+    public void onVideoStart() {
+
+    }
+
+    @Override
+    public void onVideoEnd() {
+
+    }
+
+    @Override
+    public void onRewardedVideoAdRewarded(Placement placement) {
+        PsiphonData.getPsiphonData().startFreeTrial(VIDEO_REWARD_MINUTES);
+    }
+
+    @Override
+    public void onRewardedVideoShowFail(SupersonicError supersonicError) {
+
     }
 
     private final class UserIdRequestTask extends AsyncTask<Void, Void, String> {
