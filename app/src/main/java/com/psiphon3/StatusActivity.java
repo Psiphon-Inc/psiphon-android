@@ -19,13 +19,6 @@
 
 package com.psiphon3;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -55,6 +48,13 @@ import com.psiphon3.util.IabHelper;
 import com.psiphon3.util.IabResult;
 import com.psiphon3.util.Inventory;
 import com.psiphon3.util.Purchase;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
 public class StatusActivity
