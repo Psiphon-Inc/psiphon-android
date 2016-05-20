@@ -27,7 +27,7 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
     private AsyncTask mGAIDRequestTask;
 
     //Set the Application Key - can be retrieved from Supersonic platform
-    private final String mAppKey = "49a684d5";
+    private final String mAppKey = "49a64b4d";
 
     public SupersonicRewardedVideoWrapper(Activity activity, String placement) {
         mPlacement = placement;

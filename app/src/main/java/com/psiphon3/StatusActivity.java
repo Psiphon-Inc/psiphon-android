@@ -563,16 +563,17 @@ public class StatusActivity
                     getResources().getString(R.string.FreeTrialRemainingTime),
                     DateUtils.formatElapsedTime(
                     PsiphonData.getPsiphonData().getFreeTrialRemainingMillis() / 1000)));
+
+            // Initialize Supersonic video ads
+            if (m_supersonicWrapper == null) {
+                m_supersonicWrapper = new SupersonicRewardedVideoWrapper(this, "PsiphonProVideoPlacement");
+            }
+            findViewById(R.id.watchRewardedVideoButton).setEnabled(m_supersonicWrapper.isRewardedVideoAvailable());
         }
 
         findViewById(R.id.subscriptionPromptMessage).setVisibility(show ? View.VISIBLE : View.GONE);
         findViewById(R.id.subscribeButton).setVisibility(show ? View.VISIBLE : View.GONE);
         findViewById(R.id.watchRewardedVideoButton).setVisibility(show ? View.VISIBLE : View.GONE);
-
-        if(m_supersonicWrapper == null) {
-            m_supersonicWrapper = new SupersonicRewardedVideoWrapper(this, "PsiphonProVideoPlacement");
-        }
-        findViewById(R.id.watchRewardedVideoButton).setEnabled(m_supersonicWrapper.isRewardedVideoAvailable());
 
         textViewRemainingMinutes.setVisibility(show ? View.VISIBLE : View.GONE);
     }
