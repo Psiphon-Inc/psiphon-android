@@ -257,7 +257,7 @@ public class StatusActivity
     @Override
     protected void startUp()
     {
-        if (PsiphonData.getPsiphonData().getHasValidSubscription())
+        if (PsiphonData.getPsiphonData().getHasValidSubscriptionOrFreeTime())
         {
             doStartUp();
         }
@@ -555,7 +555,8 @@ public class StatusActivity
             show = false;
         }
 
-        if (show && m_moPubInterstitial == null)
+        if (show && !PsiphonData.getPsiphonData().getHasValidSubscriptionOrFreeTime() &&
+                m_moPubInterstitial == null)
         {
             loadFullScreenAd();
         }
@@ -638,10 +639,7 @@ public class StatusActivity
             }
             @Override
             public void onInterstitialDismissed(MoPubInterstitial arg0) {
-                if (PsiphonData.getPsiphonData().getHasValidSubscriptionOrFreeTime())
-                {
-                    doStartUp();
-                }
+                startUp();
             }
             @Override
             public void onInterstitialFailed(MoPubInterstitial interstitial,
