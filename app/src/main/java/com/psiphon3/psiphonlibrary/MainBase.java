@@ -1027,7 +1027,7 @@ public abstract class MainBase {
             m_toggleButton.setEnabled(true);
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
             m_disableTimeoutsToggle.setEnabled(true);
-            m_regionSelector.setEnabled(true);
+            m_regionSelector.setEnabled(true && PsiphonData.getPsiphonData().getHasValidSubscription());
             m_moreOptionsButton.setEnabled(true);
         }
 

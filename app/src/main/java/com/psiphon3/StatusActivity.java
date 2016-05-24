@@ -42,6 +42,7 @@ import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.SupersonicRewardedVideoWrapper;
 import com.psiphon3.subscription.R;
@@ -411,6 +412,8 @@ public class StatusActivity
             }
 
             PsiphonData.getPsiphonData().setHasValidSubscription(false);
+
+            updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
 
             if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected() &&
                     !PsiphonData.getPsiphonData().getHasValidSubscriptionOrFreeTime())
