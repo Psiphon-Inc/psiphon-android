@@ -256,7 +256,7 @@ public class StatusActivity
     @Override
     protected void startUp()
     {
-        if (PsiphonData.getPsiphonData().getHasValidSubscriptionOrFreeTime())
+        if (PsiphonData.getPsiphonData().getHasValidSubscription())
         {
             doStartUp();
         }
@@ -636,7 +636,10 @@ public class StatusActivity
             }
             @Override
             public void onInterstitialDismissed(MoPubInterstitial arg0) {
-                startUp();
+                if (PsiphonData.getPsiphonData().getHasValidSubscriptionOrFreeTime())
+                {
+                    doStartUp();
+                }
             }
             @Override
             public void onInterstitialFailed(MoPubInterstitial interstitial,
