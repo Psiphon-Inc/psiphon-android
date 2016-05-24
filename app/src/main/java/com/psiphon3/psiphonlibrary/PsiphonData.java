@@ -938,9 +938,9 @@ public class PsiphonData
         return copy;
     }
     
-    public synchronized void setHasValidSubscription()
+    public synchronized void setHasValidSubscription(boolean valid)
     {
-        m_hasValidSubscription = true;
+        m_hasValidSubscription = valid;
     }
 
     public synchronized boolean getHasValidSubscription()

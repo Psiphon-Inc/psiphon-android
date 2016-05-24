@@ -410,6 +410,8 @@ public class StatusActivity
                 }
             }
 
+            PsiphonData.getPsiphonData().setHasValidSubscription(false);
+
             if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected() &&
                     !PsiphonData.getPsiphonData().getHasValidSubscriptionOrFreeTime())
             {
@@ -469,7 +471,7 @@ public class StatusActivity
     
     private void proceedWithValidSubscription()
     {
-        PsiphonData.getPsiphonData().setHasValidSubscription();
+        PsiphonData.getPsiphonData().setHasValidSubscription(true);
 
         // Auto-start on app first run
         if (m_firstRun)
