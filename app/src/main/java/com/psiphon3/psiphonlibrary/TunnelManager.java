@@ -210,7 +210,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                     m_parentService.getResources().getString(R.string.FreeTrialRemainingTime),
                     DateUtils.formatElapsedTime(secondsLeft));
 
-            notificationText += " - " + timeLeftText;
+            notificationText += "\n" + timeLeftText;
             
             if (ticker == null && secondsLeft <= 10 * 60) {
                 ticker = m_parentService.getText(R.string.app_name_psiphon_pro) + " " + timeLeftText;
