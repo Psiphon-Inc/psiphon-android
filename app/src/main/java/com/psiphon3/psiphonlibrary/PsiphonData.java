@@ -974,7 +974,7 @@ public class PsiphonData
 
     public synchronized boolean getFreeTrialActive()
     {
-        return m_freeTrialActive;
+        return m_freeTrialActive && !getHasValidSubscription();
     }
 
     public synchronized long getFreeTrialRemainingMillis()

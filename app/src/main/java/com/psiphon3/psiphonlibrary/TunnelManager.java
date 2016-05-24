@@ -45,6 +45,8 @@ import android.net.VpnService.Builder;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
+import android.text.format.DateUtils;
+
 import ca.psiphon.PsiphonTunnel;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -201,15 +203,17 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         String notificationText = m_parentService.getText(contentTextID).toString();
         
         if (PsiphonData.getPsiphonData().getFreeTrialActive()) {
-            long minutesLeft = PsiphonData.getPsiphonData().getFreeTrialRemainingMillis() / 1000 / 60;
-            String minutesLeftText = " (" + minutesLeft + " minute" +
-                    (minutesLeft == 1 ? "" : "s") + " remaining)";
 
-            notificationTitle += " (AD SUPPORTED)";
-            notificationText += minutesLeftText;
+            long secondsLeft = PsiphonData.getPsiphonData().getFreeTrialRemainingMillis() / 1000;
+
+            String timeLeftText = String.format(
+                    m_parentService.getResources().getString(R.string.FreeTrialRemainingTime),
+                    DateUtils.formatElapsedTime(secondsLeft));
+
+            notificationText += " - " + timeLeftText;
             
-            if (ticker == null && minutesLeft <= 10) {
-                ticker = m_parentService.getText(R.string.app_name_psiphon_pro) + " " + notificationText;
+            if (ticker == null && secondsLeft <= 10 * 60) {
+                ticker = m_parentService.getText(R.string.app_name_psiphon_pro) + " " + timeLeftText;
             }
         }
         
