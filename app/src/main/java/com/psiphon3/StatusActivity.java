@@ -555,8 +555,7 @@ public class StatusActivity
             show = false;
         }
 
-        if (show && !PsiphonData.getPsiphonData().getHasValidSubscriptionOrFreeTime() &&
-                m_moPubInterstitial == null)
+        if (show && m_moPubInterstitial == null)
         {
             loadFullScreenAd();
         }
