@@ -118,7 +118,7 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
             if (activity != null) {
                 try {
                     String GAID = AdvertisingIdClient.getAdvertisingIdInfo(activity).getId();
-                    return new String("unique_user_id");
+                    return GAID;
                 } catch (final IOException e) {
 
                 } catch (final GooglePlayServicesNotAvailableException e) {
