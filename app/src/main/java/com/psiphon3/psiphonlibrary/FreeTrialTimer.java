@@ -21,6 +21,7 @@ package com.psiphon3.psiphonlibrary;
 
 import android.content.Context;
 import android.provider.Settings;
+import android.util.Log;
 
 import com.psiphon3.util.AESObfuscator;
 import com.psiphon3.util.Obfuscator;
@@ -53,7 +54,10 @@ public class FreeTrialTimer {
         FileInputStream in;
         try {
             in = context.openFileInput(FREE_TRIAL_TIME_FILENAME);
-            return getRemainingTimeSeconds(context, in);
+            long remainingSeconds = getRemainingTimeSeconds(context, in);
+            Log.d("Psiphon-Pro", "got remainingSeconds from non-locked file: " + remainingSeconds);
+            return  remainingSeconds;
+
         } catch (FileNotFoundException e) {
 
         }
@@ -92,7 +96,7 @@ public class FreeTrialTimer {
         return remainingSeconds;
     }
 
-    public static void addTimeSync(Context context, long seconds) {
+    public static void addTimeSyncSeconds(Context context, long seconds) {
         FileOutputStream out = null;
         FileInputStream in = null;
         java.nio.channels.FileLock lock = null;
@@ -101,8 +105,6 @@ public class FreeTrialTimer {
 
         String deviceId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
         Obfuscator obfuscator = new AESObfuscator(SALT, context.getPackageName(), deviceId);
-
-
 
         try {
             String filePath = context.getFilesDir() + File.separator + FREE_TRIAL_TIME_FILENAME;
@@ -119,6 +121,11 @@ public class FreeTrialTimer {
             remainingSeconds = getRemainingTimeSeconds(context, in);
             remainingSeconds += seconds;
             remainingSeconds = Math.max(0, remainingSeconds);
+            Log.d("Psiphon-Pro", "got remainingSeconds from locked file: " + remainingSeconds);
+
+
+            // Overwrite file
+            raf.setLength(0);
 
             String lineWrite = obfuscator.obfuscate(String.valueOf(remainingSeconds), KEY_FREE_TRIAL_TIME_SECONDS);
 

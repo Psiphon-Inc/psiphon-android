@@ -105,7 +105,7 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
     public void onRewardedVideoAdRewarded(Placement placement) {
         Activity activity = SupersonicRewardedVideoWrapper.this.mWeakActivity.get();
         Log.d("Psiphon-Pro", "onRewardedVideoAdRewarded");
-        FreeTrialTimer.addTimeSync(activity, VIDEO_REWARD_MINUTES * 60);
+        FreeTrialTimer.addTimeSyncSeconds(activity, VIDEO_REWARD_MINUTES * 60);
     }
 
     @Override

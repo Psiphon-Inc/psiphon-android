@@ -324,7 +324,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         @Override
         public void run() {
             long timeSinceLastCheckMillis = System.currentTimeMillis() - lastChecktimeMillis;
-            FreeTrialTimer.addTimeSync(m_parentService, -timeSinceLastCheckMillis);
+            FreeTrialTimer.addTimeSyncSeconds(m_parentService, (long) -Math.floor(timeSinceLastCheckMillis/1000));
             if (FreeTrialTimer.getRemainingTimeSeconds(m_parentService) > 0) {
                 doNotify(false);
                 lastChecktimeMillis = System.currentTimeMillis();

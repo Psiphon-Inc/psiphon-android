@@ -955,7 +955,7 @@ public class PsiphonData
     public synchronized void startFreeTrial(Context context, int minutes)
     {
         m_freeTrialActive = true;
-        FreeTrialTimer.addTimeSync(context, minutes * 60);
+        FreeTrialTimer.addTimeSyncSeconds(context, minutes * 60);
     }
     
     public synchronized void endFreeTrial()
