@@ -19,20 +19,6 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -47,10 +33,24 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.text.format.DateUtils;
 
-import ca.psiphon.PsiphonTunnel;
-
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.R;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import ca.psiphon.PsiphonTunnel;
 
 public class TunnelManager implements PsiphonTunnel.HostService {
 
@@ -204,7 +204,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         
         if (PsiphonData.getPsiphonData().getFreeTrialActive()) {
 
-            long secondsLeft = PsiphonData.getPsiphonData().getFreeTrialRemainingMillis() / 1000;
+            long secondsLeft = FreeTrialTimer.getRemainingTimeSeconds(m_parentService);
 
             String timeLeftText = String.format(
                     m_parentService.getResources().getString(R.string.FreeTrialRemainingTime),
@@ -318,12 +318,16 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     }
 
     private Handler checkFreeTrialDelayHandler = new Handler();
-    private final long checkFreeTrialInterval = 30 * 1000; 
+    private final long checkFreeTrialInterval = 30 * 1000;
+    private long lastChecktimeMillis = 0;
     private Runnable checkFreeTrial = new Runnable() {
         @Override
         public void run() {
-            if (PsiphonData.getPsiphonData().getFreeTrialRemainingMillis() > 0) {
+            long timeSinceLastCheckMillis = System.currentTimeMillis() - lastChecktimeMillis;
+            FreeTrialTimer.addTimeSync(m_parentService, -timeSinceLastCheckMillis);
+            if (FreeTrialTimer.getRemainingTimeSeconds(m_parentService) > 0) {
                 doNotify(false);
+                lastChecktimeMillis = System.currentTimeMillis();
                 checkFreeTrialDelayHandler.postDelayed(this, checkFreeTrialInterval);
             } else {
                 signalStopService();
@@ -335,7 +339,8 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             }
         }
     };
-    
+
+
     private void runTunnel() {
 
         Utils.initializeSecureRandom();
@@ -381,6 +386,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             m_tunnel.startTunneling(getServerEntries(m_parentService));
 
             if (PsiphonData.getPsiphonData().getFreeTrialActive()) {
+                lastChecktimeMillis = System.currentTimeMillis();
                 checkFreeTrialDelayHandler.postDelayed(checkFreeTrial, checkFreeTrialInterval);
             }
                 
