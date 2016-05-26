@@ -19,9 +19,6 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import com.psiphon3.subscription.R;
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
-
 import android.app.AlarmManager;
 import android.app.IntentService;
 import android.app.PendingIntent;
@@ -33,6 +30,9 @@ import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
+
+import com.psiphon3.subscription.R;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import java.util.List;
 
@@ -471,5 +471,8 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
 
         @Override
         public void onStartedWaitingForNetworkConnectivity() {}
+
+        @Override
+        public void onClientVerificationRequired() {}
     }
 }
