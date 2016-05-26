@@ -29,6 +29,7 @@ import android.net.Uri;
 import android.net.VpnService;
 import android.net.VpnService.Builder;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.text.format.DateUtils;
@@ -328,11 +329,11 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     private Runnable checkFreeTrial = new Runnable() {
         @Override
         public void run() {
-            long timeSinceLastCheckMillis = System.currentTimeMillis() - lastChecktimeMillis;
+            long timeSinceLastCheckMillis = SystemClock.elapsedRealtime() - lastChecktimeMillis;
             FreeTrialTimer.addTimeSyncSeconds(m_parentService, (long) -Math.floor(timeSinceLastCheckMillis/1000));
             if (FreeTrialTimer.getRemainingTimeSeconds(m_parentService) > 0) {
                 doNotify(false);
-                lastChecktimeMillis = System.currentTimeMillis();
+                lastChecktimeMillis = SystemClock.elapsedRealtime();
                 checkFreeTrialDelayHandler.postDelayed(this, checkFreeTrialInterval);
             } else {
                 signalStopService();
@@ -391,7 +392,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             m_tunnel.startTunneling(getServerEntries(m_parentService));
 
             if (PsiphonData.getPsiphonData().getFreeTrialActive()) {
-                lastChecktimeMillis = System.currentTimeMillis();
+                lastChecktimeMillis = SystemClock.elapsedRealtime();
                 checkFreeTrialDelayHandler.postDelayed(checkFreeTrial, checkFreeTrialInterval);
             }
                 
