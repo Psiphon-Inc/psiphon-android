@@ -51,15 +51,23 @@ public class FreeTrialTimer {
 
 
     public static long getRemainingTimeSeconds(Context context) {
-        FileInputStream in;
+        FileInputStream in = null;
         try {
             in = context.openFileInput(FREE_TRIAL_TIME_FILENAME);
             long remainingSeconds = getRemainingTimeSeconds(context, in);
             Log.d("Psiphon-Pro", "got remainingSeconds from non-locked file: " + remainingSeconds);
-            return  remainingSeconds;
+            return remainingSeconds;
 
         } catch (FileNotFoundException e) {
 
+        } finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (IOException e) {
+
+            }
         }
         return 0;
     }
@@ -85,12 +93,6 @@ public class FreeTrialTimer {
             }
         } catch(IOException e) {
             remainingSeconds = 0;
-        }
-
-        try {
-            in.close();
-        } catch (IOException e) {
-
         }
 
         return remainingSeconds;
@@ -141,9 +143,17 @@ public class FreeTrialTimer {
                 if(raf != null ) {
                     raf.close();
                 }
+            } catch (IOException e) {
+
+            }
+            try {
                 if (out != null) {
                     out.close();
                 }
+            } catch (IOException e) {
+
+            }
+            try {
                 if (in != null) {
                     in.close();
                 }
