@@ -44,7 +44,7 @@ import java.util.IllegalFormatException;
  * the diagnostic package (and possibly UI).
  */
 public class LoggingProvider extends ContentProvider {
-    public static final Uri INSERT_URI = Uri.parse("content://"+LoggingProvider.class.getCanonicalName()+"/");
+    public static final Uri INSERT_URI = Uri.parse("content://com.psiphon3.psiphonlibrary.PsiphonSubscriptionLoggingProvider/");
     public static final String LOG_JSON_KEY = "logJSON";
 
     /**

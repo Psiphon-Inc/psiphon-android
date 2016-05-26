@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="SubscriptionPromptTitle">Anzeigenfreies Abonnement kaufen</string>
+    <string name="SubscriptionPromptMessage">Melden Sie sich jetzt für eine anzeigenfreie Nutzung von Psiphon Pro an. Sie können auch kostenlos eine anzeigengestützte Version von Psiphon Pro nutzen.\n\nIm anzeigengestützten Modus wird die Verbindung alle 60 Minuten getrennt und Anzeigen werden geschaltet.\n\nDanke, dass Sie Psiphon unterstützen!</string>
+    <string name="SubscriptionPromptSubscribe">Anmelden</string>
+    <string name="SubscriptionPromptAdSupported">Anzeigengestützt</string>
+</resources>

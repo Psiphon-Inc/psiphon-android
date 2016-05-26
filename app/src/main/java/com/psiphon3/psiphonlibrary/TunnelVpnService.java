@@ -28,7 +28,7 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class TunnelVpnService extends VpnService

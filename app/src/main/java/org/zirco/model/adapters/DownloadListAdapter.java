@@ -19,7 +19,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 import org.zirco.model.items.DownloadItem;
 
 import android.content.Context;

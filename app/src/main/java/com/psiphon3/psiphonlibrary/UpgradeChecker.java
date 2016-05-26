@@ -31,7 +31,7 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import java.util.List;
