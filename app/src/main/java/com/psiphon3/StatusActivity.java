@@ -275,6 +275,9 @@ public class StatusActivity
     {
         // Abort any outstanding ad requests
         deInitAds();
+
+        // Reset the FreeTrialTimerCachingWrapper because the tunnel service might modify the free trial timer independently
+        FreeTrialTimer.getFreeTrialTimerCachingWrapper().reset();
         
         // If the user hasn't set a whole-device-tunnel preference, show a prompt
         // (and delay starting the tunnel service until the prompt is completed)
@@ -566,7 +569,7 @@ public class StatusActivity
         TextView textViewRemainingMinutes = (TextView) findViewById(R.id.timeRemaining);
         if (show)
         {
-            long freeTrialRemainingSeconds = FreeTrialTimer.getRemainingTimeSeconds(this);
+            long freeTrialRemainingSeconds = FreeTrialTimer.getFreeTrialTimerCachingWrapper().getRemainingTimeSeconds(this);
             textViewRemainingMinutes.setText(String.format(
                     getResources().getString(R.string.FreeTrialRemainingTime),
                     DateUtils.formatElapsedTime(

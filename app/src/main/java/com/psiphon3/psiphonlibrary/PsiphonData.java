@@ -949,13 +949,13 @@ public class PsiphonData
     public synchronized boolean getHasValidSubscriptionOrFreeTime(Context context)
     {
         return m_hasValidSubscription ||
-                (getFreeTrialActive() && FreeTrialTimer.getRemainingTimeSeconds(context) > 0);
+                (getFreeTrialActive() && FreeTrialTimer.getFreeTrialTimerCachingWrapper().getRemainingTimeSeconds(context) > 0);
     }
     
     public synchronized void startFreeTrial(Context context, int minutes)
     {
         m_freeTrialActive = true;
-        FreeTrialTimer.addTimeSyncSeconds(context, minutes * 60);
+        FreeTrialTimer.getFreeTrialTimerCachingWrapper().addTimeSyncSeconds(context, minutes * 60);
     }
     
     public synchronized void endFreeTrial()
@@ -967,5 +967,4 @@ public class PsiphonData
     {
         return m_freeTrialActive && !getHasValidSubscription();
     }
-
 }

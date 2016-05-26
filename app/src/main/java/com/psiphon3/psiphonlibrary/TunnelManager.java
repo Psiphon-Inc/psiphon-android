@@ -210,7 +210,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         
         if (PsiphonData.getPsiphonData().getFreeTrialActive()) {
 
-            long secondsLeft = FreeTrialTimer.getRemainingTimeSeconds(m_parentService);
+            long secondsLeft = FreeTrialTimer.getFreeTrialTimerCachingWrapper().getRemainingTimeSeconds(m_parentService);
 
             String timeLeftText = String.format(
                     m_parentService.getResources().getString(R.string.FreeTrialRemainingTime),
@@ -330,8 +330,8 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         @Override
         public void run() {
             long timeSinceLastCheckMillis = SystemClock.elapsedRealtime() - lastChecktimeMillis;
-            FreeTrialTimer.addTimeSyncSeconds(m_parentService, (long) -Math.floor(timeSinceLastCheckMillis/1000));
-            if (FreeTrialTimer.getRemainingTimeSeconds(m_parentService) > 0) {
+            FreeTrialTimer.getFreeTrialTimerCachingWrapper().addTimeSyncSeconds(m_parentService, (long) -Math.floor(timeSinceLastCheckMillis/1000));
+            if (FreeTrialTimer.getFreeTrialTimerCachingWrapper().getRemainingTimeSeconds(m_parentService) > 0) {
                 doNotify(false);
                 lastChecktimeMillis = SystemClock.elapsedRealtime();
                 checkFreeTrialDelayHandler.postDelayed(this, checkFreeTrialInterval);
@@ -392,6 +392,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             m_tunnel.startTunneling(getServerEntries(m_parentService));
 
             if (PsiphonData.getPsiphonData().getFreeTrialActive()) {
+                FreeTrialTimer.getFreeTrialTimerCachingWrapper().reset();
                 lastChecktimeMillis = SystemClock.elapsedRealtime();
                 checkFreeTrialDelayHandler.postDelayed(checkFreeTrial, checkFreeTrialInterval);
             }

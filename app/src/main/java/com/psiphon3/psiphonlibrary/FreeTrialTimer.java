@@ -50,7 +50,7 @@ public class FreeTrialTimer {
     private static final byte[] SALT = {19, -116, -92, -120, 30, 43, 79, -99, 125, -124, -41, -46, 67, -117, 39, 80, -33, -73, -6, 3};
 
 
-    public static long getRemainingTimeSeconds(Context context) {
+    private static long getRemainingTimeSeconds(Context context) {
         FileInputStream in = null;
         try {
             in = context.openFileInput(FREE_TRIAL_TIME_FILENAME);
@@ -98,7 +98,7 @@ public class FreeTrialTimer {
         return remainingSeconds;
     }
 
-    public static void addTimeSyncSeconds(Context context, long seconds) {
+    private static void addTimeSyncSeconds(Context context, long seconds) {
         FileOutputStream out = null;
         FileInputStream in = null;
         java.nio.channels.FileLock lock = null;
@@ -168,5 +168,49 @@ public class FreeTrialTimer {
 
             }
         }
+    }
+
+    public static class FreeTrialTimerCachingWrapper {
+        private boolean m_initialized;
+        private long m_remainingSeconds;
+
+        public FreeTrialTimerCachingWrapper() {
+            m_initialized = false;
+            m_remainingSeconds = 0;
+        }
+
+        public void reset() {
+            m_initialized = false;
+            m_remainingSeconds = 0;
+        }
+
+        public synchronized long getRemainingTimeSeconds(Context context) {
+            if (!m_initialized) {
+                m_remainingSeconds = FreeTrialTimer.getRemainingTimeSeconds(context);
+                m_initialized = true;
+            }
+
+            return m_remainingSeconds;
+        }
+
+        public synchronized void addTimeSyncSeconds(Context context, long seconds) {
+            if (m_initialized) {
+                m_remainingSeconds += seconds;
+            }
+
+            FreeTrialTimer.addTimeSyncSeconds(context, seconds);
+        }
+    }
+
+    // Singleton pattern
+
+    private static FreeTrialTimerCachingWrapper m_freeTrialTimerCachingWrapper;
+
+    public static synchronized FreeTrialTimerCachingWrapper getFreeTrialTimerCachingWrapper() {
+        if (m_freeTrialTimerCachingWrapper == null) {
+            m_freeTrialTimerCachingWrapper = new FreeTrialTimerCachingWrapper();
+        }
+
+        return m_freeTrialTimerCachingWrapper;
     }
 }
