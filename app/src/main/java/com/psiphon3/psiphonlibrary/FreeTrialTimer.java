@@ -21,7 +21,6 @@ package com.psiphon3.psiphonlibrary;
 
 import android.content.Context;
 import android.provider.Settings;
-import android.util.Log;
 
 import com.psiphon3.util.AESObfuscator;
 import com.psiphon3.util.Obfuscator;
@@ -54,19 +53,17 @@ public class FreeTrialTimer {
         FileInputStream in = null;
         try {
             in = context.openFileInput(FREE_TRIAL_TIME_FILENAME);
-            long remainingSeconds = getRemainingTimeSeconds(context, in);
-            Log.d("Psiphon-Pro", "got remainingSeconds from non-locked file: " + remainingSeconds);
-            return remainingSeconds;
+            return getRemainingTimeSeconds(context, in);
 
         } catch (FileNotFoundException e) {
-
+            // do nothing, will return 0
         } finally {
             try {
                 if (in != null) {
                     in.close();
                 }
             } catch (IOException e) {
-
+                // do nothing
             }
         }
         return 0;
@@ -123,7 +120,6 @@ public class FreeTrialTimer {
             remainingSeconds = getRemainingTimeSeconds(context, in);
             remainingSeconds += seconds;
             remainingSeconds = Math.max(0, remainingSeconds);
-            Log.d("Psiphon-Pro", "got remainingSeconds from locked file: " + remainingSeconds);
 
 
             // Overwrite file
@@ -137,35 +133,35 @@ public class FreeTrialTimer {
             writer.close();
             out.flush();
         } catch (IOException e) {
-
+            // do nothing
         } finally {
-            try {
-                if(raf != null ) {
+            if (raf != null ) {
+                try {
                     raf.close();
+                } catch (IOException e) {
+                    // do nothing
                 }
-            } catch (IOException e) {
-
             }
-            try {
-                if (out != null) {
+            if (out != null) {
+                try {
                     out.close();
+                } catch (IOException e) {
+                    // do nothing
                 }
-            } catch (IOException e) {
-
             }
-            try {
-                if (in != null) {
+            if (in != null) {
+                try {
                     in.close();
+                } catch (IOException e) {
+                    // do nothing
                 }
-            } catch (IOException e) {
-
             }
-            try {
-                if(lock != null) {
+            if (lock != null) {
+                try {
                     lock.release();
+                } catch (IOException e) {
+                    // do nothing
                 }
-            } catch (IOException e) {
-
             }
         }
     }
@@ -174,9 +170,13 @@ public class FreeTrialTimer {
         private boolean m_initialized;
         private long m_remainingSeconds;
 
-        public FreeTrialTimerCachingWrapper() {
+        private FreeTrialTimerCachingWrapper() {
             m_initialized = false;
             m_remainingSeconds = 0;
+        }
+
+        public Object clone() throws CloneNotSupportedException {
+            throw new CloneNotSupportedException();
         }
 
         public void reset() {
@@ -196,6 +196,7 @@ public class FreeTrialTimer {
         public synchronized void addTimeSyncSeconds(Context context, long seconds) {
             if (m_initialized) {
                 m_remainingSeconds += seconds;
+                m_remainingSeconds = Math.max(0, m_remainingSeconds);
             }
 
             FreeTrialTimer.addTimeSyncSeconds(context, seconds);

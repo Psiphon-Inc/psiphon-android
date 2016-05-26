@@ -2,7 +2,6 @@ package com.psiphon3.psiphonlibrary;
 
 import android.app.Activity;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
@@ -104,7 +103,6 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
     @Override
     public void onRewardedVideoAdRewarded(Placement placement) {
         Activity activity = mWeakActivity.get();
-        Log.d("Psiphon-Pro", "onRewardedVideoAdRewarded");
         if (activity != null) {
             FreeTrialTimer.getFreeTrialTimerCachingWrapper().addTimeSyncSeconds(activity, VIDEO_REWARD_MINUTES * 60);
         }
