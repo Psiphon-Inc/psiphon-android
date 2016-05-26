@@ -73,6 +73,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TabHost.TabSpec;
@@ -151,7 +152,6 @@ public abstract class MainBase {
         public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
         public static final String HANDSHAKE_SUCCESS_IS_RECONNECT = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS_IS_RECONNECT";
         public static final String UNEXPECTED_DISCONNECT = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT";
-        public static final String UNEXPECTED_DISCONNECT_RESTART = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT_RESTART";
         public static final String TUNNEL_STARTING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STARTING";
         public static final String TUNNEL_STOPPING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STOPPING";
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.PsiphonAndroidActivity.STATUS_ENTRY_AVAILABLE";
@@ -172,7 +172,7 @@ public abstract class MainBase {
         private StatusListViewManager m_statusListManager = null;
         private SharedPreferences m_preferences;
         private ViewFlipper m_sponsorViewFlipper;
-        private LinearLayout m_statusLayout;
+        private ScrollView m_statusLayout;
         private TextView m_statusTabLogLine;
         private TextView m_statusTabVersionLine;
         private SponsorHomePage m_sponsorHomePage;
@@ -482,7 +482,7 @@ public abstract class MainBase {
             };
 
             m_tabHost.setOnTouchListener(onTouchListener);
-            m_statusLayout = (LinearLayout) findViewById(R.id.statusLayout);
+            m_statusLayout = (ScrollView) findViewById(R.id.statusLayout);
             m_statusViewImage = (ImageButton) findViewById(R.id.statusViewImage);
             m_statusViewImage.setOnTouchListener(onTouchListener);
             findViewById(R.id.sponsorViewFlipper).setOnTouchListener(onTouchListener);
@@ -537,8 +537,6 @@ public abstract class MainBase {
             m_localBroadcastManager.registerReceiver(new TunnelStoppingReceiver(), new IntentFilter(TUNNEL_STOPPING));
 
             m_localBroadcastManager.registerReceiver(new UnexpectedDisconnect(), new IntentFilter(UNEXPECTED_DISCONNECT));
-
-            m_localBroadcastManager.registerReceiver(new UnexpectedDisconnect(), new IntentFilter(UNEXPECTED_DISCONNECT_RESTART));
 
             m_localBroadcastManager.registerReceiver(new StatusEntryAvailable(), new IntentFilter(STATUS_ENTRY_AVAILABLE));
 
@@ -752,6 +750,9 @@ public abstract class MainBase {
                 });
             }
         }
+
+        public abstract void onSubscribeButtonClick(View v);
+        public abstract void onWatchRewardedVideoButtonClick(View v);
 
         protected void doToggle() {
             if (!isServiceRunning()) {
@@ -988,6 +989,7 @@ public abstract class MainBase {
                 setStatusState(R.drawable.status_icon_disconnected);
                 m_toggleButton.setText(getText(R.string.start));
                 enableToggleServiceUI();
+                updateSubscriptionAndAdOptions(true);
                 
                 if (!m_localProxySettingsHaveBeenReset) {
                     WebViewProxySettings.resetLocalProxy(this);
@@ -998,6 +1000,7 @@ public abstract class MainBase {
                 setStatusState(R.drawable.status_icon_disconnected);
                 m_toggleButton.setText(getText(R.string.waiting));
                 disableToggleServiceUI();
+                updateSubscriptionAndAdOptions(false);
                 
                 if (!m_localProxySettingsHaveBeenReset) {
                     WebViewProxySettings.resetLocalProxy(this);
@@ -1012,16 +1015,19 @@ public abstract class MainBase {
                 }
                 m_toggleButton.setText(getText(R.string.stop));
                 enableToggleServiceUI();
+                updateSubscriptionAndAdOptions(false);
                 
                 m_localProxySettingsHaveBeenReset = false;
             }
         }
-        
+
+        protected abstract void updateSubscriptionAndAdOptions(boolean show);
+
         protected void enableToggleServiceUI() {
             m_toggleButton.setEnabled(true);
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
             m_disableTimeoutsToggle.setEnabled(true);
-            m_regionSelector.setEnabled(true);
+            m_regionSelector.setEnabled(true && PsiphonData.getPsiphonData().getHasValidSubscription());
             m_moreOptionsButton.setEnabled(true);
         }
 

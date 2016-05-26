@@ -29,9 +29,10 @@ import android.net.Uri;
 import android.net.VpnService;
 import android.net.VpnService.Builder;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
-import com.psiphon3.R;
+import android.text.format.DateUtils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.R;
 import org.json.JSONArray;
@@ -208,15 +209,17 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         String notificationText = m_parentService.getText(contentTextID).toString();
         
         if (PsiphonData.getPsiphonData().getFreeTrialActive()) {
-            long minutesLeft = PsiphonData.getPsiphonData().getFreeTrialRemainingMillis() / 1000 / 60;
-            String minutesLeftText = " (" + minutesLeft + " minute" +
-                    (minutesLeft == 1 ? "" : "s") + " remaining)";
 
-            notificationTitle += " (AD SUPPORTED)";
-            notificationText += minutesLeftText;
+            long secondsLeft = FreeTrialTimer.getFreeTrialTimerCachingWrapper().getRemainingTimeSeconds(m_parentService);
+
+            String timeLeftText = String.format(
+                    m_parentService.getResources().getString(R.string.FreeTrialRemainingTime),
+                    DateUtils.formatElapsedTime(secondsLeft));
+
+            notificationText += "\n" + timeLeftText;
             
-            if (ticker == null && minutesLeft <= 10) {
-                ticker = m_parentService.getText(R.string.app_name_psiphon_pro) + " " + notificationText;
+            if (ticker == null && secondsLeft <= 10 * 60) {
+                ticker = m_parentService.getText(R.string.app_name_psiphon_pro) + " " + timeLeftText;
             }
         }
         
@@ -321,24 +324,29 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     }
 
     private Handler checkFreeTrialDelayHandler = new Handler();
-    private final long checkFreeTrialInterval = 30 * 1000; 
+    private final long checkFreeTrialInterval = 30 * 1000;
+    private long lastChecktimeMillis = 0;
     private Runnable checkFreeTrial = new Runnable() {
         @Override
         public void run() {
-            if (PsiphonData.getPsiphonData().getFreeTrialRemainingMillis() > 0) {
+            long timeSinceLastCheckMillis = SystemClock.elapsedRealtime() - lastChecktimeMillis;
+            FreeTrialTimer.getFreeTrialTimerCachingWrapper().addTimeSyncSeconds(m_parentService, (long) -Math.floor(timeSinceLastCheckMillis/1000));
+            if (FreeTrialTimer.getFreeTrialTimerCachingWrapper().getRemainingTimeSeconds(m_parentService) > 0) {
                 doNotify(false);
+                lastChecktimeMillis = SystemClock.elapsedRealtime();
                 checkFreeTrialDelayHandler.postDelayed(this, checkFreeTrialInterval);
             } else {
                 signalStopService();
                 PsiphonData.getPsiphonData().endFreeTrial();
                 IEvents events = PsiphonData.getPsiphonData().getCurrentEventsInterface();
                 if (events != null) {
-                    events.signalDisconnectRaiseActivityAutostart(m_parentService);
+                    events.signalDisconnectRaiseActivity(m_parentService);
                 }
             }
         }
     };
-    
+
+
     private void runTunnel() {
 
         Utils.initializeSecureRandom();
@@ -384,6 +392,8 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             m_tunnel.startTunneling(getServerEntries(m_parentService));
 
             if (PsiphonData.getPsiphonData().getFreeTrialActive()) {
+                FreeTrialTimer.getFreeTrialTimerCachingWrapper().reset();
+                lastChecktimeMillis = SystemClock.elapsedRealtime();
                 checkFreeTrialDelayHandler.postDelayed(checkFreeTrial, checkFreeTrialInterval);
             }
                 

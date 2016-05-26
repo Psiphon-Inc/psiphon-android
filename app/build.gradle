@@ -72,6 +72,9 @@ repositories {
     flatDir {
         dirs project(':mopub-sdk').file('libs')
     }
+    maven {
+        url "https://dl.bintray.com/supersonic/android-sdk"
+    }
 }
 
 dependencies {
@@ -84,5 +87,6 @@ dependencies {
     compile files('libs/classes.jar')
     compile project(':mopub-sdk')
     compile 'com.google.android.gms:play-services-safetynet:8.4.0'
+    compile 'com.supersonic.sdk:mediationsdk:6.4.3@jar'
 }
 

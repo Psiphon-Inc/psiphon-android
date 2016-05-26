@@ -19,23 +19,23 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.ListIterator;
-
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.NTCredentials;
-import org.json.JSONObject;
-
 import android.content.Context;
 import android.os.Build;
 import android.os.SystemClock;
 import android.util.Log;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.NTCredentials;
+import org.json.JSONObject;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.ListIterator;
 
 public class PsiphonData
 {
@@ -87,8 +87,7 @@ public class PsiphonData
     private boolean m_disableTimeouts;
     private boolean m_hasValidSubscription;
     private boolean m_freeTrialActive;
-    private long m_freeTrialExpiresAt;
-    
+
     public int m_notificationIconConnecting = 0;
     public int m_notificationIconConnected = 0;
     public int m_notificationIconDisconnected = 0;
@@ -111,7 +110,6 @@ public class PsiphonData
         m_egressRegion = PsiphonConstants.REGION_CODE_ANY;
         m_hasValidSubscription = false;
         m_freeTrialActive = false;
-        m_freeTrialExpiresAt = 0;
     }
 
     public synchronized void clearHomePages()
@@ -938,21 +936,26 @@ public class PsiphonData
         return copy;
     }
     
-    public synchronized void setHasValidSubscription()
+    public synchronized void setHasValidSubscription(boolean valid)
     {
-        m_hasValidSubscription = true;
+        m_hasValidSubscription = valid;
     }
-    
+
     public synchronized boolean getHasValidSubscription()
     {
+        return m_hasValidSubscription;
+    }
+
+    public synchronized boolean getHasValidSubscriptionOrFreeTime(Context context)
+    {
         return m_hasValidSubscription ||
-                (getFreeTrialActive() && getFreeTrialRemainingMillis() > 0);
+                (getFreeTrialActive() && FreeTrialTimer.getFreeTrialTimerCachingWrapper().getRemainingTimeSeconds(context) > 0);
     }
     
-    public synchronized void startFreeTrial()
+    public synchronized void startFreeTrial(Context context, int minutes)
     {
         m_freeTrialActive = true;
-        m_freeTrialExpiresAt = System.currentTimeMillis() + 60 * 60 * 1000;
+        FreeTrialTimer.getFreeTrialTimerCachingWrapper().addTimeSyncSeconds(context, minutes * 60);
     }
     
     public synchronized void endFreeTrial()
@@ -962,17 +965,6 @@ public class PsiphonData
 
     public synchronized boolean getFreeTrialActive()
     {
-        return m_freeTrialActive;
-    }
-
-    public synchronized long getFreeTrialRemainingMillis()
-    {
-        long currentTime = System.currentTimeMillis();
-        if (m_freeTrialExpiresAt > currentTime)
-        {
-            return m_freeTrialExpiresAt - currentTime;
-        }
-
-        return 0;
+        return m_freeTrialActive && !getHasValidSubscription();
     }
 }
