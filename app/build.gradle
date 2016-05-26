@@ -88,5 +88,6 @@ dependencies {
     compile project(':mopub-sdk')
     compile 'com.google.android.gms:play-services-safetynet:8.4.0'
     compile 'com.supersonic.sdk:mediationsdk:6.4.3@jar'
+    compile files('libs/inmobiadapter-2.0.1.jar')
 }
 

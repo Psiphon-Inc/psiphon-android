@@ -115,7 +115,7 @@
                 android:configChanges="keyboardHidden|orientation|keyboard|smallestScreenSize|screenSize"
                 android:theme="@android:style/Theme.Translucent.NoTitleBar"
                 android:hardwareAccelerated="true" />
-        
+
         <receiver
                 android:name="com.inmobi.commons.core.utilities.uid.ImIdShareBroadCastReceiver"
                 android:enabled="true"
@@ -124,7 +124,7 @@
                 <action android:name="com.inmobi.share.id" />
             </intent-filter>
         </receiver>
-        
+        <service android:enabled="true" android:name="com.inmobi.signals.activityrecognition.ActivityRecognitionManager" />
         <activity
             android:name="com.millennialmedia.internal.MMActivity"
             tools:replace="android:label"

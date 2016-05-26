@@ -49,6 +49,12 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
         }
         mGAIDRequestTask = new UserIdRequestTask().execute();
         mIsVideoAvailable = mMediationAgent.isRewardedVideoAvailable();
+
+        /**
+         * Uncomment line below for verbose output of the
+         * Supersonic integration state
+         */
+        // IntegrationHelper.validateIntegration(mWeakActivity.get());
     }
 
     public void setRewardedVideoListener(RewardedVideoListener listener) {
