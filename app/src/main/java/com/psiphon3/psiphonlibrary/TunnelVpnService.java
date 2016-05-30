@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Psiphon Inc.
+ * Copyright (c) 2016, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,31 +19,17 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
-
 import android.annotation.TargetApi;
 import android.content.Intent;
 import android.net.VpnService;
-import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
-
-import com.psiphon3.R;
 
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class TunnelVpnService extends VpnService
 {
     private TunnelManager m_Manager = new TunnelManager(this);
 
-    public class LocalBinder extends Binder
-    {
-        public TunnelVpnService getService()
-        {
-            return TunnelVpnService.this;
-        }
-    }
-    private final IBinder m_binder = new LocalBinder();
-    
     @Override
     public IBinder onBind(Intent intent)
     {
@@ -56,7 +42,7 @@ public class TunnelVpnService extends VpnService
             return super.onBind(intent);
         }
         
-        return m_binder;
+        return m_Manager.onBind(intent);
     }
 
     @Override
@@ -68,22 +54,19 @@ public class TunnelVpnService extends VpnService
     @Override
     public void onCreate()
     {
-        PsiphonData.getPsiphonData().setCurrentTunnelManager(m_Manager);
+        m_Manager.onCreate();
     }
 
     @Override
     public void onDestroy()
     {
-        PsiphonData.getPsiphonData().setCurrentTunnelManager(null);
         m_Manager.onDestroy();
     }
 
     @Override
     public void onRevoke()
     {
-        MyLog.w(R.string.vpn_service_revoked, MyLog.Sensitivity.NOT_SENSITIVE);
-        // stopSelf will trigger onDestroy in the main thread, which will in turn invoke m_Core.onDestroy
-        stopSelf();
+        m_Manager.onRevoke();
     }
     
     public VpnService.Builder newBuilder()

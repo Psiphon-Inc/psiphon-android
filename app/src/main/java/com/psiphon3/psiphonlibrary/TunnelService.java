@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Psiphon Inc.
+ * Copyright (c) 2016, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,26 +21,16 @@ package com.psiphon3.psiphonlibrary;
 
 import android.app.Service;
 import android.content.Intent;
-import android.os.Binder;
 import android.os.IBinder;
 
 public class TunnelService extends Service
 {
     private TunnelManager m_Manager = new TunnelManager(this);
 
-    public class LocalBinder extends Binder
-    {
-        public TunnelService getService()
-        {
-            return TunnelService.this;
-        }
-    }
-    private final IBinder m_binder = new LocalBinder();
-    
     @Override
     public IBinder onBind(Intent intent)
     {
-        return m_binder;
+        return m_Manager.onBind(intent);
     }
 
     @Override
@@ -52,13 +42,12 @@ public class TunnelService extends Service
     @Override
     public void onCreate()
     {
-        PsiphonData.getPsiphonData().setCurrentTunnelManager(m_Manager);
+        m_Manager.onCreate();
     }
 
     @Override
     public void onDestroy()
     {
-        PsiphonData.getPsiphonData().setCurrentTunnelManager(null);
         m_Manager.onDestroy();
     }
 }
