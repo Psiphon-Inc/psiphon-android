@@ -28,6 +28,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.net.VpnService;
 import android.net.VpnService.Builder;
+import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
@@ -45,22 +46,84 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ca.psiphon.PsiphonTunnel;
 
-public class TunnelManager implements PsiphonTunnel.HostService {
+public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
-    public enum NotificationState {
-        CONNECTING,
-        CONNECTED
+    // Android IPC messages
+
+    // Client -> Service
+    public static final int MSG_REGISTER = 0;
+    public static final int MSG_UNREGISTER = 1;
+    public static final int MSG_STOP_VPN_SERVICE = 2;
+
+    // Service -> Client
+    public static final int MSG_REGISTER_RESPONSE = 3;
+    public static final int MSG_KNOWN_SERVER_REGIONS = 4;
+    public static final int MSG_TUNNEL_STARTING = 5;
+    public static final int MSG_TUNNEL_STOPPING = 6;
+    public static final int MSG_TUNNEL_CONNECTION_STATE = 7;
+    public static final int MSG_LOGS = 8;
+
+    public static final String INTENT_ACTION_HANDSHAKE = "com.psiphon3.psiphonlibrary.TunnelManager.HANDSHAKE";
+
+    // Service -> Client bundle parameter names
+    public static final String DATA_TUNNEL_STATE_AVAILABLE_EGRESS_REGIONS = "availableEgressRegions";
+    public static final String DATA_TUNNEL_STATE_IS_CONNECTED = "isConnected";
+    public static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT = "listeningLocalSocksProxyPort";
+    public static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT = "listeningLocalHttpProxyPort";
+    public static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
+    public static final String DATA_TUNNEL_STATE_HOME_PAGES = "homePages";
+
+    // Extras in handshake intent
+    public static final String DATA_HANDSHAKE_IS_RECONNECT = "isReconnect";
+
+    // Extras in start service intent (Client -> Service)
+    public static final String DATA_TUNNEL_CONFIG_HANDSHAKE_PENDING_INTENT = "tunnelConfigHandshakePendingIntent";
+    public static final String DATA_TUNNEL_CONFIG_NOTIFICATION_PENDING_INTENT = "tunnelConfigNotificationPendingIntent";
+    public static final String DATA_TUNNEL_CONFIG_WHOLE_DEVICE = "tunnelConfigWholeDevice";
+    public static final String DATA_TUNNEL_CONFIG_EGRESS_REGION = "tunnelConfigEgressRegion";
+    public static final String DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS = "tunnelConfigDisableTimeouts";
+    public static final String DATA_TUNNEL_CONFIG_NOTIFICATION_SOUND = "tunnelConfigNotificationSound";
+    public static final String DATA_TUNNEL_CONFIG_NOTIFICATION_VIBRATE = "tunnelConfigNotificationVibrate";
+    public static final String DATA_TUNNEL_CONFIG_UPSTREAM_PROXY_CONFIG = "tunnelConfigUpstreamProxyUrl";
+    public static final String DATA_LOGS = "logs";
+
+    // Tunnel config, received from the client.
+    public static class Config {
+        PendingIntent handshakePendingIntent = null;
+        PendingIntent notificationPendingIntent = null;
+        boolean wholeDevice = false;
+        String egressRegion = PsiphonConstants.REGION_CODE_ANY;
+        boolean disableTimeouts = false;
+        // TODO wifi upgrade flag
+        boolean notificationSound = false;
+        boolean notificationVibrate = false;
+        String upstreamProxyURL;
     }
+
+    private Config m_tunnelConfig = new Config();
+
+    // Shared tunnel state, sent to the client in the HANDSHAKE
+    // intent and various state-related Messages.
+    public static class State {
+        ArrayList<String> availableEgressRegions = new ArrayList<String>();
+        boolean isConnected = false;
+        ArrayList<String> homePages = new ArrayList<String>();
+        int listeningLocalSocksProxyPort = 0;
+        int listeningLocalHttpProxyPort = 0;
+        String clientRegion;
+    }
+
+    private State m_tunnelState = new State();
 
     private NotificationManager mNotificationManager = null;
     private NotificationCompat.Builder mNotificationBuilder = null;
-    private NotificationState m_state = NotificationState.CONNECTING;
     private Service m_parentService = null;
     private boolean m_serviceDestroyed = false;
     private boolean m_firstStart = true;
@@ -73,7 +136,6 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     private String m_lastUpstreamProxyErrorMessage;
     private Handler m_Handler = new Handler();
     private GoogleSafetyNetApiWrapper m_safetyNetwrapper;
-
 
     public TunnelManager(Service parentService) {
         m_parentService = parentService;
@@ -92,7 +154,8 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             mNotificationBuilder = new NotificationCompat.Builder(m_parentService);
         }
 
-        if (m_firstStart) {
+        if (m_firstStart && intent != null) {
+            getTunnelConfig(intent);
             m_parentService.startForeground(R.string.psiphon_service_notification_id, this.createNotification(false));
             MyLog.v(R.string.client_version, MyLog.Sensitivity.NOT_SENSITIVE, EmbeddedValues.CLIENT_VERSION);
             m_firstStart = false;
@@ -106,7 +169,11 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             m_tunnelThread.start();
         }
 
-        return android.app.Service.START_NOT_STICKY;
+        return Service.START_REDELIVER_INTENT;
+    }
+
+    public void onCreate() {
+        MyLog.setLogger(this);
     }
 
     // Implementation of android.app.Service.onDestroy
@@ -117,7 +184,23 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             return;
         }
 
-        // signalStopService should have been called, but in case is was not, call here.
+        stopAndWaitForTunnel();
+
+        MyLog.unsetLogger(this);
+    }
+
+    public void onRevoke() {
+        MyLog.w(R.string.vpn_service_revoked, MyLog.Sensitivity.NOT_SENSITIVE);
+
+        stopAndWaitForTunnel();
+
+        // Stop service
+        m_parentService.stopForeground(true);
+        m_parentService.stopSelf();
+    }
+
+    private void stopAndWaitForTunnel() {
+        // signalStopService could have been called, but in case is was not, call here.
         // If signalStopService was not already called, the join may block the calling
         // thread for some time.
         signalStopService();
@@ -151,85 +234,69 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         return m_signalledStop;
     }
 
+    private void getTunnelConfig(Intent intent) {
+        m_tunnelConfig.handshakePendingIntent = (PendingIntent) intent
+                .getParcelableExtra(TunnelManager.DATA_TUNNEL_CONFIG_HANDSHAKE_PENDING_INTENT);
+
+        m_tunnelConfig.notificationPendingIntent = (PendingIntent) intent
+                .getParcelableExtra(TunnelManager.DATA_TUNNEL_CONFIG_NOTIFICATION_PENDING_INTENT);
+
+        m_tunnelConfig.wholeDevice = intent.getBooleanExtra(
+        TunnelManager.DATA_TUNNEL_CONFIG_WHOLE_DEVICE, false);
+
+        m_tunnelConfig.egressRegion = intent
+                .getStringExtra(TunnelManager.DATA_TUNNEL_CONFIG_EGRESS_REGION);
+
+        m_tunnelConfig.disableTimeouts = intent.getBooleanExtra(
+        TunnelManager.DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS, false);
+
+        m_tunnelConfig.notificationSound = intent.getBooleanExtra(
+        TunnelManager.DATA_TUNNEL_CONFIG_NOTIFICATION_SOUND, false);
+
+        m_tunnelConfig.notificationVibrate = intent.getBooleanExtra(
+        TunnelManager.DATA_TUNNEL_CONFIG_NOTIFICATION_VIBRATE, false);
+
+        m_tunnelConfig.upstreamProxyURL = intent.getStringExtra(
+        TunnelManager.DATA_TUNNEL_CONFIG_UPSTREAM_PROXY_CONFIG);
+    }
+
     private Notification createNotification(boolean alert) {
         int contentTextID = -1;
         int iconID = -1;
         CharSequence ticker = null;
 
-        switch (getNotificationState()) {
-            case CONNECTING:
-                contentTextID = R.string.psiphon_service_notification_message_connecting;
-                ticker = m_parentService.getText(R.string.psiphon_service_notification_message_connecting);
-                iconID = PsiphonData.getPsiphonData().getNotificationIconConnecting();
-                if (iconID == 0) {
-                    iconID = R.drawable.notification_icon_connecting_animation;
-                }
-                break;
-
-            case CONNECTED:
-                if (PsiphonData.getPsiphonData().getTunnelWholeDevice()) {
-                    contentTextID = R.string.psiphon_running_whole_device;
-                } else {
-                    contentTextID = R.string.psiphon_running_browser_only;
-                }
-
-                iconID = PsiphonData.getPsiphonData().getNotificationIconConnected();
-                if (iconID == 0) {
-                    iconID = R.drawable.notification_icon_connected;
-                }
-                break;
-
-            default:
-                assert (false);
+        if (m_tunnelState.isConnected) {
+            if (m_tunnelConfig.wholeDevice) {
+                contentTextID = R.string.psiphon_running_whole_device;
+            } else {
+                contentTextID = R.string.psiphon_running_browser_only;
+            }
+            iconID = R.drawable.notification_icon_connected;
+        } else {
+            contentTextID = R.string.psiphon_service_notification_message_connecting;
+            ticker = m_parentService.getText(R.string.psiphon_service_notification_message_connecting);
+            iconID = R.drawable.notification_icon_connecting_animation;
         }
-
-        Intent activityIntent = null;
-        IEvents events = PsiphonData.getPsiphonData().getCurrentEventsInterface();
-        if (events != null) {
-            activityIntent = events.pendingSignalNotification(m_parentService);
-        }
-
-        if (activityIntent == null) {
-            // Default intent if m_eventsInterface is null or returns a null pendingSignalNotification Intent.
-            // This intent will launch nothing.
-            // NOTE that setLatestEventInfo requires a PendingIntent.  And that calls to notify (ie from setState below)
-            // require a contentView which is set by setLatestEventInfo.
-            activityIntent = new Intent();
-            activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        }
-
-        PendingIntent invokeActivityIntent =
-                PendingIntent.getActivity(
-                        m_parentService,
-                        0,
-                        activityIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT);
 
         mNotificationBuilder
                 .setSmallIcon(iconID)
                 .setContentTitle(m_parentService.getText(R.string.app_name))
                 .setContentText(m_parentService.getText(contentTextID))
                 .setTicker(ticker)
-                .setContentIntent(invokeActivityIntent);
+                .setContentIntent(m_tunnelConfig.notificationPendingIntent);
 
         Notification notification = mNotificationBuilder.build();
 
         if (alert) {
-            if (PreferenceManager.getDefaultSharedPreferences(m_parentService).getBoolean(
-                    m_parentService.getString(R.string.preferenceNotificationsWithSound), false)) {
+            if (m_tunnelConfig.notificationSound) {
                 notification.defaults |= Notification.DEFAULT_SOUND;
             }
-            if (PreferenceManager.getDefaultSharedPreferences(m_parentService).getBoolean(
-                    m_parentService.getString(R.string.preferenceNotificationsWithVibrate), false)) {
+            if (m_tunnelConfig.notificationVibrate) {
                 notification.defaults |= Notification.DEFAULT_VIBRATE;
             }
         }
 
         return notification;
-    }
-
-    private synchronized NotificationState getNotificationState() {
-        return m_state;
     }
 
     private synchronized void setNotificationState(NotificationState newState) {
@@ -486,12 +553,12 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
                 json.put("LocalSocksProxyPort", PsiphonData.getPsiphonData().getConfiguredLocalSocksProxyPort());
 
-                String egressRegion = PsiphonData.getPsiphonData().getEgressRegion();
+                String egressRegion = m_tunnelConfig.egressRegion;
                 MyLog.g("EgressRegion", "regionCode", egressRegion);
                 json.put("EgressRegion", egressRegion);
             }
 
-            if (PsiphonData.getPsiphonData().getDisableTimeouts() == true) {
+            if (m_tunnelConfig.disableTimeouts) {
                 //disable timeouts
                 MyLog.g("DisableTimeouts", "disableTimeouts", true);
                 json.put("TunnelConnectTimeoutSeconds", 0);
@@ -518,14 +585,19 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
     @Override
     public void onDiagnosticMessage(String message) {
-        MyLog.g(message, "msg", message);
+        // TODO-TUNNEL-CORE: temporary:
+        //MyLog.g("diagnostic", "msg", message);
+        android.util.Log.e("PSIPHON-DIAGNOSTIC", message);
     }
 
     @Override
     public void onAvailableEgressRegions(List<String> regions) {
-        for (String region : regions) {
-            RegionAdapter.setServerExists(m_parentService, region, false);
-        }
+        m_tunnelState.availableEgressRegions.clear();
+        m_tunnelState.availableEgressRegions.addAll(regions);
+        Bundle data = new Bundle();
+        data.putStringArrayList(DATA_TUNNEL_STATE_AVAILABLE_EGRESS_REGIONS,
+                m_tunnelState.availableEgressRegions);
+        sendClientMessage(MSG_KNOWN_SERVER_REGIONS, data);
     }
 
     @Override
@@ -543,13 +615,13 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     @Override
     public void onListeningSocksProxyPort(int port) {
         MyLog.v(R.string.socks_running, MyLog.Sensitivity.NOT_SENSITIVE, port);
-        PsiphonData.getPsiphonData().setListeningLocalSocksProxyPort(port);
+        m_tunnelState.listeningLocalSocksProxyPort = port;
     }
 
     @Override
     public void onListeningHttpProxyPort(int port) {
         MyLog.v(R.string.http_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, port);
-        PsiphonData.getPsiphonData().setListeningLocalHttpProxyPort(port);
+        m_tunnelState.listeningLocalHttpProxyPort = port;
     }
 
     @Override
@@ -580,6 +652,11 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 }
             }
         }
+
+        setIsConnected(false);
+        Bundle data = new Bundle();
+        data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, false);
+        sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, data);
     }
 
     @Override
@@ -590,18 +667,23 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
         PsiphonData.getPsiphonData().getDataTransferStats().startConnected();
 
-        IEvents events = PsiphonData.getPsiphonData().getCurrentEventsInterface();
-        if (events != null) {
-            events.signalHandshakeSuccess(m_parentService, m_isReconnect.get());
-        }
-
+        sendHandshakeIntent(m_isReconnect);
         // Any subsequent onConnecting after this first onConnect will be a reconnect.
         m_isReconnect.set(true);
+
+        Bundle data = new Bundle();
+        data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, true);
+        sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, data);
     }
 
     @Override
     public void onHomepage(String url) {
-        PsiphonData.getPsiphonData().addHomePage(url);
+        for (String homePage : m_tunnelState.homePages) {
+            if (homePage.equals(url)) {
+                return;
+            }
+        }
+        m_tunnelState.homePages.add(url);
     }
 
     @Override
@@ -659,5 +741,22 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         if (m_tunnel != null) {
             m_tunnel.setClientVerificationPayload(payload);
         }
+    }
+
+    @Override
+    public void statusEntryAdded() {
+        // TODO-TUNNEL-CORE: temporary implementation only! neither robust nor functional.
+        if (m_outgoingMessenger == null) {
+            return;
+        }
+        ArrayList<PsiphonData.StatusEntry> statusEntries = PsiphonData.getPsiphonData().cloneStatusHistory();
+        PsiphonData.getPsiphonData().clearStatusHistory();
+        ArrayList<String> logs = new ArrayList<String>();
+        for (PsiphonData.StatusEntry entry : statusEntries) {
+            logs.add(m_parentContext.getString(entry.id(), entry.formatArgs()));
+        }
+        Bundle data = new Bundle();
+        data.putStringArrayList(DATA_LOGS, logs);
+        sendClientMessage(MSG_LOGS, data);
     }
 }
