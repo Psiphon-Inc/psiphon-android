@@ -19,6 +19,7 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.content.Context;
@@ -100,7 +101,19 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         
         initialized = true;
     }
-    
+
+    public static void setServersExist(Context context, List<String> regionCodes)
+    {
+        if (regionCodes == null)
+        {
+            return;
+        }
+        for (String regionCode : regionCodes)
+        {
+            setServerExists(context, regionCode, false);
+        }
+    }
+
     public static void setServerExists(Context context, String regionCode, boolean restoringKnownRegions)
     {
         // TODO: may want to replace linear lookup once there are many regions

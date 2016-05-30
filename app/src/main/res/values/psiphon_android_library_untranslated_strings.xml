@@ -27,6 +27,7 @@
     <string name="useProxyDomainPreference">useProxyDomainPreference</string>
     <string name="preferencesDownloading">preferencesDownloading</string>
     <string name="downloadWifiOnlyPreference">downloadWifiOnlyPreference</string>
+    <string name="disableTimeoutsPreference">disableTimeoutsPreference</string>
 
     <!-- When Psiphon disconnects it sends a one last ("final") status request. This message is shown if that request fails. -->
     <string name="final_status_request_failed">Final status request failed</string>

@@ -20,7 +20,7 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -35,11 +35,12 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
+import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
-import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.graphics.Color;
@@ -47,9 +48,13 @@ import android.net.Uri;
 import android.net.VpnService;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.content.LocalBroadcastManager;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.KeyEvent;
@@ -80,11 +85,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
-import com.psiphon3.psiphonlibrary.PsiphonData.DataTransferStats;
-import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-import com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity;
 
 import com.psiphon3.R;
 
@@ -148,17 +150,8 @@ public abstract class MainBase {
     }
 
     public static abstract class TabbedActivityBase extends Activity implements OnTabChangeListener {
-        public static final String HANDSHAKE_SUCCESS = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS";
-        public static final String HANDSHAKE_SUCCESS_IS_RECONNECT = "com.psiphon3.PsiphonAndroidActivity.HANDSHAKE_SUCCESS_IS_RECONNECT";
-        public static final String UNEXPECTED_DISCONNECT = "com.psiphon3.PsiphonAndroidActivity.UNEXPECTED_DISCONNECT";
-        public static final String TUNNEL_STARTING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STARTING";
-        public static final String TUNNEL_STOPPING = "com.psiphon3.PsiphonAndroidActivity.TUNNEL_STOPPING";
-        public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.PsiphonAndroidActivity.STATUS_ENTRY_AVAILABLE";
         public static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
         public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
-        public static final String DISABLE_TIMEOUTS_PREFERENCE = "disableTimeoutsPreference";
-        public static final String WDM_FORCE_IPTABLES_PREFERENCE = "wdmForceIptablesPreference";
-        public static final String SHARE_PROXIES_PREFERENCE = "shareProxiesPreference";
 
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
         protected static final int REQUEST_CODE_PREFERENCE = 101;
@@ -166,7 +159,6 @@ public abstract class MainBase {
         protected static boolean m_firstRun = true;
         private boolean m_canWholeDevice = false;
 
-        protected IEvents m_eventsInterface = null;
         protected Button m_toggleButton;
         private StatusListViewManager m_statusListManager = null;
         private SharedPreferences m_preferences;
@@ -175,9 +167,8 @@ public abstract class MainBase {
         private TextView m_statusTabLogLine;
         private TextView m_statusTabVersionLine;
         private SponsorHomePage m_sponsorHomePage;
-        private LocalBroadcastManager m_localBroadcastManager;
-        private Timer m_updateHeaderTimer;
-        private Timer m_updateServiceStateTimer;
+        private Timer m_updateStatisticsUITimer;
+        private Timer m_updateServiceStateUITimer;
         private boolean m_restartTunnel = false;
         private TextView m_elapsedConnectionTimeView;
         private TextView m_totalSentView;
@@ -193,12 +184,6 @@ public abstract class MainBase {
         protected CheckBox m_disableTimeoutsToggle;
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
-
-        /*
-         * private CheckBox m_shareProxiesToggle; private TextView
-         * m_statusTabSocksPortLine; private TextView
-         * m_statusTabHttpProxyPortLine;
-         */
 
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
@@ -221,9 +206,15 @@ public abstract class MainBase {
                 // Show the sponsor web view, but only if there's a home page to
                 // show and it's isn't excluded from being embedded.
                 boolean showHomePage = false;
-                ArrayList<String> homepages = PsiphonData.getPsiphonData().getHomePages();
+                List<String> homepages = getHomePages();
                 if (homepages.size() > 0) {
-                    showHomePage = !Arrays.asList(EmbeddedValues.HOME_TAB_URL_EXCLUSIONS).contains(homepages.get(0));
+                    showHomePage = true;
+                    for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
+                        if (homepages.get(0).contains(homeTabUrlExclusion)) {
+                            showHomePage = false;
+                            break;
+                        }
+                    }
                 }
 
                 if (showHomePage && statusShowing) {
@@ -282,7 +273,7 @@ public abstract class MainBase {
             @Override
             public boolean onFling(MotionEvent event1, MotionEvent event2, float velocityX, float velocityY) {
                 if (event1 != null && event2 != null) {
-                    int newTab = 0;
+                    int newTab;
                     if (Math.abs(event1.getY() - event2.getY()) > SWIPE_MAX_OFF_PATH) {
                         return false;
                     }
@@ -325,7 +316,7 @@ public abstract class MainBase {
 
             SharedPreferences.Editor preferencesEditor = m_preferences.edit();
             preferencesEditor.putInt("currentTab", m_currentTab);
-            preferencesEditor.commit();
+            preferencesEditor.apply();
         }
 
         /**
@@ -470,11 +461,7 @@ public abstract class MainBase {
                     // scrollview or listview
                     v.onTouchEvent(event);
 
-                    if (m_gestureDetector.onTouchEvent(event)) {
-                        return false;
-                    } else {
-                        return true;
-                    }
+                    return !m_gestureDetector.onTouchEvent(event);
                 }
             };
 
@@ -521,26 +508,8 @@ public abstract class MainBase {
             // Set up the list view
             m_statusListManager = new StatusListViewManager(statusListView);
 
-            PsiphonData.getPsiphonData().setCurrentEventsInterface(m_eventsInterface);
-
-            // Listen for new messages
-            // Using local broad cast
-            // (http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html)
-
-            m_localBroadcastManager = LocalBroadcastManager.getInstance(TabbedActivityBase.this);
-
-            m_localBroadcastManager.registerReceiver(new TunnelStartingReceiver(), new IntentFilter(TUNNEL_STARTING));
-
-            m_localBroadcastManager.registerReceiver(new TunnelStoppingReceiver(), new IntentFilter(TUNNEL_STOPPING));
-
-            m_localBroadcastManager.registerReceiver(new UnexpectedDisconnect(), new IntentFilter(UNEXPECTED_DISCONNECT));
-
-            m_localBroadcastManager.registerReceiver(new StatusEntryAvailable(), new IntentFilter(STATUS_ENTRY_AVAILABLE));
-
             updateServiceStateUI();
 
-            PsiphonData.getPsiphonData().setDisplayDataTransferStats(true);
-            
             if (m_firstRun)
             {
                 RegionAdapter.initialize(this);
@@ -549,9 +518,9 @@ public abstract class MainBase {
             m_regionSelector.setAdapter(m_regionAdapter);
             String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE,
                     PsiphonConstants.REGION_CODE_ANY);
-            PsiphonData.getPsiphonData().setEgressRegion(egressRegionPreference);
             int position = m_regionAdapter.getPositionForRegionCode(egressRegionPreference);
             m_regionSelector.setSelection(position);
+            setTunnelConfigEgressRegion(egressRegionPreference);
 
             m_regionSelector.setOnItemSelectedListener(regionSpinnerOnItemSelected);
             // Re-populate the spinner when it is expanded -- the underlying
@@ -566,7 +535,7 @@ public abstract class MainBase {
             boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE,
                     m_canWholeDevice);
             m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
-            PsiphonData.getPsiphonData().setTunnelWholeDevice(m_canWholeDevice && tunnelWholeDevicePreference);
+            setTunnelConfigWholeDevice(m_canWholeDevice && tunnelWholeDevicePreference);
 
             // Show download-wifi-only preference only in not Play Store build
             if(EmbeddedValues.hasEverBeenSideLoaded(getContext())) {
@@ -574,18 +543,16 @@ public abstract class MainBase {
                         getString(R.string.downloadWifiOnlyPreference),
                         PsiphonConstants.DOWNLOAD_WIFI_ONLY_PREFERENCE_DEFAULT);
                 m_downloadOnWifiOnlyToggle.setChecked(downLoadWifiOnlyPreference);
-                PsiphonData.getPsiphonData().setDownloadWifiOnly(downLoadWifiOnlyPreference);
             }
             else {
                 m_downloadOnWifiOnlyToggle.setEnabled(false);
                 m_downloadOnWifiOnlyToggle.setVisibility(View.GONE);
             }
 
-
-            boolean disableTimeoutsPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(DISABLE_TIMEOUTS_PREFERENCE, false);
+            boolean disableTimeoutsPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
+                    getString(R.string.disableTimeoutsPreference), false);
             m_disableTimeoutsToggle.setChecked(disableTimeoutsPreference);
-            PsiphonData.getPsiphonData().setDisableTimeouts(disableTimeoutsPreference);
-
+            setTunnelConfigDisableTimeouts(disableTimeoutsPreference);
 
             updateProxySettingsFromPreferences();
 
@@ -622,8 +589,8 @@ public abstract class MainBase {
          *            time the activity is created.
          */
         protected void resetSponsorHomePage(boolean freshConnect) {
-            String url = null;
-            ArrayList<String> homepages = PsiphonData.getPsiphonData().getHomePages();
+            String url;
+            List<String> homepages = getHomePages();
             if (homepages.size() > 0) {
                 url = homepages.get(0);
             } else {
@@ -631,18 +598,17 @@ public abstract class MainBase {
             }
 
             // Some URLs are excluded from being embedded as home pages.
-            if (Arrays.asList(EmbeddedValues.HOME_TAB_URL_EXCLUSIONS).contains(url))
-            {
-                if (freshConnect)
-                {
-                    m_eventsInterface.displayBrowser(getContext(), Uri.parse(url));
+            for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
+                if (url.contains(homeTabUrlExclusion)) {
+                    if (freshConnect) {
+                        displayBrowser(getContext(), Uri.parse(url));
+                    }
+                    return;
                 }
-                return;
             }
 
             // At this point we're showing the URL in the embedded webview.
-            m_sponsorHomePage = new SponsorHomePage((WebView) findViewById(R.id.sponsorWebView), (ProgressBar) findViewById(R.id.sponsorWebViewProgressBar),
-                    m_eventsInterface);
+            m_sponsorHomePage = new SponsorHomePage((WebView) findViewById(R.id.sponsorWebView), (ProgressBar) findViewById(R.id.sponsorWebViewProgressBar));
             m_sponsorHomePage.load(url);
         }
 
@@ -652,24 +618,24 @@ public abstract class MainBase {
             updateProxySettingsFromPreferences();
             
             // From: http://steve.odyfamily.com/?p=12
-            m_updateHeaderTimer = new Timer();
-            m_updateHeaderTimer.schedule(new TimerTask() {
+            m_updateStatisticsUITimer = new Timer();
+            m_updateStatisticsUITimer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    TabbedActivityBase.this.runOnUiThread(new Runnable() {
+                    runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            updateHeaderCallback();
+                            updateStatisticsUICallback();
                         }
                     });
                 }
             }, 0, 1000);
 
-            m_updateServiceStateTimer = new Timer();
-            m_updateServiceStateTimer.schedule(new TimerTask() {
+            m_updateServiceStateUITimer = new Timer();
+            m_updateServiceStateUITimer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    TabbedActivityBase.this.runOnUiThread(new Runnable() {
+                    runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             updateServiceStateUI();
@@ -679,10 +645,12 @@ public abstract class MainBase {
                 }
             }, 0, 250);
 
-            PsiphonData.getPsiphonData().setStatusActivityForeground(true);
-            
             // Don't show the keyboard until edit selected
             getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+
+            if (isServiceRunning()) {
+                bindAndStartTunnelService();
+            }
         }
 
         @Override
@@ -691,58 +659,11 @@ public abstract class MainBase {
 
             cancelInvalidProxySettingsToast();
 
-            m_updateHeaderTimer.cancel();
-            m_updateServiceStateTimer.cancel();
+            m_updateStatisticsUITimer.cancel();
+            m_updateServiceStateUITimer.cancel();
 
-            PsiphonData.getPsiphonData().setStatusActivityForeground(false);
-        }
-
-        public class TunnelStartingReceiver extends BroadcastReceiver {
-            @Override
-            public void onReceive(Context context, Intent intent) {                
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        updateServiceStateUI();
-                    }
-                });
-            }
-        }
-
-        public class TunnelStoppingReceiver extends BroadcastReceiver {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        updateServiceStateUI();
-                    }
-                });
-            }
-        }
-
-        public class UnexpectedDisconnect extends BroadcastReceiver {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        updateServiceStateUI();
-                    }
-                });
-            }
-        }
-
-        public class StatusEntryAvailable extends BroadcastReceiver {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        StatusEntry statusEntry = PsiphonData.getPsiphonData().getLastStatusEntryForDisplay();
-                        if (statusEntry != null) {
-                            String msg = getContext().getString(statusEntry.id(), statusEntry.formatArgs());
-                            m_statusTabLogLine.setText(msg);
-                        }
-                    }
-                });
-            }
+            // TODO-TUNNEL-CORE: ?
+            unbindTunnelService();
         }
 
         protected void doToggle() {
@@ -821,7 +742,7 @@ public abstract class MainBase {
 
             String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE,
                     PsiphonConstants.REGION_CODE_ANY);
-            if (selectedRegionCode.equals(egressRegionPreference) && selectedRegionCode.equals(PsiphonData.getPsiphonData().getEgressRegion())) {
+            if (selectedRegionCode.equals(egressRegionPreference) && selectedRegionCode.equals(getTunnelConfigEgressRegion())) {
                 return;
             }
 
@@ -838,9 +759,9 @@ public abstract class MainBase {
             // required to).
             Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
             editor.putString(EGRESS_REGION_PREFERENCE, egressRegionPreference);
-            editor.commit();
+            editor.apply();
 
-            PsiphonData.getPsiphonData().setEgressRegion(egressRegionPreference);
+            setTunnelConfigEgressRegion(egressRegionPreference);
         }
 
         public void onTunnelWholeDeviceToggle(View v) {
@@ -861,9 +782,9 @@ public abstract class MainBase {
             // required to).
             Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
             editor.putBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, tunnelWholeDevicePreference);
-            editor.commit();
+            editor.apply();
 
-            PsiphonData.getPsiphonData().setTunnelWholeDevice(tunnelWholeDevicePreference);
+            setTunnelConfigWholeDevice(tunnelWholeDevicePreference);
         }
 
         public void onDisableTimeoutsToggle(View v) {
@@ -873,9 +794,10 @@ public abstract class MainBase {
         }
         protected void updateDisableTimeoutsPreference(boolean disableTimeoutsPreference) {
             Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-            editor.putBoolean(DISABLE_TIMEOUTS_PREFERENCE, disableTimeoutsPreference);
-            editor.commit();
-            PsiphonData.getPsiphonData().setDisableTimeouts(disableTimeoutsPreference);
+            editor.putBoolean(getString(R.string.disableTimeoutsPreference), disableTimeoutsPreference);
+            editor.apply();
+
+            setTunnelConfigDisableTimeouts(disableTimeoutsPreference);
         }
 
         public void onDownloadOnWifiOnlyToggle(View v) {
@@ -886,8 +808,7 @@ public abstract class MainBase {
 
             Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
             editor.putBoolean(getString(R.string.downloadWifiOnlyPreference), downloadWifiOnly);
-            editor.commit();
-            PsiphonData.getPsiphonData().setDownloadWifiOnly(downloadWifiOnly);
+            editor.apply();
         }
 
         // Basic check that the values are populated
@@ -946,7 +867,7 @@ public abstract class MainBase {
             }
         }
 
-        private void updateHeaderCallback() {
+        private void updateStatisticsUICallback() {
             DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
             m_elapsedConnectionTimeView.setText(dataTransferStats.isConnected() ? getString(R.string.connected_elapsed_time,
                     Utils.elapsedTimeToDisplay(dataTransferStats.getElapsedTime())) : getString(R.string.disconnected));
@@ -970,27 +891,23 @@ public abstract class MainBase {
         }
 
         private void updateServiceStateUI() {
-            TunnelManager tunnelManager = PsiphonData.getPsiphonData().getCurrentTunnelManager();
-            
-            if (tunnelManager == null) {
+            if (!m_boundToTunnelService && !m_boundToTunnelVpnService) {
                 setStatusState(R.drawable.status_icon_disconnected);
-                m_toggleButton.setText(getText(R.string.start));
-                enableToggleServiceUI();
-                
-            } else if (tunnelManager.signalledStop()) {
-                setStatusState(R.drawable.status_icon_disconnected);
-                m_toggleButton.setText(getText(R.string.waiting));
-                disableToggleServiceUI();
-                
+                if (!isServiceRunning()) {
+                    m_toggleButton.setText(getText(R.string.start));
+                    enableToggleServiceUI();
+                } else {
+                    m_toggleButton.setText(getText(R.string.waiting));
+                    disableToggleServiceUI();
+                }
             } else {
-                if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected()) {
+                if (isTunnelConnected()) {
                     setStatusState(R.drawable.status_icon_connected);
                 } else {
                     setStatusState(R.drawable.status_icon_connecting);
                 }
                 m_toggleButton.setText(getText(R.string.stop));
                 enableToggleServiceUI();
-                
             }
         }
         
@@ -1012,9 +929,11 @@ public abstract class MainBase {
 
         private void checkRestartTunnel() {
             if (m_restartTunnel &&
+                    !m_boundToTunnelService &&
+                    !m_boundToTunnelVpnService &&
                     !isServiceRunning()) {
                 m_restartTunnel = false;
-                startTunnel(this);
+                startTunnel();
             }
         }
 
@@ -1026,7 +945,7 @@ public abstract class MainBase {
             }
         }
         
-        protected void startTunnel(Context context) {
+        protected void startTunnel() {
             // Don't start if custom proxy settings is selected and values are
             // invalid
             boolean useHTTPProxyPreference = PsiphonData.getPsiphonData().getUseHTTPProxy();
@@ -1034,14 +953,14 @@ public abstract class MainBase {
 
             if (useHTTPProxyPreference && useCustomProxySettingsPreference && !customProxySettingsValuesValid()) {
                 cancelInvalidProxySettingsToast();
-                m_invalidProxySettingsToast = Toast.makeText(context, R.string.network_proxy_connect_invalid_values, Toast.LENGTH_SHORT);
+                m_invalidProxySettingsToast = Toast.makeText(this, R.string.network_proxy_connect_invalid_values, Toast.LENGTH_SHORT);
                 m_invalidProxySettingsToast.show();
                 return;
             }
 
             boolean waitingForPrompt = false;
 
-            if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService()) {
+            if (getTunnelConfigWholeDevice() && Utils.hasVpnService()) {
                 // VpnService backwards compatibility: for lazy class loading
                 // the VpnService
                 // class reference has to be in another function (doVpnPrepare),
@@ -1050,7 +969,7 @@ public abstract class MainBase {
                 waitingForPrompt = doVpnPrepare();
             }
             if (!waitingForPrompt) {
-                startTunnelService();
+                bindAndStartTunnelService();
             }
         }
 
@@ -1168,7 +1087,7 @@ public abstract class MainBase {
         @Override
         protected void onActivityResult(int request, int result, Intent data) {
             if (request == REQUEST_CODE_PREPARE_VPN && result == RESULT_OK) {
-                startTunnelService();
+                bindAndStartTunnelService();
             } else if (request == REQUEST_CODE_PREFERENCE) {
                 // Don't call updateProxySettingsFromPreferences() first, because
                 // isProxySettingsRestartRequired() looks at the stored preferences.
@@ -1184,7 +1103,63 @@ public abstract class MainBase {
             }
         }
 
-        protected void startTunnelService() {
+        // Tunnel config, sent to the service.
+        private TunnelManager.Config m_tunnelConfig = new TunnelManager.Config();
+
+        protected void setTunnelConfigEgressRegion(String tunnelConfigEgressRegion) {
+            m_tunnelConfig.egressRegion = tunnelConfigEgressRegion;
+        }
+
+        protected String getTunnelConfigEgressRegion() {
+            return m_tunnelConfig.egressRegion;
+        }
+
+        protected void setTunnelConfigWholeDevice(boolean tunnelConfigWholeDevice) {
+            m_tunnelConfig.wholeDevice = tunnelConfigWholeDevice;
+        }
+
+        protected boolean getTunnelConfigWholeDevice() {
+            return m_tunnelConfig.wholeDevice;
+        }
+
+        protected void setTunnelConfigDisableTimeouts(boolean disableTimeouts) {
+            m_tunnelConfig.disableTimeouts = disableTimeouts;
+        }
+
+        protected boolean getTunnelConfigDisableTimeouts() {
+            return m_tunnelConfig.disableTimeouts;
+        }
+
+        protected PendingIntent getHandshakePendingIntent() {
+            return null;
+        }
+
+        protected PendingIntent getServiceNotificationPendingIntent() {
+            return null;
+        }
+
+        protected void configureServiceIntent(Intent intent) {
+            // TODO: requested local proxy ports
+
+            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_HANDSHAKE_PENDING_INTENT,
+                    getHandshakePendingIntent());
+
+            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_NOTIFICATION_PENDING_INTENT,
+                    getServiceNotificationPendingIntent());
+
+            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_WHOLE_DEVICE,
+                    getTunnelConfigWholeDevice());
+
+            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_EGRESS_REGION,
+                    getTunnelConfigEgressRegion());
+
+            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS,
+                    getTunnelConfigDisableTimeouts());
+
+            // TODO: upstream proxy settings
+        }
+
+        protected void bindAndStartTunnelService() {
 
             if (isServiceRunning()) {
                 MyLog.g("startTunnelService(): already running service");
@@ -1195,33 +1170,225 @@ public abstract class MainBase {
             // (i.e., while isServiceRunning can't be relied upon)
             disableToggleServiceUI();
 
-            if (PsiphonData.getPsiphonData().getTunnelWholeDevice() && Utils.hasVpnService()) {
-                doStartTunnelVpnService(this);
+            if (getTunnelConfigWholeDevice() && Utils.hasVpnService()) {
+                doStartTunnelVpnService();
             } else {
-                if (null == startService(new Intent(this, TunnelService.class))) {
-                    PsiphonData.getPsiphonData().setStartingTunnelManager();
+                startService(new Intent(this, TunnelService.class));
+            }
+        }
+
+        private void doStartTunnelVpnService() {
+            Intent intent = new Intent(this, TunnelVpnService.class);
+            bindService(intent, m_tunnelVpnServiceConnection, BIND_AUTO_CREATE);
+        }
+
+        // Shared tunnel state, received from service in the HANDSHAKE
+        // intent and in various state-related Messages.
+        private TunnelManager.State m_tunnelState = new TunnelManager.State();
+
+        protected boolean isTunnelConnected() {
+            return m_tunnelState.isConnected;
+        }
+
+        protected ArrayList<String> getHomePages() {
+            ArrayList<String> homePages = new ArrayList<>();
+            homePages.addAll(m_tunnelState.homePages);
+            return homePages;
+        }
+
+        protected int getListeningLocalHttpProxyPort() {
+            return m_tunnelState.listeningLocalHttpProxyPort;
+        }
+
+        protected void getTunnelStateFromHandshakeIntent(Intent intent) {
+            if (!intent.getAction().equals(TunnelManager.INTENT_ACTION_HANDSHAKE)) {
+                return;
+            }
+            getTunnelStateFromBundle(intent.getExtras());
+        }
+
+        private void getTunnelStateFromBundle(Bundle data) {
+            if (data == null) {
+                return;
+            }
+
+            ArrayList<String> availableEgressRegions = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_AVAILABLE_EGRESS_REGIONS);
+            if (availableEgressRegions != null) {
+                m_tunnelState.availableEgressRegions = availableEgressRegions;
+                RegionAdapter.setServersExist(this, availableEgressRegions);
+            }
+            m_tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
+            if (m_tunnelState.isConnected) {
+                setStatusState(R.drawable.status_icon_connected);
+            } else {
+                setStatusState(R.drawable.status_icon_connecting);
+            }
+            m_tunnelState.listeningLocalSocksProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT);
+            m_tunnelState.listeningLocalHttpProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT);
+            m_tunnelState.clientRegion = data.getString(TunnelManager.DATA_TUNNEL_STATE_CLIENT_REGION);
+            ArrayList<String> homePages = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_HOME_PAGES);
+            if (homePages != null) {
+                m_tunnelState.homePages = homePages;
+            }
+        }
+
+        private final Messenger m_incomingMessenger = new Messenger(new IncomingMessageHandler());
+        private Messenger m_outgoingMessenger = null;
+
+        private class IncomingMessageHandler extends Handler {
+            @Override
+            public void handleMessage(Message msg) {
+                Bundle data = msg.getData();
+                switch (msg.what) {
+                    case TunnelManager.MSG_REGISTER_RESPONSE:
+                        getTunnelStateFromBundle(data);
+                        // An activity created while the service is already running will learn
+                        // the sponsor home page at this point, so now load it.
+                        // TODO-TUNNEL-CORE: ensure restoreSponsorTab can always be called here
+                        restoreSponsorTab();
+                        updateServiceStateUI();
+                        break;
+
+                    case TunnelManager.MSG_KNOWN_SERVER_REGIONS:
+                        RegionAdapter.setServersExist(
+                                MainBase.TabbedActivityBase.this,
+                                data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_AVAILABLE_EGRESS_REGIONS));
+                        break;
+
+                    case TunnelManager.MSG_TUNNEL_STARTING:
+                        m_tunnelState.isConnected = false;
+                        updateServiceStateUI();
+                        break;
+
+                    case TunnelManager.MSG_TUNNEL_STOPPING:
+                        m_tunnelState.isConnected = false;
+                        updateServiceStateUI();
+
+                        // When the tunnel self-stops, we also need to unbind to ensure
+                        // the service is destroyed
+                        unbindTunnelService();
+                        break;
+
+                    case TunnelManager.MSG_TUNNEL_CONNECTION_STATE:
+                        m_tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
+                        updateServiceStateUI();
+                        break;
+
+                    case TunnelManager.MSG_LOGS:
+                        // TODO-TUNNEL-CORE: temporary implementation only! neither robust nor functional.
+                        ArrayList<String> logs = data.getStringArrayList(TunnelManager.DATA_LOGS);
+                        if (logs != null) {
+                            for (String log : logs) {
+                                MyLog.v(R.string.remote_service_message, MyLog.Sensitivity.NOT_SENSITIVE, log);
+                            }
+                        }
+                        break;
+
+                    default:
+                        super.handleMessage(msg);
                 }
             }
         }
 
-        private void doStartTunnelVpnService(Context context) {
-            if (null == startService(new Intent(context, TunnelVpnService.class))) {
-                PsiphonData.getPsiphonData().setStartingTunnelManager();
+        private void sendServiceMessage(int what) {
+            if (m_incomingMessenger == null ||
+                    m_outgoingMessenger == null) {
+                return;
+            }
+            try {
+                Message msg = Message.obtain(null, what);
+                msg.replyTo = m_incomingMessenger;
+                m_outgoingMessenger.send(msg);
+            } catch (RemoteException e) {
+                MyLog.g("sendServiceMessage failed: %s", e.getMessage());
             }
         }
 
-        private void stopTunnelService() {
+        private boolean m_boundToTunnelService = false;
+        private final ServiceConnection m_tunnelServiceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName className, IBinder service) {
+                m_outgoingMessenger = new Messenger(service);
+                m_boundToTunnelService = true;
+                sendServiceMessage(TunnelManager.MSG_REGISTER);
 
-            // Use signalStopService to asynchronously stop the service.
-            // 1. VpnService doesn't respond to stopService calls
-            // 2. The UI will not block while waiting for stopService to return
-            // This scheme assumes that the UI will monitor that the service is
-            // running while the Activity is not bound to it. This is the state
-            // while the tunnel is shutting down.
-            TunnelManager currentTunnelManager = PsiphonData.getPsiphonData().getCurrentTunnelManager();
-            if (currentTunnelManager != null) {
-                currentTunnelManager.signalStopService();
+                Intent intent = new Intent(TabbedActivityBase.this, TunnelService.class);
+                configureServiceIntent(intent);
+                startService(intent);
+                updateServiceStateUI();
             }
+
+            @Override
+            public void onServiceDisconnected(ComponentName arg0) {
+                m_outgoingMessenger = null;
+                m_boundToTunnelService = false;
+                updateServiceStateUI();
+            }
+        };
+
+        private boolean m_boundToTunnelVpnService = false;
+        private final ServiceConnection m_tunnelVpnServiceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName className, IBinder service) {
+                m_outgoingMessenger = new Messenger(service);
+                m_boundToTunnelVpnService = true;
+                sendServiceMessage(TunnelManager.MSG_REGISTER);
+
+                // VpnService backwards compatibility: this has sufficient lazy
+                // class loading
+                // as onServiceConnected is only called on bind.
+                Intent intent = new Intent(TabbedActivityBase.this, TunnelVpnService.class);
+                configureServiceIntent(intent);
+                startService(intent);
+                updateServiceStateUI();
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName arg0) {
+                m_outgoingMessenger = null;
+                m_boundToTunnelVpnService = false;
+                updateServiceStateUI();
+            }
+        };
+
+        private void stopTunnelService() {
+            if (getTunnelConfigWholeDevice() && Utils.hasVpnService()) {
+                sendServiceMessage(TunnelManager.MSG_STOP_VPN_SERVICE);
+                // MSG_STOP_VPN_SERVICE will cause the VpnService to stop itself,
+                // which will then cause an unbind to occur. Don't call
+                // unbindTunnelService() here, as its unnecessary and either
+                // the MSG_UNREGISTER or unbindService causes
+                // "Exception when unbinding service com.psiphon3/.psiphonlibrary.TunnelVpnService"
+                // TODO-TUNNEL-CORE: double check this logic
+                // unbindTunnelService();
+            } else {
+                unbindTunnelService();
+                stopService(new Intent(this, TunnelService.class));
+            }
+        }
+
+        private void unbindTunnelService() {
+            sendServiceMessage(TunnelManager.MSG_UNREGISTER);
+            if (m_boundToTunnelService) {
+                try {
+                    unbindService(m_tunnelServiceConnection);
+                }
+                catch (java.lang.IllegalArgumentException e) {
+                    // Ignore
+                    // "java.lang.IllegalArgumentException: Service not registered"
+                }
+                m_boundToTunnelService = false;
+            }
+            if (m_boundToTunnelVpnService) {
+                try {
+                    unbindService(m_tunnelVpnServiceConnection);
+                } catch (java.lang.IllegalArgumentException e) {
+                    // Ignore
+                    // "java.lang.IllegalArgumentException: Service not registered"
+                }
+                m_boundToTunnelVpnService = false;
+            }
+            updateServiceStateUI();
         }
 
         /**
@@ -1233,19 +1400,6 @@ public abstract class MainBase {
          * @return True if the service is already running, false otherwise.
          */
         protected boolean isServiceRunning() {
-
-            // getStartingTunnelManager is set to true by the UI thread as soon
-            // as it knows startService will start the service. It remains set
-            // until the service starts (asynchronously, which is why we have
-            // the starting flag) after which point the service onCreate will
-            // populate setCurrentTunnelManager.
-            if (PsiphonData.getPsiphonData().getStartingTunnelManager() ||
-                    PsiphonData.getPsiphonData().getCurrentTunnelManager() != null) {
-                return true;
-            }
-
-            // TODO: the getRunningServices logic is likely no longer necessary.
-
             ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
             for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
                 if (service.pid == android.os.Process.myPid() &&
@@ -1274,9 +1428,9 @@ public abstract class MainBase {
                 m_statusListManager.notifyStatusAdded();
             }
 
-            if (m_localBroadcastManager != null) {
-                m_localBroadcastManager.sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
-            }
+            // TODO-TUNNEL-CORE: implement logging
+            String msg = "TODO-TUNNEL-CORE: implement logging";
+            m_statusTabLogLine.setText(msg);
         }
 
         private class SponsorHomePage {
@@ -1306,15 +1460,8 @@ public abstract class MainBase {
             }
 
             private class SponsorWebViewClient extends WebViewClient {
-                private final IEvents mEventsInterface;
                 private Timer mTimer;
                 private boolean mWebViewLoaded = false;
-
-                public SponsorWebViewClient(IEvents eventsInterface) {
-                    super();
-                    mEventsInterface = eventsInterface;
-                }
-
                 private boolean mStopped = false;
 
                 public void stop() {
@@ -1336,12 +1483,12 @@ public abstract class MainBase {
                         mTimer = null;
                     }
 
-                    if (!PsiphonData.getPsiphonData().getDataTransferStats().isConnected()) {
+                    if (!isTunnelConnected()) {
                         return true;
                     }
 
                     if (mWebViewLoaded) {
-                        mEventsInterface.displayBrowser(getContext(), Uri.parse(url));
+                        displayBrowser(getContext(), Uri.parse(url));
                     }
                     return mWebViewLoaded;
                 }
@@ -1372,11 +1519,11 @@ public abstract class MainBase {
             private final SponsorWebChromeClient mWebChromeClient;
             private final ProgressBar mProgressBar;
 
-            @TargetApi(Build.VERSION_CODES.HONEYCOMB) public SponsorHomePage(WebView webView, ProgressBar progressBar, IEvents eventsInterface) {
+            @TargetApi(Build.VERSION_CODES.HONEYCOMB) public SponsorHomePage(WebView webView, ProgressBar progressBar) {
                 mWebView = webView;
                 mProgressBar = progressBar;
                 mWebChromeClient = new SponsorWebChromeClient(mProgressBar);
-                mWebViewClient = new SponsorWebViewClient(eventsInterface);
+                mWebViewClient = new SponsorWebViewClient();
 
                 mWebView.setWebChromeClient(mWebChromeClient);
                 mWebView.setWebViewClient(mWebViewClient);
@@ -1392,7 +1539,6 @@ public abstract class MainBase {
                     mWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
                 }                
                 
-
                 WebSettings webSettings = mWebView.getSettings();
                 webSettings.setJavaScriptEnabled(true);
                 webSettings.setDomStorageEnabled(true);
@@ -1406,10 +1552,18 @@ public abstract class MainBase {
             }
 
             public void load(String url) {
-                WebViewProxySettings.setLocalProxy(mWebView.getContext(), PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort());
+                WebViewProxySettings.setLocalProxy(mWebView.getContext(), getListeningLocalHttpProxyPort());
                 mProgressBar.setVisibility(View.VISIBLE);
                 mWebView.loadUrl(url);
             }
+        }
+
+        protected void displayBrowser(Context context, Uri uri) {
+
+        }
+
+        protected void restoreSponsorTab() {
+
         }
     }
 }

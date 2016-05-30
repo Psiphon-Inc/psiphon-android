@@ -34,6 +34,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 
 import com.psiphon3.R;
@@ -93,8 +94,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String DATA_TUNNEL_CONFIG_WHOLE_DEVICE = "tunnelConfigWholeDevice";
     public static final String DATA_TUNNEL_CONFIG_EGRESS_REGION = "tunnelConfigEgressRegion";
     public static final String DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS = "tunnelConfigDisableTimeouts";
-    public static final String DATA_TUNNEL_CONFIG_NOTIFICATION_SOUND = "tunnelConfigNotificationSound";
-    public static final String DATA_TUNNEL_CONFIG_NOTIFICATION_VIBRATE = "tunnelConfigNotificationVibrate";
     public static final String DATA_TUNNEL_CONFIG_UPSTREAM_PROXY_CONFIG = "tunnelConfigUpstreamProxyUrl";
     public static final String DATA_LOGS = "logs";
 
@@ -105,9 +104,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         boolean wholeDevice = false;
         String egressRegion = PsiphonConstants.REGION_CODE_ANY;
         boolean disableTimeouts = false;
-        // TODO-TUNNEL-CORE: wifi upgrade flag
-        boolean notificationSound = false;
-        boolean notificationVibrate = false;
         String upstreamProxyURL;
     }
 
@@ -118,10 +114,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static class State {
         ArrayList<String> availableEgressRegions = new ArrayList<>();
         boolean isConnected = false;
-        ArrayList<String> homePages = new ArrayList<>();
         int listeningLocalSocksProxyPort = 0;
         int listeningLocalHttpProxyPort = 0;
         String clientRegion;
+        ArrayList<String> homePages = new ArrayList<>();
     }
 
     private State m_tunnelState = new State();
@@ -254,12 +250,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_tunnelConfig.disableTimeouts = intent.getBooleanExtra(
                 TunnelManager.DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS, false);
 
-        m_tunnelConfig.notificationSound = intent.getBooleanExtra(
-                TunnelManager.DATA_TUNNEL_CONFIG_NOTIFICATION_SOUND, false);
-
-        m_tunnelConfig.notificationVibrate = intent.getBooleanExtra(
-                TunnelManager.DATA_TUNNEL_CONFIG_NOTIFICATION_VIBRATE, false);
-
         m_tunnelConfig.upstreamProxyURL = intent.getStringExtra(
                 TunnelManager.DATA_TUNNEL_CONFIG_UPSTREAM_PROXY_CONFIG);
     }
@@ -292,10 +282,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         Notification notification = mNotificationBuilder.build();
 
         if (alert) {
-            if (m_tunnelConfig.notificationSound) {
+            if (PreferenceManager.getDefaultSharedPreferences(m_parentService).getBoolean(
+                    m_parentService.getString(R.string.preferenceNotificationsWithSound), false)) {
                 notification.defaults |= Notification.DEFAULT_SOUND;
             }
-            if (m_tunnelConfig.notificationVibrate) {
+            if (PreferenceManager.getDefaultSharedPreferences(m_parentService).getBoolean(
+                    m_parentService.getString(R.string.preferenceNotificationsWithVibrate), false)) {
                 notification.defaults |= Notification.DEFAULT_VIBRATE;
             }
         }

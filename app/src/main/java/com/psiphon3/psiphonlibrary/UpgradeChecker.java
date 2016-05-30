@@ -355,11 +355,17 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         @Override
         public String getPsiphonConfig() {
             // Build a temporary tunnel config to use
-            String config = TunnelManager.buildTunnelCoreConfig(
+            TunnelManager.Config tunnelManagerConfig = new TunnelManager.Config();
+            tunnelManagerConfig.disableTimeouts = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
+                    this.getString(R.string.disableTimeoutsPreference), false);
+            tunnelManagerConfig.upstreamProxyURL = ;
+
+            String tunnelCoreConfig = TunnelManager.buildTunnelCoreConfig(
                     this,                       // context
+                    tunnelManagerConfig,
                     "upgradechecker",           // tempTunnelName
                     "Psiphon_UpgradeChecker_"); // clientPlatformPrefix
-            return config == null ? "" : config;
+            return tunnelCoreConfig == null ? "" : tunnelCoreConfig;
         }
 
         /**
