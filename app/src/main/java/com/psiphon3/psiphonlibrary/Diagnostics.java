@@ -35,9 +35,7 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.os.Build;
-import android.util.Log;
 
-import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import com.psiphon3.R;
@@ -64,7 +62,7 @@ public class Diagnostics
         // Our attachment is JSON, which is then encrypted, and the
         // encryption elements stored in JSON.
 
-        String diagnosticJSON = null;
+        String diagnosticJSON;
 
         try
         {
@@ -116,6 +114,8 @@ public class Diagnostics
 
             JSONArray diagnosticHistory = new JSONArray();
 
+            // TODO-TUNNEL-CORE: get from logging provider
+            /*
             for (PsiphonData.DiagnosticEntry item : PsiphonData.cloneDiagnosticHistory())
             {
                 JSONObject entry = new JSONObject();
@@ -124,6 +124,7 @@ public class Diagnostics
                 entry.put("data", item.data() == null ? JSONObject.NULL : item.data());
                 diagnosticHistory.put(entry);
             }
+            */
 
             /*
              * Status History
@@ -131,6 +132,8 @@ public class Diagnostics
 
             JSONArray statusHistory = new JSONArray();
 
+            // TODO-TUNNEL-CORE: get from logging provider
+            /*
             for (StatusEntry internalEntry : PsiphonData.getPsiphonData().cloneStatusHistory())
             {
                 // Don't send any sensitive logs or debug logs
@@ -178,7 +181,7 @@ public class Diagnostics
                 }
 
                 statusHistory.put(statusEntry);
-            }
+            }*/
 
             /*
              * JSON-ify the diagnostic info
@@ -232,11 +235,7 @@ public class Diagnostics
                     EmbeddedValues.FEEDBACK_ENCRYPTION_PUBLIC_KEY);
             encryptedOkay = true;
         }
-        catch (GeneralSecurityException e)
-        {
-            MyLog.e(R.string.Diagnostics_EncryptedFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
-        }
-        catch (UnsupportedEncodingException e)
+        catch (GeneralSecurityException | UnsupportedEncodingException e)
         {
             MyLog.e(R.string.Diagnostics_EncryptedFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
         }
@@ -416,12 +415,7 @@ public class Diagnostics
             httpsConn.getInputStream();
             
             success = true;
-        }
-        catch (ProtocolException e)
-        {
-            MyLog.g("Diagnostic doFeedbackUpload failed: %s", e.getMessage());
-        }
-        catch (IOException e)
+        } catch (IOException e)
         {
             MyLog.g("Diagnostic doFeedbackUpload failed: %s", e.getMessage());
         }

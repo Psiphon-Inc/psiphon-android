@@ -524,7 +524,8 @@ public abstract class MainBase {
             m_statusTabVersionLine.setText(msg);
 
             // Restore messages previously posted by the service.
-            MyLog.restoreLogHistory();
+            // TODO-TUNNEL-CORE: restore logs from loggingprovider
+            // MyLog.restoreLogHistory();
         }
 
         @Override
@@ -1228,16 +1229,6 @@ public abstract class MainBase {
                         updateServiceStateUI();
                         break;
 
-                    case TunnelManager.MSG_LOGS:
-                        // TODO-TUNNEL-CORE: temporary implementation only! neither robust nor functional.
-                        ArrayList<String> logs = data.getStringArrayList(TunnelManager.DATA_LOGS);
-                        if (logs != null) {
-                            for (String log : logs) {
-                                MyLog.v(R.string.remote_service_message, MyLog.Sensitivity.NOT_SENSITIVE, log);
-                            }
-                        }
-                        break;
-
                     default:
                         super.handleMessage(msg);
                 }
@@ -1367,24 +1358,6 @@ public abstract class MainBase {
 
         private boolean isVpnService(String className) {
             return TunnelVpnService.class.getName().equals(className);
-        }
-
-        /*
-         * MyLog.ILogger implementation
-         */
-
-        /**
-         * @see com.psiphon3.psiphonlibrary.Utils.MyLog.ILogger#statusEntryAdded()
-         */
-        @Override
-        public void statusEntryAdded() {
-            if (m_statusListManager != null) {
-                m_statusListManager.notifyStatusAdded();
-            }
-
-            // TODO-TUNNEL-CORE: implement logging
-            String msg = "TODO-TUNNEL-CORE: implement logging";
-            m_statusTabLogLine.setText(msg);
         }
 
         private class SponsorHomePage {

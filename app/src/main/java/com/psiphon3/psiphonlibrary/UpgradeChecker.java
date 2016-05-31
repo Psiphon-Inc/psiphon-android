@@ -34,6 +34,7 @@ import android.util.Log;
 import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
+import java.util.Date;
 import java.util.List;
 
 import ca.psiphon.PsiphonTunnel;
@@ -79,7 +80,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
      * @param formatArgs Arguments to be formatted into the log string.
      */
     private static void log(Context context, int stringResID, MyLog.Sensitivity sensitivity, int priority, Object... formatArgs) {
-        String logJSON = LoggingProvider.makeLogJSON(stringResID, sensitivity, priority, formatArgs);
+        String logJSON = LoggingProvider.makeLogJSON(new Date(), stringResID, sensitivity, formatArgs, priority);
         if (logJSON == null) {
             // Fail silently
             return;

@@ -74,7 +74,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final int MSG_TUNNEL_STARTING = 5;
     public static final int MSG_TUNNEL_STOPPING = 6;
     public static final int MSG_TUNNEL_CONNECTION_STATE = 7;
-    public static final int MSG_LOGS = 8;
 
     public static final String INTENT_ACTION_HANDSHAKE = "com.psiphon3.psiphonlibrary.TunnelManager.HANDSHAKE";
 
@@ -96,7 +95,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String DATA_TUNNEL_CONFIG_EGRESS_REGION = "tunnelConfigEgressRegion";
     public static final String DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS = "tunnelConfigDisableTimeouts";
     public static final String DATA_TUNNEL_CONFIG_UPSTREAM_PROXY_CONFIG = "tunnelConfigUpstreamProxyUrl";
-    public static final String DATA_LOGS = "logs";
 
     // Tunnel config, received from the client.
     public static class Config {
@@ -647,9 +645,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     @Override
     public void onDiagnosticMessage(String message) {
-        // TODO-TUNNEL-CORE: temporary:
-        //MyLog.g("diagnostic", "msg", message);
-        android.util.Log.e("PSIPHON-DIAGNOSTIC", message);
+        MyLog.g(message, "msg", message);
     }
 
     @Override
@@ -796,17 +792,5 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         if (m_tunnel != null) {
             m_tunnel.setClientVerificationPayload(payload);
         }
-    }
-
-    @Override
-    public void statusEntryAdded() {
-        // TODO-TUNNEL-CORE: temporary implementation only! neither robust nor functional.
-        if (m_outgoingMessenger == null) {
-            return;
-        }
-        ArrayList<String> logs = new ArrayList<>();
-        Bundle data = new Bundle();
-        data.putStringArrayList(DATA_LOGS, logs);
-        sendClientMessage(MSG_LOGS, data);
     }
 }
