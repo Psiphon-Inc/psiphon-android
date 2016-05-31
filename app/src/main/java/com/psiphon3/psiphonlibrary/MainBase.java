@@ -522,10 +522,6 @@ public abstract class MainBase {
 
             String msg = getContext().getString(R.string.client_version, EmbeddedValues.CLIENT_VERSION);
             m_statusTabVersionLine.setText(msg);
-
-            // Restore messages previously posted by the service.
-            // TODO-TUNNEL-CORE: restore logs from loggingprovider
-            // MyLog.restoreLogHistory();
         }
 
         @Override
@@ -574,6 +570,11 @@ public abstract class MainBase {
         @Override
         protected void onResume() {
             super.onResume();
+
+            // Reload logs from the logging provider
+            StatusList.getStatusList().clearStatusHistory();
+            LoggingProvider.restoreLogs(this);
+
             updateProxySettingsFromPreferences();
             
             // From: http://steve.odyfamily.com/?p=12
