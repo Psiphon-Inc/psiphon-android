@@ -35,6 +35,7 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.os.Build;
+import android.util.Log;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
@@ -132,9 +133,7 @@ public class Diagnostics
 
             JSONArray statusHistory = new JSONArray();
 
-            // TODO-TUNNEL-CORE: get from logging provider
-            /*
-            for (StatusEntry internalEntry : PsiphonData.getPsiphonData().cloneStatusHistory())
+            for (StatusList.StatusEntry internalEntry : StatusList.getStatusList().cloneStatusHistory())
             {
                 // Don't send any sensitive logs or debug logs
                 if (internalEntry.sensitivity() == MyLog.Sensitivity.SENSITIVE_LOG
@@ -181,7 +180,7 @@ public class Diagnostics
                 }
 
                 statusHistory.put(statusEntry);
-            }*/
+            }
 
             /*
              * JSON-ify the diagnostic info

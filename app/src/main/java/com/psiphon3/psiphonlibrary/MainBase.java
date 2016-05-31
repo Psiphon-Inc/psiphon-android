@@ -574,6 +574,7 @@ public abstract class MainBase {
             // Reload logs from the logging provider
             StatusList.getStatusList().clearStatusHistory();
             LoggingProvider.restoreLogs(this);
+            m_statusListManager.notifyStatusAdded();
 
             updateProxySettingsFromPreferences();
             
@@ -1095,8 +1096,6 @@ public abstract class MainBase {
         }
 
         protected void configureServiceIntent(Intent intent) {
-            // TODO: requested local proxy ports
-
             intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_HANDSHAKE_PENDING_INTENT,
                     getHandshakePendingIntent());
 
@@ -1112,7 +1111,8 @@ public abstract class MainBase {
             intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS,
                     getTunnelConfigDisableTimeouts());
 
-            // TODO: upstream proxy settings
+            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_UPSTREAM_PROXY_CONFIG,
+                    UpstreamProxySettings.getUpstreamProxyUrlFromCurrentPreferences(this));
         }
 
         protected void bindAndStartTunnelService() {
