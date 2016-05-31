@@ -101,7 +101,7 @@ public class LoggingProvider extends ContentProvider {
     }
 
     /**
-     * To be called by MyLog when logs should be moved from the provider DB to MyLog.
+     * To be called by StatusList when logs should be read from the provider DB into the StatusList.
      * @param context
      */
     public static void restoreLogs(Context context) {
@@ -270,7 +270,7 @@ public class LoggingProvider extends ContentProvider {
         }
 
         /**
-         * To be called by MyLog at a time when it's appropriate to consume logs that were stored
+         * To be called by StatusList at a time when it's appropriate to consume logs that were stored
          * by the provider. May execute asynchronously.
          */
         public static void restoreLogs(Context context) {
@@ -313,7 +313,7 @@ public class LoggingProvider extends ContentProvider {
         private static void restoreLogsHelper(Context context) {
             // DO NOT LOG WITHIN THIS FUNCTION
 
-            // We will cursor through DB records, passing them off to MyLog and deleting them.
+            // We will cursor through DB records, passing them off to StatusList
 
             SQLiteDatabase db = LogDatabaseHelper.get(context).getDB();
 
@@ -370,27 +370,29 @@ public class LoggingProvider extends ContentProvider {
                         formatArgs[i] = formatArgsJSONArray.get(i);
                     }
 
-                    // Pass the log info on to MyLog.
+                    // Pass the log info on to StatusList.
                     // Keep this call in the try block so it gets skipped if there's an exception above.
-                    // TODO-TUNNEL-CORE: put the logs somewhere
-                    /*
-                    if (!MyLog.logFromProvider(stringResID, sensitivity, priority, formatArgs, timestamp)) {
-                        // MyLog is not in a state to receive logs. Abort.
-                        db.endTransaction();
-                        break;
-                    }
-                    */
+                    StatusList.getStatusList().addStatusEntry(
+                            timestamp,
+                            stringResID,
+                            sensitivity,
+                            formatArgs,
+                            null,
+                            priority);
                 } catch (JSONException e) {
                     // Carry on with the deletion from DB
                 }
 
-                // MyLog was in a state to receive the data, so delete the row.
+                // TODO-TUNNEL-CORE: need another strategy to truncate logs
+                /*
+                // StatusList was in a state to receive the data, so delete the row.
                 String selection = COLUMN_NAME_ID + " = ?";
                 String[] selectionArgs = { String.valueOf(recId) };
                 db.delete(TABLE_NAME, selection, selectionArgs);
 
                 db.setTransactionSuccessful();
                 db.endTransaction();
+                */
             }
         }
     }
