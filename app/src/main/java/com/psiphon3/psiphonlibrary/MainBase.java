@@ -377,49 +377,7 @@ public abstract class MainBase {
         }
 
         private void updateProxySettingsFromPreferences() {
-            boolean useSystemProxySettingsPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
-                    getString(R.string.useSystemProxySettingsPreference), false);
-
-            // Backwards compatibility: if useSystemProxySettingsPreference is
-            // set and (the new) useProxySettingsPreference is not,
-            // then set it
-            if (useSystemProxySettingsPreference
-                    && !PreferenceManager.getDefaultSharedPreferences(this).contains(getString(R.string.useProxySettingsPreference))) {
-                Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-                editor.putBoolean(getString(R.string.useProxySettingsPreference), true);
-                editor.commit();
-            }
-
-            boolean useProxySettingsPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(getString(R.string.useProxySettingsPreference),
-                    false);
-
-            boolean useCustomProxySettingsPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
-                    getString(R.string.useCustomProxySettingsPreference), false);
-
-            String customProxyHostPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(
-                    getString(R.string.useCustomProxySettingsHostPreference), "");
-
-            String customProxyPortPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(
-                    getString(R.string.useCustomProxySettingsPortPreference), "");
-
-            boolean useProxyAuthenticationPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
-                    getString(R.string.useProxyAuthenticationPreference), false);
-
-            String proxyUsernamePreference = PreferenceManager.getDefaultSharedPreferences(this).getString(getString(R.string.useProxyUsernamePreference), "");
-
-            String proxyPasswordPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(getString(R.string.useProxyPasswordPreference), "");
-
-            String proxyDomainPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(getString(R.string.useProxyDomainPreference), "");
-
-            PsiphonData.getPsiphonData().setUseSystemProxySettings(useSystemProxySettingsPreference);
-            PsiphonData.getPsiphonData().setUseHTTPProxy(useProxySettingsPreference);
-            PsiphonData.getPsiphonData().setUseCustomProxySettings(useCustomProxySettingsPreference);
-            PsiphonData.getPsiphonData().setCustomProxyHost(customProxyHostPreference);
-            PsiphonData.getPsiphonData().setCustomProxyPort(customProxyPortPreference);
-            PsiphonData.getPsiphonData().setUseProxyAuthentication(useProxyAuthenticationPreference);
-            PsiphonData.getPsiphonData().setProxyUsername(proxyUsernamePreference);
-            PsiphonData.getPsiphonData().setProxyPassword(proxyPasswordPreference);
-            PsiphonData.getPsiphonData().setProxyDomain(proxyDomainPreference);
+            UpstreamProxySettings.getUpstreamProxySettings().updateProxySettingsFromPreferences(this);
         }
 
         @SuppressLint("SetJavaScriptEnabled")
@@ -813,7 +771,7 @@ public abstract class MainBase {
 
         // Basic check that the values are populated
         private boolean customProxySettingsValuesValid() {
-            PsiphonData.ProxySettings proxySettings = PsiphonData.getPsiphonData().getProxySettings(this);
+            UpstreamProxySettings.ProxySettings proxySettings = UpstreamProxySettings.getUpstreamProxySettings().getProxySettings(this);
             return proxySettings != null && proxySettings.proxyHost.length() > 0 && proxySettings.proxyPort >= 1 && proxySettings.proxyPort <= 65535;
         }
 
@@ -868,8 +826,8 @@ public abstract class MainBase {
         }
 
         private void updateStatisticsUICallback() {
-            DataTransferStats dataTransferStats = PsiphonData.getPsiphonData().getDataTransferStats();
-            m_elapsedConnectionTimeView.setText(dataTransferStats.isConnected() ? getString(R.string.connected_elapsed_time,
+            DataTransferStats dataTransferStats = DataTransferStats.getDataTransferStats();
+            m_elapsedConnectionTimeView.setText(isTunnelConnected() ? getString(R.string.connected_elapsed_time,
                     Utils.elapsedTimeToDisplay(dataTransferStats.getElapsedTime())) : getString(R.string.disconnected));
             m_totalSentView.setText(Utils.byteCountToDisplaySize(dataTransferStats.getTotalBytesSent(), false));
             m_totalReceivedView.setText(Utils.byteCountToDisplaySize(dataTransferStats.getTotalBytesReceived(), false));
@@ -948,8 +906,8 @@ public abstract class MainBase {
         protected void startTunnel() {
             // Don't start if custom proxy settings is selected and values are
             // invalid
-            boolean useHTTPProxyPreference = PsiphonData.getPsiphonData().getUseHTTPProxy();
-            boolean useCustomProxySettingsPreference = PsiphonData.getPsiphonData().getUseCustomProxySettings();
+            boolean useHTTPProxyPreference = UpstreamProxySettings.getUpstreamProxySettings().getUseHTTPProxy();
+            boolean useCustomProxySettingsPreference = UpstreamProxySettings.getUpstreamProxySettings().getUseCustomProxySettings();
 
             if (useHTTPProxyPreference && useCustomProxySettingsPreference && !customProxySettingsValuesValid()) {
                 cancelInvalidProxySettingsToast();
@@ -1024,7 +982,7 @@ public abstract class MainBase {
             // check if "use proxy" has changed
             boolean useHTTPProxyPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(getString(R.string.useProxySettingsPreference),
                     false);
-            if (useHTTPProxyPreference != PsiphonData.getPsiphonData().getUseHTTPProxy()) {
+            if (useHTTPProxyPreference != UpstreamProxySettings.getUpstreamProxySettings().getUseHTTPProxy()) {
                 return true;
             }
 
@@ -1038,7 +996,7 @@ public abstract class MainBase {
             // radio has changed
             boolean useCustomProxySettingsPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
                     getString(R.string.useCustomProxySettingsPreference), false);
-            if (useCustomProxySettingsPreference != PsiphonData.getPsiphonData().getUseCustomProxySettings()) {
+            if (useCustomProxySettingsPreference != UpstreamProxySettings.getUpstreamProxySettings().getUseCustomProxySettings()) {
                 return true;
             }
 
@@ -1051,16 +1009,16 @@ public abstract class MainBase {
             // "use custom proxy" is selected, check if
             // host || port have changed
             if (!PreferenceManager.getDefaultSharedPreferences(this).getString(getString(R.string.useCustomProxySettingsHostPreference), "")
-                    .equals(PsiphonData.getPsiphonData().getCustomProxyHost())
+                    .equals(UpstreamProxySettings.getUpstreamProxySettings().getCustomProxyHost())
                     || !PreferenceManager.getDefaultSharedPreferences(this).getString(getString(R.string.useCustomProxySettingsPortPreference), "")
-                            .equals(PsiphonData.getPsiphonData().getCustomProxyPort())) {
+                            .equals(UpstreamProxySettings.getUpstreamProxySettings().getCustomProxyPort())) {
                 return true;
             }
 
             // check if "use proxy authentication" has changed
             boolean useProxyAuthenticationPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
                     getString(R.string.useProxyAuthenticationPreference), false);
-            if (useProxyAuthenticationPreference != PsiphonData.getPsiphonData().getUseProxyAuthentication()) {
+            if (useProxyAuthenticationPreference != UpstreamProxySettings.getUpstreamProxySettings().getUseProxyAuthentication()) {
                 return true;
             }
 
@@ -1072,16 +1030,12 @@ public abstract class MainBase {
 
             // "use proxy authentication" is checked, check if
             // username || password || domain have changed
-            if (!PreferenceManager.getDefaultSharedPreferences(this).getString(getString(R.string.useProxyUsernamePreference), "")
-                    .equals(PsiphonData.getPsiphonData().getProxyUsername())
+            return !PreferenceManager.getDefaultSharedPreferences(this).getString(getString(R.string.useProxyUsernamePreference), "")
+                    .equals(UpstreamProxySettings.getUpstreamProxySettings().getProxyUsername())
                     || !PreferenceManager.getDefaultSharedPreferences(this).getString(getString(R.string.useProxyPasswordPreference), "")
-                            .equals(PsiphonData.getPsiphonData().getProxyPassword())
+                    .equals(UpstreamProxySettings.getUpstreamProxySettings().getProxyPassword())
                     || !PreferenceManager.getDefaultSharedPreferences(this).getString(getString(R.string.useProxyDomainPreference), "")
-                            .equals(PsiphonData.getPsiphonData().getProxyDomain())) {
-                return true;
-            }
-
-            return false;
+                    .equals(UpstreamProxySettings.getUpstreamProxySettings().getProxyDomain());
         }
 
         @Override

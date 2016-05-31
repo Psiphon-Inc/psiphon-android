@@ -313,7 +313,6 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
                 log(this, R.string.upgrade_checker_start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN, e.getMessage());
                 // No need to call shutDownTunnel().
                 releaseWakefulIntent();
-                return;
             }
         }
 
@@ -358,7 +357,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
             TunnelManager.Config tunnelManagerConfig = new TunnelManager.Config();
             tunnelManagerConfig.disableTimeouts = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
                     this.getString(R.string.disableTimeoutsPreference), false);
-            tunnelManagerConfig.upstreamProxyURL = ;
+            tunnelManagerConfig.upstreamProxyURL = UpstreamProxySettings.getUpstreamProxyUrlFromCurrentPreferences(this);
 
             String tunnelCoreConfig = TunnelManager.buildTunnelCoreConfig(
                     this,                       // context

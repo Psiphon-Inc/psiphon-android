@@ -777,7 +777,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_Handler.post(new Runnable() {
             @Override
             public void run() {
-                m_safetyNetwrapper =  GoogleSafetyNetApiWrapper.getInstance(getContext());
+                m_safetyNetwrapper = GoogleSafetyNetApiWrapper.getInstance(getContext());
                 m_safetyNetwrapper.connect();
             }
         });
