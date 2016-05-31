@@ -58,8 +58,6 @@ import org.zirco.utils.ApplicationUtils;
 import org.zirco.utils.Constants;
 import org.zirco.utils.UrlUtils;
 
-import com.psiphon3.psiphonlibrary.PsiphonData;
-
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -2403,7 +2401,7 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
                     HttpConnectionParams.setSoTimeout(params, 5000);
                     HttpHost httpproxy = new HttpHost(
                             "localhost",
-                            PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort());
+                            PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getInt(MainActivity.this.getString(R.string.current_local_http_proxy_port), 0));
                     params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
                     DefaultHttpClient client = new DefaultHttpClient(params);
                     HttpContext context = new BasicHttpContext();

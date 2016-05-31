@@ -54,4 +54,6 @@
     <string name="upgrade_checker_client_upgrade_downloaded">UpgradeCheckerService: client upgrade downloaded</string>
     <string name="upgrade_checker_tunnel_exiting">UpgradeCheckerService: tunnel exiting</string>
     <string name="upgrade_checker_tunnel_diagnostic_message">UpgradeCheckerService: tunnel diagnostic: %s</string>
+
+    <string name="current_local_http_proxy_port">currentLocalHttpProxyPort</string>
 </resources>

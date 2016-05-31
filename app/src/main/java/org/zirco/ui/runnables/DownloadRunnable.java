@@ -30,10 +30,11 @@ import java.net.URLConnection;
 import org.zirco.model.items.DownloadItem;
 import org.zirco.utils.IOUtils;
 
-import com.psiphon3.psiphonlibrary.PsiphonData;
-
 import android.os.Handler;
 import android.os.Message;
+import android.preference.PreferenceManager;
+
+import com.psiphon3.R;
 
 /**
  * Background downloader.
@@ -117,7 +118,9 @@ public class DownloadRunnable implements Runnable {
                 URLConnection conn;
 
                 //Psiphon we are opening connection via local proxy
-			    Proxy localProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort()));
+			    Proxy localProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost",
+                        PreferenceManager.getDefaultSharedPreferences(mParent.getContext()).getInt(
+                                mParent.getContext().getString(R.string.current_local_http_proxy_port), 0)));
 			    conn = url.openConnection(localProxy);
 				//end Psiphon changes
 				

@@ -25,6 +25,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.net.VpnService;
 import android.net.VpnService.Builder;
@@ -683,6 +684,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public void onListeningHttpProxyPort(int port) {
         MyLog.v(R.string.http_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, port);
         m_tunnelState.listeningLocalHttpProxyPort = port;
+
+        // TODO-TUNNEL-CORE: use a multi process safe method
+        SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(m_parentService).edit();
+        editor.putInt(m_parentService.getString(R.string.current_local_http_proxy_port), port);
+        editor.apply();
     }
 
     @Override

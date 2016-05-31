@@ -12,11 +12,11 @@ import com.psiphon3.R;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 
 
@@ -165,6 +165,7 @@ public class ProxySettings
 	
 	public static void setLocalProxy(Context ctx)
 	{
-	    WebViewProxySettings.setLocalProxy(ctx, PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort());
+	    WebViewProxySettings.setLocalProxy(ctx,
+                PreferenceManager.getDefaultSharedPreferences(ctx).getInt(ctx.getString(R.string.current_local_http_proxy_port), 0));
 	}
 }
