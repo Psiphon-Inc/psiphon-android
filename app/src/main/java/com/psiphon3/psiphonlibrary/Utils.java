@@ -351,6 +351,8 @@ public class Utils
          */
         static public void g(String msg, JSONObject data)
         {
+            // TODO-TUNNEL-CORE: temporarily disabling
+            /*
             String logJSON = LoggingProvider.makeDiagnosticLogJSON(new Date(), msg, data);
             if (logJSON == null) {
                 // Fail silently
@@ -364,6 +366,7 @@ public class Utils
                     LoggingProvider.INSERT_URI,
                     values
             );
+            */
 
             // We're not logging the `data` at all. In the future we may want to.
             MyLog.d(msg);
