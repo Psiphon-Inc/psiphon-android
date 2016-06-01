@@ -632,10 +632,6 @@ public class IabHelper {
                 catch (IabException ex) {
                     result = ex.getResult();
                 }
-                catch (IllegalStateException ex) {
-                    result = new IabResult(BILLING_RESPONSE_RESULT_ERROR, "Inventory invalid state.");
-                }
-
 
                 flagEndAsync();
 
