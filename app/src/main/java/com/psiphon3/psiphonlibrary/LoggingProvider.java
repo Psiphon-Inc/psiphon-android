@@ -324,75 +324,53 @@ public class LoggingProvider extends ContentProvider {
 
             String sortOrder = COLUMN_NAME_ID + " ASC";
 
-            String limit = "1";
+            Cursor cursor = db.query(
+                    TABLE_NAME,
+                    projection,
+                    null, null,
+                    null, null,
+                    sortOrder);
 
-            // We will do repeated limit-1-query + delete transactions.
-            while (true) {
-                db.beginTransaction();
+            // Iterate over the cursor
+            try {
+                while (cursor.moveToNext()) {
 
-                Cursor cursor = db.query(
-                        TABLE_NAME,
-                        projection,
-                        null, null,
-                        null, null,
-                        sortOrder,
-                        limit);
+                    String logJSON = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_LOGJSON));
 
-                cursor.moveToFirst();
-                if (cursor.isAfterLast()) {
-                    // No records left.
-                    cursor.close();
-                    db.endTransaction();
-                    break;
-                }
+                    // Extract log args from JSON.
+                    int stringResID, priority;
+                    MyLog.Sensitivity sensitivity;
+                    Object[] formatArgs;
+                    Date timestamp;
+                    try {
+                        JSONObject jsonObj = new JSONObject(logJSON);
+                        stringResID = jsonObj.getInt("stringResID");
+                        sensitivity = MyLog.Sensitivity.valueOf(jsonObj.getString("sensitivity"));
+                        priority = jsonObj.getInt("priority");
+                        timestamp = new Date(jsonObj.getLong("timestamp"));
 
-                long recId = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_NAME_ID));
-                String logJSON = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_LOGJSON));
+                        JSONArray formatArgsJSONArray = jsonObj.getJSONArray("formatArgs");
+                        formatArgs = new Object[formatArgsJSONArray.length()];
+                        for (int i = 0; i < formatArgsJSONArray.length(); i++) {
+                            formatArgs[i] = formatArgsJSONArray.get(i);
+                        }
 
-                // Don't need the cursor any longer
-                cursor.close();
-
-                // Extract log args from JSON.
-                int stringResID, priority;
-                MyLog.Sensitivity sensitivity;
-                Object[] formatArgs;
-                Date timestamp;
-                try {
-                    JSONObject jsonObj = new JSONObject(logJSON);
-                    stringResID = jsonObj.getInt("stringResID");
-                    sensitivity = MyLog.Sensitivity.valueOf(jsonObj.getString("sensitivity"));
-                    priority = jsonObj.getInt("priority");
-                    timestamp = new Date(jsonObj.getLong("timestamp"));
-
-                    JSONArray formatArgsJSONArray = jsonObj.getJSONArray("formatArgs");
-                    formatArgs = new Object[formatArgsJSONArray.length()];
-                    for (int i = 0; i < formatArgsJSONArray.length(); i++) {
-                        formatArgs[i] = formatArgsJSONArray.get(i);
+                        // Pass the log info on to StatusList.
+                        // Keep this call in the try block so it gets skipped if there's an exception above.
+                        StatusList.addStatusEntry(
+                                context,
+                                timestamp,
+                                stringResID,
+                                sensitivity,
+                                formatArgs,
+                                null,
+                                priority);
+                    } catch (JSONException e) {
+                        // just skip this entry
                     }
-
-                    // Pass the log info on to StatusList.
-                    // Keep this call in the try block so it gets skipped if there's an exception above.
-                    StatusList.getStatusList().addStatusEntry(
-                            timestamp,
-                            stringResID,
-                            sensitivity,
-                            formatArgs,
-                            null,
-                            priority);
-                } catch (JSONException e) {
-                    // Carry on with the deletion from DB
                 }
-
-                // TODO-TUNNEL-CORE: need another strategy to truncate logs
-                /*
-                // StatusList was in a state to receive the data, so delete the row.
-                String selection = COLUMN_NAME_ID + " = ?";
-                String[] selectionArgs = { String.valueOf(recId) };
-                db.delete(TABLE_NAME, selection, selectionArgs);
-
-                db.setTransactionSuccessful();
-                db.endTransaction();
-                */
+            } finally {
+                cursor.close();
             }
         }
     }

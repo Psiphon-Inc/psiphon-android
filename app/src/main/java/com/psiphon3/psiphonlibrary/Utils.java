@@ -353,19 +353,20 @@ public class Utils
         {
             // TODO-TUNNEL-CORE: temporarily disabling
             /*
-            String logJSON = LoggingProvider.makeDiagnosticLogJSON(new Date(), msg, data);
-            if (logJSON == null) {
-                // Fail silently
-                return;
+            if (logger.get() != null) {
+                String logJSON = LoggingProvider.makeDiagnosticLogJSON(new Date(), msg, data);
+                if (logJSON == null) {
+                    // Fail silently
+                    return;
+                }
+
+                ContentValues values = new ContentValues();
+                values.put(LoggingProvider.DIAGNOSTIC_LOG_JSON_KEY, logJSON);
+
+                logger.get().getContext().getContentResolver().insert(
+                        LoggingProvider.INSERT_URI,
+                        values);
             }
-
-            ContentValues values = new ContentValues();
-            values.put(LoggingProvider.DIAGNOSTIC_LOG_JSON_KEY, logJSON);
-
-            logger.get().getContext().getContentResolver().insert(
-                    LoggingProvider.INSERT_URI,
-                    values
-            );
             */
 
             // We're not logging the `data` at all. In the future we may want to.
@@ -452,19 +453,20 @@ public class Utils
                 int priority,
                 Date timestamp)
         {
-            String logJSON = LoggingProvider.makeLogJSON(timestamp, stringResID, sensitivity, formatArgs, priority);
-            if (logJSON == null) {
-                // Fail silently
-                return;
+            if (logger.get() != null) {
+                String logJSON = LoggingProvider.makeLogJSON(timestamp, stringResID, sensitivity, formatArgs, priority);
+                if (logJSON == null) {
+                    // Fail silently
+                    return;
+                }
+
+                ContentValues values = new ContentValues();
+                values.put(LoggingProvider.LOG_JSON_KEY, logJSON);
+
+                logger.get().getContext().getContentResolver().insert(
+                        LoggingProvider.INSERT_URI,
+                        values);
             }
-
-            ContentValues values = new ContentValues();
-            values.put(LoggingProvider.LOG_JSON_KEY, logJSON);
-
-            logger.get().getContext().getContentResolver().insert(
-                    LoggingProvider.INSERT_URI,
-                    values
-            );
 
             // Log to LogCat only if we're in debug mode and not restoring.
             if (PsiphonConstants.DEBUG)

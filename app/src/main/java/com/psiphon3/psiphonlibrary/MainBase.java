@@ -37,9 +37,11 @@ import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
@@ -55,6 +57,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.KeyEvent;
@@ -167,6 +170,7 @@ public abstract class MainBase {
         private TextView m_statusTabLogLine;
         private TextView m_statusTabVersionLine;
         private SponsorHomePage m_sponsorHomePage;
+        private LocalBroadcastManager m_localBroadcastManager;
         private Timer m_updateStatisticsUITimer;
         private Timer m_updateServiceStateUITimer;
         private boolean m_restartTunnel = false;
@@ -466,6 +470,9 @@ public abstract class MainBase {
             // Set up the list view
             m_statusListManager = new StatusListViewManager(statusListView);
 
+            m_localBroadcastManager = LocalBroadcastManager.getInstance(this);
+            m_localBroadcastManager.registerReceiver(new StatusEntryAdded(), new IntentFilter(StatusList.STATUS_ENTRY_ADDED));
+
             updateServiceStateUI();
 
             if (m_firstRun)
@@ -572,9 +579,8 @@ public abstract class MainBase {
             super.onResume();
 
             // Reload logs from the logging provider
-            StatusList.getStatusList().clearStatusHistory();
+            StatusList.clearStatusHistory();
             LoggingProvider.restoreLogs(this);
-            m_statusListManager.notifyStatusAdded();
 
             updateProxySettingsFromPreferences();
             
@@ -632,6 +638,25 @@ public abstract class MainBase {
                 startUp();
             } else {
                 stopTunnelService();
+            }
+        }
+
+        public class StatusEntryAdded extends BroadcastReceiver {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (m_statusListManager != null) {
+                    m_statusListManager.notifyStatusAdded();
+                }
+
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        StatusList.StatusEntry statusEntry = StatusList.getLastStatusEntryForDisplay();
+                        if (statusEntry != null) {
+                            String msg = getContext().getString(statusEntry.id(), statusEntry.formatArgs());
+                            m_statusTabLogLine.setText(msg);
+                        }
+                    }
+                });
             }
         }
 

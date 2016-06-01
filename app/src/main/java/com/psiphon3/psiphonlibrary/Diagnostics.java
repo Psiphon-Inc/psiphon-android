@@ -21,7 +21,6 @@ package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
@@ -115,9 +114,7 @@ public class Diagnostics
 
             JSONArray diagnosticHistory = new JSONArray();
 
-            // TODO-TUNNEL-CORE: get from logging provider
-            /*
-            for (PsiphonData.DiagnosticEntry item : PsiphonData.cloneDiagnosticHistory())
+            for (StatusList.DiagnosticEntry item : StatusList.cloneDiagnosticHistory())
             {
                 JSONObject entry = new JSONObject();
                 entry.put("timestamp!!timestamp", Utils.getISO8601String(item.timestamp()));
@@ -125,7 +122,6 @@ public class Diagnostics
                 entry.put("data", item.data() == null ? JSONObject.NULL : item.data());
                 diagnosticHistory.put(entry);
             }
-            */
 
             /*
              * Status History
@@ -133,7 +129,7 @@ public class Diagnostics
 
             JSONArray statusHistory = new JSONArray();
 
-            for (StatusList.StatusEntry internalEntry : StatusList.getStatusList().cloneStatusHistory())
+            for (StatusList.StatusEntry internalEntry : StatusList.cloneStatusHistory())
             {
                 // Don't send any sensitive logs or debug logs
                 if (internalEntry.sensitivity() == MyLog.Sensitivity.SENSITIVE_LOG

@@ -50,34 +50,13 @@ import org.json.JSONObject;
  */
 
 public class StatusList {
-    // Singleton pattern
-
-    private static StatusList m_statusList;
-
-    public Object clone() throws CloneNotSupportedException
-    {
-        throw new CloneNotSupportedException();
-    }
-
-    public static synchronized StatusList getStatusList()
-    {
-        if (m_statusList == null)
-        {
-            m_statusList = new StatusList();
-        }
-
-        return m_statusList;
-    }
-
-    private StatusList() {
-
-    }
+    public static final String STATUS_ENTRY_ADDED = "com.psiphon3.psiphonlibrary.StatusList.STATUS_ENTRY_ADDED";
 
     /*
      * Status Message History support
      */
 
-    static public class StatusEntry
+    public static class StatusEntry
     {
         private Date timestamp;
         private int id;
@@ -117,9 +96,10 @@ public class StatusList {
         }
     }
 
-    private ArrayList<StatusEntry> m_statusHistory = new ArrayList<>();
+    private static final ArrayList<StatusEntry> m_statusHistory = new ArrayList<>();
 
-    public void addStatusEntry(
+    public static void addStatusEntry(
+            Context context,
             Date timestamp,
             int id,
             Utils.MyLog.Sensitivity sensitivity,
@@ -139,9 +119,11 @@ public class StatusList {
         {
             m_statusHistory.add(entry);
         }
+
+        LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(STATUS_ENTRY_ADDED));
     }
 
-    public ArrayList<StatusEntry> cloneStatusHistory()
+    public static ArrayList<StatusEntry> cloneStatusHistory()
     {
         ArrayList<StatusEntry> copy;
         synchronized(m_statusHistory)
@@ -151,7 +133,7 @@ public class StatusList {
         return copy;
     }
 
-    public void clearStatusHistory()
+    public static void clearStatusHistory()
     {
         synchronized(m_statusHistory)
         {
@@ -160,11 +142,11 @@ public class StatusList {
     }
 
     /**
-     * @param index
+     * @param index The index of the item to retrieve.
      * @return Returns item at `index`. Negative indexes count from the end of
      * the array. If `index` is out of bounds, null is returned.
      */
-    public StatusEntry getStatusEntry(int index)
+    public static StatusEntry getStatusEntry(int index)
     {
         synchronized(m_statusHistory)
         {
@@ -188,7 +170,7 @@ public class StatusList {
     /**
      * @return Returns the last non-DEBUG, non-WARN(ing) item, or null if there is none.
      */
-    public StatusEntry getLastStatusEntryForDisplay()
+    public static StatusEntry getLastStatusEntryForDisplay()
     {
         synchronized(m_statusHistory)
         {
@@ -212,7 +194,7 @@ public class StatusList {
      * Diagnostic history support
      */
 
-    static public class DiagnosticEntry {
+    public static class DiagnosticEntry {
         private Date timestamp;
         private String msg;
         private JSONObject data;
@@ -233,9 +215,9 @@ public class StatusList {
         }
     }
 
-    static private List<DiagnosticEntry> m_diagnosticHistory = new ArrayList<>();
+    private static final List<DiagnosticEntry> m_diagnosticHistory = new ArrayList<>();
 
-    static public void addDiagnosticEntry(Date timestamp, String msg, JSONObject data)
+    public static void addDiagnosticEntry(Date timestamp, String msg, JSONObject data)
     {
         DiagnosticEntry entry = new DiagnosticEntry();
         entry.timestamp = timestamp;
@@ -247,7 +229,7 @@ public class StatusList {
         }
     }
 
-    static public List<DiagnosticEntry> cloneDiagnosticHistory()
+    public static List<DiagnosticEntry> cloneDiagnosticHistory()
     {
         List<DiagnosticEntry> copy;
         synchronized(m_diagnosticHistory)
@@ -436,7 +418,7 @@ public class StatusList {
             
             List<StatusEntry> newEntries = new ArrayList<>();
             while (true) {
-                StatusEntry entry = getStatusList().getStatusEntry(m_nextStatusEntryIndex);
+                StatusEntry entry = getStatusEntry(m_nextStatusEntryIndex);
                 if (entry == null) {
                     // No more entries to add
                     break;
