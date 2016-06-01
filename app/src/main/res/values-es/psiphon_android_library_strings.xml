@@ -74,7 +74,7 @@
   <string name="data_transfer_bytes_sent">Bytes enviados: %1$s (%2$.2f%% comprimidos)</string>
   <string name="data_transfer_bytes_received">Bytes recibidos: %1$s (%2$.2f%% comprimidos)</string>
   <string name="data_transfer_elapsed_time">Tiempo de conexión: %s</string>
-  <string name="check_tunnel_failed">Fallo del túnel de comprobación. Su dispositivo puede que no soporte la opción de tunelizar dispositivo al completo.</string>
+  <string name="check_tunnel_failed">No se pudo comprobar el túnel. Su dispositivo puede que no soporte la opción de derivar por el túnel el dispositivo al completo.</string>
   <string name="debug_message">%s</string>
   <string name="Diagnostics.AttachmentWriteFailed">Fallo al crear o escribir el fichero de diagnósticos para respuesta del usuario</string>
   <string name="Diagnostics.EncryptedFailed">Fallo al cifrar la información de diagnóstico para respuesta. Esta información no será adjuntada al correo de respuesta del usuario.</string>
@@ -130,15 +130,15 @@
   <string name="region_name_nl">Países Bajos</string>
   <string name="about">Acerca de Psiphon</string>
   <string name="feedback">Comentarios</string>
-  <string name="tunnel_whole_device_toggle">Tunelizar por completo el dispositivo (requiere Android 4.0+)</string>
+  <string name="tunnel_whole_device_toggle">Dervivar por el túnel el dispositivo al completo (requiere Android 4.0+)</string>
   <string name="disable_timeouts">Deshabilitar tiempos de espera para redes lentas</string>
   <string name="region_selector">Seleccionar región</string>
   <string name="network_proxy_connect_exception">Fallo al conectar al proxy HTTP de la red: %s</string>
   <string name="network_proxy_connect_information">Conectando mediante su proxy HTTP: %s</string>
   <string name="network_proxy_connect_invalid_values">Configuraciones de proxy HTTP no válidas</string>
-  <string name="tunnel_whole_device_exception">Su dispositivo no soporta la opción de tunelizar dispositivo al completo sin estar rooteado.</string>
+  <string name="tunnel_whole_device_exception">Su dispositivo no soporta la opción de derivar por el túnel el dispositivo al completo sin estar rooteado.</string>
   <string name="run_polipo_failed">La ejecución de Polipo falló: %s</string>
-  <string name="wdm_force_iptables_toggle">Forzar el método \'Tunelizar dispositivo al completo\' de dispositivo rooteado</string>
+  <string name="wdm_force_iptables_toggle">Forzar el método \'Derivar por el túnel el dispositivo al completo\' de dispositivo rooteado</string>
   <string name="http_prefix_toggle">Enmascarar como HTTP</string>
   <string name="preference_notifications_title">Notificaciones</string>
   <string name="preference_notifications_with_sound_title">Sonido</string>
@@ -162,11 +162,11 @@
   <!--When the split tunnel option is enabled, the current region is used to determine which requests should and shouldn't be tunneled. This log message tells the user which region (in '%s') is being used for this decision.-->
   <string name="split_tunnel_region">Región del túnel dividido: %s</string>
   <!--When the split tunnel option is enabled, this log message is shown when a domain is not tunneled (because it's detected as being in the same region as the user). The '%s' is the domain name.-->
-  <string name="untunneled_address"> No tunelizado: %s</string>
+  <string name="untunneled_address"> No derivado por túnel: %s</string>
   <!--The log message is shown to the user if an upstream proxy error occurs. The '%s' is the detail of the error.-->
   <string name="upstream_proxy_error">Error del proxy de subida: %s</string>
   <string name="diagnostic">Diagnóstico: %s</string>
-  <string name="start_tunnel_failed">Fallo al iniciar túnel: %s</string>
+  <string name="start_tunnel_failed">Fallo al iniciar el túnel: %s</string>
   <string name="tunnel_connecting">Conectando túnel...</string>
   <string name="tunnel_connected">Túnel conectado</string>
   <string name="waiting">Esperando...</string>
