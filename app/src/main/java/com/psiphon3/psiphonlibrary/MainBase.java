@@ -1377,18 +1377,6 @@ public abstract class MainBase {
                 mWebView.setWebChromeClient(mWebChromeClient);
                 mWebView.setWebViewClient(mWebViewClient);
                 
-                
-                //UI glitch fix attempt
-                //possibly similar to the following
-                //https://stackoverflow.com/questions/27172217/android-systemui-glitches
-                //https://stackoverflow.com/questions/27224394/android-lollipop-activity-screen-corrupted
-                //https://stackoverflow.com/questions/27139494/android-5-screen-glitch-static-with-google-maps-fragment-inside-a-viewpager
-                
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB) {
-                    mWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-                }                
-                
-
                 WebSettings webSettings = mWebView.getSettings();
                 webSettings.setJavaScriptEnabled(true);
                 webSettings.setDomStorageEnabled(true);
