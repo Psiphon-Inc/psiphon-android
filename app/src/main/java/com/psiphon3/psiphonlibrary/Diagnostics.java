@@ -140,7 +140,7 @@ public class Diagnostics
 
                 JSONObject statusEntry = new JSONObject();
 
-                String idName = context.getResources().getResourceEntryName(internalEntry.id());
+                String idName = context.getResources().getResourceEntryName(internalEntry.stringId());
                 statusEntry.put("id", idName);
                 statusEntry.put("timestamp!!timestamp", Utils.getISO8601String(internalEntry.timestamp()));
                 statusEntry.put("priority", internalEntry.priority());

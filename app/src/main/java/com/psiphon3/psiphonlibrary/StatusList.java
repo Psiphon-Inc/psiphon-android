@@ -50,8 +50,6 @@ import org.json.JSONObject;
  */
 
 public class StatusList {
-    public static final String STATUS_ENTRY_ADDED = "com.psiphon3.psiphonlibrary.StatusList.STATUS_ENTRY_ADDED";
-
     /*
      * Status Message History support
      */
@@ -59,20 +57,26 @@ public class StatusList {
     public static class StatusEntry
     {
         private Date timestamp;
-        private int id;
+        private long key;
+        private int stringId;
         private Object[] formatArgs;
         private Throwable throwable;
         private int priority;
         private Utils.MyLog.Sensitivity sensitivity;
+
+        public long key()
+        {
+            return key;
+        }
 
         public Date timestamp()
         {
             return timestamp;
         }
 
-        public int id()
+        public int stringId()
         {
-            return id;
+            return stringId;
         }
 
         public Object[] formatArgs()
@@ -99,17 +103,18 @@ public class StatusList {
     private static final ArrayList<StatusEntry> m_statusHistory = new ArrayList<>();
 
     public static void addStatusEntry(
-            Context context,
+            long key,
             Date timestamp,
-            int id,
+            int stringId,
             Utils.MyLog.Sensitivity sensitivity,
             Object[] formatArgs,
             Throwable throwable,
             int priority)
     {
         StatusEntry entry = new StatusEntry();
+        entry.key = key;
         entry.timestamp = timestamp;
-        entry.id = id;
+        entry.stringId = stringId;
         entry.sensitivity = sensitivity;
         entry.formatArgs = formatArgs;
         entry.throwable = throwable;
@@ -119,8 +124,6 @@ public class StatusList {
         {
             m_statusHistory.add(entry);
         }
-
-        LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(STATUS_ENTRY_ADDED));
     }
 
     public static ArrayList<StatusEntry> cloneStatusHistory()
@@ -131,14 +134,6 @@ public class StatusList {
             copy = new ArrayList<>(m_statusHistory);
         }
         return copy;
-    }
-
-    public static void clearStatusHistory()
-    {
-        synchronized(m_statusHistory)
-        {
-            m_statusHistory.clear();
-        }
     }
 
     /**
@@ -296,7 +291,7 @@ public class StatusList {
                 break;
             }
             
-            String msg = getContext().getString(item.id(), item.formatArgs());
+            String msg = getContext().getString(item.stringId(), item.formatArgs());
             
             if (item.throwable() != null)
             {

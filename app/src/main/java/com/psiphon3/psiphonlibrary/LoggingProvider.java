@@ -24,6 +24,7 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -32,6 +33,7 @@ import android.os.AsyncTask;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.LocalBroadcastManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -101,11 +103,11 @@ public class LoggingProvider extends ContentProvider {
     }
 
     /**
-     * To be called by StatusList when logs should be read from the provider DB into the StatusList.
+     * To be called by the UI when logs should be read from the provider DB into the StatusList.
      * @param context
      */
-    public static void restoreLogs(Context context) {
-        LogDatabaseHelper.restoreLogs(context);
+    public static void retrieveLogs(Context context) {
+        LogDatabaseHelper.retrieveLogs(context);
     }
 
     @Override
@@ -267,22 +269,24 @@ public class LoggingProvider extends ContentProvider {
 
             db.setTransactionSuccessful();
             db.endTransaction();
+
+            context.getContentResolver().notifyChange(INSERT_URI, null);
         }
 
         /**
-         * To be called by StatusList at a time when it's appropriate to consume logs that were stored
+         * To be called by the UI at a time when it's appropriate to consume logs that were stored
          * by the provider. May execute asynchronously.
          */
-        public static void restoreLogs(Context context) {
+        public static void retrieveLogs(Context context) {
             // If this function is being called in the UI thread, then we need to do the work in an
             // async task. Otherwise we'll do the work directly.
             // For info about content provider thread use: http://stackoverflow.com/a/3571583
             if (Looper.myLooper() == Looper.getMainLooper()) {
-                RestoreLogsTask task = new RestoreLogsTask(context);
+                RetrieveLogsTask task = new RetrieveLogsTask(context);
                 task.execute();
             }
             else {
-                LogDatabaseHelper.restoreLogsHelper(context);
+                LogDatabaseHelper.retrieveLogsHelper(context);
             }
 
         }
@@ -290,9 +294,9 @@ public class LoggingProvider extends ContentProvider {
         /**
          * Task to do the async work.
          */
-        private static class RestoreLogsTask extends AsyncTask<Void, Void, Void> {
+        private static class RetrieveLogsTask extends AsyncTask<Void, Void, Void> {
             private Context mContext;
-            public RestoreLogsTask (Context context){
+            public RetrieveLogsTask (Context context){
                 mContext = context;
             }
 
@@ -300,17 +304,17 @@ public class LoggingProvider extends ContentProvider {
             protected Void doInBackground(Void... params) {
                 // DO NOT LOG WITHIN THIS FUNCTION
 
-                LogDatabaseHelper.restoreLogsHelper(mContext);
+                LogDatabaseHelper.retrieveLogsHelper(mContext);
 
                 return null;
             }
         }
 
         /**
-         * Does the log restore work. Should be called via restoreLogs or RestoreLogsTask.
+         * Does the log retrieval work. Should be called via retrieveLogs or RetrieveLogsTask.
          * @param context
          */
-        private static void restoreLogsHelper(Context context) {
+        private static void retrieveLogsHelper(Context context) {
             // DO NOT LOG WITHIN THIS FUNCTION
 
             // We will cursor through DB records, passing them off to StatusList
@@ -322,19 +326,29 @@ public class LoggingProvider extends ContentProvider {
                     COLUMN_NAME_LOGJSON
             };
 
+            String whereClause = null;
+            StatusList.StatusEntry lastEntry = StatusList.getStatusEntry(-1);
+            if (lastEntry != null)
+            {
+                whereClause = COLUMN_NAME_ID + " > " + lastEntry.key();
+            }
+
             String sortOrder = COLUMN_NAME_ID + " ASC";
 
             Cursor cursor = db.query(
                     TABLE_NAME,
                     projection,
-                    null, null,
+                    whereClause, null,
                     null, null,
                     sortOrder);
+
+            int numberOfLogsRetrieved = 0;
 
             // Iterate over the cursor
             try {
                 while (cursor.moveToNext()) {
 
+                    long ID = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_NAME_ID));
                     String logJSON = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_LOGJSON));
 
                     // Extract log args from JSON.
@@ -358,19 +372,25 @@ public class LoggingProvider extends ContentProvider {
                         // Pass the log info on to StatusList.
                         // Keep this call in the try block so it gets skipped if there's an exception above.
                         StatusList.addStatusEntry(
-                                context,
+                                ID,
                                 timestamp,
                                 stringResID,
                                 sensitivity,
                                 formatArgs,
                                 null,
                                 priority);
+
+                        numberOfLogsRetrieved ++;
                     } catch (JSONException e) {
                         // just skip this entry
                     }
                 }
             } finally {
                 cursor.close();
+            }
+
+            if (numberOfLogsRetrieved > 0) {
+                LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(MainBase.TabbedActivityBase.STATUS_ENTRY_AVAILABLE));
             }
         }
     }

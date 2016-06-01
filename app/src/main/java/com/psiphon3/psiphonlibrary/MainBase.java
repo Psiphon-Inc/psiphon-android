@@ -51,6 +51,7 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
@@ -153,6 +154,7 @@ public abstract class MainBase {
     }
 
     public static abstract class TabbedActivityBase extends Activity implements OnTabChangeListener {
+        public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.MainBase.TabbedActivityBase.STATUS_ENTRY_AVAILABLE";
         public static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
         public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
 
@@ -188,6 +190,7 @@ public abstract class MainBase {
         protected CheckBox m_disableTimeoutsToggle;
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
+        private LoggingObserver m_loggingObserver;
 
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
@@ -471,7 +474,7 @@ public abstract class MainBase {
             m_statusListManager = new StatusListViewManager(statusListView);
 
             m_localBroadcastManager = LocalBroadcastManager.getInstance(this);
-            m_localBroadcastManager.registerReceiver(new StatusEntryAdded(), new IntentFilter(StatusList.STATUS_ENTRY_ADDED));
+            m_localBroadcastManager.registerReceiver(new StatusEntryAdded(), new IntentFilter(STATUS_ENTRY_AVAILABLE));
 
             updateServiceStateUI();
 
@@ -529,6 +532,14 @@ public abstract class MainBase {
 
             String msg = getContext().getString(R.string.client_version, EmbeddedValues.CLIENT_VERSION);
             m_statusTabVersionLine.setText(msg);
+
+            // The LoggingObserver will run in a separate thread than the main UI thread
+            HandlerThread loggingObserverThread = new HandlerThread("LoggingObserverThread");
+            loggingObserverThread.start();
+            m_loggingObserver = new LoggingObserver(this, new Handler(loggingObserverThread.getLooper()));
+
+            // Force the UI to display logs already loaded into the StatusList message history
+            LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
         }
 
         @Override
@@ -578,9 +589,11 @@ public abstract class MainBase {
         protected void onResume() {
             super.onResume();
 
-            // Reload logs from the logging provider
-            StatusList.clearStatusHistory();
-            LoggingProvider.restoreLogs(this);
+            // Load new logs from the logging provider now
+            m_loggingObserver.dispatchChange(false, LoggingProvider.INSERT_URI);
+
+            // Load new logs from the logging provider when it changes
+            getContentResolver().registerContentObserver(LoggingProvider.INSERT_URI, true, m_loggingObserver);
 
             updateProxySettingsFromPreferences();
             
@@ -624,6 +637,8 @@ public abstract class MainBase {
         protected void onPause() {
             super.onPause();
 
+            getContentResolver().unregisterContentObserver(m_loggingObserver);
+
             cancelInvalidProxySettingsToast();
 
             m_updateStatisticsUITimer.cancel();
@@ -652,7 +667,7 @@ public abstract class MainBase {
                     public void run() {
                         StatusList.StatusEntry statusEntry = StatusList.getLastStatusEntryForDisplay();
                         if (statusEntry != null) {
-                            String msg = getContext().getString(statusEntry.id(), statusEntry.formatArgs());
+                            String msg = getContext().getString(statusEntry.stringId(), statusEntry.formatArgs());
                             m_statusTabLogLine.setText(msg);
                         }
                     }
