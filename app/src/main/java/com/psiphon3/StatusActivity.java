@@ -583,7 +583,12 @@ public class StatusActivity
 
         findViewById(R.id.subscriptionPromptMessage).setVisibility(show ? View.VISIBLE : View.GONE);
         findViewById(R.id.subscribeButton).setVisibility(show ? View.VISIBLE : View.GONE);
-        findViewById(R.id.watchRewardedVideoButton).setVisibility(show && m_supersonicWrapper.isRewardedVideoAvailable() ? View.VISIBLE : View.GONE);
+        findViewById(R.id.watchRewardedVideoButton).setVisibility(show ? View.VISIBLE : View.GONE);
+
+        if (show)
+        {
+            findViewById(R.id.watchRewardedVideoButton).setEnabled(m_supersonicWrapper.isRewardedVideoAvailable());
+        }
 
         textViewRemainingMinutes.setVisibility(show ? View.VISIBLE : View.GONE);
     }
