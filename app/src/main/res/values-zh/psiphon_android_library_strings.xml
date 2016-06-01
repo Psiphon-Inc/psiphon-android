@@ -7,12 +7,12 @@
   <string name="ssh_authentication_failed">SSH身份验证失败</string>
   <string name="ssh_authenticated">SSH身份验证成功</string>
   <string name="socks_starting">SOCKS代理启动...</string>
-  <string name="socks_running">SOCKS代理运行于 %d 端口</string>
+  <string name="socks_running">SOCKS代理运行于%d端口</string>
   <string name="socks_stopped">SOCKS代理已停止</string>
   <string name="ssh_stopped">SSH已停止</string>
   <string name="error_message">发生了错误：</string>
   <string name="http_proxy_starting">HTTP代理启动...</string>
-  <string name="http_proxy_running">HTTP代理运行于 %d 端口</string>
+  <string name="http_proxy_running">HTTP代理运行于%d端口</string>
   <string name="http_proxy_stopped">HTTP代理已停止</string>
   <string name="http_proxy_stopped_unexpectedly">HTTP代理意外停止</string>
   <string name="ServerInterface.FailedToCreateServerEntries">创建用来存储的服务器项失败。</string>
@@ -27,7 +27,7 @@
   <string name="PsiphonAndroidService.HandshakeRequestFailed">握手请求失败。</string>
   <string name="ssh_disconnected_unexpectedly">SSH意外断开连接</string>
   <string name="client_version">客户端版本 %s</string>
-  <string name="no_server_entries">没有服务器可以连接</string>
+  <string name="no_server_entries">无服务器可供连接</string>
   <string name="ServerInterface.InvalidRemoteServerList">无效的远程服务器列表</string>
   <string name="AuthenticatedDataPackage.WrongPublicKey">用不同公钥签名的已验证数据包</string>
   <string name="AuthenticatedDataPackage.InvalidSignature">已验证数据包上的无效签名</string>
@@ -130,10 +130,10 @@
   <string name="region_name_nl">荷兰</string>
   <string name="about">关于赛风</string>
   <string name="feedback">反馈</string>
-  <string name="tunnel_whole_device_toggle">全局代理设备（需要安卓4.0以上）</string>
-  <string name="disable_timeouts">慢速网络下禁用超时</string>
+  <string name="tunnel_whole_device_toggle">全局代理设备（适用于 Android 4.0+）</string>
+  <string name="disable_timeouts">慢速网络中禁用超时断线</string>
   <string name="region_selector">选择区域</string>
-  <string name="network_proxy_connect_exception">无法连接到网络的 HTTP 代理：%s</string>
+  <string name="network_proxy_connect_exception">无法连接到网络的HTTP代理：%s</string>
   <string name="network_proxy_connect_information">正在通过您的HTTP代理连接：%s</string>
   <string name="network_proxy_connect_invalid_values">无效的HTTP代理设置</string>
   <string name="tunnel_whole_device_exception">您的设备不支持未 root 的全局代理选项。</string>
