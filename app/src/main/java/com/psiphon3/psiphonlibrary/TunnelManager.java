@@ -417,9 +417,21 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
         try {
             String clientPlatform = PsiphonConstants.PLATFORM;
+
             if (clientPlatformPrefix != null && !clientPlatformPrefix.isEmpty()) {
-                clientPlatform += clientPlatformPrefix;
+                clientPlatform = clientPlatformPrefix + clientPlatform;
             }
+
+            // Detect if device is rooted and append to the client_platform string
+            if (Utils.isRooted()) {
+                clientPlatform += PsiphonConstants.ROOTED;
+            }
+
+            // Detect if this is a Play Store build
+            if (EmbeddedValues.IS_PLAY_STORE_BUILD) {
+                clientPlatform += PsiphonConstants.PLAY_STORE_BUILD;
+            }
+
             json.put("ClientPlatform", clientPlatform);
 
             json.put("ClientVersion", EmbeddedValues.CLIENT_VERSION);
