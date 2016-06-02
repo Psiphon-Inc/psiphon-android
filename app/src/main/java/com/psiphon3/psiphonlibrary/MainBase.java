@@ -869,7 +869,7 @@ public abstract class MainBase {
         }
 
         private void updateStatisticsUICallback() {
-            DataTransferStats dataTransferStats = DataTransferStats.getDataTransferStats();
+            DataTransferStats.DataTransferStatsForUI dataTransferStats = DataTransferStats.getDataTransferStatsForUI();
             m_elapsedConnectionTimeView.setText(isTunnelConnected() ? getString(R.string.connected_elapsed_time,
                     Utils.elapsedTimeToDisplay(dataTransferStats.getElapsedTime())) : getString(R.string.disconnected));
             m_totalSentView.setText(Utils.byteCountToDisplaySize(dataTransferStats.getTotalBytesSent(), false));

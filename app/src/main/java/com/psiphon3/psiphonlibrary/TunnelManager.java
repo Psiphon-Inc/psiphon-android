@@ -126,7 +126,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     private Service m_parentService = null;
     private boolean m_serviceDestroyed = false;
     private boolean m_firstStart = true;
-    private boolean m_signalledStop = false;
     private CountDownLatch m_tunnelThreadStopSignal;
     private Thread m_tunnelThread;
     private AtomicBoolean m_isReconnect;
@@ -219,7 +218,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     // 1. VpnService doesn't respond to stopService calls
     // 2. The UI will not block while waiting for stopService to return
     public void signalStopService() {
-        m_signalledStop = true;
         if (m_tunnelThreadStopSignal != null) {
             m_tunnelThreadStopSignal.countDown();
         }
@@ -227,10 +225,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         if (m_safetyNetwrapper != null) {
             m_safetyNetwrapper.disconnect();
         }
-    }
-
-    public boolean signalledStop() {
-        return m_signalledStop;
     }
 
     private void getTunnelConfig(Intent intent) {
@@ -457,7 +451,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
         m_tunnelState.homePages.clear();
 
-        DataTransferStats.getDataTransferStats().startSession();
+        DataTransferStats.getDataTransferStatsForService().startSession();
 
         boolean runVpn =
                 m_tunnelConfig.wholeDevice &&
@@ -493,7 +487,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             m_tunnel.stop();
 
-            DataTransferStats.getDataTransferStats().stop();
+            DataTransferStats.getDataTransferStatsForService().stop();
 
             MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
@@ -699,7 +693,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     @Override
     public void onConnecting() {
-        DataTransferStats.getDataTransferStats().stop();
+        DataTransferStats.getDataTransferStatsForService().stop();
 
         MyLog.v(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
 
@@ -711,7 +705,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     @Override
     public void onConnected() {
-        DataTransferStats.getDataTransferStats().startConnected();
+        DataTransferStats.getDataTransferStatsForService().startConnected();
 
         MyLog.v(R.string.tunnel_connected, MyLog.Sensitivity.NOT_SENSITIVE);
 
@@ -763,7 +757,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     @Override
     public void onBytesTransferred(long sent, long received) {
-        DataTransferStats stats = DataTransferStats.getDataTransferStats();
+        DataTransferStats.DataTransferStatsForService stats = DataTransferStats.getDataTransferStatsForService();
         stats.addBytesSent(sent);
         stats.addBytesReceived(received);
     }
