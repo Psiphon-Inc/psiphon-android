@@ -336,7 +336,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     if (manager != null) {
                         manager.m_outgoingMessenger = msg.replyTo;
                         manager.sendClientMessage(MSG_REGISTER_RESPONSE, manager.getTunnelStateBundle());
-                        manager.sendClientMessage(MSG_DATA_TRANSFER_STATS, manager.getDataTransferStatsBundle());
                     }
                     break;
 
@@ -454,6 +453,16 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         return list.toString();
     }
 
+    private Handler sendDataTransferStatsHandler = new Handler();
+    private final long sendDataTransferStatsIntervalMs = 1000;
+    private Runnable sendDataTransferStats = new Runnable() {
+        @Override
+        public void run() {
+            sendClientMessage(MSG_DATA_TRANSFER_STATS, getDataTransferStatsBundle());
+            sendDataTransferStatsHandler.postDelayed(this, sendDataTransferStatsIntervalMs);
+        }
+    };
+
     private void runTunnel() {
 
         Utils.initializeSecureRandom();
@@ -473,6 +482,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_tunnelState.homePages.clear();
 
         DataTransferStats.getDataTransferStatsForService().startSession();
+        sendDataTransferStatsHandler.postDelayed(sendDataTransferStats, sendDataTransferStatsIntervalMs);
 
         boolean runVpn =
                 m_tunnelConfig.wholeDevice &&
@@ -508,6 +518,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             m_tunnel.stop();
 
+            sendDataTransferStatsHandler.removeCallbacks(sendDataTransferStats);
             DataTransferStats.getDataTransferStatsForService().stop();
 
             MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
