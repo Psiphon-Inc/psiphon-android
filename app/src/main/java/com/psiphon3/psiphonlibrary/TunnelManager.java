@@ -74,6 +74,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final int MSG_TUNNEL_STARTING = 5;
     public static final int MSG_TUNNEL_STOPPING = 6;
     public static final int MSG_TUNNEL_CONNECTION_STATE = 7;
+    public static final int MSG_DATA_TRANSFER_STATS = 8;
 
     public static final String INTENT_ACTION_HANDSHAKE = "com.psiphon3.psiphonlibrary.TunnelManager.HANDSHAKE";
 
@@ -84,6 +85,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT = "listeningLocalHttpProxyPort";
     public static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
     public static final String DATA_TUNNEL_STATE_HOME_PAGES = "homePages";
+    public static final String DATA_TRANSFER_STATS_CONNECTED_TIME = "dataTransferStatsConnectedTime";
+    public static final String DATA_TRANSFER_STATS_TOTAL_BYTES_SENT = "dataTransferStatsTotalBytesSent";
+    public static final String DATA_TRANSFER_STATS_TOTAL_BYTES_RECEIVED = "dataTransferStatsTotalBytesReceived";
+    public static final String DATA_TRANSFER_STATS_SLOW_BUCKETS = "dataTransferStatsSlowBuckets";
+    public static final String DATA_TRANSFER_STATS_SLOW_BUCKETS_LAST_START_TIME = "dataTransferStatsSlowBucketsLastStartTime";
+    public static final String DATA_TRANSFER_STATS_FAST_BUCKETS = "dataTransferStatsFastBuckets";
+    public static final String DATA_TRANSFER_STATS_FAST_BUCKETS_LAST_START_TIME = "dataTransferStatsFastBucketsLastStartTime";
 
     // Extras in handshake intent
     public static final String DATA_HANDSHAKE_IS_RECONNECT = "isReconnect";
@@ -328,6 +336,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     if (manager != null) {
                         manager.m_outgoingMessenger = msg.replyTo;
                         manager.sendClientMessage(MSG_REGISTER_RESPONSE, manager.getTunnelStateBundle());
+                        manager.sendClientMessage(MSG_DATA_TRANSFER_STATS, manager.getDataTransferStatsBundle());
                     }
                     break;
 
@@ -388,6 +397,18 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT, m_tunnelState.listeningLocalHttpProxyPort);
         data.putString(DATA_TUNNEL_STATE_CLIENT_REGION, m_tunnelState.clientRegion);
         data.putStringArrayList(DATA_TUNNEL_STATE_HOME_PAGES, m_tunnelState.homePages);
+        return data;
+    }
+
+    private Bundle getDataTransferStatsBundle() {
+        Bundle data = new Bundle();
+        data.putLong(DATA_TRANSFER_STATS_CONNECTED_TIME, DataTransferStats.getDataTransferStatsForService().m_connectedTime);
+        data.putLong(DATA_TRANSFER_STATS_TOTAL_BYTES_SENT, DataTransferStats.getDataTransferStatsForService().m_totalBytesSent);
+        data.putLong(DATA_TRANSFER_STATS_TOTAL_BYTES_RECEIVED, DataTransferStats.getDataTransferStatsForService().m_totalBytesReceived);
+        data.putParcelableArrayList(DATA_TRANSFER_STATS_SLOW_BUCKETS, DataTransferStats.getDataTransferStatsForService().m_slowBuckets);
+        data.putLong(DATA_TRANSFER_STATS_SLOW_BUCKETS_LAST_START_TIME, DataTransferStats.getDataTransferStatsForService().m_slowBucketsLastStartTime);
+        data.putParcelableArrayList(DATA_TRANSFER_STATS_FAST_BUCKETS, DataTransferStats.getDataTransferStatsForService().m_fastBuckets);
+        data.putLong(DATA_TRANSFER_STATS_FAST_BUCKETS_LAST_START_TIME, DataTransferStats.getDataTransferStatsForService().m_fastBucketsLastStartTime);
         return data;
     }
 

@@ -1228,6 +1228,21 @@ public abstract class MainBase {
             }
         }
 
+        private void getDataTransferStatsFromBundle(Bundle data) {
+            if (data == null) {
+                return;
+            }
+
+            data.setClassLoader(DataTransferStats.DataTransferStatsBase.Bucket.class.getClassLoader());
+            DataTransferStats.getDataTransferStatsForUI().m_connectedTime = data.getLong(TunnelManager.DATA_TRANSFER_STATS_CONNECTED_TIME);
+            DataTransferStats.getDataTransferStatsForUI().m_totalBytesSent = data.getLong(TunnelManager.DATA_TRANSFER_STATS_TOTAL_BYTES_SENT);
+            DataTransferStats.getDataTransferStatsForUI().m_totalBytesReceived = data.getLong(TunnelManager.DATA_TRANSFER_STATS_TOTAL_BYTES_RECEIVED);
+            DataTransferStats.getDataTransferStatsForUI().m_slowBuckets = data.getParcelableArrayList(TunnelManager.DATA_TRANSFER_STATS_SLOW_BUCKETS);
+            DataTransferStats.getDataTransferStatsForUI().m_slowBucketsLastStartTime = data.getLong(TunnelManager.DATA_TRANSFER_STATS_SLOW_BUCKETS_LAST_START_TIME);
+            DataTransferStats.getDataTransferStatsForUI().m_fastBuckets = data.getParcelableArrayList(TunnelManager.DATA_TRANSFER_STATS_FAST_BUCKETS);
+            DataTransferStats.getDataTransferStatsForUI().m_fastBucketsLastStartTime = data.getLong(TunnelManager.DATA_TRANSFER_STATS_FAST_BUCKETS_LAST_START_TIME);
+        }
+
         private final Messenger m_incomingMessenger = new Messenger(new IncomingMessageHandler());
         private Messenger m_outgoingMessenger = null;
 
@@ -1268,6 +1283,10 @@ public abstract class MainBase {
                     case TunnelManager.MSG_TUNNEL_CONNECTION_STATE:
                         m_tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
                         updateServiceStateUI();
+                        break;
+
+                    case TunnelManager.MSG_DATA_TRANSFER_STATS:
+                        getDataTransferStatsFromBundle(data);
                         break;
 
                     default:
