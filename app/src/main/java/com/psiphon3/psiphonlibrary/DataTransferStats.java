@@ -62,10 +62,8 @@ public class DataTransferStats {
             }
 
             protected Bucket(Parcel in) {
-                long[] data = new long[2];
-                in.readLongArray(data);
-                m_bytesSent = data[0];
-                m_bytesReceived = data[1];
+                m_bytesSent = in.readLong();
+                m_bytesReceived = in.readLong();
             }
 
             @Override
@@ -75,7 +73,8 @@ public class DataTransferStats {
 
             @Override
             public void writeToParcel(Parcel dest, int flags) {
-                dest.writeLongArray(new long[] {m_bytesSent, m_bytesReceived});
+                dest.writeLong(m_bytesSent);
+                dest.writeLong(m_bytesReceived);
             }
 
             public static final Creator<Bucket> CREATOR = new Creator<Bucket>() {
