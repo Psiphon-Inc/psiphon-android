@@ -69,6 +69,7 @@ public class StatusActivity
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
     private IabHelper m_iabHelper = null;
+    private boolean m_startIabInFlight = false;
     private MoPubInterstitial m_moPubInterstitial = null;
     private boolean m_moPubInterstitialShowWhenLoaded = false;
     private SupersonicRewardedVideoWrapper m_supersonicWrapper;
@@ -364,6 +365,13 @@ public class StatusActivity
     synchronized
     private void startIab()
     {
+        if (m_startIabInFlight)
+        {
+            return;
+        }
+
+        m_startIabInFlight = true;
+
         if (m_iabHelper == null)
         {
             m_iabHelper = new IabHelper(this, IAB_PUBLIC_KEY);
@@ -403,7 +411,9 @@ public class StatusActivity
                 handleIabFailure(result);
                 return;
             }
-            
+
+            m_startIabInFlight = false;
+
             List<String> validSubscriptionSkus = new ArrayList<String>(Arrays.asList(OTHER_VALID_IAB_SUBSCRIPTION_SKUS));
             validSubscriptionSkus.add(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU);
             for (String validSku : validSubscriptionSkus)
@@ -464,7 +474,7 @@ public class StatusActivity
     {
         try
         {
-            if (m_iabHelper != null)
+            if (m_iabHelper != null && !m_startIabInFlight)
             {
                 m_iabHelper.launchSubscriptionPurchaseFlow(this, IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU,
                         IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
@@ -493,7 +503,8 @@ public class StatusActivity
     {
         // try again next time
         deInitIab();
-        
+        m_startIabInFlight = false;
+
         if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected() &&
                 !PsiphonData.getPsiphonData().getHasValidSubscriptionOrFreeTime(this))
         {
@@ -577,7 +588,7 @@ public class StatusActivity
 
             // Initialize Supersonic video ads
             if (m_supersonicWrapper == null) {
-                m_supersonicWrapper = new SupersonicRewardedVideoWrapper(this, "PsiphonProVideoPlacement");
+                m_supersonicWrapper = new SupersonicRewardedVideoWrapper(this);
             }
         }
 
