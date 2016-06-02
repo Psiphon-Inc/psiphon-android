@@ -19,6 +19,8 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.os.SystemClock;
 import java.util.ArrayList;
 
@@ -51,9 +53,42 @@ public class DataTransferStats {
         private static final long FAST_BUCKET_PERIOD_MILLISECONDS = 1000;
         private static final int MAX_BUCKETS = 24 * 60 / 5;
 
-        protected static class Bucket {
+        protected static class Bucket implements Parcelable {
             public long m_bytesSent = 0;
             public long m_bytesReceived = 0;
+
+            protected Bucket() {
+
+            }
+
+            protected Bucket(Parcel in) {
+                long[] data = new long[2];
+                in.readLongArray(data);
+                m_bytesSent = data[0];
+                m_bytesReceived = data[1];
+            }
+
+            @Override
+            public int describeContents() {
+                return 0;
+            }
+
+            @Override
+            public void writeToParcel(Parcel dest, int flags) {
+                dest.writeLongArray(new long[] {m_bytesSent, m_bytesReceived});
+            }
+
+            public static final Creator<Bucket> CREATOR = new Creator<Bucket>() {
+                @Override
+                public Bucket createFromParcel(Parcel in) {
+                    return new Bucket(in);
+                }
+
+                @Override
+                public Bucket[] newArray(int size) {
+                    return new Bucket[size];
+                }
+            };
         }
 
         protected long m_connectedTime;
