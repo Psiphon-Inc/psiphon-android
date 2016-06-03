@@ -1161,19 +1161,24 @@ public abstract class MainBase {
             // (i.e., while isServiceRunning can't be relied upon)
             disableToggleServiceUI();
 
-            Intent intent;
             if (getTunnelConfigWholeDevice() && Utils.hasVpnService()) {
                 // VpnService backwards compatibility: startVpnServiceIntent is a wrapper
                 // function so we don't reference the undefined class when this
                 // function is loaded.
-                intent = startVpnServiceIntent();
+                Intent intent = startVpnServiceIntent();
+                configureServiceIntent(intent);
+                startService(intent);
+                if (bindService(intent, m_tunnelServiceConnection, 0)) {
+                    m_boundToTunnelVpnService = true;
+                }
             } else {
-                intent = new Intent(this, TunnelService.class);
+                Intent intent = new Intent(this, TunnelService.class);
+                configureServiceIntent(intent);
+                startService(intent);
+                if (bindService(intent, m_tunnelServiceConnection, 0)) {
+                    m_boundToTunnelService = true;
+                }
             }
-
-            configureServiceIntent(intent);
-            startService(intent);
-            bindService(intent, m_tunnelServiceConnection, 0);
         }
 
         private Intent startVpnServiceIntent() {
