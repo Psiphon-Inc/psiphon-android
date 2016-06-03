@@ -42,13 +42,12 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
         if(mIsInitialized) {
             return;
         }
+        mIsInitialized = true;
 
         if (mGAIDRequestTask != null && !mGAIDRequestTask.isCancelled()) {
             mGAIDRequestTask.cancel(false);
         }
         mGAIDRequestTask = new UserIdRequestTask().execute();
-        mIsVideoAvailable = mMediationAgent.isRewardedVideoAvailable();
-
         /**
          * Uncomment line below for verbose output of the
          * Supersonic integration state
@@ -144,7 +143,7 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
                 Activity activity = SupersonicRewardedVideoWrapper.this.mWeakActivity.get();
                 if (activity != null) {
                     mMediationAgent.initRewardedVideo(activity, SupersonicRewardedVideoWrapper.this.mAppKey, GAID);
-                    SupersonicRewardedVideoWrapper.this.mIsInitialized = true;
+                    mIsVideoAvailable = mMediationAgent.isRewardedVideoAvailable();
                 }
             }
         }
