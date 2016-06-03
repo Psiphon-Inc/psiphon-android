@@ -629,7 +629,7 @@ public abstract class MainBase {
             getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
             if (isServiceRunning()) {
-                bindAndStartTunnelService();
+                startAndBindTunnelService();
             }
         }
 
@@ -970,7 +970,7 @@ public abstract class MainBase {
                 waitingForPrompt = doVpnPrepare();
             }
             if (!waitingForPrompt) {
-                bindAndStartTunnelService();
+                startAndBindTunnelService();
             }
         }
 
@@ -1014,7 +1014,7 @@ public abstract class MainBase {
 
                 startActivityForResult(intent, REQUEST_CODE_PREPARE_VPN);
 
-                // bindAndStartTunnelService will be called in onActivityResult
+                // startAndBindTunnelService will be called in onActivityResult
                 return true;
             }
 
@@ -1084,7 +1084,7 @@ public abstract class MainBase {
         @Override
         protected void onActivityResult(int request, int result, Intent data) {
             if (request == REQUEST_CODE_PREPARE_VPN && result == RESULT_OK) {
-                bindAndStartTunnelService();
+                startAndBindTunnelService();
             } else if (request == REQUEST_CODE_PREFERENCE) {
                 // Don't call updateProxySettingsFromPreferences() first, because
                 // isProxySettingsRestartRequired() looks at the stored preferences.
@@ -1155,27 +1155,29 @@ public abstract class MainBase {
                     UpstreamProxySettings.getUpstreamProxyUrlFromCurrentPreferences(this));
         }
 
-        protected void bindAndStartTunnelService() {
-
-            if (isServiceRunning()) {
-                MyLog.g("startTunnelService(): already running service");
-                return;
-            }
+        protected void startAndBindTunnelService() {
 
             // Disable service-toggling controls while service is starting up
             // (i.e., while isServiceRunning can't be relied upon)
             disableToggleServiceUI();
 
+            Intent intent;
             if (getTunnelConfigWholeDevice() && Utils.hasVpnService()) {
-                doStartTunnelVpnService();
+                // VpnService backwards compatibility: startVpnServiceIntent is a wrapper
+                // function so we don't reference the undefined class when this
+                // function is loaded.
+                intent = startVpnServiceIntent();
             } else {
-                startService(new Intent(this, TunnelService.class));
+                intent = new Intent(this, TunnelService.class);
             }
+
+            configureServiceIntent(intent);
+            startService(intent);
+            bindService(intent, m_tunnelServiceConnection, 0);
         }
 
-        private void doStartTunnelVpnService() {
-            Intent intent = new Intent(this, TunnelVpnService.class);
-            bindService(intent, m_tunnelVpnServiceConnection, BIND_AUTO_CREATE);
+        private Intent startVpnServiceIntent() {
+            return new Intent(this, TunnelVpnService.class);
         }
 
         // Shared tunnel state, received from service in the HANDSHAKE
@@ -1316,10 +1318,6 @@ public abstract class MainBase {
                 m_outgoingMessenger = new Messenger(service);
                 m_boundToTunnelService = true;
                 sendServiceMessage(TunnelManager.MSG_REGISTER);
-
-                Intent intent = new Intent(TabbedActivityBase.this, TunnelService.class);
-                configureServiceIntent(intent);
-                startService(intent);
                 updateServiceStateUI();
             }
 
@@ -1338,13 +1336,6 @@ public abstract class MainBase {
                 m_outgoingMessenger = new Messenger(service);
                 m_boundToTunnelVpnService = true;
                 sendServiceMessage(TunnelManager.MSG_REGISTER);
-
-                // VpnService backwards compatibility: this has sufficient lazy
-                // class loading
-                // as onServiceConnected is only called on bind.
-                Intent intent = new Intent(TabbedActivityBase.this, TunnelVpnService.class);
-                configureServiceIntent(intent);
-                startService(intent);
                 updateServiceStateUI();
             }
 
@@ -1407,9 +1398,8 @@ public abstract class MainBase {
         protected boolean isServiceRunning() {
             ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
             for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-                if (service.pid == android.os.Process.myPid() &&
-                        (TunnelService.class.getName().equals(service.service.getClassName())
-                        || (Utils.hasVpnService() && isVpnService(service.service.getClassName())))) {
+                if (TunnelService.class.getName().equals(service.service.getClassName())
+                        || (Utils.hasVpnService() && isVpnService(service.service.getClassName()))) {
                     return true;
                 }
             }
