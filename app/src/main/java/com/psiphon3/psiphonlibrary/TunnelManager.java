@@ -66,7 +66,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     // Client -> Service
     public static final int MSG_REGISTER = 0;
     public static final int MSG_UNREGISTER = 1;
-    public static final int MSG_STOP_VPN_SERVICE = 2;
+    public static final int MSG_STOP_SERVICE = 2;
 
     // Service -> Client
     public static final int MSG_REGISTER_RESPONSE = 3;
@@ -187,10 +187,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public void onDestroy() {
         m_serviceDestroyed = true;
 
-        if (m_tunnelThread == null) {
-            return;
-        }
-
         stopAndWaitForTunnel();
 
         MyLog.unsetLogger();
@@ -200,13 +196,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         MyLog.w(R.string.vpn_service_revoked, MyLog.Sensitivity.NOT_SENSITIVE);
 
         stopAndWaitForTunnel();
-
-        // Stop service
-        m_parentService.stopForeground(true);
-        m_parentService.stopSelf();
     }
 
     private void stopAndWaitForTunnel() {
+        if (m_tunnelThread == null) {
+            return;
+        }
+
         // signalStopService could have been called, but in case is was not, call here.
         // If signalStopService was not already called, the join may block the calling
         // thread for some time.
@@ -346,7 +342,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     }
                     break;
 
-                case TunnelManager.MSG_STOP_VPN_SERVICE:
+                case TunnelManager.MSG_STOP_SERVICE:
                     if (manager != null) {
                         manager.signalStopService();
                     }
@@ -708,7 +704,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         MyLog.v(R.string.http_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, port);
         m_tunnelState.listeningLocalHttpProxyPort = port;
 
-        // TODO-TUNNEL-CORE: use a multi process safe method
+        // TODO: use a multi process safe method
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(m_parentService).edit();
         editor.putInt(m_parentService.getString(R.string.current_local_http_proxy_port), port);
         editor.apply();
@@ -728,7 +724,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public void onConnecting() {
         DataTransferStats.getDataTransferStatsForService().stop();
 
-        MyLog.v(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
+        if (!m_isStopping.get()) {
+            MyLog.v(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
+        }
 
         setIsConnected(false);
         Bundle data = new Bundle();

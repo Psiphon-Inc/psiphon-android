@@ -644,7 +644,6 @@ public abstract class MainBase {
             m_updateStatisticsUITimer.cancel();
             m_updateServiceStateUITimer.cancel();
 
-            // TODO-TUNNEL-CORE: ?
             unbindTunnelService();
         }
 
@@ -1333,7 +1332,9 @@ public abstract class MainBase {
             @Override
             public void onServiceDisconnected(ComponentName arg0) {
                 m_outgoingMessenger = null;
-                m_boundToTunnelService = false;
+                if (m_boundToTunnelService) {
+                    unbindTunnelService();
+                }
                 updateServiceStateUI();
             }
         };
@@ -1351,25 +1352,20 @@ public abstract class MainBase {
             @Override
             public void onServiceDisconnected(ComponentName arg0) {
                 m_outgoingMessenger = null;
-                m_boundToTunnelVpnService = false;
+                if (m_boundToTunnelVpnService) {
+                    unbindTunnelService();
+                }
                 updateServiceStateUI();
             }
         };
 
         private void stopTunnelService() {
-            if (getTunnelConfigWholeDevice() && Utils.hasVpnService()) {
-                sendServiceMessage(TunnelManager.MSG_STOP_VPN_SERVICE);
-                // MSG_STOP_VPN_SERVICE will cause the VpnService to stop itself,
-                // which will then cause an unbind to occur. Don't call
-                // unbindTunnelService() here, as its unnecessary and either
-                // the MSG_UNREGISTER or unbindService causes
-                // "Exception when unbinding service com.psiphon3/.psiphonlibrary.TunnelVpnService"
-                // TODO-TUNNEL-CORE: double check this logic
-                // unbindTunnelService();
-            } else {
-                unbindTunnelService();
-                stopService(new Intent(this, TunnelService.class));
-            }
+            sendServiceMessage(TunnelManager.MSG_STOP_SERVICE);
+            // MSG_STOP_SERVICE will cause the Service to stop itself,
+            // which will then cause an unbind to occur. Don't call
+            // unbindTunnelService() here, as its unnecessary and either
+            // the MSG_UNREGISTER or unbindService causes
+            // "Exception when unbinding service com.psiphon3/.psiphonlibrary.TunnelVpnService"
         }
 
         private void unbindTunnelService() {
