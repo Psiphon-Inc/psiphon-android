@@ -48,6 +48,7 @@ import org.json.JSONObject;
 import de.schildbach.wallet.util.LinuxSecureRandom;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
@@ -284,17 +285,16 @@ public class Utils
      */
     static public class MyLog
     {
-        static public interface ILogger
+        public interface ILogger
         {
-            public void statusEntryAdded();
-            public Context getContext();
+            Context getContext();
         }
         
         // It is expected that the logger implementation will be an Activity, so
         // we're only going to hold a weak reference to it -- we don't want to
         // interfere with it being destroyed in low memory situations. This class
         // can cope with the logger going away and being re-set later on.
-        static private WeakReference<ILogger> logger = new WeakReference<ILogger>(null);
+        static private WeakReference<ILogger> logger = new WeakReference<>(null);
         
         /**
          * Used to indicate the sensitivity level of the log. This will affect
@@ -323,7 +323,7 @@ public class Utils
         
         static public void setLogger(ILogger logger)
         {
-            MyLog.logger = new WeakReference<ILogger>(logger);
+            MyLog.logger = new WeakReference<>(logger);
         }
         
         static public void unsetLogger()
@@ -331,44 +331,6 @@ public class Utils
             MyLog.logger.clear();
         }
 
-        static public void restoreLogHistory()
-        {
-            if (logger.get() != null)
-            {
-                // Check if LoggingProvider has any stored logs for us
-                LoggingProvider.restoreLogs(logger.get().getContext());
-
-                // Trigger the UI to refresh its status display
-                logger.get().statusEntryAdded();
-            }
-        }
-
-        /**
-         * To be called only from LoggingProvider.
-         * @return True if successful, false if LoggingProvider should store the log for later.
-         */
-        static public boolean logFromProvider(
-                int stringResID,
-                Sensitivity sensitivity,
-                int priority,
-                Object[] formatArgs,
-                Date timestamp) {
-            if (logger.get() == null) {
-                // Not yet ready to receive provider logs.
-                return false;
-            }
-
-            println(
-                stringResID,
-                sensitivity,
-                formatArgs,
-                null,
-                priority,
-                timestamp);
-
-            return true;
-        }
-        
         // TODO: Add sensitivity to debug logs
         static public void d(String msg)
         {
@@ -389,7 +351,24 @@ public class Utils
          */
         static public void g(String msg, JSONObject data)
         {
-            PsiphonData.addDiagnosticEntry(new Date(), msg, data);
+            // TODO-TUNNEL-CORE: temporarily disabling
+            /*
+            if (logger.get() != null) {
+                String logJSON = LoggingProvider.makeDiagnosticLogJSON(new Date(), msg, data);
+                if (logJSON == null) {
+                    // Fail silently
+                    return;
+                }
+
+                ContentValues values = new ContentValues();
+                values.put(LoggingProvider.DIAGNOSTIC_LOG_JSON_KEY, logJSON);
+
+                logger.get().getContext().getContentResolver().insert(
+                        LoggingProvider.INSERT_URI,
+                        values);
+            }
+            */
+
             // We're not logging the `data` at all. In the future we may want to.
             MyLog.d(msg);
         }
@@ -474,21 +453,21 @@ public class Utils
                 int priority,
                 Date timestamp)
         {
-            PsiphonData.getPsiphonData().addStatusEntry(
-                    timestamp,
-                    stringResID,
-                    sensitivity,
-                    formatArgs, 
-                    throwable, 
-                    priority);
-            
-            // If we're not restoring, and a logger has been set, let it know
-            // that status entries have been added.
-            if (logger.get() != null)
-            {
-                logger.get().statusEntryAdded();
+            if (logger.get() != null) {
+                String logJSON = LoggingProvider.makeLogJSON(timestamp, stringResID, sensitivity, formatArgs, priority);
+                if (logJSON == null) {
+                    // Fail silently
+                    return;
+                }
+
+                ContentValues values = new ContentValues();
+                values.put(LoggingProvider.LOG_JSON_KEY, logJSON);
+
+                logger.get().getContext().getContentResolver().insert(
+                        LoggingProvider.INSERT_URI,
+                        values);
             }
-            
+
             // Log to LogCat only if we're in debug mode and not restoring.
             if (PsiphonConstants.DEBUG)
             {

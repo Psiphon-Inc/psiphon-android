@@ -52,7 +52,7 @@ public interface UpgradeManager
     /**
      * To be used by other UpgradeManager classes only.
      */
-    static abstract class UpgradeFile
+    abstract class UpgradeFile
     {
         private Context context;
         
@@ -161,7 +161,7 @@ public interface UpgradeManager
         }
     }
 
-    static class VerifiedUpgradeFile extends UpgradeFile
+    class VerifiedUpgradeFile extends UpgradeFile
     {
         public VerifiedUpgradeFile(Context context)
         {
@@ -180,7 +180,7 @@ public interface UpgradeManager
         }
     }    
 
-    static class UnverifiedUpgradeFile extends UpgradeFile
+    class UnverifiedUpgradeFile extends UpgradeFile
     {
         public UnverifiedUpgradeFile(Context context)
         {
@@ -199,7 +199,7 @@ public interface UpgradeManager
         }
     }    
 
-    static class DownloadedUpgradeFile extends UpgradeFile
+    class DownloadedUpgradeFile extends UpgradeFile
     {
         public DownloadedUpgradeFile(Context context)
         {
@@ -273,7 +273,7 @@ public interface UpgradeManager
     /**
      * Used for checking if an upgrade has been downloaded and installing it.
      */
-    static public class UpgradeInstaller
+    class UpgradeInstaller
     {
         private static NotificationManager mNotificationManager;
         private static NotificationCompat.Builder mNotificationBuilder;
@@ -331,7 +331,7 @@ public interface UpgradeManager
             }
             
             // Info about the current app
-            PackageInfo currentPackageInfo = null;
+            PackageInfo currentPackageInfo;
             try
             {
                 currentPackageInfo = context.getPackageManager().getPackageInfo(
@@ -395,14 +395,8 @@ public interface UpgradeManager
         
             if (mNotificationBuilder == null)
             {
-                int iconID = PsiphonData.getPsiphonData().getNotificationIconUpgradeAvailable();
-                if (iconID == 0)
-                {
-                    iconID = R.drawable.notification_icon_upgrade_available;
-                }
-
                 mNotificationBuilder = new NotificationCompat.Builder(context)
-                        .setSmallIcon(iconID)
+                        .setSmallIcon(R.drawable.notification_icon_upgrade_available)
                         .setContentTitle(context.getString(R.string.UpgradeManager_UpgradePromptTitle))
                         .setContentText(context.getString(R.string.UpgradeManager_UpgradePromptMessage))
                         .setContentIntent(invokeUpgradeIntent);

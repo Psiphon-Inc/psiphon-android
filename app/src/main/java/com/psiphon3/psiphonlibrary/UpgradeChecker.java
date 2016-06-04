@@ -34,6 +34,7 @@ import android.util.Log;
 import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
+import java.util.Date;
 import java.util.List;
 
 import ca.psiphon.PsiphonTunnel;
@@ -79,7 +80,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
      * @param formatArgs Arguments to be formatted into the log string.
      */
     private static void log(Context context, int stringResID, MyLog.Sensitivity sensitivity, int priority, Object... formatArgs) {
-        String logJSON = LoggingProvider.makeLogJSON(stringResID, sensitivity, priority, formatArgs);
+        String logJSON = LoggingProvider.makeLogJSON(new Date(), stringResID, sensitivity, formatArgs, priority);
         if (logJSON == null) {
             // Fail silently
             return;
@@ -313,7 +314,6 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
                 log(this, R.string.upgrade_checker_start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN, e.getMessage());
                 // No need to call shutDownTunnel().
                 releaseWakefulIntent();
-                return;
             }
         }
 
@@ -355,11 +355,17 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         @Override
         public String getPsiphonConfig() {
             // Build a temporary tunnel config to use
-            String config = TunnelManager.buildTunnelCoreConfig(
+            TunnelManager.Config tunnelManagerConfig = new TunnelManager.Config();
+            tunnelManagerConfig.disableTimeouts = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
+                    this.getString(R.string.disableTimeoutsPreference), false);
+            tunnelManagerConfig.upstreamProxyURL = UpstreamProxySettings.getUpstreamProxyUrlFromCurrentPreferences(this);
+
+            String tunnelCoreConfig = TunnelManager.buildTunnelCoreConfig(
                     this,                       // context
+                    tunnelManagerConfig,
                     "upgradechecker",           // tempTunnelName
                     "Psiphon_UpgradeChecker_"); // clientPlatformPrefix
-            return config == null ? "" : config;
+            return tunnelCoreConfig == null ? "" : tunnelCoreConfig;
         }
 
         /**

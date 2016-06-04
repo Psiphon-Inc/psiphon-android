@@ -20,7 +20,9 @@
 package com.psiphon3.psiphonlibrary;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.ListIterator;
 
 import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
@@ -41,13 +43,198 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import org.json.JSONObject;
+
 /*
  * Adapted from the sample code here: http://developer.android.com/reference/android/content/AsyncTaskLoader.html
  */
 
 public class StatusList {
-    
-    public static class StatusListAdapter extends ArrayAdapter<PsiphonData.StatusEntry> {
+    /*
+     * Status Message History support
+     */
+
+    public static class StatusEntry
+    {
+        private Date timestamp;
+        private long key;
+        private int stringId;
+        private Object[] formatArgs;
+        private Throwable throwable;
+        private int priority;
+        private Utils.MyLog.Sensitivity sensitivity;
+
+        public long key()
+        {
+            return key;
+        }
+
+        public Date timestamp()
+        {
+            return timestamp;
+        }
+
+        public int stringId()
+        {
+            return stringId;
+        }
+
+        public Object[] formatArgs()
+        {
+            return formatArgs;
+        }
+
+        public Throwable throwable()
+        {
+            return throwable;
+        }
+
+        public int priority()
+        {
+            return priority;
+        }
+
+        public Utils.MyLog.Sensitivity sensitivity()
+        {
+            return sensitivity;
+        }
+    }
+
+    private static final ArrayList<StatusEntry> m_statusHistory = new ArrayList<>();
+
+    public static void addStatusEntry(
+            long key,
+            Date timestamp,
+            int stringId,
+            Utils.MyLog.Sensitivity sensitivity,
+            Object[] formatArgs,
+            Throwable throwable,
+            int priority)
+    {
+        StatusEntry entry = new StatusEntry();
+        entry.key = key;
+        entry.timestamp = timestamp;
+        entry.stringId = stringId;
+        entry.sensitivity = sensitivity;
+        entry.formatArgs = formatArgs;
+        entry.throwable = throwable;
+        entry.priority = priority;
+
+        synchronized(m_statusHistory)
+        {
+            m_statusHistory.add(entry);
+        }
+    }
+
+    public static ArrayList<StatusEntry> cloneStatusHistory()
+    {
+        ArrayList<StatusEntry> copy;
+        synchronized(m_statusHistory)
+        {
+            copy = new ArrayList<>(m_statusHistory);
+        }
+        return copy;
+    }
+
+    /**
+     * @param index The index of the item to retrieve.
+     * @return Returns item at `index`. Negative indexes count from the end of
+     * the array. If `index` is out of bounds, null is returned.
+     */
+    public static StatusEntry getStatusEntry(int index)
+    {
+        synchronized(m_statusHistory)
+        {
+            if (index < 0)
+            {
+                // index is negative, so this is subtracting...
+                index = m_statusHistory.size() + index;
+                // Note that index is still negative if the array is empty or if
+                // the negative value was too large.
+            }
+
+            if (index >= m_statusHistory.size() || index < 0)
+            {
+                return null;
+            }
+
+            return m_statusHistory.get(index);
+        }
+    }
+
+    /**
+     * @return Returns the last non-DEBUG, non-WARN(ing) item, or null if there is none.
+     */
+    public static StatusEntry getLastStatusEntryForDisplay()
+    {
+        synchronized(m_statusHistory)
+        {
+            ListIterator<StatusEntry> iterator = m_statusHistory.listIterator(m_statusHistory.size());
+
+            while (iterator.hasPrevious())
+            {
+                StatusEntry current_item = iterator.previous();
+                if (current_item.priority() != Log.DEBUG &&
+                        current_item.priority() != Log.WARN)
+                {
+                    return current_item;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    /*
+     * Diagnostic history support
+     */
+
+    public static class DiagnosticEntry {
+        private Date timestamp;
+        private String msg;
+        private JSONObject data;
+
+        public Date timestamp()
+        {
+            return timestamp;
+        }
+
+        public String msg()
+        {
+            return msg;
+        }
+
+        public JSONObject data()
+        {
+            return data;
+        }
+    }
+
+    private static final List<DiagnosticEntry> m_diagnosticHistory = new ArrayList<>();
+
+    public static void addDiagnosticEntry(Date timestamp, String msg, JSONObject data)
+    {
+        DiagnosticEntry entry = new DiagnosticEntry();
+        entry.timestamp = timestamp;
+        entry.msg = msg;
+        entry.data = data;
+        synchronized(m_diagnosticHistory)
+        {
+            m_diagnosticHistory.add(entry);
+        }
+    }
+
+    public static List<DiagnosticEntry> cloneDiagnosticHistory()
+    {
+        List<DiagnosticEntry> copy;
+        synchronized(m_diagnosticHistory)
+        {
+            copy = new ArrayList<>(m_diagnosticHistory);
+        }
+        return copy;
+    }
+
+    public static class StatusListAdapter extends ArrayAdapter<StatusEntry> {
         private final LayoutInflater m_inflater;
         private final int m_resourceID;
         private final int m_textViewResourceId;
@@ -77,7 +264,7 @@ public class StatusList {
 
         @Override 
         public View getView(int position, View convertView, ViewGroup parent) {
-            View rowView = null;
+            View rowView;
 
             if (convertView == null) {
                 rowView = m_inflater.inflate(m_resourceID, null);
@@ -85,7 +272,7 @@ public class StatusList {
                 rowView = convertView;
             }
 
-            PsiphonData.StatusEntry item = getItem(position);
+            StatusEntry item = getItem(position);
             
             Drawable messageClassImage = null;
             boolean boldText = true;
@@ -104,7 +291,7 @@ public class StatusList {
                 break;
             }
             
-            String msg = getContext().getString(item.id(), item.formatArgs());
+            String msg = getContext().getString(item.stringId(), item.formatArgs());
             
             if (item.throwable() != null)
             {
@@ -132,7 +319,7 @@ public class StatusList {
             return rowView;
         }
         
-        public void addEntries(List<PsiphonData.StatusEntry> entries) {
+        public void addEntries(List<StatusEntry> entries) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                 addEntriesFast(entries);
             }
@@ -142,20 +329,20 @@ public class StatusList {
         }
         
         @TargetApi(Build.VERSION_CODES.HONEYCOMB) 
-        private void addEntriesFast(List<PsiphonData.StatusEntry> entries) {
+        private void addEntriesFast(List<StatusEntry> entries) {
             addAll(entries);
         }
 
-        private void addEntriesSlow(List<PsiphonData.StatusEntry> entries) {
-            for (PsiphonData.StatusEntry entry : entries) {
+        private void addEntriesSlow(List<StatusEntry> entries) {
+            for (StatusEntry entry : entries) {
                 add(entry);
             }
         }
     }
     
     public static class StatusListIntentReceiver extends BroadcastReceiver {
-        public static interface NotificationRecipient {
-            public void statusAddedNotificationReceived();
+        public interface NotificationRecipient {
+            void statusAddedNotificationReceived();
         }
         
         public static final String STATUS_ADDED = "com.psiphon3.PsiphonAndroidActivity.STATUS_ADDED";
@@ -224,9 +411,9 @@ public class StatusList {
             // It might only be one item that's been added, but proceed as if 
             // there are a bunch to bulk-load.
             
-            List<PsiphonData.StatusEntry> newEntries = new ArrayList<PsiphonData.StatusEntry>(); 
+            List<StatusEntry> newEntries = new ArrayList<>();
             while (true) {
-                PsiphonData.StatusEntry entry = PsiphonData.getPsiphonData().getStatusEntry(m_nextStatusEntryIndex);
+                StatusEntry entry = getStatusEntry(m_nextStatusEntryIndex);
                 if (entry == null) {
                     // No more entries to add
                     break;

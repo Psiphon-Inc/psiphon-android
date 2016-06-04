@@ -24,38 +24,41 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.LocalBroadcastManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Date;
-import java.util.IllegalFormatException;
 
 /**
- * Can be used by secondary processes (like UpgradeChecker) to create logs that will be included in
- * the diagnostic package (and possibly UI).
+ * All logging is done directly to the LoggingProvider from all processes.
  */
 public class LoggingProvider extends ContentProvider {
     public static final Uri INSERT_URI = Uri.parse("content://"+LoggingProvider.class.getCanonicalName()+"/");
     public static final String LOG_JSON_KEY = "logJSON";
+    public static final String DIAGNOSTIC_LOG_JSON_KEY = "diagnosticlogJSON";
 
     /**
      * JSON-ify the arguments to be used in a call to the LoggingProvider content provider.
+     * @param date Timestamp for the log.
      * @param stringResID String resource ID.
      * @param sensitivity Log sensitivity level.
-     * @param priority One of the log priority levels supported by MyLog. Like: Log.DEBUG, Log.INFO, Log.WARN, Log.ERROR, Log.VERBOSE
      * @param formatArgs Arguments to be formatted into the log string.
+     * @param priority One of the log priority levels supported by MyLog. Like: Log.DEBUG, Log.INFO, Log.WARN, Log.ERROR, Log.VERBOSE
      * @return null on error.
      */
-    public static String makeLogJSON(int stringResID, MyLog.Sensitivity sensitivity, int priority, Object[] formatArgs) {
+    public static String makeLogJSON(Date date, int stringResID, MyLog.Sensitivity sensitivity, Object[] formatArgs, int priority) {
         JSONObject json = new JSONObject();
         try {
             JSONArray jsonArray = new JSONArray();
@@ -65,11 +68,11 @@ public class LoggingProvider extends ContentProvider {
                 }
             }
 
+            json.put("timestamp", date.getTime()); // Store as millis since epoch
             json.put("stringResID", stringResID);
             json.put("sensitivity", sensitivity.name());
-            json.put("priority", priority);
             json.put("formatArgs", jsonArray);
-            json.put("timestamp", new Date().getTime()); // Store as millis since epoch
+            json.put("priority", priority);
             return json.toString();
         } catch (JSONException e) {
             // pass
@@ -79,11 +82,32 @@ public class LoggingProvider extends ContentProvider {
     }
 
     /**
-     * To be called by MyLog when logs should be moved from the provider DB to MyLog.
+     * JSON-ify the arguments to be used in a call to the LoggingProvider content provider.
+     * @param date Timestamp for the log.
+     * @param message String message.
+     * @param data JSON data.
+     * @return null on error.
+     */
+    public static String makeDiagnosticLogJSON(Date date, String message, JSONObject data) {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("timestamp", date.getTime()); // Store as millis since epoch
+            json.put("message", message);
+            json.put("data", data);
+            return json.toString();
+        } catch (JSONException e) {
+            // pass
+        }
+
+        return null;
+    }
+
+    /**
+     * To be called by the UI when logs should be read from the provider DB into the StatusList.
      * @param context
      */
-    public static void restoreLogs(Context context) {
-        LogDatabaseHelper.restoreLogs(context);
+    public static void retrieveLogs(Context context) {
+        LogDatabaseHelper.retrieveLogs(context);
     }
 
     @Override
@@ -93,14 +117,14 @@ public class LoggingProvider extends ContentProvider {
 
     @Nullable
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+    public Cursor query(@NonNull Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         assert(false);
         return null;
     }
 
     @Nullable
     @Override
-    public String getType(Uri uri) {
+    public String getType(@NonNull Uri uri) {
         assert(false);
         return null;
     }
@@ -113,48 +137,19 @@ public class LoggingProvider extends ContentProvider {
      */
     @Nullable
     @Override
-    public Uri insert(Uri uri, ContentValues values) {
+    public Uri insert(@NonNull Uri uri, ContentValues values) {
         LogDatabaseHelper.insertLog(this.getContext(), values);
-
-        // If we're a debug build, output something to LogCat right now so we can see it.
-        if (PsiphonConstants.DEBUG) {
-            try {
-                JSONObject jsonObj = new JSONObject(values.getAsString(LOG_JSON_KEY));
-                int stringResID = jsonObj.getInt("stringResID");
-
-                JSONArray formatArgsJSONArray = jsonObj.getJSONArray("formatArgs");
-                Object[] formatArgs = new Object[formatArgsJSONArray.length()];
-                for (int i = 0; i < formatArgsJSONArray.length(); i++) {
-                    formatArgs[i] = formatArgsJSONArray.get(i);
-                }
-
-                String logString;
-                try
-                {
-                    logString = getContext().getString(stringResID, formatArgs);
-                }
-                catch (IllegalFormatException e)
-                {
-                    logString = getContext().getString(stringResID);
-                }
-
-                MyLog.d(logString);
-            } catch (JSONException e) {
-                // pass
-            }
-        }
-
         return null;
     }
 
     @Override
-    public int delete(Uri uri, String selection, String[] selectionArgs) {
+    public int delete(@NonNull Uri uri, String selection, String[] selectionArgs) {
         assert(false);
         return 0;
     }
 
     @Override
-    public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+    public int update(@NonNull Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         assert(false);
         return 0;
     }
@@ -274,22 +269,24 @@ public class LoggingProvider extends ContentProvider {
 
             db.setTransactionSuccessful();
             db.endTransaction();
+
+            context.getContentResolver().notifyChange(INSERT_URI, null);
         }
 
         /**
-         * To be called by MyLog at a time when it's appropriate to consume logs that were stored
+         * To be called by the UI at a time when it's appropriate to consume logs that were stored
          * by the provider. May execute asynchronously.
          */
-        public static void restoreLogs(Context context) {
+        public static void retrieveLogs(Context context) {
             // If this function is being called in the UI thread, then we need to do the work in an
             // async task. Otherwise we'll do the work directly.
             // For info about content provider thread use: http://stackoverflow.com/a/3571583
             if (Looper.myLooper() == Looper.getMainLooper()) {
-                RestoreLogsTask task = new RestoreLogsTask(context);
+                RetrieveLogsTask task = new RetrieveLogsTask(context);
                 task.execute();
             }
             else {
-                LogDatabaseHelper.restoreLogsHelper(context);
+                LogDatabaseHelper.retrieveLogsHelper(context);
             }
 
         }
@@ -297,9 +294,9 @@ public class LoggingProvider extends ContentProvider {
         /**
          * Task to do the async work.
          */
-        private static class RestoreLogsTask extends AsyncTask<Void, Void, Void> {
+        private static class RetrieveLogsTask extends AsyncTask<Void, Void, Void> {
             private Context mContext;
-            public RestoreLogsTask (Context context){
+            public RetrieveLogsTask (Context context){
                 mContext = context;
             }
 
@@ -307,20 +304,20 @@ public class LoggingProvider extends ContentProvider {
             protected Void doInBackground(Void... params) {
                 // DO NOT LOG WITHIN THIS FUNCTION
 
-                LogDatabaseHelper.restoreLogsHelper(mContext);
+                LogDatabaseHelper.retrieveLogsHelper(mContext);
 
                 return null;
             }
         }
 
         /**
-         * Does the log restore work. Should be called via restoreLogs or RestoreLogsTask.
+         * Does the log retrieval work. Should be called via retrieveLogs or RetrieveLogsTask.
          * @param context
          */
-        private static void restoreLogsHelper(Context context) {
+        private static void retrieveLogsHelper(Context context) {
             // DO NOT LOG WITHIN THIS FUNCTION
 
-            // We will cursor through DB records, passing them off to MyLog and deleting them.
+            // We will cursor through DB records, passing them off to StatusList
 
             SQLiteDatabase db = LogDatabaseHelper.get(context).getDB();
 
@@ -329,72 +326,71 @@ public class LoggingProvider extends ContentProvider {
                     COLUMN_NAME_LOGJSON
             };
 
+            String whereClause = null;
+            StatusList.StatusEntry lastEntry = StatusList.getStatusEntry(-1);
+            if (lastEntry != null)
+            {
+                whereClause = COLUMN_NAME_ID + " > " + lastEntry.key();
+            }
+
             String sortOrder = COLUMN_NAME_ID + " ASC";
 
-            String limit = "1";
+            Cursor cursor = db.query(
+                    TABLE_NAME,
+                    projection,
+                    whereClause, null,
+                    null, null,
+                    sortOrder);
 
-            // We will do repeated limit-1-query + delete transactions.
-            while (true) {
-                db.beginTransaction();
+            int numberOfLogsRetrieved = 0;
 
-                Cursor cursor = db.query(
-                        TABLE_NAME,
-                        projection,
-                        null, null,
-                        null, null,
-                        sortOrder,
-                        limit);
+            // Iterate over the cursor
+            try {
+                while (cursor.moveToNext()) {
 
-                cursor.moveToFirst();
-                if (cursor.isAfterLast()) {
-                    // No records left.
-                    cursor.close();
-                    db.endTransaction();
-                    break;
+                    long ID = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_NAME_ID));
+                    String logJSON = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_LOGJSON));
+
+                    // Extract log args from JSON.
+                    int stringResID, priority;
+                    MyLog.Sensitivity sensitivity;
+                    Object[] formatArgs;
+                    Date timestamp;
+                    try {
+                        JSONObject jsonObj = new JSONObject(logJSON);
+                        stringResID = jsonObj.getInt("stringResID");
+                        sensitivity = MyLog.Sensitivity.valueOf(jsonObj.getString("sensitivity"));
+                        priority = jsonObj.getInt("priority");
+                        timestamp = new Date(jsonObj.getLong("timestamp"));
+
+                        JSONArray formatArgsJSONArray = jsonObj.getJSONArray("formatArgs");
+                        formatArgs = new Object[formatArgsJSONArray.length()];
+                        for (int i = 0; i < formatArgsJSONArray.length(); i++) {
+                            formatArgs[i] = formatArgsJSONArray.get(i);
+                        }
+
+                        // Pass the log info on to StatusList.
+                        // Keep this call in the try block so it gets skipped if there's an exception above.
+                        StatusList.addStatusEntry(
+                                ID,
+                                timestamp,
+                                stringResID,
+                                sensitivity,
+                                formatArgs,
+                                null,
+                                priority);
+
+                        numberOfLogsRetrieved ++;
+                    } catch (JSONException e) {
+                        // just skip this entry
+                    }
                 }
-
-                long recId = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_NAME_ID));
-                String logJSON = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_LOGJSON));
-
-                // Don't need the cursor any longer
+            } finally {
                 cursor.close();
+            }
 
-                // Extract log args from JSON.
-                int stringResID, priority;
-                MyLog.Sensitivity sensitivity;
-                Object[] formatArgs;
-                Date timestamp;
-                try {
-                    JSONObject jsonObj = new JSONObject(logJSON);
-                    stringResID = jsonObj.getInt("stringResID");
-                    sensitivity = MyLog.Sensitivity.valueOf(jsonObj.getString("sensitivity"));
-                    priority = jsonObj.getInt("priority");
-                    timestamp = new Date(jsonObj.getLong("timestamp"));
-
-                    JSONArray formatArgsJSONArray = jsonObj.getJSONArray("formatArgs");
-                    formatArgs = new Object[formatArgsJSONArray.length()];
-                    for (int i = 0; i < formatArgsJSONArray.length(); i++) {
-                        formatArgs[i] = formatArgsJSONArray.get(i);
-                    }
-
-                    // Pass the log info on to MyLog.
-                    // Keep this call in the try block so it gets skipped if there's an exception above.
-                    if (!MyLog.logFromProvider(stringResID, sensitivity, priority, formatArgs, timestamp)) {
-                        // MyLog is not in a state to receive logs. Abort.
-                        db.endTransaction();
-                        break;
-                    }
-                } catch (JSONException e) {
-                    // Carry on with the deletion from DB
-                }
-
-                // MyLog was in a state to receive the data, so delete the row.
-                String selection = COLUMN_NAME_ID + " = ?";
-                String[] selectionArgs = { String.valueOf(recId) };
-                db.delete(TABLE_NAME, selection, selectionArgs);
-
-                db.setTransactionSuccessful();
-                db.endTransaction();
+            if (numberOfLogsRetrieved > 0) {
+                LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(MainBase.TabbedActivityBase.STATUS_ENTRY_AVAILABLE));
             }
         }
     }

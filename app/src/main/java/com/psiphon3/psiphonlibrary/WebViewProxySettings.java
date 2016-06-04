@@ -57,7 +57,7 @@ public class WebViewProxySettings
     */
     public static boolean setProxy (Context ctx, String host, int port)
     {
-        PsiphonData.getPsiphonData().saveSystemProxySettings(ctx);
+        UpstreamProxySettings.getUpstreamProxySettings().saveSystemProxySettings(ctx);
         
         boolean worked = false;
 
