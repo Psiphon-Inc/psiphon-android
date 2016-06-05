@@ -435,7 +435,8 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         ActivityManager manager = (ActivityManager)getSystemService(ACTIVITY_SERVICE);
         for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
         {
-            if (this.mPsiphonServiceClassName.equals(service.service.getClassName()))
+            if (service.uid == android.os.Process.myUid() &&
+                    this.mPsiphonServiceClassName.equals(service.service.getClassName()))
             {
                 return true;
             }
