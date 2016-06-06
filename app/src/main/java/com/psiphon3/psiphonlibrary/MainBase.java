@@ -631,6 +631,10 @@ public abstract class MainBase {
             if (isServiceRunning()) {
                 startAndBindTunnelService();
             }
+            else {
+                // reset the tunnel state
+                m_tunnelState = new TunnelManager.State();
+            }
         }
 
         @Override
