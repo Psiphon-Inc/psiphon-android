@@ -167,7 +167,8 @@ public class LoggingProvider extends ContentProvider {
         private static final String DICTIONARY_TABLE_CREATE =
                 "CREATE TABLE " + TABLE_NAME + " (" +
                         COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                        COLUMN_NAME_LOGJSON + " TEXT NOT NULL" +
+                        COLUMN_NAME_LOGJSON + " TEXT NOT NULL, " +
+                        COLUMN_NAME_IS_DIAGNOSTIC + " BOOLEAN DEFAULT 0 " +
                 ");";
 
         /**
@@ -214,7 +215,7 @@ public class LoggingProvider extends ContentProvider {
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
             if(newVersion == 2 && oldVersion == 1) {
                 db.execSQL("ALTER " + TABLE_NAME + " ADD " +
-                        COLUMN_NAME_IS_DIAGNOSTIC + " boolean NOT NULL default 0");
+                        COLUMN_NAME_IS_DIAGNOSTIC + " BOOLEAN NOT NULL DEFAULT 0");
 
             }
         }
@@ -404,7 +405,7 @@ public class LoggingProvider extends ContentProvider {
             whereClause = COLUMN_NAME_IS_DIAGNOSTIC;
             StatusList.DiagnosticEntry lastDiagnosticEntry = StatusList.getDiagnosticEntry(-1);
             if (lastDiagnosticEntry != null) {
-                whereClause = " AND " + COLUMN_NAME_ID + " > " + lastDiagnosticEntry.key();
+                whereClause += " AND " + COLUMN_NAME_ID + " > " + lastDiagnosticEntry.key();
             }
 
             sortOrder = COLUMN_NAME_ID + " ASC";
