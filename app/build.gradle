@@ -17,6 +17,7 @@ android {
             defaultConfig {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
                 applicationId "com.psiphon3"
+                resValue "string", "tray__authority", "${applicationId}.tray"
                 minSdkVersion 9
                 targetSdkVersion 21
                 versionCode verCode
@@ -75,5 +76,6 @@ dependencies {
     compile files('libs/snakeyaml-1.10-android.jar')
     compile files('libs/classes.jar')
     compile 'com.google.android.gms:play-services-safetynet:8.4.0'
+    compile 'net.grandcentrix.tray:tray:0.10.0'
 }
 

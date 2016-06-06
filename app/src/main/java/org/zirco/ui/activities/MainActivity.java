@@ -124,6 +124,8 @@ import android.widget.Toast;
 import android.widget.ViewFlipper;
 import android.widget.SimpleCursorAdapter.CursorToStringConverter;
 
+import net.grandcentrix.tray.AppPreferences;
+
 /**
  * The application main activity.
  */
@@ -2400,9 +2402,10 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
                     HttpParams params = new BasicHttpParams();
                     HttpConnectionParams.setConnectionTimeout(params, 5000);
                     HttpConnectionParams.setSoTimeout(params, 5000);
+                    final AppPreferences multiProcessPreferences = new AppPreferences(MainActivity.this);
                     HttpHost httpproxy = new HttpHost(
                             "localhost",
-                            PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getInt(MainActivity.this.getString(R.string.current_local_http_proxy_port), 0));
+                            multiProcessPreferences.getInt(MainActivity.this.getString(R.string.current_local_http_proxy_port), 0));
                     params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
                     DefaultHttpClient client = new DefaultHttpClient(params);
                     HttpContext context = new BasicHttpContext();

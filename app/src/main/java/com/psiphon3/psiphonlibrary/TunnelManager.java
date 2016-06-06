@@ -25,7 +25,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.net.VpnService;
 import android.net.VpnService.Builder;
@@ -40,6 +39,8 @@ import android.support.v4.app.NotificationCompat;
 
 import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+
+import net.grandcentrix.tray.AppPreferences;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -716,10 +717,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         MyLog.v(R.string.http_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, port);
         m_tunnelState.listeningLocalHttpProxyPort = port;
 
-        // TODO: use a multi process safe method
-        SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(m_parentService).edit();
-        editor.putInt(m_parentService.getString(R.string.current_local_http_proxy_port), port);
-        editor.apply();
+        final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
+        multiProcessPreferences.put(
+                m_parentService.getString(R.string.current_local_http_proxy_port),
+                port);
     }
 
     @Override

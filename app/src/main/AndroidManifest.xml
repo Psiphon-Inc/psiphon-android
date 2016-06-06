@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.psiphon3"
+    xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
 
+    <uses-sdk tools:overrideLibrary="net.grandcentrix.tray" />
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"
