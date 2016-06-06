@@ -94,6 +94,9 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import com.psiphon3.R;
 
+import net.grandcentrix.tray.AppPreferences;
+import net.grandcentrix.tray.core.SharedPreferencesImport;
+
 public abstract class MainBase {
     public static abstract class SupportFragmentActivity extends FragmentActivity implements MyLog.ILogger {
         public SupportFragmentActivity() {
@@ -167,6 +170,7 @@ public abstract class MainBase {
         protected Button m_toggleButton;
         private StatusListViewManager m_statusListManager = null;
         private SharedPreferences m_preferences;
+        private AppPreferences m_multiProcessPreferences;
         private ViewFlipper m_sponsorViewFlipper;
         private LinearLayout m_statusLayout;
         private TextView m_statusTabLogLine;
@@ -393,6 +397,17 @@ public abstract class MainBase {
             super.onCreate(savedInstanceState);
 
             m_preferences = PreferenceManager.getDefaultSharedPreferences(this);
+            m_multiProcessPreferences = new AppPreferences(this);
+
+            // The name of the DefaultSharedPreferences is this.getPackageName() + "_preferences"
+            // http://stackoverflow.com/questions/5946135/difference-between-getdefaultsharedpreferences-and-getsharedpreferences
+            m_multiProcessPreferences.migrate(
+                    new SharedPreferencesImport(this, this.getPackageName() + "_preferences", getString(R.string.downloadWifiOnlyPreference), getString(R.string.downloadWifiOnlyPreference)),
+                    new SharedPreferencesImport(this, this.getPackageName() + "_preferences", getString(R.string.disableTimeoutsPreference), getString(R.string.disableTimeoutsPreference)));
+
+            if (m_firstRun) {
+                EmbeddedValues.initialize(this);
+            }
 
             // Set up tabs
             m_tabHost.setup();
@@ -507,7 +522,7 @@ public abstract class MainBase {
 
             // Show download-wifi-only preference only in not Play Store build
             if(EmbeddedValues.hasEverBeenSideLoaded(getContext())) {
-                boolean downLoadWifiOnlyPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
+                boolean downLoadWifiOnlyPreference = m_multiProcessPreferences.getBoolean(
                         getString(R.string.downloadWifiOnlyPreference),
                         PsiphonConstants.DOWNLOAD_WIFI_ONLY_PREFERENCE_DEFAULT);
                 m_downloadOnWifiOnlyToggle.setChecked(downLoadWifiOnlyPreference);
@@ -517,7 +532,7 @@ public abstract class MainBase {
                 m_downloadOnWifiOnlyToggle.setVisibility(View.GONE);
             }
 
-            boolean disableTimeoutsPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
+            boolean disableTimeoutsPreference = m_multiProcessPreferences.getBoolean(
                     getString(R.string.disableTimeoutsPreference), false);
             m_disableTimeoutsToggle.setChecked(disableTimeoutsPreference);
             setTunnelConfigDisableTimeouts(disableTimeoutsPreference);
@@ -797,9 +812,7 @@ public abstract class MainBase {
             scheduleRunningTunnelServiceRestart();
         }
         protected void updateDisableTimeoutsPreference(boolean disableTimeoutsPreference) {
-            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-            editor.putBoolean(getString(R.string.disableTimeoutsPreference), disableTimeoutsPreference);
-            editor.apply();
+            m_multiProcessPreferences.put(getString(R.string.disableTimeoutsPreference), disableTimeoutsPreference);
 
             setTunnelConfigDisableTimeouts(disableTimeoutsPreference);
         }
@@ -810,9 +823,7 @@ public abstract class MainBase {
             // There is no need to restart the service if the value of downloadWifiOnly
             // has changed because upgrade downloads happen in a different, temp tunnel
 
-            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-            editor.putBoolean(getString(R.string.downloadWifiOnlyPreference), downloadWifiOnly);
-            editor.apply();
+            m_multiProcessPreferences.put(getString(R.string.downloadWifiOnlyPreference), downloadWifiOnly);
         }
 
         // Basic check that the values are populated

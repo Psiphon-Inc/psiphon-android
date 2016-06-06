@@ -27,12 +27,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.SystemClock;
-import android.preference.PreferenceManager;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
 
 import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+
+import net.grandcentrix.tray.AppPreferences;
 
 import java.util.Date;
 import java.util.List;
@@ -101,7 +102,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
      * May be called from any process or thread.
      * Side-effect: If an existing upgrade file is detected, the upgrade notification will be displayed.
      * Side-effect: Creates the UpgradeChecker alarm.
-     * @param context
+     * @param context the context
      * @return true if upgrade check is needed.
      */
     public static boolean upgradeCheckNeeded(Context context) {
@@ -143,7 +144,8 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
 
         // Verify if 'Download upgrades on WiFi only' user preference is on
         // but current network is not WiFi
-        if (PreferenceManager.getDefaultSharedPreferences(appContext).getBoolean(
+        final AppPreferences multiProcessPreferences = new AppPreferences(appContext);
+        if (multiProcessPreferences.getBoolean(
                 context.getString(R.string.downloadWifiOnlyPreference), PsiphonConstants.DOWNLOAD_WIFI_ONLY_PREFERENCE_DEFAULT) &&
                 !Utils.isOnWiFi(appContext)) {
             log(context, R.string.upgrade_checker_upgrade_wifi_only, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
@@ -356,7 +358,8 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         public String getPsiphonConfig() {
             // Build a temporary tunnel config to use
             TunnelManager.Config tunnelManagerConfig = new TunnelManager.Config();
-            tunnelManagerConfig.disableTimeouts = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
+            final AppPreferences multiProcessPreferences = new AppPreferences(this);
+            tunnelManagerConfig.disableTimeouts = multiProcessPreferences.getBoolean(
                     this.getString(R.string.disableTimeoutsPreference), false);
             tunnelManagerConfig.upstreamProxyURL = UpstreamProxySettings.getUpstreamProxyUrlFromCurrentPreferences(this);
 

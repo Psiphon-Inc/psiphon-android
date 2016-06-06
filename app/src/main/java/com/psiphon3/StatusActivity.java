@@ -68,9 +68,7 @@ public class StatusActivity
 
         super.onCreate(savedInstanceState);
 
-        if (m_firstRun) {
-            EmbeddedValues.initialize(this);
-        }
+        // EmbeddedValues.initialize(this); is called in MainBase.OnCreate
 
         // Play Store Build instances should use existing banner from previously installed APK
         // (if present). To enable this, non-Play Store Build instances write their banner to
