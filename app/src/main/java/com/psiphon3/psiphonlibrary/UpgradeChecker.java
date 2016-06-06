@@ -81,14 +81,30 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
      * @param formatArgs Arguments to be formatted into the log string.
      */
     private static void log(Context context, int stringResID, MyLog.Sensitivity sensitivity, int priority, Object... formatArgs) {
-        String logJSON = LoggingProvider.makeLogJSON(new Date(), stringResID, sensitivity, formatArgs, priority);
+
+        /*
+        //TODO: use MyLog?
+        if(!MyLog.isSetLogger()) {
+            final Context loggerCtx = context;
+            MyLog.ILogger logger = new MyLog.ILogger() {
+                @Override
+                public Context getContext() {
+                    return loggerCtx;
+                }
+            };
+            MyLog.setLogger(logger);
+        }
+        */
+
+        String logJSON = LoggingProvider.makeStatusLogJSON(new Date(), stringResID, sensitivity, formatArgs, priority);
         if (logJSON == null) {
             // Fail silently
             return;
         }
 
         ContentValues values = new ContentValues();
-        values.put(LoggingProvider.LOG_JSON_KEY, logJSON);
+        values.put(LoggingProvider.LogDatabaseHelper.COLUMN_NAME_LOGJSON, logJSON);
+        values.put(LoggingProvider.LogDatabaseHelper.COLUMN_NAME_IS_DIAGNOSTIC, false);
 
         context.getContentResolver().insert(
                 LoggingProvider.INSERT_URI,

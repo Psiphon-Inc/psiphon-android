@@ -19,6 +19,24 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import android.annotation.TargetApi;
+import android.app.Activity;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.Build;
+import android.util.Log;
+
+import com.psiphon3.R;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
@@ -42,24 +60,7 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import de.schildbach.wallet.util.LinuxSecureRandom;
-import android.annotation.TargetApi;
-import android.app.Activity;
-import android.content.ContentValues;
-import android.content.Context;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.os.Build;
-import android.util.Log;
-
-import com.psiphon3.R;
 
 
 public class Utils
@@ -351,8 +352,6 @@ public class Utils
          */
         static public void g(String msg, JSONObject data)
         {
-            // TODO-TUNNEL-CORE: temporarily disabling
-            /*
             if (logger.get() != null) {
                 String logJSON = LoggingProvider.makeDiagnosticLogJSON(new Date(), msg, data);
                 if (logJSON == null) {
@@ -361,13 +360,13 @@ public class Utils
                 }
 
                 ContentValues values = new ContentValues();
-                values.put(LoggingProvider.DIAGNOSTIC_LOG_JSON_KEY, logJSON);
+                values.put(LoggingProvider.LogDatabaseHelper.COLUMN_NAME_LOGJSON, logJSON);
+                values.put(LoggingProvider.LogDatabaseHelper.COLUMN_NAME_IS_DIAGNOSTIC, true);
 
                 logger.get().getContext().getContentResolver().insert(
                         LoggingProvider.INSERT_URI,
                         values);
             }
-            */
 
             // We're not logging the `data` at all. In the future we may want to.
             MyLog.d(msg);
@@ -454,14 +453,15 @@ public class Utils
                 Date timestamp)
         {
             if (logger.get() != null) {
-                String logJSON = LoggingProvider.makeLogJSON(timestamp, stringResID, sensitivity, formatArgs, priority);
+                String logJSON = LoggingProvider.makeStatusLogJSON(timestamp, stringResID, sensitivity, formatArgs, priority);
                 if (logJSON == null) {
                     // Fail silently
                     return;
                 }
 
                 ContentValues values = new ContentValues();
-                values.put(LoggingProvider.LOG_JSON_KEY, logJSON);
+                values.put(LoggingProvider.LogDatabaseHelper.COLUMN_NAME_LOGJSON, logJSON);
+                values.put(LoggingProvider.LogDatabaseHelper.COLUMN_NAME_IS_DIAGNOSTIC, false);
 
                 logger.get().getContext().getContentResolver().insert(
                         LoggingProvider.INSERT_URI,

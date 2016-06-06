@@ -19,8 +19,6 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
-
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
@@ -35,6 +33,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -46,8 +46,6 @@ import java.util.Date;
  */
 public class LoggingProvider extends ContentProvider {
     public static final Uri INSERT_URI = Uri.parse("content://"+LoggingProvider.class.getCanonicalName()+"/");
-    public static final String LOG_JSON_KEY = "logJSON";
-    public static final String DIAGNOSTIC_LOG_JSON_KEY = "diagnosticlogJSON";
 
     /**
      * JSON-ify the arguments to be used in a call to the LoggingProvider content provider.
@@ -58,7 +56,7 @@ public class LoggingProvider extends ContentProvider {
      * @param priority One of the log priority levels supported by MyLog. Like: Log.DEBUG, Log.INFO, Log.WARN, Log.ERROR, Log.VERBOSE
      * @return null on error.
      */
-    public static String makeLogJSON(Date date, int stringResID, MyLog.Sensitivity sensitivity, Object[] formatArgs, int priority) {
+    public static String makeStatusLogJSON(Date date, int stringResID, MyLog.Sensitivity sensitivity, Object[] formatArgs, int priority) {
         JSONObject json = new JSONObject();
         try {
             JSONArray jsonArray = new JSONArray();
@@ -84,15 +82,15 @@ public class LoggingProvider extends ContentProvider {
     /**
      * JSON-ify the arguments to be used in a call to the LoggingProvider content provider.
      * @param date Timestamp for the log.
-     * @param message String message.
-     * @param data JSON data.
+     * @param msg String nessage name.
+     * @param data String json data.
      * @return null on error.
      */
-    public static String makeDiagnosticLogJSON(Date date, String message, JSONObject data) {
+    public static String makeDiagnosticLogJSON(Date date, String msg, JSONObject data) {
         JSONObject json = new JSONObject();
         try {
             json.put("timestamp", date.getTime()); // Store as millis since epoch
-            json.put("message", message);
+            json.put("msg", msg);
             json.put("data", data);
             return json.toString();
         } catch (JSONException e) {
@@ -132,7 +130,8 @@ public class LoggingProvider extends ContentProvider {
     /**
      * Called when a content provider consumer wants to create a log.
      * @param uri Ignored.
-     * @param values Must have LOG_JSON_KEY value, created by makeLogJSON().
+     * @param values Must have COLUMN_NAME_LOGJSON value, created by makeStatusLogJSON() or makeDiagnosticLogJSON()
+     *               and boolean COLUMN_NAME_IS_DIAGNOSTIC indicating whether the log entry is 'diagnostic' or 'status'
      * @return Always returns null.
      */
     @Nullable
@@ -159,11 +158,12 @@ public class LoggingProvider extends ContentProvider {
      */
     public static class LogDatabaseHelper extends SQLiteOpenHelper {
         private static final String DATABASE_NAME = "loggingprovider.db";
-        private static final int DATABASE_VERSION = 1;
+        private static final int DATABASE_VERSION = 2;
 
         private static final String TABLE_NAME = "log";
         private static final String COLUMN_NAME_ID = "_ID";
-        private static final String COLUMN_NAME_LOGJSON = "logjson";
+        public static final String COLUMN_NAME_LOGJSON = "logjson";
+        public static final String COLUMN_NAME_IS_DIAGNOSTIC = "is_diagnostic";
         private static final String DICTIONARY_TABLE_CREATE =
                 "CREATE TABLE " + TABLE_NAME + " (" +
                         COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -212,7 +212,11 @@ public class LoggingProvider extends ContentProvider {
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            // nothing yet
+            if(newVersion == 2 && oldVersion == 1) {
+                db.execSQL("ALTER " + TABLE_NAME + " ADD " +
+                        COLUMN_NAME_IS_DIAGNOSTIC + " boolean NOT NULL default 0");
+
+            }
         }
 
         /**
@@ -323,14 +327,16 @@ public class LoggingProvider extends ContentProvider {
 
             String[] projection = {
                     COLUMN_NAME_ID,
+                    COLUMN_NAME_IS_DIAGNOSTIC,
                     COLUMN_NAME_LOGJSON
             };
 
-            String whereClause = null;
+
+            //restore status logs  (COLUMN_NAME_IS_DIAGNOSTIC == false)
+            String whereClause = "NOT(" + COLUMN_NAME_IS_DIAGNOSTIC + ") ";
             StatusList.StatusEntry lastEntry = StatusList.getStatusEntry(-1);
-            if (lastEntry != null)
-            {
-                whereClause = COLUMN_NAME_ID + " > " + lastEntry.key();
+            if (lastEntry != null) {
+                whereClause += " AND " + COLUMN_NAME_ID + " > " + lastEntry.key();
             }
 
             String sortOrder = COLUMN_NAME_ID + " ASC";
@@ -380,7 +386,7 @@ public class LoggingProvider extends ContentProvider {
                                 null,
                                 priority);
 
-                        numberOfLogsRetrieved ++;
+                        numberOfLogsRetrieved++;
                     } catch (JSONException e) {
                         // just skip this entry
                     }
@@ -391,6 +397,51 @@ public class LoggingProvider extends ContentProvider {
 
             if (numberOfLogsRetrieved > 0) {
                 LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(MainBase.TabbedActivityBase.STATUS_ENTRY_AVAILABLE));
+            }
+
+
+            //restore diagnostic logs  (COLUMN_NAME_IS_DIAGNOSTIC == true)
+            whereClause = COLUMN_NAME_IS_DIAGNOSTIC;
+            StatusList.DiagnosticEntry lastDiagnosticEntry = StatusList.getDiagnosticEntry(-1);
+            if (lastDiagnosticEntry != null) {
+                whereClause = " AND " + COLUMN_NAME_ID + " > " + lastDiagnosticEntry.key();
+            }
+
+            sortOrder = COLUMN_NAME_ID + " ASC";
+
+            cursor = db.query(
+                    TABLE_NAME,
+                    projection,
+                    whereClause, null,
+                    null, null,
+                    sortOrder);
+
+            // Iterate over the cursor
+            try {
+                while (cursor.moveToNext()) {
+
+                    long ID = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_NAME_ID));
+                    String logJSON = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_LOGJSON));
+
+                    // Extract log args from JSON.
+                    Date timestamp;
+                    String msg;
+                    JSONObject data;
+                    try {
+                        JSONObject jsonObj = new JSONObject(logJSON);
+                        timestamp = new Date(jsonObj.getLong("timestamp"));
+                        msg = jsonObj.getString("msg");
+                        data = jsonObj.getJSONObject("data");
+
+                        // Pass the log info on to StatusList.
+                        // Keep this call in the try block so it gets skipped if there's an exception above.
+                        StatusList.addDiagnosticEntry(ID, timestamp, msg, data);
+                    } catch (JSONException e) {
+                        // just skip this entry
+                    }
+                }
+            } finally {
+                cursor.close();
             }
         }
     }

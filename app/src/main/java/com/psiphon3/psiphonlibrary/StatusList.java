@@ -19,11 +19,6 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.ListIterator;
-
 import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -45,11 +40,35 @@ import android.widget.TextView;
 
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.ListIterator;
+
 /*
  * Adapted from the sample code here: http://developer.android.com/reference/android/content/AsyncTaskLoader.html
  */
 
 public class StatusList {
+    public static DiagnosticEntry getDiagnosticEntry(int index) {
+        synchronized(m_diagnosticHistory)
+        {
+            if (index < 0)
+            {
+                // index is negative, so this is subtracting...
+                index = m_diagnosticHistory.size() + index;
+                // Note that index is still negative if the array is empty or if
+                // the negative value was too large.
+            }
+
+            if (index >= m_diagnosticHistory.size() || index < 0)
+            {
+                return null;
+            }
+
+            return m_diagnosticHistory.get(index);
+        }
+    }
     /*
      * Status Message History support
      */
@@ -193,7 +212,7 @@ public class StatusList {
         private Date timestamp;
         private String msg;
         private JSONObject data;
-
+        private long key;
         public Date timestamp()
         {
             return timestamp;
@@ -208,13 +227,20 @@ public class StatusList {
         {
             return data;
         }
+
+        public long key()
+        {
+            return key;
+        }
+
     }
 
     private static final List<DiagnosticEntry> m_diagnosticHistory = new ArrayList<>();
 
-    public static void addDiagnosticEntry(Date timestamp, String msg, JSONObject data)
+    public static void addDiagnosticEntry(long key, Date timestamp, String msg, JSONObject data)
     {
         DiagnosticEntry entry = new DiagnosticEntry();
+        entry.key = key;
         entry.timestamp = timestamp;
         entry.msg = msg;
         entry.data = data;
