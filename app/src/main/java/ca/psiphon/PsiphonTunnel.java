@@ -89,6 +89,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         public void onUntunneledAddress(String address);
         public void onBytesTransferred(long sent, long received);
         public void onStartedWaitingForNetworkConnectivity();
+        public void onClientVerificationRequired();
         public void onExiting();
     }
 
@@ -149,16 +150,32 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         startPsiphon(embeddedServerEntries);
     }
 
-    public synchronized void restartPsiphon() throws Exception {
-        stopPsiphon();
-        startPsiphon("");
-    }
-    
+    // Note: to avoid deadlock, do not call directly from a HostService callback;
+    // instead post to a Handler if necessary to trigger from a HostService callback.
+    // For example, deadlock can occur when a Notice callback invokes stop() since stop() calls
+    // Psi.Stop() which will block waiting for tunnel-core Controller to shutdown which in turn
+    // waits for Notice callback invoker to stop, meanwhile the callback thread has blocked waiting
+    // for stop().
     public synchronized void stop() {
         stopVpn();
         stopPsiphon();
         mVpnMode.set(false);
         mLocalSocksProxyPort.set(0);
+    }
+
+    // Note: same deadlock note as stop().
+    public synchronized void restartPsiphon() throws Exception {
+        stopPsiphon();
+        startPsiphon("");
+    }
+
+    // Call through to tunnel-core Controller.SetClientVerificationPayload. See description in
+    // Controller.SetClientVerificationPayload.
+    // Note: same deadlock note as stop().
+    // Note: this function only has an effect after Psi.Start() and before Psi.Stop(),
+    // so call it after startTunneling() and before stop().
+    public synchronized void setClientVerificationPayload (String requestPayload) {
+        Psi.SetClientVerificationPayload(requestPayload);
     }
 
     //----------------------------------------------------------------------------------------------
@@ -460,6 +477,8 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
                 mHostService.onBytesTransferred(data.getLong("sent"), data.getLong("received"));
             } else if (noticeType.equals("Exiting")) {
                 mHostService.onExiting();
+            } else if(noticeType.equals("ClientVerificationRequired")) {
+                mHostService.onClientVerificationRequired();
             }
 
             if (diagnostic) {
