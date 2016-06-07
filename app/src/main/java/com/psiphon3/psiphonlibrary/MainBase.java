@@ -172,7 +172,7 @@ public abstract class MainBase {
         protected Button m_toggleButton;
         private StatusListViewManager m_statusListManager = null;
         private SharedPreferences m_preferences;
-        private AppPreferences m_multiProcessPreferences;
+        protected AppPreferences m_multiProcessPreferences;
         private ViewFlipper m_sponsorViewFlipper;
         private LinearLayout m_statusLayout;
         private TextView m_statusTabLogLine;

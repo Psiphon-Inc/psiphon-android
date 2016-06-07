@@ -56,4 +56,5 @@
     <string name="upgrade_checker_tunnel_diagnostic_message">UpgradeCheckerService: tunnel diagnostic: %s</string>
 
     <string name="current_local_http_proxy_port">currentLocalHttpProxyPort</string>
+    <string name="persistent_show_ads_setting">persistentShowAdsSetting</string>
 </resources>

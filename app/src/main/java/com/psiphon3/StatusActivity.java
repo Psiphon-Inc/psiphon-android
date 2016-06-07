@@ -234,12 +234,7 @@ public class StatusActivity
     static final String MOPUB_INTERSTITIAL_PROPERTY_ID = "";
 
     private boolean getShowAds() {
-        for (String homepage : getHomePages()) {
-            if (homepage.contains("psiphon_show_ads")) {
-                return true;
-            }
-        }
-        return false;
+        return m_multiProcessPreferences.getBoolean(getString(R.string.persistent_show_ads_setting), false);
     }
 
     private boolean shouldShowAds()
