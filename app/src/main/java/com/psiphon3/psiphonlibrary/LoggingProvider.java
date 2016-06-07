@@ -220,15 +220,8 @@ public class LoggingProvider extends ContentProvider {
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
             if(newVersion == 2 && oldVersion == 1) {
-                db.execSQL("ALTER TABLE " + TABLE_NAME + " RENAME TO tmp;");
-                
+                db.execSQL("DROP TABLE IF EXISTS "+ TABLE_NAME);
                 db.execSQL(DICTIONARY_TABLE_CREATE);
-                
-                db.execSQL("INSERT INTO " + TABLE_NAME +
-                "(" + COLUMN_NAME_LOGJSON +") SELECT " + 
-                COLUMN_NAME_LOGJSON + " FROM tmp;");
-                
-                db.execSQL("DROP TABLE tmp");
             }
         }
 
