@@ -37,6 +37,7 @@ import com.google.android.gms.safetynet.SafetyNetApi;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -49,13 +50,14 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     private AtomicBoolean mCheckInFlight;
     private GoogleApiClient mGoogleApiClient;
     private String mLastPayload;
+    private WeakReference<TunnelManager> mTunnelManager;
 
     public Object clone() throws CloneNotSupportedException
     {
         throw new CloneNotSupportedException();
     }
 
-    private  GoogleSafetyNetApiWrapper(Context context) {
+    private GoogleSafetyNetApiWrapper(Context context) {
         // Create the Google API Client.
         mGoogleApiClient = new GoogleApiClient.Builder(context)
                 .addApi(SafetyNet.API)
@@ -65,14 +67,16 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         mCheckInFlight = new AtomicBoolean(false);
     }
 
-    public static synchronized  GoogleSafetyNetApiWrapper getInstance(Context context) {
+    public static synchronized GoogleSafetyNetApiWrapper getInstance(Context context) {
         if(mInstance == null) {
             mInstance = new GoogleSafetyNetApiWrapper(context);
         }
         return mInstance;
     }
 
-    public void connect() {
+    public void connect(TunnelManager manager) {
+        mTunnelManager = new WeakReference<>(manager);
+
         if (!mCheckInFlight.compareAndSet(false, true)) {
             return;
         }
@@ -125,7 +129,10 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     @Override
     public void onConnectionSuspended(int i) {
         //try to reconnect
-        connect();
+        TunnelManager tunnelManager = mTunnelManager.get();
+        if (tunnelManager != null) {
+            connect(tunnelManager);
+        }
     }
 
     @Override
@@ -149,8 +156,8 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
 
     private void setPayload(String payload) {
         mLastPayload = payload;
-        TunnelManager tunnelManager = PsiphonData.getPsiphonData().getCurrentTunnelManager();
-        if(tunnelManager != null) {
+        TunnelManager tunnelManager = mTunnelManager.get();
+        if (tunnelManager != null) {
             tunnelManager.setClientVerificationResult(payload);
         }
         mCheckInFlight.set(false);

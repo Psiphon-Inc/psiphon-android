@@ -27,6 +27,7 @@
     <string name="useProxyDomainPreference">useProxyDomainPreference</string>
     <string name="preferencesDownloading">preferencesDownloading</string>
     <string name="downloadWifiOnlyPreference">downloadWifiOnlyPreference</string>
+    <string name="disableTimeoutsPreference">disableTimeoutsPreference</string>
 
     <!-- When Psiphon disconnects it sends a one last ("final") status request. This message is shown if that request fails. -->
     <string name="final_status_request_failed">Final status request failed</string>
@@ -53,4 +54,6 @@
     <string name="upgrade_checker_client_upgrade_downloaded">UpgradeCheckerService: client upgrade downloaded</string>
     <string name="upgrade_checker_tunnel_exiting">UpgradeCheckerService: tunnel exiting</string>
     <string name="upgrade_checker_tunnel_diagnostic_message">UpgradeCheckerService: tunnel diagnostic: %s</string>
+
+    <string name="current_local_http_proxy_port">currentLocalHttpProxyPort</string>
 </resources>

@@ -24,13 +24,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
+import android.app.PendingIntent;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -51,7 +53,8 @@ import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
-import com.psiphon3.psiphonlibrary.PsiphonData;
+import com.psiphon3.psiphonlibrary.TunnelManager;
+import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 
 
@@ -73,23 +76,16 @@ public class StatusActivity
     private boolean m_loadedSponsorTab = false;
     private boolean m_temporarilyDisableInterstitial = false;
 
-    public StatusActivity()
-    {
-        super();
-        m_eventsInterface = new Events();
-    }
-
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         setContentView(R.layout.main);
 
-        m_banner = (ImageView)findViewById(R.id.banner);
+        m_banner = (ImageView) findViewById(R.id.banner);
         m_statusImage = (ImageButton)findViewById(R.id.statusViewImage);
         m_versionLine = (TextView)findViewById(R.id.versionline);
         m_logLine = (TextView)findViewById(R.id.lastlogline);
-        m_tabHost = (TabHost)findViewById(R.id.tabHost);
-        m_toggleButton = (Button)findViewById(R.id.toggleButton);
+        m_tabHost = (TabHost) findViewById(R.id.tabHost);
+        m_toggleButton = (Button) findViewById(R.id.toggleButton);
 
         // NOTE: super class assumes m_tabHost is initialized in its onCreate
 
@@ -99,38 +95,27 @@ public class StatusActivity
         
         super.onCreate(savedInstanceState);
 
-        if (m_firstRun)
-        {
-            EmbeddedValues.initialize(this);
-        }
+        // EmbeddedValues.initialize(this); is called in MainBase.OnCreate
 
         // Play Store Build instances should use existing banner from previously installed APK
         // (if present). To enable this, non-Play Store Build instances write their banner to
         // a private file.
-        try
-        {
-            if (EmbeddedValues.IS_PLAY_STORE_BUILD)
-            {
+        try {
+            if (EmbeddedValues.IS_PLAY_STORE_BUILD) {
                 File bannerImageFile = new File(getFilesDir(), BANNER_FILE_NAME);
-                if (bannerImageFile.exists())
-                {
+                if (bannerImageFile.exists()) {
                     Bitmap bitmap = BitmapFactory.decodeFile(bannerImageFile.getAbsolutePath());
                     m_banner.setImageBitmap(bitmap);
                 }
-            }
-            else
-            {
+            } else {
                 Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.banner);
-                if (bitmap != null)
-                {
+                if (bitmap != null) {
                     FileOutputStream out = openFileOutput(BANNER_FILE_NAME, Context.MODE_PRIVATE);
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
                     out.close();
                 }
             }
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             // Ignore failure
         }
 
@@ -140,18 +125,21 @@ public class StatusActivity
         localBroadcastManager.registerReceiver(new ConnectionStateChangeReceiver(), new IntentFilter(UNEXPECTED_DISCONNECT));
 
         // Auto-start on app first run
-        if (m_firstRun)
-        {
+        if (m_firstRun) {
             m_firstRun = false;
             startUp();
         }
-        
+
         m_loadedSponsorTab = false;
         HandleCurrentIntent();
-        
+
+        restoreSponsorTab();
+    }
+
+    @Override
+    protected void restoreSponsorTab() {
         // HandleCurrentIntent() may have already loaded the sponsor tab
-        if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected() &&
-                !m_loadedSponsorTab)
+        if (isTunnelConnected() && !m_loadedSponsorTab)
         {
             loadSponsorTab(false);
         }
@@ -202,6 +190,35 @@ public class StatusActivity
     }
 
     @Override
+    protected PendingIntent getHandshakePendingIntent() {
+        Intent intent = new Intent(
+                TunnelManager.INTENT_ACTION_HANDSHAKE,
+                null,
+                this,
+                com.psiphon3.StatusActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        return PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    @Override
+    protected PendingIntent getServiceNotificationPendingIntent() {
+        Intent intent = new Intent(
+                "ACTION_VIEW",
+                null,
+                this,
+                com.psiphon3.StatusActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        return PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
     protected void doToggle()
     {
         super.doToggle();
@@ -412,15 +429,17 @@ public class StatusActivity
             return;
         }
 
-        if (0 == intent.getAction().compareTo(HANDSHAKE_SUCCESS))
+        if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_HANDSHAKE))
         {
+            getTunnelStateFromHandshakeIntent(intent);
+
             // Show the home page. Always do this in browser-only mode, even
             // after an automated reconnect -- since the status activity was
             // brought to the front after an unexpected disconnect. In whole
             // device mode, after an automated reconnect, we don't re-invoke
             // the browser.
-            if (!PsiphonData.getPsiphonData().getTunnelWholeDevice()
-                || !intent.getBooleanExtra(HANDSHAKE_SUCCESS_IS_RECONNECT, false))
+            if (!getTunnelConfigWholeDevice()
+                || !intent.getBooleanExtra(TunnelManager.DATA_HANDSHAKE_IS_RECONNECT, false))
             {
                 // Don't let this tab change trigger an interstitial ad
                 // OnResume() will reset this flag
@@ -453,7 +472,7 @@ public class StatusActivity
 
     public void onOpenBrowserClick(View v)
     {
-        m_eventsInterface.displayBrowser(this);
+        displayBrowser(this, null);
     }
 
     @Override
@@ -496,7 +515,7 @@ public class StatusActivity
                                 public void onClick(DialogInterface dialog, int whichButton) {
                                     // Persist the "on" setting
                                     updateWholeDevicePreference(true);
-                                    startTunnel(context);
+                                    startTunnel();
                                 }})
                     .setNegativeButton(R.string.StatusActivity_WholeDeviceTunnelNegativeButton,
                                 new DialogInterface.OnClickListener() {
@@ -505,14 +524,14 @@ public class StatusActivity
                                         // Turn off and persist the "off" setting
                                         m_tunnelWholeDeviceToggle.setChecked(false);
                                         updateWholeDevicePreference(false);
-                                        startTunnel(context);
+                                        startTunnel();
                                     }})
                     .setOnCancelListener(
                             new DialogInterface.OnCancelListener() {
                                 @Override
                                 public void onCancel(DialogInterface dialog) {
                                     // Don't change or persist preference (this prompt may reappear)
-                                    startTunnel(context);
+                                    startTunnel();
                                 }})
                     .show();
                 
@@ -539,7 +558,68 @@ public class StatusActivity
         {
             // No prompt, just start the tunnel (if not already running)
 
-            startTunnel(this);
+            startTunnel();
+        }
+    }
+
+    @Override
+    public void displayBrowser(Context context, Uri uri)
+    {
+        try
+        {
+            if (getTunnelConfigWholeDevice())
+            {
+                // TODO: support multiple home pages in whole device mode. This is
+                // disabled due to the case where users haven't set a default browser
+                // and will get the prompt once per home page.
+
+                if (uri == null)
+                {
+                    for (String homePage : getHomePages())
+                    {
+                        uri = Uri.parse(homePage);
+                        break;
+                    }
+                }
+
+                if (uri != null)
+                {
+                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
+                    context.startActivity(browserIntent);
+                }
+            }
+            else
+            {
+                Intent intent = new Intent(
+                        "ACTION_VIEW",
+                        uri,
+                        context,
+                        org.zirco.ui.activities.MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+                // This intent displays the Zirco browser.
+                // We use "extras" to communicate Psiphon settings to Zirco.
+                // When Zirco is first created, it will use the homePages
+                // extras to open tabs for each home page, respectively. When the intent
+                // triggers an existing Zirco instance (and it's a singleton) this extra
+                // is ignored and the browser is displayed as-is.
+                // When a uri is specified, it will open as a new tab. This is
+                // independent of the home pages.
+                // Note: Zirco now directly accesses PsiphonData to get the current
+                // local HTTP proxy port for WebView tunneling.
+
+                intent.putExtra("localProxyPort", getListeningLocalHttpProxyPort());
+                intent.putExtra("homePages", getHomePages());
+                intent.putExtra("serviceClassName", TunnelService.class.getName());
+                intent.putExtra("statusActivityClassName", StatusActivity.class.getName());
+                intent.putExtra("feedbackActivityClassName", FeedbackActivity.class.getName());
+
+                context.startActivity(intent);
+            }
+        }
+        catch (ActivityNotFoundException e)
+        {
+            // Thrown by startActivity; in this case, we ignore and the URI isn't opened
         }
     }
 }
