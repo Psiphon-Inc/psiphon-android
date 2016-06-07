@@ -29,14 +29,12 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
@@ -119,11 +117,6 @@ public class StatusActivity
             // Ignore failure
         }
 
-        
-        LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(StatusActivity.this);
-        localBroadcastManager.registerReceiver(new ConnectionStateChangeReceiver(), new IntentFilter(TUNNEL_STOPPING));
-        localBroadcastManager.registerReceiver(new ConnectionStateChangeReceiver(), new IntentFilter(UNEXPECTED_DISCONNECT));
-
         // Auto-start on app first run
         if (m_firstRun) {
             m_firstRun = false;
@@ -168,7 +161,7 @@ public class StatusActivity
     
     private void loadSponsorTab(boolean freshConnect)
     {
-        if (!PsiphonData.getPsiphonData().getSkipHomePage())
+        if (!getSkipHomePage())
         {
             resetSponsorHomePage(freshConnect);
         }
@@ -230,24 +223,31 @@ public class StatusActivity
         showFullScreenAd();
         super.onTabChanged(tabId);
     }
-    
-    public class ConnectionStateChangeReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            deInitAds();
-        }
+
+    @Override
+    protected void onTunnelDisconnected() {
+        deInitAds();
     }
 
     static final String MOPUB_BANNER_PROPERTY_ID = "";
     static final String MOPUB_LARGE_BANNER_PROPERTY_ID = "";
     static final String MOPUB_INTERSTITIAL_PROPERTY_ID = "";
-    
+
+    private boolean getShowAds() {
+        for (String homepage : getHomePages()) {
+            if (homepage.contains("psiphon_show_ads")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean shouldShowAds()
     {
         // For now, only show ads when the tunnel is connected, since WebViewProxySettings are
         // probably set and webviews won't load successfully when the tunnel is not connected
-        return PsiphonData.getPsiphonData().getShowAds() &&
-                PsiphonData.getPsiphonData().getDataTransferStats().isConnected() &&
+        return getShowAds() &&
+                isTunnelConnected() &&
                 Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO;
     }
     
@@ -264,7 +264,9 @@ public class StatusActivity
                     m_moPubInterstitial.destroy();
                 }
                 m_moPubInterstitial = new MoPubInterstitial(this, MOPUB_INTERSTITIAL_PROPERTY_ID);
-                m_moPubInterstitial.setKeywords("client_region:" + PsiphonData.getPsiphonData().getClientRegion());
+                if (isTunnelConnected()) {
+                    m_moPubInterstitial.setKeywords("client_region:" + getClientRegion());
+                }
                 
                 m_moPubInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
                     @Override
@@ -302,7 +304,9 @@ public class StatusActivity
             {
                 m_moPubBannerAdView = new MoPubView(this);
                 m_moPubBannerAdView.setAdUnitId(MOPUB_BANNER_PROPERTY_ID);
-                m_moPubBannerAdView.setKeywords("client_region:" + PsiphonData.getPsiphonData().getClientRegion());
+                if (isTunnelConnected()) {
+                    m_moPubBannerAdView.setKeywords("client_region:" + getClientRegion());
+                }
                 
                 m_moPubBannerAdView.setBannerAdListener(new BannerAdListener() {
                     @Override
@@ -334,11 +338,13 @@ public class StatusActivity
                 m_moPubBannerAdView.setAutorefreshEnabled(true);
             }
             
-            if (!PsiphonData.getPsiphonData().showFirstHomePageInApp() && m_moPubBannerLargeAdView == null)
+            if (!showFirstHomePageInApp() && m_moPubBannerLargeAdView == null)
             {
                 m_moPubBannerLargeAdView = new MoPubView(this);
                 m_moPubBannerLargeAdView.setAdUnitId(MOPUB_LARGE_BANNER_PROPERTY_ID);
-                m_moPubBannerLargeAdView.setKeywords("client_region:" + PsiphonData.getPsiphonData().getClientRegion());
+                if (isTunnelConnected()) {
+                    m_moPubBannerLargeAdView.setKeywords("client_region:" + getClientRegion());
+                }
                 
                 m_moPubBannerLargeAdView.setBannerAdListener(new BannerAdListener() {
                     @Override
@@ -405,10 +411,10 @@ public class StatusActivity
     
     private void initAds()
     {
-        if (PsiphonData.getPsiphonData().getShowAds())
+        if (getShowAds())
         {
             // make sure WebView proxy settings are up to date
-            WebViewProxySettings.setLocalProxy(this, PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort());
+            WebViewProxySettings.setLocalProxy(this, getListeningLocalHttpProxyPort());
             
             initBanners();
             
