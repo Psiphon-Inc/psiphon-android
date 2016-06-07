@@ -39,7 +39,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * All logging is done directly to the LoggingProvider from all processes.
@@ -157,6 +160,7 @@ public class LoggingProvider extends ContentProvider {
      * The database where logs are stored until they can be consumed by the app.
      */
     public static class LogDatabaseHelper extends SQLiteOpenHelper {
+        private static final int DAYS_TO_STORE_LOGS = 3;
         private static final String DATABASE_NAME = "loggingprovider.db";
         private static final int DATABASE_VERSION = 2;
 
@@ -164,11 +168,13 @@ public class LoggingProvider extends ContentProvider {
         private static final String COLUMN_NAME_ID = "_ID";
         public static final String COLUMN_NAME_LOGJSON = "logjson";
         public static final String COLUMN_NAME_IS_DIAGNOSTIC = "is_diagnostic";
+        public static final String COLUMN_NAME_TIMESTAMP = "timestamp";
         private static final String DICTIONARY_TABLE_CREATE =
                 "CREATE TABLE " + TABLE_NAME + " (" +
                         COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                         COLUMN_NAME_LOGJSON + " TEXT NOT NULL, " +
-                        COLUMN_NAME_IS_DIAGNOSTIC + " BOOLEAN DEFAULT 0 " +
+                        COLUMN_NAME_IS_DIAGNOSTIC + " BOOLEAN DEFAULT 0, " +
+                        COLUMN_NAME_TIMESTAMP + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP " +
                 ");";
 
         /**
@@ -215,7 +221,9 @@ public class LoggingProvider extends ContentProvider {
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
             if(newVersion == 2 && oldVersion == 1) {
                 db.execSQL("ALTER " + TABLE_NAME + " ADD " +
-                        COLUMN_NAME_IS_DIAGNOSTIC + " BOOLEAN NOT NULL DEFAULT 0");
+                        COLUMN_NAME_IS_DIAGNOSTIC + " BOOLEAN NOT NULL DEFAULT 0, " +
+                        COLUMN_NAME_TIMESTAMP + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+                );
 
             }
         }
@@ -279,6 +287,62 @@ public class LoggingProvider extends ContentProvider {
         }
 
         /**
+         * To be called by the UI at a time when it's appropriate to truncate logs database.
+         * May execute asynchronously.
+         */
+        public static void truncateLogs(Context context) {
+            // If this function is being called in the UI thread, then we need to do the work in an
+            // async task. Otherwise we'll do the work directly.
+            // For info about content provider thread use: http://stackoverflow.com/a/3571583
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                TruncateLogsTask task = new TruncateLogsTask(context);
+                task.execute();
+            }
+            else {
+                LogDatabaseHelper.truncateLogsHelper(context);
+            }
+
+        }
+
+        /**
+         * Task to do the async work.
+         */
+        private static class TruncateLogsTask extends AsyncTask<Void, Void, Void> {
+            private Context mContext;
+            public TruncateLogsTask (Context context){
+                mContext = context;
+            }
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                LogDatabaseHelper.truncateLogsHelper(mContext);
+                return null;
+            }
+        }
+
+        /**
+         * Does the log retrieval work. Should be called via retrieveLogs or RetrieveLogsTask.
+         * @param context
+         */
+        private static void truncateLogsHelper(Context context) {
+            SQLiteDatabase db = LogDatabaseHelper.get(context).getDB();
+
+            String whereClause = COLUMN_NAME_TIMESTAMP +"<?";
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat(
+                    "yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+            Date date = new Date();
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(date);
+            cal.add(Calendar.DATE, -DAYS_TO_STORE_LOGS);
+
+            db.delete(TABLE_NAME,
+                    whereClause,
+                    new String[]{dateFormat.format(cal.getTime())}
+            );
+        }
+
+        /**
          * To be called by the UI at a time when it's appropriate to consume logs that were stored
          * by the provider. May execute asynchronously.
          */
@@ -333,7 +397,7 @@ public class LoggingProvider extends ContentProvider {
             };
 
 
-            //restore status logs  (COLUMN_NAME_IS_DIAGNOSTIC == false)
+            // retrieve status logs  (COLUMN_NAME_IS_DIAGNOSTIC == false)
             String whereClause = "NOT(" + COLUMN_NAME_IS_DIAGNOSTIC + ") ";
             StatusList.StatusEntry lastEntry = StatusList.getStatusEntry(-1);
             if (lastEntry != null) {
@@ -401,7 +465,7 @@ public class LoggingProvider extends ContentProvider {
             }
 
 
-            //restore diagnostic logs  (COLUMN_NAME_IS_DIAGNOSTIC == true)
+            // retrieve diagnostic logs  (COLUMN_NAME_IS_DIAGNOSTIC == true)
             whereClause = COLUMN_NAME_IS_DIAGNOSTIC;
             StatusList.DiagnosticEntry lastDiagnosticEntry = StatusList.getDiagnosticEntry(-1);
             if (lastDiagnosticEntry != null) {
