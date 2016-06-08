@@ -19,15 +19,6 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-import org.apache.http.HttpHost;
-
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
-
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
@@ -35,6 +26,15 @@ import android.net.Proxy;
 import android.os.Build;
 import android.os.Parcelable;
 import android.util.ArrayMap;
+
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
+
+import org.apache.http.HttpHost;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public class WebViewProxySettings 
 {
@@ -57,7 +57,7 @@ public class WebViewProxySettings
     */
     public static boolean setProxy (Context ctx, String host, int port)
     {
-        UpstreamProxySettings.getUpstreamProxySettings().saveSystemProxySettings(ctx);
+        UpstreamProxySettings.saveSystemProxySettings(ctx);
         
         boolean worked = false;
 

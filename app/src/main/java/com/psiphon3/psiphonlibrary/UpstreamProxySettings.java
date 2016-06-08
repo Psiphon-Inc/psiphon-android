@@ -20,11 +20,12 @@
 package com.psiphon3.psiphonlibrary;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Build;
-import android.preference.PreferenceManager;
+import android.text.TextUtils;
 
 import com.psiphon3.R;
+
+import net.grandcentrix.tray.AppPreferences;
 
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
@@ -32,132 +33,53 @@ import org.apache.http.auth.NTCredentials;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class UpstreamProxySettings {
-    // Singleton pattern
-
-    private static UpstreamProxySettings m_upstreamProxySettings;
-
-    public Object clone() throws CloneNotSupportedException {
-        throw new CloneNotSupportedException();
-    }
-
-    public static synchronized UpstreamProxySettings getUpstreamProxySettings() {
-        if (m_upstreamProxySettings == null) {
-            m_upstreamProxySettings = new UpstreamProxySettings();
-        }
-        return m_upstreamProxySettings;
-    }
-
-    public static synchronized String getUpstreamProxyUrlFromCurrentPreferences(Context context) {
-        getUpstreamProxySettings().updateProxySettingsFromPreferences(context);
-        return getUpstreamProxySettings().getUpstreamProxyUrl(context);
-    }
-
-    private boolean m_useHTTPProxy;
-    private boolean m_useSystemProxySettings;
-    private boolean m_useCustomProxySettings;
-    private String m_customProxyHost;
-    private String m_customProxyPort;
-    private boolean m_useProxyAuthentication;
-    private String m_proxyUsername;
-    private String m_proxyPassword;
-    private String m_proxyDomain;
-    private ProxySettings m_savedSystemProxySettings;
-
-    private UpstreamProxySettings() {
-        m_useHTTPProxy = false;
-        m_useSystemProxySettings = false;
-        m_useCustomProxySettings = false;
-        m_useProxyAuthentication = false;
-    }
-
-    public synchronized void updateProxySettingsFromPreferences(Context context) {
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-
-        m_useSystemProxySettings = sharedPreferences.getBoolean(
-                context.getString(R.string.useSystemProxySettingsPreference), false);
-
-        // Backwards compatibility: if m_useSystemProxySettings is
-        // set and (the new) useProxySettingsPreference is not,
-        // then set it
-        if (m_useSystemProxySettings
-                && !sharedPreferences.contains(context.getString(R.string.useProxySettingsPreference))) {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putBoolean(context.getString(R.string.useProxySettingsPreference), true);
-            editor.commit();
-        }
-
-        m_useHTTPProxy = sharedPreferences.getBoolean(
-                context.getString(R.string.useProxySettingsPreference), false);
-
-        m_useCustomProxySettings = sharedPreferences.getBoolean(
-                context.getString(R.string.useCustomProxySettingsPreference), false);
-
-        m_customProxyHost = sharedPreferences.getString(
-                context.getString(R.string.useCustomProxySettingsHostPreference), "");
-
-        m_customProxyPort = sharedPreferences.getString(
-                context.getString(R.string.useCustomProxySettingsPortPreference), "");
-
-        m_useProxyAuthentication = sharedPreferences.getBoolean(
-                context.getString(R.string.useProxyAuthenticationPreference), false);
-
-        m_proxyUsername = sharedPreferences.getString(
-                context.getString(R.string.useProxyUsernamePreference), "");
-
-        m_proxyPassword = sharedPreferences.getString(
-                context.getString(R.string.useProxyPasswordPreference), "");
-
-        m_proxyDomain = sharedPreferences.getString(
-                context.getString(R.string.useProxyDomainPreference), "");
-    }
-
-    public synchronized boolean getUseHTTPProxy()
+public  class UpstreamProxySettings {
+    public static synchronized boolean getUseHTTPProxy(Context context)
     {
-        return m_useHTTPProxy;
+        return new AppPreferences(context).getBoolean(context.getString(R.string.useProxySettingsPreference), false);
     }
 
-    public synchronized boolean getUseSystemProxySettings()
+    public static synchronized  boolean getUseSystemProxySettings(Context context)
     {
-        return m_useSystemProxySettings;
+        return new AppPreferences(context).getBoolean(context.getString(R.string.useSystemProxySettingsPreference), false);
     }
 
-    public synchronized boolean getUseCustomProxySettings()
+    public static synchronized boolean getUseCustomProxySettings(Context context)
     {
-        return m_useCustomProxySettings;
+        return new AppPreferences(context).getBoolean(context.getString(R.string.useCustomProxySettingsPreference), false);
     }
 
-    public synchronized String getCustomProxyHost()
+    public static synchronized String getCustomProxyHost(Context context)
     {
-        return m_customProxyHost;
+        return new AppPreferences(context).getString(context.getString(R.string.useCustomProxySettingsHostPreference), "");
     }
 
-    public synchronized String getCustomProxyPort()
+    public static synchronized String getCustomProxyPort(Context context)
     {
-        return m_customProxyPort;
+        return new AppPreferences(context).getString(context.getString(R.string.useCustomProxySettingsPortPreference), "");
     }
 
-    public synchronized boolean getUseProxyAuthentication()
+    public static synchronized boolean getUseProxyAuthentication(Context context)
     {
-        return m_useProxyAuthentication;
+        return new AppPreferences(context).getBoolean(context.getString(R.string.useProxyAuthenticationPreference), false);
     }
 
-    public synchronized String getProxyUsername()
+    public static synchronized String getProxyUsername(Context context)
     {
-        return m_proxyUsername;
+        return new AppPreferences(context).getString(context.getString(R.string.useProxyUsernamePreference), "");
     }
 
-    public synchronized String getProxyPassword()
+    public static synchronized String getProxyPassword(Context context)
     {
-        return m_proxyPassword;
+        return new AppPreferences(context).getString(context.getString(R.string.useProxyPasswordPreference), "");
     }
 
-    public synchronized String getProxyDomain()
+    public static synchronized String getProxyDomain(Context context)
     {
-        return m_proxyDomain;
+        return new AppPreferences(context).getString(context.getString(R.string.useProxyDomainPreference), "");
     }
 
-    public class ProxySettings
+    public static class ProxySettings
     {
         public String proxyHost;
         public int proxyPort;
@@ -165,32 +87,53 @@ public class UpstreamProxySettings {
 
     // Call this before doing anything that could change the system proxy settings
     // (such as setting a WebView's proxy)
-    public synchronized void saveSystemProxySettings(Context context)
+    public synchronized static void saveSystemProxySettings(Context context)
     {
-        if (m_savedSystemProxySettings == null)
+        ProxySettings settings = getSavedSystemProxySettings(context);
+
+        AppPreferences pref = new AppPreferences(context);
+        if (settings == null)
         {
-            m_savedSystemProxySettings = getSystemProxySettings(context);
+            settings = getSystemProxySettings(context);
+            pref.put(context.getString(R.string.savedSystemProxyHost), settings.proxyHost);
+            pref.put(context.getString(R.string.savedSystemProxyHost), String.valueOf(settings.proxyPort));
         }
+    }
+
+    public synchronized static ProxySettings getSavedSystemProxySettings(Context context) {
+        AppPreferences pref = new AppPreferences(context);
+        ProxySettings settings = new ProxySettings();
+
+        settings.proxyHost = pref.getString(context.getString(R.string.savedSystemProxyHost), "");
+        String port = pref.getString(context.getString(R.string.savedSystemProxyPort), "");
+        settings.proxyPort = Integer.parseInt(port != null ? port : "-1");
+
+        if (TextUtils.isEmpty(settings.proxyHost) ||
+                settings.proxyPort <= 0)
+        {
+            settings = null;
+        }
+        return  settings;
     }
 
     // Checks if we are supposed to use proxy settings, custom or system,
     // and if system, if any system proxy settings are configured.
     // Returns the user-requested proxy settings.
-    public synchronized ProxySettings getProxySettings(Context context)
+    public synchronized static ProxySettings getProxySettings(Context context)
     {
-        if (!getUseHTTPProxy())
+        if (!getUseHTTPProxy(context))
         {
             return null;
         }
 
         ProxySettings settings = null;
 
-        if (getUseCustomProxySettings())
+        if (getUseCustomProxySettings(context))
         {
             settings = new ProxySettings();
 
-            settings.proxyHost = getCustomProxyHost();
-            String port = getCustomProxyPort();
+            settings.proxyHost = getCustomProxyHost(context);
+            String port = getCustomProxyPort(context);
             try
             {
                 settings.proxyPort = Integer.parseInt(port);
@@ -201,29 +144,22 @@ public class UpstreamProxySettings {
             }
         }
 
-        if (getUseSystemProxySettings())
+        if (getUseSystemProxySettings(context))
         {
             settings = getSystemProxySettings(context);
-
-            if (settings.proxyHost == null ||
-                    settings.proxyHost.length() == 0 ||
-                    settings.proxyPort <= 0)
-            {
-                settings = null;
-            }
         }
 
         return settings;
     }
 
-    public synchronized Credentials getProxyCredentials() {
-        if (!getUseProxyAuthentication()) {
+    public synchronized static Credentials getProxyCredentials(Context context) {
+        if (!getUseProxyAuthentication(context)) {
             return null;
         }
 
-        String username = getProxyUsername();
-        String password = getProxyPassword();
-        String domain = getProxyDomain();
+        String username = getProxyUsername(context);
+        String password = getProxyPassword(context);
+        String domain = getProxyDomain(context);
 
         if (username == null || username.trim().equals("")) {
             return null;
@@ -245,9 +181,9 @@ public class UpstreamProxySettings {
         return new NTCredentials(username, password, localHost, domain);
     }
 
-    private ProxySettings getSystemProxySettings(Context context)
+    private static ProxySettings getSystemProxySettings(Context context)
     {
-        ProxySettings settings = m_savedSystemProxySettings;
+        ProxySettings settings = getSavedSystemProxySettings(context);
 
         if (settings == null)
         {
@@ -264,6 +200,12 @@ public class UpstreamProxySettings {
                 settings.proxyHost = android.net.Proxy.getHost(context);
                 settings.proxyPort = android.net.Proxy.getPort(context);
             }
+
+            if (TextUtils.isEmpty(settings.proxyHost) ||
+                    settings.proxyPort <= 0)
+            {
+                settings = null;
+            }
         }
 
         return settings;
@@ -273,7 +215,7 @@ public class UpstreamProxySettings {
     // current user configured proxy settings.
     // e.g., http://NTDOMAIN\NTUser:password@proxyhost:3375,
     //       http://user:password@proxyhost:8080", etc.
-    public synchronized String getUpstreamProxyUrl(Context context)
+    public synchronized static String getUpstreamProxyUrl(Context context)
     {
         ProxySettings proxySettings = getProxySettings(context);
 
@@ -285,7 +227,7 @@ public class UpstreamProxySettings {
         StringBuilder url = new StringBuilder();
         url.append("http://");
 
-        NTCredentials credentials = (NTCredentials) getProxyCredentials();
+        NTCredentials credentials = (NTCredentials) getProxyCredentials(context);
 
         if (credentials != null)
         {
