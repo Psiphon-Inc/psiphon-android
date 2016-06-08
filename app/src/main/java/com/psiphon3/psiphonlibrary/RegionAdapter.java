@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Psiphon Inc.
+ * Copyright (c) 2016, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -65,6 +65,7 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         new Region("HK", R.string.region_name_hk, R.drawable.flag_hk, false),
         new Region("SG", R.string.region_name_sg, R.drawable.flag_sg, false),
         new Region("NL", R.string.region_name_nl, R.drawable.flag_nl, false),
+        new Region("IN", R.string.region_name_in, R.drawable.flag_in, false),
     };
     
     private static boolean initialized = false;
