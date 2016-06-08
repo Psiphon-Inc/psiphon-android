@@ -19,12 +19,7 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import android.content.Context;
-import android.content.SharedPreferences.Editor;
-import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +28,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.psiphon3.R;
+
+import net.grandcentrix.tray.AppPreferences;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RegionAdapter extends ArrayAdapter<Integer>
 {
@@ -91,9 +91,7 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         // and emits AvailableEgressRegions. The original assumption about
         // regions only being added, not removed, still applies.
 
-        String knownRegions = PreferenceManager
-                                        .getDefaultSharedPreferences(context)
-                                        .getString(KNOWN_REGIONS_PREFERENCE, "");
+        String knownRegions = new AppPreferences(context).getString(KNOWN_REGIONS_PREFERENCE, "");
         for (String region : knownRegions.split(","))
         {
             setServerExists(context, region, true);
@@ -146,9 +144,7 @@ public class RegionAdapter extends ArrayAdapter<Integer>
                 }
             }
 
-            Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
-            editor.putString(KNOWN_REGIONS_PREFERENCE, knownRegions.toString());
-            editor.commit();
+            new AppPreferences(context).put(KNOWN_REGIONS_PREFERENCE, knownRegions.toString());
         }
     }
     

@@ -31,6 +31,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.Uri;
 import android.net.VpnService;
@@ -42,7 +43,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.GestureDetector;
@@ -829,9 +829,9 @@ public abstract class MainBase {
             m_multiProcessPreferences.put(getString(R.string.downloadWifiOnlyPreference), downloadWifiOnly);
         }
 
-        // Basic check that the values are populated
+        // Basic check of proxy settings values
         private boolean customProxySettingsValuesValid() {
-            UpstreamProxySettings.ProxySettings proxySettings = UpstreamProxySettings.getUpstreamProxySettings().getProxySettings(this);
+            UpstreamProxySettings.ProxySettings proxySettings = UpstreamProxySettings.getProxySettings(this);
             return proxySettings != null && proxySettings.proxyHost.length() > 0 && proxySettings.proxyPort >= 1 && proxySettings.proxyPort <= 65535;
         }
 
@@ -966,8 +966,8 @@ public abstract class MainBase {
         protected void startTunnel() {
             // Don't start if custom proxy settings is selected and values are
             // invalid
-            boolean useHTTPProxyPreference = UpstreamProxySettings.getUpstreamProxySettings().getUseHTTPProxy();
-            boolean useCustomProxySettingsPreference = UpstreamProxySettings.getUpstreamProxySettings().getUseCustomProxySettings();
+            boolean useHTTPProxyPreference = UpstreamProxySettings.getUseHTTPProxy(this);
+            boolean useCustomProxySettingsPreference = UpstreamProxySettings.getUseCustomProxySettings(this);
 
             if (useHTTPProxyPreference && useCustomProxySettingsPreference && !customProxySettingsValuesValid()) {
                 cancelInvalidProxySettingsToast();
@@ -1039,10 +1039,12 @@ public abstract class MainBase {
         }
 
         private boolean isProxySettingsRestartRequired() {
+            SharedPreferences prefs = getSharedPreferences(getString(R.string.moreOptionsPreferencesName), MODE_PRIVATE);
+
             // check if "use proxy" has changed
-            boolean useHTTPProxyPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(getString(R.string.useProxySettingsPreference),
+            boolean useHTTPProxyPreference = prefs.getBoolean(getString(R.string.useProxySettingsPreference),
                     false);
-            if (useHTTPProxyPreference != UpstreamProxySettings.getUpstreamProxySettings().getUseHTTPProxy()) {
+            if (useHTTPProxyPreference != UpstreamProxySettings.getUseHTTPProxy(this)) {
                 return true;
             }
 
@@ -1054,9 +1056,9 @@ public abstract class MainBase {
 
             // check if "use custom proxy settings"
             // radio has changed
-            boolean useCustomProxySettingsPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
+            boolean useCustomProxySettingsPreference = prefs.getBoolean(
                     getString(R.string.useCustomProxySettingsPreference), false);
-            if (useCustomProxySettingsPreference != UpstreamProxySettings.getUpstreamProxySettings().getUseCustomProxySettings()) {
+            if (useCustomProxySettingsPreference != UpstreamProxySettings.getUseCustomProxySettings(this)) {
                 return true;
             }
 
@@ -1068,17 +1070,17 @@ public abstract class MainBase {
 
             // "use custom proxy" is selected, check if
             // host || port have changed
-            if (!PreferenceManager.getDefaultSharedPreferences(this).getString(getString(R.string.useCustomProxySettingsHostPreference), "")
-                    .equals(UpstreamProxySettings.getUpstreamProxySettings().getCustomProxyHost())
-                    || !PreferenceManager.getDefaultSharedPreferences(this).getString(getString(R.string.useCustomProxySettingsPortPreference), "")
-                            .equals(UpstreamProxySettings.getUpstreamProxySettings().getCustomProxyPort())) {
+            if (!prefs.getString(getString(R.string.useCustomProxySettingsHostPreference), "")
+                    .equals(UpstreamProxySettings.getCustomProxyHost(this))
+                    || !prefs.getString(getString(R.string.useCustomProxySettingsPortPreference), "")
+                            .equals(UpstreamProxySettings.getCustomProxyPort(this))) {
                 return true;
             }
 
             // check if "use proxy authentication" has changed
-            boolean useProxyAuthenticationPreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
+            boolean useProxyAuthenticationPreference = prefs.getBoolean(
                     getString(R.string.useProxyAuthenticationPreference), false);
-            if (useProxyAuthenticationPreference != UpstreamProxySettings.getUpstreamProxySettings().getUseProxyAuthentication()) {
+            if (useProxyAuthenticationPreference != UpstreamProxySettings.getUseProxyAuthentication(this)) {
                 return true;
             }
 
@@ -1090,12 +1092,12 @@ public abstract class MainBase {
 
             // "use proxy authentication" is checked, check if
             // username || password || domain have changed
-            return !PreferenceManager.getDefaultSharedPreferences(this).getString(getString(R.string.useProxyUsernamePreference), "")
-                    .equals(UpstreamProxySettings.getUpstreamProxySettings().getProxyUsername())
-                    || !PreferenceManager.getDefaultSharedPreferences(this).getString(getString(R.string.useProxyPasswordPreference), "")
-                    .equals(UpstreamProxySettings.getUpstreamProxySettings().getProxyPassword())
-                    || !PreferenceManager.getDefaultSharedPreferences(this).getString(getString(R.string.useProxyDomainPreference), "")
-                    .equals(UpstreamProxySettings.getUpstreamProxySettings().getProxyDomain());
+            return !prefs.getString(getString(R.string.useProxyUsernamePreference), "")
+                    .equals(UpstreamProxySettings.getProxyUsername(this))
+                    || !prefs.getString(getString(R.string.useProxyPasswordPreference), "")
+                    .equals(UpstreamProxySettings.getProxyPassword(this))
+                    || !prefs.getString(getString(R.string.useProxyDomainPreference), "")
+                    .equals(UpstreamProxySettings.getProxyDomain(this));
         }
 
         @Override
@@ -1103,12 +1105,8 @@ public abstract class MainBase {
             if (request == REQUEST_CODE_PREPARE_VPN && result == RESULT_OK) {
                 startAndBindTunnelService();
             } else if (request == REQUEST_CODE_PREFERENCE) {
-                // Don't call updateProxySettingsFromPreferences() first, because
-                // isProxySettingsRestartRequired() looks at the stored preferences.
-                // But, it should be called before stopping the tunnel, since the tunnel
-                // gets asyncronously restarted, and we want it to be restarted with
-                // the new settings.
 
+                // Verify if restart is required before saving new settings
                 boolean bRestartRequired = isProxySettingsRestartRequired();
 
                 // Import 'More Options' values to tray preferences
@@ -1187,7 +1185,7 @@ public abstract class MainBase {
                     getTunnelConfigDisableTimeouts());
 
             intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_UPSTREAM_PROXY_CONFIG,
-                    UpstreamProxySettings.getUpstreamProxyUrlFromCurrentPreferences(this));
+                    UpstreamProxySettings.getUpstreamProxyUrl(this));
         }
 
         protected void startAndBindTunnelService() {

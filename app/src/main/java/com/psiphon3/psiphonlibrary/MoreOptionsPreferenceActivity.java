@@ -285,8 +285,4 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
         }
         return false;
     }
-
-    private void populateFromTrayPreferences() {
-
-    }
 }
