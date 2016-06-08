@@ -649,6 +649,11 @@ public abstract class MainBase {
             // Don't show the keyboard until edit selected
             getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
+            // Set to foreground before binding to the service. Otherwise there would be a short
+            // period of time where we could miss a handshake intent after getting the
+            // tunnel state from registering with the service.
+            m_multiProcessPreferences.put(getString(R.string.status_activity_foreground), true);
+
             if (isServiceRunning()) {
                 startAndBindTunnelService();
             }
@@ -670,6 +675,8 @@ public abstract class MainBase {
             m_updateServiceStateUITimer.cancel();
 
             unbindTunnelService();
+
+            m_multiProcessPreferences.put(getString(R.string.status_activity_foreground), false);
         }
 
         protected void doToggle() {

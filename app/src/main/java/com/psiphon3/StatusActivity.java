@@ -176,19 +176,22 @@ public class StatusActivity
         {
             getTunnelStateFromHandshakeIntent(intent);
 
+            // OLD COMMENT:
             // Show the home page. Always do this in browser-only mode, even
             // after an automated reconnect -- since the status activity was
             // brought to the front after an unexpected disconnect. In whole
             // device mode, after an automated reconnect, we don't re-invoke
             // the browser.
-            if (!getTunnelConfigWholeDevice()
-                || !intent.getBooleanExtra(TunnelManager.DATA_HANDSHAKE_IS_RECONNECT, false))
+            // UPDATED:
+            // We don't bring the status activity to the front after an
+            // unexpected disconnect in browser-only mode any more.
+            // Show the home page, unless this was an automatic reconnect,
+            // since the homepage should already be showing.
+            if (!intent.getBooleanExtra(TunnelManager.DATA_HANDSHAKE_IS_RECONNECT, false))
             {
                 m_tabHost.setCurrentTabByTag("home");
                 loadSponsorTab(true);
                 m_loadedSponsorTab = true;
-
-                //m_eventsInterface.displayBrowser(this);
             }
 
             // We only want to respond to the HANDSHAKE_SUCCESS action once,
@@ -199,8 +202,6 @@ public class StatusActivity
                             this,
                             this.getClass()));
         }
-
-        // No explicit action for UNEXPECTED_DISCONNECT, just show the activity
     }
 
     public void onToggleClick(View v)
