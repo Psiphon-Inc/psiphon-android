@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="PsiphonAndroidService.ConnectedRequestFailed">Connected request failed.</string>
+    <string name="TunnelService.FetchRemoteServerListFailed">Fetch remote server list failed</string>
+    <string name="preemptive_socket_connection_failed">Preemptive socket connection failed</string>
+    <string name="preemptive_ssh_connection_failed">Preemptive SSH connection failed</string>
+    <string name="AuthenticatedDataPackage.InvalidEncoding">Invalid encoding for authenticated data package</string>
+    <string name="UpgradeManager.UpgradeAvailableNotificationId">Psiphon Upgrade Available Notification</string>
+    <string name="meek_error">Meek Error: %s</string>
+    <string name="meek_http_request_error">Meek HTTP Request Error: %d</string>
+    <string name="preferencesNotifications">preferencesNotifications</string>
+    <string name="preferenceNotificationsWithSound">preferenceNotificationsWithSoundDefaultOff</string>
+    <string name="preferenceNotificationsWithVibrate">preferenceNotificationsWithVibrateDefaultOff</string>
+    <string name="make_request_close_http_client">makeRequest error closing HTTP client: %s</string>
+    <string name="make_request_close_http_response">makeRequest error closing HTTP response: %s</string>
+    <string name="rotating_target_protocol_state">rotating target protocol state</string>
+    <!-- backwards compatible shared preferences names for new 'More Options' screen with proxy settings  -->
+    <string name="proxySettingsCategoryKey">proxySettingsCategoryKey</string>
+    <string name="useProxySettingsPreference">useProxySettingsPreference</string>
+    <string name="useSystemProxySettingsPreference">useSystemProxySettingsPreference</string>
+    <string name="useCustomProxySettingsPreference">useCustomProxySettingsPreference</string>
+    <string name="useCustomProxySettingsHostPreference">useCustomProxySettingsHostPreference</string>
+    <string name="useCustomProxySettingsPortPreference">useCustomProxySettingsPortPreference</string>
+    <string name="useProxyAuthenticationPreference">useProxyAuthenticationPreference</string>
+    <string name="useProxyUsernamePreference">useProxyUsernamePreference</string>
+    <string name="useProxyPasswordPreference">useProxyPasswordPreference</string>
+    <string name="useProxyDomainPreference">useProxyDomainPreference</string>
+    <string name="preferencesDownloading">preferencesDownloading</string>
+    <string name="downloadWifiOnlyPreference">downloadWifiOnlyPreference</string>
+
+    <!-- When Psiphon disconnects it sends a one last ("final") status request. This message is shown if that request fails. -->
+    <string name="final_status_request_failed">Final status request failed</string>
+    <string name="preemptive_bind_failed">Preemptive bind failed</string>
+    <string name="upgrade_checker_service_name">Psiphon:UpgradeChecker</string>
+    <string name="logging_provider_json_parse_fail">LoggingProvider JSON parse fail</string>
+    <string name="upgrade_checker_no_upgrading">UpgradeChecker.upgradeCheckNeeded: install does not support upgrading</string>
+    <string name="upgrade_checker_upgrade_file_exists">UpgradeChecker.upgradeCheckNeeded: upgrade file already exists</string>
+    <string name="upgrade_checker_check_needed">UpgradeChecker.upgradeCheckNeeded: upgrade check needed</string>
+    <string name="upgrade_checker_upgrade_wifi_only">UpgradeChecker.upgradeCheckNeeded: WiFi only user preference</string>
+    <string name="upgrade_checker_alarm_intent_received">UpgradeChecker.onReceive: ALARM_INTENT_ACTION received</string>
+    <string name="upgrade_checker_upgrade_file_available_intent_received">UpgradeChecker.onReceive: UPGRADE_FILE_AVAILABLE_INTENT_ACTION received</string>
+    <string name="upgrade_checker_boot_completed_intent_received">UpgradeChecker.onReceive: ACTION_BOOT_COMPLETED received</string>
+    <string name="upgrade_checker_create_alarm_intent_received">UpgradeChecker.onReceive: CREATE_ALARM_INTENT_ACTION received</string>
+    <string name="upgrade_checker_alarm_exists">UpgradeChecker.createAlarm: alarmExists; aborting</string>
+    <string name="upgrade_checker_creating_alarm">UpgradeChecker.createAlarm: creating alarm</string>
+    <string name="upgrade_checker_no_alarm_no_selfupgrading">UpgradeChecker.createAlarm: build does not allow self-upgrading; not creating alarm</string>
+    <string name="upgrade_checker_start_service">UpgradeChecker.checkForUpgrade: starting service for upgrade check</string>
+    <string name="upgrade_checker_start_tunnel_failed">UpgradeCheckerService: start tunnel failed: %s</string>
+    <string name="upgrade_checker_check_start">UpgradeCheckerService: check starting</string>
+    <string name="upgrade_checker_already_in_progress">UpgradeCheckerService: check already in progress</string>
+    <string name="upgrade_checker_done">UpgradeCheckerService: check done</string>
+    <string name="upgrade_checker_client_is_latest_version">UpgradeCheckerService: client is latest version</string>
+    <string name="upgrade_checker_client_upgrade_downloaded">UpgradeCheckerService: client upgrade downloaded</string>
+    <string name="upgrade_checker_tunnel_exiting">UpgradeCheckerService: tunnel exiting</string>
+    <string name="upgrade_checker_tunnel_diagnostic_message">UpgradeCheckerService: tunnel diagnostic: %s</string>
+</resources>

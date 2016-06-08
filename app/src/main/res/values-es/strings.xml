@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <string name="app_name">Psiphon</string>
+  <string name="banner_desc">anuncio del patrocinador; haga clic para visitar la página principal del patrocinador</string>
+  <string name="start_desc">conectar con Psiphon; haga clic para conectarse</string>
+  <string name="message_image_success_desc">ícono que indica un mensaje de éxito</string>
+  <string name="message_image_error_desc">ícono que indica un mensaje de error</string>
+  <string name="message_image_debug_desc">ícono que indica un mensaje de depuración</string>
+  <string name="message_image_warning_desc">ícono que indica un mensaje de advertencia</string>
+  <string name="exit">Salir</string>
+  <string name="open_browser">Abrir navegador</string>
+  <string name="browser_task_label">Navegador Psiphon</string>
+  <string name="FeedbackActivity.DefaultText">Si tiene comentarios específicos, mayor información de sitios que no funcionan, o si este formulario no está funcionando para usted por favor mande un mensaje a &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt;.</string>
+  <string name="FeedbackActivity.Success">Gracias por enviar sus comentarios</string>
+  <string name="FeedbackActivity.Failure">Fallo del envío. Por favor inténtelo de nuevo.</string>
+  <string name="FeedbackActivity.SubmitFeedbackFailed">Fallo al enviar sus comentarios</string>
+  <string name="FeedbackActivity.InvalidURLParameters">Parámetros de URL no válidos en el formulario de envío de comentarios</string>
+  <string name="FeedbackActivity.GetHTMLContentFailed">No se pudo obtener el contenido de la página de comentarios</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptTitle">¿Derivar por el túnel el dispositivo al completo?</string>
+  <string name="StatusActivity.WholeDeviceTunnelPromptMessage">La opción de derivar por el túnel el dispositivo al completo está disponible para su dispositivo.\n\nCon esta opción, todo su tráfico de Internet para todas las aplicaciones, incluyendo todos los navegadores, se derivará por el túnel a través de Psiphon.\n\nComo alternativa, puede elegir derivar por el túnel sólo el navegador Psiphon del paquete, lo cual dejará a todas las demás aplicaciones yendo directamente a través de su conexión a Internet estándar.</string>
+  <string name="StatusActivity.WholeDeviceTunnelPositiveButton">Derivar por el túnel el dispositivo al completo</string>
+  <string name="StatusActivity.WholeDeviceTunnelNegativeButton">Usar solo el navegador Psiphon</string>
+</resources>
