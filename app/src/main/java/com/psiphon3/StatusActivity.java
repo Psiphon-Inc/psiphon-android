@@ -145,9 +145,12 @@ public class StatusActivity
     }
     
     @Override
-    public void onResume()
-    {
+    public void onResume() {
         super.onResume();
+    }
+
+    @Override
+    protected void onTunnelStateReceived() {
         m_temporarilyDisableInterstitial = false;
         initAds();
     }

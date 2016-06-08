@@ -1266,6 +1266,12 @@ public abstract class MainBase {
             if (homePages != null) {
                 m_tunnelState.homePages = homePages;
             }
+
+            onTunnelStateReceived();
+        }
+
+        protected void onTunnelStateReceived() {
+            // do nothing
         }
 
         private void getDataTransferStatsFromBundle(Bundle data) {
