@@ -105,8 +105,8 @@ public  class UpstreamProxySettings {
         ProxySettings settings = new ProxySettings();
 
         settings.proxyHost = pref.getString(context.getString(R.string.savedSystemProxyHost), "");
-        String port = pref.getString(context.getString(R.string.savedSystemProxyPort), "");
-        settings.proxyPort = Integer.parseInt(port != null ? port : "-1");
+        String port = pref.getString(context.getString(R.string.savedSystemProxyPort), "-1");
+        settings.proxyPort = Integer.parseInt(port);
 
         if (TextUtils.isEmpty(settings.proxyHost) ||
                 settings.proxyPort <= 0)
