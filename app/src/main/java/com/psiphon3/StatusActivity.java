@@ -19,10 +19,6 @@
 
 package com.psiphon3;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
@@ -34,7 +30,6 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
@@ -54,6 +49,13 @@ import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
+
+import net.grandcentrix.tray.AppPreferences;
+import net.grandcentrix.tray.core.ItemNotFoundException;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 
 public class StatusActivity
@@ -437,13 +439,18 @@ public class StatusActivity
         {
             getTunnelStateFromHandshakeIntent(intent);
 
+            // OLD COMMENT:
             // Show the home page. Always do this in browser-only mode, even
             // after an automated reconnect -- since the status activity was
             // brought to the front after an unexpected disconnect. In whole
             // device mode, after an automated reconnect, we don't re-invoke
             // the browser.
-            if (!getTunnelConfigWholeDevice()
-                || !intent.getBooleanExtra(TunnelManager.DATA_HANDSHAKE_IS_RECONNECT, false))
+            // UPDATED:
+            // We don't bring the status activity to the front after an
+            // unexpected disconnect in browser-only mode any more.
+            // Show the home page, unless this was an automatic reconnect,
+            // since the homepage should already be showing.
+            if (!intent.getBooleanExtra(TunnelManager.DATA_HANDSHAKE_IS_RECONNECT, false))
             {
                 // Don't let this tab change trigger an interstitial ad
                 // OnResume() will reset this flag
@@ -465,8 +472,6 @@ public class StatusActivity
                             this,
                             this.getClass()));
         }
-
-        // No explicit action for UNEXPECTED_DISCONNECT, just show the activity
     }
 
     public void onToggleClick(View v)
@@ -492,7 +497,14 @@ public class StatusActivity
         // If the user hasn't set a whole-device-tunnel preference, show a prompt
         // (and delay starting the tunnel service until the prompt is completed)
 
-        boolean hasPreference = PreferenceManager.getDefaultSharedPreferences(this).contains(TUNNEL_WHOLE_DEVICE_PREFERENCE);
+        boolean hasPreference;
+        AppPreferences mpPreferences = new AppPreferences(this);
+        try {
+            mpPreferences.getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE);
+            hasPreference = true;
+        } catch (ItemNotFoundException e) {
+            hasPreference = false;
+        }
 
         if (m_tunnelWholeDeviceToggle.isEnabled() &&
             !hasPreference &&

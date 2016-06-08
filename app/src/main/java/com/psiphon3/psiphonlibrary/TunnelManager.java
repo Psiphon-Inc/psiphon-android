@@ -34,7 +34,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 
 import com.psiphon3.R;
@@ -284,11 +283,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         Notification notification = mNotificationBuilder.build();
 
         if (alert) {
-            if (PreferenceManager.getDefaultSharedPreferences(m_parentService).getBoolean(
+            final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
+
+            if (multiProcessPreferences.getBoolean(
                     m_parentService.getString(R.string.preferenceNotificationsWithSound), false)) {
                 notification.defaults |= Notification.DEFAULT_SOUND;
             }
-            if (PreferenceManager.getDefaultSharedPreferences(m_parentService).getBoolean(
+            if (multiProcessPreferences.getBoolean(
                     m_parentService.getString(R.string.preferenceNotificationsWithVibrate), false)) {
                 notification.defaults |= Notification.DEFAULT_VIBRATE;
             }
@@ -378,14 +379,26 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     }
 
     private void sendHandshakeIntent(boolean isReconnect) {
-        Intent fillInExtras = new Intent();
-        fillInExtras.putExtra(DATA_HANDSHAKE_IS_RECONNECT, isReconnect);
-        fillInExtras.putExtras(getTunnelStateBundle());
-        try {
-            m_tunnelConfig.handshakePendingIntent.send(
-                    m_parentService, 0, fillInExtras);
-        } catch (PendingIntent.CanceledException e) {
-            MyLog.g("sendHandshakeIntent failed: %s", e.getMessage());
+        // Only send this intent if the StatusActivity is
+        // in the foreground, or if this is an initial connection
+        // so we can show the home tab.
+        // If it isn't and we sent the intent, the activity will
+        // interrupt the user in some other app.
+        // It's too late to do this check in StatusActivity
+        // onNewIntent.
+
+        final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
+        if (multiProcessPreferences.getBoolean(m_parentService.getString(R.string.status_activity_foreground), false) ||
+                !isReconnect) {
+            Intent fillInExtras = new Intent();
+            fillInExtras.putExtra(DATA_HANDSHAKE_IS_RECONNECT, isReconnect);
+            fillInExtras.putExtras(getTunnelStateBundle());
+            try {
+                m_tunnelConfig.handshakePendingIntent.send(
+                        m_parentService, 0, fillInExtras);
+            } catch (PendingIntent.CanceledException e) {
+                MyLog.g("sendHandshakeIntent failed: %s", e.getMessage());
+            }
         }
     }
 
@@ -745,6 +758,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         }
 
         setIsConnected(false);
+        m_tunnelState.homePages.clear();
         Bundle data = new Bundle();
         data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, false);
         sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, data);
