@@ -31,11 +31,19 @@ import android.preference.PreferenceCategory;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
 import android.text.InputType;
+import android.text.TextUtils;
+import android.widget.Toast;
 
 import com.psiphon3.R;
 
+import net.grandcentrix.tray.AppPreferences;
+
+import java.util.Set;
+
 public class MoreOptionsPreferenceActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener,
         OnPreferenceClickListener {
+    CheckBoxPreference mNotificationSound;
+    CheckBoxPreference mNotificationVibration;
     CheckBoxPreference mUseProxy;
     RadioButtonPreference mUseSystemProxy;
     RadioButtonPreference mUseCustomProxy;
@@ -50,9 +58,17 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
     @SuppressWarnings("deprecation")
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Store temporary preferences used in this activity in its own file
+        PreferenceManager prefMgr = getPreferenceManager();
+        prefMgr.setSharedPreferencesName(getString(R.string.moreOptionsPreferencesName));
+
+
         addPreferencesFromResource(R.xml.preferences);
         PreferenceScreen preferences = getPreferenceScreen();
 
+        mNotificationSound = (CheckBoxPreference) preferences.findPreference(getString(R.string.preferenceNotificationsWithSound));
+        mNotificationVibration = (CheckBoxPreference) preferences.findPreference(getString(R.string.preferenceNotificationsWithVibrate));
         mUseProxy = (CheckBoxPreference) preferences.findPreference(getString(R.string.useProxySettingsPreference));
         mUseSystemProxy = (RadioButtonPreference) preferences
                 .findPreference(getString(R.string.useSystemProxySettingsPreference));
@@ -73,9 +89,53 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
         mProxyDomain = (EditTextPreference) preferences
                 .findPreference(getString(R.string.useProxyDomainPreference));
 
+
+        // Initialize with tray preferences values
+        AppPreferences mpPreferences = new AppPreferences(this);
+
+        mNotificationSound.setDefaultValue(mpPreferences.getBoolean(getString(R.string.preferenceNotificationsWithSound), false));
+        mNotificationVibration.setDefaultValue(mpPreferences.getBoolean(getString(R.string.preferenceNotificationsWithVibrate), false));
+        mUseProxy.setDefaultValue(mpPreferences.getBoolean(getString(R.string.useProxySettingsPreference), false));
+        mUseSystemProxy.setDefaultValue(mpPreferences.getBoolean(getString(R.string.useSystemProxySettingsPreference), false));
+        mUseCustomProxy.setDefaultValue(mpPreferences.getBoolean(getString(R.string.useCustomProxySettingsPreference), false));
+        mProxyHost.setDefaultValue(mpPreferences.getString(getString(R.string.useCustomProxySettingsHostPreference), ""));
+        mProxyPort.setDefaultValue(mpPreferences.getString(getString(R.string.useCustomProxySettingsPortPreference), ""));
+        mUseProxyAuthentication.setDefaultValue(mpPreferences.getBoolean(getString(R.string.useProxyAuthenticationPreference), false));
+        mProxyUsername.setDefaultValue(mpPreferences.getString(getString(R.string.useProxyUsernamePreference), ""));
+        mProxyPassword.setDefaultValue(mpPreferences.getString(getString(R.string.useProxyPasswordPreference), ""));
+        mProxyDomain.setDefaultValue(mpPreferences.getString(getString(R.string.useProxyDomainPreference), ""));
+
+
+        // Set listeners
         mUseSystemProxy.setOnPreferenceClickListener(this);
         mUseCustomProxy.setOnPreferenceClickListener(this);
-        
+
+        mProxyHost.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object newValue) {
+                String proxyHost = (String)newValue;
+                if (TextUtils.isEmpty(proxyHost)) {
+                    Toast toast = Toast.makeText(MoreOptionsPreferenceActivity.this, R.string.network_proxy_connect_invalid_values, Toast.LENGTH_SHORT);
+                    toast.show();
+                    return false;
+                }
+                return true;
+            }
+        });
+
+        mProxyPort.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object newValue) {
+                int proxyPort = (int)newValue;
+                if (proxyPort >= 1 && proxyPort <= 65535) {
+                    Toast toast = Toast.makeText(MoreOptionsPreferenceActivity.this, R.string.network_proxy_connect_invalid_values, Toast.LENGTH_SHORT);
+                    toast.show();
+                    return false;
+                }
+                return true;
+            }
+        });
+
         mDefaultSummaryBundle = new Bundle();
 
         updatePreferencesScreen();
@@ -224,5 +284,9 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
             mUseCustomProxy.setChecked(true);
         }
         return false;
+    }
+
+    private void populateFromTrayPreferences() {
+
     }
 }

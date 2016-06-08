@@ -31,8 +31,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.net.VpnService;
@@ -171,7 +169,6 @@ public abstract class MainBase {
 
         protected Button m_toggleButton;
         private StatusListViewManager m_statusListManager = null;
-        private SharedPreferences m_preferences;
         private AppPreferences m_multiProcessPreferences;
         private ViewFlipper m_sponsorViewFlipper;
         private LinearLayout m_statusLayout;
@@ -327,9 +324,7 @@ public abstract class MainBase {
             m_previousView = m_currentView;
             m_currentTab = m_tabHost.getCurrentTab();
 
-            SharedPreferences.Editor preferencesEditor = m_preferences.edit();
-            preferencesEditor.putInt("currentTab", m_currentTab);
-            preferencesEditor.apply();
+            m_multiProcessPreferences.put("currentTab", m_currentTab);
         }
 
         /**
@@ -389,23 +384,33 @@ public abstract class MainBase {
             return animation;
         }
 
-        private void updateProxySettingsFromPreferences() {
-            UpstreamProxySettings.getUpstreamProxySettings().updateProxySettingsFromPreferences(this);
-        }
-
         @SuppressLint("SetJavaScriptEnabled")
         @Override
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
 
-            m_preferences = PreferenceManager.getDefaultSharedPreferences(this);
             m_multiProcessPreferences = new AppPreferences(this);
-
+            // Migrate 'More Options' SharedPreferences to tray preferences:
             // The name of the DefaultSharedPreferences is this.getPackageName() + "_preferences"
             // http://stackoverflow.com/questions/5946135/difference-between-getdefaultsharedpreferences-and-getsharedpreferences
+            String prefName = this.getPackageName() + "_preferences";
             m_multiProcessPreferences.migrate(
-                    new SharedPreferencesImport(this, this.getPackageName() + "_preferences", getString(R.string.downloadWifiOnlyPreference), getString(R.string.downloadWifiOnlyPreference)),
-                    new SharedPreferencesImport(this, this.getPackageName() + "_preferences", getString(R.string.disableTimeoutsPreference), getString(R.string.disableTimeoutsPreference)));
+                    // Top level  preferences
+                    new SharedPreferencesImport(this, prefName, getString(R.string.downloadWifiOnlyPreference), getString(R.string.downloadWifiOnlyPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.disableTimeoutsPreference), getString(R.string.disableTimeoutsPreference)),
+                    // More Options preferences
+                    new SharedPreferencesImport(this, prefName, getString(R.string.preferenceNotificationsWithSound), getString(R.string.preferenceNotificationsWithSound)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.preferenceNotificationsWithVibrate), getString(R.string.preferenceNotificationsWithVibrate)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useProxySettingsPreference), getString(R.string.useProxySettingsPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useSystemProxySettingsPreference), getString(R.string.useSystemProxySettingsPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useCustomProxySettingsPreference), getString(R.string.useCustomProxySettingsPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useCustomProxySettingsHostPreference), getString(R.string.useCustomProxySettingsHostPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useCustomProxySettingsPortPreference), getString(R.string.useCustomProxySettingsPortPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useProxyAuthenticationPreference), getString(R.string.useProxyAuthenticationPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useProxyUsernamePreference), getString(R.string.useProxyUsernamePreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useProxyPasswordPreference), getString(R.string.useProxyPasswordPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference))
+            );
 
             if (m_firstRun) {
                 EmbeddedValues.initialize(this);
@@ -464,7 +469,7 @@ public abstract class MainBase {
 
             m_tabHost.setOnTabChangedListener(this);
 
-            int currentTab = m_preferences.getInt("currentTab", 0);
+            int currentTab = m_multiProcessPreferences.getInt("currentTab", 0);
             m_tabHost.setCurrentTab(currentTab);
 
             m_sponsorViewFlipper = (ViewFlipper) findViewById(R.id.sponsorViewFlipper);
@@ -501,7 +506,7 @@ public abstract class MainBase {
             }
             m_regionAdapter = new RegionAdapter(this);
             m_regionSelector.setAdapter(m_regionAdapter);
-            String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE,
+            String egressRegionPreference = m_multiProcessPreferences.getString(EGRESS_REGION_PREFERENCE,
                     PsiphonConstants.REGION_CODE_ANY);
             int position = m_regionAdapter.getPositionForRegionCode(egressRegionPreference);
             m_regionSelector.setSelection(position);
@@ -517,7 +522,7 @@ public abstract class MainBase {
             m_canWholeDevice = Utils.hasVpnService();
 
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
-            boolean tunnelWholeDevicePreference = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE,
+            boolean tunnelWholeDevicePreference = m_multiProcessPreferences.getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE,
                     m_canWholeDevice);
             m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
             setTunnelConfigWholeDevice(m_canWholeDevice && tunnelWholeDevicePreference);
@@ -538,8 +543,6 @@ public abstract class MainBase {
                     getString(R.string.disableTimeoutsPreference), false);
             m_disableTimeoutsToggle.setChecked(disableTimeoutsPreference);
             setTunnelConfigDisableTimeouts(disableTimeoutsPreference);
-
-            updateProxySettingsFromPreferences();
 
             // Note that this must come after the above lines, or else the
             // activity
@@ -616,8 +619,6 @@ public abstract class MainBase {
             // Load new logs from the logging provider when it changes
             getContentResolver().registerContentObserver(LoggingProvider.INSERT_URI, true, m_loggingObserver);
 
-            updateProxySettingsFromPreferences();
-            
             // From: http://steve.odyfamily.com/?p=12
             m_updateStatisticsUITimer = new Timer();
             m_updateStatisticsUITimer.schedule(new TimerTask() {
@@ -765,7 +766,7 @@ public abstract class MainBase {
 
             String selectedRegionCode = m_regionAdapter.getSelectedRegionCode(position);
 
-            String egressRegionPreference = PreferenceManager.getDefaultSharedPreferences(this).getString(EGRESS_REGION_PREFERENCE,
+            String egressRegionPreference = m_multiProcessPreferences.getString(EGRESS_REGION_PREFERENCE,
                     PsiphonConstants.REGION_CODE_ANY);
             if (selectedRegionCode.equals(egressRegionPreference) && selectedRegionCode.equals(getTunnelConfigEgressRegion())) {
                 return;
@@ -782,9 +783,7 @@ public abstract class MainBase {
             // No isRooted check: the user can specify whatever preference they
             // wish. Also, CheckBox enabling should cover this (but isn't
             // required to).
-            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-            editor.putString(EGRESS_REGION_PREFERENCE, egressRegionPreference);
-            editor.apply();
+            m_multiProcessPreferences.put(EGRESS_REGION_PREFERENCE, egressRegionPreference);
 
             setTunnelConfigEgressRegion(egressRegionPreference);
         }
@@ -805,9 +804,7 @@ public abstract class MainBase {
             // No isRooted check: the user can specify whatever preference they
             // wish. Also, CheckBox enabling should cover this (but isn't
             // required to).
-            Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-            editor.putBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE, tunnelWholeDevicePreference);
-            editor.apply();
+            m_multiProcessPreferences.put(TUNNEL_WHOLE_DEVICE_PREFERENCE, tunnelWholeDevicePreference);
 
             setTunnelConfigWholeDevice(tunnelWholeDevicePreference);
         }
@@ -1111,11 +1108,29 @@ public abstract class MainBase {
                 // But, it should be called before stopping the tunnel, since the tunnel
                 // gets asyncronously restarted, and we want it to be restarted with
                 // the new settings.
-                if (isProxySettingsRestartRequired()) {
-                    updateProxySettingsFromPreferences();
+
+                boolean bRestartRequired = isProxySettingsRestartRequired();
+
+                // Import 'More Options' values to tray preferences
+                String prefName = getString(R.string.moreOptionsPreferencesName);
+                m_multiProcessPreferences.migrate(
+                        new SharedPreferencesImport(this, prefName, getString(R.string.preferenceNotificationsWithSound), getString(R.string.preferenceNotificationsWithSound)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.preferenceNotificationsWithVibrate), getString(R.string.preferenceNotificationsWithVibrate)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.downloadWifiOnlyPreference), getString(R.string.downloadWifiOnlyPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.disableTimeoutsPreference), getString(R.string.disableTimeoutsPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxySettingsPreference), getString(R.string.useProxySettingsPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.useSystemProxySettingsPreference), getString(R.string.useSystemProxySettingsPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.useCustomProxySettingsPreference), getString(R.string.useCustomProxySettingsPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.useCustomProxySettingsHostPreference), getString(R.string.useCustomProxySettingsHostPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.useCustomProxySettingsPortPreference), getString(R.string.useCustomProxySettingsPortPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyAuthenticationPreference), getString(R.string.useProxyAuthenticationPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyUsernamePreference), getString(R.string.useProxyUsernamePreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyPasswordPreference), getString(R.string.useProxyPasswordPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference))
+                );
+
+                if (bRestartRequired) {
                     scheduleRunningTunnelServiceRestart();
-                } else {
-                    updateProxySettingsFromPreferences();
                 }
             }
         }

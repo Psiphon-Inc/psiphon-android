@@ -34,7 +34,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 
 import com.psiphon3.R;
@@ -281,11 +280,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         Notification notification = mNotificationBuilder.build();
 
         if (alert) {
-            if (PreferenceManager.getDefaultSharedPreferences(m_parentService).getBoolean(
+            final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
+
+            if (multiProcessPreferences.getBoolean(
                     m_parentService.getString(R.string.preferenceNotificationsWithSound), false)) {
                 notification.defaults |= Notification.DEFAULT_SOUND;
             }
-            if (PreferenceManager.getDefaultSharedPreferences(m_parentService).getBoolean(
+            if (multiProcessPreferences.getBoolean(
                     m_parentService.getString(R.string.preferenceNotificationsWithVibrate), false)) {
                 notification.defaults |= Notification.DEFAULT_VIBRATE;
             }
