@@ -745,6 +745,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         }
 
         setIsConnected(false);
+        m_tunnelState.homePages.clear();
         Bundle data = new Bundle();
         data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, false);
         sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, data);
