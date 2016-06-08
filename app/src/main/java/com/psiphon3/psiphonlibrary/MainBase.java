@@ -607,7 +607,11 @@ public abstract class MainBase {
             super.onResume();
 
             // Load new logs from the logging provider now
-            m_loggingObserver.dispatchChange(false, LoggingProvider.INSERT_URI);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                m_loggingObserver.dispatchChange(false, LoggingProvider.INSERT_URI);
+            } else {
+                m_loggingObserver.dispatchChange(false);
+            }
 
             // Load new logs from the logging provider when it changes
             getContentResolver().registerContentObserver(LoggingProvider.INSERT_URI, true, m_loggingObserver);
