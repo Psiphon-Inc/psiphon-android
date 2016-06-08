@@ -158,9 +158,9 @@ public abstract class MainBase {
 
     public static abstract class TabbedActivityBase extends Activity implements OnTabChangeListener {
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.MainBase.TabbedActivityBase.STATUS_ENTRY_AVAILABLE";
-        private static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
-        private static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
-        private static final String CURRENT_TAB = "currentTab";
+        protected static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
+        protected static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
+        protected static final String CURRENT_TAB = "currentTab";
 
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
         protected static final int REQUEST_CODE_PREFERENCE = 101;
