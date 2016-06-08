@@ -20,9 +20,9 @@
 package com.psiphon3.psiphonlibrary;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
-import android.preference.PreferenceManager;
+import net.grandcentrix.tray.AppPreferences;
+import net.grandcentrix.tray.core.ItemNotFoundException;
+import net.grandcentrix.tray.core.SharedPreferencesImport;
 
 public class EmbeddedValues
 {
