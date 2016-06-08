@@ -19,10 +19,6 @@
 
 package com.psiphon3;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
@@ -34,7 +30,6 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
@@ -45,6 +40,13 @@ import android.widget.TabHost;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
+
+import net.grandcentrix.tray.AppPreferences;
+import net.grandcentrix.tray.core.ItemNotFoundException;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 
 public class StatusActivity
@@ -226,7 +228,14 @@ public class StatusActivity
         // If the user hasn't set a whole-device-tunnel preference, show a prompt
         // (and delay starting the tunnel service until the prompt is completed)
 
-        boolean hasPreference = PreferenceManager.getDefaultSharedPreferences(this).contains(TUNNEL_WHOLE_DEVICE_PREFERENCE);
+        boolean hasPreference =false;
+        AppPreferences mpPreferences = new AppPreferences(this);
+        try {
+            mpPreferences.getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE);
+            hasPreference = true;
+        } catch (ItemNotFoundException e) {
+            hasPreference = false;
+        }
 
         if (m_tunnelWholeDeviceToggle.isEnabled() &&
             !hasPreference &&
