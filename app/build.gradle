@@ -78,6 +78,5 @@ dependencies {
     compile files('libs/classes.jar')
     compile project(':mopub-sdk')
     compile 'com.google.android.gms:play-services-safetynet:8.4.0'
-    compile 'net.grandcentrix.tray:tray:0.10.0'
+    compile project(':tray')
 }
-
