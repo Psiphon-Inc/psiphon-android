@@ -194,6 +194,9 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        // This service runs as a separate process, so it needs to initialize embedded values
+        EmbeddedValues.initialize(context);
+
         // Make sure the alarm is created, regardless of which intent we received.
         createAlarm(context.getApplicationContext());
 
