@@ -158,8 +158,9 @@ public abstract class MainBase {
 
     public static abstract class TabbedActivityBase extends Activity implements OnTabChangeListener {
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.MainBase.TabbedActivityBase.STATUS_ENTRY_AVAILABLE";
-        public static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
-        public static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
+        private static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
+        private static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
+        private static final String CURRENT_TAB = "currentTab";
 
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
         protected static final int REQUEST_CODE_PREFERENCE = 101;
@@ -324,7 +325,7 @@ public abstract class MainBase {
             m_previousView = m_currentView;
             m_currentTab = m_tabHost.getCurrentTab();
 
-            m_multiProcessPreferences.put("currentTab", m_currentTab);
+            m_multiProcessPreferences.put(CURRENT_TAB, m_currentTab);
         }
 
         /**
@@ -396,6 +397,9 @@ public abstract class MainBase {
             String prefName = this.getPackageName() + "_preferences";
             m_multiProcessPreferences.migrate(
                     // Top level  preferences
+                    new SharedPreferencesImport(this, prefName, CURRENT_TAB, CURRENT_TAB),
+                    new SharedPreferencesImport(this, prefName, EGRESS_REGION_PREFERENCE, EGRESS_REGION_PREFERENCE),
+                    new SharedPreferencesImport(this, prefName, TUNNEL_WHOLE_DEVICE_PREFERENCE, TUNNEL_WHOLE_DEVICE_PREFERENCE),
                     new SharedPreferencesImport(this, prefName, getString(R.string.downloadWifiOnlyPreference), getString(R.string.downloadWifiOnlyPreference)),
                     new SharedPreferencesImport(this, prefName, getString(R.string.disableTimeoutsPreference), getString(R.string.disableTimeoutsPreference)),
                     // More Options preferences
@@ -469,7 +473,7 @@ public abstract class MainBase {
 
             m_tabHost.setOnTabChangedListener(this);
 
-            int currentTab = m_multiProcessPreferences.getInt("currentTab", 0);
+            int currentTab = m_multiProcessPreferences.getInt(CURRENT_TAB, 0);
             m_tabHost.setCurrentTab(currentTab);
 
             m_sponsorViewFlipper = (ViewFlipper) findViewById(R.id.sponsorViewFlipper);

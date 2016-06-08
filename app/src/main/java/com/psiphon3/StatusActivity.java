@@ -228,7 +228,7 @@ public class StatusActivity
         // If the user hasn't set a whole-device-tunnel preference, show a prompt
         // (and delay starting the tunnel service until the prompt is completed)
 
-        boolean hasPreference =false;
+        boolean hasPreference;
         AppPreferences mpPreferences = new AppPreferences(this);
         try {
             mpPreferences.getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE);
