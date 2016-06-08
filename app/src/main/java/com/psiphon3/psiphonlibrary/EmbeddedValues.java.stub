@@ -20,9 +20,9 @@
 package com.psiphon3.psiphonlibrary;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
-import android.preference.PreferenceManager;
+import net.grandcentrix.tray.AppPreferences;
+import net.grandcentrix.tray.core.ItemNotFoundException;
+import net.grandcentrix.tray.core.SharedPreferencesImport;
 
 public class EmbeddedValues
 {
@@ -95,8 +95,6 @@ cog.outl('public static String DATA_COLLECTION_INFO_URL = "%s";' % utils.get_emb
     public static String GET_NEW_VERSION_EMAIL = "get@example.com";
     public static String FAQ_URL = "https://s3.amazonaws.com/invalid_bucket_name/en/faq.html";
     public static String DATA_COLLECTION_INFO_URL = "https://s3.amazonaws.com/invalid_bucket_name/en/faq.html#information-collected";
-
-    public static final String MEEK_CLIENT_COOKIE_PAYLOAD_ENCRYPTION_PUBLIC_KEY = "";
     
 //[[[end]]]
 
@@ -112,39 +110,57 @@ cog.outl('public static String DATA_COLLECTION_INFO_URL = "%s";' % utils.get_emb
     private static final String FAQ_URL_PREFERENCE = "faqUrlPreference";
     private static final String DATA_COLLECTION_INFO_URL_PREFERENCE = "dataCollectionInfoUrlPreference";
 
-    public static void initialize(Context context)
+ public static void initialize(Context context)
     {
+
+        // migrate existing values to Tray
+        AppPreferences mpPreferences = new AppPreferences(context);
+        String prefFileName =  context.getPackageName() + "_preferences";
+
+        mpPreferences.migrate(
+                new SharedPreferencesImport(context, prefFileName, PROPAGATION_CHANNEL_ID_PREFERENCE, PROPAGATION_CHANNEL_ID_PREFERENCE),
+                new SharedPreferencesImport(context, prefFileName, SPONSOR_ID_PREFERENCE, SPONSOR_ID_PREFERENCE),
+                new SharedPreferencesImport(context, prefFileName, REMOTE_SERVER_LIST_URL_PREFERENCE, REMOTE_SERVER_LIST_URL_PREFERENCE),
+                new SharedPreferencesImport(context, prefFileName, REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY_PREFERENCE, REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY_PREFERENCE),
+                new SharedPreferencesImport(context, prefFileName, INFO_LINK_URL_PREFERENCE, INFO_LINK_URL_PREFERENCE),
+                new SharedPreferencesImport(context, prefFileName, UPGRADE_URL_PREFERENCE, UPGRADE_URL_PREFERENCE),
+                new SharedPreferencesImport(context, prefFileName, UPGRADE_SIGNATURE_PUBLIC_KEY_PREFERENCE, UPGRADE_SIGNATURE_PUBLIC_KEY_PREFERENCE),
+                new SharedPreferencesImport(context, prefFileName, GET_NEW_VERSION_URL_PREFERENCE, GET_NEW_VERSION_URL_PREFERENCE),
+                new SharedPreferencesImport(context, prefFileName, GET_NEW_VERSION_EMAIL_PREREFENCE, GET_NEW_VERSION_EMAIL_PREREFENCE),
+                new SharedPreferencesImport(context, prefFileName, FAQ_URL_PREFERENCE, FAQ_URL_PREFERENCE),
+                new SharedPreferencesImport(context, prefFileName, DATA_COLLECTION_INFO_URL_PREFERENCE, DATA_COLLECTION_INFO_URL_PREFERENCE)
+        );
+
+
+
+
         if (!IS_PLAY_STORE_BUILD)
         {
-            Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
-            editor.putString(PROPAGATION_CHANNEL_ID_PREFERENCE, PROPAGATION_CHANNEL_ID);
-            editor.putString(SPONSOR_ID_PREFERENCE, SPONSOR_ID);
-            editor.putString(REMOTE_SERVER_LIST_URL_PREFERENCE, REMOTE_SERVER_LIST_URL);
-            editor.putString(REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY_PREFERENCE, REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY);
-            editor.putString(INFO_LINK_URL_PREFERENCE, INFO_LINK_URL);
-            editor.putString(UPGRADE_URL_PREFERENCE, UPGRADE_URL);
-            editor.putString(UPGRADE_SIGNATURE_PUBLIC_KEY_PREFERENCE, UPGRADE_SIGNATURE_PUBLIC_KEY);
-            editor.putString(GET_NEW_VERSION_URL_PREFERENCE, GET_NEW_VERSION_URL);
-            editor.putString(GET_NEW_VERSION_EMAIL_PREREFENCE, GET_NEW_VERSION_EMAIL);
-            editor.putString(FAQ_URL_PREFERENCE, FAQ_URL);
-            editor.putString(DATA_COLLECTION_INFO_URL_PREFERENCE, DATA_COLLECTION_INFO_URL);
-            // Ignore failure
-            editor.commit();
+            mpPreferences.put(PROPAGATION_CHANNEL_ID_PREFERENCE, PROPAGATION_CHANNEL_ID);
+            mpPreferences.put(SPONSOR_ID_PREFERENCE, SPONSOR_ID);
+            mpPreferences.put(REMOTE_SERVER_LIST_URL_PREFERENCE, REMOTE_SERVER_LIST_URL);
+            mpPreferences.put(REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY_PREFERENCE, REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY);
+            mpPreferences.put(INFO_LINK_URL_PREFERENCE, INFO_LINK_URL);
+            mpPreferences.put(UPGRADE_URL_PREFERENCE, UPGRADE_URL);
+            mpPreferences.put(UPGRADE_SIGNATURE_PUBLIC_KEY_PREFERENCE, UPGRADE_SIGNATURE_PUBLIC_KEY);
+            mpPreferences.put(GET_NEW_VERSION_URL_PREFERENCE, GET_NEW_VERSION_URL);
+            mpPreferences.put(GET_NEW_VERSION_EMAIL_PREREFENCE, GET_NEW_VERSION_EMAIL);
+            mpPreferences.put(FAQ_URL_PREFERENCE, FAQ_URL);
+            mpPreferences.put(DATA_COLLECTION_INFO_URL_PREFERENCE, DATA_COLLECTION_INFO_URL);
         }
         else
         {
-            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-            PROPAGATION_CHANNEL_ID = preferences.getString(PROPAGATION_CHANNEL_ID_PREFERENCE, PROPAGATION_CHANNEL_ID);
-            SPONSOR_ID = preferences.getString(SPONSOR_ID_PREFERENCE, SPONSOR_ID);
-            REMOTE_SERVER_LIST_URL = preferences.getString(REMOTE_SERVER_LIST_URL_PREFERENCE, REMOTE_SERVER_LIST_URL);
-            REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY = preferences.getString(REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY_PREFERENCE, REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY);
-            INFO_LINK_URL = preferences.getString(INFO_LINK_URL_PREFERENCE, INFO_LINK_URL);
-            UPGRADE_URL = preferences.getString(UPGRADE_URL_PREFERENCE, UPGRADE_URL);
-            UPGRADE_SIGNATURE_PUBLIC_KEY = preferences.getString(UPGRADE_SIGNATURE_PUBLIC_KEY_PREFERENCE, UPGRADE_SIGNATURE_PUBLIC_KEY);
-            GET_NEW_VERSION_URL = preferences.getString(GET_NEW_VERSION_URL_PREFERENCE, GET_NEW_VERSION_URL);
-            GET_NEW_VERSION_EMAIL = preferences.getString(GET_NEW_VERSION_EMAIL_PREREFENCE, GET_NEW_VERSION_EMAIL);
-            FAQ_URL = preferences.getString(FAQ_URL_PREFERENCE, FAQ_URL);
-            DATA_COLLECTION_INFO_URL = preferences.getString(DATA_COLLECTION_INFO_URL_PREFERENCE, DATA_COLLECTION_INFO_URL);
+            PROPAGATION_CHANNEL_ID = mpPreferences.getString(PROPAGATION_CHANNEL_ID_PREFERENCE, PROPAGATION_CHANNEL_ID);
+            SPONSOR_ID = mpPreferences.getString(SPONSOR_ID_PREFERENCE, SPONSOR_ID);
+            REMOTE_SERVER_LIST_URL = mpPreferences.getString(REMOTE_SERVER_LIST_URL_PREFERENCE, REMOTE_SERVER_LIST_URL);
+            REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY = mpPreferences.getString(REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY_PREFERENCE, REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY);
+            INFO_LINK_URL = mpPreferences.getString(INFO_LINK_URL_PREFERENCE, INFO_LINK_URL);
+            UPGRADE_URL = mpPreferences.getString(UPGRADE_URL_PREFERENCE, UPGRADE_URL);
+            UPGRADE_SIGNATURE_PUBLIC_KEY = mpPreferences.getString(UPGRADE_SIGNATURE_PUBLIC_KEY_PREFERENCE, UPGRADE_SIGNATURE_PUBLIC_KEY);
+            GET_NEW_VERSION_URL = mpPreferences.getString(GET_NEW_VERSION_URL_PREFERENCE, GET_NEW_VERSION_URL);
+            GET_NEW_VERSION_EMAIL = mpPreferences.getString(GET_NEW_VERSION_EMAIL_PREREFENCE, GET_NEW_VERSION_EMAIL);
+            FAQ_URL = mpPreferences.getString(FAQ_URL_PREFERENCE, FAQ_URL);
+            DATA_COLLECTION_INFO_URL = mpPreferences.getString(DATA_COLLECTION_INFO_URL_PREFERENCE, DATA_COLLECTION_INFO_URL);
         }
     }
 
@@ -152,8 +168,13 @@ cog.outl('public static String DATA_COLLECTION_INFO_URL = "%s";' % utils.get_emb
     {
         if (IS_PLAY_STORE_BUILD)
         {
-            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-            return preferences.contains(PROPAGATION_CHANNEL_ID_PREFERENCE);
+            AppPreferences mpPreferences = new AppPreferences(context);
+            try {
+                mpPreferences.getString(PROPAGATION_CHANNEL_ID_PREFERENCE);
+            } catch (ItemNotFoundException e) {
+                return false;
+            }
+            return true;
         }
         else
         {

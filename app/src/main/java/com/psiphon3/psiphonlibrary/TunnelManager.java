@@ -181,6 +181,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     }
 
     public void onCreate() {
+        // This service runs as a separate process, so it needs to initialize embedded values
+        EmbeddedValues.initialize(this.getContext());
+
         MyLog.setLogger(this);
     }
 
