@@ -50,7 +50,7 @@ public class SharedPreferencesImport implements TrayMigration {
         mSharedPrefsKey = sharedPrefsKey;
         mSharedPrefsName = sharedPrefsName;
         mTrayKey = trayKey;
-        mPreferences = context.getSharedPreferences(sharedPrefsName, Context.MODE_MULTI_PROCESS);
+        mPreferences = context.getSharedPreferences(sharedPrefsName, 0);
     }
 
     @Override

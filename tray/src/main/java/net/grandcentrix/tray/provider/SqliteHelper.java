@@ -141,7 +141,7 @@ public class SqliteHelper {
             return -1;
         }
 
-        final long items = DatabaseUtils.queryNumEntries(sqlDb, table, selection, selectionArgs);
+        final long items = queryNumEntries(sqlDb, table, selection, selectionArgs);
 
         if (items == 0) {
             // insert, item doesn't exist
@@ -168,5 +168,26 @@ public class SqliteHelper {
             // a wrong selection results only in an insert. update will never called then.
             return 0;
         }
+    }
+
+    // From https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/database/DatabaseUtils.java
+    /**
+     * Query the table for the number of rows in the table.
+     * @param db the database the table is in
+     * @param table the name of the table to query
+     * @param selection A filter declaring which rows to return,
+     *              formatted as an SQL WHERE clause (excluding the WHERE itself).
+     *              Passing null will count all rows for the given table
+     * @param selectionArgs You may include ?s in selection,
+     *              which will be replaced by the values from selectionArgs,
+     *              in order that they appear in the selection.
+     *              The values will be bound as Strings.
+     * @return the number of rows in the table filtered by the selection
+     */
+    public static long queryNumEntries(SQLiteDatabase db, String table, String selection,
+                                       String[] selectionArgs) {
+        String s = (!TextUtils.isEmpty(selection)) ? " where " + selection : "";
+        return DatabaseUtils.longForQuery(db, "select count(*) from " + table + s,
+                selectionArgs);
     }
 }
