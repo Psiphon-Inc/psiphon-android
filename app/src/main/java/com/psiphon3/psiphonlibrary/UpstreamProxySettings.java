@@ -85,7 +85,7 @@ public class UpstreamProxySettings {
             settings = getSystemProxySettings(context);
             if (settings != null) {
                 pref.put(context.getString(R.string.savedSystemProxyHost), settings.proxyHost);
-                pref.put(context.getString(R.string.savedSystemProxyHost), String.valueOf(settings.proxyPort));
+                pref.put(context.getString(R.string.savedSystemProxyPort), String.valueOf(settings.proxyPort));
             }
         }
     }
