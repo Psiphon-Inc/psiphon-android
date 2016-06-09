@@ -17,6 +17,7 @@ android {
             defaultConfig {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
                 applicationId "com.psiphon3.subscription"
+                resValue "string", "tray__authority", "${applicationId}.tray"
                 minSdkVersion 9
                 targetSdkVersion 21
                 versionCode verCode
@@ -87,7 +88,7 @@ dependencies {
     compile files('libs/classes.jar')
     compile project(':mopub-sdk')
     compile 'com.google.android.gms:play-services-safetynet:8.4.0'
+    compile project(':tray')
     compile 'com.supersonic.sdk:mediationsdk:6.4.3@jar'
     compile files('libs/inmobiadapter-2.0.1.jar')
 }
-

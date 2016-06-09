@@ -1,1 +1,1 @@
-include ':app', ':mopub-sdk'
+include ':app', ':tray', ':mopub-sdk'
