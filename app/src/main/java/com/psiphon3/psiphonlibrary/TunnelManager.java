@@ -693,98 +693,146 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     }
 
     @Override
-    public void onDiagnosticMessage(String message) {
-        MyLog.g(message, "msg", message);
+    public void onDiagnosticMessage(final String message) {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                MyLog.g(message, "msg", message);
+            }
+        });
     }
 
     @Override
-    public void onAvailableEgressRegions(List<String> regions) {
-        m_tunnelState.availableEgressRegions.clear();
-        m_tunnelState.availableEgressRegions.addAll(regions);
-        Bundle data = new Bundle();
-        data.putStringArrayList(DATA_TUNNEL_STATE_AVAILABLE_EGRESS_REGIONS,
-                m_tunnelState.availableEgressRegions);
-        sendClientMessage(MSG_KNOWN_SERVER_REGIONS, data);
+    public void onAvailableEgressRegions(final List<String> regions) {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                m_tunnelState.availableEgressRegions.clear();
+                m_tunnelState.availableEgressRegions.addAll(regions);
+                Bundle data = new Bundle();
+                data.putStringArrayList(DATA_TUNNEL_STATE_AVAILABLE_EGRESS_REGIONS,
+                        m_tunnelState.availableEgressRegions);
+                sendClientMessage(MSG_KNOWN_SERVER_REGIONS, data);
+            }
+        });
     }
 
     @Override
-    public void onSocksProxyPortInUse(int port) {
-        MyLog.e(R.string.socks_port_in_use, MyLog.Sensitivity.NOT_SENSITIVE, port);
-        signalStopService();
+    public void onSocksProxyPortInUse(final int port) {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                MyLog.e(R.string.socks_port_in_use, MyLog.Sensitivity.NOT_SENSITIVE, port);
+                signalStopService();
+            }
+        });
     }
 
     @Override
-    public void onHttpProxyPortInUse(int port) {
-        MyLog.e(R.string.http_proxy_port_in_use, MyLog.Sensitivity.NOT_SENSITIVE, port);
-        signalStopService();
+    public void onHttpProxyPortInUse(final int port) {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                MyLog.e(R.string.http_proxy_port_in_use, MyLog.Sensitivity.NOT_SENSITIVE, port);
+                signalStopService();
+            }
+        });
     }
 
     @Override
-    public void onListeningSocksProxyPort(int port) {
-        MyLog.v(R.string.socks_running, MyLog.Sensitivity.NOT_SENSITIVE, port);
-        m_tunnelState.listeningLocalSocksProxyPort = port;
+    public void onListeningSocksProxyPort(final int port) {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                MyLog.v(R.string.socks_running, MyLog.Sensitivity.NOT_SENSITIVE, port);
+                m_tunnelState.listeningLocalSocksProxyPort = port;
+            }
+        });
     }
 
     @Override
-    public void onListeningHttpProxyPort(int port) {
-        MyLog.v(R.string.http_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, port);
-        m_tunnelState.listeningLocalHttpProxyPort = port;
+    public void onListeningHttpProxyPort(final int port) {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                MyLog.v(R.string.http_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, port);
+                m_tunnelState.listeningLocalHttpProxyPort = port;
 
-        final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
-        multiProcessPreferences.put(
-                m_parentService.getString(R.string.current_local_http_proxy_port),
-                port);
+                final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
+                multiProcessPreferences.put(
+                        m_parentService.getString(R.string.current_local_http_proxy_port),
+                        port);
+            }
+        });
     }
 
     @Override
-    public void onUpstreamProxyError(String message) {
-        // Display the error message only once, and continue trying to connect in
-        // case the issue is temporary.
-        if (m_lastUpstreamProxyErrorMessage == null || !m_lastUpstreamProxyErrorMessage.equals(message)) {
-            MyLog.v(R.string.upstream_proxy_error, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, message);
-            m_lastUpstreamProxyErrorMessage = message;
-        }
+    public void onUpstreamProxyError(final String message) {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                // Display the error message only once, and continue trying to connect in
+                // case the issue is temporary.
+                if (m_lastUpstreamProxyErrorMessage == null || !m_lastUpstreamProxyErrorMessage.equals(message)) {
+                    MyLog.v(R.string.upstream_proxy_error, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, message);
+                    m_lastUpstreamProxyErrorMessage = message;
+                }
+            }
+        });
     }
 
     @Override
     public void onConnecting() {
-        DataTransferStats.getDataTransferStatsForService().stop();
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                DataTransferStats.getDataTransferStatsForService().stop();
 
-        if (!m_isStopping.get()) {
-            MyLog.v(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
-        }
+                if (!m_isStopping.get()) {
+                    MyLog.v(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
+                }
 
-        setIsConnected(false);
-        m_tunnelState.homePages.clear();
-        Bundle data = new Bundle();
-        data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, false);
-        sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, data);
+                setIsConnected(false);
+                m_tunnelState.homePages.clear();
+                Bundle data = new Bundle();
+                data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, false);
+                sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, data);
+            }
+        });
     }
 
     @Override
     public void onConnected() {
-        DataTransferStats.getDataTransferStatsForService().startConnected();
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                DataTransferStats.getDataTransferStatsForService().startConnected();
 
-        MyLog.v(R.string.tunnel_connected, MyLog.Sensitivity.NOT_SENSITIVE);
+                MyLog.v(R.string.tunnel_connected, MyLog.Sensitivity.NOT_SENSITIVE);
 
-        sendHandshakeIntent(m_isReconnect.get());
-        // Any subsequent onConnecting after this first onConnect will be a reconnect.
-        m_isReconnect.set(true);
+                sendHandshakeIntent(m_isReconnect.get());
+                // Any subsequent onConnecting after this first onConnect will be a reconnect.
+                m_isReconnect.set(true);
 
-        setIsConnected(true);
-        Bundle data = new Bundle();
-        data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, true);
-        sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, data);
+                setIsConnected(true);
+                Bundle data = new Bundle();
+                data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, true);
+                sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, data);
+            }
+        });
     }
 
     @Override
-    public void onHomepage(String url) {
-        for (String homePage : m_tunnelState.homePages) {
-            if (homePage.equals(url)) {
-                return;
-            }
-        }
-        m_tunnelState.homePages.add(url);
+    public void onHomepage(final String url) {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                for (String homePage : m_tunnelState.homePages) {
+                    if (homePage.equals(url)) {
+                        return;
+                    }
+                }
+                m_tunnelState.homePages.add(url);
 
         boolean showAds = false;
         for (String homePage : m_tunnelState.homePages) {
@@ -796,18 +844,30 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         multiProcessPreferences.put(
                 m_parentService.getString(R.string.persistent_show_ads_setting),
                 showAds);
+            }
+        });
     }
 
     @Override
-    public void onClientRegion(String region) {
-        Bundle data = new Bundle();
-        data.putString(DATA_TUNNEL_STATE_CLIENT_REGION, region);
-        sendClientMessage(MSG_CLIENT_REGION, data);
+    public void onClientRegion(final String region) {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                Bundle data = new Bundle();
+                data.putString(DATA_TUNNEL_STATE_CLIENT_REGION, region);
+                sendClientMessage(MSG_CLIENT_REGION, data);
+            }
+        });
     }
 
     @Override
     public void onClientUpgradeDownloaded(String filename) {
-        UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentService);
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentService);
+            }
+        });
     }
 
     @Override
@@ -815,33 +875,53 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     }
 
     @Override
-    public void onSplitTunnelRegion(String region) {
-        MyLog.v(R.string.split_tunnel_region, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, region);
+    public void onSplitTunnelRegion(final String region) {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                MyLog.v(R.string.split_tunnel_region, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, region);
+            }
+        });
     }
 
     @Override
-    public void onUntunneledAddress(String address) {
-        MyLog.v(R.string.untunneled_address, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, address);
+    public void onUntunneledAddress(final String address) {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                MyLog.v(R.string.untunneled_address, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, address);
+            }
+        });
     }
 
     @Override
-    public void onBytesTransferred(long sent, long received) {
-        DataTransferStats.DataTransferStatsForService stats = DataTransferStats.getDataTransferStatsForService();
-        stats.addBytesSent(sent);
-        stats.addBytesReceived(received);
+    public void onBytesTransferred(final long sent, final long received) {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                DataTransferStats.DataTransferStatsForService stats = DataTransferStats.getDataTransferStatsForService();
+                stats.addBytesSent(sent);
+                stats.addBytesReceived(received);
+            }
+        });
     }
 
     @Override
     public void onStartedWaitingForNetworkConnectivity() {
-        MyLog.v(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                MyLog.v(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);
+            }
+        });
     }
 
     @Override
     public void onClientVerificationRequired() {
-        // Perform safetyNet check
         m_Handler.post(new Runnable() {
             @Override
             public void run() {
+                // Perform safetyNet check
                 m_safetyNetwrapper = GoogleSafetyNetApiWrapper.getInstance(getContext());
                 m_safetyNetwrapper.connect(TunnelManager.this);
             }
