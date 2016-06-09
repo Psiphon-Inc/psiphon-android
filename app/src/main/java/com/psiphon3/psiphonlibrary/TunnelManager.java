@@ -520,7 +520,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         }
     };
 
-
     private void runTunnel() {
 
         Utils.initializeSecureRandom();

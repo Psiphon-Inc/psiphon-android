@@ -19,7 +19,6 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import com.psiphon3.psiphonlibrary.PsiphonData.ProxySettings;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
@@ -41,7 +40,7 @@ public class WebViewProxySettings
 {
     public static void resetLocalProxy(Context ctx)
     {
-        ProxySettings systemProxySettings = PsiphonData.getPsiphonData().getSystemProxySettings(ctx);
+        UpstreamProxySettings.ProxySettings systemProxySettings = PsiphonData.getPsiphonData().getSystemProxySettings(ctx);
         setProxy(ctx, systemProxySettings.proxyHost, systemProxySettings.proxyPort);
     }
     

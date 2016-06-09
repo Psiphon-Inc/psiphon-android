@@ -32,8 +32,6 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import android.util.Log;
 
-import com.psiphon3.R;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 

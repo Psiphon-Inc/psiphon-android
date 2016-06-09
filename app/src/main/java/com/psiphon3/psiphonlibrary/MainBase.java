@@ -76,7 +76,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
-import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.R;
@@ -618,7 +617,6 @@ public abstract class MainBase {
             super.onResume();
             
             m_localProxySettingsHaveBeenReset = false;
-            
 
             // Load new logs from the logging provider now
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -946,7 +944,6 @@ public abstract class MainBase {
                         m_localProxySettingsHaveBeenReset = true;
                     }
                 } else {
-
                     m_toggleButton.setText(getText(R.string.waiting));
                     disableToggleServiceUI();
                     updateSubscriptionAndAdOptions(false);
@@ -956,7 +953,6 @@ public abstract class MainBase {
                         m_localProxySettingsHaveBeenReset = true;
                     }
                 }
-
             } else {
                 if (isTunnelConnected()) {
                     setStatusState(R.drawable.status_icon_connected);
