@@ -89,7 +89,6 @@ public class UpstreamProxySettings {
     }
 
     // Checks if we are supposed to use proxy settings, custom or system,
-    // Checks if we are supposed to use proxy settings, custom or system,
     // and if system, if any system proxy settings are configured.
     // Returns the user-requested proxy settings.
     public synchronized static ProxySettings getProxySettings(Context context) {
