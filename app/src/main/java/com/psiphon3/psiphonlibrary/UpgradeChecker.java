@@ -96,7 +96,13 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         }
         */
 
-        String logJSON = LoggingProvider.makeStatusLogJSON(new Date(), stringResID, sensitivity, formatArgs, priority);
+        String logJSON = LoggingProvider.makeStatusLogJSON(
+                context,
+                new Date(),
+                stringResID,
+                sensitivity,
+                formatArgs,
+                priority);
         if (logJSON == null) {
             // Fail silently
             return;
