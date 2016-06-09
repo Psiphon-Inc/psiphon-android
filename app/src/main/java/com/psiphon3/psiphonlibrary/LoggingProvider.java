@@ -23,6 +23,7 @@ import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -52,6 +53,7 @@ public class LoggingProvider extends ContentProvider {
 
     /**
      * JSON-ify the arguments to be used in a call to the LoggingProvider content provider.
+     * @param context The context to be used for access app resources.
      * @param date Timestamp for the log.
      * @param stringResID String resource ID.
      * @param sensitivity Log sensitivity level.
@@ -59,7 +61,14 @@ public class LoggingProvider extends ContentProvider {
      * @param priority One of the log priority levels supported by MyLog. Like: Log.DEBUG, Log.INFO, Log.WARN, Log.ERROR, Log.VERBOSE
      * @return null on error.
      */
-    public static String makeStatusLogJSON(Date date, int stringResID, MyLog.Sensitivity sensitivity, Object[] formatArgs, int priority) {
+    public static String makeStatusLogJSON(Context context,
+                                           Date date,
+                                           int stringResID,
+                                           MyLog.Sensitivity sensitivity,
+                                           Object[] formatArgs,
+                                           int priority) {
+        String resourceName = context.getResources().getResourceName(stringResID);
+
         JSONObject json = new JSONObject();
         try {
             JSONArray jsonArray = new JSONArray();
@@ -70,7 +79,7 @@ public class LoggingProvider extends ContentProvider {
             }
 
             json.put("timestamp", date.getTime()); // Store as millis since epoch
-            json.put("stringResID", stringResID);
+            json.put("stringResourceName", resourceName);
             json.put("sensitivity", sensitivity.name());
             json.put("formatArgs", jsonArray);
             json.put("priority", priority);
@@ -420,13 +429,14 @@ public class LoggingProvider extends ContentProvider {
                     String logJSON = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_LOGJSON));
 
                     // Extract log args from JSON.
-                    int stringResID, priority;
+                    String stringResourceName;
+                    int priority;
                     MyLog.Sensitivity sensitivity;
                     Object[] formatArgs;
                     Date timestamp;
                     try {
                         JSONObject jsonObj = new JSONObject(logJSON);
-                        stringResID = jsonObj.getInt("stringResID");
+                        stringResourceName = jsonObj.getString("stringResourceName");
                         sensitivity = MyLog.Sensitivity.valueOf(jsonObj.getString("sensitivity"));
                         priority = jsonObj.getInt("priority");
                         timestamp = new Date(jsonObj.getLong("timestamp"));
@@ -437,12 +447,20 @@ public class LoggingProvider extends ContentProvider {
                             formatArgs[i] = formatArgsJSONArray.get(i);
                         }
 
+                        // Convert the resource name to ID.
+                        int resourceID = context.getResources().getIdentifier(stringResourceName, null, null);
+                        if (resourceID == 0) {
+                            // Failed to convert from resource name to ID. This can happen if a
+                            // string resource has been renamed since the log entry was created.
+                            continue;
+                        }
+
                         // Pass the log info on to StatusList.
                         // Keep this call in the try block so it gets skipped if there's an exception above.
                         StatusList.addStatusEntry(
                                 ID,
                                 timestamp,
-                                stringResID,
+                                resourceID,
                                 sensitivity,
                                 formatArgs,
                                 null,

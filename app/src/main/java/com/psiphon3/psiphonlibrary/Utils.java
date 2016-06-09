@@ -453,7 +453,13 @@ public class Utils
                 Date timestamp)
         {
             if (logger.get() != null) {
-                String logJSON = LoggingProvider.makeStatusLogJSON(timestamp, stringResID, sensitivity, formatArgs, priority);
+                String logJSON = LoggingProvider.makeStatusLogJSON(
+                        logger.get().getContext(),
+                        timestamp,
+                        stringResID,
+                        sensitivity,
+                        formatArgs,
+                        priority);
                 if (logJSON == null) {
                     // Fail silently
                     return;
