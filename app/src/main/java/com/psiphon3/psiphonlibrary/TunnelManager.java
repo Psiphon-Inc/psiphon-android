@@ -371,10 +371,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             }
             m_outgoingMessenger.send(msg);
         } catch (RemoteException e) {
-            // TODO-TUNNEL-CORE: ?
-            // NOTE: potential stack overflow since MyLog invokes
-            // statusEntryAdded which invokes sendClientMessage
-            // MyLog.g("sendClientMessage failed: %s", e.getMessage());
+            MyLog.g("sendClientMessage failed: %s", e.getMessage());
         }
     }
 
@@ -661,7 +658,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
                 json.put("EgressRegion", "");
             } else {
-                // TODO-TUNNEL-CORE: configure local proxy ports
+                // TODO: configure local proxy ports
                 json.put("LocalHttpProxyPort", 0);
                 json.put("LocalSocksProxyPort", 0);
 
