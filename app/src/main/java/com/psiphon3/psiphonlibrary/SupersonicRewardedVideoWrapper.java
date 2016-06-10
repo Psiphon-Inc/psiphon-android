@@ -21,7 +21,6 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
 
     private boolean mIsInitialized = false;
     private Supersonic mMediationAgent;
-    private  String mPlacement;
     private WeakReference<Activity> mWeakActivity;
     private boolean mIsVideoAvailable = false;
 
@@ -31,7 +30,7 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
     private final String mAppKey = "49a64b4d";
 
     public SupersonicRewardedVideoWrapper(Activity activity) {
-        mWeakActivity = new WeakReference<Activity>(activity);
+        mWeakActivity = new WeakReference<>(activity);
         mMediationAgent = SupersonicFactory.getInstance();
         mMediationAgent.setRewardedVideoListener(SupersonicRewardedVideoWrapper.this);
 
@@ -53,10 +52,6 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
          * Supersonic integration state
          */
         // IntegrationHelper.validateIntegration(mWeakActivity.get());
-    }
-
-    public void setRewardedVideoListener(RewardedVideoListener listener) {
-        mMediationAgent.setRewardedVideoListener(listener);
     }
 
     public void playVideo() {
@@ -124,14 +119,9 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
             Activity activity = SupersonicRewardedVideoWrapper.this.mWeakActivity.get();
             if (activity != null) {
                 try {
-                    String GAID = AdvertisingIdClient.getAdvertisingIdInfo(activity).getId();
-                    return GAID;
-                } catch (final IOException e) {
-
-                } catch (final GooglePlayServicesNotAvailableException e) {
-
-                } catch (final GooglePlayServicesRepairableException e) {
-
+                    return AdvertisingIdClient.getAdvertisingIdInfo(activity).getId();
+                } catch (final IOException | GooglePlayServicesRepairableException | GooglePlayServicesNotAvailableException e) {
+                    // do nothing
                 }
             }
             return null;
@@ -170,7 +160,7 @@ public class SupersonicRewardedVideoWrapper implements RewardedVideoListener {
             mGAIDRequestTask.cancel(true);
             mGAIDRequestTask = null;
         }
-        mWeakActivity = null;
+        mWeakActivity.clear();
     }
 }
 
