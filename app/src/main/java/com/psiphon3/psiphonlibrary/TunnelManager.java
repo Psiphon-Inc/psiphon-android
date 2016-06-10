@@ -276,7 +276,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         String notificationTitle = m_parentService.getText(R.string.app_name_psiphon_pro).toString();
         String notificationText = m_parentService.getText(contentTextID).toString();
         
-        if (PsiphonData.getPsiphonData().getFreeTrialActive()) {
+        if (Utils.getFreeTrialActive(m_parentService)) {
 
             long secondsLeft = FreeTrialTimer.getFreeTrialTimerCachingWrapper().getRemainingTimeSeconds(m_parentService);
 
@@ -511,10 +511,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 checkFreeTrialDelayHandler.postDelayed(this, checkFreeTrialInterval);
             } else {
                 signalStopService();
-                PsiphonData.getPsiphonData().endFreeTrial();
-                IEvents events = PsiphonData.getPsiphonData().getCurrentEventsInterface();
-                if (events != null) {
-                    events.signalDisconnectRaiseActivity(m_parentService);
+                Utils.endFreeTrial(m_parentService);
+                try {
+                    m_tunnelConfig.notificationPendingIntent.send();
+                } catch (PendingIntent.CanceledException e) {
+                    MyLog.g("send notificationPendingIntent failed: %s", e.getMessage());
                 }
             }
         }
@@ -557,7 +558,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             m_tunnel.startTunneling(getServerEntries(m_parentService));
 
-            if (PsiphonData.getPsiphonData().getFreeTrialActive()) {
+            if (Utils.getFreeTrialActive(m_parentService)) {
                 FreeTrialTimer.getFreeTrialTimerCachingWrapper().reset();
                 lastChecktimeMillis = SystemClock.elapsedRealtime();
                 checkFreeTrialDelayHandler.postDelayed(checkFreeTrial, checkFreeTrialInterval);

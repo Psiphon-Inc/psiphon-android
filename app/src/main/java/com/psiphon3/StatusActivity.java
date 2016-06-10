@@ -49,6 +49,7 @@ import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.SupersonicRewardedVideoWrapper;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
+import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 import com.psiphon3.util.IabHelper;
 import com.psiphon3.util.IabResult;
@@ -206,7 +207,7 @@ public class StatusActivity
         {
             getTunnelStateFromHandshakeIntent(intent);
 
-            if (!PsiphonData.getPsiphonData().getHasValidSubscriptionOrFreeTime(this))
+            if (!Utils.getHasValidSubscriptionOrFreeTime(this))
             {
                 startIab();
             }
@@ -242,8 +243,8 @@ public class StatusActivity
     @Override
     protected void onPause()
     {
-        if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected() &&
-                !PsiphonData.getPsiphonData().getHasValidSubscriptionOrFreeTime(this))
+        if (isTunnelConnected() &&
+                !Utils.getHasValidSubscriptionOrFreeTime(this))
         {
             doToggle();
         }
@@ -284,7 +285,7 @@ public class StatusActivity
     @Override
     protected void startUp()
     {
-        if (PsiphonData.getPsiphonData().getHasValidSubscriptionOrFreeTime(this))
+        if (Utils.getHasValidSubscriptionOrFreeTime(this))
         {
             doStartUp();
         }
@@ -507,7 +508,7 @@ public class StatusActivity
 
             m_startIabInFlight = false;
 
-            List<String> validSubscriptionSkus = new ArrayList<String>(Arrays.asList(OTHER_VALID_IAB_SUBSCRIPTION_SKUS));
+            List<String> validSubscriptionSkus = new ArrayList<>(Arrays.asList(OTHER_VALID_IAB_SUBSCRIPTION_SKUS));
             validSubscriptionSkus.add(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU);
             for (String validSku : validSubscriptionSkus)
             {
@@ -518,12 +519,12 @@ public class StatusActivity
                 }
             }
 
-            PsiphonData.getPsiphonData().setHasValidSubscription(false);
+            Utils.setHasValidSubscription(StatusActivity.this, false);
 
             updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
 
-            if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected() &&
-                    !PsiphonData.getPsiphonData().getHasValidSubscriptionOrFreeTime(StatusActivity.this))
+            if (isTunnelConnected() &&
+                    !Utils.getHasValidSubscriptionOrFreeTime(StatusActivity.this))
             {
                 // Stop the tunnel
                 doToggle();
@@ -581,7 +582,7 @@ public class StatusActivity
     
     private void proceedWithValidSubscription()
     {
-        PsiphonData.getPsiphonData().setHasValidSubscription(true);
+        Utils.setHasValidSubscription(this, true);
 
         // Auto-start on app first run
         if (m_firstRun)
@@ -598,8 +599,8 @@ public class StatusActivity
         deInitIab();
         m_startIabInFlight = false;
 
-        if (PsiphonData.getPsiphonData().getDataTransferStats().isConnected() &&
-                !PsiphonData.getPsiphonData().getHasValidSubscriptionOrFreeTime(this))
+        if (isTunnelConnected() &&
+                !Utils.getHasValidSubscriptionOrFreeTime(this))
         {
             // Stop the tunnel
             doToggle();
@@ -639,7 +640,7 @@ public class StatusActivity
             else
             {
                 resumeServiceStateUI();
-                PsiphonData.getPsiphonData().startFreeTrial(StatusActivity.this, INTERSTITIAL_REWARD_MINUTES);
+                Utils.startFreeTrial(StatusActivity.this, INTERSTITIAL_REWARD_MINUTES);
             }
         }
     };
@@ -659,12 +660,12 @@ public class StatusActivity
             updateSubscriptionAndAdOptionsFlickerHackCountdown--;
         }
 
-        if (PsiphonData.getPsiphonData().getHasValidSubscription())
+        if (Utils.getHasValidSubscription(this))
         {
             show = false;
         }
 
-        if (show && !PsiphonData.getPsiphonData().getHasValidSubscriptionOrFreeTime(this) &&
+        if (show && !Utils.getHasValidSubscriptionOrFreeTime(this) &&
                 m_moPubInterstitial == null)
         {
             loadFullScreenAd();
@@ -774,7 +775,7 @@ public class StatusActivity
                 // Enable the free trial right away
                 delayHandler.removeCallbacks(enableFreeTrial);
                 resumeServiceStateUI();
-                PsiphonData.getPsiphonData().startFreeTrial(StatusActivity.this, INTERSTITIAL_REWARD_MINUTES);
+                Utils.startFreeTrial(StatusActivity.this, INTERSTITIAL_REWARD_MINUTES);
             }
         });
 

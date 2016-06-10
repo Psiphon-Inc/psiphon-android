@@ -40,7 +40,7 @@ public class WebViewProxySettings
 {
     public static void resetLocalProxy(Context ctx)
     {
-        UpstreamProxySettings.ProxySettings systemProxySettings = PsiphonData.getPsiphonData().getSystemProxySettings(ctx);
+        UpstreamProxySettings.ProxySettings systemProxySettings = UpstreamProxySettings.getOriginalSystemProxySettings(ctx);
         setProxy(ctx, systemProxySettings.proxyHost, systemProxySettings.proxyPort);
     }
     
