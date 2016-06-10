@@ -138,7 +138,12 @@ public class StatusActivity
     protected void onResume()
     {
         startIab();
+
+        // Reset the FreeTrialTimerCachingWrapper because the tunnel service might modify the free trial timer independently
+        FreeTrialTimer.getFreeTrialTimerCachingWrapper().reset();
+
         super.onResume();
+
         if(m_supersonicWrapper != null) {
             m_supersonicWrapper.onResume();
         }
@@ -303,9 +308,6 @@ public class StatusActivity
         // Abort any outstanding ad requests
         deInitAds();
 
-        // Reset the FreeTrialTimerCachingWrapper because the tunnel service might modify the free trial timer independently
-        FreeTrialTimer.getFreeTrialTimerCachingWrapper().reset();
-        
         // If the user hasn't set a whole-device-tunnel preference, show a prompt
         // (and delay starting the tunnel service until the prompt is completed)
 
@@ -649,7 +651,7 @@ public class StatusActivity
     // updateSubscriptionAndAdOptions() gets called once in onCreate().
     // Don't show these options during the first few calls, to allow time for IAB to check
     // for a valid subscription.
-    private int updateSubscriptionAndAdOptionsFlickerHackCountdown = 3;
+    private int updateSubscriptionAndAdOptionsFlickerHackCountdown = 4;
 
     @Override
     protected void updateSubscriptionAndAdOptions(boolean show)
