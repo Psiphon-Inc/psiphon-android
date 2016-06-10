@@ -41,6 +41,9 @@ public class WebViewProxySettings
     public static void resetLocalProxy(Context ctx)
     {
         UpstreamProxySettings.ProxySettings systemProxySettings = UpstreamProxySettings.getOriginalSystemProxySettings(ctx);
+        if (systemProxySettings == null) {
+            systemProxySettings = new UpstreamProxySettings.ProxySettings();
+        }
         setProxy(ctx, systemProxySettings.proxyHost, systemProxySettings.proxyPort);
     }
     
