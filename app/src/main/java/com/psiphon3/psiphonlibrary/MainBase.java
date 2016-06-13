@@ -1194,9 +1194,6 @@ public abstract class MainBase {
 
             intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS,
                     getTunnelConfigDisableTimeouts());
-
-            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_UPSTREAM_PROXY_CONFIG,
-                    UpstreamProxySettings.getUpstreamProxyUrl(this));
         }
 
         protected void startAndBindTunnelService() {

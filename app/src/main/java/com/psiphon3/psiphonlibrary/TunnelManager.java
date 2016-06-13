@@ -103,7 +103,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String DATA_TUNNEL_CONFIG_WHOLE_DEVICE = "tunnelConfigWholeDevice";
     public static final String DATA_TUNNEL_CONFIG_EGRESS_REGION = "tunnelConfigEgressRegion";
     public static final String DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS = "tunnelConfigDisableTimeouts";
-    public static final String DATA_TUNNEL_CONFIG_UPSTREAM_PROXY_CONFIG = "tunnelConfigUpstreamProxyUrl";
 
     // Tunnel config, received from the client.
     public static class Config {
@@ -112,7 +111,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         boolean wholeDevice = false;
         String egressRegion = PsiphonConstants.REGION_CODE_ANY;
         boolean disableTimeouts = false;
-        String upstreamProxyURL;
     }
 
     private Config m_tunnelConfig = new Config();
@@ -250,9 +248,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
         m_tunnelConfig.disableTimeouts = intent.getBooleanExtra(
                 TunnelManager.DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS, false);
-
-        m_tunnelConfig.upstreamProxyURL = intent.getStringExtra(
-                TunnelManager.DATA_TUNNEL_CONFIG_UPSTREAM_PROXY_CONFIG);
     }
 
     private Notification createNotification(boolean alert) {
@@ -623,7 +618,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             json.put("RemoteServerListSignaturePublicKey", EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY);
 
-            json.put("UpstreamProxyUrl", tunnelConfig.upstreamProxyURL);
+            json.put("UpstreamProxyUrl", UpstreamProxySettings.getUpstreamProxyUrl(context));
 
             json.put("EmitDiagnosticNotices", true);
 

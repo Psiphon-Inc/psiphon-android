@@ -386,7 +386,6 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
             final AppPreferences multiProcessPreferences = new AppPreferences(this);
             tunnelManagerConfig.disableTimeouts = multiProcessPreferences.getBoolean(
                     this.getString(R.string.disableTimeoutsPreference), false);
-            tunnelManagerConfig.upstreamProxyURL = UpstreamProxySettings.getUpstreamProxyUrl(this);
 
             String tunnelCoreConfig = TunnelManager.buildTunnelCoreConfig(
                     this,                       // context
