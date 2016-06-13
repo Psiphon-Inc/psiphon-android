@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="SubscriptionPromptTitle">إشتري نسخة خالية من الإعلانات</string>
+    <string name="SubscriptionPromptMessage">لديكم خيارين لإستعمال سايفون برو:\n\n١- خيار إشتراك مدفوع من دون الإعلانات\n٢-خيار مجاني مع إعلانات\n\nشكرا لإستخدامكم سايفون!</string>
+    <string name="SubscriptionPromptSubscribe">إشتراك</string>
+    <string name="SubscriptionPromptAdSupported">مجاني</string>
+    <string name="RewardedVideoPrompt">جديد! شاهد فيديو لتحصل على ١٠٠ دقيقة من سايفون برو خالية من الإعلانات.</string>
+    <string name="WatchRewardedVideoButtonText">شاهد الفيديو</string>
+    <string name="FreeTrialRemainingTime">تجربة مجانية: %s</string>
+</resources>

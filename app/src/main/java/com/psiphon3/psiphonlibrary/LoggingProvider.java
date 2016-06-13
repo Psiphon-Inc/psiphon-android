@@ -49,7 +49,7 @@ import java.util.Locale;
  * All logging is done directly to the LoggingProvider from all processes.
  */
 public class LoggingProvider extends ContentProvider {
-    public static final Uri INSERT_URI = Uri.parse("content://"+LoggingProvider.class.getCanonicalName()+"/");
+    public static final Uri INSERT_URI = Uri.parse("content://com.psiphon3.psiphonlibrary.PsiphonSubscriptionLoggingProvider/");
 
     /**
      * JSON-ify the arguments to be used in a call to the LoggingProvider content provider.

@@ -23,7 +23,7 @@ import android.content.Context;
 import android.os.Build;
 import android.text.TextUtils;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
@@ -169,6 +169,18 @@ public class UpstreamProxySettings {
         if (TextUtils.isEmpty(settings.proxyHost) ||
                 settings.proxyPort <= 0) {
             settings = null;
+        }
+
+        return settings;
+    }
+
+    public static ProxySettings getOriginalSystemProxySettings(Context context) {
+        ProxySettings settings;
+
+        if (m_isSystemProxySaved) {
+            settings = m_savedProxySettings;
+        } else {
+            settings = getSystemProxySettings(context);
         }
 
         return settings;
