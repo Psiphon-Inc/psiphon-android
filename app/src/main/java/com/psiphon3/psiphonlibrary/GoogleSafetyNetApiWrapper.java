@@ -115,7 +115,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
                             onSafetyNetCheckNotify(API_REQUEST_OK, jwsResult);
                         } else {
                             // An error occurred while communicating with the SafetyNet Api
-                            onSafetyNetCheckNotify(API_REQUEST_FAILED, status.getStatusMessage());
+                            onSafetyNetCheckNotify(API_REQUEST_FAILED, status.toString());
                         }
                     }
                 });
@@ -137,7 +137,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        onSafetyNetCheckNotify(API_CONNECT_FAILED, connectionResult.getErrorMessage());
+        onSafetyNetCheckNotify(API_CONNECT_FAILED, connectionResult.toString());
     }
 
     private void onSafetyNetCheckNotify(int status, String payload) {
