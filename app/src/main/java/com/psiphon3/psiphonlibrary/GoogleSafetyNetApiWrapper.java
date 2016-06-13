@@ -48,9 +48,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     private static GoogleSafetyNetApiWrapper mInstance;
     private AtomicBoolean mCheckInFlight;
     private GoogleApiClient mGoogleApiClient;
-    private String mLastCheckJson;
-    private int mLastStatus;
-    private int mFailedRetries;
+    private String mLastPayload;
 
     public Object clone() throws CloneNotSupportedException
     {
@@ -58,7 +56,6 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     }
 
     private  GoogleSafetyNetApiWrapper(Context context) {
-        mFailedRetries = 0;
         // Create the Google API Client.
         mGoogleApiClient = new GoogleApiClient.Builder(context)
                 .addApi(SafetyNet.API)
@@ -80,17 +77,9 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
             return;
         }
 
-        if(!TextUtils.isEmpty(mLastCheckJson)) {
-            // Use cached response if either
-            // last status was API_REQUEST_FAILED more than 2 times in a row or
-            // last status was not API_REQUEST_FAILED
-
-            if ((mLastStatus == API_REQUEST_FAILED && mFailedRetries > 1) ||
-                    mLastStatus != API_REQUEST_FAILED) {
-                setPayload(mLastCheckJson);
-                mCheckInFlight.set(false);
-                return;
-            }
+        if(!TextUtils.isEmpty(mLastPayload)) {
+            setPayload(mLastPayload);
+            return;
         }
 
         if (!mGoogleApiClient.isConnecting() && !mGoogleApiClient.isConnected()) {
@@ -122,7 +111,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
                             onSafetyNetCheckNotify(API_REQUEST_OK, jwsResult);
                         } else {
                             // An error occurred while communicating with the SafetyNet Api
-                            onSafetyNetCheckNotify(API_REQUEST_FAILED, status.toString());
+                            onSafetyNetCheckNotify(API_REQUEST_FAILED, status.getStatusMessage());
                         }
                     }
                 });
@@ -141,7 +130,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        onSafetyNetCheckNotify(API_CONNECT_FAILED, connectionResult.toString());
+        onSafetyNetCheckNotify(API_CONNECT_FAILED, connectionResult.getErrorMessage());
     }
 
     private void onSafetyNetCheckNotify(int status, String payload) {
@@ -155,31 +144,15 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         {
             throw new RuntimeException(e);
         }
-
-        String checkJson = checkData.toString();
-        setPayload(checkJson);
-
-        // Cache last check response in memory,
-        // increment retries counter if API_REQUEST_FAILED,
-        // otherwise reset the counter
-
-        mLastCheckJson = checkJson;
-        mLastStatus = status;
-
-        if(status == API_REQUEST_FAILED) {
-            mFailedRetries++;
-        }
-        else {
-            mFailedRetries = 0;
-        }
-
-        mCheckInFlight.set(false);
+        setPayload(checkData.toString());
     }
 
     private void setPayload(String payload) {
+        mLastPayload = payload;
         TunnelManager tunnelManager = PsiphonData.getPsiphonData().getCurrentTunnelManager();
         if(tunnelManager != null) {
             tunnelManager.setClientVerificationResult(payload);
         }
+        mCheckInFlight.set(false);
     }
 }
