@@ -19,7 +19,7 @@ android {
                 applicationId "com.psiphon3"
                 resValue "string", "tray__authority", "${applicationId}.tray"
                 minSdkVersion 9
-                targetSdkVersion 21
+                targetSdkVersion 23
                 versionCode verCode
                 versionName verName
             }
@@ -70,11 +70,11 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:23.3.0'
+    compile 'com.android.support:appcompat-v7:23.4.0'
     compile files('libs/jackson-core-2.2.0.jar')
     compile files('libs/achartengine-1.0.0.jar')
     compile files('libs/snakeyaml-1.10-android.jar')
     compile files('libs/classes.jar')
-    compile 'com.google.android.gms:play-services-safetynet:8.4.0'
+    compile 'com.google.android.gms:play-services-safetynet:9.0.2'
     compile project(':tray')
 }
