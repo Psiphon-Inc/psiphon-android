@@ -21,7 +21,6 @@ package com.psiphon3.psiphonlibrary;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
@@ -37,7 +36,6 @@ import android.content.Context;
 import android.os.Build;
 import android.util.Log;
 
-import com.psiphon3.psiphonlibrary.PsiphonData.StatusEntry;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import com.psiphon3.R;
@@ -64,7 +62,7 @@ public class Diagnostics
         // Our attachment is JSON, which is then encrypted, and the
         // encryption elements stored in JSON.
 
-        String diagnosticJSON = null;
+        String diagnosticJSON;
 
         try
         {
@@ -116,7 +114,7 @@ public class Diagnostics
 
             JSONArray diagnosticHistory = new JSONArray();
 
-            for (PsiphonData.DiagnosticEntry item : PsiphonData.cloneDiagnosticHistory())
+            for (StatusList.DiagnosticEntry item : StatusList.cloneDiagnosticHistory())
             {
                 JSONObject entry = new JSONObject();
                 entry.put("timestamp!!timestamp", Utils.getISO8601String(item.timestamp()));
@@ -131,7 +129,7 @@ public class Diagnostics
 
             JSONArray statusHistory = new JSONArray();
 
-            for (StatusEntry internalEntry : PsiphonData.getPsiphonData().cloneStatusHistory())
+            for (StatusList.StatusEntry internalEntry : StatusList.cloneStatusHistory())
             {
                 // Don't send any sensitive logs or debug logs
                 if (internalEntry.sensitivity() == MyLog.Sensitivity.SENSITIVE_LOG
@@ -142,7 +140,7 @@ public class Diagnostics
 
                 JSONObject statusEntry = new JSONObject();
 
-                String idName = context.getResources().getResourceEntryName(internalEntry.id());
+                String idName = context.getResources().getResourceEntryName(internalEntry.stringId());
                 statusEntry.put("id", idName);
                 statusEntry.put("timestamp!!timestamp", Utils.getISO8601String(internalEntry.timestamp()));
                 statusEntry.put("priority", internalEntry.priority());
@@ -232,11 +230,7 @@ public class Diagnostics
                     EmbeddedValues.FEEDBACK_ENCRYPTION_PUBLIC_KEY);
             encryptedOkay = true;
         }
-        catch (GeneralSecurityException e)
-        {
-            MyLog.e(R.string.Diagnostics_EncryptedFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
-        }
-        catch (UnsupportedEncodingException e)
+        catch (GeneralSecurityException | UnsupportedEncodingException e)
         {
             MyLog.e(R.string.Diagnostics_EncryptedFailed, MyLog.Sensitivity.NOT_SENSITIVE, e);
         }
@@ -416,12 +410,7 @@ public class Diagnostics
             httpsConn.getInputStream();
             
             success = true;
-        }
-        catch (ProtocolException e)
-        {
-            MyLog.g("Diagnostic doFeedbackUpload failed: %s", e.getMessage());
-        }
-        catch (IOException e)
+        } catch (IOException e)
         {
             MyLog.g("Diagnostic doFeedbackUpload failed: %s", e.getMessage());
         }

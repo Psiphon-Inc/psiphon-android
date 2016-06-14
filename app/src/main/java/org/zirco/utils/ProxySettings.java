@@ -16,8 +16,9 @@ import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.psiphon3.psiphonlibrary.PsiphonData;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
+
+import net.grandcentrix.tray.AppPreferences;
 
 
 /**
@@ -165,6 +166,8 @@ public class ProxySettings
 	
 	public static void setLocalProxy(Context ctx)
 	{
-	    WebViewProxySettings.setLocalProxy(ctx, PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort());
+        final AppPreferences multiProcessPreferences = new AppPreferences(ctx);
+	    WebViewProxySettings.setLocalProxy(ctx,
+                multiProcessPreferences.getInt(ctx.getString(R.string.current_local_http_proxy_port), 0));
 	}
 }

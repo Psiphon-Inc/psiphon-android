@@ -132,7 +132,7 @@
   <string name="region_name_sg">سنغافورة</string>
   <string name="region_name_nl">هولندا</string>
   <string name="about">من نحن؟</string>
-  <string name="feedback">الردود </string>
+  <string name="feedback">رأيك </string>
   <string name="tunnel_whole_device_toggle">تمرير الجهاز بأكمله عبر النفق (يتطلب أندرويد 4.0+) </string>
   <string name="disable_timeouts">إبطال الانقطاعات للإتصالات البطيئة </string>
   <string name="region_selector">اختر المنطقة</string>
