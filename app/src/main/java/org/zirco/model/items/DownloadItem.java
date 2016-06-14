@@ -85,6 +85,10 @@ public class DownloadItem {
 		mNotificationManager = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
 		mNotificationBuilder = new NotificationCompat.Builder(mContext.getApplicationContext());
 	}
+
+	public Context getContext() {
+		return mContext;
+	}
 	
 	/**
 	 * Gets the download url.
