@@ -58,8 +58,6 @@ import org.zirco.utils.ApplicationUtils;
 import org.zirco.utils.Constants;
 import org.zirco.utils.UrlUtils;
 
-import com.psiphon3.psiphonlibrary.PsiphonData;
-
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -125,6 +123,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 import android.widget.SimpleCursorAdapter.CursorToStringConverter;
+
+import net.grandcentrix.tray.AppPreferences;
 
 /**
  * The application main activity.
@@ -437,7 +437,8 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         ActivityManager manager = (ActivityManager)getSystemService(ACTIVITY_SERVICE);
         for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
         {
-            if (this.mPsiphonServiceClassName.equals(service.service.getClassName()))
+            if (service.uid == android.os.Process.myUid() &&
+                    this.mPsiphonServiceClassName.equals(service.service.getClassName()))
             {
                 return true;
             }
@@ -2401,9 +2402,10 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
                     HttpParams params = new BasicHttpParams();
                     HttpConnectionParams.setConnectionTimeout(params, 5000);
                     HttpConnectionParams.setSoTimeout(params, 5000);
+                    final AppPreferences multiProcessPreferences = new AppPreferences(MainActivity.this);
                     HttpHost httpproxy = new HttpHost(
                             "localhost",
-                            PsiphonData.getPsiphonData().getListeningLocalHttpProxyPort());
+                            multiProcessPreferences.getInt(MainActivity.this.getString(R.string.current_local_http_proxy_port), 0));
                     params.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpproxy);
                     DefaultHttpClient client = new DefaultHttpClient(params);
                     HttpContext context = new BasicHttpContext();
