@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="SubscriptionPromptTitle">Compra suscripción libre de publicidad</string>
+    <string name="SubscriptionPromptMessage">Suscribete ahora para usar Psiphon Pro ilimitado, o puedes usar la versión de Psiphon Pro con publicidad, gratuitamente.\n\nEn modo con publicidad, estarás desconectado y se te mostrará un anuncio cada 60 minutos.\n\nGracias por apoyar Psiphon!</string>
+    <string name="SubscriptionPromptSubscribe">Suscríbete</string>
+    <string name="SubscriptionPromptAdSupported">Versión con publicidad</string>
+    <string name="RewardedVideoPrompt">¡Nuevo! Ver un video para ganar 100 minutos de Psiphon Pro sin interrupciones.</string>
+    <string name="WatchRewardedVideoButtonText">Ver video</string>
+    <string name="FreeTrialRemainingTime">Prueba gratuita: %s</string>
+</resources>

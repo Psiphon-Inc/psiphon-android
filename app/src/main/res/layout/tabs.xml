@@ -40,37 +40,83 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent" >
 
-            <LinearLayout
+            <ScrollView
                 android:id="@+id/statusLayout"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
-                android:layout_gravity="center"
-                android:gravity="center"
-                android:orientation="vertical" >
+                android:orientation="vertical"
+                android:scrollbarAlwaysDrawVerticalTrack="false" >
 
-                <ImageButton
-                    android:id="@+id/statusViewImage"
-                    android:layout_width="wrap_content"
-                    android:layout_height="150dp"
-                    android:layout_gravity="center"
-                    android:background="@android:color/transparent"
-                    android:padding="20dp"
-                    android:scaleType="fitCenter" />
-
-                <TextView
-                    android:id="@+id/versionline"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="" />
+                    android:padding="10dp"
+                    android:orientation="vertical" >
 
-                <TextView
-                    android:id="@+id/lastlogline"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="" />
-            </LinearLayout>
+                    <TextView
+                        android:id="@+id/subscriptionPromptMessage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:text="@string/SubscriptionPromptMessage" />
+
+                    <Button
+                        android:id="@+id/subscribeButton"
+                        android:onClick="onSubscribeButtonClick"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_margin="10dp"
+                        android:padding="10dp"
+                        android:text="@string/SubscriptionPromptTitle"
+                        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+                    <Button
+                        android:id="@+id/watchRewardedVideoButton"
+                        android:onClick="onWatchRewardedVideoButtonClick"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_margin="10dp"
+                        android:padding="10dp"
+                        android:text="@string/RewardedVideoPrompt"
+                        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+                    <TextView
+                        android:id="@+id/timeRemaining"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:padding="10dp"
+                        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                    <ImageButton
+                        android:id="@+id/statusViewImage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="150dp"
+                        android:layout_gravity="center"
+                        android:background="@android:color/transparent"
+                        android:padding="20dp"
+                        android:scaleType="fitCenter" />
+
+                    <TextView
+                        android:id="@+id/versionline"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="" />
+
+                    <TextView
+                        android:id="@+id/lastlogline"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="" />
+
+                </LinearLayout>
+            </ScrollView>
 
             <RelativeLayout
                 android:id="@+id/sponsorLayout"

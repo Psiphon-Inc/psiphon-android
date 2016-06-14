@@ -68,6 +68,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TabHost.TabSpec;
@@ -75,9 +76,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
-import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.SharedPreferencesImport;
@@ -172,7 +173,7 @@ public abstract class MainBase {
         private StatusListViewManager m_statusListManager = null;
         private AppPreferences m_multiProcessPreferences;
         private ViewFlipper m_sponsorViewFlipper;
-        private LinearLayout m_statusLayout;
+        private ScrollView m_statusLayout;
         private TextView m_statusTabLogLine;
         private TextView m_statusTabVersionLine;
         private SponsorHomePage m_sponsorHomePage;
@@ -195,6 +196,8 @@ public abstract class MainBase {
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
         private LoggingObserver m_loggingObserver;
+        private boolean m_serviceStateUIPaused = false;
+        private boolean m_localProxySettingsHaveBeenReset = false;
 
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
@@ -457,7 +460,7 @@ public abstract class MainBase {
             };
 
             m_tabHost.setOnTouchListener(onTouchListener);
-            m_statusLayout = (LinearLayout) findViewById(R.id.statusLayout);
+            m_statusLayout = (ScrollView) findViewById(R.id.statusLayout);
             m_statusViewImage = (ImageButton) findViewById(R.id.statusViewImage);
             m_statusViewImage.setOnTouchListener(onTouchListener);
             findViewById(R.id.sponsorViewFlipper).setOnTouchListener(onTouchListener);
@@ -612,6 +615,8 @@ public abstract class MainBase {
         @Override
         protected void onResume() {
             super.onResume();
+            
+            m_localProxySettingsHaveBeenReset = false;
 
             // Load new logs from the logging provider now
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -710,6 +715,9 @@ public abstract class MainBase {
                 });
             }
         }
+
+        public abstract void onSubscribeButtonClick(View v);
+        public abstract void onWatchRewardedVideoButtonClick(View v);
 
         protected abstract void startUp();
 
@@ -920,14 +928,30 @@ public abstract class MainBase {
         }
 
         private void updateServiceStateUI() {
+            if (m_serviceStateUIPaused) {
+                return;
+            }
+            
             if (!m_boundToTunnelService && !m_boundToTunnelVpnService) {
                 setStatusState(R.drawable.status_icon_disconnected);
                 if (!isServiceRunning()) {
                     m_toggleButton.setText(getText(R.string.start));
                     enableToggleServiceUI();
+                    updateSubscriptionAndAdOptions(true);
+                
+                    if (!m_localProxySettingsHaveBeenReset) {
+                        WebViewProxySettings.resetLocalProxy(this);
+                        m_localProxySettingsHaveBeenReset = true;
+                    }
                 } else {
                     m_toggleButton.setText(getText(R.string.waiting));
                     disableToggleServiceUI();
+                    updateSubscriptionAndAdOptions(false);
+                
+                    if (!m_localProxySettingsHaveBeenReset) {
+                        WebViewProxySettings.resetLocalProxy(this);
+                        m_localProxySettingsHaveBeenReset = true;
+                    }
                 }
             } else {
                 if (isTunnelConnected()) {
@@ -937,14 +961,18 @@ public abstract class MainBase {
                 }
                 m_toggleButton.setText(getText(R.string.stop));
                 enableToggleServiceUI();
+                updateSubscriptionAndAdOptions(false);
+                m_localProxySettingsHaveBeenReset = false;
             }
         }
-        
+
+        protected abstract void updateSubscriptionAndAdOptions(boolean show);
+
         protected void enableToggleServiceUI() {
             m_toggleButton.setEnabled(true);
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
             m_disableTimeoutsToggle.setEnabled(true);
-            m_regionSelector.setEnabled(true);
+            m_regionSelector.setEnabled(Utils.getHasValidSubscription(this));
             m_moreOptionsButton.setEnabled(true);
         }
 
@@ -954,6 +982,16 @@ public abstract class MainBase {
             m_disableTimeoutsToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
             m_moreOptionsButton.setEnabled(false);
+        }
+        
+        protected void pauseServiceStateUI() {
+            m_serviceStateUIPaused = true;
+            disableToggleServiceUI();
+        }
+        
+        protected void resumeServiceStateUI() {
+            m_serviceStateUIPaused = false;
+            updateServiceStateUI();
         }
 
         private void checkRestartTunnel() {
@@ -1565,6 +1603,7 @@ public abstract class MainBase {
             }
 
             public void load(String url) {
+                m_localProxySettingsHaveBeenReset = false;
                 WebViewProxySettings.setLocalProxy(mWebView.getContext(), getListeningLocalHttpProxyPort());
                 mProgressBar.setVisibility(View.VISIBLE);
                 mWebView.loadUrl(url);
