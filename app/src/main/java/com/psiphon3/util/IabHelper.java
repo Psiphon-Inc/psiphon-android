@@ -264,7 +264,8 @@ public class IabHelper {
 
         Intent serviceIntent = new Intent("com.android.vending.billing.InAppBillingService.BIND");
         serviceIntent.setPackage("com.android.vending");
-        if (!mContext.getPackageManager().queryIntentServices(serviceIntent, 0).isEmpty()) {
+        List billingServices = mContext.getPackageManager().queryIntentServices(serviceIntent, 0);
+        if (billingServices != null && !billingServices.isEmpty()) {
             // service available to handle that Intent
             mContext.bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
         }
@@ -849,6 +850,10 @@ public class IabHelper {
         logDebug("Package name: " + mContext.getPackageName());
         boolean verificationFailed = false;
         String continueToken = null;
+
+        if (mService == null) {
+            return IABHELPER_UNKNOWN_ERROR;
+        }
 
         do {
             logDebug("Calling getPurchases with continuation token: " + continueToken);
