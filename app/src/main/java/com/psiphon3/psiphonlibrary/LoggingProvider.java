@@ -405,9 +405,12 @@ public class LoggingProvider extends ContentProvider {
 
             // retrieve status logs  (COLUMN_NAME_IS_DIAGNOSTIC == false)
             String whereClause = "NOT(" + COLUMN_NAME_IS_DIAGNOSTIC + ") ";
+            String[] whereArgs = null;
+
             StatusList.StatusEntry lastEntry = StatusList.getStatusEntry(-1);
             if (lastEntry != null) {
-                whereClause += " AND " + COLUMN_NAME_ID + " > " + lastEntry.key();
+                whereClause += " AND " + COLUMN_NAME_ID + " >?";
+                whereArgs = new String[]{String.valueOf(lastEntry.key())};
             }
 
             String sortOrder = COLUMN_NAME_ID + " ASC";
@@ -415,7 +418,8 @@ public class LoggingProvider extends ContentProvider {
             Cursor cursor = db.query(
                     TABLE_NAME,
                     projection,
-                    whereClause, null,
+                    whereClause,
+                    whereArgs,
                     null, null,
                     sortOrder);
 
@@ -482,9 +486,11 @@ public class LoggingProvider extends ContentProvider {
 
             // retrieve diagnostic logs  (COLUMN_NAME_IS_DIAGNOSTIC == true)
             whereClause = COLUMN_NAME_IS_DIAGNOSTIC;
+            whereArgs = null;
             StatusList.DiagnosticEntry lastDiagnosticEntry = StatusList.getDiagnosticEntry(-1);
             if (lastDiagnosticEntry != null) {
-                whereClause += " AND " + COLUMN_NAME_ID + " > " + lastDiagnosticEntry.key();
+                whereClause += " AND " + COLUMN_NAME_ID + " >?";
+                whereArgs = new String[]{String.valueOf(lastDiagnosticEntry.key())};
             }
 
             sortOrder = COLUMN_NAME_ID + " ASC";
@@ -492,7 +498,8 @@ public class LoggingProvider extends ContentProvider {
             cursor = db.query(
                     TABLE_NAME,
                     projection,
-                    whereClause, null,
+                    whereClause,
+                    whereArgs,
                     null, null,
                     sortOrder);
 
