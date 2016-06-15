@@ -498,6 +498,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     private Runnable checkFreeTrial = new Runnable() {
         @Override
         public void run() {
+            // Now it could be possible to subscribe while tunneled. Stop the timer if
+            // the user is now subscribed.
+            if (Utils.getHasValidSubscription(m_parentService)) {
+                return;
+            }
+
             long timeSinceLastCheckMillis = SystemClock.elapsedRealtime() - lastChecktimeMillis;
             FreeTrialTimer.getFreeTrialTimerCachingWrapper().addTimeSyncSeconds(m_parentService, (long) -Math.floor(timeSinceLastCheckMillis/1000));
             if (FreeTrialTimer.getFreeTrialTimerCachingWrapper().getRemainingTimeSeconds(m_parentService) > 0) {
