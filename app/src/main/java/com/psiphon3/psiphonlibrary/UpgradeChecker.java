@@ -113,7 +113,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         values.put(LoggingProvider.LogDatabaseHelper.COLUMN_NAME_IS_DIAGNOSTIC, false);
 
         context.getContentResolver().insert(
-                LoggingProvider.getInsertUri(context),
+                LoggingProvider.INSERT_URI,
                 values
         );
     }

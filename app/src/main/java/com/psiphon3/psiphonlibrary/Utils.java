@@ -364,7 +364,7 @@ public class Utils
                 values.put(LoggingProvider.LogDatabaseHelper.COLUMN_NAME_IS_DIAGNOSTIC, true);
 
                 logger.get().getContext().getContentResolver().insert(
-                        LoggingProvider.getInsertUri(logger.get().getContext()),
+                        LoggingProvider.INSERT_URI,
                         values);
             }
 
@@ -470,7 +470,7 @@ public class Utils
                 values.put(LoggingProvider.LogDatabaseHelper.COLUMN_NAME_IS_DIAGNOSTIC, false);
 
                 logger.get().getContext().getContentResolver().insert(
-                        LoggingProvider.getInsertUri(logger.get().getContext()),
+                        LoggingProvider.INSERT_URI,
                         values);
             }
 

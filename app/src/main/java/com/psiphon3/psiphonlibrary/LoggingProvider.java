@@ -34,6 +34,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.BuildConfig;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -48,9 +49,7 @@ import java.util.Locale;
  * All logging is done directly to the LoggingProvider from all processes.
  */
 public class LoggingProvider extends ContentProvider {
-    public static final Uri getInsertUri(Context context){
-        return Uri.parse("content://"+ context.getPackageName() + "." + LoggingProvider.class.getSimpleName() +"/");
-    }
+    public static final Uri INSERT_URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + "." + LoggingProvider.class.getSimpleName());
 
     /**
      * JSON-ify the arguments to be used in a call to the LoggingProvider content provider.
@@ -290,7 +289,7 @@ public class LoggingProvider extends ContentProvider {
             db.setTransactionSuccessful();
             db.endTransaction();
 
-            context.getContentResolver().notifyChange(getInsertUri(context), null);
+            context.getContentResolver().notifyChange(INSERT_URI, null);
         }
 
         /**
@@ -406,11 +405,9 @@ public class LoggingProvider extends ContentProvider {
 
             // retrieve status logs  (COLUMN_NAME_IS_DIAGNOSTIC == false)
             String whereClause = "NOT(" + COLUMN_NAME_IS_DIAGNOSTIC + ") ";
-            String[] whereArgs = null;
             StatusList.StatusEntry lastEntry = StatusList.getStatusEntry(-1);
             if (lastEntry != null) {
-                whereClause += " AND " + COLUMN_NAME_ID + " >?";
-                whereArgs = new String[]{String.valueOf(lastEntry.key())};
+                whereClause += " AND " + COLUMN_NAME_ID + " > " + lastEntry.key();
             }
 
             String sortOrder = COLUMN_NAME_ID + " ASC";
@@ -418,8 +415,7 @@ public class LoggingProvider extends ContentProvider {
             Cursor cursor = db.query(
                     TABLE_NAME,
                     projection,
-                    whereClause,
-                    whereArgs,
+                    whereClause, null,
                     null, null,
                     sortOrder);
 
