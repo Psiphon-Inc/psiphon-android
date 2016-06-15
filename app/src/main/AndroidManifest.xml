@@ -59,7 +59,7 @@
 
         <provider
             android:name="com.psiphon3.psiphonlibrary.LoggingProvider"
-            android:authorities="com.psiphon3.psiphonlibrary.PsiphonSubscriptionLoggingProvider"
+            android:authorities="com.psiphon3.subscription.LoggingProvider"
             android:exported="false">
         </provider>
 
