@@ -615,13 +615,13 @@ public abstract class MainBase {
 
             // Load new logs from the logging provider now
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                m_loggingObserver.dispatchChange(false, LoggingProvider.INSERT_URI);
+                m_loggingObserver.dispatchChange(false, LoggingProvider.getInsertUri(this));
             } else {
                 m_loggingObserver.dispatchChange(false);
             }
 
             // Load new logs from the logging provider when it changes
-            getContentResolver().registerContentObserver(LoggingProvider.INSERT_URI, true, m_loggingObserver);
+            getContentResolver().registerContentObserver(LoggingProvider.getInsertUri(this), true, m_loggingObserver);
 
             // From: http://steve.odyfamily.com/?p=12
             m_updateStatisticsUITimer = new Timer();

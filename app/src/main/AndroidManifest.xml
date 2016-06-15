@@ -55,7 +55,7 @@
 
         <provider
             android:name=".psiphonlibrary.LoggingProvider"
-            android:authorities="com.psiphon3.psiphonlibrary.LoggingProvider"
+            android:authorities="com.psiphon3.LoggingProvider"
             android:exported="false">
         </provider>
 
