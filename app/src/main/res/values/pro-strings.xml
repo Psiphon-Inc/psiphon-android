@@ -1,11 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- The name of the app. "Pro" is intended to indicate that this version of
+         Psiphon has additional features and is not totally free; it's supported
+         by ads or suscription. -->
     <string name="app_name_psiphon_pro">Psiphon Pro</string>
+
+    <!-- Text for a button that users can click to get a trial subscription. -->
     <string name="SubscriptionPromptTitle">Purchase ad-free subscription\nNEW! 7 day free trial</string>
+
+    <!-- Descriptive text telling the user how they can use Psiphon Pro: either
+         by subscribing or by having ads in the app. -->
     <string name="SubscriptionPromptMessage">Subscribe now for unlimited ad-free use of Psiphon Pro.\n\nOr press Start to try ad-supported Psiphon Pro for free for 60 minutes.\n\nThank you for supporting Psiphon!</string>
-    <string name="SubscriptionPromptSubscribe">Subscribe</string>
-    <string name="SubscriptionPromptAdSupported">Ad-Supported</string>
+
+    <!-- Prompt text telling the user that can continue to use Psiphon by watching
+         a video ad. (This is an alternative to subscribing.) -->
     <string name="RewardedVideoPrompt">NEW! Watch a video to earn 100 minutes of uninterrupted Psiphon Pro.</string>
-    <string name="WatchRewardedVideoButtonText">Play Video</string>
+
+    <!-- Text indicating to the user how much time they have left in their free trial. -->
     <string name="FreeTrialRemainingTime">Free trial: %s</string>
 </resources>
