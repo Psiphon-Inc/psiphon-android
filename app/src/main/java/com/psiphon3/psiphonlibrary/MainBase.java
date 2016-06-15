@@ -783,6 +783,12 @@ public abstract class MainBase {
                 return;
             }
 
+            if (!Utils.getHasValidSubscription(this)) {
+                m_regionSelector.setSelection(m_regionAdapter.getPositionForRegionCode(PsiphonConstants.REGION_CODE_ANY));
+                onSubscribeButtonClick(null);
+                return;
+            }
+
             String selectedRegionCode = m_regionAdapter.getSelectedRegionCode(position);
 
             String egressRegionPreference = m_multiProcessPreferences.getString(EGRESS_REGION_PREFERENCE,
@@ -972,7 +978,7 @@ public abstract class MainBase {
             m_toggleButton.setEnabled(true);
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
             m_disableTimeoutsToggle.setEnabled(true);
-            m_regionSelector.setEnabled(Utils.getHasValidSubscription(this));
+            m_regionSelector.setEnabled(true);
             m_moreOptionsButton.setEnabled(true);
         }
 
