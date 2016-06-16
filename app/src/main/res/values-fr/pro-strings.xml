@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="SubscriptionPromptTitle">Achetez un abonnement sans publicités</string>
-    <string name="SubscriptionPromptMessage">Abonnez-vous dès à présent pour bénéficier d\'un accès illimité et sans publicités à Psiphon Pro. Vous pouvez également utiliser gratuitement la version de Psiphon Pro avec des publicités.\n\nDans cette dernière, vous serez déconnecté et verrez une publicité s\'afficher toutes les 60 secondes.\n\nMerci de soutenir Psiphon !</string>
-    <string name="SubscriptionPromptSubscribe">S\'inscrire</string>
-    <string name="SubscriptionPromptAdSupported">Version avec publicités</string>
+    <string name="app_name_psiphon_pro">Psiphon Pro</string>
+    <string name="SubscriptionPromptTitle">Achetez un abonnement sans publicité\nNOUVEAU ! Essai gratuit de 7 jours</string>
+    <string name="SubscriptionPromptMessage">Abonnez-vous maintenant pour profiter de Psiphon Pro sans publicité.\n\nOu encore appuyez sur Démarrer pour essayer gratuitement pendant 60 minutes la version financée par de la publicité de Psiphon Pro.\n\n Merci de soutenir Psiphon Pro !</string>
+    <string name="RewardedVideoPrompt">NOUVEAU ! Regardez une vidéo pour gagner 100 minutes de Psiphon Pro sans interruption.</string>
+    <string name="FreeTrialRemainingTime">Essai gratuit : %s</string>
 </resources>
