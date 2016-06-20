@@ -173,6 +173,11 @@
             android:name="com.applovin.adview.AppLovinInterstitialActivity"/>
         <activity
             android:name="com.applovin.adview.AppLovinConfirmationActivity"/>
+
+        <activity
+            android:name="com.vungle.publisher.FullScreenAdActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
     </application>
 
 </manifest>
