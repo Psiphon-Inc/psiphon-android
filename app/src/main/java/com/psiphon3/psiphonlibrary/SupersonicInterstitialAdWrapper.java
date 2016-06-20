@@ -19,7 +19,7 @@ public class SupersonicInterstitialAdWrapper implements InterstitialListener {
     private Supersonic mMediationAgent;
     private WeakReference<Activity> mWeakActivity;
     private boolean mInterstitialReady = false;
-    private AdListener mAdListener = null;
+    private WrapperAdListener mWrapperAdListener = null;
 
     private AsyncTask mGAIDRequestTask;
 
@@ -32,8 +32,8 @@ public class SupersonicInterstitialAdWrapper implements InterstitialListener {
         mMediationAgent.setInterstitialListener(this);
     }
 
-    public void setAdListener(AdListener adListener) {
-        mAdListener = adListener;
+    public void setAdListener(WrapperAdListener listener) {
+        mWrapperAdListener = listener;
     }
 
     private void initializeAndLoadInterstitial() {
@@ -88,22 +88,22 @@ public class SupersonicInterstitialAdWrapper implements InterstitialListener {
 
     @Override
     public void onInterstitialOpen() {
-        if(mAdListener != null) {
-            mAdListener.onOpen();
+        if(mWrapperAdListener != null) {
+            mWrapperAdListener.onOpen();
         }
     }
 
     @Override
     public void onInterstitialClose() {
-        if(mAdListener != null) {
-            mAdListener.onClose();
+        if(mWrapperAdListener != null) {
+            mWrapperAdListener.onClose();
         }
     }
 
     @Override
     public void onInterstitialShowSuccess() {
-        if(mAdListener != null) {
-            mAdListener.onShowSuccess();
+        if(mWrapperAdListener != null) {
+            mWrapperAdListener.onShowSuccess();
         }
     }
 
@@ -114,8 +114,8 @@ public class SupersonicInterstitialAdWrapper implements InterstitialListener {
 
     @Override
     public void onInterstitialClick() {
-        if(mAdListener != null) {
-            mAdListener.onClick();
+        if(mWrapperAdListener != null) {
+            mWrapperAdListener.onClick();
         }
     }
 
@@ -171,7 +171,7 @@ public class SupersonicInterstitialAdWrapper implements InterstitialListener {
         mWeakActivity.clear();
     }
 
-    public interface AdListener {
+    public interface WrapperAdListener {
         void onClick();
         void onClose();
         void onOpen();
