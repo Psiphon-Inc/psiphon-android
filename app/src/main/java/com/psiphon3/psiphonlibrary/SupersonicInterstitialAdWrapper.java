@@ -15,12 +15,11 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 
 public class SupersonicInterstitialAdWrapper implements InterstitialListener {
-
-
     private boolean mIsInitialized = false;
     private Supersonic mMediationAgent;
     private WeakReference<Activity> mWeakActivity;
     private boolean mInterstitialReady = false;
+    private AdListener mAdListener = null;
 
     private AsyncTask mGAIDRequestTask;
 
@@ -33,7 +32,11 @@ public class SupersonicInterstitialAdWrapper implements InterstitialListener {
         mMediationAgent.setInterstitialListener(this);
     }
 
-    public void initializeAndLoadInterstitial() {
+    public void setAdListener(AdListener adListener) {
+        mAdListener = adListener;
+    }
+
+    private void initializeAndLoadInterstitial() {
         if(mIsInitialized) {
             return;
         }
@@ -85,17 +88,23 @@ public class SupersonicInterstitialAdWrapper implements InterstitialListener {
 
     @Override
     public void onInterstitialOpen() {
-
+        if(mAdListener != null) {
+            mAdListener.onOpen();
+        }
     }
 
     @Override
     public void onInterstitialClose() {
-
+        if(mAdListener != null) {
+            mAdListener.onClose();
+        }
     }
 
     @Override
     public void onInterstitialShowSuccess() {
-
+        if(mAdListener != null) {
+            mAdListener.onShowSuccess();
+        }
     }
 
     @Override
@@ -105,7 +114,9 @@ public class SupersonicInterstitialAdWrapper implements InterstitialListener {
 
     @Override
     public void onInterstitialClick() {
-
+        if(mAdListener != null) {
+            mAdListener.onClick();
+        }
     }
 
     private final class UserIdRequestTask extends AsyncTask<Void, Void, String> {
@@ -158,5 +169,12 @@ public class SupersonicInterstitialAdWrapper implements InterstitialListener {
             mGAIDRequestTask = null;
         }
         mWeakActivity.clear();
+    }
+
+    public interface AdListener {
+        void onClick();
+        void onClose();
+        void onOpen();
+        void onShowSuccess();
     }
 }
