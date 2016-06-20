@@ -23,7 +23,6 @@ import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -35,6 +34,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.BuildConfig;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -49,7 +49,7 @@ import java.util.Locale;
  * All logging is done directly to the LoggingProvider from all processes.
  */
 public class LoggingProvider extends ContentProvider {
-    public static final Uri INSERT_URI = Uri.parse("content://"+LoggingProvider.class.getCanonicalName()+"/");
+    public static final Uri INSERT_URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + "." + LoggingProvider.class.getSimpleName());
 
     /**
      * JSON-ify the arguments to be used in a call to the LoggingProvider content provider.
@@ -405,9 +405,12 @@ public class LoggingProvider extends ContentProvider {
 
             // retrieve status logs  (COLUMN_NAME_IS_DIAGNOSTIC == false)
             String whereClause = "NOT(" + COLUMN_NAME_IS_DIAGNOSTIC + ") ";
+            String[] whereArgs = null;
+
             StatusList.StatusEntry lastEntry = StatusList.getStatusEntry(-1);
             if (lastEntry != null) {
-                whereClause += " AND " + COLUMN_NAME_ID + " > " + lastEntry.key();
+                whereClause += " AND " + COLUMN_NAME_ID + " >?";
+                whereArgs = new String[]{String.valueOf(lastEntry.key())};
             }
 
             String sortOrder = COLUMN_NAME_ID + " ASC";
@@ -415,7 +418,8 @@ public class LoggingProvider extends ContentProvider {
             Cursor cursor = db.query(
                     TABLE_NAME,
                     projection,
-                    whereClause, null,
+                    whereClause,
+                    whereArgs,
                     null, null,
                     sortOrder);
 
@@ -482,9 +486,11 @@ public class LoggingProvider extends ContentProvider {
 
             // retrieve diagnostic logs  (COLUMN_NAME_IS_DIAGNOSTIC == true)
             whereClause = COLUMN_NAME_IS_DIAGNOSTIC;
+            whereArgs = null;
             StatusList.DiagnosticEntry lastDiagnosticEntry = StatusList.getDiagnosticEntry(-1);
             if (lastDiagnosticEntry != null) {
-                whereClause += " AND " + COLUMN_NAME_ID + " > " + lastDiagnosticEntry.key();
+                whereClause += " AND " + COLUMN_NAME_ID + " >?";
+                whereArgs = new String[]{String.valueOf(lastDiagnosticEntry.key())};
             }
 
             sortOrder = COLUMN_NAME_ID + " ASC";
@@ -492,7 +498,8 @@ public class LoggingProvider extends ContentProvider {
             cursor = db.query(
                     TABLE_NAME,
                     projection,
-                    whereClause, null,
+                    whereClause,
+                    whereArgs,
                     null, null,
                     sortOrder);
 
