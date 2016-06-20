@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="SubscriptionPromptTitle">إشتري نسخة خالية من الإعلانات</string>
-    <string name="SubscriptionPromptMessage">لديكم خيارين لإستعمال سايفون برو:\n\n١- خيار إشتراك مدفوع من دون الإعلانات\n٢-خيار مجاني مع إعلانات\n\nشكرا لإستخدامكم سايفون!</string>
-    <string name="SubscriptionPromptSubscribe">إشتراك</string>
-    <string name="SubscriptionPromptAdSupported">مجاني</string>
+    <string name="app_name_psiphon_pro">سايفون برو </string>
+    <string name="SubscriptionPromptTitle">إشتري نسخة خالية من الإعلانات \n جديد! تجربة مجانية ل 7 أيام</string>
+    <string name="SubscriptionPromptMessage">إشترك الآن لتحصل على نسخة خالية من الإعلانات من سايفون برو \n\n أو إضغط على \"إبدأ\" لإستعمال سايفون برو مجانا لستون 60 دقيقة  بعد مشاهدتك إعلان \n\n شكرا لإستعمالكم سايفون!</string>
     <string name="RewardedVideoPrompt">جديد! شاهد فيديو لتحصل على ١٠٠ دقيقة من سايفون برو خالية من الإعلانات.</string>
-    <string name="WatchRewardedVideoButtonText">شاهد الفيديو</string>
     <string name="FreeTrialRemainingTime">تجربة مجانية: %s</string>
 </resources>
