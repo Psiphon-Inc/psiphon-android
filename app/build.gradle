@@ -35,6 +35,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -84,5 +88,5 @@ dependencies {
     compile project(':mopub-sdk')
     compile 'com.google.android.gms:play-services:9.0.2'
     compile 'com.google.android.gms:play-services-safetynet:9.0.2'
-    compile 'com.supersonic.sdk:mediationsdk:6.4.3@jar'
+    compile 'com.supersonic.sdk:mediationsdk:6.4.7@jar'
 }
