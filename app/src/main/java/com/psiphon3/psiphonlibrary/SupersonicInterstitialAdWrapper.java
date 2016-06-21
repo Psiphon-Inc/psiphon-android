@@ -13,9 +13,11 @@ import com.supersonic.mediationsdk.sdk.SupersonicFactory;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SupersonicInterstitialAdWrapper implements InterstitialListener {
-    private boolean mIsInitialized = false;
+
     private Supersonic mMediationAgent;
     private WeakReference<Activity> mWeakActivity;
     private boolean mInterstitialReady = false;
@@ -23,29 +25,20 @@ public class SupersonicInterstitialAdWrapper implements InterstitialListener {
 
     private AsyncTask mGAIDRequestTask;
 
+    private boolean mInitInFlight;
+
     //Set the Application Key - can be retrieved from Supersonic platform
-    private final String mAppKey = "49a64b4d";
+    private final String mAppKey = "49a684d5";
 
     public SupersonicInterstitialAdWrapper(Activity activity) {
         mWeakActivity = new WeakReference<>(activity);
         mMediationAgent = SupersonicFactory.getInstance();
         mMediationAgent.setInterstitialListener(this);
+        mInitInFlight = false;
     }
 
     public void setAdListener(WrapperAdListener listener) {
         mWrapperAdListener = listener;
-    }
-
-    private void initializeAndLoadInterstitial() {
-        if(mIsInitialized) {
-            return;
-        }
-        mIsInitialized = true;
-
-        if (mGAIDRequestTask != null && !mGAIDRequestTask.isCancelled()) {
-            mGAIDRequestTask.cancel(false);
-        }
-        mGAIDRequestTask = new UserIdRequestTask().execute();
     }
 
     public void showInterstitial() {
@@ -54,11 +47,23 @@ public class SupersonicInterstitialAdWrapper implements InterstitialListener {
         }
     }
 
-    public void loadInterstitial() {
-        if (mIsInitialized) {
-            mMediationAgent.loadInterstitial();
-        } else {
-            initializeAndLoadInterstitial();
+    public synchronized void loadInterstitial() {
+        if(mInitInFlight) {
+            // onInterstitialInitSuccess will call loadInterstitial when init is done
+            // do nothing
+            return;
+        }
+        else {
+            if (isSupersonicObjectInitialized()) {
+                mMediationAgent.loadInterstitial();
+            } else {
+                mInitInFlight = true;
+
+                if (mGAIDRequestTask != null && !mGAIDRequestTask.isCancelled()) {
+                    mGAIDRequestTask.cancel(false);
+                }
+                mGAIDRequestTask = new UserIdRequestTask().execute();
+            }
         }
     }
 
@@ -68,29 +73,36 @@ public class SupersonicInterstitialAdWrapper implements InterstitialListener {
 
     @Override
     public void onInterstitialInitSuccess() {
-
+        mMediationAgent.loadInterstitial();
+        mInitInFlight = false;
     }
 
     @Override
     public void onInterstitialInitFailed(SupersonicError supersonicError) {
-
+        mInitInFlight = false;
+        if(mWrapperAdListener != null) {
+            mWrapperAdListener.onFailed(supersonicError);
+        }
     }
 
     @Override
     public void onInterstitialReady() {
         mInterstitialReady = true;
+        if(mWrapperAdListener != null) {
+            mWrapperAdListener.onReady();
+        }
     }
 
     @Override
     public void onInterstitialLoadFailed(SupersonicError supersonicError) {
-
+        if(mWrapperAdListener != null) {
+            mWrapperAdListener.onFailed(supersonicError);
+        }
     }
 
     @Override
     public void onInterstitialOpen() {
-        if(mWrapperAdListener != null) {
-            mWrapperAdListener.onOpen();
-        }
+
     }
 
     @Override
@@ -114,9 +126,6 @@ public class SupersonicInterstitialAdWrapper implements InterstitialListener {
 
     @Override
     public void onInterstitialClick() {
-        if(mWrapperAdListener != null) {
-            mWrapperAdListener.onClick();
-        }
     }
 
     private final class UserIdRequestTask extends AsyncTask<Void, Void, String> {
@@ -140,8 +149,6 @@ public class SupersonicInterstitialAdWrapper implements InterstitialListener {
                 Activity activity = mWeakActivity.get();
                 if (activity != null) {
                     mMediationAgent.initInterstitial(activity, mAppKey, GAID);
-                    mMediationAgent.loadInterstitial();
-                    mInterstitialReady = mMediationAgent.isInterstitialReady();
                 }
             }
         }
@@ -172,9 +179,22 @@ public class SupersonicInterstitialAdWrapper implements InterstitialListener {
     }
 
     public interface WrapperAdListener {
-        void onClick();
-        void onClose();
-        void onOpen();
+        void onFailed(SupersonicError supersonicError);
         void onShowSuccess();
+        void onClose();
+        void onReady();
+    }
+
+    private boolean isSupersonicObjectInitialized() {
+        try {
+            Field f = mMediationAgent.getClass().getDeclaredField("mAtomicBaseInit");
+            f.setAccessible(true);
+            AtomicBoolean mAtomicBaseInit = (AtomicBoolean) f.get(mMediationAgent);
+            return mAtomicBaseInit.get();
+        } catch (NoSuchFieldException e) {
+            return false;
+        } catch (IllegalAccessException e) {
+            return false;
+        }
     }
 }

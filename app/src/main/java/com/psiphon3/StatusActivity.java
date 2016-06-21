@@ -30,6 +30,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
@@ -46,9 +47,12 @@ import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.SupersonicInterstitialAdWrapper;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
+import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
+import com.supersonic.mediationsdk.logger.SupersonicError;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
@@ -62,6 +66,7 @@ public class StatusActivity
     extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
 {
     public static final String BANNER_FILE_NAME = "bannerImage";
+    private static final int UNTUNNELED_AD_COUNTDOWN_SECONDS = 10;
 
     private ImageView m_banner;
     private ImageButton m_statusImage;
@@ -75,6 +80,33 @@ public class StatusActivity
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
     private boolean m_temporarilyDisableInterstitial = false;
+    private SupersonicInterstitialAdWrapper m_SupersonicInterstitialAdWrapper;
+    int m_SupersonicCountdown = 0;
+
+    final Handler delayHandler = new Handler();
+
+    final Runnable countdownRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (m_SupersonicCountdown > 0) {
+                if (m_toggleButton != null) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            m_toggleButton.setText(String.valueOf(m_SupersonicCountdown));
+                        }
+                    });
+                }
+                m_SupersonicCountdown--;
+                delayHandler.postDelayed(this, 1000);
+            }
+            else {
+                resumeServiceStateUI();
+                doStartUp();
+            }
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -143,12 +175,18 @@ public class StatusActivity
     @Override
     public void onPause()
     {
+        if(m_SupersonicInterstitialAdWrapper != null) {
+            m_SupersonicInterstitialAdWrapper.onPause();
+        }
         super.onPause();
     }
     
     @Override
     public void onResume() {
         super.onResume();
+        if(m_SupersonicInterstitialAdWrapper != null) {
+            m_SupersonicInterstitialAdWrapper.onResume();
+        }
     }
 
     @Override
@@ -161,6 +199,11 @@ public class StatusActivity
     public void onDestroy()
     {
         deInitAds();
+
+        delayHandler.removeCallbacks(countdownRunnable);
+        if(m_SupersonicInterstitialAdWrapper != null) {
+            m_SupersonicInterstitialAdWrapper.onDestroy();
+        }
         super.onDestroy();
     }
     
@@ -492,7 +535,16 @@ public class StatusActivity
     }
 
     @Override
-    protected void startUp()
+    protected void startUp() {
+        if(getShowAds() || true) {
+            showSuperSonicInterstitialAd();
+        } else {
+            doStartUp();
+        }
+
+    }
+
+    private void doStartUp()
     {
         // If the user hasn't set a whole-device-tunnel preference, show a prompt
         // (and delay starting the tunnel service until the prompt is completed)
@@ -637,5 +689,53 @@ public class StatusActivity
         {
             // Thrown by startActivity; in this case, we ignore and the URI isn't opened
         }
+    }
+
+    private void showSuperSonicInterstitialAd() {
+        // TODO: split load and show, try to load untunnelled ad as early as posible
+
+        m_SupersonicCountdown = UNTUNNELED_AD_COUNTDOWN_SECONDS;
+        pauseServiceStateUI();
+        delayHandler.post(countdownRunnable);
+
+        if(m_SupersonicInterstitialAdWrapper == null) {
+            m_SupersonicInterstitialAdWrapper  = new SupersonicInterstitialAdWrapper(this);
+            m_SupersonicInterstitialAdWrapper.setAdListener(new SupersonicInterstitialAdWrapper.WrapperAdListener() {
+                @Override
+                public void onFailed(SupersonicError supersonicError) {
+                    Utils.MyLog.d("Supersonic interstitial ad failed: " + supersonicError.toString());
+                }
+
+                @Override
+                public void onShowSuccess() {
+                    delayHandler.removeCallbacks(countdownRunnable);
+                }
+
+                @Override
+                public void onClose() {
+                    delayHandler.removeCallbacks(countdownRunnable);
+                    resumeStartup();
+                }
+
+                @Override
+                public void onReady() {
+                    delayHandler.removeCallbacks(countdownRunnable);
+                    if (m_SupersonicCountdown > 0) {
+                        m_SupersonicInterstitialAdWrapper.showInterstitial();
+                    }
+                }
+            });
+        }
+        m_SupersonicInterstitialAdWrapper.loadInterstitial();
+    }
+
+    private void resumeStartup() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                resumeServiceStateUI();
+                doStartUp();
+            }
+        });
     }
 }

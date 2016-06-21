@@ -195,6 +195,7 @@ public abstract class MainBase {
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
         private LoggingObserver m_loggingObserver;
+        private boolean m_serviceStateUIPaused = false;
 
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
@@ -933,6 +934,9 @@ public abstract class MainBase {
         }
 
         private void updateServiceStateUI() {
+            if (m_serviceStateUIPaused) {
+                return;
+            }
             if (!m_boundToTunnelService && !m_boundToTunnelVpnService) {
                 setStatusState(R.drawable.status_icon_disconnected);
                 if (!isServiceRunning()) {
@@ -967,6 +971,16 @@ public abstract class MainBase {
             m_disableTimeoutsToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
             m_moreOptionsButton.setEnabled(false);
+        }
+
+        protected void pauseServiceStateUI() {
+            m_serviceStateUIPaused = true;
+            disableToggleServiceUI();
+        }
+
+        protected void resumeServiceStateUI() {
+            m_serviceStateUIPaused = false;
+            updateServiceStateUI();
         }
 
         private void checkRestartTunnel() {
