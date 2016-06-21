@@ -122,6 +122,7 @@
                 <action android:name="com.inmobi.share.id" />
             </intent-filter>
         </receiver>
+        <service android:enabled="true" android:name="com.inmobi.signals.activityrecognition.ActivityRecognitionManager" />
 
         <activity android:name="com.mopub.mobileads.MoPubActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
         <activity android:name="com.mopub.mobileads.MraidActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
@@ -144,6 +145,28 @@
             android:hardwareAccelerated="true"
             android:theme="@android:style/Theme.Translucent" />
 
+        <activity
+            android:name="com.jirbo.adcolony.AdColonyOverlay"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen" />
+        <activity
+            android:name="com.jirbo.adcolony.AdColonyFullscreen"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+        <activity
+            android:name="com.jirbo.adcolony.AdColonyBrowser"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+
+        <activity
+            android:name="com.applovin.adview.AppLovinInterstitialActivity"/>
+        <activity
+            android:name="com.applovin.adview.AppLovinConfirmationActivity"/>
+
+        <activity
+            android:name="com.vungle.publisher.FullScreenAdActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
     </application>
 
 </manifest>
