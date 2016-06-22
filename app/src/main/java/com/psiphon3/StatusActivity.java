@@ -277,9 +277,9 @@ public class StatusActivity
         deInitAds();
     }
 
-    static final String MOPUB_BANNER_PROPERTY_ID = "";
-    static final String MOPUB_LARGE_BANNER_PROPERTY_ID = "";
-    static final String MOPUB_INTERSTITIAL_PROPERTY_ID = "";
+    static final String MOPUB_BANNER_PROPERTY_ID = "a671197931e94a6b85f4a31a2aa3022e";
+    static final String MOPUB_LARGE_BANNER_PROPERTY_ID = "cc43734b96384aae9538716ceadc3935";
+    static final String MOPUB_INTERSTITIAL_PROPERTY_ID = "8ca0fb406d2e4dbaa9c4737956acd9fa";
 
     private boolean getShowAds() {
         return m_multiProcessPreferences.getBoolean(getString(R.string.persistent_show_ads_setting), false);
