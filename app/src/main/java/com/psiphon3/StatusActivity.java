@@ -82,6 +82,7 @@ public class StatusActivity
     private boolean m_temporarilyDisableInterstitial = false;
     private SupersonicInterstitialAdWrapper m_SupersonicInterstitialAdWrapper;
     int m_SupersonicCountdown = 0;
+    boolean m_startupPending = false;
 
     final Handler delayHandler = new Handler();
 
@@ -186,6 +187,11 @@ public class StatusActivity
         super.onResume();
         if(m_SupersonicInterstitialAdWrapper != null) {
             m_SupersonicInterstitialAdWrapper.onResume();
+        }
+        if(m_startupPending) {
+            m_startupPending = false;
+            resumeServiceStateUI();
+            doStartUp();
         }
     }
 
@@ -710,18 +716,16 @@ public class StatusActivity
 
                 @Override
                 public void onShowSuccess() {
+                    m_startupPending = true;
                     delayHandler.removeCallbacks(countdownRunnable);
                 }
 
                 @Override
                 public void onClose() {
-                    delayHandler.removeCallbacks(countdownRunnable);
-                    resumeStartup();
                 }
 
                 @Override
                 public void onReady() {
-                    delayHandler.removeCallbacks(countdownRunnable);
                     if (m_SupersonicCountdown > 0) {
                         m_SupersonicInterstitialAdWrapper.showInterstitial();
                     }
@@ -729,15 +733,5 @@ public class StatusActivity
             });
         }
         m_SupersonicInterstitialAdWrapper.loadInterstitial();
-    }
-
-    private void resumeStartup() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                resumeServiceStateUI();
-                doStartUp();
-            }
-        });
     }
 }
