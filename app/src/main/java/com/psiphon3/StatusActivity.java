@@ -411,7 +411,7 @@ public class StatusActivity
     
     private void initAds()
     {
-        if (getShowAds())
+        if (shouldShowAds())
         {
             // make sure WebView proxy settings are up to date
             WebViewProxySettings.setLocalProxy(this, getListeningLocalHttpProxyPort());
