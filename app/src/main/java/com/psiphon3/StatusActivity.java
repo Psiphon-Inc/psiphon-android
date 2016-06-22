@@ -536,7 +536,7 @@ public class StatusActivity
 
     @Override
     protected void startUp() {
-        if(getShowAds() || true) {
+        if(getShowAds()) {
             showSuperSonicInterstitialAd();
         } else {
             doStartUp();
