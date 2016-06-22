@@ -536,12 +536,14 @@ public class StatusActivity
 
     @Override
     protected void startUp() {
-        if(getShowAds()) {
+        if (getShowAds() &&
+                !isServiceRunning() &&
+                !EmbeddedValues.hasEverBeenSideLoaded(this) &&
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             showSuperSonicInterstitialAd();
         } else {
             doStartUp();
         }
-
     }
 
     private void doStartUp()
