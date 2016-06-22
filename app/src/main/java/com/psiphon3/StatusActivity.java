@@ -81,12 +81,12 @@ public class StatusActivity
     private boolean m_loadedSponsorTab = false;
     private boolean m_temporarilyDisableInterstitial = false;
     private SupersonicInterstitialAdWrapper m_SupersonicInterstitialAdWrapper;
-    int m_SupersonicCountdown = 0;
-    boolean m_startupPending = false;
+    private int m_SupersonicCountdown = 0;
+    private static boolean m_startupPending = false;
 
-    final Handler delayHandler = new Handler();
+    private final Handler delayHandler = new Handler();
 
-    final Runnable countdownRunnable = new Runnable() {
+    private final Runnable countdownRunnable = new Runnable() {
         @Override
         public void run() {
             if (m_SupersonicCountdown > 0) {
