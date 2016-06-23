@@ -25,8 +25,6 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -36,14 +34,14 @@ import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TabHost;
 import android.widget.TextView;
 
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
-import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.mopub.mobileads.MoPubView;
 import com.psiphon3.psiphonlibrary.FreeTrialTimer;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.SupersonicRewardedVideoWrapper;
@@ -59,9 +57,6 @@ import com.psiphon3.util.Purchase;
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -70,13 +65,11 @@ import java.util.List;
 public class StatusActivity
     extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
 {
-    public static final String BANNER_FILE_NAME = "bannerImage";
-
-    private ImageView m_banner;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
     private IabHelper m_iabHelper = null;
     private boolean m_startIabInFlight = false;
+    private MoPubView m_moPubBannerLargeAdView = null;
     private MoPubInterstitial m_moPubInterstitial = null;
     private boolean m_moPubInterstitialShowWhenLoaded = false;
     private SupersonicRewardedVideoWrapper m_supersonicWrapper;
@@ -85,39 +78,14 @@ public class StatusActivity
     protected void onCreate(Bundle savedInstanceState) {
         setContentView(R.layout.main);
 
-        m_banner = (ImageView) findViewById(R.id.banner);
         m_tabHost = (TabHost) findViewById(R.id.tabHost);
         m_toggleButton = (Button) findViewById(R.id.toggleButton);
-
-
 
         // NOTE: super class assumes m_tabHost is initialized in its onCreate
 
         super.onCreate(savedInstanceState);
 
         // EmbeddedValues.initialize(this); is called in MainBase.OnCreate
-
-        // Play Store Build instances should use existing banner from previously installed APK
-        // (if present). To enable this, non-Play Store Build instances write their banner to
-        // a private file.
-        try {
-            if (EmbeddedValues.IS_PLAY_STORE_BUILD) {
-                File bannerImageFile = new File(getFilesDir(), BANNER_FILE_NAME);
-                if (bannerImageFile.exists()) {
-                    Bitmap bitmap = BitmapFactory.decodeFile(bannerImageFile.getAbsolutePath());
-                    m_banner.setImageBitmap(bitmap);
-                }
-            } else {
-                Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.banner);
-                if (bitmap != null) {
-                    FileOutputStream out = openFileOutput(BANNER_FILE_NAME, Context.MODE_PRIVATE);
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-                    out.close();
-                }
-            }
-        } catch (IOException e) {
-            // Ignore failure
-        }
 
         m_loadedSponsorTab = false;
         HandleCurrentIntent();
@@ -305,9 +273,6 @@ public class StatusActivity
     
     private void doStartUp()
     {
-        // Abort any outstanding ad requests
-        deInitAds();
-
         // If the user hasn't set a whole-device-tunnel preference, show a prompt
         // (and delay starting the tunnel service until the prompt is completed)
 
@@ -667,12 +632,6 @@ public class StatusActivity
             show = false;
         }
 
-        if (show && !Utils.getHasValidSubscriptionOrFreeTime(this) &&
-                m_moPubInterstitial == null)
-        {
-            loadFullScreenAd();
-        }
-
         TextView textViewRemainingMinutes = (TextView) findViewById(R.id.timeRemaining);
         if (show)
         {
@@ -686,17 +645,25 @@ public class StatusActivity
             if (m_supersonicWrapper == null) {
                 m_supersonicWrapper = new SupersonicRewardedVideoWrapper(this);
             }
+            findViewById(R.id.watchRewardedVideoButton).setEnabled(m_supersonicWrapper.isRewardedVideoAvailable());
+
+            initBanner();
+
+            if (!Utils.getHasValidSubscriptionOrFreeTime(this) &&
+                    m_moPubInterstitial == null)
+            {
+                loadFullScreenAd();
+            }
+        }
+        else
+        {
+            // Abort any outstanding ad requests
+            deInitAds();
         }
 
         findViewById(R.id.subscriptionPromptMessage).setVisibility(show ? View.VISIBLE : View.GONE);
         findViewById(R.id.subscribeButton).setVisibility(show ? View.VISIBLE : View.GONE);
         findViewById(R.id.watchRewardedVideoButton).setVisibility(show ? View.VISIBLE : View.GONE);
-
-        if (show)
-        {
-            findViewById(R.id.watchRewardedVideoButton).setEnabled(m_supersonicWrapper.isRewardedVideoAvailable());
-        }
-
         textViewRemainingMinutes.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
@@ -740,7 +707,48 @@ public class StatusActivity
         }
     }
 
-    static final String MOPUB_INTERSTITIAL_PROPERTY_ID = "";
+    static final String MOPUB_LARGE_BANNER_PROPERTY_ID = "6490d145426a418db838f640c26edb77";
+    static final String MOPUB_INTERSTITIAL_PROPERTY_ID = "0d4cf70da6504af5878f0b3592808852";
+
+    private void initBanner()
+    {
+        if (m_moPubBannerLargeAdView == null)
+        {
+            m_moPubBannerLargeAdView = new MoPubView(this);
+            m_moPubBannerLargeAdView.setAdUnitId(MOPUB_LARGE_BANNER_PROPERTY_ID);
+
+            m_moPubBannerLargeAdView.setBannerAdListener(new MoPubView.BannerAdListener() {
+                @Override
+                public void onBannerLoaded(MoPubView banner)
+                {
+                    if (m_moPubBannerLargeAdView.getParent() == null)
+                    {
+                        LinearLayout layout = (LinearLayout)findViewById(R.id.largeAdSlot);
+                        layout.removeAllViewsInLayout();
+                        layout.addView(m_moPubBannerLargeAdView);
+                    }
+                }
+                @Override
+                public void onBannerClicked(MoPubView arg0) {
+                }
+                @Override
+                public void onBannerCollapsed(MoPubView arg0) {
+                }
+                @Override
+                public void onBannerExpanded(MoPubView arg0) {
+                }
+                @Override
+                public void onBannerFailed(MoPubView arg0,
+                                           MoPubErrorCode arg1) {
+                    LinearLayout layout = (LinearLayout)findViewById(R.id.largeAdSlot);
+                    layout.removeAllViewsInLayout();
+                }
+            });
+
+            m_moPubBannerLargeAdView.loadAd();
+            m_moPubBannerLargeAdView.setAutorefreshEnabled(true);
+        }
+    }
 
     synchronized
     private void loadFullScreenAd()
@@ -803,6 +811,15 @@ public class StatusActivity
     synchronized
     private void deInitAds()
     {
+        LinearLayout layout = (LinearLayout)findViewById(R.id.largeAdSlot);
+        layout.removeAllViewsInLayout();
+
+        if (m_moPubBannerLargeAdView != null)
+        {
+            m_moPubBannerLargeAdView.destroy();
+        }
+        m_moPubBannerLargeAdView = null;
+
         if (m_moPubInterstitial != null)
         {
             m_moPubInterstitial.destroy();

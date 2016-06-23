@@ -53,14 +53,6 @@
                     android:padding="10dp"
                     android:orientation="vertical" >
 
-                    <TextView
-                        android:id="@+id/subscriptionPromptMessage"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:gravity="center"
-                        android:text="@string/SubscriptionPromptMessage" />
-
                     <Button
                         android:id="@+id/subscribeButton"
                         android:onClick="onSubscribeButtonClick"
@@ -91,6 +83,14 @@
                         android:gravity="center"
                         android:padding="10dp"
                         android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                    <TextView
+                        android:id="@+id/subscriptionPromptMessage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:text="@string/SubscriptionPromptMessage" />
 
                     <ImageButton
                         android:id="@+id/statusViewImage"
