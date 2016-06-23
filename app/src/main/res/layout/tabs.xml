@@ -75,6 +75,15 @@
                         android:text="@string/RewardedVideoPrompt"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
 
+                    <LinearLayout
+                        android:id="@+id/largeAdSlot"
+                        android:orientation="vertical"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center" >
+
+                    </LinearLayout>
+
                     <TextView
                         android:id="@+id/timeRemaining"
                         android:layout_width="wrap_content"
