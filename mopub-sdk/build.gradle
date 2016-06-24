@@ -108,6 +108,7 @@ dependencies {
     compile 'com.mopub.volley:mopub-volley:1.1.0'
     compile 'com.google.android.exoplayer:exoplayer:r1.5.6'
     compile 'com.inmobi.monetization:inmobi-ads:5.3.1'
+    compile 'com.google.android.gms:play-services-ads:9.0.2'
     compile(name: 'mm-ad-sdk-6.1.0', ext: 'aar')
 
     javadocDeps 'com.google.android.exoplayer:exoplayer:r1.5.6:sources'
