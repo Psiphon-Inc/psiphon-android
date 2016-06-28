@@ -96,6 +96,6 @@ dependencies {
     compile 'com.supersonic.adapters:adcolonyadapter:2.0.1@jar'
     compile 'com.supersonic.adapters:applovinadapter:2.0.1@jar'
     compile 'com.supersonic.adapters:inmobiadapter:2.0.1@jar'
-    compile 'com.supersonic.adapters:unityadsadapter:2.0.1@jar'
+    compile 'com.supersonic.adapters:unityadsadapter:2.0.2@jar'
     compile 'com.supersonic.adapters:vungleadapter:2.0.3@jar'
 }
