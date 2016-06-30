@@ -2,7 +2,7 @@
 <resources>
     <!-- The name of the app. "Pro" is intended to indicate that this version of
          Psiphon has additional features and is not totally free; it's supported
-         by ads or suscription. -->
+         by ads or subscription. -->
     <string name="app_name_psiphon_pro">Psiphon Pro</string>
 
     <!-- Text for a button that users can click to get a trial subscription. -->
@@ -18,4 +18,10 @@
 
     <!-- Text indicating to the user how much time they have left in their free trial. -->
     <string name="FreeTrialRemainingTime">Free trial: %s</string>
+
+    <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro. -->
+    <string name="PaymentChooserFragment.BuySubscription">Subscribe</string>
+
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro. -->
+    <string name="PaymentChooserFragment.TimePass">Buy 30-day Pass</string>
 </resources>

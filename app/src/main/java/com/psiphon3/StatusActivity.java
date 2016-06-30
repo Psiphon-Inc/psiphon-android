@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Psiphon Inc.
+ * Copyright (c) 2016, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -59,7 +59,10 @@ import net.grandcentrix.tray.core.ItemNotFoundException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class StatusActivity
@@ -419,9 +422,18 @@ public class StatusActivity
     }
 
     static final String IAB_PUBLIC_KEY = "";
+    static final int IAB_REQUEST_CODE = 10001;
+
     static final String IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU = "";
     static final String[] OTHER_VALID_IAB_SUBSCRIPTION_SKUS = {};
-    static final int IAB_REQUEST_CODE = 10001;
+
+    static final String IAB_BASIC_30DAY_TIMEPASS_SKU = "";
+    static final Map<String, Long> IAB_TIMEPASS_SKUS_TO_TIME;
+    static {
+        Map<String, Long> m = new HashMap<>();
+        m.put(IAB_BASIC_30DAY_TIMEPASS_SKU, 30l * 24 * 60 * 60 * 1000);
+        IAB_TIMEPASS_SKUS_TO_TIME = Collections.unmodifiableMap(m);
+    }
 
     synchronized
     private void startIab()
@@ -475,6 +487,10 @@ public class StatusActivity
 
             m_startIabInFlight = false;
 
+            //
+            // Check if the user has a subscription.
+            //
+
             List<String> validSubscriptionSkus = new ArrayList<>(Arrays.asList(OTHER_VALID_IAB_SUBSCRIPTION_SKUS));
             validSubscriptionSkus.add(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU);
             for (String validSku : validSubscriptionSkus)
@@ -485,6 +501,56 @@ public class StatusActivity
                     return;
                 }
             }
+
+            //
+            // Check if the user has purchased a (30-day) time pass.
+            //
+
+            long now = System.currentTimeMillis();
+            List<Purchase> timepassesToConsume = new ArrayList<>();
+            for (Map.Entry<String, Long> timepassSku : IAB_TIMEPASS_SKUS_TO_TIME.entrySet())
+            {
+                Purchase purchase = inventory.getPurchase(timepassSku.getKey());
+                if (purchase == null)
+                {
+                    continue;
+                }
+
+                long timepassExpiry = purchase.getPurchaseTime() + timepassSku.getValue();
+                if (now < timepassExpiry)
+                {
+                    // This time pass is still valid.
+                    proceedWithValidSubscription();
+                    return;
+                }
+                else
+                {
+                    // This time pass is no longer valid. Consider it invalid and consume it below
+                    // (unless a valid time-pass is found first and we early-exit).
+                    timepassesToConsume.add(purchase);
+                }
+            }
+
+            if (timepassesToConsume.size() > 0)
+            {
+                // We're not passing a callback, because we're not going to take any special action
+                // when it completes (or if it fails).
+                //
+                // We are consuming purchases for two reasons:
+                //   1. So that they can be re-purchased (IAB prevents purchasing the same
+                //      un-consumed product twice).
+                //   2. So that the list of purchases to check doesn't just get longer and longer.
+                //
+                // Note: As implied by #1, if the consume fails the user may be left in a state
+                // where they can't buy another time pass. We think this is improbable and accept it
+                // (especially since whatever prevented the consume from succeeding would likely
+                // also prevent a new purchase from succeeding).
+                consumePurchases(timepassesToConsume, null);
+            }
+
+            //
+            // There is no valid subscription or time pass for this user.
+            //
 
             Utils.setHasValidSubscription(StatusActivity.this, false);
 
@@ -513,6 +579,12 @@ public class StatusActivity
             {
                 proceedWithValidSubscription();
             }
+            else if (IAB_TIMEPASS_SKUS_TO_TIME.containsKey(purchase.getSku()))
+            {
+                // We're not going to check the validity time here -- assume no time-pass is so
+                // short that it's already expired right after it's purchased.
+                proceedWithValidSubscription();
+            }
         }
     };
     
@@ -530,7 +602,25 @@ public class StatusActivity
             handleIabFailure(null);
         }
     }
-    
+
+    private void consumePurchases(List<Purchase> purchases, IabHelper.OnConsumeMultiFinishedListener listener)
+    {
+        try
+        {
+            if (m_iabHelper != null)
+            {
+                m_iabHelper.consumeAsync(purchases, listener);
+            }
+        }
+        catch (IllegalStateException ex)
+        {
+            handleIabFailure(null);
+        }
+    }
+
+    /**
+     * Begin the flow for subscribing to premium access.
+     */
     private void launchSubscriptionPurchaseFlow()
     {
         try
@@ -546,7 +636,26 @@ public class StatusActivity
             handleIabFailure(null);
         }
     }
-    
+
+    /**
+     * Begin the flow for making a one-time purchase of time-limited premium access.
+     */
+    private void launchTimePassPurchaseFlow()
+    {
+        try
+        {
+            if (m_iabHelper != null && !m_startIabInFlight)
+            {
+                m_iabHelper.launchPurchaseFlow(this, IAB_BASIC_30DAY_TIMEPASS_SKU,
+                        IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
+            }
+        }
+        catch (IllegalStateException ex)
+        {
+            handleIabFailure(null);
+        }
+    }
+
     private void proceedWithValidSubscription()
     {
         Utils.setHasValidSubscription(this, true);
@@ -667,10 +776,14 @@ public class StatusActivity
         textViewRemainingMinutes.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
+    private final int PAYMENT_CHOOSER_ACTIVITY = 20001;
+
     @Override
     public void onSubscribeButtonClick(View v)
     {
-        launchSubscriptionPurchaseFlow();
+        // User has clicked the Subscribe button, now let them choose the payment method.
+        Intent feedbackIntent = new Intent(this, PaymentChooserActivity.class);
+        startActivityForResult(feedbackIntent, PAYMENT_CHOOSER_ACTIVITY);
     }
 
     @Override
@@ -699,6 +812,21 @@ public class StatusActivity
             if (m_iabHelper != null)
             {
                 m_iabHelper.handleActivityResult(requestCode, resultCode, data);
+            }
+        }
+        else if (requestCode == PAYMENT_CHOOSER_ACTIVITY)
+        {
+            if (resultCode == RESULT_OK)
+            {
+                int buyType = data.getIntExtra(PaymentChooserActivity.BUY_TYPE_EXTRA, -1);
+                if (buyType == PaymentChooserActivity.BUY_SUBSCRIPTION)
+                {
+                    launchSubscriptionPurchaseFlow();
+                }
+                else if (buyType == PaymentChooserActivity.BUY_TIMEPASS)
+                {
+                    launchTimePassPurchaseFlow();
+                }
             }
         }
         else
