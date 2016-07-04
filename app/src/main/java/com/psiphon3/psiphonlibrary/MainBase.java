@@ -95,8 +95,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public abstract class MainBase {
-    public static abstract class SupportFragmentActivity extends FragmentActivity implements MyLog.ILogger {
-        public SupportFragmentActivity() {
+    public static abstract class Activity extends android.app.Activity implements MyLog.ILogger {
+        public Activity() {
             Utils.initializeSecureRandom();
         }
 
@@ -108,35 +108,6 @@ public abstract class MainBase {
 
             //truncate logs database
             LoggingProvider.LogDatabaseHelper.truncateLogs(this);
-        }
-
-        @Override
-        protected void onDestroy() {
-            super.onDestroy();
-
-            MyLog.unsetLogger();
-        }
-
-        /*
-         * Partial MyLog.ILogger implementation
-         */
-
-        @Override
-        public Context getContext() {
-            return this;
-        }
-    }
-
-    public static abstract class Activity extends android.app.Activity implements MyLog.ILogger {
-        public Activity() {
-            Utils.initializeSecureRandom();
-        }
-
-        @Override
-        protected void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-
-            MyLog.setLogger(this);
         }
 
         @Override
