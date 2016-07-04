@@ -464,10 +464,12 @@ public class StatusActivity
         {
             if (result.isFailure())
             {
+                Utils.MyLog.g(String.format("StatusActivity::onIabSetupFinished: failure: %s", result));
                 handleIabFailure(result);
             }
             else
             {
+                Utils.MyLog.g(String.format("StatusActivity::onIabSetupFinished: success: %s", result));
                 queryInventory();
             }
         }
@@ -481,6 +483,7 @@ public class StatusActivity
         {
             if (result.isFailure())
             {
+                Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: failure: %s", result));
                 handleIabFailure(result);
                 return;
             }
@@ -497,6 +500,7 @@ public class StatusActivity
             {
                 if (inventory.hasPurchase(validSku))
                 {
+                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid subscription: %s", validSku));
                     proceedWithValidSubscription();
                     return;
                 }
@@ -520,6 +524,7 @@ public class StatusActivity
                 if (now < timepassExpiry)
                 {
                     // This time pass is still valid.
+                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid time pass: %s", timepassSku.getKey()));
                     proceedWithValidSubscription();
                     return;
                 }
@@ -527,6 +532,7 @@ public class StatusActivity
                 {
                     // This time pass is no longer valid. Consider it invalid and consume it below
                     // (unless a valid time-pass is found first and we early-exit).
+                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: consuming old time pass: %s", timepassSku.getKey()));
                     timepassesToConsume.add(purchase);
                 }
             }
@@ -557,11 +563,13 @@ public class StatusActivity
             updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
 
             if (isTunnelConnected() &&
-                    !Utils.getHasValidSubscriptionOrFreeTime(StatusActivity.this))
+                !Utils.getHasValidSubscriptionOrFreeTime(StatusActivity.this))
             {
                 // Stop the tunnel
                 doToggle();
             }
+
+            Utils.MyLog.g("StatusActivity::onQueryInventoryFinished: no valid subscription or time pass");
         }
     };
     
@@ -573,14 +581,18 @@ public class StatusActivity
         {
             if (result.isFailure())
             {
+                Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: failure: %s", result));
                 handleIabFailure(result);
             }      
             else if (purchase.getSku().equals(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU))
             {
+                Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
                 proceedWithValidSubscription();
             }
             else if (IAB_TIMEPASS_SKUS_TO_TIME.containsKey(purchase.getSku()))
             {
+                Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
+
                 // We're not going to check the validity time here -- assume no time-pass is so
                 // short that it's already expired right after it's purchased.
                 proceedWithValidSubscription();
@@ -781,6 +793,8 @@ public class StatusActivity
     @Override
     public void onSubscribeButtonClick(View v)
     {
+        Utils.MyLog.g("StatusActivity::onSubscribeButtonClick");
+
         // User has clicked the Subscribe button, now let them choose the payment method.
         Intent feedbackIntent = new Intent(this, PaymentChooserActivity.class);
         startActivityForResult(feedbackIntent, PAYMENT_CHOOSER_ACTIVITY);
@@ -789,6 +803,8 @@ public class StatusActivity
     @Override
     public void onWatchRewardedVideoButtonClick(View v)
     {
+        Utils.MyLog.g("StatusActivity::onWatchRewardedVideoButtonClick");
+
         if(m_supersonicWrapper != null) {
             m_supersonicWrapper.playVideo();
         }
@@ -821,12 +837,18 @@ public class StatusActivity
                 int buyType = data.getIntExtra(PaymentChooserActivity.BUY_TYPE_EXTRA, -1);
                 if (buyType == PaymentChooserActivity.BUY_SUBSCRIPTION)
                 {
+                    Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: subscription");
                     launchSubscriptionPurchaseFlow();
                 }
                 else if (buyType == PaymentChooserActivity.BUY_TIMEPASS)
                 {
+                    Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: time pass");
                     launchTimePassPurchaseFlow();
                 }
+            }
+            else
+            {
+                Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: canceled");
             }
         }
         else
