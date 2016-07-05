@@ -1,50 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <TextView
-        android:text="@string/PaymentChooserFragment.OverallDescription"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center_horizontal"
-        android:layout_margin="10dp" />
-
-    <TextView
-        android:text="@string/PaymentChooserFragment.SubscriptionDescription"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center_horizontal"
-        android:layout_margin="10dp" />
-
-    <Button
-        android:id="@+id/buy_subscription"
-        android:text="@string/PaymentChooserFragment.Subscription"
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_margin="10dp"
-        android:padding="10dp"
-        android:nestedScrollingEnabled="false" />
+        android:layout_height="match_parent">
 
-    <TextView
-        android:text="@string/PaymentChooserFragment.TimePassDescription"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center_horizontal"
-        android:layout_margin="10dp" />
+        <TextView
+            android:text="@string/PaymentChooserFragment.OverallDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:layout_margin="10dp" />
 
-    <Button
-        android:id="@+id/buy_timepass"
-        android:text="@string/PaymentChooserFragment.TimePass"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_margin="10dp"
-        android:padding="10dp"
-        android:nestedScrollingEnabled="false" />
-</LinearLayout>
+        <TextView
+            android:text="@string/PaymentChooserFragment.SubscriptionDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:layout_margin="10dp" />
+
+        <Button
+            android:text="@string/PaymentChooserFragment.Subscription"
+            android:onClick="onSubscriptionButtonClick"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="10dp"
+            android:padding="10dp"
+            android:nestedScrollingEnabled="false" />
+
+        <TextView
+            android:text="@string/PaymentChooserFragment.TimePassDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:layout_margin="10dp" />
+
+        <Button
+            android:text="@string/PaymentChooserFragment.TimePass7Day"
+            android:tag="7"
+            android:onClick="onTimePassButtonClick"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="10dp"
+            android:padding="10dp"
+            android:nestedScrollingEnabled="false" />
+
+        <Button
+            android:text="@string/PaymentChooserFragment.TimePass30Day"
+            android:tag="30"
+            android:onClick="onTimePassButtonClick"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="10dp"
+            android:padding="10dp"
+            android:nestedScrollingEnabled="false" />
+
+        <Button
+            android:text="@string/PaymentChooserFragment.TimePass90Day"
+            android:tag="90"
+            android:onClick="onTimePassButtonClick"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="10dp"
+            android:padding="10dp"
+            android:nestedScrollingEnabled="false" />
+    </LinearLayout>
+
+</ScrollView>

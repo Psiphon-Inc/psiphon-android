@@ -28,8 +28,14 @@
          as the English. -->
     <string name="PaymentChooserFragment.Subscription">Buy Subscription\nNEW! 7 day free trial</string>
 
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro. -->
+    <string name="PaymentChooserFragment.TimePass7Day">Buy 7-day Pass</string>
+
     <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass">Buy 30-day Pass</string>
+    <string name="PaymentChooserFragment.TimePass30Day">Buy 30-day Pass</string>
+
+    <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro. -->
+    <string name="PaymentChooserFragment.TimePass90Day">Buy 90-day Pass</string>
 
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string is an overall description of the benefits of paying for

@@ -53,10 +53,12 @@ import com.psiphon3.util.IabHelper;
 import com.psiphon3.util.IabResult;
 import com.psiphon3.util.Inventory;
 import com.psiphon3.util.Purchase;
+import com.psiphon3.util.SkuDetails;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -428,12 +430,18 @@ public class StatusActivity
     static final String[] OTHER_VALID_IAB_SUBSCRIPTION_SKUS = {};
 
     static final String IAB_BASIC_30DAY_TIMEPASS_SKU = "";
+    static final String IAB_BASIC_7DAY_TIMEPASS_SKU = "";
+    static final String IAB_BASIC_90DAY_TIMEPASS_SKU = "";
     static final Map<String, Long> IAB_TIMEPASS_SKUS_TO_TIME;
     static {
         Map<String, Long> m = new HashMap<>();
         m.put(IAB_BASIC_30DAY_TIMEPASS_SKU, 30l * 24 * 60 * 60 * 1000);
+        m.put(IAB_BASIC_7DAY_TIMEPASS_SKU, 7l * 24 * 60 * 60 * 1000);
+        m.put(IAB_BASIC_90DAY_TIMEPASS_SKU, 90l * 24 * 60 * 60 * 1000);
         IAB_TIMEPASS_SKUS_TO_TIME = Collections.unmodifiableMap(m);
     }
+
+    Inventory mInventory;
 
     synchronized
     private void startIab()
@@ -489,6 +497,8 @@ public class StatusActivity
             }
 
             m_startIabInFlight = false;
+
+            mInventory = inventory;
 
             //
             // Check if the user has a subscription.
@@ -792,8 +802,10 @@ public class StatusActivity
             deInitAds();
         }
 
-        findViewById(R.id.subscriptionPromptMessage).setVisibility(show ? View.VISIBLE : View.GONE);
-        findViewById(R.id.subscribeButton).setVisibility(show ? View.VISIBLE : View.GONE);
+        boolean showSubscribe = show && (mInventory != null);
+
+        findViewById(R.id.subscriptionPromptMessage).setVisibility(showSubscribe ? View.VISIBLE : View.GONE);
+        findViewById(R.id.subscribeButton).setVisibility(showSubscribe ? View.VISIBLE : View.GONE);
         findViewById(R.id.watchRewardedVideoButton).setVisibility(show ? View.VISIBLE : View.GONE);
         textViewRemainingMinutes.setVisibility(show ? View.VISIBLE : View.GONE);
     }
@@ -805,8 +817,40 @@ public class StatusActivity
     {
         Utils.MyLog.g("StatusActivity::onSubscribeButtonClick");
 
+        // The button should not have been enabled if there's no inventory (yet).
+        assert(mInventory != null);
+
         // User has clicked the Subscribe button, now let them choose the payment method.
+
         Intent feedbackIntent = new Intent(this, PaymentChooserActivity.class);
+
+        // Pass price and SKU info to payment chooser activity.
+        PaymentChooserActivity.SkuInfo skuInfo = new PaymentChooserActivity.SkuInfo();
+
+        SkuDetails subscriptionSkuDetails = mInventory.getSkuDetails(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU);
+
+        skuInfo.mSubscriptionInfo.sku = subscriptionSkuDetails.getSku();
+        skuInfo.mSubscriptionInfo.price = subscriptionSkuDetails.getPrice();
+        skuInfo.mSubscriptionInfo.priceMicros = subscriptionSkuDetails.getPriceAmountMicros();
+        // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
+        // we'll set it to 30 days.
+        skuInfo.mSubscriptionInfo.lifetime = 30l * 24 * 60 * 60 * 1000;
+
+        for (Map.Entry<String, Long> timepassSku : IAB_TIMEPASS_SKUS_TO_TIME.entrySet())
+        {
+            SkuDetails timepassSkuDetails = mInventory.getSkuDetails(timepassSku.getKey());
+            PaymentChooserActivity.SkuInfo.Info info = new PaymentChooserActivity.SkuInfo.Info();
+
+            info.sku = timepassSkuDetails.getSku();
+            info.price = timepassSkuDetails.getPrice();
+            info.priceMicros = timepassSkuDetails.getPriceAmountMicros();
+            info.lifetime = timepassSku.getValue();
+
+            skuInfo.mTimePassSkuToInfo.put(info.sku, info);
+        }
+
+        feedbackIntent.putExtra(PaymentChooserActivity.SKU_INFO_EXTRA, skuInfo.toString());
+
         startActivityForResult(feedbackIntent, PAYMENT_CHOOSER_ACTIVITY);
     }
 

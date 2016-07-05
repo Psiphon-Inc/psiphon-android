@@ -23,41 +23,124 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
 
+import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class PaymentChooserActivity extends Activity {
+    public static final String SKU_INFO_EXTRA = "SKU_INFO";
     public static final String BUY_TYPE_EXTRA = "BUY_TYPE";
     public static final int BUY_SUBSCRIPTION = 1;
     public static final int BUY_TIMEPASS = 2;
+
+    SkuInfo mSkuInfo;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.payment_chooser);
 
-        // Watch for button clicks.
-        Button buySubscriptionButton = (Button)findViewById(R.id.buy_subscription);
-        buySubscriptionButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                // When button is clicked, call up to owning activity.
-                Intent intent = getIntent();
-                intent.putExtra(BUY_TYPE_EXTRA, BUY_SUBSCRIPTION);
-                setResult(RESULT_OK, intent);
-                finish();
-            }
-        });
+        Intent intent = getIntent();
+        String jsonString = intent.getStringExtra(SKU_INFO_EXTRA);
 
-        Button buyTimePassButton = (Button)findViewById(R.id.buy_timepass);
-        buyTimePassButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                // When button is clicked, call up to owning activity.
-                Intent intent = getIntent();
-                intent.putExtra(BUY_TYPE_EXTRA, BUY_TIMEPASS);
-                setResult(RESULT_OK, intent);
-                finish();
+        mSkuInfo = new SkuInfo(jsonString);
+    }
+
+    public void onSubscriptionButtonClick(View v)
+    {
+        Utils.MyLog.g("PaymentChooserActivity::onSubscriptionButtonClick");
+        Intent intent = getIntent();
+        intent.putExtra(BUY_TYPE_EXTRA, BUY_SUBSCRIPTION);
+        setResult(RESULT_OK, intent);
+        finish();
+    }
+
+    public void onTimePassButtonClick(View v)
+    {
+        Utils.MyLog.g("PaymentChooserActivity::onTimePassButtonClick");
+        Intent intent = getIntent();
+        intent.putExtra(BUY_TYPE_EXTRA, BUY_TIMEPASS);
+        setResult(RESULT_OK, intent);
+        finish();
+    }
+
+    static public class SkuInfo {
+        static public class Info {
+            public String sku;
+            public long lifetime;
+            public String price;
+            public long priceMicros;
+        }
+
+        Info mSubscriptionInfo = new Info();
+        Map<String, Info> mTimePassSkuToInfo = new HashMap<>();
+
+        public SkuInfo() { }
+
+        public SkuInfo(String jsonString) {
+            try {
+                JSONObject json = new JSONObject(jsonString);
+
+                JSONObject subscriptionInfo = json.getJSONObject("subscriptionInfo");
+                mSubscriptionInfo.sku = subscriptionInfo.getString("sku");
+                mSubscriptionInfo.lifetime = subscriptionInfo.getLong("lifetime");
+                mSubscriptionInfo.price = subscriptionInfo.getString("price");
+                mSubscriptionInfo.priceMicros = subscriptionInfo.getLong("priceMicros");
+
+                JSONArray timepassInfo = json.getJSONArray("timepassInfo");
+                for (int i = 0; i < timepassInfo.length(); i++) {
+                    JSONObject infoJson = timepassInfo.getJSONObject(i);
+                    Info info = new Info();
+                    info.sku = infoJson.getString("sku");
+                    info.lifetime = infoJson.getLong("lifetime");
+                    info.price = infoJson.getString("price");
+                    info.priceMicros = infoJson.getLong("priceMicros");
+
+                    mTimePassSkuToInfo.put(info.sku, info);
+                }
             }
-        });
+            catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public String toString() {
+            JSONObject json = new JSONObject();
+
+            try {
+                JSONObject jsonSubscriptionObj = new JSONObject();
+                jsonSubscriptionObj.put("sku", mSubscriptionInfo.sku);
+                jsonSubscriptionObj.put("lifetime", mSubscriptionInfo.lifetime);
+                jsonSubscriptionObj.put("price", mSubscriptionInfo.price);
+                jsonSubscriptionObj.put("priceMicros", mSubscriptionInfo.priceMicros);
+
+                JSONArray timepassInfo = new JSONArray();
+                for (Info info : mTimePassSkuToInfo.values()) {
+                    JSONObject jsonTimePassObj = new JSONObject();
+
+                    jsonTimePassObj.put("sku", info.sku);
+                    jsonTimePassObj.put("lifetime", info.lifetime);
+                    jsonTimePassObj.put("price", info.price);
+                    jsonTimePassObj.put("priceMicros", info.priceMicros);
+
+                    timepassInfo.put(jsonTimePassObj);
+                }
+
+                json.put("subscriptionInfo", jsonSubscriptionObj);
+                json.put("timepassInfo", timepassInfo);
+            }
+            catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            return json.toString();
+        }
     }
 }
