@@ -681,6 +681,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             json.put("UpstreamProxyUrl", UpstreamProxySettings.getUpstreamProxyUrl(context));
 
+            json.put("UpstreamProxyCustomHeaders", UpstreamProxySettings.getUpstreamProxyCustomHeaders(context));
+
             json.put("EmitDiagnosticNotices", true);
 
             // If this is a temporary tunnel (like for UpgradeChecker) we need to override some of

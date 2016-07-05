@@ -29,6 +29,9 @@ import net.grandcentrix.tray.AppPreferences;
 
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -72,6 +75,10 @@ public class UpstreamProxySettings {
 
     public static synchronized String getProxyDomain(Context context) {
         return new AppPreferences(context).getString(context.getString(R.string.useProxyDomainPreference), "");
+    }
+
+    public static boolean getAddCustomHeadersPreference(Context context) {
+        return new AppPreferences(context).getBoolean(context.getString(R.string.addCustomHeadersPreference), false);
     }
 
     public static class ProxySettings {
@@ -218,5 +225,44 @@ public class UpstreamProxySettings {
         url.append(proxySettings.proxyPort);
 
         return url.toString();
+    }
+
+    public synchronized static JSONObject getUpstreamProxyCustomHeaders(Context context) {
+        ProxySettings proxySettings = getProxySettings(context);
+
+        if (proxySettings == null) {
+            return null;
+        }
+
+        AppPreferences ap = new AppPreferences(context);
+
+        if(!ap.getBoolean(context.getString(R.string.addCustomHeadersPreference), false)) {
+            return null;
+        }
+
+        JSONObject headers = new JSONObject();
+
+        for (int position = 1; position <= 3; position++) {
+            int nameID = context.getResources().getIdentifier("customProxyHeaderName" + position, "string", context.getPackageName());
+            int valueID = context.getResources().getIdentifier("customProxyHeaderValue" + position, "string", context.getPackageName());
+
+            String namePrefStr = context.getResources().getString(nameID);
+            String valuePrefStr = context.getResources().getString(valueID);
+
+            String name = ap.getString(namePrefStr, "");
+            String value = ap.getString(valuePrefStr, "");
+            try {
+                if (!TextUtils.isEmpty(name)) {
+                        JSONArray arr = new JSONArray();
+                    if (!TextUtils.isEmpty(value)) {
+                        arr.put(value);
+                    }
+                    headers.put(name, arr);
+                }
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return headers;
     }
 }

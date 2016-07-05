@@ -45,6 +45,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
+import android.text.TextUtils;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.KeyEvent;
@@ -89,6 +90,9 @@ import org.achartengine.model.XYMultipleSeriesDataset;
 import org.achartengine.model.XYSeries;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -1107,6 +1111,47 @@ public abstract class MainBase {
             // changed
             if (!useHTTPProxyPreference) {
                 return false;
+            }
+
+            //check if "add custom headers" checkbox changed
+            boolean addCustomHeadersPreference = prefs.getBoolean(
+                    getString(R.string.addCustomHeadersPreference), false);
+            if (addCustomHeadersPreference != UpstreamProxySettings.getAddCustomHeadersPreference(this)) {
+                return true;
+            }
+
+            // "add custom headers" is selected, check if
+            // upstream headers string has changed
+            if (addCustomHeadersPreference) {
+                JSONObject headers = new JSONObject();
+
+                for (int position = 1; position <= 3; position++) {
+                    int nameID = getResources().getIdentifier("customProxyHeaderName" + position, "string", getPackageName());
+                    int valueID = getResources().getIdentifier("customProxyHeaderValue" + position, "string", getPackageName());
+
+                    String namePrefStr = getResources().getString(nameID);
+                    String valuePrefStr = getResources().getString(valueID);
+
+                    String name = prefs.getString(namePrefStr, "");
+                    String value = prefs.getString(valuePrefStr, "");
+                    try {
+                        if (!TextUtils.isEmpty(name)) {
+                            JSONArray arr = new JSONArray();
+                            if (!TextUtils.isEmpty(value)) {
+                                arr.put(value);
+                            }
+                            headers.put(name, arr);
+                        }
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                String newHeaders = headers.toString();
+                String oldHeaders = UpstreamProxySettings.getUpstreamProxyCustomHeaders(this).toString();
+
+                if (0 != oldHeaders.compareTo(newHeaders)) {
+                    return true;
+                }
             }
 
             // check if "use custom proxy settings"
