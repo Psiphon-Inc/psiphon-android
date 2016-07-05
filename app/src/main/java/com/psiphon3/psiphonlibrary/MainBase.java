@@ -141,7 +141,7 @@ public abstract class MainBase {
 
         protected Button m_toggleButton;
         private StatusListViewManager m_statusListManager = null;
-        private AppPreferences m_multiProcessPreferences;
+        protected AppPreferences m_multiProcessPreferences;
         private ViewFlipper m_sponsorViewFlipper;
         private LinearLayout m_statusLayout;
         private TextView m_statusTabLogLine;
@@ -166,9 +166,35 @@ public abstract class MainBase {
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
         private LoggingObserver m_loggingObserver;
+        private boolean m_localProxySettingsHaveBeenReset = false;
+        private boolean m_serviceStateUIPaused = false;
 
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
+        }
+
+        protected boolean getSkipHomePage() {
+            for (String homepage : getHomePages()) {
+                if (homepage.contains("psiphon_skip_homepage")) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        protected boolean showFirstHomePageInApp() {
+            boolean showHomePage = false;
+            List<String> homepages = getHomePages();
+            if (!getSkipHomePage() && homepages.size() > 0) {
+                showHomePage = true;
+                for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
+                    if (homepages.get(0).contains(homeTabUrlExclusion)) {
+                        showHomePage = false;
+                        break;
+                    }
+                }
+            }
+            return showHomePage;
         }
 
         // Avoid calling m_statusTabToggleButton.setImageResource() every 250 ms
@@ -187,19 +213,7 @@ public abstract class MainBase {
 
                 // Show the sponsor web view, but only if there's a home page to
                 // show and it's isn't excluded from being embedded.
-                boolean showHomePage = false;
-                List<String> homepages = getHomePages();
-                if (homepages.size() > 0) {
-                    showHomePage = true;
-                    for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
-                        if (homepages.get(0).contains(homeTabUrlExclusion)) {
-                            showHomePage = false;
-                            break;
-                        }
-                    }
-                }
-
-                if (showHomePage && statusShowing) {
+                if (showFirstHomePageInApp() && statusShowing) {
                     m_sponsorViewFlipper.showNext();
                 }
             } else {
@@ -557,6 +571,10 @@ public abstract class MainBase {
          *            time the activity is created.
          */
         protected void resetSponsorHomePage(boolean freshConnect) {
+            if (getSkipHomePage()) {
+                return;
+            }
+
             String url;
             List<String> homepages = getHomePages();
             if (homepages.size() > 0) {
@@ -565,14 +583,11 @@ public abstract class MainBase {
                 return;
             }
 
-            // Some URLs are excluded from being embedded as home pages.
-            for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
-                if (url.contains(homeTabUrlExclusion)) {
-                    if (freshConnect) {
-                        displayBrowser(getContext(), Uri.parse(url));
-                    }
-                    return;
+            if (!showFirstHomePageInApp()) {
+                if (freshConnect) {
+                    displayBrowser(getContext(), Uri.parse(url));
                 }
+                return;
             }
 
             // At this point we're showing the URL in the embedded webview.
@@ -583,6 +598,8 @@ public abstract class MainBase {
         @Override
         protected void onResume() {
             super.onResume();
+
+            m_localProxySettingsHaveBeenReset = false;
 
             // Load new logs from the logging provider now
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -891,14 +908,27 @@ public abstract class MainBase {
         }
 
         private void updateServiceStateUI() {
+            if (m_serviceStateUIPaused) {
+                return;
+            }
             if (!m_boundToTunnelService && !m_boundToTunnelVpnService) {
                 setStatusState(R.drawable.status_icon_disconnected);
                 if (!isServiceRunning()) {
                     m_toggleButton.setText(getText(R.string.start));
                     enableToggleServiceUI();
+
+                    if (!m_localProxySettingsHaveBeenReset) {
+                        WebViewProxySettings.resetLocalProxy(this);
+                        m_localProxySettingsHaveBeenReset = true;
+                    }
                 } else {
                     m_toggleButton.setText(getText(R.string.waiting));
                     disableToggleServiceUI();
+
+                    if (!m_localProxySettingsHaveBeenReset) {
+                        WebViewProxySettings.resetLocalProxy(this);
+                        m_localProxySettingsHaveBeenReset = true;
+                    }
                 }
             } else {
                 if (isTunnelConnected()) {
@@ -908,6 +938,7 @@ public abstract class MainBase {
                 }
                 m_toggleButton.setText(getText(R.string.stop));
                 enableToggleServiceUI();
+                m_localProxySettingsHaveBeenReset = false;
             }
         }
         
@@ -925,6 +956,16 @@ public abstract class MainBase {
             m_disableTimeoutsToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
             m_moreOptionsButton.setEnabled(false);
+        }
+
+        protected void pauseServiceStateUI() {
+            m_serviceStateUIPaused = true;
+            disableToggleServiceUI();
+        }
+
+        protected void resumeServiceStateUI() {
+            m_serviceStateUIPaused = false;
+            updateServiceStateUI();
         }
 
         private void checkRestartTunnel() {
@@ -1215,6 +1256,10 @@ public abstract class MainBase {
             return m_tunnelState.listeningLocalHttpProxyPort;
         }
 
+        protected String getClientRegion() {
+            return m_tunnelState.clientRegion;
+        }
+
         protected void getTunnelStateFromHandshakeIntent(Intent intent) {
             if (!intent.getAction().equals(TunnelManager.INTENT_ACTION_HANDSHAKE)) {
                 return;
@@ -1245,6 +1290,12 @@ public abstract class MainBase {
             if (homePages != null) {
                 m_tunnelState.homePages = homePages;
             }
+
+            onTunnelStateReceived();
+        }
+
+        protected void onTunnelStateReceived() {
+            // do nothing
         }
 
         private void getDataTransferStatsFromBundle(Bundle data) {
@@ -1291,6 +1342,7 @@ public abstract class MainBase {
 
                     case TunnelManager.MSG_TUNNEL_STOPPING:
                         m_tunnelState.isConnected = false;
+                        onTunnelDisconnected();
                         updateServiceStateUI();
 
                         // When the tunnel self-stops, we also need to unbind to ensure
@@ -1300,6 +1352,9 @@ public abstract class MainBase {
 
                     case TunnelManager.MSG_TUNNEL_CONNECTION_STATE:
                         m_tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
+                        if (!m_tunnelState.isConnected) {
+                            onTunnelDisconnected();
+                        }
                         updateServiceStateUI();
                         break;
 
@@ -1402,6 +1457,10 @@ public abstract class MainBase {
                 m_boundToTunnelVpnService = false;
             }
             updateServiceStateUI();
+        }
+
+        protected void onTunnelDisconnected() {
+            // do nothing
         }
 
         /**
@@ -1514,7 +1573,8 @@ public abstract class MainBase {
             private final SponsorWebChromeClient mWebChromeClient;
             private final ProgressBar mProgressBar;
 
-            @TargetApi(Build.VERSION_CODES.HONEYCOMB) public SponsorHomePage(WebView webView, ProgressBar progressBar) {
+            @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+            public SponsorHomePage(WebView webView, ProgressBar progressBar) {
                 mWebView = webView;
                 mProgressBar = progressBar;
                 mWebChromeClient = new SponsorWebChromeClient(mProgressBar);
@@ -1536,6 +1596,7 @@ public abstract class MainBase {
             }
 
             public void load(String url) {
+                m_localProxySettingsHaveBeenReset = false;
                 WebViewProxySettings.setLocalProxy(mWebView.getContext(), getListeningLocalHttpProxyPort());
                 mProgressBar.setVisibility(View.VISIBLE);
                 mWebView.loadUrl(url);
