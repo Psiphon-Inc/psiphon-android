@@ -4,18 +4,47 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <Button
+    <TextView
+        android:text="@string/PaymentChooserFragment.OverallDescription"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/PaymentChooserFragment.BuySubscription"
-        android:id="@+id/buy_subscription"
-        android:layout_gravity="center_horizontal"
-        android:nestedScrollingEnabled="false" />
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:layout_margin="10dp" />
+
+    <TextView
+        android:text="@string/PaymentChooserFragment.SubscriptionDescription"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:layout_margin="10dp" />
 
     <Button
+        android:id="@+id/buy_subscription"
+        android:text="@string/PaymentChooserFragment.Subscription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_margin="10dp"
+        android:padding="10dp"
+        android:nestedScrollingEnabled="false" />
+
+    <TextView
+        android:text="@string/PaymentChooserFragment.TimePassDescription"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/PaymentChooserFragment.TimePass"
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:layout_margin="10dp" />
+
+    <Button
         android:id="@+id/buy_timepass"
-        android:layout_gravity="center_horizontal" />
+        android:text="@string/PaymentChooserFragment.TimePass"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_margin="10dp"
+        android:padding="10dp"
+        android:nestedScrollingEnabled="false" />
 </LinearLayout>

@@ -5,11 +5,10 @@
          by ads or subscription. -->
     <string name="app_name_psiphon_pro">Psiphon Pro</string>
 
-    <!-- Text for a button that users can click to get a trial subscription. -->
-    <string name="SubscriptionPromptTitle">Purchase ad-free subscription\nNEW! 7 day free trial</string>
-
     <!-- Descriptive text telling the user how they can use Psiphon Pro: either
-         by subscribing or by having ads in the app. -->
+         by subscribing or by having ads in the app.
+         Insert one or more newline characters as needed to keep the lines approximately as short
+         as the English. -->
     <string name="SubscriptionPromptMessage">Subscribe now for unlimited ad-free use of Psiphon Pro.\n\nOr press Start to try ad-supported Psiphon Pro for free for 60 minutes.\n\nThank you for supporting Psiphon!</string>
 
     <!-- Prompt text telling the user that can continue to use Psiphon by watching
@@ -19,9 +18,32 @@
     <!-- Text indicating to the user how much time they have left in their free trial. -->
     <string name="FreeTrialRemainingTime">Free trial: %s</string>
 
-    <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.BuySubscription">Subscribe</string>
+    <!-- Label for button that leads user to buy subscription or time pass to premium service.
+         When the user has a subscription or time pass, advertisements are removed from the app
+         ("ad-free"), and additional features and network speed become available ("unlimited"). -->
+    <string name="SubscribeButton">Get unlimited ad-free Psiphon Pro!</string>
+
+    <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
+         Insert one or more newline characters as needed to keep the lines approximately as short
+         as the English. -->
+    <string name="PaymentChooserFragment.Subscription">Buy Subscription\nNEW! 7 day free trial</string>
 
     <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro. -->
     <string name="PaymentChooserFragment.TimePass">Buy 30-day Pass</string>
+
+    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
+         amount of time. This string is an overall description of the benefits of paying for
+         premium access. -->
+    <string name="PaymentChooserFragment.OverallDescription">Buying a Psiphon Pro subscription or time pass removes in-app advertisements and gives you access to additional features and unlimited speed.</string>
+
+    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
+         amount of time. This string is a description specifically about buying a subscription.
+         The parenthetical remark about credit card requirements should be separated by a newline. -->
+    <string name="PaymentChooserFragment.SubscriptionDescription">Subscribe for uninterrupted service at the best price.\n(Requires your Google Play account to have a valid credit card.)</string>
+
+    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
+         amount of time. This string is a description specifically about buying a time pass.
+         The parenthetical remark about credit card requirements should be separated by a newline. -->
+    <string name="PaymentChooserFragment.TimePassDescription">Buy a pass for a specific amount of time.\n(Does not require that Google Play account have a credit card. Account credit can be used.)</string>
+
 </resources>
