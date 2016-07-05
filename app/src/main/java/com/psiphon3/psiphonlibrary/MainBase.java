@@ -43,8 +43,8 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
+import android.text.TextUtils;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.KeyEvent;
@@ -89,6 +89,9 @@ import org.achartengine.model.XYMultipleSeriesDataset;
 import org.achartengine.model.XYSeries;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -1080,6 +1083,47 @@ public abstract class MainBase {
                 return false;
             }
 
+            //check if "add custom headers" checkbox changed
+            boolean addCustomHeadersPreference = prefs.getBoolean(
+                    getString(R.string.addCustomHeadersPreference), false);
+            if (addCustomHeadersPreference != UpstreamProxySettings.getAddCustomHeadersPreference(this)) {
+                return true;
+            }
+
+            // "add custom headers" is selected, check if
+            // upstream headers string has changed
+            if (addCustomHeadersPreference) {
+                JSONObject headers = new JSONObject();
+
+                for (int position = 1; position <= 3; position++) {
+                    int nameID = getResources().getIdentifier("customProxyHeaderName" + position, "string", getPackageName());
+                    int valueID = getResources().getIdentifier("customProxyHeaderValue" + position, "string", getPackageName());
+
+                    String namePrefStr = getResources().getString(nameID);
+                    String valuePrefStr = getResources().getString(valueID);
+
+                    String name = prefs.getString(namePrefStr, "");
+                    String value = prefs.getString(valuePrefStr, "");
+                    try {
+                        if (!TextUtils.isEmpty(name)) {
+                            JSONArray arr = new JSONArray();
+                            if (!TextUtils.isEmpty(value)) {
+                                arr.put(value);
+                            }
+                            headers.put(name, arr);
+                        }
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                String newHeaders = headers.toString();
+                String oldHeaders = UpstreamProxySettings.getUpstreamProxyCustomHeaders(this).toString();
+
+                if (0 != oldHeaders.compareTo(newHeaders)) {
+                    return true;
+                }
+            }
+
             // check if "use custom proxy settings"
             // radio has changed
             boolean useCustomProxySettingsPreference = prefs.getBoolean(
@@ -1150,7 +1194,14 @@ public abstract class MainBase {
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyAuthenticationPreference), getString(R.string.useProxyAuthenticationPreference)),
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyUsernamePreference), getString(R.string.useProxyUsernamePreference)),
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyPasswordPreference), getString(R.string.useProxyPasswordPreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference))
+                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.addCustomHeadersPreference), getString(R.string.addCustomHeadersPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName1), getString(R.string.customProxyHeaderName1)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue1), getString(R.string.customProxyHeaderValue1)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName2), getString(R.string.customProxyHeaderName2)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue2), getString(R.string.customProxyHeaderValue2)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName3), getString(R.string.customProxyHeaderName3)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue3), getString(R.string.customProxyHeaderValue3))
                 );
 
                 if (bRestartRequired) {

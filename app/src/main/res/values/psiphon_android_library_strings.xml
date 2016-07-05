@@ -161,6 +161,18 @@
     <string name="proxy_domain_title">Proxy domain</string>
     <string name="proxy_domain_summary">Domain for proxy authentication</string>
     <string name="http_proxy_port_in_use">Requested local HTTP proxy port %d is already in use by another app.  Cannot continue.</string>
+    <string name="custom_proxy_headers_title">Custom HTTP headers</string>
+    <string name="custom_proxy_headers_summary">Setup additional custom HTTP headers for proxy requests</string>
+    <string name="custom_proxy_headers_checkbox_title">Add custom HTTP headers</string>
+    <string name="custom_proxy_headers_checkbox_description">Add custom HTTP headers to all outgoing HTTP proxy requests</string>
+    <string name="custom_proxy_header_group_1">Header 1</string>
+    <string name="custom_proxy_header_group_2">Header 2</string>
+    <string name="custom_proxy_header_group_3">Header 3</string>
+    <string name="custom_proxy_header_name">Enter header name</string>
+    <string name="custom_proxy_header_value">Enter header value</string>
+    <string name="custom_proxy_header_ignored_values">Warning: headers with empty names will be ignored!</string>
+    <string name="custom_proxy_header_invalid_name">Error: header name contains illegal characters!</string>
+
 
     <!-- When the split tunnel option is enabled, the current region is used to determine which requests should and shouldn't be tunneled. This log message tells the user which region (in '%s') is being used for this decision. -->
     <string name="split_tunnel_region">Split tunnel region: %s</string>

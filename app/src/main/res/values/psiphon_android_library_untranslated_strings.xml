@@ -29,6 +29,15 @@
     <string name="downloadWifiOnlyPreference">downloadWifiOnlyPreference</string>
     <string name="disableTimeoutsPreference">disableTimeoutsPreference</string>
     <string name="moreOptionsPreferencesName">moreOptionsPreferencesName</string>
+    <string name="customProxyHeadersPreference">customProxyHeadersPreference</string>
+    <string name="addCustomHeadersPreference">addCustomHeadersPreference</string>
+    <string name="customProxyHeaderName1" >customProxyHeaderName1</string>
+    <string name="customProxyHeaderValue1">customProxyHeaderValue1</string>
+    <string name="customProxyHeaderName2" >customProxyHeaderName2</string>
+    <string name="customProxyHeaderValue2">customProxyHeaderValue2</string>
+    <string name="customProxyHeaderName3" >customProxyHeaderName3</string>
+    <string name="customProxyHeaderValue3">customProxyHeaderValue3</string>
+
 
     <!-- When Psiphon disconnects it sends a one last ("final") status request. This message is shown if that request fails. -->
     <string name="final_status_request_failed">Final status request failed</string>
