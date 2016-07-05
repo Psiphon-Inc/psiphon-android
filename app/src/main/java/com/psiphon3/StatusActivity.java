@@ -606,10 +606,20 @@ public class StatusActivity
         {
             if (m_iabHelper != null)
             {
-                m_iabHelper.queryInventoryAsync(false, m_iabQueryInventoryFinishedListener);
+                List<String> timepassSkus = new ArrayList<>();
+                timepassSkus.addAll(IAB_TIMEPASS_SKUS_TO_TIME.keySet());
+
+                List<String> subscriptionSkus = new ArrayList<>();
+                subscriptionSkus.add(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU);
+
+                m_iabHelper.queryInventoryAsync(
+                        true,
+                        timepassSkus,
+                        subscriptionSkus,
+                        m_iabQueryInventoryFinishedListener);
             }
         }
-        catch (IllegalStateException ex)
+        catch (IllegalStateException|IabHelper.IabAsyncInProgressException ex)
         {
             handleIabFailure(null);
         }
@@ -624,7 +634,7 @@ public class StatusActivity
                 m_iabHelper.consumeAsync(purchases, listener);
             }
         }
-        catch (IllegalStateException ex)
+        catch (IllegalStateException|IabHelper.IabAsyncInProgressException ex)
         {
             handleIabFailure(null);
         }
@@ -643,7 +653,7 @@ public class StatusActivity
                         IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
             }
         }
-        catch (IllegalStateException ex)
+        catch (IllegalStateException|IabHelper.IabAsyncInProgressException ex)
         {
             handleIabFailure(null);
         }
@@ -662,7 +672,7 @@ public class StatusActivity
                         IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
             }
         }
-        catch (IllegalStateException ex)
+        catch (IllegalStateException|IabHelper.IabAsyncInProgressException ex)
         {
             handleIabFailure(null);
         }
@@ -815,7 +825,14 @@ public class StatusActivity
     {
         if (m_iabHelper != null)
         {
-            m_iabHelper.dispose();
+            try {
+                m_iabHelper.dispose();
+            }
+            catch (IabHelper.IabAsyncInProgressException ex)
+            {
+                // Nothing can help at this point. Continue to de-init.
+            }
+
             m_iabHelper = null;
         }
     }
