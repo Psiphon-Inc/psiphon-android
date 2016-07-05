@@ -606,7 +606,7 @@ public class StatusActivity
         {
             if (m_iabHelper != null)
             {
-                m_iabHelper.queryInventoryAsync(m_iabQueryInventoryFinishedListener);
+                m_iabHelper.queryInventoryAsync(false, m_iabQueryInventoryFinishedListener);
             }
         }
         catch (IllegalStateException ex)
