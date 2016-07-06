@@ -37,10 +37,20 @@
     <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro. -->
     <string name="PaymentChooserFragment.TimePass90Day">Buy 90-day Pass\n(%1$s / day)</string>
 
-    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
-         amount of time. This string is an overall description of the benefits of paying for
-         premium access. -->
-    <string name="PaymentChooserFragment.OverallDescription">Buying a Psiphon Pro subscription or time pass removes in-app advertisements and provides unlimited access and additional features.</string>
+    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
+         exclamatory. Indicates that premium access results in all in-app advertisements being
+         removed. -->
+    <string name="PaymentChooserFragment.NoAdsExclaim">No ads!</string>
+
+    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
+         exclamatory. Indicates that premium access results in additional features being unlocked
+         (such as egress region selection). -->
+    <string name="PaymentChooserFragment.FeaturesExclaim">Unlocked features!</string>
+
+    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
+         exclamatory. Indicates that premium access results in no interruptions due to free trial
+         time expiring (as happens with non-premium access). -->
+    <string name="PaymentChooserFragment.InterruptionsExclaim">No interruptions!</string>
 
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string is a description specifically about buying a subscription.
