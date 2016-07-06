@@ -27,13 +27,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.SystemClock;
-import android.preference.PreferenceManager;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
 
 import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
+import net.grandcentrix.tray.AppPreferences;
+
+import java.util.Date;
 import java.util.List;
 
 import ca.psiphon.PsiphonTunnel;
@@ -79,14 +81,36 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
      * @param formatArgs Arguments to be formatted into the log string.
      */
     private static void log(Context context, int stringResID, MyLog.Sensitivity sensitivity, int priority, Object... formatArgs) {
-        String logJSON = LoggingProvider.makeLogJSON(stringResID, sensitivity, priority, formatArgs);
+
+        /*
+        //TODO: use MyLog?
+        if(!MyLog.isSetLogger()) {
+            final Context loggerCtx = context;
+            MyLog.ILogger logger = new MyLog.ILogger() {
+                @Override
+                public Context getContext() {
+                    return loggerCtx;
+                }
+            };
+            MyLog.setLogger(logger);
+        }
+        */
+
+        String logJSON = LoggingProvider.makeStatusLogJSON(
+                context,
+                new Date(),
+                stringResID,
+                sensitivity,
+                formatArgs,
+                priority);
         if (logJSON == null) {
             // Fail silently
             return;
         }
 
         ContentValues values = new ContentValues();
-        values.put(LoggingProvider.LOG_JSON_KEY, logJSON);
+        values.put(LoggingProvider.LogDatabaseHelper.COLUMN_NAME_LOGJSON, logJSON);
+        values.put(LoggingProvider.LogDatabaseHelper.COLUMN_NAME_IS_DIAGNOSTIC, false);
 
         context.getContentResolver().insert(
                 LoggingProvider.INSERT_URI,
@@ -100,7 +124,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
      * May be called from any process or thread.
      * Side-effect: If an existing upgrade file is detected, the upgrade notification will be displayed.
      * Side-effect: Creates the UpgradeChecker alarm.
-     * @param context
+     * @param context the context
      * @return true if upgrade check is needed.
      */
     public static boolean upgradeCheckNeeded(Context context) {
@@ -142,7 +166,8 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
 
         // Verify if 'Download upgrades on WiFi only' user preference is on
         // but current network is not WiFi
-        if (PreferenceManager.getDefaultSharedPreferences(appContext).getBoolean(
+        final AppPreferences multiProcessPreferences = new AppPreferences(appContext);
+        if (multiProcessPreferences.getBoolean(
                 context.getString(R.string.downloadWifiOnlyPreference), PsiphonConstants.DOWNLOAD_WIFI_ONLY_PREFERENCE_DEFAULT) &&
                 !Utils.isOnWiFi(appContext)) {
             log(context, R.string.upgrade_checker_upgrade_wifi_only, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN);
@@ -175,6 +200,9 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        // This service runs as a separate process, so it needs to initialize embedded values
+        EmbeddedValues.initialize(context);
+
         // Make sure the alarm is created, regardless of which intent we received.
         createAlarm(context.getApplicationContext());
 
@@ -313,7 +341,6 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
                 log(this, R.string.upgrade_checker_start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, Log.WARN, e.getMessage());
                 // No need to call shutDownTunnel().
                 releaseWakefulIntent();
-                return;
             }
         }
 
@@ -355,11 +382,17 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         @Override
         public String getPsiphonConfig() {
             // Build a temporary tunnel config to use
-            String config = TunnelManager.buildTunnelCoreConfig(
+            TunnelManager.Config tunnelManagerConfig = new TunnelManager.Config();
+            final AppPreferences multiProcessPreferences = new AppPreferences(this);
+            tunnelManagerConfig.disableTimeouts = multiProcessPreferences.getBoolean(
+                    this.getString(R.string.disableTimeoutsPreference), false);
+
+            String tunnelCoreConfig = TunnelManager.buildTunnelCoreConfig(
                     this,                       // context
+                    tunnelManagerConfig,
                     "upgradechecker",           // tempTunnelName
                     "Psiphon_UpgradeChecker_"); // clientPlatformPrefix
-            return config == null ? "" : config;
+            return tunnelCoreConfig == null ? "" : tunnelCoreConfig;
         }
 
         /**

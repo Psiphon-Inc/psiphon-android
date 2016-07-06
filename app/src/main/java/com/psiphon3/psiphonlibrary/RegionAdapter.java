@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Psiphon Inc.
+ * Copyright (c) 2016, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,11 +19,7 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import android.content.Context;
-import android.content.SharedPreferences.Editor;
-import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,6 +28,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.psiphon3.R;
+
+import net.grandcentrix.tray.AppPreferences;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RegionAdapter extends ArrayAdapter<Integer>
 {
@@ -64,6 +65,7 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         new Region("HK", R.string.region_name_hk, R.drawable.flag_hk, false),
         new Region("SG", R.string.region_name_sg, R.drawable.flag_sg, false),
         new Region("NL", R.string.region_name_nl, R.drawable.flag_nl, false),
+        new Region("IN", R.string.region_name_in, R.drawable.flag_in, false),
     };
     
     private static boolean initialized = false;
@@ -90,9 +92,7 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         // and emits AvailableEgressRegions. The original assumption about
         // regions only being added, not removed, still applies.
 
-        String knownRegions = PreferenceManager
-                                        .getDefaultSharedPreferences(context)
-                                        .getString(KNOWN_REGIONS_PREFERENCE, "");
+        String knownRegions = new AppPreferences(context).getString(KNOWN_REGIONS_PREFERENCE, "");
         for (String region : knownRegions.split(","))
         {
             setServerExists(context, region, true);
@@ -100,7 +100,19 @@ public class RegionAdapter extends ArrayAdapter<Integer>
         
         initialized = true;
     }
-    
+
+    public static void setServersExist(Context context, List<String> regionCodes)
+    {
+        if (regionCodes == null)
+        {
+            return;
+        }
+        for (String regionCode : regionCodes)
+        {
+            setServerExists(context, regionCode, false);
+        }
+    }
+
     public static void setServerExists(Context context, String regionCode, boolean restoringKnownRegions)
     {
         // TODO: may want to replace linear lookup once there are many regions
@@ -133,9 +145,7 @@ public class RegionAdapter extends ArrayAdapter<Integer>
                 }
             }
 
-            Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
-            editor.putString(KNOWN_REGIONS_PREFERENCE, knownRegions.toString());
-            editor.commit();
+            new AppPreferences(context).put(KNOWN_REGIONS_PREFERENCE, knownRegions.toString());
         }
     }
     

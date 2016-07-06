@@ -37,6 +37,7 @@ import com.google.android.gms.safetynet.SafetyNetApi;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -48,17 +49,15 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     private static GoogleSafetyNetApiWrapper mInstance;
     private AtomicBoolean mCheckInFlight;
     private GoogleApiClient mGoogleApiClient;
-    private String mLastCheckJson;
-    private int mLastStatus;
-    private int mFailedRetries;
+    private String mLastPayload;
+    private WeakReference<TunnelManager> mTunnelManager;
 
     public Object clone() throws CloneNotSupportedException
     {
         throw new CloneNotSupportedException();
     }
 
-    private  GoogleSafetyNetApiWrapper(Context context) {
-        mFailedRetries = 0;
+    private GoogleSafetyNetApiWrapper(Context context) {
         // Create the Google API Client.
         mGoogleApiClient = new GoogleApiClient.Builder(context)
                 .addApi(SafetyNet.API)
@@ -68,29 +67,23 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         mCheckInFlight = new AtomicBoolean(false);
     }
 
-    public static synchronized  GoogleSafetyNetApiWrapper getInstance(Context context) {
+    public static synchronized GoogleSafetyNetApiWrapper getInstance(Context context) {
         if(mInstance == null) {
             mInstance = new GoogleSafetyNetApiWrapper(context);
         }
         return mInstance;
     }
 
-    public void connect() {
+    public void connect(TunnelManager manager) {
+        mTunnelManager = new WeakReference<>(manager);
+
         if (!mCheckInFlight.compareAndSet(false, true)) {
             return;
         }
 
-        if(!TextUtils.isEmpty(mLastCheckJson)) {
-            // Use cached response if either
-            // last status was API_REQUEST_FAILED more than 2 times in a row or
-            // last status was not API_REQUEST_FAILED
-
-            if ((mLastStatus == API_REQUEST_FAILED && mFailedRetries > 1) ||
-                    mLastStatus != API_REQUEST_FAILED) {
-                setPayload(mLastCheckJson);
-                mCheckInFlight.set(false);
-                return;
-            }
+        if(!TextUtils.isEmpty(mLastPayload)) {
+            setPayload(mLastPayload);
+            return;
         }
 
         if (!mGoogleApiClient.isConnecting() && !mGoogleApiClient.isConnected()) {
@@ -136,7 +129,10 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     @Override
     public void onConnectionSuspended(int i) {
         //try to reconnect
-        connect();
+        TunnelManager tunnelManager = mTunnelManager.get();
+        if (tunnelManager != null) {
+            connect(tunnelManager);
+        }
     }
 
     @Override
@@ -155,31 +151,15 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         {
             throw new RuntimeException(e);
         }
-
-        String checkJson = checkData.toString();
-        setPayload(checkJson);
-
-        // Cache last check response in memory,
-        // increment retries counter if API_REQUEST_FAILED,
-        // otherwise reset the counter
-
-        mLastCheckJson = checkJson;
-        mLastStatus = status;
-
-        if(status == API_REQUEST_FAILED) {
-            mFailedRetries++;
-        }
-        else {
-            mFailedRetries = 0;
-        }
-
-        mCheckInFlight.set(false);
+        setPayload(checkData.toString());
     }
 
     private void setPayload(String payload) {
-        TunnelManager tunnelManager = PsiphonData.getPsiphonData().getCurrentTunnelManager();
-        if(tunnelManager != null) {
+        mLastPayload = payload;
+        TunnelManager tunnelManager = mTunnelManager.get();
+        if (tunnelManager != null) {
             tunnelManager.setClientVerificationResult(payload);
         }
+        mCheckInFlight.set(false);
     }
 }
