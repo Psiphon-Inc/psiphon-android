@@ -65,15 +65,6 @@
             android:layout_margin="10dp" />
 
         <!-- Time pass button IDs must be of the form "timepass"+lifetime_in_days -->
-        <Button
-            android:text="@string/PaymentChooserFragment.TimePass7Day"
-            android:id="@+id/timepass7"
-            android:onClick="onTimePassButtonClick"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_margin="10dp"
-            android:padding="10dp" />
 
         <Button
             android:text="@string/PaymentChooserFragment.TimePass30Day"
@@ -85,15 +76,6 @@
             android:layout_margin="10dp"
             android:padding="10dp" />
 
-        <Button
-            android:text="@string/PaymentChooserFragment.TimePass90Day"
-            android:id="@+id/timepass90"
-            android:onClick="onTimePassButtonClick"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_margin="10dp"
-            android:padding="10dp" />
     </LinearLayout>
 
 </ScrollView>
