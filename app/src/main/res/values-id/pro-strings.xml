@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="SubscriptionPromptTitle">Beli langganan bebas iklan</string>
+    <string name="SubscriptionPromptMessage">Ayo berlangganan sekarang untuk menggunakan Psiphon Pro bebas iklan tanpa batas. Anda juga dapat menggunakan Psiphon Pro disertai iklan secara gratis.\n\nDalam mode disertai iklan, sambungan Anda akan terputus dan menampilkan iklan setiap 60 menit.\n\nTerima kasih telah mendukung Psiphon!</string>
+    <string name="SubscriptionPromptSubscribe">Daftar</string>
+    <string name="SubscriptionPromptAdSupported">Disertai Iklan</string>
+</resources>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The name of the app. "Pro" is intended to indicate that this version of
+         Psiphon has additional features and is not totally free; it's supported
+         by ads or suscription. -->
+    <string name="app_name_psiphon_pro">Psiphon Pro</string>
+
+    <!-- Text for a button that users can click to get a trial subscription. -->
+    <string name="SubscriptionPromptTitle">Purchase ad-free subscription\nNEW! 7 day free trial</string>
+
+    <!-- Descriptive text telling the user how they can use Psiphon Pro: either
+         by subscribing or by having ads in the app. -->
+    <string name="SubscriptionPromptMessage">Subscribe now for unlimited ad-free use of Psiphon Pro.\n\nOr press Start to try ad-supported Psiphon Pro for free for 60 minutes.\n\nThank you for supporting Psiphon!</string>
+
+    <!-- Prompt text telling the user that can continue to use Psiphon by watching
+         a video ad. (This is an alternative to subscribing.) -->
+    <string name="RewardedVideoPrompt">NEW! Watch a video to earn 100 minutes of uninterrupted Psiphon Pro.</string>
+
+    <!-- Text indicating to the user how much time they have left in their free trial. -->
+    <string name="FreeTrialRemainingTime">Free trial: %s</string>
+
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">Custom HTTP headers</string>
+
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">Setup additional custom HTTP headers for proxy requests</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">Add custom HTTP headers</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">Add custom HTTP headers to all outgoing HTTP proxy requests</string>
+    <string name="custom_proxy_header_group_1">Header 1</string>
+    <string name="custom_proxy_header_group_2">Header 2</string>
+    <string name="custom_proxy_header_group_3">Header 3</string>
+    <string name="custom_proxy_header_name">Enter header name</string>
+    <string name="custom_proxy_header_value">Enter header value</string>
+    <string name="custom_proxy_header_ignored_values">Warning: headers with empty names will be ignored!</string>
+    <string name="custom_proxy_header_invalid_name">Error: header name contains illegal characters!</string>
+</resources>

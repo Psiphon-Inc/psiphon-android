@@ -44,6 +44,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
+import android.text.TextUtils;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.KeyEvent;
@@ -67,6 +68,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TabHost.TabSpec;
@@ -74,9 +76,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
-import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.SharedPreferencesImport;
@@ -87,6 +89,9 @@ import org.achartengine.model.XYMultipleSeriesDataset;
 import org.achartengine.model.XYSeries;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -142,7 +147,7 @@ public abstract class MainBase {
         private StatusListViewManager m_statusListManager = null;
         private AppPreferences m_multiProcessPreferences;
         private ViewFlipper m_sponsorViewFlipper;
-        private LinearLayout m_statusLayout;
+        private ScrollView m_statusLayout;
         private TextView m_statusTabLogLine;
         private TextView m_statusTabVersionLine;
         private SponsorHomePage m_sponsorHomePage;
@@ -165,6 +170,8 @@ public abstract class MainBase {
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
         private LoggingObserver m_loggingObserver;
+        private boolean m_serviceStateUIPaused = false;
+        private boolean m_localProxySettingsHaveBeenReset = false;
 
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
@@ -427,7 +434,7 @@ public abstract class MainBase {
             };
 
             m_tabHost.setOnTouchListener(onTouchListener);
-            m_statusLayout = (LinearLayout) findViewById(R.id.statusLayout);
+            m_statusLayout = (ScrollView) findViewById(R.id.statusLayout);
             m_statusViewImage = (ImageButton) findViewById(R.id.statusViewImage);
             m_statusViewImage.setOnTouchListener(onTouchListener);
             findViewById(R.id.sponsorViewFlipper).setOnTouchListener(onTouchListener);
@@ -582,6 +589,8 @@ public abstract class MainBase {
         @Override
         protected void onResume() {
             super.onResume();
+            
+            m_localProxySettingsHaveBeenReset = false;
 
             // Load new logs from the logging provider now
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -681,6 +690,9 @@ public abstract class MainBase {
             }
         }
 
+        public abstract void onSubscribeButtonClick(View v);
+        public abstract void onWatchRewardedVideoButtonClick(View v);
+
         protected abstract void startUp();
 
         protected void doAbout() {
@@ -742,6 +754,12 @@ public abstract class MainBase {
             // Just in case an OnItemSelected message is in transit before
             // setEnabled is processed...(?)
             if (!m_regionSelector.isEnabled()) {
+                return;
+            }
+
+            if (!Utils.getHasValidSubscription(this)) {
+                m_regionSelector.setSelection(m_regionAdapter.getPositionForRegionCode(PsiphonConstants.REGION_CODE_ANY));
+                onSubscribeButtonClick(null);
                 return;
             }
 
@@ -890,14 +908,30 @@ public abstract class MainBase {
         }
 
         private void updateServiceStateUI() {
+            if (m_serviceStateUIPaused) {
+                return;
+            }
+            
             if (!m_boundToTunnelService) {
                 setStatusState(R.drawable.status_icon_disconnected);
                 if (!isServiceRunning()) {
                     m_toggleButton.setText(getText(R.string.start));
                     enableToggleServiceUI();
+                    updateSubscriptionAndAdOptions(true);
+                
+                    if (!m_localProxySettingsHaveBeenReset) {
+                        WebViewProxySettings.resetLocalProxy(this);
+                        m_localProxySettingsHaveBeenReset = true;
+                    }
                 } else {
                     m_toggleButton.setText(getText(R.string.waiting));
                     disableToggleServiceUI();
+                    updateSubscriptionAndAdOptions(false);
+                
+                    if (!m_localProxySettingsHaveBeenReset) {
+                        WebViewProxySettings.resetLocalProxy(this);
+                        m_localProxySettingsHaveBeenReset = true;
+                    }
                 }
             } else {
                 if (isTunnelConnected()) {
@@ -907,9 +941,13 @@ public abstract class MainBase {
                 }
                 m_toggleButton.setText(getText(R.string.stop));
                 enableToggleServiceUI();
+                updateSubscriptionAndAdOptions(false);
+                m_localProxySettingsHaveBeenReset = false;
             }
         }
-        
+
+        protected abstract void updateSubscriptionAndAdOptions(boolean show);
+
         protected void enableToggleServiceUI() {
             m_toggleButton.setEnabled(true);
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
@@ -924,6 +962,16 @@ public abstract class MainBase {
             m_disableTimeoutsToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
             m_moreOptionsButton.setEnabled(false);
+        }
+        
+        protected void pauseServiceStateUI() {
+            m_serviceStateUIPaused = true;
+            disableToggleServiceUI();
+        }
+        
+        protected void resumeServiceStateUI() {
+            m_serviceStateUIPaused = false;
+            updateServiceStateUI();
         }
 
         private void checkRestartTunnel() {
@@ -1034,6 +1082,48 @@ public abstract class MainBase {
                 return false;
             }
 
+            //check if "add custom headers" checkbox changed
+            boolean addCustomHeadersPreference = prefs.getBoolean(
+                    getString(R.string.addCustomHeadersPreference), false);
+            if (addCustomHeadersPreference != UpstreamProxySettings.getAddCustomHeadersPreference(this)) {
+                return true;
+            }
+
+            // "add custom headers" is selected, check if
+            // upstream headers string has changed
+            if (addCustomHeadersPreference) {
+                JSONObject newHeaders = new JSONObject();
+
+                for (int position = 1; position <= 3; position++) {
+                    int nameID = getResources().getIdentifier("customProxyHeaderName" + position, "string", getPackageName());
+                    int valueID = getResources().getIdentifier("customProxyHeaderValue" + position, "string", getPackageName());
+
+                    String namePrefStr = getResources().getString(nameID);
+                    String valuePrefStr = getResources().getString(valueID);
+
+                    String name = prefs.getString(namePrefStr, "");
+                    String value = prefs.getString(valuePrefStr, "");
+                    try {
+                        if (!TextUtils.isEmpty(name)) {
+                            JSONArray arr = new JSONArray();
+                            if (!TextUtils.isEmpty(value)) {
+                                arr.put(value);
+                            }
+                            newHeaders.put(name, arr);
+                        }
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                JSONObject oldHeaders = UpstreamProxySettings.getUpstreamProxyCustomHeaders(this);
+                String oldValStr = (oldHeaders == null ? "" : oldHeaders.toString());
+
+                if (0 != oldValStr.compareTo(newHeaders.toString())) {
+                    return true;
+                }
+            }
+
             // check if "use custom proxy settings"
             // radio has changed
             boolean useCustomProxySettingsPreference = prefs.getBoolean(
@@ -1104,7 +1194,14 @@ public abstract class MainBase {
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyAuthenticationPreference), getString(R.string.useProxyAuthenticationPreference)),
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyUsernamePreference), getString(R.string.useProxyUsernamePreference)),
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyPasswordPreference), getString(R.string.useProxyPasswordPreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference))
+                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.addCustomHeadersPreference), getString(R.string.addCustomHeadersPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName1), getString(R.string.customProxyHeaderName1)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue1), getString(R.string.customProxyHeaderValue1)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName2), getString(R.string.customProxyHeaderName2)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue2), getString(R.string.customProxyHeaderValue2)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName3), getString(R.string.customProxyHeaderName3)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue3), getString(R.string.customProxyHeaderValue3))
                 );
 
                 if (bRestartRequired) {
@@ -1517,6 +1614,7 @@ public abstract class MainBase {
             }
 
             public void load(String url) {
+                m_localProxySettingsHaveBeenReset = false;
                 WebViewProxySettings.setLocalProxy(mWebView.getContext(), getListeningLocalHttpProxyPort());
                 mProgressBar.setVisibility(View.VISIBLE);
                 mWebView.loadUrl(url);

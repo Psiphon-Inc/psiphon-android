@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name_psiphon_pro">Psiphon Pro</string>
+    <string name="SubscriptionPromptTitle">Compra suscripción libre de publicidad\n¡NUEVO! prueba gratuita de 7 días.</string>
+    <string name="SubscriptionPromptMessage">Suscríbete ahora para el uso de Psiphon Pro ilimitado, sin la publicidad.\n\nO pulsa Iniciar para probar Psiphon Pro, con la publicidad, gratuitamente para 60 minutos.\n\nGracias por apoyar Psiphon.</string>
+    <string name="RewardedVideoPrompt">¡Nuevo! Ver un video para ganar 100 minutos de Psiphon Pro sin interrupciones.</string>
+    <string name="FreeTrialRemainingTime">Prueba gratuita: %s</string>
+</resources>
