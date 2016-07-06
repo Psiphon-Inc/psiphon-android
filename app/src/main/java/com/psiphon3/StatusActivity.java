@@ -627,9 +627,13 @@ public class StatusActivity
                         m_iabQueryInventoryFinishedListener);
             }
         }
-        catch (IllegalStateException|IabHelper.IabAsyncInProgressException ex)
+        catch (IllegalStateException ex)
         {
             handleIabFailure(null);
+        }
+        catch (IabHelper.IabAsyncInProgressException ex)
+        {
+            // Allow outstanding IAB request to finish.
         }
     }
 
@@ -642,9 +646,13 @@ public class StatusActivity
                 m_iabHelper.consumeAsync(purchases, listener);
             }
         }
-        catch (IllegalStateException|IabHelper.IabAsyncInProgressException ex)
+        catch (IllegalStateException ex)
         {
             handleIabFailure(null);
+        }
+        catch (IabHelper.IabAsyncInProgressException ex)
+        {
+            // Allow outstanding IAB request to finish.
         }
     }
 
@@ -661,9 +669,13 @@ public class StatusActivity
                         IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
             }
         }
-        catch (IllegalStateException|IabHelper.IabAsyncInProgressException ex)
+        catch (IllegalStateException ex)
         {
             handleIabFailure(null);
+        }
+        catch (IabHelper.IabAsyncInProgressException ex)
+        {
+            // Allow outstanding IAB request to finish.
         }
     }
 
@@ -680,9 +692,13 @@ public class StatusActivity
                         IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
             }
         }
-        catch (IllegalStateException|IabHelper.IabAsyncInProgressException ex)
+        catch (IllegalStateException ex)
         {
             handleIabFailure(null);
+        }
+        catch (IabHelper.IabAsyncInProgressException ex)
+        {
+            // Allow outstanding IAB request to finish.
         }
     }
 
