@@ -1206,6 +1206,9 @@ public abstract class MainBase {
                 );
 
                 if (bRestartRequired) {
+                    if (isServiceRunning()) {
+                        startAndBindTunnelService();
+                    }
                     scheduleRunningTunnelServiceRestart();
                 }
             }
