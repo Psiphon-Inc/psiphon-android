@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Psiphon Inc.
+ * Copyright (c) 2016, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -53,13 +53,17 @@ import com.psiphon3.util.IabHelper;
 import com.psiphon3.util.IabResult;
 import com.psiphon3.util.Inventory;
 import com.psiphon3.util.Purchase;
+import com.psiphon3.util.SkuDetails;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class StatusActivity
@@ -419,9 +423,20 @@ public class StatusActivity
     }
 
     static final String IAB_PUBLIC_KEY = "";
+    static final int IAB_REQUEST_CODE = 10001;
+
     static final String IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU = "";
     static final String[] OTHER_VALID_IAB_SUBSCRIPTION_SKUS = {};
-    static final int IAB_REQUEST_CODE = 10001;
+
+    static final String IAB_BASIC_30DAY_TIMEPASS_SKU = "";
+    static final Map<String, Long> IAB_TIMEPASS_SKUS_TO_TIME;
+    static {
+        Map<String, Long> m = new HashMap<>();
+        m.put(IAB_BASIC_30DAY_TIMEPASS_SKU, 30l * 24 * 60 * 60 * 1000);
+        IAB_TIMEPASS_SKUS_TO_TIME = Collections.unmodifiableMap(m);
+    }
+
+    Inventory mInventory;
 
     synchronized
     private void startIab()
@@ -452,15 +467,17 @@ public class StatusActivity
         {
             if (result.isFailure())
             {
+                Utils.MyLog.g(String.format("StatusActivity::onIabSetupFinished: failure: %s", result));
                 handleIabFailure(result);
             }
             else
             {
+                Utils.MyLog.g(String.format("StatusActivity::onIabSetupFinished: success: %s", result));
                 queryInventory();
             }
         }
     };
-    
+
     private IabHelper.QueryInventoryFinishedListener m_iabQueryInventoryFinishedListener =
             new IabHelper.QueryInventoryFinishedListener()
     {
@@ -469,11 +486,18 @@ public class StatusActivity
         {
             if (result.isFailure())
             {
+                Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: failure: %s", result));
                 handleIabFailure(result);
                 return;
             }
 
             m_startIabInFlight = false;
+
+            mInventory = inventory;
+
+            //
+            // Check if the user has a subscription.
+            //
 
             List<String> validSubscriptionSkus = new ArrayList<>(Arrays.asList(OTHER_VALID_IAB_SUBSCRIPTION_SKUS));
             validSubscriptionSkus.add(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU);
@@ -481,21 +505,79 @@ public class StatusActivity
             {
                 if (inventory.hasPurchase(validSku))
                 {
+                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid subscription: %s", validSku));
                     proceedWithValidSubscription();
                     return;
                 }
             }
+
+            //
+            // Check if the user has purchased a (30-day) time pass.
+            //
+
+            long now = System.currentTimeMillis();
+            List<Purchase> timepassesToConsume = new ArrayList<>();
+            for (Map.Entry<String, Long> timepass : IAB_TIMEPASS_SKUS_TO_TIME.entrySet())
+            {
+                String sku = timepass.getKey();
+                long lifetime = timepass.getValue();
+
+                Purchase purchase = inventory.getPurchase(sku);
+                if (purchase == null)
+                {
+                    continue;
+                }
+
+                long timepassExpiry = purchase.getPurchaseTime() + lifetime;
+                if (now < timepassExpiry)
+                {
+                    // This time pass is still valid.
+                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid time pass: %s", sku));
+                    proceedWithValidSubscription();
+                    return;
+                }
+                else
+                {
+                    // This time pass is no longer valid. Consider it invalid and consume it below
+                    // (unless a valid time-pass is found first and we early-exit).
+                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: consuming old time pass: %s", sku));
+                    timepassesToConsume.add(purchase);
+                }
+            }
+
+            if (timepassesToConsume.size() > 0)
+            {
+                // We're not passing a callback, because we're not going to take any special action
+                // when it completes (or if it fails).
+                //
+                // We are consuming purchases for two reasons:
+                //   1. So that they can be re-purchased (IAB prevents purchasing the same
+                //      un-consumed product twice).
+                //   2. So that the list of purchases to check doesn't just get longer and longer.
+                //
+                // Note: As implied by #1, if the consume fails the user may be left in a state
+                // where they can't buy another time pass. We think this is improbable and accept it
+                // (especially since whatever prevented the consume from succeeding would likely
+                // also prevent a new purchase from succeeding).
+                consumePurchases(timepassesToConsume, null);
+            }
+
+            //
+            // There is no valid subscription or time pass for this user.
+            //
 
             Utils.setHasValidSubscription(StatusActivity.this, false);
 
             updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
 
             if (isTunnelConnected() &&
-                    !Utils.getHasValidSubscriptionOrFreeTime(StatusActivity.this))
+                !Utils.getHasValidSubscriptionOrFreeTime(StatusActivity.this))
             {
                 // Stop the tunnel
                 doToggle();
             }
+
+            Utils.MyLog.g("StatusActivity::onQueryInventoryFinished: no valid subscription or time pass");
         }
     };
     
@@ -507,10 +589,20 @@ public class StatusActivity
         {
             if (result.isFailure())
             {
+                Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: failure: %s", result));
                 handleIabFailure(result);
             }      
             else if (purchase.getSku().equals(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU))
             {
+                Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
+                proceedWithValidSubscription();
+            }
+            else if (IAB_TIMEPASS_SKUS_TO_TIME.containsKey(purchase.getSku()))
+            {
+                Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
+
+                // We're not going to check the validity time here -- assume no time-pass is so
+                // short that it's already expired right after it's purchased.
                 proceedWithValidSubscription();
             }
         }
@@ -522,15 +614,51 @@ public class StatusActivity
         {
             if (m_iabHelper != null)
             {
-                m_iabHelper.queryInventoryAsync(m_iabQueryInventoryFinishedListener);
+                List<String> timepassSkus = new ArrayList<>();
+                timepassSkus.addAll(IAB_TIMEPASS_SKUS_TO_TIME.keySet());
+
+                List<String> subscriptionSkus = new ArrayList<>();
+                subscriptionSkus.add(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU);
+
+                m_iabHelper.queryInventoryAsync(
+                        true,
+                        timepassSkus,
+                        subscriptionSkus,
+                        m_iabQueryInventoryFinishedListener);
             }
         }
         catch (IllegalStateException ex)
         {
             handleIabFailure(null);
         }
+        catch (IabHelper.IabAsyncInProgressException ex)
+        {
+            // Allow outstanding IAB request to finish.
+        }
     }
-    
+
+    private void consumePurchases(List<Purchase> purchases, IabHelper.OnConsumeMultiFinishedListener listener)
+    {
+        try
+        {
+            if (m_iabHelper != null)
+            {
+                m_iabHelper.consumeAsync(purchases, listener);
+            }
+        }
+        catch (IllegalStateException ex)
+        {
+            handleIabFailure(null);
+        }
+        catch (IabHelper.IabAsyncInProgressException ex)
+        {
+            // Allow outstanding IAB request to finish.
+        }
+    }
+
+    /**
+     * Begin the flow for subscribing to premium access.
+     */
     private void launchSubscriptionPurchaseFlow()
     {
         try
@@ -545,8 +673,35 @@ public class StatusActivity
         {
             handleIabFailure(null);
         }
+        catch (IabHelper.IabAsyncInProgressException ex)
+        {
+            // Allow outstanding IAB request to finish.
+        }
     }
-    
+
+    /**
+     * Begin the flow for making a one-time purchase of time-limited premium access.
+     */
+    private void launchTimePassPurchaseFlow(String sku)
+    {
+        try
+        {
+            if (m_iabHelper != null && !m_startIabInFlight)
+            {
+                m_iabHelper.launchPurchaseFlow(this, sku,
+                        IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
+            }
+        }
+        catch (IllegalStateException ex)
+        {
+            handleIabFailure(null);
+        }
+        catch (IabHelper.IabAsyncInProgressException ex)
+        {
+            // Allow outstanding IAB request to finish.
+        }
+    }
+
     private void proceedWithValidSubscription()
     {
         Utils.setHasValidSubscription(this, true);
@@ -661,21 +816,65 @@ public class StatusActivity
             deInitAds();
         }
 
-        findViewById(R.id.subscriptionPromptMessage).setVisibility(show ? View.VISIBLE : View.GONE);
-        findViewById(R.id.subscribeButton).setVisibility(show ? View.VISIBLE : View.GONE);
+        boolean showSubscribe = show && (mInventory != null);
+
+        findViewById(R.id.subscriptionPromptMessage).setVisibility(showSubscribe ? View.VISIBLE : View.GONE);
+        findViewById(R.id.subscribeButton).setVisibility(showSubscribe ? View.VISIBLE : View.GONE);
         findViewById(R.id.watchRewardedVideoButton).setVisibility(show ? View.VISIBLE : View.GONE);
         textViewRemainingMinutes.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
+    private final int PAYMENT_CHOOSER_ACTIVITY = 20001;
+
     @Override
     public void onSubscribeButtonClick(View v)
     {
-        launchSubscriptionPurchaseFlow();
+        Utils.MyLog.g("StatusActivity::onSubscribeButtonClick");
+
+        // The button should not have been enabled if there's no inventory (yet).
+        assert(mInventory != null);
+
+        // User has clicked the Subscribe button, now let them choose the payment method.
+
+        Intent feedbackIntent = new Intent(this, PaymentChooserActivity.class);
+
+        // Pass price and SKU info to payment chooser activity.
+        PaymentChooserActivity.SkuInfo skuInfo = new PaymentChooserActivity.SkuInfo();
+
+        SkuDetails subscriptionSkuDetails = mInventory.getSkuDetails(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU);
+
+        skuInfo.mSubscriptionInfo.sku = subscriptionSkuDetails.getSku();
+        skuInfo.mSubscriptionInfo.price = subscriptionSkuDetails.getPrice();
+        skuInfo.mSubscriptionInfo.priceMicros = subscriptionSkuDetails.getPriceAmountMicros();
+        skuInfo.mSubscriptionInfo.priceCurrency = subscriptionSkuDetails.getPriceCurrencyCode();
+        // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
+        // we'll set it to 30 days.
+        skuInfo.mSubscriptionInfo.lifetime = 30l * 24 * 60 * 60 * 1000;
+
+        for (Map.Entry<String, Long> timepassSku : IAB_TIMEPASS_SKUS_TO_TIME.entrySet())
+        {
+            SkuDetails timepassSkuDetails = mInventory.getSkuDetails(timepassSku.getKey());
+            PaymentChooserActivity.SkuInfo.Info info = new PaymentChooserActivity.SkuInfo.Info();
+
+            info.sku = timepassSkuDetails.getSku();
+            info.price = timepassSkuDetails.getPrice();
+            info.priceMicros = timepassSkuDetails.getPriceAmountMicros();
+            info.priceCurrency = timepassSkuDetails.getPriceCurrencyCode();
+            info.lifetime = timepassSku.getValue();
+
+            skuInfo.mTimePassSkuToInfo.put(info.sku, info);
+        }
+
+        feedbackIntent.putExtra(PaymentChooserActivity.SKU_INFO_EXTRA, skuInfo.toString());
+
+        startActivityForResult(feedbackIntent, PAYMENT_CHOOSER_ACTIVITY);
     }
 
     @Override
     public void onWatchRewardedVideoButtonClick(View v)
     {
+        Utils.MyLog.g("StatusActivity::onWatchRewardedVideoButtonClick");
+
         if(m_supersonicWrapper != null) {
             m_supersonicWrapper.playVideo();
         }
@@ -686,7 +885,14 @@ public class StatusActivity
     {
         if (m_iabHelper != null)
         {
-            m_iabHelper.dispose();
+            try {
+                m_iabHelper.dispose();
+            }
+            catch (IabHelper.IabAsyncInProgressException ex)
+            {
+                // Nothing can help at this point. Continue to de-init.
+            }
+
             m_iabHelper = null;
         }
     }
@@ -699,6 +905,28 @@ public class StatusActivity
             if (m_iabHelper != null)
             {
                 m_iabHelper.handleActivityResult(requestCode, resultCode, data);
+            }
+        }
+        else if (requestCode == PAYMENT_CHOOSER_ACTIVITY)
+        {
+            if (resultCode == RESULT_OK)
+            {
+                int buyType = data.getIntExtra(PaymentChooserActivity.BUY_TYPE_EXTRA, -1);
+                if (buyType == PaymentChooserActivity.BUY_SUBSCRIPTION)
+                {
+                    Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: subscription");
+                    launchSubscriptionPurchaseFlow();
+                }
+                else if (buyType == PaymentChooserActivity.BUY_TIMEPASS)
+                {
+                    Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: time pass");
+                    String sku = data.getStringExtra(PaymentChooserActivity.SKU_INFO_EXTRA);
+                    launchTimePassPurchaseFlow(sku);
+                }
+            }
+            else
+            {
+                Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: canceled");
             }
         }
         else
