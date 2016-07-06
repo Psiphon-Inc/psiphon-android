@@ -955,6 +955,11 @@ public class IabHelper {
         boolean verificationFailed = false;
         String continueToken = null;
 
+        // PSIPHON
+        if (mService == null) {
+            return IABHELPER_UNKNOWN_ERROR;
+        }
+
         do {
             logDebug("Calling getPurchases with continuation token: " + continueToken);
             Bundle ownedItems = mService.getPurchases(3, mContext.getPackageName(),
