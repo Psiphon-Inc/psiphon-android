@@ -26,6 +26,7 @@
 
         <Button
             android:text="@string/PaymentChooserFragment.Subscription"
+            android:id="@+id/subscription"
             android:onClick="onSubscriptionButtonClick"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -42,9 +43,10 @@
             android:gravity="center_horizontal"
             android:layout_margin="10dp" />
 
+        <!-- Time pass button IDs must be of the form "timepass"+lifetime_in_days -->
         <Button
             android:text="@string/PaymentChooserFragment.TimePass7Day"
-            android:tag="7"
+            android:id="@+id/timepass7"
             android:onClick="onTimePassButtonClick"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -55,7 +57,7 @@
 
         <Button
             android:text="@string/PaymentChooserFragment.TimePass30Day"
-            android:tag="30"
+            android:id="@+id/timepass30"
             android:onClick="onTimePassButtonClick"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -66,7 +68,7 @@
 
         <Button
             android:text="@string/PaymentChooserFragment.TimePass90Day"
-            android:tag="90"
+            android:id="@+id/timepass90"
             android:onClick="onTimePassButtonClick"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

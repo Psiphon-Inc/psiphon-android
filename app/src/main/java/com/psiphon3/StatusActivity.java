@@ -58,7 +58,6 @@ import com.psiphon3.util.SkuDetails;
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -482,7 +481,7 @@ public class StatusActivity
             }
         }
     };
-    
+
     private IabHelper.QueryInventoryFinishedListener m_iabQueryInventoryFinishedListener =
             new IabHelper.QueryInventoryFinishedListener()
     {
@@ -522,19 +521,22 @@ public class StatusActivity
 
             long now = System.currentTimeMillis();
             List<Purchase> timepassesToConsume = new ArrayList<>();
-            for (Map.Entry<String, Long> timepassSku : IAB_TIMEPASS_SKUS_TO_TIME.entrySet())
+            for (Map.Entry<String, Long> timepass : IAB_TIMEPASS_SKUS_TO_TIME.entrySet())
             {
-                Purchase purchase = inventory.getPurchase(timepassSku.getKey());
+                String sku = timepass.getKey();
+                long lifetime = timepass.getValue();
+
+                Purchase purchase = inventory.getPurchase(sku);
                 if (purchase == null)
                 {
                     continue;
                 }
 
-                long timepassExpiry = purchase.getPurchaseTime() + timepassSku.getValue();
+                long timepassExpiry = purchase.getPurchaseTime() + lifetime;
                 if (now < timepassExpiry)
                 {
                     // This time pass is still valid.
-                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid time pass: %s", timepassSku.getKey()));
+                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid time pass: %s", sku));
                     proceedWithValidSubscription();
                     return;
                 }
@@ -542,7 +544,7 @@ public class StatusActivity
                 {
                     // This time pass is no longer valid. Consider it invalid and consume it below
                     // (unless a valid time-pass is found first and we early-exit).
-                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: consuming old time pass: %s", timepassSku.getKey()));
+                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: consuming old time pass: %s", sku));
                     timepassesToConsume.add(purchase);
                 }
             }
@@ -672,13 +674,13 @@ public class StatusActivity
     /**
      * Begin the flow for making a one-time purchase of time-limited premium access.
      */
-    private void launchTimePassPurchaseFlow()
+    private void launchTimePassPurchaseFlow(String sku)
     {
         try
         {
             if (m_iabHelper != null && !m_startIabInFlight)
             {
-                m_iabHelper.launchPurchaseFlow(this, IAB_BASIC_30DAY_TIMEPASS_SKU,
+                m_iabHelper.launchPurchaseFlow(this, sku,
                         IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
             }
         }
@@ -832,6 +834,7 @@ public class StatusActivity
         skuInfo.mSubscriptionInfo.sku = subscriptionSkuDetails.getSku();
         skuInfo.mSubscriptionInfo.price = subscriptionSkuDetails.getPrice();
         skuInfo.mSubscriptionInfo.priceMicros = subscriptionSkuDetails.getPriceAmountMicros();
+        skuInfo.mSubscriptionInfo.priceCurrency = subscriptionSkuDetails.getPriceCurrencyCode();
         // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
         // we'll set it to 30 days.
         skuInfo.mSubscriptionInfo.lifetime = 30l * 24 * 60 * 60 * 1000;
@@ -844,6 +847,7 @@ public class StatusActivity
             info.sku = timepassSkuDetails.getSku();
             info.price = timepassSkuDetails.getPrice();
             info.priceMicros = timepassSkuDetails.getPriceAmountMicros();
+            info.priceCurrency = timepassSkuDetails.getPriceCurrencyCode();
             info.lifetime = timepassSku.getValue();
 
             skuInfo.mTimePassSkuToInfo.put(info.sku, info);
@@ -904,7 +908,8 @@ public class StatusActivity
                 else if (buyType == PaymentChooserActivity.BUY_TIMEPASS)
                 {
                     Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: time pass");
-                    launchTimePassPurchaseFlow();
+                    String sku = data.getStringExtra(PaymentChooserActivity.SKU_INFO_EXTRA);
+                    launchTimePassPurchaseFlow(sku);
                 }
             }
             else

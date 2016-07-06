@@ -23,6 +23,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
@@ -31,6 +32,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.NumberFormat;
+import java.util.Currency;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,22 +54,66 @@ public class PaymentChooserActivity extends Activity {
         String jsonString = intent.getStringExtra(SKU_INFO_EXTRA);
 
         mSkuInfo = new SkuInfo(jsonString);
+
+        // Set up the buttons, including adding a tag with the product SKU and setting the
+        // price-per-day value.
+
+        setUpButton(R.id.subscription, mSkuInfo.mSubscriptionInfo);
+
+        for (SkuInfo.Info info : mSkuInfo.mTimePassSkuToInfo.values()) {
+            long lifetimeInDays = info.lifetime / 24 / 60 / 60 / 1000;
+            int id = getResources().getIdentifier("timepass"+lifetimeInDays, "id", getPackageName());
+
+            setUpButton(id, info);
+        }
     }
 
-    public void onSubscriptionButtonClick(View v)
-    {
+    /**
+     * Sets up the payment chooser buttons. This includes adding a tag with the product SKU and
+     * putting the price-per-day value into the label.
+     * @param buttonId ID of the button to set up.
+     * @param skuInfo Info about the SKU.
+     */
+    private void setUpButton(int buttonId, SkuInfo.Info skuInfo) {
+        skuInfo.button = (Button)findViewById(buttonId);
+
+        long lifetimeInDays = skuInfo.lifetime / 24 / 60 / 60 / 1000;
+        skuInfo.button.setTag(skuInfo.sku);
+
+        float pricePerDay = skuInfo.priceMicros / 1000000.0f / lifetimeInDays;
+
+        Currency currency = Currency.getInstance(skuInfo.priceCurrency);
+        NumberFormat priceFormatter = NumberFormat.getCurrencyInstance();
+        priceFormatter.setCurrency(currency);
+        String pricePerDayText = priceFormatter.format(pricePerDay);
+
+        String formatString = skuInfo.button.getText().toString();
+        String buttonText = String.format(formatString, pricePerDayText);
+        skuInfo.button.setText(buttonText);
+    }
+
+    public void onSubscriptionButtonClick(View v) {
         Utils.MyLog.g("PaymentChooserActivity::onSubscriptionButtonClick");
         Intent intent = getIntent();
         intent.putExtra(BUY_TYPE_EXTRA, BUY_SUBSCRIPTION);
+        intent.putExtra(SKU_INFO_EXTRA, mSkuInfo.mSubscriptionInfo.sku);
         setResult(RESULT_OK, intent);
         finish();
     }
 
-    public void onTimePassButtonClick(View v)
-    {
+    public void onTimePassButtonClick(View v) {
         Utils.MyLog.g("PaymentChooserActivity::onTimePassButtonClick");
+
+        // One of the time-pass buttons was clicked, but we don't know which. Figure it out from the
+        // tag attribute, which is set to the SKU.
+
+        String sku = (String)v.getTag();
+
+        assert(sku != null);
+
         Intent intent = getIntent();
         intent.putExtra(BUY_TYPE_EXTRA, BUY_TIMEPASS);
+        intent.putExtra(SKU_INFO_EXTRA, sku);
         setResult(RESULT_OK, intent);
         finish();
     }
@@ -77,6 +124,8 @@ public class PaymentChooserActivity extends Activity {
             public long lifetime;
             public String price;
             public long priceMicros;
+            public String priceCurrency;
+            public Button button;
         }
 
         Info mSubscriptionInfo = new Info();
@@ -93,6 +142,7 @@ public class PaymentChooserActivity extends Activity {
                 mSubscriptionInfo.lifetime = subscriptionInfo.getLong("lifetime");
                 mSubscriptionInfo.price = subscriptionInfo.getString("price");
                 mSubscriptionInfo.priceMicros = subscriptionInfo.getLong("priceMicros");
+                mSubscriptionInfo.priceCurrency = subscriptionInfo.getString("priceCurrency");
 
                 JSONArray timepassInfo = json.getJSONArray("timepassInfo");
                 for (int i = 0; i < timepassInfo.length(); i++) {
@@ -102,6 +152,7 @@ public class PaymentChooserActivity extends Activity {
                     info.lifetime = infoJson.getLong("lifetime");
                     info.price = infoJson.getString("price");
                     info.priceMicros = infoJson.getLong("priceMicros");
+                    info.priceCurrency = infoJson.getString("priceCurrency");
 
                     mTimePassSkuToInfo.put(info.sku, info);
                 }
@@ -120,6 +171,7 @@ public class PaymentChooserActivity extends Activity {
                 jsonSubscriptionObj.put("lifetime", mSubscriptionInfo.lifetime);
                 jsonSubscriptionObj.put("price", mSubscriptionInfo.price);
                 jsonSubscriptionObj.put("priceMicros", mSubscriptionInfo.priceMicros);
+                jsonSubscriptionObj.put("priceCurrency", mSubscriptionInfo.priceCurrency);
 
                 JSONArray timepassInfo = new JSONArray();
                 for (Info info : mTimePassSkuToInfo.values()) {
@@ -129,6 +181,7 @@ public class PaymentChooserActivity extends Activity {
                     jsonTimePassObj.put("lifetime", info.lifetime);
                     jsonTimePassObj.put("price", info.price);
                     jsonTimePassObj.put("priceMicros", info.priceMicros);
+                    jsonTimePassObj.put("priceCurrency", info.priceCurrency);
 
                     timepassInfo.put(jsonTimePassObj);
                 }
