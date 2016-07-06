@@ -43,7 +43,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -1267,6 +1266,9 @@ public abstract class MainBase {
 
         private final Messenger m_incomingMessenger = new Messenger(new IncomingMessageHandler());
         private Messenger m_outgoingMessenger = null;
+        // queue of client messages that
+        // will be sent to Service once client is connected
+        private final List<Integer> m_queue = new ArrayList<>();
 
         private class IncomingMessageHandler extends Handler {
             @Override
@@ -1323,6 +1325,9 @@ public abstract class MainBase {
         private void sendServiceMessage(int what) {
             if (m_incomingMessenger == null ||
                     m_outgoingMessenger == null) {
+                synchronized (m_queue) {
+                    m_queue.add(what);
+                }
                 return;
             }
             try {
@@ -1341,6 +1346,13 @@ public abstract class MainBase {
                 m_outgoingMessenger = new Messenger(service);
                 m_boundToTunnelService = true;
                 sendServiceMessage(TunnelManager.MSG_REGISTER);
+                /** Send all pending messages to the newly created Service. **/
+                synchronized (m_queue) {
+                    for (Integer message : m_queue) {
+                        sendServiceMessage(message);
+                    }
+                    m_queue.clear();
+                }
                 updateServiceStateUI();
             }
 
@@ -1360,6 +1372,13 @@ public abstract class MainBase {
             public void onServiceConnected(ComponentName className, IBinder service) {
                 m_outgoingMessenger = new Messenger(service);
                 m_boundToTunnelVpnService = true;
+                /** Send all pending messages to the newly created Service. **/
+                synchronized (m_queue) {
+                    for (Integer message : m_queue) {
+                        sendServiceMessage(message);
+                    }
+                    m_queue.clear();
+                }
                 sendServiceMessage(TunnelManager.MSG_REGISTER);
                 updateServiceStateUI();
             }
