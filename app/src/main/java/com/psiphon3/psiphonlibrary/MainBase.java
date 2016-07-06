@@ -1093,7 +1093,7 @@ public abstract class MainBase {
             // "add custom headers" is selected, check if
             // upstream headers string has changed
             if (addCustomHeadersPreference) {
-                JSONObject headers = new JSONObject();
+                JSONObject newHeaders = new JSONObject();
 
                 for (int position = 1; position <= 3; position++) {
                     int nameID = getResources().getIdentifier("customProxyHeaderName" + position, "string", getPackageName());
@@ -1110,16 +1110,17 @@ public abstract class MainBase {
                             if (!TextUtils.isEmpty(value)) {
                                 arr.put(value);
                             }
-                            headers.put(name, arr);
+                            newHeaders.put(name, arr);
                         }
                     } catch (JSONException e) {
                         throw new RuntimeException(e);
                     }
                 }
-                String newHeaders = headers.toString();
-                String oldHeaders = UpstreamProxySettings.getUpstreamProxyCustomHeaders(this).toString();
 
-                if (0 != oldHeaders.compareTo(newHeaders)) {
+                JSONObject oldHeaders = UpstreamProxySettings.getUpstreamProxyCustomHeaders(this);
+                String oldValStr = (oldHeaders == null ? "" : oldHeaders.toString());
+
+                if (0 != oldValStr.compareTo(newHeaders.toString())) {
                     return true;
                 }
             }
