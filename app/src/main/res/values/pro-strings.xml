@@ -18,4 +18,25 @@
 
     <!-- Text indicating to the user how much time they have left in their free trial. -->
     <string name="FreeTrialRemainingTime">Free trial: %s</string>
+
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">Custom HTTP headers</string>
+
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">Setup additional custom HTTP headers for proxy requests</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">Add custom HTTP headers</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">Add custom HTTP headers to all outgoing HTTP proxy requests</string>
+    <string name="custom_proxy_header_group_1">Header 1</string>
+    <string name="custom_proxy_header_group_2">Header 2</string>
+    <string name="custom_proxy_header_group_3">Header 3</string>
+    <string name="custom_proxy_header_name">Enter header name</string>
+    <string name="custom_proxy_header_value">Enter header value</string>
+    <string name="custom_proxy_header_ignored_values">Warning: headers with empty names will be ignored!</string>
+    <string name="custom_proxy_header_invalid_name">Error: header name contains illegal characters!</string>
 </resources>
