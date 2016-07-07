@@ -425,10 +425,10 @@ public class StatusActivity
     static final String IAB_PUBLIC_KEY = "";
     static final int IAB_REQUEST_CODE = 10001;
 
-    static final String IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU = "";
-    static final String[] OTHER_VALID_IAB_SUBSCRIPTION_SKUS = {};
+    static final String IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU = "basic_ad_free_subscription_4";
+    static final String[] OTHER_VALID_IAB_SUBSCRIPTION_SKUS = {"basic_ad_free_subscription", "basic_ad_free_subscription_2, basic_ad_free_subscription_3"};
 
-    static final String IAB_BASIC_30DAY_TIMEPASS_SKU = "";
+    static final String IAB_BASIC_30DAY_TIMEPASS_SKU = "basic_ad_free_30_day_timepass";
     static final Map<String, Long> IAB_TIMEPASS_SKUS_TO_TIME;
     static {
         Map<String, Long> m = new HashMap<>();
