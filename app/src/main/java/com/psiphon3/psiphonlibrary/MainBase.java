@@ -1117,9 +1117,8 @@ public abstract class MainBase {
                 }
 
                 JSONObject oldHeaders = UpstreamProxySettings.getUpstreamProxyCustomHeaders(this);
-                String oldValStr = (oldHeaders == null ? "" : oldHeaders.toString());
 
-                if (0 != oldValStr.compareTo(newHeaders.toString())) {
+                if (0 != oldHeaders.toString().compareTo(newHeaders.toString())) {
                     return true;
                 }
             }
