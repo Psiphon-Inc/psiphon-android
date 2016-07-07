@@ -228,19 +228,13 @@ public class UpstreamProxySettings {
     }
 
     public synchronized static JSONObject getUpstreamProxyCustomHeaders(Context context) {
-        ProxySettings proxySettings = getProxySettings(context);
         JSONObject headersJson = new JSONObject();
 
-        if (proxySettings == null) {
+        if(!getAddCustomHeadersPreference(context)) {
             return headersJson;
         }
 
         AppPreferences ap = new AppPreferences(context);
-
-        if(!ap.getBoolean(context.getString(R.string.addCustomHeadersPreference), false)) {
-            return headersJson;
-        }
-
 
         for (int position = 1; position <= 3; position++) {
             int nameID = context.getResources().getIdentifier("customProxyHeaderName" + position, "string", context.getPackageName());
