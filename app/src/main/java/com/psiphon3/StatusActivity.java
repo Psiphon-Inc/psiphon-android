@@ -611,6 +611,10 @@ public class StatusActivity
                     Utils.MyLog.g(String.format("StatusActivity::onConsumeMultiFinished: failure: %s", result));
                     failed = true;
                 }
+                else
+                {
+                    Utils.MyLog.g("StatusActivity::onConsumeMultiFinished: success");
+                }
             }
 
             if (failed)
