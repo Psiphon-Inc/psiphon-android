@@ -220,7 +220,7 @@ public class StatusActivity
     @Override
     protected void onPause()
     {
-        if (isTunnelConnected() &&
+        if (isServiceRunning() &&
                 !Utils.getHasValidSubscriptionOrFreeTime(this))
         {
             doToggle();
@@ -570,7 +570,7 @@ public class StatusActivity
 
             updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
 
-            if (isTunnelConnected() &&
+            if (isServiceRunning() &&
                 !Utils.getHasValidSubscriptionOrFreeTime(StatusActivity.this))
             {
                 // Stop the tunnel
@@ -721,7 +721,7 @@ public class StatusActivity
         deInitIab();
         m_startIabInFlight = false;
 
-        if (isTunnelConnected() &&
+        if (isServiceRunning() &&
                 !Utils.getHasValidSubscriptionOrFreeTime(this))
         {
             // Stop the tunnel
