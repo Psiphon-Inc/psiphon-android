@@ -559,7 +559,7 @@ public class StatusActivity
                 // where they can't buy another time pass. We think this is improbable and accept it
                 // (especially since whatever prevented the consume from succeeding would likely
                 // also prevent a new purchase from succeeding).
-                consumePurchases(timepassesToConsume, null);
+                consumePurchases(timepassesToConsume);
             }
 
             //
@@ -607,6 +607,32 @@ public class StatusActivity
             }
         }
     };
+
+    private IabHelper.OnConsumeMultiFinishedListener m_iabConsumeFinishedListener =
+            new IabHelper.OnConsumeMultiFinishedListener()
+    {
+        @Override
+        public void onConsumeMultiFinished(List<Purchase> purchases, List<IabResult> results)
+        {
+            boolean failed = false;
+            for (IabResult result : results)
+            {
+                if (result.isFailure())
+                {
+                    Utils.MyLog.g(String.format("StatusActivity::onConsumeMultiFinished: failure: %s", result));
+                    failed = true;
+                }
+            }
+            if (failed)
+            {
+                handleIabFailure(null);
+            }
+            else
+            {
+                queryInventory();
+            }
+        }
+    };
     
     private void queryInventory()
     {
@@ -637,13 +663,17 @@ public class StatusActivity
         }
     }
 
-    private void consumePurchases(List<Purchase> purchases, IabHelper.OnConsumeMultiFinishedListener listener)
+    private void consumePurchases(List<Purchase> purchases)
     {
+        // Invalidate the cached inventory, and query inventory again when
+        // the consume completes
+        mInventory = null;
+
         try
         {
             if (m_iabHelper != null)
             {
-                m_iabHelper.consumeAsync(purchases, listener);
+                m_iabHelper.consumeAsync(purchases, m_iabConsumeFinishedListener);
             }
         }
         catch (IllegalStateException ex)
