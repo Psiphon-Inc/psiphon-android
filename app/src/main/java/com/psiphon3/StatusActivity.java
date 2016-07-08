@@ -545,23 +545,6 @@ public class StatusActivity
                 }
             }
 
-            if (timepassesToConsume.size() > 0)
-            {
-                // We're not passing a callback, because we're not going to take any special action
-                // when it completes (or if it fails).
-                //
-                // We are consuming purchases for two reasons:
-                //   1. So that they can be re-purchased (IAB prevents purchasing the same
-                //      un-consumed product twice).
-                //   2. So that the list of purchases to check doesn't just get longer and longer.
-                //
-                // Note: As implied by #1, if the consume fails the user may be left in a state
-                // where they can't buy another time pass. We think this is improbable and accept it
-                // (especially since whatever prevented the consume from succeeding would likely
-                // also prevent a new purchase from succeeding).
-                consumePurchases(timepassesToConsume);
-            }
-
             //
             // There is no valid subscription or time pass for this user.
             //
@@ -570,7 +553,13 @@ public class StatusActivity
 
             updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
 
-            if (isServiceRunning() &&
+            // If the tunnel needs to be stopped, wait until after consumePurchases has finished,
+            // otherwise the async consumePurchases will fail.
+            if (timepassesToConsume.size() > 0)
+            {
+                consumePurchases(timepassesToConsume);
+            }
+            else if (isServiceRunning() &&
                 !Utils.getHasValidSubscriptionOrFreeTime(StatusActivity.this))
             {
                 // Stop the tunnel
@@ -623,13 +612,16 @@ public class StatusActivity
                     failed = true;
                 }
             }
+
             if (failed)
             {
                 handleIabFailure(null);
             }
-            else
+            else if (isServiceRunning() &&
+                    !Utils.getHasValidSubscriptionOrFreeTime(StatusActivity.this))
             {
-                queryInventory();
+                // Stop the tunnel
+                doToggle();
             }
         }
     };
@@ -665,10 +657,6 @@ public class StatusActivity
 
     private void consumePurchases(List<Purchase> purchases)
     {
-        // Invalidate the cached inventory, and query inventory again when
-        // the consume completes
-        mInventory = null;
-
         try
         {
             if (m_iabHelper != null)
@@ -864,6 +852,13 @@ public class StatusActivity
         // The button should not have been enabled if there's no inventory (yet).
         assert(mInventory != null);
 
+        // This function is also called when an unsubscribed user selects a region.
+        // Do nothing in this case (instead of crashing).
+        if (mInventory == null)
+        {
+            return;
+        }
+
         // User has clicked the Subscribe button, now let them choose the payment method.
 
         Intent feedbackIntent = new Intent(this, PaymentChooserActivity.class);
@@ -913,6 +908,7 @@ public class StatusActivity
     synchronized
     private void deInitIab()
     {
+        mInventory = null;
         if (m_iabHelper != null)
         {
             try {
