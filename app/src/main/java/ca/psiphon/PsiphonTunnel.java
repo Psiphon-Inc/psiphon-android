@@ -578,8 +578,14 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         TelephonyManager telephonyManager = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
         if (telephonyManager != null) {
             region = telephonyManager.getSimCountryIso();
+            if (region == null) {
+                region = "";
+            }
             if (region.length() == 0 && telephonyManager.getPhoneType() != TelephonyManager.PHONE_TYPE_CDMA) {
                 region = telephonyManager.getNetworkCountryIso();
+                if (region == null) {
+                    region = "";
+                }
             }
         }
         if (region.length() == 0) {
