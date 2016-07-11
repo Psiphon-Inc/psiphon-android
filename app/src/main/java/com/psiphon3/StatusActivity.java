@@ -768,7 +768,7 @@ public class StatusActivity
         }
     }
 
-    static final int INTERSTITIAL_REWARD_MINUTES = 60;
+    static final int INTERSTITIAL_REWARD_MINUTES = 700;
     private Handler delayHandler = new Handler();
     private Runnable enableFreeTrial = new Runnable()
     {
@@ -820,7 +820,7 @@ public class StatusActivity
 
             // Initialize Supersonic video ads
             if (m_supersonicWrapper == null) {
-                m_supersonicWrapper = new SupersonicRewardedVideoWrapper(this);
+                //m_supersonicWrapper = new SupersonicRewardedVideoWrapper(this);
             }
             findViewById(R.id.watchRewardedVideoButton).setEnabled(m_supersonicWrapper.isRewardedVideoAvailable());
 
