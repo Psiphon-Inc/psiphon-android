@@ -9,7 +9,7 @@
          by subscribing or by having ads in the app.
          Insert one or more newline characters as needed to keep the lines approximately as short
          as the English. -->
-    <string name="SubscriptionPromptMessage">Abonnez-vous maintenant pour profiter de Psiphon Pro sans publicité.\n\nOu encore appuyez sur Démarrer pour essayer gratuitement pendant 700 minutes la version financée par de la publicité de Psiphon Pro.\n\n Merci de soutenir Psiphon Pro !</string>
+    <string name="SubscriptionPromptMessage">Abonnez-vous maintenant pour profiter de Psiphon Pro sans publicité et sans limites.\n\nOu encore appuyez sur Démarrer pour essayer gratuitement pendant 700 minutes la version financée par de la publicité de Psiphon Pro.\n\n Merci de soutenir Psiphon Pro !</string>
 
     <!-- Prompt text telling the user that can continue to use Psiphon by watching
          a video ad. (This is an alternative to subscribing.) -->
