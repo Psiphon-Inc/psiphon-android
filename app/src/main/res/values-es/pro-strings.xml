@@ -28,7 +28,7 @@
         to HTTP proxy requests. Users may specify up to 3 custom headers -->
     <string name="custom_proxy_headers_title">Encabezados personalizados HTTP</string>
 
-    <string name="custom_proxy_header_group_1">Enbcabezado 1</string>
+    <string name="custom_proxy_header_group_1">Encabezado 1</string>
     <string name="custom_proxy_header_group_2">Encabezado 2</string>
     <string name="custom_proxy_header_group_3">Encabezado 3</string>
     <string name="custom_proxy_header_name">Introducir el nombre del encabezado</string>
@@ -36,14 +36,19 @@
     <string name="custom_proxy_header_ignored_values">¡Aviso: no se hará caso a los encabezados sin nombres! </string>
     <string name="custom_proxy_header_invalid_name">¡Error: el nombre del encabezado contiene letras ilegales!</string>
     
+    <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
+         Insert one or more newline characters as needed to keep the lines approximately as short
+         as the English. -->
+    <string name="PaymentChooserFragment.Subscription">Compra Suscripción\n¡NUEVO! Prueba gratuita de 7 días\n(%1$s / día)</string>
+
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass7Day">Compra el pase de 7 días \n(%1$s / día)</string>
+    <string name="PaymentChooserFragment.TimePass7Day">Compra el pase de 7 días\n(%1$s / día)</string>
 
     <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass30Day">Compra el pase de 30 días \n(%1$s / día)</string>
+    <string name="PaymentChooserFragment.TimePass30Day">Compra el pase de 30 días\n(%1$s / día)</string>
 
     <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass90Day">Compra el pase de 90 días \n(%1$s / día)</string>
+    <string name="PaymentChooserFragment.TimePass90Day">Compra el pase de 90 días\n(%1$s / día)</string>
 
     <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
          exclamatory. Indicates that premium access results in all in-app advertisements being
@@ -63,11 +68,11 @@
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string is a description specifically about buying a subscription.
          The parenthetical remark about credit card requirements should be separated by a newline. -->
-    <string name="PaymentChooserFragment.SubscriptionDescription">Suscribe para el servico sin interrupciones por el mejor precio.\n ( Requiere una tarjeta de crédito válida.)</string>
+    <string name="PaymentChooserFragment.SubscriptionDescription">Suscribe para el servico sin interrupciones por el mejor precio.\n(Requiere una tarjeta de crédito válida.)</string>
 
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string is a description specifically about buying a time pass.
          The parenthetical remark about credit card requirements should be separated by a newline. -->
-    <string name="PaymentChooserFragment.TimePassDescription">Compra un pase de tiempo.\n (No requiere una tarjeta de crédito.  Se puede usar una tarjeta de regalo de Google Play).</string>
+    <string name="PaymentChooserFragment.TimePassDescription">Compra un pase de tiempo.\n(No requiere una tarjeta de crédito.  Se puede usar una tarjeta de regalo de Google Play).</string>
 
 </resources>
