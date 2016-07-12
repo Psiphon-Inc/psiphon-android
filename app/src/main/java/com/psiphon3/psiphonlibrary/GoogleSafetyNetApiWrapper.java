@@ -52,7 +52,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     private static final int API_REQUEST_OK = 0x00;
     private static final int API_REQUEST_FAILED = 0x01;
     private static final int API_CONNECT_FAILED = 0x02;
-    private static final String SAFETYNET_CACHE_FILE = "SAFETYNET_CACHE_FILE";
+    private static final String ATTESTATION_RESULT_CACHE_FILE = "attestationResultCacheFile";
 
     private static final int MAX_CACHED_ENTRIES = 20;
 
@@ -99,7 +99,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     public void loadSavedCache(Context context) {
         FileInputStream fis;
         try {
-            fis = context.openFileInput(SAFETYNET_CACHE_FILE);
+            fis = context.openFileInput(ATTESTATION_RESULT_CACHE_FILE);
             ObjectInputStream ois = new ObjectInputStream(fis);
             mCacheMap = (CacheMap<String, CacheEntry>) ois.readObject();
             ois.close();
@@ -113,7 +113,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         if (mCacheMap != null && mCacheMap.size() > 0) {
             FileOutputStream fos;
             try {
-                fos = context.openFileOutput(SAFETYNET_CACHE_FILE, Context.MODE_PRIVATE);
+                fos = context.openFileOutput(ATTESTATION_RESULT_CACHE_FILE, Context.MODE_PRIVATE);
                 ObjectOutputStream oos = new ObjectOutputStream(fos);
                 oos.writeObject(mCacheMap);
                 oos.close();
@@ -257,7 +257,8 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
             throw new RuntimeException(e);
         }
 
-        setPayload(checkData.toString(), true);
+        // cache payload only if attestation request has completed
+        setPayload(checkData.toString(), status == API_REQUEST_OK);
     }
 
     private void setPayload(String payload, boolean shouldCache) {
