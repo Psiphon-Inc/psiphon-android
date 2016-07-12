@@ -22,6 +22,7 @@ package com.psiphon3.psiphonlibrary;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -34,6 +35,9 @@ import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.safetynet.SafetyNet;
 import com.google.android.gms.safetynet.SafetyNetApi;
+import com.psiphon3.psiphonlibrary.obfuscation.AESObfuscator;
+import com.psiphon3.psiphonlibrary.obfuscation.Obfuscator;
+import com.psiphon3.psiphonlibrary.obfuscation.ValidationException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -53,6 +57,10 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     private static final int API_REQUEST_FAILED = 0x01;
     private static final int API_CONNECT_FAILED = 0x02;
     private static final String ATTESTATION_RESULT_CACHE_FILE = "attestationResultCacheFile";
+    private static final String KEY_ATTESTATION_RESULT = "keyAttestationResult";
+    private static final byte[] SALT = {18, 43, -35, 57, -14, 121, 127, -59, 58, -29, 11, -108, 103, 87, 72, -17, 104, -121, -111, 53};
+    private Obfuscator mObfuscator;
+
 
     private static final int MAX_CACHED_ENTRIES = 20;
 
@@ -64,6 +72,33 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     private String mLastServerNonce;
     private long mLastTtlSeconds;
 
+    public Object clone() throws CloneNotSupportedException
+    {
+        throw new CloneNotSupportedException();
+    }
+
+    private GoogleSafetyNetApiWrapper(Context context) {
+        // Create the Google API Client.
+        mGoogleApiClient = new GoogleApiClient.Builder(context)
+                .addApi(SafetyNet.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
+        mCheckInFlight = new AtomicBoolean(false);
+        mCacheMap = new CacheMap<>();
+
+        String deviceId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+        mObfuscator = new AESObfuscator(SALT, context.getPackageName(), deviceId);
+
+        loadSavedCache(context);
+    }
+
+    public static synchronized GoogleSafetyNetApiWrapper getInstance(Context context) {
+        if(mInstance == null) {
+            mInstance = new GoogleSafetyNetApiWrapper(context);
+        }
+        return mInstance;
+    }
 
     // Limited size LinkedHashMap where size <= MAX_CACHED_ENTRIES
     private class CacheMap<K,V> extends LinkedHashMap<K,V> {
@@ -83,20 +118,8 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         long expirationTimestamp;
     }
 
-    private CacheEntry getCacheEntry(String key) {
-        CacheEntry entry = mCacheMap.get(mLastServerNonce);
 
-        Long currentTimeMillis = SystemClock.elapsedRealtime();
-
-        if(currentTimeMillis > entry.expirationTimestamp) {
-            mCacheMap.remove(mLastServerNonce);
-            entry = null;
-        }
-        return entry;
-    }
-
-
-    public void loadSavedCache(Context context) {
+    private void loadSavedCache(Context context) {
         FileInputStream fis;
         try {
             fis = context.openFileInput(ATTESTATION_RESULT_CACHE_FILE);
@@ -109,7 +132,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
 
     }
 
-    public void saveCache(Context context) {
+    protected void saveCache(Context context) {
         if (mCacheMap != null && mCacheMap.size() > 0) {
             FileOutputStream fos;
             try {
@@ -125,39 +148,27 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         }
     }
 
-    public Object clone() throws CloneNotSupportedException
-    {
-        throw new CloneNotSupportedException();
-    }
-
-    private GoogleSafetyNetApiWrapper(Context context) {
-        // Create the Google API Client.
-        mGoogleApiClient = new GoogleApiClient.Builder(context)
-                .addApi(SafetyNet.API)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .build();
-        mCheckInFlight = new AtomicBoolean(false);
-        mCacheMap = new CacheMap<>();
-        loadSavedCache(context);
-    }
-
-    public static synchronized GoogleSafetyNetApiWrapper getInstance(Context context) {
-        if(mInstance == null) {
-            mInstance = new GoogleSafetyNetApiWrapper(context);
-        }
-        return mInstance;
-    }
-
     private boolean setPayloadFromCache() {
-        CacheEntry entry = getCacheEntry(mLastServerNonce);
+        CacheEntry entry = mCacheMap.get(mLastServerNonce);
 
         if(entry == null) {
             return false;
         }
 
-        setPayload(entry.payload, false);
-        return true;
+        Long currentTimeMillis = SystemClock.elapsedRealtime();
+
+        if(currentTimeMillis > entry.expirationTimestamp) {
+            mCacheMap.remove(mLastServerNonce);
+            return false;
+        }
+
+        try {
+            String unobfuscatedPayload = mObfuscator.unobfuscate(entry.payload, KEY_ATTESTATION_RESULT);
+            setPayload(unobfuscatedPayload, false);
+            return true;
+        } catch (ValidationException e) {
+        }
+        return false;
     }
 
     public void verify(TunnelManager manager, String serverNonce, int ttlSeconds) {
@@ -173,8 +184,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         if(setPayloadFromCache()) {
             return;
         }
-
-
+        
         if (!mGoogleApiClient.isConnecting() && !mGoogleApiClient.isConnected()) {
             mGoogleApiClient.connect();
         }
@@ -263,7 +273,8 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
 
     private void setPayload(String payload, boolean shouldCache) {
         if(shouldCache) {
-            CacheEntry entry = new CacheEntry(payload, SystemClock.elapsedRealtime() + mLastTtlSeconds);
+            String obfuscatedPayload = mObfuscator.obfuscate(payload, KEY_ATTESTATION_RESULT);
+            CacheEntry entry = new CacheEntry(obfuscatedPayload, SystemClock.elapsedRealtime() + mLastTtlSeconds);
             mCacheMap.put(mLastServerNonce, entry);
         }
 
