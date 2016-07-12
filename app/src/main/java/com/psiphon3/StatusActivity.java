@@ -822,7 +822,9 @@ public class StatusActivity
             if (m_supersonicWrapper == null) {
                 //m_supersonicWrapper = new SupersonicRewardedVideoWrapper(this);
             }
-            findViewById(R.id.watchRewardedVideoButton).setEnabled(m_supersonicWrapper.isRewardedVideoAvailable());
+            if (m_supersonicWrapper != null) {
+                findViewById(R.id.watchRewardedVideoButton).setEnabled(m_supersonicWrapper.isRewardedVideoAvailable());
+            }
 
             initBanner();
 
