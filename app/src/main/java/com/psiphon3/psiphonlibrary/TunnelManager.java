@@ -532,6 +532,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             // Stop service
             m_parentService.stopForeground(true);
             m_parentService.stopSelf();
+            if(m_safetyNetwrapper != null) {
+                m_safetyNetwrapper.saveCache(m_parentService);
+            }
         }
     }
 
@@ -901,13 +904,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     }
 
     @Override
-    public void onClientVerificationRequired() {
+    public void onClientVerificationRequired(final String serverNonce, final int ttlSeconds) {
+        if (ttlSeconds == 0) {
+            // do not send payload if requested TTL is 0
+            return;
+        }
         m_Handler.post(new Runnable() {
             @Override
             public void run() {
                 // Perform safetyNet check
                 m_safetyNetwrapper = GoogleSafetyNetApiWrapper.getInstance(getContext());
-                m_safetyNetwrapper.connect(TunnelManager.this);
+                m_safetyNetwrapper.verify(TunnelManager.this, serverNonce, ttlSeconds);
             }
         });
     }
