@@ -47,6 +47,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
 import java.util.LinkedHashMap;
@@ -59,9 +60,6 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     private static final String ATTESTATION_RESULT_CACHE_FILE = "attestationResultCacheFile";
     private static final String KEY_ATTESTATION_RESULT = "keyAttestationResult";
     private static final byte[] SALT = {18, 43, -35, 57, -14, 121, 127, -59, 58, -29, 11, -108, 103, 87, 72, -17, 104, -121, -111, 53};
-    private Obfuscator mObfuscator;
-
-
     private static final int MAX_CACHED_ENTRIES = 20;
 
     private static GoogleSafetyNetApiWrapper mInstance;
@@ -71,6 +69,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     private CacheMap<String, CacheEntry> mCacheMap;
     private String mLastServerNonce;
     private long mLastTtlSeconds;
+    private Obfuscator mObfuscator;
 
     public Object clone() throws CloneNotSupportedException
     {
@@ -101,21 +100,23 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     }
 
     // Limited size LinkedHashMap where size <= MAX_CACHED_ENTRIES
-    private class CacheMap<K,V> extends LinkedHashMap<K,V> {
+    private static class CacheMap<K,V> extends LinkedHashMap<K,V> {
         @Override
         protected boolean removeEldestEntry(Entry eldest) {
             return size() > MAX_CACHED_ENTRIES;
         }
     }
 
-    private class CacheEntry {
+    private static class CacheEntry implements Serializable{
+        private static final long serialVersionUID = 1L;
+        private String payload;
+        private long expirationTimestamp;
+
+
         CacheEntry(String payload, long expirationTimestamp) {
             this.payload = payload;
             this.expirationTimestamp = expirationTimestamp;
         }
-
-        String payload;
-        long expirationTimestamp;
     }
 
 
@@ -128,6 +129,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
             ois.close();
             fis.close();
         } catch (IOException | ClassNotFoundException e) {
+            //TODO: handle this
         }
 
     }
@@ -143,7 +145,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
                 fos.flush();
                 fos.close();
             } catch (IOException e) {
-
+                //TODO: handle this
             }
         }
     }
@@ -155,9 +157,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
             return false;
         }
 
-        Long currentTimeMillis = SystemClock.elapsedRealtime();
-
-        if(currentTimeMillis > entry.expirationTimestamp) {
+        if(SystemClock.elapsedRealtime() > entry.expirationTimestamp) {
             mCacheMap.remove(mLastServerNonce);
             return false;
         }
@@ -184,7 +184,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         if(setPayloadFromCache()) {
             return;
         }
-        
+
         if (!mGoogleApiClient.isConnecting() && !mGoogleApiClient.isConnected()) {
             mGoogleApiClient.connect();
         }
@@ -202,7 +202,10 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         byte[] clientNonce = new byte[32];
         rnd.nextBytes(clientNonce);
 
-        byte[] serverNonce = Utils.Base64.decode(mLastServerNonce);
+        byte[] serverNonce = null;
+        if(!TextUtils.isEmpty(mLastServerNonce)) {
+            serverNonce = Utils.Base64.decode(mLastServerNonce);
+        }
 
         final byte[] attestationNonce;
 
@@ -219,7 +222,6 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
             attestationNonce = clientNonce;
         }
 
-
         SafetyNet.SafetyNetApi.attest(mGoogleApiClient, attestationNonce)
                 .setResultCallback(new ResultCallback<SafetyNetApi.AttestationResult>() {
                     @Override
@@ -229,10 +231,10 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
                         //JSON Web Signature format
                         final String jwsResult = result.getJwsResult();
                         if (status.isSuccess() && !TextUtils.isEmpty(jwsResult)) {
-                            onSafetyNetCheckNotify(API_REQUEST_OK, attestationNonce, jwsResult);
+                            onSafetyNetCheckNotify(API_REQUEST_OK, jwsResult);
                         } else {
                             // An error occurred while communicating with the SafetyNet Api
-                            onSafetyNetCheckNotify(API_REQUEST_FAILED, attestationNonce, status.toString());
+                            onSafetyNetCheckNotify(API_REQUEST_FAILED, status.toString());
                         }
                     }
                 });
@@ -251,15 +253,14 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        onSafetyNetCheckNotify(API_CONNECT_FAILED, null, connectionResult.toString());
+        onSafetyNetCheckNotify(API_CONNECT_FAILED, connectionResult.toString());
     }
 
-    private void onSafetyNetCheckNotify(int status, byte[] attestationNonce, String attestationResult) {
+    private void onSafetyNetCheckNotify(int status, String attestationResult) {
         JSONObject checkData = new JSONObject();
         try
         {
             checkData.put("status", status);
-            checkData.put("attestation_nonce", Utils.Base64.encode(attestationNonce));
             checkData.put("payload", attestationResult);
         }
         catch (JSONException e)
@@ -274,7 +275,7 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     private void setPayload(String payload, boolean shouldCache) {
         if(shouldCache) {
             String obfuscatedPayload = mObfuscator.obfuscate(payload, KEY_ATTESTATION_RESULT);
-            CacheEntry entry = new CacheEntry(obfuscatedPayload, SystemClock.elapsedRealtime() + mLastTtlSeconds);
+            CacheEntry entry = new CacheEntry(obfuscatedPayload, SystemClock.elapsedRealtime() + mLastTtlSeconds * 1000);
             mCacheMap.put(mLastServerNonce, entry);
         }
 
