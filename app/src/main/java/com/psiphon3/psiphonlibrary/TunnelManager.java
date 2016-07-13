@@ -904,7 +904,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     }
 
     @Override
-    public void onClientVerificationRequired(final String serverNonce, final int ttlSeconds) {
+    public void onClientVerificationRequired(final String serverNonce, final int ttlSeconds, final boolean resetCache) {
         if (ttlSeconds == 0) {
             // do not send payload if requested TTL is 0
             return;
@@ -914,7 +914,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             public void run() {
                 // Perform safetyNet check
                 m_safetyNetwrapper = GoogleSafetyNetApiWrapper.getInstance(getContext());
-                m_safetyNetwrapper.verify(TunnelManager.this, serverNonce, ttlSeconds);
+                m_safetyNetwrapper.verify(TunnelManager.this, serverNonce, ttlSeconds, resetCache);
             }
         });
     }

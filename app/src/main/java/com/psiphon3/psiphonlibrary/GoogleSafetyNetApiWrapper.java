@@ -171,13 +171,17 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         return false;
     }
 
-    public void verify(TunnelManager manager, String serverNonce, int ttlSeconds) {
+    public void verify(TunnelManager manager, String serverNonce, int ttlSeconds, boolean resetCache) {
         mTunnelManager = new WeakReference<>(manager);
 
         if (!mCheckInFlight.compareAndSet(false, true)) {
             return;
         }
 
+        if (resetCache) {
+            mCacheMap.remove(serverNonce);
+        }
+        
         mLastServerNonce = serverNonce;
         mLastTtlSeconds = (long) ttlSeconds;
 

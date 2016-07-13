@@ -89,7 +89,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
         public void onUntunneledAddress(String address);
         public void onBytesTransferred(long sent, long received);
         public void onStartedWaitingForNetworkConnectivity();
-        public void onClientVerificationRequired(String serverNonce, int ttlSeconds);
+        public void onClientVerificationRequired(String serverNonce, int ttlSeconds, boolean resetCache);
         public void onExiting();
     }
 
@@ -479,7 +479,7 @@ public class PsiphonTunnel extends Psi.PsiphonProvider.Stub {
                 mHostService.onExiting();
             } else if(noticeType.equals("ClientVerificationRequired")) {
                 JSONObject data = notice.getJSONObject("data");
-                mHostService.onClientVerificationRequired(data.getString("nonce"), data.getInt("ttlSeconds"));
+                mHostService.onClientVerificationRequired(data.getString("nonce"), data.getInt("ttlSeconds"), data.getBoolean("resetCache"));
 
             }
 
