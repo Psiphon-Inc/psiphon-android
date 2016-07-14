@@ -1106,9 +1106,7 @@ public abstract class MainBase {
                     try {
                         if (!TextUtils.isEmpty(name)) {
                             JSONArray arr = new JSONArray();
-                            if (!TextUtils.isEmpty(value)) {
-                                arr.put(value);
-                            }
+                            arr.put(value);
                             newHeaders.put(name, arr);
                         }
                     } catch (JSONException e) {

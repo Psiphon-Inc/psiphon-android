@@ -247,10 +247,8 @@ public class UpstreamProxySettings {
             String value = ap.getString(valuePrefStr, "");
             try {
                 if (!TextUtils.isEmpty(name)) {
-                        JSONArray arr = new JSONArray();
-                    if (!TextUtils.isEmpty(value)) {
-                        arr.put(value);
-                    }
+                    JSONArray arr = new JSONArray();
+                    arr.put(value);
                     headersJson.put(name, arr);
                 }
             } catch (JSONException e) {
