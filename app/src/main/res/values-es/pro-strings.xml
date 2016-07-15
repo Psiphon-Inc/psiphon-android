@@ -26,8 +26,16 @@
     <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
         When clicked a new screen opens where users can specify additional HTTP headers to be added to
         to HTTP proxy requests. Users may specify up to 3 custom headers -->
-    <string name="custom_proxy_headers_title">Encabezados personalizados HTTP</string>
+    <string name="custom_proxy_headers_title">Cabeceras personalizadas HTTP</string>
 
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">Configura cabeceras HTTP personalizadas adicionales para peticiones proxy</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">Añade cabeceras HTTP cabeceras HTTP personalizadas</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">Añade cabeceras HTTP cabeceras HTTP personalizadas para todas las peticiones proxy HTTP salientes</string>
     <string name="custom_proxy_header_group_1">Encabezado 1</string>
     <string name="custom_proxy_header_group_2">Encabezado 2</string>
     <string name="custom_proxy_header_group_3">Encabezado 3</string>
