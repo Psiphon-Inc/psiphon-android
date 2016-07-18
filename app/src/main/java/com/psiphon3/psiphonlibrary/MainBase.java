@@ -43,7 +43,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -891,7 +890,7 @@ public abstract class MainBase {
         }
 
         private void updateServiceStateUI() {
-            if (!m_boundToTunnelService && !m_boundToTunnelVpnService) {
+            if (!m_boundToTunnelService) {
                 setStatusState(R.drawable.status_icon_disconnected);
                 if (!isServiceRunning()) {
                     m_toggleButton.setText(getText(R.string.start));
@@ -930,7 +929,6 @@ public abstract class MainBase {
         private void checkRestartTunnel() {
             if (m_restartTunnel &&
                     !m_boundToTunnelService &&
-                    !m_boundToTunnelVpnService &&
                     !isServiceRunning()) {
                 m_restartTunnel = false;
                 startTunnel();
@@ -1110,6 +1108,9 @@ public abstract class MainBase {
                 );
 
                 if (bRestartRequired) {
+                    if (isServiceRunning()) {
+                        startAndBindTunnelService();
+                    }
                     scheduleRunningTunnelServiceRestart();
                 }
             }
@@ -1172,25 +1173,22 @@ public abstract class MainBase {
             // Disable service-toggling controls while service is starting up
             // (i.e., while isServiceRunning can't be relied upon)
             disableToggleServiceUI();
+            Intent intent;
 
             if (getTunnelConfigWholeDevice() && Utils.hasVpnService()) {
                 // VpnService backwards compatibility: startVpnServiceIntent is a wrapper
                 // function so we don't reference the undefined class when this
                 // function is loaded.
-                Intent intent = startVpnServiceIntent();
-                configureServiceIntent(intent);
-                startService(intent);
-                if (bindService(intent, m_tunnelServiceConnection, 0)) {
-                    m_boundToTunnelVpnService = true;
-                }
+                intent = startVpnServiceIntent();
             } else {
-                Intent intent = new Intent(this, TunnelService.class);
-                configureServiceIntent(intent);
-                startService(intent);
-                if (bindService(intent, m_tunnelServiceConnection, 0)) {
-                    m_boundToTunnelService = true;
-                }
+                intent = new Intent(this, TunnelService.class);
             }
+            configureServiceIntent(intent);
+            startService(intent);
+            if (bindService(intent, m_tunnelServiceConnection, 0)) {
+                m_boundToTunnelService = true;
+            }
+            sendServiceMessage(TunnelManager.MSG_REGISTER);
         }
 
         private Intent startVpnServiceIntent() {
@@ -1264,6 +1262,9 @@ public abstract class MainBase {
 
         private final Messenger m_incomingMessenger = new Messenger(new IncomingMessageHandler());
         private Messenger m_outgoingMessenger = null;
+        // queue of client messages that
+        // will be sent to Service once client is connected
+        private final List<Message> m_queue = new ArrayList<>();
 
         private class IncomingMessageHandler extends Handler {
             @Override
@@ -1291,7 +1292,6 @@ public abstract class MainBase {
 
                     case TunnelManager.MSG_TUNNEL_STOPPING:
                         m_tunnelState.isConnected = false;
-                        updateServiceStateUI();
 
                         // When the tunnel self-stops, we also need to unbind to ensure
                         // the service is destroyed
@@ -1318,14 +1318,16 @@ public abstract class MainBase {
         }
 
         private void sendServiceMessage(int what) {
-            if (m_incomingMessenger == null ||
-                    m_outgoingMessenger == null) {
-                return;
-            }
             try {
                 Message msg = Message.obtain(null, what);
                 msg.replyTo = m_incomingMessenger;
-                m_outgoingMessenger.send(msg);
+                if (m_outgoingMessenger == null) {
+                    synchronized (m_queue) {
+                        m_queue.add(msg);
+                    }
+                } else {
+                    m_outgoingMessenger.send(msg);
+                }
             } catch (RemoteException e) {
                 MyLog.g("sendServiceMessage failed: %s", e.getMessage());
             }
@@ -1336,38 +1338,24 @@ public abstract class MainBase {
             @Override
             public void onServiceConnected(ComponentName className, IBinder service) {
                 m_outgoingMessenger = new Messenger(service);
-                m_boundToTunnelService = true;
-                sendServiceMessage(TunnelManager.MSG_REGISTER);
+                /** Send all pending messages to the newly created Service. **/
+                synchronized (m_queue) {
+                    for (Message message : m_queue) {
+                        try {
+                            m_outgoingMessenger.send(message);
+                        } catch (RemoteException e) {
+
+                        }
+                    }
+                    m_queue.clear();
+                }
                 updateServiceStateUI();
             }
 
             @Override
             public void onServiceDisconnected(ComponentName arg0) {
                 m_outgoingMessenger = null;
-                if (m_boundToTunnelService) {
-                    unbindTunnelService();
-                }
-                updateServiceStateUI();
-            }
-        };
-
-        private boolean m_boundToTunnelVpnService = false;
-        private final ServiceConnection m_tunnelVpnServiceConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName className, IBinder service) {
-                m_outgoingMessenger = new Messenger(service);
-                m_boundToTunnelVpnService = true;
-                sendServiceMessage(TunnelManager.MSG_REGISTER);
-                updateServiceStateUI();
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName arg0) {
-                m_outgoingMessenger = null;
-                if (m_boundToTunnelVpnService) {
-                    unbindTunnelService();
-                }
-                updateServiceStateUI();
+                unbindTunnelService();
             }
         };
 
@@ -1381,8 +1369,9 @@ public abstract class MainBase {
         }
 
         private void unbindTunnelService() {
-            sendServiceMessage(TunnelManager.MSG_UNREGISTER);
             if (m_boundToTunnelService) {
+                m_boundToTunnelService = false;
+                sendServiceMessage(TunnelManager.MSG_UNREGISTER);
                 try {
                     unbindService(m_tunnelServiceConnection);
                 }
@@ -1390,16 +1379,6 @@ public abstract class MainBase {
                     // Ignore
                     // "java.lang.IllegalArgumentException: Service not registered"
                 }
-                m_boundToTunnelService = false;
-            }
-            if (m_boundToTunnelVpnService) {
-                try {
-                    unbindService(m_tunnelVpnServiceConnection);
-                } catch (java.lang.IllegalArgumentException e) {
-                    // Ignore
-                    // "java.lang.IllegalArgumentException: Service not registered"
-                }
-                m_boundToTunnelVpnService = false;
             }
             updateServiceStateUI();
         }
