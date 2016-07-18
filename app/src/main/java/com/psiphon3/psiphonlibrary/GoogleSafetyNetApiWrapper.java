@@ -21,6 +21,8 @@ package com.psiphon3.psiphonlibrary;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.SystemClock;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -33,24 +35,41 @@ import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.safetynet.SafetyNet;
 import com.google.android.gms.safetynet.SafetyNetApi;
+import com.psiphon3.psiphonlibrary.obfuscation.AESObfuscator;
+import com.psiphon3.psiphonlibrary.obfuscation.Obfuscator;
+import com.psiphon3.psiphonlibrary.obfuscation.ValidationException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
+import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnectionFailedListener{
     private static final int API_REQUEST_OK = 0x00;
     private static final int API_REQUEST_FAILED = 0x01;
     private static final int API_CONNECT_FAILED = 0x02;
+    private static final String ATTESTATION_RESULT_CACHE_FILE = "attestationResultCacheFile";
+    private static final String KEY_ATTESTATION_RESULT = "keyAttestationResult";
+    private static final byte[] SALT = {18, 43, -35, 57, -14, 121, 127, -59, 58, -29, 11, -108, 103, 87, 72, -17, 104, -121, -111, 53};
+    private static final int MAX_CACHED_ENTRIES = 20;
 
     private static GoogleSafetyNetApiWrapper mInstance;
     private AtomicBoolean mCheckInFlight;
     private GoogleApiClient mGoogleApiClient;
-    private String mLastPayload;
     private WeakReference<TunnelManager> mTunnelManager;
+    private CacheMap<String, CacheEntry> mCacheMap;
+    private String mLastServerNonce;
+    private long mLastTtlSeconds;
+    private Obfuscator mObfuscator;
 
     public Object clone() throws CloneNotSupportedException
     {
@@ -65,6 +84,12 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
                 .addOnConnectionFailedListener(this)
                 .build();
         mCheckInFlight = new AtomicBoolean(false);
+        mCacheMap = new CacheMap<>();
+
+        String deviceId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+        mObfuscator = new AESObfuscator(SALT, context.getPackageName(), deviceId);
+
+        loadSavedCache(context);
     }
 
     public static synchronized GoogleSafetyNetApiWrapper getInstance(Context context) {
@@ -74,15 +99,93 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         return mInstance;
     }
 
-    public void connect(TunnelManager manager) {
+    // Limited size LinkedHashMap where size <= MAX_CACHED_ENTRIES
+    private static class CacheMap<K,V> extends LinkedHashMap<K,V> {
+        @Override
+        protected boolean removeEldestEntry(Entry eldest) {
+            return size() > MAX_CACHED_ENTRIES;
+        }
+    }
+
+    private static class CacheEntry implements Serializable{
+        private static final long serialVersionUID = 1L;
+        private String payload;
+        private long expirationTimestamp;
+
+
+        CacheEntry(String payload, long expirationTimestamp) {
+            this.payload = payload;
+            this.expirationTimestamp = expirationTimestamp;
+        }
+    }
+
+
+    private void loadSavedCache(Context context) {
+        FileInputStream fis;
+        try {
+            fis = context.openFileInput(ATTESTATION_RESULT_CACHE_FILE);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            mCacheMap = (CacheMap<String, CacheEntry>) ois.readObject();
+            ois.close();
+            fis.close();
+        } catch (IOException | ClassNotFoundException e) {
+            //TODO: handle this
+        }
+
+    }
+
+    protected void saveCache(Context context) {
+        if (mCacheMap != null && mCacheMap.size() > 0) {
+            FileOutputStream fos;
+            try {
+                fos = context.openFileOutput(ATTESTATION_RESULT_CACHE_FILE, Context.MODE_PRIVATE);
+                ObjectOutputStream oos = new ObjectOutputStream(fos);
+                oos.writeObject(mCacheMap);
+                oos.close();
+                fos.flush();
+                fos.close();
+            } catch (IOException e) {
+                //TODO: handle this
+            }
+        }
+    }
+
+    private boolean setPayloadFromCache() {
+        CacheEntry entry = mCacheMap.get(mLastServerNonce);
+
+        if(entry == null) {
+            return false;
+        }
+
+        if(SystemClock.elapsedRealtime() > entry.expirationTimestamp) {
+            mCacheMap.remove(mLastServerNonce);
+            return false;
+        }
+
+        try {
+            String unobfuscatedPayload = mObfuscator.unobfuscate(entry.payload, KEY_ATTESTATION_RESULT);
+            setPayload(unobfuscatedPayload, false);
+            return true;
+        } catch (ValidationException e) {
+        }
+        return false;
+    }
+
+    public void verify(TunnelManager manager, String serverNonce, int ttlSeconds, boolean resetCache) {
         mTunnelManager = new WeakReference<>(manager);
 
         if (!mCheckInFlight.compareAndSet(false, true)) {
             return;
         }
 
-        if(!TextUtils.isEmpty(mLastPayload)) {
-            setPayload(mLastPayload);
+        if (resetCache) {
+            mCacheMap.remove(serverNonce);
+        }
+        
+        mLastServerNonce = serverNonce;
+        mLastTtlSeconds = (long) ttlSeconds;
+
+        if(setPayloadFromCache()) {
             return;
         }
 
@@ -100,10 +203,30 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
 
     private void  doSafetyNetCheck() {
         SecureRandom rnd = new SecureRandom();
-        byte[] nonce = new byte[32];
-        rnd.nextBytes(nonce);
+        byte[] clientNonce = new byte[32];
+        rnd.nextBytes(clientNonce);
 
-        SafetyNet.SafetyNetApi.attest(mGoogleApiClient, nonce)
+        byte[] serverNonce = null;
+        if(!TextUtils.isEmpty(mLastServerNonce)) {
+            serverNonce = Utils.Base64.decode(mLastServerNonce);
+        }
+
+        final byte[] attestationNonce;
+
+        //              Attestation nonce:
+        //
+        //      client nonce               server nonce
+        // [<32 bytes of random data> + <any size byte array>]
+
+        if (serverNonce != null) {
+            attestationNonce = new byte[32 + serverNonce.length];
+            System.arraycopy(clientNonce, 0, attestationNonce, 0, clientNonce.length);
+            System.arraycopy(serverNonce, 0, attestationNonce, clientNonce.length, serverNonce.length);
+        } else {
+            attestationNonce = clientNonce;
+        }
+
+        SafetyNet.SafetyNetApi.attest(mGoogleApiClient, attestationNonce)
                 .setResultCallback(new ResultCallback<SafetyNetApi.AttestationResult>() {
                     @Override
                     public void onResult(final SafetyNetApi.AttestationResult result) {
@@ -128,11 +251,8 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
 
     @Override
     public void onConnectionSuspended(int i) {
-        //try to reconnect
-        TunnelManager tunnelManager = mTunnelManager.get();
-        if (tunnelManager != null) {
-            connect(tunnelManager);
-        }
+        // according to a Google engineer we shouldn't try to reconnect
+        // in this case: http://stackoverflow.com/a/26147518
     }
 
     @Override
@@ -140,22 +260,29 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         onSafetyNetCheckNotify(API_CONNECT_FAILED, connectionResult.toString());
     }
 
-    private void onSafetyNetCheckNotify(int status, String payload) {
+    private void onSafetyNetCheckNotify(int status, String attestationResult) {
         JSONObject checkData = new JSONObject();
         try
         {
             checkData.put("status", status);
-            checkData.put("payload", payload);
+            checkData.put("payload", attestationResult);
         }
         catch (JSONException e)
         {
             throw new RuntimeException(e);
         }
-        setPayload(checkData.toString());
+
+        // cache payload only if attestation request has completed
+        setPayload(checkData.toString(), status == API_REQUEST_OK);
     }
 
-    private void setPayload(String payload) {
-        mLastPayload = payload;
+    private void setPayload(String payload, boolean shouldCache) {
+        if(shouldCache) {
+            String obfuscatedPayload = mObfuscator.obfuscate(payload, KEY_ATTESTATION_RESULT);
+            CacheEntry entry = new CacheEntry(obfuscatedPayload, SystemClock.elapsedRealtime() + mLastTtlSeconds * 1000);
+            mCacheMap.put(mLastServerNonce, entry);
+        }
+
         TunnelManager tunnelManager = mTunnelManager.get();
         if (tunnelManager != null) {
             tunnelManager.setClientVerificationResult(payload);
