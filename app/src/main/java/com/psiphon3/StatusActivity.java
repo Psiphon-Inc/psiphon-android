@@ -72,6 +72,7 @@ public class StatusActivity
     private MoPubView m_moPubBannerLargeAdView = null;
     private MoPubInterstitial m_moPubInterstitial = null;
     private boolean m_moPubInterstitialShowWhenLoaded = false;
+    private static boolean m_startupPending = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,6 +108,11 @@ public class StatusActivity
         startIab();
 
         super.onResume();
+
+        if (m_startupPending) {
+            m_startupPending = false;
+            doStartUp();
+        }
     }
 
     private void loadSponsorTab(boolean freshConnect)
@@ -950,7 +956,6 @@ public class StatusActivity
             }
             @Override
             public void onInterstitialDismissed(MoPubInterstitial arg0) {
-                doStartUp();
             }
             @Override
             public void onInterstitialFailed(MoPubInterstitial interstitial,
@@ -967,6 +972,7 @@ public class StatusActivity
             @Override
             public void onInterstitialShown(MoPubInterstitial arg0) {
                 // Enable the free trial right away
+                m_startupPending = true;
                 delayHandler.removeCallbacks(enableAdMode);
                 resumeServiceStateUI();
             }
