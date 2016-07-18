@@ -29,22 +29,18 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.text.format.DateUtils;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TabHost;
-import android.widget.TextView;
 
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
-import com.psiphon3.psiphonlibrary.FreeTrialTimer;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
-import com.psiphon3.psiphonlibrary.SupersonicRewardedVideoWrapper;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -76,7 +72,6 @@ public class StatusActivity
     private MoPubView m_moPubBannerLargeAdView = null;
     private MoPubInterstitial m_moPubInterstitial = null;
     private boolean m_moPubInterstitialShowWhenLoaded = false;
-    private SupersonicRewardedVideoWrapper m_supersonicWrapper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,14 +106,7 @@ public class StatusActivity
     {
         startIab();
 
-        // Reset the FreeTrialTimerCachingWrapper because the tunnel service might modify the free trial timer independently
-        FreeTrialTimer.getFreeTrialTimerCachingWrapper().reset();
-
         super.onResume();
-
-        if(m_supersonicWrapper != null) {
-            m_supersonicWrapper.onResume();
-        }
     }
 
     private void loadSponsorTab(boolean freshConnect)
@@ -184,7 +172,7 @@ public class StatusActivity
         {
             getTunnelStateFromHandshakeIntent(intent);
 
-            if (!Utils.getHasValidSubscriptionOrFreeTime(this))
+            if (!Utils.getHasValidSubscription(this))
             {
                 startIab();
             }
@@ -220,14 +208,6 @@ public class StatusActivity
     @Override
     protected void onPause()
     {
-        if (isServiceRunning() &&
-                !Utils.getHasValidSubscriptionOrFreeTime(this))
-        {
-            doToggle();
-        }
-        if(m_supersonicWrapper != null) {
-            m_supersonicWrapper.onPause();
-        }
         super.onPause();
     }
     
@@ -235,10 +215,7 @@ public class StatusActivity
     public void onDestroy()
     {
         deInitAds();
-        delayHandler.removeCallbacks(enableFreeTrial);
-        if(m_supersonicWrapper != null) {
-            m_supersonicWrapper.onDestroy();
-        }
+        delayHandler.removeCallbacks(enableAdMode);
         super.onDestroy();
     }
 
@@ -262,15 +239,15 @@ public class StatusActivity
     @Override
     protected void startUp()
     {
-        if (Utils.getHasValidSubscriptionOrFreeTime(this))
+        if (Utils.getHasValidSubscription(this))
         {
             doStartUp();
         }
         else
         {
             pauseServiceStateUI();
-            freeTrialCountdown = 10;
-            delayHandler.postDelayed(enableFreeTrial, 1000);
+            adModeCountdown = 10;
+            delayHandler.postDelayed(enableAdMode, 1000);
             showFullScreenAd();
         }
     }
@@ -432,7 +409,7 @@ public class StatusActivity
     static final Map<String, Long> IAB_TIMEPASS_SKUS_TO_TIME;
     static {
         Map<String, Long> m = new HashMap<>();
-        m.put(IAB_BASIC_30DAY_TIMEPASS_SKU, 30l * 24 * 60 * 60 * 1000);
+        m.put(IAB_BASIC_30DAY_TIMEPASS_SKU, 30L * 24 * 60 * 60 * 1000);
         IAB_TIMEPASS_SKUS_TO_TIME = Collections.unmodifiableMap(m);
     }
 
@@ -553,17 +530,9 @@ public class StatusActivity
 
             updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
 
-            // If the tunnel needs to be stopped, wait until after consumePurchases has finished,
-            // otherwise the async consumePurchases will fail.
             if (timepassesToConsume.size() > 0)
             {
                 consumePurchases(timepassesToConsume);
-            }
-            else if (isServiceRunning() &&
-                !Utils.getHasValidSubscriptionOrFreeTime(StatusActivity.this))
-            {
-                // Stop the tunnel
-                doToggle();
             }
 
             Utils.MyLog.g("StatusActivity::onQueryInventoryFinished: no valid subscription or time pass");
@@ -620,12 +589,6 @@ public class StatusActivity
             if (failed)
             {
                 handleIabFailure(null);
-            }
-            else if (isServiceRunning() &&
-                    !Utils.getHasValidSubscriptionOrFreeTime(StatusActivity.this))
-            {
-                // Stop the tunnel
-                doToggle();
             }
         }
     };
@@ -743,52 +706,42 @@ public class StatusActivity
         deInitIab();
         m_startIabInFlight = false;
 
-        if (isServiceRunning() &&
-                !Utils.getHasValidSubscriptionOrFreeTime(this))
+        if (result != null &&
+                result.getResponse() == IabHelper.IABHELPER_USER_CANCELLED)
         {
-            // Stop the tunnel
-            doToggle();
+            // do nothing, onResume() calls startIAB()
         }
         else
         {
-            if (result != null &&
-                    result.getResponse() == IabHelper.IABHELPER_USER_CANCELLED)
+            // Start the tunnel anyway, IAB will get checked again once the tunnel is connected
+            if (m_firstRun)
             {
-                // do nothing, onResume() calls startIAB()
-            }
-            else
-            {
-                // Start the tunnel anyway, IAB will get checked again once the tunnel is connected
-                if (m_firstRun)
-                {
-                    m_firstRun = false;
-                    doStartUp();
-                }
+                m_firstRun = false;
+                doStartUp();
             }
         }
     }
 
-    static final int INTERSTITIAL_REWARD_MINUTES = 700;
     private Handler delayHandler = new Handler();
-    private Runnable enableFreeTrial = new Runnable()
+    private Runnable enableAdMode = new Runnable()
     {
         @Override
         public void run()
         {
-            if (freeTrialCountdown > 0)
+            if (adModeCountdown > 0)
             {
-                m_toggleButton.setText(String.valueOf(freeTrialCountdown));
-                freeTrialCountdown--;
+                m_toggleButton.setText(String.valueOf(adModeCountdown));
+                adModeCountdown--;
                 delayHandler.postDelayed(this, 1000);
             }
             else
             {
                 resumeServiceStateUI();
-                Utils.startFreeTrial(StatusActivity.this, INTERSTITIAL_REWARD_MINUTES);
+                doStartUp();
             }
         }
     };
-    private int freeTrialCountdown;
+    private int adModeCountdown;
 
     // updateSubscriptionAndAdOptions() gets called once in onCreate().
     // Don't show these options during the first few calls, to allow time for IAB to check
@@ -809,19 +762,11 @@ public class StatusActivity
             show = false;
         }
 
-        TextView textViewRemainingMinutes = (TextView) findViewById(R.id.timeRemaining);
         if (show)
         {
-            long freeTrialRemainingSeconds = FreeTrialTimer.getFreeTrialTimerCachingWrapper().getRemainingTimeSeconds(this);
-            textViewRemainingMinutes.setText(String.format(
-                    getResources().getString(R.string.FreeTrialRemainingTime),
-                    DateUtils.formatElapsedTime(
-                            freeTrialRemainingSeconds)));
-
             initBanner();
 
-            if (!Utils.getHasValidSubscriptionOrFreeTime(this) &&
-                    m_moPubInterstitial == null)
+            if (m_moPubInterstitial == null)
             {
                 loadFullScreenAd();
             }
@@ -834,10 +779,7 @@ public class StatusActivity
 
         boolean showSubscribe = show && (mInventory != null);
 
-        findViewById(R.id.subscriptionPromptMessage).setVisibility(showSubscribe ? View.VISIBLE : View.GONE);
         findViewById(R.id.subscribeButton).setVisibility(showSubscribe ? View.VISIBLE : View.GONE);
-        findViewById(R.id.watchRewardedVideoButton).setVisibility(View.GONE);
-        textViewRemainingMinutes.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
     private final int PAYMENT_CHOOSER_ACTIVITY = 20001;
@@ -872,7 +814,7 @@ public class StatusActivity
         skuInfo.mSubscriptionInfo.priceCurrency = subscriptionSkuDetails.getPriceCurrencyCode();
         // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
         // we'll set it to 30 days.
-        skuInfo.mSubscriptionInfo.lifetime = 30l * 24 * 60 * 60 * 1000;
+        skuInfo.mSubscriptionInfo.lifetime = 30L * 24 * 60 * 60 * 1000;
 
         for (Map.Entry<String, Long> timepassSku : IAB_TIMEPASS_SKUS_TO_TIME.entrySet())
         {
@@ -891,16 +833,6 @@ public class StatusActivity
         feedbackIntent.putExtra(PaymentChooserActivity.SKU_INFO_EXTRA, skuInfo.toString());
 
         startActivityForResult(feedbackIntent, PAYMENT_CHOOSER_ACTIVITY);
-    }
-
-    @Override
-    public void onWatchRewardedVideoButtonClick(View v)
-    {
-        Utils.MyLog.g("StatusActivity::onWatchRewardedVideoButtonClick");
-
-        if(m_supersonicWrapper != null) {
-            m_supersonicWrapper.playVideo();
-        }
     }
 
     synchronized
@@ -1018,7 +950,7 @@ public class StatusActivity
             }
             @Override
             public void onInterstitialDismissed(MoPubInterstitial arg0) {
-                startUp();
+                doStartUp();
             }
             @Override
             public void onInterstitialFailed(MoPubInterstitial interstitial,
@@ -1035,9 +967,8 @@ public class StatusActivity
             @Override
             public void onInterstitialShown(MoPubInterstitial arg0) {
                 // Enable the free trial right away
-                delayHandler.removeCallbacks(enableFreeTrial);
+                delayHandler.removeCallbacks(enableAdMode);
                 resumeServiceStateUI();
-                Utils.startFreeTrial(StatusActivity.this, INTERSTITIAL_REWARD_MINUTES);
             }
         });
 

@@ -775,30 +775,4 @@ public class Utils
         final AppPreferences multiProcessPreferences = new AppPreferences(context);
         return multiProcessPreferences.getBoolean(context.getString(R.string.has_valid_subscription), false);
     }
-
-    public static synchronized boolean getHasValidSubscriptionOrFreeTime(Context context)
-    {
-        return getHasValidSubscription(context) ||
-                (getFreeTrialActive(context) && FreeTrialTimer.getFreeTrialTimerCachingWrapper().getRemainingTimeSeconds(context) > 0);
-    }
-
-    public static synchronized void startFreeTrial(Context context, int minutes)
-    {
-        final AppPreferences multiProcessPreferences = new AppPreferences(context);
-        multiProcessPreferences.put(context.getString(R.string.free_trial_active), true);
-        FreeTrialTimer.getFreeTrialTimerCachingWrapper().addTimeSyncSeconds(context, minutes * 60);
-    }
-
-    public static synchronized void endFreeTrial(Context context)
-    {
-        final AppPreferences multiProcessPreferences = new AppPreferences(context);
-        multiProcessPreferences.put(context.getString(R.string.free_trial_active), false);
-    }
-
-    public static synchronized boolean getFreeTrialActive(Context context)
-    {
-        final AppPreferences multiProcessPreferences = new AppPreferences(context);
-        return multiProcessPreferences.getBoolean(context.getString(R.string.free_trial_active), false) &&
-                !getHasValidSubscription(context);
-    }
 }

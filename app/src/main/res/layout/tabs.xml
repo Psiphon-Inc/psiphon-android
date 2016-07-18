@@ -64,42 +64,12 @@
                         android:text="@string/SubscribeButton"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
 
-                    <Button
-                        android:id="@+id/watchRewardedVideoButton"
-                        android:onClick="onWatchRewardedVideoButtonClick"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:layout_margin="10dp"
-                        android:padding="10dp"
-                        android:text="@string/RewardedVideoPrompt"
-                        android:textAppearance="?android:attr/textAppearanceSmall" />
-
                     <LinearLayout
                         android:id="@+id/largeAdSlot"
                         android:orientation="vertical"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center" >
-
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/timeRemaining"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:gravity="center"
-                        android:padding="10dp"
-                        android:textAppearance="?android:attr/textAppearanceMedium" />
-
-                    <TextView
-                        android:id="@+id/subscriptionPromptMessage"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:gravity="center"
-                        android:text="@string/SubscriptionPromptMessage" />
+                        android:layout_gravity="center" />
 
                     <ImageButton
                         android:id="@+id/statusViewImage"

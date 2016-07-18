@@ -691,7 +691,6 @@ public abstract class MainBase {
         }
 
         public abstract void onSubscribeButtonClick(View v);
-        public abstract void onWatchRewardedVideoButtonClick(View v);
 
         protected abstract void startUp();
 
