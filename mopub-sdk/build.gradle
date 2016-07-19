@@ -37,7 +37,7 @@ task wrapper(type: Wrapper) {
 
 group = 'com.mopub'
 description = '''MoPub Android SDK'''
-version = '4.6.1'
+version = '4.7.1'
 
 android {
     compileSdkVersion 23
@@ -46,9 +46,9 @@ android {
     useLibrary 'org.apache.http.legacy'
 
     defaultConfig {
-        versionCode 40
+        versionCode 42
         versionName version
-        minSdkVersion 16
+        minSdkVersion 9
         targetSdkVersion 23
         consumerProguardFiles 'proguard.txt'
     }
@@ -110,6 +110,8 @@ dependencies {
     compile 'com.inmobi.monetization:inmobi-ads:5.3.1'
     compile 'com.google.android.gms:play-services-ads:9.0.2'
     compile(name: 'mm-ad-sdk-6.1.0', ext: 'aar')
+    compile(name: 'adcolony', ext: 'jar')
+    compile(name: 'vungle-publisher-adaptive-id-3.3.5', ext: 'jar')
 
     javadocDeps 'com.google.android.exoplayer:exoplayer:r1.5.6:sources'
     javadocDeps 'com.mopub.volley:mopub-volley:1.1.0:sources'
