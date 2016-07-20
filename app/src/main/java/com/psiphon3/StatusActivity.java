@@ -44,7 +44,6 @@ import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.psiphon3.psiphonlibrary.FreeTrialTimer;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
-import com.psiphon3.psiphonlibrary.SupersonicRewardedVideoWrapper;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -76,7 +75,6 @@ public class StatusActivity
     private MoPubView m_moPubBannerLargeAdView = null;
     private MoPubInterstitial m_moPubInterstitial = null;
     private boolean m_moPubInterstitialShowWhenLoaded = false;
-    private SupersonicRewardedVideoWrapper m_supersonicWrapper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,10 +113,6 @@ public class StatusActivity
         FreeTrialTimer.getFreeTrialTimerCachingWrapper().reset();
 
         super.onResume();
-
-        if(m_supersonicWrapper != null) {
-            m_supersonicWrapper.onResume();
-        }
     }
 
     private void loadSponsorTab(boolean freshConnect)
@@ -225,9 +219,6 @@ public class StatusActivity
         {
             doToggle();
         }
-        if(m_supersonicWrapper != null) {
-            m_supersonicWrapper.onPause();
-        }
         super.onPause();
     }
     
@@ -236,9 +227,6 @@ public class StatusActivity
     {
         deInitAds();
         delayHandler.removeCallbacks(enableFreeTrial);
-        if(m_supersonicWrapper != null) {
-            m_supersonicWrapper.onDestroy();
-        }
         super.onDestroy();
     }
 
@@ -897,10 +885,6 @@ public class StatusActivity
     public void onWatchRewardedVideoButtonClick(View v)
     {
         Utils.MyLog.g("StatusActivity::onWatchRewardedVideoButtonClick");
-
-        if(m_supersonicWrapper != null) {
-            m_supersonicWrapper.playVideo();
-        }
     }
 
     synchronized
