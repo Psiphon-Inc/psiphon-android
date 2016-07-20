@@ -35,10 +35,8 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
-
-import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-
+import com.psiphon3.subscription.R;
 import net.grandcentrix.tray.AppPreferences;
 
 import org.json.JSONArray;
@@ -268,15 +266,19 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             iconID = R.drawable.notification_icon_connecting_animation;
         }
 
+        String notificationTitle = m_parentService.getText(R.string.app_name_psiphon_pro).toString();
+        String notificationText = m_parentService.getText(contentTextID).toString();
+        
         mNotificationBuilder
                 .setSmallIcon(iconID)
-                .setContentTitle(m_parentService.getText(R.string.app_name))
-                .setContentText(m_parentService.getText(contentTextID))
+                .setContentTitle(notificationTitle)
+                .setContentText(notificationText)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationText))
                 .setTicker(ticker)
                 .setContentIntent(m_tunnelConfig.notificationPendingIntent);
 
         Notification notification = mNotificationBuilder.build();
-
+        
         if (alert) {
             final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
 
@@ -298,6 +300,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
         m_tunnelState.isConnected = isConnected;
 
+        doNotify(alert);
+    }
+
+    private synchronized void doNotify(boolean alert) {
         // Don't update notification to CONNECTING, etc., when a stop was commanded.
         if (!m_serviceDestroyed && !m_isStopping.get()) {
             if (mNotificationManager != null) {
@@ -540,7 +546,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     @Override
     public String getAppName() {
-        return m_parentService.getString(R.string.app_name);
+        return m_parentService.getString(R.string.app_name_psiphon_pro);
     }
 
     @Override
@@ -621,7 +627,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             json.put("RemoteServerListSignaturePublicKey", EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY);
 
-            json.put("UpstreamProxyUrl", UpstreamProxySettings.getUpstreamProxyUrl(context));
+            if(UpstreamProxySettings.getProxySettings(context) != null) {
+                json.put("UpstreamProxyUrl", UpstreamProxySettings.getUpstreamProxyUrl(context));
+                json.put("UpstreamProxyCustomHeaders", UpstreamProxySettings.getUpstreamProxyCustomHeaders(context));
+            }
 
             json.put("EmitDiagnosticNotices", true);
 
