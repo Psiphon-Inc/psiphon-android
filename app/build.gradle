@@ -73,12 +73,6 @@ repositories {
     flatDir {
         dirs project(':mopub-sdk').file('libs')
     }
-    maven {
-        url "https://dl.bintray.com/supersonic/android-sdk"
-    }
-    maven {
-        url "https://dl.bintray.com/supersonic/android-adapters"
-    }
 }
 
 dependencies {
@@ -93,9 +87,4 @@ dependencies {
     compile project(':unity-ads-2')
     compile 'com.google.android.gms:play-services:9.0.2'
     compile 'com.google.android.gms:play-services-safetynet:9.0.2'
-    compile 'com.supersonic.sdk:mediationsdk:6.4.7@jar'
-    compile 'com.supersonic.adapters:adcolonyadapter:2.0.1@jar'
-    compile 'com.supersonic.adapters:applovinadapter:2.0.1@jar'
-    compile 'com.supersonic.adapters:unityadsadapter:2.0.1@jar'
-    compile 'com.supersonic.adapters:vungleadapter:2.0.3@jar'
 }

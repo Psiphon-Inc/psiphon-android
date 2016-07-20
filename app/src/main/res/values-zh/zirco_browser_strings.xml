@@ -228,7 +228,7 @@
   <string name="QuickAction.Share">共享</string>
   <string name="QuickAction.SelectText">选择文本</string>
   <string name="QuickAction.MobileView">移动视图</string>
-  <string name="AboutActivity.OtherLicenseText">本程序包含来自 Zirco Browser 项目的源代码 (https://code.google.com/p/zirco-browser/)，以 GPLv3 授权。另包含来自 GreenDroid 项目的源代码 (https://github.com/cyrilmottier/GreenDroid)，以及来自 Shaman 项目的源代码 (https://github.com/emergentdotorg/shaman)，两者均以 Apache 许可证第 2 版授权。</string>
+  <string name="AboutActivity.OtherLicenseText">本程序包含来自 Zirco Browser 项目的源代码（https://code.google.com/p/zirco-browser/），以 GPLv3 授权。另包含来自 GreenDroid 项目的源代码（https://github.com/cyrilmottier/GreenDroid），以及来自 Shaman 项目的源代码（https://github.com/emergentdotorg/shaman），二者均以 Apache 许可证第 2 版授权。</string>
   <string name="PreferencesActivity.WeavePreferenceTitle">Firefox书签同步</string>
   <string name="PreferencesActivity.WeavePreferenceSummary">使用 Firefox Sync 管理书签同步设置。</string>
   <string name="PreferencesActivity.UseWeavePreferenceTitle">使用 Firefox Sync</string>

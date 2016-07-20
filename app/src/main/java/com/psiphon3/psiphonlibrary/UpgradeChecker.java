@@ -506,6 +506,6 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         public void onStartedWaitingForNetworkConnectivity() {}
 
         @Override
-        public void onClientVerificationRequired() {}
+        public void onClientVerificationRequired(String serverNonce, int ttlSeconds, boolean resetCache) {}
     }
 }

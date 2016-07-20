@@ -2,7 +2,6 @@ package com.mopub.mobileads;
 
 import android.app.Activity;
 import android.content.Context;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -48,17 +47,6 @@ class MillennialBanner extends CustomEventBanner {
         int width;
         int height;
         mBannerListener = customEventBannerListener;
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-            Log.e(LOGCAT_TAG, "Unable to initialize the Millennial SDK-- Android SDK is " + Build.VERSION.SDK_INT);
-            UI_THREAD_HANDLER.post(new Runnable() {
-                @Override
-                public void run() {
-                    mBannerListener.onBannerFailed(MoPubErrorCode.INTERNAL_ERROR);
-                }
-            });
-            return;
-        }
 
         if ( !MMSDK.isInitialized() ) {
             try {
