@@ -47,7 +47,7 @@
     <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
          Insert one or more newline characters as needed to keep the lines approximately as short
          as the English. -->
-    <string name="PaymentChooserFragment.Subscription">Abonelik Satın Alın\nYENİ! 7 günlük ücretsiz deneme\n(%1$s / gün)</string>
+    <string name="PaymentChooserFragment.Subscription">Abonelik Satın Alın\nYENİ! 30 günlük ücretsiz deneme\n(%1$s / gün)</string>
 
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro. -->
     <string name="PaymentChooserFragment.TimePass7Day">7 Günlük Geçiş Satın Alın\n(%1$s / gün)</string>

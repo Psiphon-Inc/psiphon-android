@@ -47,7 +47,7 @@
     <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
          Insert one or more newline characters as needed to keep the lines approximately as short
          as the English. -->
-    <string name="PaymentChooserFragment.Subscription">Купить подписку\nНОВОЕ! Попробуйте 7 дней бесплатно\n(%1$s в день)</string>
+    <string name="PaymentChooserFragment.Subscription">Купить подписку\nНОВОЕ! Попробуйте 30 дней бесплатно\n(%1$s в день)</string>
 
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro. -->
     <string name="PaymentChooserFragment.TimePass7Day">Купить подписку на 7 дней\n(%1$s в день)</string>

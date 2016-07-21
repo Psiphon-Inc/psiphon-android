@@ -32,22 +32,22 @@
     <string name="custom_proxy_headers_summary">Configura cabeceras HTTP personalizadas adicionales para peticiones proxy</string>
 
     <!-- Checkbox that toggles adding custom headers feature-->
-    <string name="custom_proxy_headers_checkbox_title">Añade cabeceras HTTP cabeceras HTTP personalizadas</string>
+    <string name="custom_proxy_headers_checkbox_title">Añade cabeceras HTTP personalizadas</string>
 
     <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
-    <string name="custom_proxy_headers_checkbox_description">Añade cabeceras HTTP cabeceras HTTP personalizadas para todas las peticiones proxy HTTP salientes</string>
-    <string name="custom_proxy_header_group_1">Encabezado 1</string>
-    <string name="custom_proxy_header_group_2">Encabezado 2</string>
-    <string name="custom_proxy_header_group_3">Encabezado 3</string>
-    <string name="custom_proxy_header_name">Introducir el nombre del encabezado</string>
-    <string name="custom_proxy_header_value">Introducir el valor del encabezado</string>
-    <string name="custom_proxy_header_ignored_values">¡Aviso: no se hará caso a los encabezados sin nombres! </string>
-    <string name="custom_proxy_header_invalid_name">¡Error: el nombre del encabezado contiene letras ilegales!</string>
+    <string name="custom_proxy_headers_checkbox_description">Añade cabeceras HTTP personalizadas para todas las peticiones proxy HTTP salientes</string>
+    <string name="custom_proxy_header_group_1">Cabecera 1</string>
+    <string name="custom_proxy_header_group_2">Cabecera 2</string>
+    <string name="custom_proxy_header_group_3">Cabecera 3</string>
+    <string name="custom_proxy_header_name">Introducir el nombre de la cabecera</string>
+    <string name="custom_proxy_header_value">Introducir el valor de la cabecera</string>
+    <string name="custom_proxy_header_ignored_values">¡Aviso: no se hará caso a las cabeceras sin nombres! </string>
+    <string name="custom_proxy_header_invalid_name">¡Error: el nombre de la cabecera contiene letras ilegales!</string>
     
     <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
          Insert one or more newline characters as needed to keep the lines approximately as short
          as the English. -->
-    <string name="PaymentChooserFragment.Subscription">Compra Suscripción\n¡NUEVO! Prueba gratuita de 7 días\n(%1$s / día)</string>
+    <string name="PaymentChooserFragment.Subscription">Compra Suscripción\n¡NUEVO! Prueba gratuita de 30 días\n(%1$s / día)</string>
 
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro. -->
     <string name="PaymentChooserFragment.TimePass7Day">Compra el pase de 7 días\n(%1$s / día)</string>
