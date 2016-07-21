@@ -2,6 +2,7 @@ package com.mopub.mobileads;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 
@@ -59,6 +60,11 @@ public class AdColonyInterstitial extends CustomEventInterstitial implements AdC
                                     Map<String, String> serverExtras) {
         if (!(context instanceof Activity)) {
             customEventInterstitialListener.onInterstitialFailed(MoPubErrorCode.ADAPTER_CONFIGURATION_ERROR);
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            customEventInterstitialListener.onInterstitialFailed(MoPubErrorCode.ADAPTER_NOT_FOUND);
             return;
         }
 

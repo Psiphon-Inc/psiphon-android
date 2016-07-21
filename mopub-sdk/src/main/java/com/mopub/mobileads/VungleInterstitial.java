@@ -1,6 +1,7 @@
 package com.mopub.mobileads;
 
 import android.content.Context;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -44,6 +45,11 @@ public class VungleInterstitial extends CustomEventInterstitial implements Event
 
         if (context == null) {
             mCustomEventInterstitialListener.onInterstitialFailed(MoPubErrorCode.NETWORK_INVALID_STATE);
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+            mCustomEventInterstitialListener.onInterstitialFailed(MoPubErrorCode.ADAPTER_NOT_FOUND);
             return;
         }
 
