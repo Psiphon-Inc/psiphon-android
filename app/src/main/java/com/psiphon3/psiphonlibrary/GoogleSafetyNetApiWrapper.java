@@ -48,6 +48,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
 import java.util.LinkedHashMap;
@@ -273,7 +274,35 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         }
 
         // cache payload only if attestation request has completed
-        setPayload(checkData.toString(), status == API_REQUEST_OK);
+        // and result passes basic JWT validation
+        setPayload(checkData.toString(),
+                (status == API_REQUEST_OK) && isValidJWTResult(attestationResult));
+    }
+
+    private boolean isValidJWTResult(String jwtResult) {
+        // perform basic validation:
+        // JWT must be 3 base64 encoded strings separated by '.'
+        // each part must be valid JSON object
+        final String[] jwtParts = jwtResult.split("\\.");
+
+        if (jwtParts.length != 3) {
+            return false;
+        }
+        for (String encoded : jwtParts) {
+            String jsonString;
+
+            try {
+                jsonString = new String(Utils.Base64.decode(encoded), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                return false;
+            }
+            try {
+                new JSONObject(jsonString);
+            } catch (JSONException e) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void setPayload(String payload, boolean shouldCache) {
