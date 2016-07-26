@@ -36,6 +36,8 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.safetynet.SafetyNet;
 import com.google.android.gms.safetynet.SafetyNetApi;
 import com.psiphon3.psiphonlibrary.obfuscation.AESObfuscator;
+import com.psiphon3.psiphonlibrary.obfuscation.Base64;
+import com.psiphon3.psiphonlibrary.obfuscation.Base64DecoderException;
 import com.psiphon3.psiphonlibrary.obfuscation.Obfuscator;
 import com.psiphon3.psiphonlibrary.obfuscation.ValidationException;
 
@@ -282,24 +284,27 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
     private boolean isValidJWTResult(String jwtResult) {
         // perform basic validation:
         // JWT must be 3 base64 encoded strings separated by '.'
-        // each part must be valid JSON object
+        // first(header) and second(payload) parts must be valid JSON objects
         final String[] jwtParts = jwtResult.split("\\.");
 
         if (jwtParts.length != 3) {
             return false;
         }
-        for (String encoded : jwtParts) {
-            String jsonString;
-
+        for (int i = 0; i < jwtParts.length; i++) {
+            byte[] decoded;
             try {
-                jsonString = new String(Utils.Base64.decode(encoded), "UTF-8");
-            } catch (UnsupportedEncodingException e) {
+                decoded = Base64.decodeWebSafe(jwtParts[i]);
+            } catch (Base64DecoderException e) {
                 return false;
             }
-            try {
-                new JSONObject(jsonString);
-            } catch (JSONException e) {
-                return false;
+            if (i < 2) {
+                String jsonString;
+                try {
+                    jsonString = new String(decoded, "UTF-8");
+                    new JSONObject(jsonString);
+                } catch (UnsupportedEncodingException | JSONException e) {
+                    return false;
+                }
             }
         }
         return true;
