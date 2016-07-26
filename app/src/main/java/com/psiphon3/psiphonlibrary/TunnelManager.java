@@ -60,7 +60,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import ca.psiphon.PsiphonTunnel;
 
 public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
-    private static final long CLIENT_VERIFICATION_STATUS_REQUEST_DELAY_MILLISECONDS = 1000 * 30L;
 
     // Android IPC messages
 
@@ -817,17 +816,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 Bundle data = new Bundle();
                 data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, true);
                 sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, data);
-            }
-        });
 
-        // After some delay request client verification status from the server by
-        // sending an empty message to client verification handler
-        m_Handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
+                // Request client verification status from the server by
+                // sending an empty message to client verification handler
                 TunnelManager.this.setClientVerificationResult("");
             }
-        }, CLIENT_VERIFICATION_STATUS_REQUEST_DELAY_MILLISECONDS);
+        });
     }
 
     @Override
