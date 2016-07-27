@@ -60,6 +60,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import ca.psiphon.PsiphonTunnel;
 
 public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
+    private static final int MAX_CLIENT_VERIFICATION_ATTEMPTS = 5;
+    private int m_clientVerificationAttempts = 0;
+
 
     // Android IPC messages
 
@@ -816,6 +819,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 Bundle data = new Bundle();
                 data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, true);
                 sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, data);
+
+                // Reset verification attempts count and
+                // request client verification status from the server by
+                // sending an empty message to client verification handler
+                m_clientVerificationAttempts = 0;
+                TunnelManager.this.setClientVerificationResult("");
             }
         });
     }
@@ -905,6 +914,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     @Override
     public void onClientVerificationRequired(final String serverNonce, final int ttlSeconds, final boolean resetCache) {
+
+        // Server may reply with a new verification request after verification payload is sent
+        // In this case we want to limit a number of possible retries per each session
+        m_clientVerificationAttempts ++;
+
+        if (m_clientVerificationAttempts > MAX_CLIENT_VERIFICATION_ATTEMPTS) {
+            return;
+        }
         if (ttlSeconds == 0) {
             // do not send payload if requested TTL is 0
             return;
