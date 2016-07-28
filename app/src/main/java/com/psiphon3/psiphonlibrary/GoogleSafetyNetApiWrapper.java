@@ -36,6 +36,8 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.safetynet.SafetyNet;
 import com.google.android.gms.safetynet.SafetyNetApi;
 import com.psiphon3.psiphonlibrary.obfuscation.AESObfuscator;
+import com.psiphon3.psiphonlibrary.obfuscation.Base64;
+import com.psiphon3.psiphonlibrary.obfuscation.Base64DecoderException;
 import com.psiphon3.psiphonlibrary.obfuscation.Obfuscator;
 import com.psiphon3.psiphonlibrary.obfuscation.ValidationException;
 
@@ -48,6 +50,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
 import java.util.LinkedHashMap;
@@ -273,7 +276,38 @@ public class GoogleSafetyNetApiWrapper implements ConnectionCallbacks, OnConnect
         }
 
         // cache payload only if attestation request has completed
-        setPayload(checkData.toString(), status == API_REQUEST_OK);
+        // and result passes basic JWT validation
+        setPayload(checkData.toString(),
+                (status == API_REQUEST_OK) && isValidJWTResult(attestationResult));
+    }
+
+    private boolean isValidJWTResult(String jwtResult) {
+        // perform basic validation:
+        // JWT must be 3 base64 encoded strings separated by '.'
+        // first(header) and second(payload) parts must be valid JSON objects
+        final String[] jwtParts = jwtResult.split("\\.");
+
+        if (jwtParts.length != 3) {
+            return false;
+        }
+        for (int i = 0; i < jwtParts.length; i++) {
+            byte[] decoded;
+            try {
+                decoded = Base64.decodeWebSafe(jwtParts[i]);
+            } catch (Base64DecoderException e) {
+                return false;
+            }
+            if (i < 2) {
+                String jsonString;
+                try {
+                    jsonString = new String(decoded, "UTF-8");
+                    new JSONObject(jsonString);
+                } catch (UnsupportedEncodingException | JSONException e) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private void setPayload(String payload, boolean shouldCache) {
