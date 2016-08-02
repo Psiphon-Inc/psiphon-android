@@ -18,7 +18,7 @@ package org.zirco.model.items;
 import java.io.File;
 import java.util.Random;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 import org.zirco.events.EventConstants;
 import org.zirco.events.EventController;
 import org.zirco.ui.activities.DownloadsListActivity;
