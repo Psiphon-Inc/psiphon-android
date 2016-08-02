@@ -236,8 +236,10 @@ public class StatusActivity
                 // OnResume() will reset this flag
                 m_temporarilyDisableTunneledInterstitial = true;
 
-                // Show the full screen ad after OnResume() has initialized ads
-                m_tunneledFullScreenAdPending = true;
+                if (getSkipHomePage() || showFirstHomePageInApp()) {
+                    // Show the full screen ad after OnResume() has initialized ads
+                    m_tunneledFullScreenAdPending = true;
+                }
                 
                 m_tabHost.setCurrentTabByTag("home");
                 loadSponsorTab(true);
