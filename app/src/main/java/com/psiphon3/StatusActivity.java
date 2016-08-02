@@ -263,8 +263,7 @@ public class StatusActivity
     @Override
     public void onDestroy()
     {
-        deInitUntunneledAds();
-        deInitTunneledAds();
+        deInitAllAds();
         delayHandler.removeCallbacks(enableAdMode);
         super.onDestroy();
     }
@@ -744,6 +743,8 @@ public class StatusActivity
     {
         Utils.setHasValidSubscription(this, true);
 
+        deInitAllAds();
+
         // Auto-start on app first run
         if (m_firstRun)
         {
@@ -1063,15 +1064,9 @@ public class StatusActivity
     }
 
 
-    private boolean getShowAds() {
-        return m_multiProcessPreferences.getBoolean(getString(R.string.persistent_show_ads_setting), false);
-    }
-
     private boolean shouldShowTunneledAds()
     {
-        // For now, only show ads when the tunnel is connected, since WebViewProxySettings are
-        // probably set and webviews won't load successfully when the tunnel is not connected
-        return getShowAds() &&
+        return !Utils.getHasValidSubscription(this) &&
                 isTunnelConnected() &&
                 Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO;
     }
@@ -1196,5 +1191,12 @@ public class StatusActivity
             m_moPubTunneledInterstitial.destroy();
         }
         m_moPubTunneledInterstitial = null;
+    }
+
+    synchronized
+    private void deInitAllAds()
+    {
+        deInitUntunneledAds();
+        deInitTunneledAds();
     }
 }
