@@ -87,6 +87,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT = "listeningLocalHttpProxyPort";
     public static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
     public static final String DATA_TUNNEL_STATE_HOME_PAGES = "homePages";
+    public static final String DATA_TUNNEL_STATE_RATE_LIMITED = "rateLimited";
     public static final String DATA_TRANSFER_STATS_CONNECTED_TIME = "dataTransferStatsConnectedTime";
     public static final String DATA_TRANSFER_STATS_TOTAL_BYTES_SENT = "dataTransferStatsTotalBytesSent";
     public static final String DATA_TRANSFER_STATS_TOTAL_BYTES_RECEIVED = "dataTransferStatsTotalBytesReceived";
@@ -104,6 +105,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String DATA_TUNNEL_CONFIG_WHOLE_DEVICE = "tunnelConfigWholeDevice";
     public static final String DATA_TUNNEL_CONFIG_EGRESS_REGION = "tunnelConfigEgressRegion";
     public static final String DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS = "tunnelConfigDisableTimeouts";
+    public static final String DATA_TUNNEL_CONFIG_RATE_LIMIT = "tunnelConfigRateLimit";
 
     // Tunnel config, received from the client.
     public static class Config {
@@ -112,6 +114,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         boolean wholeDevice = false;
         String egressRegion = PsiphonConstants.REGION_CODE_ANY;
         boolean disableTimeouts = false;
+        boolean rateLimit = false;
     }
 
     private Config m_tunnelConfig = new Config();
@@ -125,6 +128,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         int listeningLocalHttpProxyPort = 0;
         String clientRegion;
         ArrayList<String> homePages = new ArrayList<>();
+        boolean rateLimited = false;
     }
 
     private State m_tunnelState = new State();
@@ -249,6 +253,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
         m_tunnelConfig.disableTimeouts = intent.getBooleanExtra(
                 TunnelManager.DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS, false);
+
+        m_tunnelConfig.rateLimit = intent.getBooleanExtra(
+                TunnelManager.DATA_TUNNEL_CONFIG_RATE_LIMIT, false);
+
     }
 
     private Notification createNotification(boolean alert) {
@@ -411,6 +419,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT, m_tunnelState.listeningLocalHttpProxyPort);
         data.putString(DATA_TUNNEL_STATE_CLIENT_REGION, m_tunnelState.clientRegion);
         data.putStringArrayList(DATA_TUNNEL_STATE_HOME_PAGES, m_tunnelState.homePages);
+        data.putBoolean(DATA_TUNNEL_STATE_RATE_LIMITED, m_tunnelState.rateLimited);
         return data;
     }
 
@@ -495,6 +504,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         MyLog.v(R.string.starting_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
         m_tunnelState.homePages.clear();
+        m_tunnelState.rateLimited = m_tunnelConfig.rateLimit;
 
         DataTransferStats.getDataTransferStatsForService().startSession();
         sendDataTransferStatsHandler.postDelayed(sendDataTransferStats, sendDataTransferStatsIntervalMs);
@@ -572,6 +582,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
      * tunnel and the UpgradeChecker temp tunnel).
      *
      * @param context
+     * @param tunnelConfig         Config values to be set in the tunnel core config.
      * @param tempTunnelName       null if not a temporary tunnel. If set, must be a valid to use in file path.
      * @param clientPlatformPrefix null if not applicable (i.e., for main Psiphon app); should be provided
      *                             for temp tunnels. Will be prepended to standard client platform value.
@@ -675,6 +686,26 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 String egressRegion = tunnelConfig.egressRegion;
                 MyLog.g("EgressRegion", "regionCode", egressRegion);
                 json.put("EgressRegion", egressRegion);
+
+
+                long rateLimit = 0;
+                if (tunnelConfig.rateLimit) {
+                    rateLimit = 1 * 1024 * 1024 / 8; // 1 Mbps
+                }
+
+                JSONObject rateLimits = new JSONObject();
+                rateLimits.put("DownstreamUnlimitedBytes", 0);
+                rateLimits.put("DownstreamBytesPerSecond", rateLimit);
+                rateLimits.put("UpstreamUnlimitedBytes", 0);
+                rateLimits.put("UpstreamBytesPerSecond", rateLimit);
+
+                MyLog.g("RateLimit",
+                        "DownstreamUnlimitedBytes", 0,
+                        "DownstreamBytesPerSecond", rateLimit,
+                        "UpstreamUnlimitedBytes", 0,
+                        "UpstreamBytesPerSecond", rateLimit);
+
+                json.put("RateLimits", rateLimits);
             }
 
             if (tunnelConfig.disableTimeouts) {
