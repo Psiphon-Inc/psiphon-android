@@ -35,6 +35,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TabHost;
+import android.widget.TextView;
 
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
@@ -65,6 +66,11 @@ import java.util.Map;
 public class StatusActivity
     extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
 {
+    private TextView mRateLimitedText;
+    private TextView mRateUnlimitedText;
+    private Button mRateLimitSubscribeButton;
+    private View mRateLimitedTextSection;
+
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
     private IabHelper mIabHelper = null;
@@ -78,8 +84,13 @@ public class StatusActivity
     protected void onCreate(Bundle savedInstanceState) {
         setContentView(R.layout.main);
 
-        m_tabHost = (TabHost) findViewById(R.id.tabHost);
-        m_toggleButton = (Button) findViewById(R.id.toggleButton);
+        m_tabHost = (TabHost)findViewById(R.id.tabHost);
+        m_toggleButton = (Button)findViewById(R.id.toggleButton);
+
+        mRateLimitedTextSection = findViewById(R.id.rateLimitedTextSection);
+        mRateLimitedText = (TextView)findViewById(R.id.rateLimitedText);
+        mRateUnlimitedText = (TextView)findViewById(R.id.rateUnlimitedText);
+        mRateLimitSubscribeButton = (Button)findViewById(R.id.rateLimitSubscribeButton);
 
         // NOTE: super class assumes m_tabHost is initialized in its onCreate
 
@@ -718,6 +729,12 @@ public class StatusActivity
         // Tunnel throughput is unlimited with a valid subscription.
         setTunnelConfigRateLimit(false);
 
+        // Update UI elements showing the current speed.
+        mRateLimitedText.setVisibility(View.GONE);
+        mRateUnlimitedText.setVisibility(View.VISIBLE);
+        mRateLimitSubscribeButton.setVisibility(View.GONE);
+        mRateLimitedTextSection.setVisibility(View.VISIBLE);
+
         // Auto-start on app first run
         if (m_firstRun) {
             m_firstRun = false;
@@ -743,6 +760,15 @@ public class StatusActivity
 
         // Tunnel throughput is limited without a valid subscription.
         setTunnelConfigRateLimit(true);
+
+        // Update UI elements showing the current speed.
+        String formatString = mRateLimitedText.getText().toString();
+        String buttonText = String.format(formatString, "1");
+        mRateLimitedText.setText(buttonText);
+        mRateLimitedText.setVisibility(View.VISIBLE);
+        mRateUnlimitedText.setVisibility(View.GONE);
+        mRateLimitSubscribeButton.setVisibility(View.VISIBLE);
+        mRateLimitedTextSection.setVisibility(View.VISIBLE);
 
         // Region selection is only available to paid users.
         updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
