@@ -190,4 +190,8 @@
          have access to a full-speed connection. Users have limited speed if they have not paid for
          premium service. -->
     <string name="rate_limit_text_unlimited">Unlimited</string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">Upgrade now!</string>
 </resources>

@@ -66,10 +66,10 @@ import java.util.Map;
 public class StatusActivity
     extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
 {
+    private View mRateLimitedTextSection;
     private TextView mRateLimitedText;
     private TextView mRateUnlimitedText;
     private Button mRateLimitSubscribeButton;
-    private View mRateLimitedTextSection;
 
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;

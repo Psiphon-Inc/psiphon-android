@@ -224,61 +224,6 @@
                         android:textAppearance="?android:attr/textAppearanceSmall" />
                 </LinearLayout>
 
-            <LinearLayout
-                android:id="@+id/rateLimitedTextSection"
-                android:orientation="vertical"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginTop="12dp"
-                android:visibility="gone" >
-
-                <View
-                    android:layout_width="fill_parent"
-                    android:layout_height="1dip"
-                    android:layout_marginBottom="6dp"
-                    android:background="#555555" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginRight="5dp"
-                    android:textAppearance="?android:attr/textAppearanceMedium"
-                    android:text="@string/rate_limit_text_title" />
-
-                <TextView
-                    android:id="@+id/rateLimitedText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginRight="5dp"
-                    android:textAppearance="?android:attr/textAppearanceLarge"
-                    android:text="@string/rate_limit_text_limited" />
-
-                <TextView
-                    android:id="@+id/rateUnlimitedText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginRight="5dp"
-                    android:textAppearance="?android:attr/textAppearanceLarge"
-                    android:textAllCaps="true"
-                    android:visibility="gone"
-                    android:text="@string/rate_limit_text_unlimited" />
-
-                <Button
-                    android:id="@+id/rateLimitSubscribeButton"
-                    android:onClick="onSubscribeButtonClick"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:padding="10dp"
-                    android:text="@string/SubscribeButton"
-                    android:textAppearance="?android:attr/textAppearanceSmall" />
-
-            </LinearLayout>
-
             </LinearLayout>
         </ScrollView>
 
