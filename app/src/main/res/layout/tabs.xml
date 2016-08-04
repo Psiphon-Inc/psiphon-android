@@ -223,6 +223,7 @@
                         android:text="@string/about"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
                 </LinearLayout>
+
             </LinearLayout>
         </ScrollView>
 

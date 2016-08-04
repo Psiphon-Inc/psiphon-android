@@ -35,6 +35,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TabHost;
+import android.widget.TextView;
 
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
@@ -65,10 +66,15 @@ import java.util.Map;
 public class StatusActivity
     extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
 {
+    private View mRateLimitedTextSection;
+    private TextView mRateLimitedText;
+    private TextView mRateUnlimitedText;
+    private Button mRateLimitSubscribeButton;
+
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
-    private IabHelper m_iabHelper = null;
-    private boolean m_startIabInFlight = false;
+    private IabHelper mIabHelper = null;
+    private boolean mStartIabInProgress = false;
     private MoPubView m_moPubBannerLargeAdView = null;
     private MoPubInterstitial m_moPubInterstitial = null;
     private boolean m_moPubInterstitialShowWhenLoaded = false;
@@ -78,8 +84,13 @@ public class StatusActivity
     protected void onCreate(Bundle savedInstanceState) {
         setContentView(R.layout.main);
 
-        m_tabHost = (TabHost) findViewById(R.id.tabHost);
-        m_toggleButton = (Button) findViewById(R.id.toggleButton);
+        m_tabHost = (TabHost)findViewById(R.id.tabHost);
+        m_toggleButton = (Button)findViewById(R.id.toggleButton);
+
+        mRateLimitedTextSection = findViewById(R.id.rateLimitedTextSection);
+        mRateLimitedText = (TextView)findViewById(R.id.rateLimitedText);
+        mRateUnlimitedText = (TextView)findViewById(R.id.rateUnlimitedText);
+        mRateLimitSubscribeButton = (Button)findViewById(R.id.rateLimitSubscribeButton);
 
         // NOTE: super class assumes m_tabHost is initialized in its onCreate
 
@@ -339,7 +350,6 @@ public class StatusActivity
         else
         {
             // No prompt, just start the tunnel (if not already running)
-
             startTunnel();
         }
     }
@@ -427,22 +437,25 @@ public class StatusActivity
     synchronized
     private void startIab()
     {
-        if (m_startIabInFlight)
+        if (mStartIabInProgress)
         {
             return;
         }
 
-        m_startIabInFlight = true;
-
-        if (m_iabHelper == null)
+        if (mIabHelper == null)
         {
-            m_iabHelper = new IabHelper(this, IAB_PUBLIC_KEY);
-            m_iabHelper.startSetup(m_iabSetupFinishedListener);
+            mStartIabInProgress = true;
+            mIabHelper = new IabHelper(this, IAB_PUBLIC_KEY);
+            mIabHelper.startSetup(m_iabSetupFinishedListener);
         }
         else
         {
             queryInventory();
         }
+    }
+
+    private boolean isIabInitialized() {
+        return !mStartIabInProgress && mIabHelper != null;
     }
     
     private IabHelper.OnIabSetupFinishedListener m_iabSetupFinishedListener =
@@ -451,9 +464,12 @@ public class StatusActivity
         @Override
         public void onIabSetupFinished(IabResult result)
         {
+            mStartIabInProgress = false;
+
             if (result.isFailure())
             {
                 Utils.MyLog.g(String.format("StatusActivity::onIabSetupFinished: failure: %s", result));
+                mIabHelper = null;
                 handleIabFailure(result);
             }
             else
@@ -477,9 +493,9 @@ public class StatusActivity
                 return;
             }
 
-            m_startIabInFlight = false;
-
             mInventory = inventory;
+
+            boolean hasValidSubscription = false;
 
             //
             // Check if the user has a subscription.
@@ -492,9 +508,15 @@ public class StatusActivity
                 if (inventory.hasPurchase(validSku))
                 {
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid subscription: %s", validSku));
-                    proceedWithValidSubscription();
-                    return;
+                    hasValidSubscription = true;
+                    break;
                 }
+            }
+
+            if (hasValidSubscription)
+            {
+                proceedWithValidSubscription();
+                return;
             }
 
             //
@@ -508,6 +530,9 @@ public class StatusActivity
                 String sku = timepass.getKey();
                 long lifetime = timepass.getValue();
 
+                // DEBUG: This line will convert days to minutes. Useful for testing.
+                //lifetime = lifetime / 24 / 60;
+
                 Purchase purchase = inventory.getPurchase(sku);
                 if (purchase == null)
                 {
@@ -519,32 +544,31 @@ public class StatusActivity
                 {
                     // This time pass is still valid.
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid time pass: %s", sku));
-                    proceedWithValidSubscription();
-                    return;
+                    hasValidSubscription = true;
                 }
                 else
                 {
-                    // This time pass is no longer valid. Consider it invalid and consume it below
-                    // (unless a valid time-pass is found first and we early-exit).
+                    // This time pass is no longer valid. Consider it invalid and consume it below.
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: consuming old time pass: %s", sku));
                     timepassesToConsume.add(purchase);
                 }
             }
 
-            //
-            // There is no valid subscription or time pass for this user.
-            //
-
-            Utils.setHasValidSubscription(StatusActivity.this, false);
-
-            updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
+            if (hasValidSubscription)
+            {
+                proceedWithValidSubscription();
+            }
+            else
+            {
+                // There is no valid subscription or time pass for this user.
+                Utils.MyLog.g("StatusActivity::onQueryInventoryFinished: no valid subscription or time pass");
+                proceedWithoutValidSubscription();
+            }
 
             if (timepassesToConsume.size() > 0)
             {
                 consumePurchases(timepassesToConsume);
             }
-
-            Utils.MyLog.g("StatusActivity::onQueryInventoryFinished: no valid subscription or time pass");
         }
     };
     
@@ -606,7 +630,7 @@ public class StatusActivity
     {
         try
         {
-            if (m_iabHelper != null)
+            if (isIabInitialized())
             {
                 List<String> timepassSkus = new ArrayList<>();
                 timepassSkus.addAll(IAB_TIMEPASS_SKUS_TO_TIME.keySet());
@@ -614,7 +638,7 @@ public class StatusActivity
                 List<String> subscriptionSkus = new ArrayList<>();
                 subscriptionSkus.add(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU);
 
-                m_iabHelper.queryInventoryAsync(
+                mIabHelper.queryInventoryAsync(
                         true,
                         timepassSkus,
                         subscriptionSkus,
@@ -635,9 +659,9 @@ public class StatusActivity
     {
         try
         {
-            if (m_iabHelper != null)
+            if (isIabInitialized())
             {
-                m_iabHelper.consumeAsync(purchases, m_iabConsumeFinishedListener);
+                mIabHelper.consumeAsync(purchases, m_iabConsumeFinishedListener);
             }
         }
         catch (IllegalStateException ex)
@@ -657,9 +681,11 @@ public class StatusActivity
     {
         try
         {
-            if (m_iabHelper != null && !m_startIabInFlight)
+            if (isIabInitialized())
             {
-                m_iabHelper.launchSubscriptionPurchaseFlow(this, IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU,
+                mIabHelper.launchSubscriptionPurchaseFlow(
+                        this,
+                        IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU,
                         IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
             }
         }
@@ -680,9 +706,9 @@ public class StatusActivity
     {
         try
         {
-            if (m_iabHelper != null && !m_startIabInFlight)
+            if (isIabInitialized())
             {
-                m_iabHelper.launchPurchaseFlow(this, sku,
+                mIabHelper.launchPurchaseFlow(this, sku,
                         IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
             }
         }
@@ -700,23 +726,74 @@ public class StatusActivity
     {
         Utils.setHasValidSubscription(this, true);
 
+        // Tunnel throughput is unlimited with a valid subscription.
+        setTunnelConfigRateLimit(false);
+
+        // Update UI elements showing the current speed.
+        mRateLimitedText.setVisibility(View.GONE);
+        mRateUnlimitedText.setVisibility(View.VISIBLE);
+        mRateLimitSubscribeButton.setVisibility(View.GONE);
+        mRateLimitedTextSection.setVisibility(View.VISIBLE);
+
         // Auto-start on app first run
-        if (m_firstRun)
-        {
+        if (m_firstRun) {
             m_firstRun = false;
             doStartUp();
         }
+        else if (isTunnelConnected()) {
+            // Note: This is an else-if statement because we're assuming that
+            // m_firstRun being true means that we're not already connected.
+
+            // If we're already connected, make sure we're using a tunnel with
+            // valid-subscription capabilities.
+            boolean restartRequired = getRateLimited();
+            if (restartRequired) {
+                Utils.MyLog.g(String.format("StatusActivity::proceedWithValidSubscription: restarting tunnel"));
+                scheduleRunningTunnelServiceRestart();
+            }
+        }
     }
-    
-    // NOTE: result may be null
+
+    private void proceedWithoutValidSubscription()
+    {
+        Utils.setHasValidSubscription(this, false);
+
+        // Tunnel throughput is limited without a valid subscription.
+        setTunnelConfigRateLimit(true);
+
+        // Update UI elements showing the current speed.
+        String formatString = mRateLimitedText.getText().toString();
+        String buttonText = String.format(formatString, "1");
+        mRateLimitedText.setText(buttonText);
+        mRateLimitedText.setVisibility(View.VISIBLE);
+        mRateUnlimitedText.setVisibility(View.GONE);
+        mRateLimitSubscribeButton.setVisibility(View.VISIBLE);
+        mRateLimitedTextSection.setVisibility(View.VISIBLE);
+
+        // Region selection is only available to paid users.
+        updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
+
+        // If we're already connected, make sure we're using a tunnel with
+        // no-valid-subscription capabilities.
+        if (isTunnelConnected()) {
+            // If we're already connected, make sure we're using a tunnel with
+            // valid-subscription capabilities.
+            boolean restartRequired = !getRateLimited();
+            if (restartRequired) {
+                Utils.MyLog.g(String.format("StatusActivity::proceedWithoutValidSubscription: restarting tunnel"));
+                scheduleRunningTunnelServiceRestart();
+            }
+        }
+    }
+
+    // NOTE: result param may be null
     private void handleIabFailure(IabResult result)
     {
         // try again next time
         deInitIab();
-        m_startIabInFlight = false;
 
         if (result != null &&
-                result.getResponse() == IabHelper.IABHELPER_USER_CANCELLED)
+            result.getResponse() == IabHelper.IABHELPER_USER_CANCELLED)
         {
             // do nothing, onResume() calls startIAB()
         }
@@ -798,9 +875,6 @@ public class StatusActivity
     {
         Utils.MyLog.g("StatusActivity::onSubscribeButtonClick");
 
-        // The button should not have been enabled if there's no inventory (yet).
-        assert(mInventory != null);
-
         // This function is also called when an unsubscribed user selects a region.
         // Do nothing in this case (instead of crashing).
         if (mInventory == null)
@@ -848,17 +922,17 @@ public class StatusActivity
     private void deInitIab()
     {
         mInventory = null;
-        if (m_iabHelper != null)
+        if (mIabHelper != null)
         {
             try {
-                m_iabHelper.dispose();
+                mIabHelper.dispose();
             }
             catch (IabHelper.IabAsyncInProgressException ex)
             {
                 // Nothing can help at this point. Continue to de-init.
             }
 
-            m_iabHelper = null;
+            mIabHelper = null;
         }
     }
     
@@ -867,9 +941,9 @@ public class StatusActivity
     {
         if (requestCode == IAB_REQUEST_CODE)
         {
-            if (m_iabHelper != null)
+            if (isIabInitialized())
             {
-                m_iabHelper.handleActivityResult(requestCode, resultCode, data);
+                mIabHelper.handleActivityResult(requestCode, resultCode, data);
             }
         }
         else if (requestCode == PAYMENT_CHOOSER_ACTIVITY)
