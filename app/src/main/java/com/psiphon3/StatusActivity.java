@@ -77,6 +77,7 @@ public class StatusActivity
     private boolean m_loadedSponsorTab = false;
     private IabHelper mIabHelper = null;
     private boolean mStartIabInProgress = false;
+    private boolean mIabHelperIsInitialized = false;
     private MoPubView m_moPubUntunneledBannerLargeAdView = null;
     private MoPubInterstitial m_moPubUntunneledInterstitial = null;
     private boolean m_moPubUntunneledInterstitialShowWhenLoaded = false;
@@ -500,7 +501,7 @@ public class StatusActivity
     }
 
     private boolean isIabInitialized() {
-        return !mStartIabInProgress && mIabHelper != null;
+        return mIabHelper != null && mIabHelperIsInitialized;
     }
     
     private IabHelper.OnIabSetupFinishedListener m_iabSetupFinishedListener =
@@ -514,11 +515,11 @@ public class StatusActivity
             if (result.isFailure())
             {
                 Utils.MyLog.g(String.format("StatusActivity::onIabSetupFinished: failure: %s", result));
-                mIabHelper = null;
                 handleIabFailure(result);
             }
             else
             {
+                mIabHelperIsInitialized = true;
                 Utils.MyLog.g(String.format("StatusActivity::onIabSetupFinished: success: %s", result));
                 queryInventory();
             }
@@ -969,6 +970,7 @@ public class StatusActivity
     private void deInitIab()
     {
         mInventory = null;
+        mIabHelperIsInitialized = false;
         if (mIabHelper != null)
         {
             try {
