@@ -226,11 +226,6 @@ public class StatusActivity
         {
             getTunnelStateFromHandshakeIntent(intent);
 
-            if (!Utils.getHasValidSubscription(this))
-            {
-                startIab();
-            }
-            
             // OLD COMMENT:
             // Show the home page. Always do this in browser-only mode, even
             // after an automated reconnect -- since the status activity was
