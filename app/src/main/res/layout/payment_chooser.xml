@@ -86,6 +86,16 @@
             android:layout_margin="10dp"
             android:padding="10dp" />
 
+        <Button
+            android:text="@string/PaymentChooserFragment.TimePass360Day"
+            android:id="@+id/timepass360"
+            android:onClick="onTimePassButtonClick"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="10dp"
+            android:padding="10dp" />
+
     </LinearLayout>
 
 </ScrollView>
