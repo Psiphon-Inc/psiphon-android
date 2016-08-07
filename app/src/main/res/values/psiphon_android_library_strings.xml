@@ -176,22 +176,4 @@
     <string name="tunnel_connecting">Tunnel connecting…</string>
     <string name="tunnel_connected">Tunnel connected</string>
     <string name="waiting">Waiting…</string>
-
-    <!-- Title for other text showing what the user's current speed limit is. Users have limited
-         speed if they have not paid for premium service. -->
-    <string name="rate_limit_text_title">Psiphon speed limit:</string>
-
-    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
-         and is in megabits-per-second. Users have limited speed if they have not paid for premium
-         service. -->
-    <string name="rate_limit_text_limited">%s Mb/s</string>
-
-    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
-         have access to a full-speed connection. Users have limited speed if they have not paid for
-         premium service. -->
-    <string name="rate_limit_text_unlimited">Unlimited</string>
-
-    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
-         the workflow to subscribe for premium access. -->
-    <string name="rate_limit_text_subscribe_button">Upgrade now!</string>
 </resources>
