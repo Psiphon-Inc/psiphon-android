@@ -785,10 +785,12 @@ public class StatusActivity
             m_firstRun = false;
             doStartUp();
         }
-        else if (isTunnelConnected()) {
-            // Note: This is an else-if statement because we're assuming that
-            // m_firstRun being true means that we're not already connected.
 
+        // Note: There is a possible race condition here because startIab() and binding to the
+        // tunnel service are both asynchronously called from onResume(). If we get here before
+        // having bound to the tunnel service, we will not perform the following restart to upgrade
+        // the tunnel to unthrottled mode.
+        if (isTunnelConnected()) {
             // If we're already connected, make sure we're using a tunnel with
             // valid-subscription capabilities.
             boolean restartRequired = getRateLimited();
