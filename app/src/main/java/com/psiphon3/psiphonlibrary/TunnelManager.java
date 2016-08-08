@@ -690,7 +690,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
                 long rateLimit = 0;
                 if (tunnelConfig.rateLimit) {
-                    rateLimit = 1 * 1024 * 1024 / 8; // 1 Mbps
+                    rateLimit = 3 * 1024 * 1024 / 8; // 3 Mbps
                 }
 
                 JSONObject rateLimits = new JSONObject();

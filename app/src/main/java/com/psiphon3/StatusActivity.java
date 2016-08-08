@@ -794,7 +794,9 @@ public class StatusActivity
             // If we're already connected, make sure we're using a tunnel with
             // valid-subscription capabilities.
             boolean restartRequired = getRateLimited();
-            if (restartRequired) {
+            if (restartRequired &&
+                    // If the activity isn't foreground, the service won't get restarted
+                    m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
                 Utils.MyLog.g(String.format("StatusActivity::proceedWithValidSubscription: restarting tunnel"));
                 scheduleRunningTunnelServiceRestart();
             }
@@ -810,7 +812,7 @@ public class StatusActivity
 
         // Update UI elements showing the current speed.
         String formatString = mRateLimitedText.getText().toString();
-        String buttonText = String.format(formatString, "1");
+        String buttonText = String.format(formatString, 3);
         mRateLimitedText.setText(buttonText);
         mRateLimitedText.setVisibility(View.VISIBLE);
         mRateUnlimitedText.setVisibility(View.GONE);
@@ -820,13 +822,13 @@ public class StatusActivity
         // Region selection is only available to paid users.
         updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
 
-        // If we're already connected, make sure we're using a tunnel with
-        // no-valid-subscription capabilities.
         if (isTunnelConnected()) {
             // If we're already connected, make sure we're using a tunnel with
-            // valid-subscription capabilities.
+            // no-valid-subscription capabilities.
             boolean restartRequired = !getRateLimited();
-            if (restartRequired) {
+            if (restartRequired &&
+                    // If the activity isn't foreground, the service won't get restarted
+                    m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
                 Utils.MyLog.g(String.format("StatusActivity::proceedWithoutValidSubscription: restarting tunnel"));
                 scheduleRunningTunnelServiceRestart();
             }
