@@ -687,7 +687,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 MyLog.g("EgressRegion", "regionCode", egressRegion);
                 json.put("EgressRegion", egressRegion);
 
-
                 long rateLimit = 0;
                 if (tunnelConfig.rateLimit) {
                     rateLimit = 3 * 1024 * 1024 / 8; // 3 Mbps
@@ -706,6 +705,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                         "UpstreamBytesPerSecond", rateLimit);
 
                 json.put("RateLimits", rateLimits);
+
+                if (rateLimit > 0 && !tunnelConfig.disableTimeouts) {
+                    // More relaxed timeouts when rate limiting is enabled
+                    json.put("TunnelPortForwardTimeoutSeconds", 60);
+                }
             }
 
             if (tunnelConfig.disableTimeouts) {
