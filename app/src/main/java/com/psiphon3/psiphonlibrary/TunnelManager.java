@@ -689,7 +689,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
                 long rateLimit = 0;
                 if (tunnelConfig.rateLimit) {
-                    rateLimit = 3 * 1024 * 1024 / 8; // 3 Mbps
+                    rateLimit = 2 * 1024 * 1024 / 8; // 2 Mbps
                 }
 
                 JSONObject rateLimits = new JSONObject();
@@ -705,11 +705,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                         "UpstreamBytesPerSecond", rateLimit);
 
                 json.put("RateLimits", rateLimits);
-
-                if (rateLimit > 0 && !tunnelConfig.disableTimeouts) {
-                    // More relaxed timeouts when rate limiting is enabled
-                    json.put("TunnelPortForwardTimeoutSeconds", 60);
-                }
             }
 
             if (tunnelConfig.disableTimeouts) {
@@ -723,6 +718,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 json.put("PsiphonApiServerTimeoutSeconds", 0);
                 json.put("FetchRoutesTimeoutSeconds", 0);
                 json.put("HttpProxyOriginServerTimeoutSeconds", 0);
+            } else {
+                // TEMP: The default value is too aggressive, it will be adjusted in a future release
+                json.put("TunnelPortForwardTimeoutSeconds", 30);
             }
 
             return json.toString();

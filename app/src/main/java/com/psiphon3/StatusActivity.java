@@ -812,7 +812,7 @@ public class StatusActivity
 
         // Update UI elements showing the current speed.
         String formatString = mRateLimitedText.getText().toString();
-        String buttonText = String.format(formatString, 3);
+        String buttonText = String.format(formatString, 2);
         mRateLimitedText.setText(buttonText);
         mRateLimitedText.setVisibility(View.VISIBLE);
         mRateUnlimitedText.setVisibility(View.GONE);
