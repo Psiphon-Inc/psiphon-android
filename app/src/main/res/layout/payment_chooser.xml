@@ -46,10 +46,28 @@
             android:gravity="center_horizontal"
             android:layout_margin="10dp" />
 
+        <TextView
+            android:text="@string/PaymentChooserFragment.FreeTrialDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:layout_margin="10dp" />
+
         <Button
-            android:text="@string/PaymentChooserFragment.Subscription"
-            android:id="@+id/subscription"
-            android:onClick="onSubscriptionButtonClick"
+            android:text="@string/PaymentChooserFragment.UnlimitedSubscription"
+            android:id="@+id/unlimitedSubscription"
+            android:onClick="onUnlimitedSubscriptionButtonClick"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="10dp"
+            android:padding="10dp" />
+
+        <Button
+            android:text="@string/PaymentChooserFragment.LimitedSubscription"
+            android:id="@+id/limitedSubscription"
+            android:onClick="onLimitedSubscriptionButtonClick"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"

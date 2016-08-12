@@ -58,7 +58,8 @@ public class PaymentChooserActivity extends Activity {
         // Set up the buttons, including adding a tag with the product SKU and setting the
         // price-per-day value.
 
-        setUpButton(R.id.subscription, mSkuInfo.mSubscriptionInfo);
+        setUpButton(R.id.limitedSubscription, mSkuInfo.mLimitedSubscriptionInfo);
+        setUpButton(R.id.unlimitedSubscription, mSkuInfo.mUnlimitedSubscriptionInfo);
 
         for (SkuInfo.Info info : mSkuInfo.mTimePassSkuToInfo.values()) {
             long lifetimeInDays = info.lifetime / 24 / 60 / 60 / 1000;
@@ -92,11 +93,20 @@ public class PaymentChooserActivity extends Activity {
         skuInfo.button.setText(buttonText);
     }
 
-    public void onSubscriptionButtonClick(View v) {
-        Utils.MyLog.g("PaymentChooserActivity::onSubscriptionButtonClick");
+    public void onLimitedSubscriptionButtonClick(View v) {
+        Utils.MyLog.g("PaymentChooserActivity::onLimitedSubscriptionButtonClick");
         Intent intent = getIntent();
         intent.putExtra(BUY_TYPE_EXTRA, BUY_SUBSCRIPTION);
-        intent.putExtra(SKU_INFO_EXTRA, mSkuInfo.mSubscriptionInfo.sku);
+        intent.putExtra(SKU_INFO_EXTRA, mSkuInfo.mLimitedSubscriptionInfo.sku);
+        setResult(RESULT_OK, intent);
+        finish();
+    }
+
+    public void onUnlimitedSubscriptionButtonClick(View v) {
+        Utils.MyLog.g("PaymentChooserActivity::onUnlimitedSubscriptionButtonClick");
+        Intent intent = getIntent();
+        intent.putExtra(BUY_TYPE_EXTRA, BUY_SUBSCRIPTION);
+        intent.putExtra(SKU_INFO_EXTRA, mSkuInfo.mUnlimitedSubscriptionInfo.sku);
         setResult(RESULT_OK, intent);
         finish();
     }
@@ -128,7 +138,8 @@ public class PaymentChooserActivity extends Activity {
             public Button button;
         }
 
-        Info mSubscriptionInfo = new Info();
+        Info mLimitedSubscriptionInfo = new Info();
+        Info mUnlimitedSubscriptionInfo = new Info();
         Map<String, Info> mTimePassSkuToInfo = new HashMap<>();
 
         public SkuInfo() { }
@@ -137,12 +148,19 @@ public class PaymentChooserActivity extends Activity {
             try {
                 JSONObject json = new JSONObject(jsonString);
 
-                JSONObject subscriptionInfo = json.getJSONObject("subscriptionInfo");
-                mSubscriptionInfo.sku = subscriptionInfo.getString("sku");
-                mSubscriptionInfo.lifetime = subscriptionInfo.getLong("lifetime");
-                mSubscriptionInfo.price = subscriptionInfo.getString("price");
-                mSubscriptionInfo.priceMicros = subscriptionInfo.getLong("priceMicros");
-                mSubscriptionInfo.priceCurrency = subscriptionInfo.getString("priceCurrency");
+                JSONObject limitedSubscriptionInfo = json.getJSONObject("limitedSubscriptionInfo");
+                mLimitedSubscriptionInfo.sku = limitedSubscriptionInfo.getString("sku");
+                mLimitedSubscriptionInfo.lifetime = limitedSubscriptionInfo.getLong("lifetime");
+                mLimitedSubscriptionInfo.price = limitedSubscriptionInfo.getString("price");
+                mLimitedSubscriptionInfo.priceMicros = limitedSubscriptionInfo.getLong("priceMicros");
+                mLimitedSubscriptionInfo.priceCurrency = limitedSubscriptionInfo.getString("priceCurrency");
+
+                JSONObject unlimitedSubscriptionInfo = json.getJSONObject("unlimitedSubscriptionInfo");
+                mUnlimitedSubscriptionInfo.sku = unlimitedSubscriptionInfo.getString("sku");
+                mUnlimitedSubscriptionInfo.lifetime = unlimitedSubscriptionInfo.getLong("lifetime");
+                mUnlimitedSubscriptionInfo.price = unlimitedSubscriptionInfo.getString("price");
+                mUnlimitedSubscriptionInfo.priceMicros = unlimitedSubscriptionInfo.getLong("priceMicros");
+                mUnlimitedSubscriptionInfo.priceCurrency = unlimitedSubscriptionInfo.getString("priceCurrency");
 
                 JSONArray timepassInfo = json.getJSONArray("timepassInfo");
                 for (int i = 0; i < timepassInfo.length(); i++) {
@@ -166,12 +184,19 @@ public class PaymentChooserActivity extends Activity {
             JSONObject json = new JSONObject();
 
             try {
-                JSONObject jsonSubscriptionObj = new JSONObject();
-                jsonSubscriptionObj.put("sku", mSubscriptionInfo.sku);
-                jsonSubscriptionObj.put("lifetime", mSubscriptionInfo.lifetime);
-                jsonSubscriptionObj.put("price", mSubscriptionInfo.price);
-                jsonSubscriptionObj.put("priceMicros", mSubscriptionInfo.priceMicros);
-                jsonSubscriptionObj.put("priceCurrency", mSubscriptionInfo.priceCurrency);
+                JSONObject jsonLimitedSubscriptionObj = new JSONObject();
+                jsonLimitedSubscriptionObj.put("sku", mLimitedSubscriptionInfo.sku);
+                jsonLimitedSubscriptionObj.put("lifetime", mLimitedSubscriptionInfo.lifetime);
+                jsonLimitedSubscriptionObj.put("price", mLimitedSubscriptionInfo.price);
+                jsonLimitedSubscriptionObj.put("priceMicros", mLimitedSubscriptionInfo.priceMicros);
+                jsonLimitedSubscriptionObj.put("priceCurrency", mLimitedSubscriptionInfo.priceCurrency);
+
+                JSONObject jsonUnlimitedSubscriptionObj = new JSONObject();
+                jsonUnlimitedSubscriptionObj.put("sku", mUnlimitedSubscriptionInfo.sku);
+                jsonUnlimitedSubscriptionObj.put("lifetime", mUnlimitedSubscriptionInfo.lifetime);
+                jsonUnlimitedSubscriptionObj.put("price", mUnlimitedSubscriptionInfo.price);
+                jsonUnlimitedSubscriptionObj.put("priceMicros", mUnlimitedSubscriptionInfo.priceMicros);
+                jsonUnlimitedSubscriptionObj.put("priceCurrency", mUnlimitedSubscriptionInfo.priceCurrency);
 
                 JSONArray timepassInfo = new JSONArray();
                 for (Info info : mTimePassSkuToInfo.values()) {
@@ -186,7 +211,8 @@ public class PaymentChooserActivity extends Activity {
                     timepassInfo.put(jsonTimePassObj);
                 }
 
-                json.put("subscriptionInfo", jsonSubscriptionObj);
+                json.put("limitedSubscriptionInfo", jsonLimitedSubscriptionObj);
+                json.put("unlimitedSubscriptionInfo", jsonUnlimitedSubscriptionObj);
                 json.put("timepassInfo", timepassInfo);
             }
             catch (JSONException e) {
