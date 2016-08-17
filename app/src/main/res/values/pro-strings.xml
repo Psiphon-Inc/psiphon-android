@@ -47,19 +47,24 @@
     <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
          Insert one or more newline characters as needed to keep the lines approximately as short
          as the English. -->
-    <string name="PaymentChooserFragment.Subscription">Buy Subscription\nNEW! 30 day free trial\n(%1$s / day)</string>
+    <string name="PaymentChooserFragment.UnlimitedSubscription">Unlimited Speed\n(%1$s / day)</string>
+
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+     Insert one or more newline characters as needed to keep the lines approximately as short
+     as the English. -->
+    <string name="PaymentChooserFragment.LimitedSubscription">High Speed\n(%1$s / day)</string>
 
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass7Day">Buy 7-day Pass\n(%1$s / day)</string>
+    <string name="PaymentChooserFragment.TimePass7Day">7 day Pass\n(%1$s / day)</string>
 
     <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass30Day">Buy 30-day Pass\n(%1$s / day)</string>
+    <string name="PaymentChooserFragment.TimePass30Day">30 day Pass\n(%1$s / day)</string>
 
     <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass90Day">Buy 90-day Pass\n(%1$s / day)</string>
+    <string name="PaymentChooserFragment.TimePass90Day">90 day Pass\n(%1$s / day)</string>
 
     <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass360Day">Buy 360-day Pass\n(%1$s / day)</string>
+    <string name="PaymentChooserFragment.TimePass360Day">360 day Pass\n(%1$s / day)</string>
 
     <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
          exclamatory. Indicates that premium access results in all in-app advertisements being
@@ -80,6 +85,10 @@
          amount of time. This string is a description specifically about buying a subscription.
          The parenthetical remark about credit card requirements should be separated by a newline. -->
     <string name="PaymentChooserFragment.SubscriptionDescription">Subscribe for uninterrupted service at the best price.\n(Requires a valid credit card.)</string>
+
+    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
+         amount of time. This string announces that subscriptions include a free trial. -->
+    <string name="PaymentChooserFragment.FreeTrialDescription">NEW! 30 day free trial with each subscription.</string>
 
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string is a description specifically about buying a time pass.

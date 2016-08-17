@@ -1249,12 +1249,12 @@ public abstract class MainBase {
             return m_tunnelConfig.disableTimeouts;
         }
 
-        protected void setTunnelConfigRateLimit(boolean rateLimit) {
-            m_tunnelConfig.rateLimit = rateLimit;
+        protected void setTunnelConfigRateLimit(int rateLimitMbps) {
+            m_tunnelConfig.rateLimitMbps = rateLimitMbps;
         }
 
-        protected boolean getTunnelConfigRateLimit() {
-            return m_tunnelConfig.rateLimit;
+        protected int getTunnelConfigRateLimitMbps() {
+            return m_tunnelConfig.rateLimitMbps;
         }
 
         protected PendingIntent getHandshakePendingIntent() {
@@ -1281,8 +1281,8 @@ public abstract class MainBase {
             intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS,
                     getTunnelConfigDisableTimeouts());
 
-            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_RATE_LIMIT,
-                    getTunnelConfigRateLimit());
+            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_RATE_LIMIT_MBPS,
+                    getTunnelConfigRateLimitMbps());
         }
 
         protected void startAndBindTunnelService() {
@@ -1335,12 +1335,12 @@ public abstract class MainBase {
         }
 
         /**
-         * Indicates if the currently connected tunnel is rate-limited.
+         * Indicates the currently connected tunnel's rate-limit.
          * Invalid if there is no currently connected tunnel.
-         * @return True if currently connected tunnel is rate-limited. False otherwise.
+         * @return The rate limit if currently connected tunnel is rate-limited. 0 otherwise.
          */
-        protected boolean getRateLimited() {
-            return m_tunnelState.rateLimited;
+        protected int getRateLimitMbps() {
+            return m_tunnelState.rateLimitMbps;
         }
 
         protected void getTunnelStateFromHandshakeIntent(Intent intent) {
@@ -1373,7 +1373,7 @@ public abstract class MainBase {
             if (homePages != null) {
                 m_tunnelState.homePages = homePages;
             }
-            m_tunnelState.rateLimited = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_RATE_LIMITED);
+            m_tunnelState.rateLimitMbps = data.getInt(TunnelManager.DATA_TUNNEL_STATE_RATE_LIMIT_MBPS);
 
             onTunnelStateReceived();
         }

@@ -98,7 +98,7 @@ public class StatusActivity
         mRateLimitedTextSection = findViewById(R.id.rateLimitedTextSection);
         mRateLimitedText = (TextView)findViewById(R.id.rateLimitedText);
         mRateUnlimitedText = (TextView)findViewById(R.id.rateUnlimitedText);
-        mRateLimitSubscribeButton = (Button)findViewById(R.id.rateLimitSubscribeButton);
+        mRateLimitSubscribeButton = (Button)findViewById(R.id.rateLimitUpgradeButton);
 
         // NOTE: super class assumes m_tabHost is initialized in its onCreate
 
@@ -459,9 +459,11 @@ public class StatusActivity
     static final String IAB_PUBLIC_KEY = "";
     static final int IAB_REQUEST_CODE = 10001;
 
-    static final String IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU = "basic_ad_free_subscription_5";
-    static final String[] OTHER_VALID_IAB_SUBSCRIPTION_SKUS = {"basic_ad_free_subscription",
-            "basic_ad_free_subscription_2", "basic_ad_free_subscription_3", "basic_ad_free_subscription_4"};
+    static final String IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU = "speed_limited_ad_free_subscription";
+    static final String[] IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKUS = {IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU};
+    static final String IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU = "basic_ad_free_subscription_5";
+    static final String[] IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKUS = {IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU,
+            "basic_ad_free_subscription", "basic_ad_free_subscription_2", "basic_ad_free_subscription_3", "basic_ad_free_subscription_4"};
 
     static final String IAB_BASIC_7DAY_TIMEPASS_SKU = "basic_ad_free_7_day_timepass";
     static final String IAB_BASIC_30DAY_TIMEPASS_SKU = "basic_ad_free_30_day_timepass";
@@ -474,6 +476,10 @@ public class StatusActivity
         m.put(IAB_BASIC_360DAY_TIMEPASS_SKU, 360L * 24 * 60 * 60 * 1000);
         IAB_TIMEPASS_SKUS_TO_TIME = Collections.unmodifiableMap(m);
     }
+
+    static int AD_MODE_RATE_LIMIT_MBPS = 2;
+    static int LIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS = 5;
+    static int UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS = 0;
 
     Inventory mInventory;
 
@@ -544,13 +550,21 @@ public class StatusActivity
             // Check if the user has a subscription.
             //
 
-            List<String> validSubscriptionSkus = new ArrayList<>(Arrays.asList(OTHER_VALID_IAB_SUBSCRIPTION_SKUS));
-            validSubscriptionSkus.add(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU);
-            for (String validSku : validSubscriptionSkus)
-            {
-                if (inventory.hasPurchase(validSku))
-                {
-                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid subscription: %s", validSku));
+            int rateLimit = AD_MODE_RATE_LIMIT_MBPS;
+
+            for (String limitedMonthlySubscriptionSku : IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKUS) {
+                if (inventory.hasPurchase(limitedMonthlySubscriptionSku)) {
+                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid limited subscription: %s", limitedMonthlySubscriptionSku));
+                    rateLimit = LIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS;
+                    hasValidSubscription = true;
+                    break;
+                }
+            }
+
+            for (String unlimitedMonthlySubscriptionSku : IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKUS) {
+                if (inventory.hasPurchase(unlimitedMonthlySubscriptionSku)) {
+                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid unlimited subscription: %s", unlimitedMonthlySubscriptionSku));
+                    rateLimit = UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS;
                     hasValidSubscription = true;
                     break;
                 }
@@ -558,7 +572,7 @@ public class StatusActivity
 
             if (hasValidSubscription)
             {
-                proceedWithValidSubscription();
+                proceedWithValidSubscription(rateLimit);
                 return;
             }
 
@@ -587,6 +601,7 @@ public class StatusActivity
                 {
                     // This time pass is still valid.
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid time pass: %s", sku));
+                    rateLimit = UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS;
                     hasValidSubscription = true;
                 }
                 else
@@ -599,7 +614,7 @@ public class StatusActivity
 
             if (hasValidSubscription)
             {
-                proceedWithValidSubscription();
+                proceedWithValidSubscription(rateLimit);
             }
             else
             {
@@ -625,11 +640,16 @@ public class StatusActivity
             {
                 Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: failure: %s", result));
                 handleIabFailure(result);
-            }      
-            else if (purchase.getSku().equals(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU))
+            }
+            else if (purchase.getSku().equals(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU))
             {
                 Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
-                proceedWithValidSubscription();
+                proceedWithValidSubscription(LIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS);
+            }
+            else if (purchase.getSku().equals(IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU))
+            {
+                Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
+                proceedWithValidSubscription(UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS);
             }
             else if (IAB_TIMEPASS_SKUS_TO_TIME.containsKey(purchase.getSku()))
             {
@@ -637,7 +657,7 @@ public class StatusActivity
 
                 // We're not going to check the validity time here -- assume no time-pass is so
                 // short that it's already expired right after it's purchased.
-                proceedWithValidSubscription();
+                proceedWithValidSubscription(UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS);
             }
         }
     };
@@ -679,7 +699,8 @@ public class StatusActivity
                 timepassSkus.addAll(IAB_TIMEPASS_SKUS_TO_TIME.keySet());
 
                 List<String> subscriptionSkus = new ArrayList<>();
-                subscriptionSkus.add(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU);
+                subscriptionSkus.add(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU);
+                subscriptionSkus.add(IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
 
                 mIabHelper.queryInventoryAsync(
                         true,
@@ -720,7 +741,7 @@ public class StatusActivity
     /**
      * Begin the flow for subscribing to premium access.
      */
-    private void launchSubscriptionPurchaseFlow()
+    private void launchSubscriptionPurchaseFlow(String sku)
     {
         try
         {
@@ -728,7 +749,7 @@ public class StatusActivity
             {
                 mIabHelper.launchSubscriptionPurchaseFlow(
                         this,
-                        IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU,
+                        sku,
                         IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
             }
         }
@@ -765,20 +786,14 @@ public class StatusActivity
         }
     }
 
-    private void proceedWithValidSubscription()
+    private void proceedWithValidSubscription(int rateLimitMbps)
     {
         Utils.setHasValidSubscription(this, true);
 
         deInitAllAds();
 
-        // Tunnel throughput is unlimited with a valid subscription.
-        setTunnelConfigRateLimit(false);
-
-        // Update UI elements showing the current speed.
-        mRateLimitedText.setVisibility(View.GONE);
-        mRateUnlimitedText.setVisibility(View.VISIBLE);
-        mRateLimitSubscribeButton.setVisibility(View.GONE);
-        mRateLimitedTextSection.setVisibility(View.VISIBLE);
+        // Tunnel throughput is limited depending on the subscription.
+        setRateLimit(rateLimitMbps);
 
         // Auto-start on app first run
         if (m_firstRun) {
@@ -792,12 +807,12 @@ public class StatusActivity
         // the tunnel to unthrottled mode.
         if (isTunnelConnected()) {
             // If we're already connected, make sure we're using a tunnel with
-            // valid-subscription capabilities.
-            boolean restartRequired = getRateLimited();
+            // the correct capabilities for the subscription.
+            boolean restartRequired = getRateLimitMbps() != rateLimitMbps;
             if (restartRequired &&
                     // If the activity isn't foreground, the service won't get restarted
                     m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
-                Utils.MyLog.g(String.format("StatusActivity::proceedWithValidSubscription: restarting tunnel"));
+                Utils.MyLog.g("StatusActivity::proceedWithValidSubscription: restarting tunnel");
                 scheduleRunningTunnelServiceRestart();
             }
         }
@@ -808,16 +823,7 @@ public class StatusActivity
         Utils.setHasValidSubscription(this, false);
 
         // Tunnel throughput is limited without a valid subscription.
-        setTunnelConfigRateLimit(true);
-
-        // Update UI elements showing the current speed.
-        String formatString = mRateLimitedText.getText().toString();
-        String buttonText = String.format(formatString, 2);
-        mRateLimitedText.setText(buttonText);
-        mRateLimitedText.setVisibility(View.VISIBLE);
-        mRateUnlimitedText.setVisibility(View.GONE);
-        mRateLimitSubscribeButton.setVisibility(View.VISIBLE);
-        mRateLimitedTextSection.setVisibility(View.VISIBLE);
+        setRateLimit(AD_MODE_RATE_LIMIT_MBPS);
 
         // Region selection is only available to paid users.
         updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
@@ -825,13 +831,31 @@ public class StatusActivity
         if (isTunnelConnected()) {
             // If we're already connected, make sure we're using a tunnel with
             // no-valid-subscription capabilities.
-            boolean restartRequired = !getRateLimited();
+            boolean restartRequired = getRateLimitMbps() != AD_MODE_RATE_LIMIT_MBPS;
             if (restartRequired &&
                     // If the activity isn't foreground, the service won't get restarted
                     m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
-                Utils.MyLog.g(String.format("StatusActivity::proceedWithoutValidSubscription: restarting tunnel"));
+                Utils.MyLog.g("StatusActivity::proceedWithoutValidSubscription: restarting tunnel");
                 scheduleRunningTunnelServiceRestart();
             }
+        }
+    }
+
+    private void setRateLimit(int rateLimitMbps) {
+        setTunnelConfigRateLimit(rateLimitMbps);
+
+        // Update UI elements showing the current speed.
+        if (rateLimitMbps > 0) {
+            mRateLimitedText.setText(getString(R.string.rate_limit_text_limited, rateLimitMbps));
+            mRateLimitedText.setVisibility(View.VISIBLE);
+            mRateUnlimitedText.setVisibility(View.GONE);
+            mRateLimitSubscribeButton.setVisibility(View.VISIBLE);
+            mRateLimitedTextSection.setVisibility(View.VISIBLE);
+        } else {
+            mRateLimitedText.setVisibility(View.GONE);
+            mRateUnlimitedText.setVisibility(View.VISIBLE);
+            mRateLimitSubscribeButton.setVisibility(View.GONE);
+            mRateLimitedTextSection.setVisibility(View.VISIBLE);
         }
     }
 
@@ -917,6 +941,29 @@ public class StatusActivity
         findViewById(R.id.subscribeButton).setVisibility(showSubscribe ? View.VISIBLE : View.GONE);
     }
 
+    public void onRateLimitUpgradeButtonClick(View v) {
+        if (!Utils.getHasValidSubscription(this)) {
+            onSubscribeButtonClick(v);
+            return;
+        }
+
+        try {
+            if (isIabInitialized()) {
+                // Replace any subscribed limited monthly subscription SKUs with the unlimited SKU
+                mIabHelper.launchPurchaseFlow(
+                        this,
+                        IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU,
+                        IabHelper.ITEM_TYPE_SUBS,
+                        Arrays.asList(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKUS),
+                        IAB_REQUEST_CODE, m_iabPurchaseFinishedListener, "");
+            }
+        } catch (IllegalStateException ex) {
+            handleIabFailure(null);
+        } catch (IabHelper.IabAsyncInProgressException ex) {
+            // Allow outstanding IAB request to finish.
+        }
+    }
+
     private final int PAYMENT_CHOOSER_ACTIVITY = 20001;
 
     @Override
@@ -938,15 +985,23 @@ public class StatusActivity
         // Pass price and SKU info to payment chooser activity.
         PaymentChooserActivity.SkuInfo skuInfo = new PaymentChooserActivity.SkuInfo();
 
-        SkuDetails subscriptionSkuDetails = mInventory.getSkuDetails(IAB_BASIC_MONTHLY_SUBSCRIPTION_SKU);
-
-        skuInfo.mSubscriptionInfo.sku = subscriptionSkuDetails.getSku();
-        skuInfo.mSubscriptionInfo.price = subscriptionSkuDetails.getPrice();
-        skuInfo.mSubscriptionInfo.priceMicros = subscriptionSkuDetails.getPriceAmountMicros();
-        skuInfo.mSubscriptionInfo.priceCurrency = subscriptionSkuDetails.getPriceCurrencyCode();
+        SkuDetails limitedSubscriptionSkuDetails = mInventory.getSkuDetails(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU);
+        skuInfo.mLimitedSubscriptionInfo.sku = limitedSubscriptionSkuDetails.getSku();
+        skuInfo.mLimitedSubscriptionInfo.price = limitedSubscriptionSkuDetails.getPrice();
+        skuInfo.mLimitedSubscriptionInfo.priceMicros = limitedSubscriptionSkuDetails.getPriceAmountMicros();
+        skuInfo.mLimitedSubscriptionInfo.priceCurrency = limitedSubscriptionSkuDetails.getPriceCurrencyCode();
         // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
         // we'll set it to 30 days.
-        skuInfo.mSubscriptionInfo.lifetime = 30L * 24 * 60 * 60 * 1000;
+        skuInfo.mLimitedSubscriptionInfo.lifetime = 30L * 24 * 60 * 60 * 1000;
+
+        SkuDetails unlimitedSubscriptionSkuDetails = mInventory.getSkuDetails(IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
+        skuInfo.mUnlimitedSubscriptionInfo.sku = unlimitedSubscriptionSkuDetails.getSku();
+        skuInfo.mUnlimitedSubscriptionInfo.price = unlimitedSubscriptionSkuDetails.getPrice();
+        skuInfo.mUnlimitedSubscriptionInfo.priceMicros = unlimitedSubscriptionSkuDetails.getPriceAmountMicros();
+        skuInfo.mUnlimitedSubscriptionInfo.priceCurrency = unlimitedSubscriptionSkuDetails.getPriceCurrencyCode();
+        // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
+        // we'll set it to 30 days.
+        skuInfo.mUnlimitedSubscriptionInfo.lifetime = 30L * 24 * 60 * 60 * 1000;
 
         for (Map.Entry<String, Long> timepassSku : IAB_TIMEPASS_SKUS_TO_TIME.entrySet())
         {
@@ -1004,7 +1059,8 @@ public class StatusActivity
                 if (buyType == PaymentChooserActivity.BUY_SUBSCRIPTION)
                 {
                     Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: subscription");
-                    launchSubscriptionPurchaseFlow();
+                    String sku = data.getStringExtra(PaymentChooserActivity.SKU_INFO_EXTRA);
+                    launchSubscriptionPurchaseFlow(sku);
                 }
                 else if (buyType == PaymentChooserActivity.BUY_TIMEPASS)
                 {
