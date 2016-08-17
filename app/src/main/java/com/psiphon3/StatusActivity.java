@@ -460,9 +460,10 @@ public class StatusActivity
     static final int IAB_REQUEST_CODE = 10001;
 
     static final String IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU = "speed_limited_ad_free_subscription";
+    static final String[] IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKUS = {IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU};
     static final String IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU = "basic_ad_free_subscription_5";
-    static final String[] OTHER_VALID_IAB_UNLIMITED_SUBSCRIPTION_SKUS = {"basic_ad_free_subscription",
-            "basic_ad_free_subscription_2", "basic_ad_free_subscription_3", "basic_ad_free_subscription_4"};
+    static final String[] IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKUS = {IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU,
+            "basic_ad_free_subscription", "basic_ad_free_subscription_2", "basic_ad_free_subscription_3", "basic_ad_free_subscription_4"};
 
     static final String IAB_BASIC_7DAY_TIMEPASS_SKU = "basic_ad_free_7_day_timepass";
     static final String IAB_BASIC_30DAY_TIMEPASS_SKU = "basic_ad_free_30_day_timepass";
@@ -551,20 +552,18 @@ public class StatusActivity
 
             int rateLimit = AD_MODE_RATE_LIMIT_MBPS;
 
-            if (inventory.hasPurchase(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU))
-            {
-                Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid limited subscription: %s", IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU));
-                rateLimit = LIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS;
-                hasValidSubscription = true;
+            for (String limitedMonthlySubscriptionSku : IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKUS) {
+                if (inventory.hasPurchase(limitedMonthlySubscriptionSku)) {
+                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid limited subscription: %s", limitedMonthlySubscriptionSku));
+                    rateLimit = LIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS;
+                    hasValidSubscription = true;
+                    break;
+                }
             }
 
-            List<String> validUnlimitedSubscriptionSkus = new ArrayList<>(Arrays.asList(OTHER_VALID_IAB_UNLIMITED_SUBSCRIPTION_SKUS));
-            validUnlimitedSubscriptionSkus.add(IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
-            for (String validSku : validUnlimitedSubscriptionSkus)
-            {
-                if (inventory.hasPurchase(validSku))
-                {
-                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid unlimited subscription: %s", validSku));
+            for (String unlimitedMonthlySubscriptionSku : IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKUS) {
+                if (inventory.hasPurchase(unlimitedMonthlySubscriptionSku)) {
+                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid unlimited subscription: %s", unlimitedMonthlySubscriptionSku));
                     rateLimit = UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS;
                     hasValidSubscription = true;
                     break;
@@ -942,6 +941,29 @@ public class StatusActivity
         boolean showSubscribe = show && (mInventory != null);
 
         findViewById(R.id.subscribeButton).setVisibility(showSubscribe ? View.VISIBLE : View.GONE);
+    }
+
+    public void onRateLimitUpgradeButtonClick(View v) {
+        if (!Utils.getHasValidSubscription(this)) {
+            onSubscribeButtonClick(v);
+            return;
+        }
+
+        try {
+            if (isIabInitialized()) {
+                // Replace any subscribed limited monthly subscription SKUs with the unlimited SKU
+                mIabHelper.launchPurchaseFlow(
+                        this,
+                        IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU,
+                        IabHelper.ITEM_TYPE_SUBS,
+                        Arrays.asList(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKUS),
+                        IAB_REQUEST_CODE, m_iabPurchaseFinishedListener, "");
+            }
+        } catch (IllegalStateException ex) {
+            handleIabFailure(null);
+        } catch (IabHelper.IabAsyncInProgressException ex) {
+            // Allow outstanding IAB request to finish.
+        }
     }
 
     private final int PAYMENT_CHOOSER_ACTIVITY = 20001;
