@@ -88,8 +88,10 @@ public class PaymentChooserActivity extends Activity {
         priceFormatter.setCurrency(currency);
         String pricePerDayText = priceFormatter.format(pricePerDay);
 
+        String priceText = priceFormatter.format(skuInfo.price);
+
         String formatString = skuInfo.button.getText().toString();
-        String buttonText = String.format(formatString, pricePerDayText);
+        String buttonText = String.format(formatString, priceText, pricePerDayText);
         skuInfo.button.setText(buttonText);
     }
 
