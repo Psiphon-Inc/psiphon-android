@@ -846,9 +846,7 @@ public class StatusActivity
 
         // Update UI elements showing the current speed.
         if (rateLimitMbps > 0) {
-            String formatString = mRateLimitedText.getText().toString();
-            String buttonText = String.format(formatString, rateLimitMbps);
-            mRateLimitedText.setText(buttonText);
+            mRateLimitedText.setText(getString(R.string.rate_limit_text_limited, rateLimitMbps));
             mRateLimitedText.setVisibility(View.VISIBLE);
             mRateUnlimitedText.setVisibility(View.GONE);
             mRateLimitSubscribeButton.setVisibility(View.VISIBLE);
