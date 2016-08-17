@@ -131,6 +131,7 @@
   <string name="about">Psiphon Hakkında</string>
   <string name="feedback">Geribildirim</string>
   <string name="tunnel_whole_device_toggle">Tüm Cihazı Tünelle (Android 4.0+ gerektirir)</string>
+  <string name="disable_timeouts">Yavaş bağlantılar için zamanaşımını devre dışı bırak</string>
   <string name="region_selector">Bölgeyi seç</string>
   <string name="network_proxy_connect_exception">Ağın HTTP Vekil Sunucusu\'na bağlanılamadı: %s</string>
   <string name="network_proxy_connect_information">HTTP Vekil Sunucunuz aracılığıyla bağlanılıyor: %s</string>
@@ -144,6 +145,7 @@
   <string name="preference_notifications_with_sound_summary">Bağlantı durumu değiştiğinde ses çal</string>
   <string name="preference_notifications_with_vibrate_title">Titret</string>
   <string name="preference_notifications_with_vibrate_summary">Bağlantı durumu değiştiğinde titret</string>
+  <string name="preference_download_wifi_only_toggle">Güncellemeleri yalnızca WİFİ\'da yükle</string>
   <string name="moreOptions">Daha Fazla Seçenek</string>
   <string name="root_mode_not_supported">Android\'in bu sürümünde root modu desteklenmiyor</string>
   <string name="proxySettingsCategoryTitle">Vekil Sunucu Ayarları</string>
