@@ -98,7 +98,7 @@ public class StatusActivity
         mRateLimitedTextSection = findViewById(R.id.rateLimitedTextSection);
         mRateLimitedText = (TextView)findViewById(R.id.rateLimitedText);
         mRateUnlimitedText = (TextView)findViewById(R.id.rateUnlimitedText);
-        mRateLimitSubscribeButton = (Button)findViewById(R.id.rateLimitSubscribeButton);
+        mRateLimitSubscribeButton = (Button)findViewById(R.id.rateLimitUpgradeButton);
 
         // NOTE: super class assumes m_tabHost is initialized in its onCreate
 
