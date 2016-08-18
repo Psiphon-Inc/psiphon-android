@@ -45,18 +45,32 @@
     <string name="custom_proxy_header_invalid_name">¡Error: el nombre de la cabecera contiene letras ilegales!</string>
     
     <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day.
          Insert one or more newline characters as needed to keep the lines approximately as short
          as the English. -->
-    <string name="PaymentChooserFragment.Subscription">Compra Suscripción\n¡NUEVO! Prueba gratuita de 30 días\n(%1$s / día)</string>
+    <string name="PaymentChooserFragment.UnlimitedSubscription">Máxima Velocidad - %1$s / mes\n(%2$s / día)</string>
 
-    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass7Day">Compra el pase de 7 días\n(%1$s / día)</string>
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day.
+         Insert one or more newline characters as needed to keep the lines approximately as short
+         as the English. -->
+    <string name="PaymentChooserFragment.LimitedSubscription">Alta Velocidad - %1$s / mes\n(%2$s / día)</string>
 
-    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass30Day">Compra el pase de 30 días\n(%1$s / día)</string>
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass7Day">Bono de 7 días - %1$s\n(%2$s / día)</string>
 
-    <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass90Day">Compra el pase de 90 días\n(%1$s / día)</string>
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass30Day">Bono de 30 días - %1$s\n(%2$s / día)</string>
+
+    <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass90Day">Bono de 90 días - %1$s\n(%2$s / día)</string>
+
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass360Day">Bono de 360 días - %1$s\n(%2$s / día)</string>
 
     <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
          exclamatory. Indicates that premium access results in all in-app advertisements being
@@ -79,8 +93,30 @@
     <string name="PaymentChooserFragment.SubscriptionDescription">Suscribe para el servico sin interrupciones por el mejor precio.\n(Requiere una tarjeta de crédito válida.)</string>
 
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
+         amount of time. This string announces that subscriptions include a free trial. -->
+    <string name="PaymentChooserFragment.FreeTrialDescription">¡NUEVO! prueba gratuita de 30 días con cada suscripción.</string>
+
+    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string is a description specifically about buying a time pass.
          The parenthetical remark about credit card requirements should be separated by a newline. -->
-    <string name="PaymentChooserFragment.TimePassDescription">Compra un pase de tiempo.\n(No requiere una tarjeta de crédito.  Se puede usar una tarjeta de regalo de Google Play).</string>
+    <string name="PaymentChooserFragment.TimePassDescription">Compra un bono de tiempo Máxima Velocidad.\n(No requiere una tarjeta de crédito. Se puede utilizar las tarjetas de regalos o el crédito de Google Play.)</string>
+
+    <!-- Title for other text showing what the user's current speed limit is. Users have limited
+         speed if they have not paid for premium service. -->
+    <string name="rate_limit_text_title">Límite de velocidad de Psiphon:</string>
+
+    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
+         and is in megabits-per-second. Users have limited speed if they have not paid for premium
+         service. -->
+    <string name="rate_limit_text_limited">%d Mb/s</string>
+
+    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
+         have access to a full-speed connection. Users have limited speed if they have not paid for
+         premium service. -->
+    <string name="rate_limit_text_unlimited">Ilimitado</string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">!Haz un upgrade ahora!</string>
 
 </resources>
