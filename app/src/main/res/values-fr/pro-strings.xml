@@ -44,19 +44,21 @@
     <string name="custom_proxy_header_ignored_values">Avertissement : les en-têtes sans nom seront ignorés !</string>
     <string name="custom_proxy_header_invalid_name">Erreur : le nom de l\'en-tête contient des caractères illégaux !</string>
     
-    <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
-         Insert one or more newline characters as needed to keep the lines approximately as short
-         as the English. -->
-    <string name="PaymentChooserFragment.Subscription">Acheter un abonnement\nNOUVEAU ! Essai gratuit de 30 jours\n(%1$s / jour)</string>
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass7Day">7 jours - %1$s\n(%2$s / jour)</string>
 
-    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass7Day">Acheter un abonnement de 7 jours\n(%1$s / jour)</string>
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass30Day">30 jours - %1$s\n(%2$s / jour)</string>
 
-    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass30Day">Acheter un abonnement de 30 jours\n(%1$s / jour)</string>
+    <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass90Day">90 jours - %1$s\n(%2$s / jour)</string>
 
-    <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass90Day">Acheter un abonnement de 90 jours\n(%1$s / jour)</string>
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass360Day">360 jours - %1$s\n(%2$s / jour)</string>
 
     <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
          exclamatory. Indicates that premium access results in all in-app advertisements being
@@ -78,9 +80,22 @@
          The parenthetical remark about credit card requirements should be separated by a newline. -->
     <string name="PaymentChooserFragment.SubscriptionDescription">Abonnez-vous et obtenez un service sans interruption au meilleur prix.\n(Une carte de crédit valide est exigée.)</string>
 
-    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
-         amount of time. This string is a description specifically about buying a time pass.
-         The parenthetical remark about credit card requirements should be separated by a newline. -->
-    <string name="PaymentChooserFragment.TimePassDescription">Achetez un abonnement limité.\n(Aucune carte de crédit exigée. Les cartes cadeau Google Play ou de crédit peuvent être utilisées.)</string>
+    <!-- Title for other text showing what the user's current speed limit is. Users have limited
+         speed if they have not paid for premium service. -->
+    <string name="rate_limit_text_title">Limite de vitesse de Psiphon :</string>
+
+    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
+         and is in megabits-per-second. Users have limited speed if they have not paid for premium
+         service. -->
+    <string name="rate_limit_text_limited">%d Mo/s</string>
+
+    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
+         have access to a full-speed connection. Users have limited speed if they have not paid for
+         premium service. -->
+    <string name="rate_limit_text_unlimited">Illimitée</string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">Passer à Pro maintenant !</string>
 
 </resources>
