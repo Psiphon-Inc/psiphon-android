@@ -117,6 +117,6 @@
 
     <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
          the workflow to subscribe for premium access. -->
-    <string name="rate_limit_text_subscribe_button">!Haz un upgrade ahora!</string>
+    <string name="rate_limit_text_subscribe_button">!Actualiza ahora!</string>
 
 </resources>
