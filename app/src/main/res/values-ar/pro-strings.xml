@@ -48,29 +48,29 @@
          The first formatted string is the price, and the second is what the price is per day.
          Insert one or more newline characters as needed to keep the lines approximately as short
          as the English. -->
-    <string name="PaymentChooserFragment.UnlimitedSubscription">السرعة القصوى - %1$s / شهر\n(%2$s / يوم)</string>
+    <string name="PaymentChooserFragment.UnlimitedSubscription">سرعة قصوى - %1$s / شهر\n(%2$s / في اليوم)</string>
 
     <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day.
          Insert one or more newline characters as needed to keep the lines approximately as short
          as the English. -->
-    <string name="PaymentChooserFragment.LimitedSubscription">سرعة عالية - %1$s / شهر\n(%2$s / يوم)</string>
+    <string name="PaymentChooserFragment.LimitedSubscription">سرعة عالية - %1$s / شهر\n(%2$s / في اليوم)</string>
 
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass7Day">إشتراك 7 أيام - %1$s\n(%2$s / يوم)</string>
+    <string name="PaymentChooserFragment.TimePass7Day">إشتراك 7 أيام - %1$s\n(%2$s / في اليوم)</string>
 
     <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass30Day">إشتراك 30 يوم - %1$s\n(%2$s / )</string>
+    <string name="PaymentChooserFragment.TimePass30Day">إشتراك 30 يوم - %1$s\n(%2$s / في اليوم)</string>
 
     <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass90Day">إشتراك 90 يوم - %1$s\n(%2$s / )</string>
+    <string name="PaymentChooserFragment.TimePass90Day">إشتراك 90 يوم - %1$s\n(%2$s / في اليوم)</string>
 
     <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass360Day">إشتراك 360 يوم - %1$s\n(%2$s / )</string>
+    <string name="PaymentChooserFragment.TimePass360Day">إشتراك 360 يوم - %1$s\n(%2$s / في اليوم)</string>
 
     <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
          exclamatory. Indicates that premium access results in all in-app advertisements being
@@ -90,11 +90,11 @@
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string is a description specifically about buying a subscription.
          The parenthetical remark about credit card requirements should be separated by a newline. -->
-    <string name="PaymentChooserFragment.SubscriptionDescription">إشترك في خدمة من دون إنقطاع بأفضل سعر.\n(تحتاج لبطاقة إئتمان.)</string>
+    <string name="PaymentChooserFragment.SubscriptionDescription">إحصل على خدمة ممتازة من دون انقطاعات بأفضل سعر.\n(تحتاج لبطاقة إئتمان.)</string>
 
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string announces that subscriptions include a free trial. -->
-    <string name="PaymentChooserFragment.FreeTrialDescription">جديد! 30 يوم مجاني مع كل إشتراك. </string>
+    <string name="PaymentChooserFragment.FreeTrialDescription">جديد! شهر مجاني مع كل إشتراك.</string>
 
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string is a description specifically about buying a time pass.
