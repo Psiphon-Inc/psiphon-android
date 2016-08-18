@@ -45,18 +45,32 @@
     <string name="custom_proxy_header_invalid_name">خطأ: إسم العنوان يحتوي على أحرف مشبوهة </string>
     
     <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day.
          Insert one or more newline characters as needed to keep the lines approximately as short
          as the English. -->
-    <string name="PaymentChooserFragment.Subscription">إشتري إشتراك\nجديد! تجربة مجانية ل ٣٠ يوم \n(%1$s /يوم)</string>
+    <string name="PaymentChooserFragment.UnlimitedSubscription">السرعة القصوى - %1$s / شهر\n(%2$s / يوم)</string>
 
-    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass7Day">إشتري إشتراك ل ٧ أيام\n(%1$s / أيام)</string>
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day.
+         Insert one or more newline characters as needed to keep the lines approximately as short
+         as the English. -->
+    <string name="PaymentChooserFragment.LimitedSubscription">سرعة عالية - %1$s / شهر\n(%2$s / يوم)</string>
 
-    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass30Day">إشتري إشتراك ٣٠ يوم\n(%1$s / يوم)</string>
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass7Day">إشتراك 7 أيام - %1$s\n(%2$s / يوم)</string>
 
-    <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass90Day">إشتري إشتراك ٩٠ يوم\n(%1$s / يوم)</string>
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass30Day">إشتراك 30 يوم - %1$s\n(%2$s / )</string>
+
+    <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass90Day">إشتراك 90 يوم - %1$s\n(%2$s / )</string>
+
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass360Day">إشتراك 360 يوم - %1$s\n(%2$s / )</string>
 
     <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
          exclamatory. Indicates that premium access results in all in-app advertisements being
@@ -79,8 +93,30 @@
     <string name="PaymentChooserFragment.SubscriptionDescription">إشترك في خدمة من دون إنقطاع بأفضل سعر.\n(تحتاج لبطاقة إئتمان.)</string>
 
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
+         amount of time. This string announces that subscriptions include a free trial. -->
+    <string name="PaymentChooserFragment.FreeTrialDescription">جديد! 30 يوم مجاني مع كل إشتراك. </string>
+
+    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string is a description specifically about buying a time pass.
          The parenthetical remark about credit card requirements should be separated by a newline. -->
-    <string name="PaymentChooserFragment.TimePassDescription">إشتري إشتراك مؤقت\n(لا يتطلب بطاقة إئتمان.يمكن إستعمال بطاقة هدية أو أي رصيد من متجر جوجل.)</string>
+    <string name="PaymentChooserFragment.TimePassDescription">إشتري إشتراك السرعة القصوى\n(لا يتطلب بطاقة إئتمان.يمكن إستعمال بطاقة هدية أو أي رصيد من متجر جوجل.)</string>
+
+    <!-- Title for other text showing what the user's current speed limit is. Users have limited
+         speed if they have not paid for premium service. -->
+    <string name="rate_limit_text_title">حدود سرعة سايفون:</string>
+
+    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
+         and is in megabits-per-second. Users have limited speed if they have not paid for premium
+         service. -->
+    <string name="rate_limit_text_limited">%d Mb/s</string>
+
+    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
+         have access to a full-speed connection. Users have limited speed if they have not paid for
+         premium service. -->
+    <string name="rate_limit_text_unlimited">غير محدود </string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">إشترك الآن!</string>
 
 </resources>
