@@ -44,19 +44,21 @@
     <string name="custom_proxy_header_ignored_values">Peringatan: header dengan tanpa nama akan diabaikan!</string>
     <string name="custom_proxy_header_invalid_name">Kesalahan: nama header berisi karakter ilegal!</string>
     
-    <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
-         Insert one or more newline characters as needed to keep the lines approximately as short
-         as the English. -->
-    <string name="PaymentChooserFragment.Subscription">Berlangganan\nBARU! Uji coba gratis selama 30 hari\n(%1$s/hari)</string>
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass7Day">7 hari - %1$s\n(%2$s/hari)</string>
 
-    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass7Day">Berlangganan selama 7 hari\n(%1$s/hari)</string>
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass30Day">30 hari - %1$s\n(%2$s/hari)</string>
 
-    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass30Day">Berlangganan selama 30 hari\n(%1$s/hari)</string>
+    <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass90Day">90 hari - %1$s\n(%2$s/hari)</string>
 
-    <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro. -->
-    <string name="PaymentChooserFragment.TimePass90Day">Berlangganan selama 90 hari\n(%1$s/hari)</string>
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass360Day">360 hari - %1$s\n(%2$s/hari)</string>
 
     <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
          exclamatory. Indicates that premium access results in all in-app advertisements being
@@ -78,9 +80,4 @@
          The parenthetical remark about credit card requirements should be separated by a newline. -->
     <string name="PaymentChooserFragment.SubscriptionDescription">Langganan layanan tanpa gangguan dengan harga terbaik.\n(Memerlukan kartu kredit yang valid.)</string>
 
-    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
-         amount of time. This string is a description specifically about buying a time pass.
-         The parenthetical remark about credit card requirements should be separated by a newline. -->
-    <string name="PaymentChooserFragment.TimePassDescription">Langganan berbatas waktu.\n(Tidak memerlukan kartu kredit. Kartu hadiah atau kredit Google Play dapat digunakan.)</string>
-
-</resources>
+    </resources>
