@@ -54,8 +54,7 @@
             android:layout_gravity="center"
             android:gravity="center_horizontal"
             android:layout_margin="10dp"
-            android:textStyle="bold"
-            android:textSize="16sp" />
+            android:textStyle="bold" />
 
         <Button
             android:text="@string/PaymentChooserFragment.UnlimitedSubscription"
