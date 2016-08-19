@@ -85,7 +85,6 @@ public class StatusActivity
     private MoPubView m_moPubTunneledBannerLargeAdView = null;
     private MoPubInterstitial m_moPubTunneledInterstitial = null;
     private int m_tunneledFullScreenAdCounter = 0;
-    private boolean m_tunneledFullScreenAdPending = false;
     private boolean m_temporarilyDisableTunneledInterstitial = false;
 
     @Override
@@ -243,11 +242,6 @@ public class StatusActivity
                 // OnResume() will reset this flag
                 m_temporarilyDisableTunneledInterstitial = true;
 
-                if (getSkipHomePage() || showFirstHomePageInApp()) {
-                    // Show the full screen ad after OnResume() has initialized ads
-                    m_tunneledFullScreenAdPending = true;
-                }
-                
                 m_tabHost.setCurrentTabByTag("home");
                 loadSponsorTab(true);
                 m_loadedSponsorTab = true;
@@ -1214,12 +1208,7 @@ public class StatusActivity
             WebViewProxySettings.setLocalProxy(this, getListeningLocalHttpProxyPort());
 
             initTunneledBanner();
-
-            if (m_tunneledFullScreenAdPending)
-            {
-                showTunneledFullScreenAd();
-                m_tunneledFullScreenAdPending = false;
-            }
+            loadTunneledFullScreenAd();
         }
     }
 
@@ -1267,47 +1256,51 @@ public class StatusActivity
         }
     }
 
+    synchronized
+    private void loadTunneledFullScreenAd()
+    {
+        if (shouldShowTunneledAds()) {
+            if (m_moPubTunneledInterstitial != null) {
+                m_moPubTunneledInterstitial.destroy();
+            }
+            m_moPubTunneledInterstitial = new MoPubInterstitial(this, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
+            if (isTunnelConnected()) {
+                m_moPubTunneledInterstitial.setKeywords("client_region:" + getClientRegion());
+            }
+
+            m_moPubTunneledInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
+                @Override
+                public void onInterstitialClicked(MoPubInterstitial arg0) {
+                }
+                @Override
+                public void onInterstitialDismissed(MoPubInterstitial arg0) {
+                }
+                @Override
+                public void onInterstitialFailed(MoPubInterstitial arg0,
+                                                 MoPubErrorCode arg1) {
+                }
+                @Override
+                public void onInterstitialLoaded(MoPubInterstitial interstitial) {
+                }
+                @Override
+                public void onInterstitialShown(MoPubInterstitial arg0) {
+                }
+            });
+            m_moPubTunneledInterstitial.load();
+        }
+    }
+
     private void showTunneledFullScreenAd()
     {
-        if (shouldShowTunneledAds() && !m_temporarilyDisableTunneledInterstitial)
+        if (shouldShowTunneledAds() && m_moPubTunneledInterstitial != null &&
+                m_moPubTunneledInterstitial.isReady() &&
+                !m_temporarilyDisableTunneledInterstitial)
         {
             m_tunneledFullScreenAdCounter++;
 
             if (m_tunneledFullScreenAdCounter % 3 == 1)
             {
-                if (m_moPubTunneledInterstitial != null)
-                {
-                    m_moPubTunneledInterstitial.destroy();
-                }
-                m_moPubTunneledInterstitial = new MoPubInterstitial(this, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
-                if (isTunnelConnected()) {
-                    m_moPubTunneledInterstitial.setKeywords("client_region:" + getClientRegion());
-                }
-
-                m_moPubTunneledInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
-                    @Override
-                    public void onInterstitialClicked(MoPubInterstitial arg0) {
-                    }
-                    @Override
-                    public void onInterstitialDismissed(MoPubInterstitial arg0) {
-                    }
-                    @Override
-                    public void onInterstitialFailed(MoPubInterstitial arg0,
-                                                     MoPubErrorCode arg1) {
-                    }
-                    @Override
-                    public void onInterstitialLoaded(MoPubInterstitial interstitial) {
-                        if (interstitial != null && interstitial.isReady())
-                        {
-                            interstitial.show();
-                        }
-                    }
-                    @Override
-                    public void onInterstitialShown(MoPubInterstitial arg0) {
-                    }
-                });
-
-                m_moPubTunneledInterstitial.load();
+                m_moPubTunneledInterstitial.show();
             }
         }
     }
