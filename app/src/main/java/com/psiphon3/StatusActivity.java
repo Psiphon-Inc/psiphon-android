@@ -241,6 +241,7 @@ public class StatusActivity
                 // Don't let this tab change trigger an interstitial ad
                 // OnResume() will reset this flag
                 m_temporarilyDisableTunneledInterstitial = true;
+                m_tunneledFullScreenAdCounter = 0;
 
                 m_tabHost.setCurrentTabByTag("home");
                 loadSponsorTab(true);
