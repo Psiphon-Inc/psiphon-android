@@ -1259,10 +1259,8 @@ public class StatusActivity
     synchronized
     private void loadTunneledFullScreenAd()
     {
-        if (shouldShowTunneledAds()) {
-            if (m_moPubTunneledInterstitial != null) {
-                m_moPubTunneledInterstitial.destroy();
-            }
+        if (shouldShowTunneledAds() && m_moPubTunneledInterstitial == null)
+        {
             m_moPubTunneledInterstitial = new MoPubInterstitial(this, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
             if (isTunnelConnected()) {
                 m_moPubTunneledInterstitial.setKeywords("client_region:" + getClientRegion());
@@ -1274,10 +1272,12 @@ public class StatusActivity
                 }
                 @Override
                 public void onInterstitialDismissed(MoPubInterstitial arg0) {
+                    m_moPubTunneledInterstitial.load();
                 }
                 @Override
                 public void onInterstitialFailed(MoPubInterstitial arg0,
                                                  MoPubErrorCode arg1) {
+                    m_moPubTunneledInterstitial.load();
                 }
                 @Override
                 public void onInterstitialLoaded(MoPubInterstitial interstitial) {
@@ -1292,15 +1292,19 @@ public class StatusActivity
 
     private void showTunneledFullScreenAd()
     {
-        if (shouldShowTunneledAds() && m_moPubTunneledInterstitial != null &&
-                m_moPubTunneledInterstitial.isReady() &&
-                !m_temporarilyDisableTunneledInterstitial)
+        if (shouldShowTunneledAds() && !m_temporarilyDisableTunneledInterstitial)
         {
-            m_tunneledFullScreenAdCounter++;
-
-            if (m_tunneledFullScreenAdCounter % 3 == 1)
+            if (m_tunneledFullScreenAdCounter % 3 == 0)
             {
-                m_moPubTunneledInterstitial.show();
+                if (m_moPubTunneledInterstitial != null && m_moPubTunneledInterstitial.isReady())
+                {
+                    m_tunneledFullScreenAdCounter++;
+                    m_moPubTunneledInterstitial.show();
+                }
+            }
+            else
+            {
+                m_tunneledFullScreenAdCounter++;
             }
         }
     }
