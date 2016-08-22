@@ -672,7 +672,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 //disable timeouts
                 MyLog.g("DisableTimeouts", "disableTimeouts", true);
                 json.put("TunnelConnectTimeoutSeconds", 0);
-                json.put("TunnelPortForwardTimeoutSeconds", 0);
+                json.put("TunnelPortForwardDialTimeoutSeconds", 0);
                 json.put("TunnelSshKeepAliveProbeTimeoutSeconds", 0);
                 json.put("TunnelSshKeepAlivePeriodicTimeoutSeconds", 0);
                 json.put("FetchRemoteServerListTimeoutSeconds", 0);
