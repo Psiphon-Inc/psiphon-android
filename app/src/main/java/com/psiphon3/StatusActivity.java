@@ -186,13 +186,6 @@ public class StatusActivity
             m_startupPending = false;
             resumeServiceStateUI();
             doStartUp();
-        } else {
-            initUntunneledAds();
-        }
-        if (isServiceRunning()) {
-            deInitUntunneledAds();
-        } else {
-            deInitTunneledAds();
         }
     }
 
@@ -351,7 +344,6 @@ public class StatusActivity
 
     @Override
     protected void startUp() {
-        deInitUntunneledAds();
         if (shouldShowUntunneledAds() &&
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             showSuperSonicInterstitialAd();
@@ -513,16 +505,25 @@ public class StatusActivity
     static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "cc43734b96384aae9538716ceadc3935";
     static final String MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID = "8ca0fb406d2e4dbaa9c4737956acd9fa";
 
+    @Override
+    protected void updateAdsForServiceState() {
+        if (isServiceRunning()) {
+            deInitUntunneledAds();
+        } else {
+            deInitTunneledAds();
+            initUntunneledAds();
+        }
+    }
+
     private boolean getShowAds() {
-        return m_multiProcessPreferences.getBoolean(getString(R.string.persistent_show_ads_setting), false);
+        return m_multiProcessPreferences.getBoolean(getString(R.string.persistent_show_ads_setting), false) &&
+                !EmbeddedValues.hasEverBeenSideLoaded(this) &&
+                Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO;
     }
 
     private boolean shouldShowUntunneledAds()
     {
-        return getShowAds() &&
-                !isServiceRunning() &&
-                !EmbeddedValues.hasEverBeenSideLoaded(this) &&
-                Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO;
+        return getShowAds() && !isServiceRunning();
     }
 
     private void initUntunneledAds() {
@@ -628,11 +629,7 @@ public class StatusActivity
 
     private boolean shouldShowTunneledAds()
     {
-        // For now, only show ads when the tunnel is connected, since WebViewProxySettings are
-        // probably set and webviews won't load successfully when the tunnel is not connected
-        return getShowAds() &&
-                isTunnelConnected() &&
-                Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO;
+        return getShowAds() && isTunnelConnected();
     }
 
     private void initTunneledAds()

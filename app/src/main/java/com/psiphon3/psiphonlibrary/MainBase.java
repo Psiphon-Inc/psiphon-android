@@ -941,7 +941,11 @@ public abstract class MainBase {
                 enableToggleServiceUI();
                 m_localProxySettingsHaveBeenReset = false;
             }
+
+            updateAdsForServiceState();
         }
+
+        protected abstract void updateAdsForServiceState();
         
         protected void enableToggleServiceUI() {
             m_toggleButton.setEnabled(true);
