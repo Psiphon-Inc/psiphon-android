@@ -351,6 +351,7 @@ public class StatusActivity
 
     @Override
     protected void startUp() {
+        deInitUntunneledAds();
         if (shouldShowUntunneledAds() &&
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             showSuperSonicInterstitialAd();
@@ -595,8 +596,6 @@ public class StatusActivity
                 @Override
                 public void onBannerFailed(MoPubView arg0,
                                            MoPubErrorCode arg1) {
-                    LinearLayout layout = (LinearLayout)findViewById(R.id.largeAdSlot);
-                    layout.removeAllViewsInLayout();
                 }
             });
 
@@ -610,6 +609,12 @@ public class StatusActivity
     {
         if (m_moPubUntunneledBannerAdView != null)
         {
+            if (m_moPubUntunneledBannerAdView.getParent() != null) {
+                LinearLayout layout = (LinearLayout) findViewById(R.id.bannerLayout);
+                layout.removeAllViewsInLayout();
+                layout.addView(m_banner);
+            }
+
             m_moPubUntunneledBannerAdView.destroy();
         }
         m_moPubUntunneledBannerAdView = null;
@@ -776,12 +781,14 @@ public class StatusActivity
 
     private void deInitTunneledAds()
     {
-        LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
-        layout.removeAllViewsInLayout();
-        layout.addView(m_banner);
-
         if (m_moPubTunneledBannerAdView != null)
         {
+            if (m_moPubTunneledBannerAdView.getParent() != null) {
+                LinearLayout layout = (LinearLayout) findViewById(R.id.bannerLayout);
+                layout.removeAllViewsInLayout();
+                layout.addView(m_banner);
+            }
+
             m_moPubTunneledBannerAdView.destroy();
         }
         m_moPubTunneledBannerAdView = null;
