@@ -1,6 +1,6 @@
 package com.mopub.nativeads;
 
-import android.app.Activity;
+import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
@@ -36,9 +36,9 @@ public class MoPubStaticNativeAdRenderer implements MoPubAdRenderer<StaticNative
 
     @Override
     @NonNull
-    public View createAdView(@NonNull final Activity activity, @Nullable final ViewGroup parent) {
+    public View createAdView(@NonNull final Context context, @Nullable final ViewGroup parent) {
         return LayoutInflater
-                .from(activity)
+                .from(context)
                 .inflate(mViewBinder.layoutId, parent, false);
     }
 

@@ -28,6 +28,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(SdkTestRunner.class)
 @Config(constants = BuildConfig.class)
@@ -267,6 +268,7 @@ public class MoPubInterstitialTest {
 
     @Test
     public void loadingCustomEventInterstitial_shouldBecomeReadyToShowCustomEventAd() throws Exception {
+        subject.load();
         subject.onCustomEventInterstitialLoaded();
 
         assertShowsCustomEventInterstitial(true);
@@ -331,6 +333,357 @@ public class MoPubInterstitialTest {
         moPubInterstitialView.adFailed(CANCELLED);
 
         verify(interstitialAdListener).onInterstitialFailed(eq(subject), eq(CANCELLED));
+    }
+
+    @Test
+    public void attemptStateTransition_withIdleStartState() {
+        /**
+         * IDLE can go to LOADING when load is called. IDLE can also go to DESTROYED if the
+         * interstitial view is destroyed.
+         */
+
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.IDLE);
+        boolean stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.IDLE, false);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.IDLE);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.IDLE);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.IDLE, true);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.IDLE);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setInterstitialView(interstitialView);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.IDLE);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.LOADING, false);
+        assertThat(stateDidChange).isTrue();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.LOADING);
+        verify(customEventInterstitialAdapter).invalidate();
+        verify(interstitialView).loadAd();
+
+        reset(customEventInterstitialAdapter, interstitialView);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setInterstitialView(interstitialView);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.IDLE);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.LOADING, true);
+        assertThat(stateDidChange).isTrue();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.LOADING);
+        verify(customEventInterstitialAdapter).invalidate();
+        verify(interstitialView).forceRefresh();
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.IDLE);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.READY, false);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.IDLE);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.IDLE);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.READY, true);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.IDLE);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.IDLE);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.DESTROYED, false);
+        assertThat(stateDidChange).isTrue();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.DESTROYED);
+        verify(customEventInterstitialAdapter).invalidate();
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.IDLE);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.DESTROYED, true);
+        assertThat(stateDidChange).isTrue();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.DESTROYED);
+        verify(customEventInterstitialAdapter).invalidate();
+    }
+
+    @Test
+    public void attemptStateTransition_withLoadingStartState() {
+        /**
+         * LOADING can go to IDLE if and only if it's a hard reset to IDLE. LOADING should go to
+         * READY when the interstitial is done loading. LOADING can go to DESTROYED if the
+         * interstitial view is destroyed.
+         */
+
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.LOADING);
+        boolean stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.IDLE, false);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.LOADING);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.LOADING);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.IDLE, true);
+        assertThat(stateDidChange).isTrue();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.IDLE);
+        verify(customEventInterstitialAdapter).invalidate();
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.LOADING);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.LOADING, false);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.LOADING);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.LOADING);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.LOADING, true);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.LOADING);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.LOADING);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.READY, false);
+        assertThat(stateDidChange).isTrue();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.READY);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.LOADING);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.READY, true);
+        assertThat(stateDidChange).isTrue();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.READY);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.LOADING);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.DESTROYED, false);
+        assertThat(stateDidChange).isTrue();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.DESTROYED);
+        verify(customEventInterstitialAdapter).invalidate();
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.LOADING);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.DESTROYED, true);
+        assertThat(stateDidChange).isTrue();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.DESTROYED);
+        verify(customEventInterstitialAdapter).invalidate();
+    }
+
+    @Test
+    public void attemptStateTransition_withReadyStartState() {
+        /**
+         * This state should succeed for going to IDLE. When it's forced, it's implicitly resetting
+         * the internals into ready state. If it's not forced, this is when the interstitial is
+         * shown. Also, READY can go into DESTROYED.
+         */
+
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.READY);
+        boolean stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.IDLE, false);
+        assertThat(stateDidChange).isTrue();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.IDLE);
+        verify(customEventInterstitialAdapter).showInterstitial();
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.READY);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.IDLE, true);
+        assertThat(stateDidChange).isTrue();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.IDLE);
+        verify(customEventInterstitialAdapter).invalidate();
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.READY);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.LOADING, false);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.READY);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+        verify(interstitialAdListener).onInterstitialLoaded(subject);
+
+        reset(customEventInterstitialAdapter, interstitialAdListener);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.READY);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.LOADING, true);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.READY);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+        verify(interstitialAdListener).onInterstitialLoaded(subject);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.READY);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.READY, false);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.READY);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.READY);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.READY, true);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.READY);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.READY);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.DESTROYED, false);
+        assertThat(stateDidChange).isTrue();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.DESTROYED);
+        verify(customEventInterstitialAdapter).invalidate();
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.READY);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.DESTROYED, true);
+        assertThat(stateDidChange).isTrue();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.DESTROYED);
+        verify(customEventInterstitialAdapter).invalidate();
+    }
+
+    @Test
+    public void attemptStateTransition_withDestroyedStartState() {
+        // All state transitions should fail if starting from a destroyed state
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.DESTROYED);
+        boolean stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.IDLE, false);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.DESTROYED);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.DESTROYED);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.IDLE, true);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.DESTROYED);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.DESTROYED);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.LOADING, false);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.DESTROYED);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.DESTROYED);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.LOADING, true);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.DESTROYED);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.DESTROYED);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.READY, false);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.DESTROYED);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.DESTROYED);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.READY, true);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.DESTROYED);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.DESTROYED);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.DESTROYED, false);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.DESTROYED);
+        verifyZeroInteractions(customEventInterstitialAdapter);
+
+        reset(customEventInterstitialAdapter);
+        subject.setCustomEventInterstitialAdapter(customEventInterstitialAdapter);
+        subject.setCurrentInterstitialState(MoPubInterstitial.InterstitialState.DESTROYED);
+        stateDidChange = subject.attemptStateTransition(
+                MoPubInterstitial.InterstitialState.DESTROYED, true);
+        assertThat(stateDidChange).isFalse();
+        assertThat(subject.getCurrentInterstitialState()).isEqualTo(
+                MoPubInterstitial.InterstitialState.DESTROYED);
     }
 
     private void loadCustomEvent() {

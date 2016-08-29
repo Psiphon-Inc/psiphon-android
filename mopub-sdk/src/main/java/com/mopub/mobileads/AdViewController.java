@@ -259,7 +259,10 @@ public class AdViewController {
         loadNonJavascript(mUrl);
     }
 
-    void loadFailUrl(MoPubErrorCode errorCode) {
+    /**
+     * Returns true if continuing to load the failover url, false if the ad actually did not fill.
+     */
+    boolean loadFailUrl(MoPubErrorCode errorCode) {
         mIsLoading = false;
 
         Log.v("MoPub", "MoPubErrorCode: " + (errorCode == null ? "" : errorCode.toString()));
@@ -268,9 +271,11 @@ public class AdViewController {
         if (!TextUtils.isEmpty(failUrl)) {
             MoPubLog.d("Loading failover url: " + failUrl);
             loadNonJavascript(failUrl);
+            return true;
         } else {
             // No other URLs to try, so signal a failure.
             adDidFail(MoPubErrorCode.NO_FILL);
+            return false;
         }
     }
 

@@ -78,6 +78,9 @@ repositories {
     maven {
         url "https://dl.bintray.com/supersonic/android-adapters"
     }
+    flatDir {
+        dirs project(':mopub-sdk').file('libs')
+    }
 }
 
 dependencies {

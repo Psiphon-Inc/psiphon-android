@@ -18,7 +18,6 @@ import com.mopub.volley.VolleyError;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
@@ -92,6 +91,7 @@ public class
 
         // Finish the request
         requestListener.onErrorResponse(new VolleyError("end test"));
+        ShadowLooper.unPauseMainLooper();
     }
 
     @Test
@@ -106,6 +106,7 @@ public class
 
         // Finish the request
         requestListener.onErrorResponse(new VolleyError("end test"));
+        ShadowLooper.unPauseMainLooper();
     }
 
     @Test
@@ -275,6 +276,8 @@ public class
         MoPubRewardedVideoManager.loadVideo("testAdUnit", null);
         requestListener.onSuccess(testResponse);
 
+        ShadowLooper.unPauseMainLooper();
+
         MoPubReward moPubReward =
                 MoPubRewardedVideoManager.getRewardedVideoData().getMoPubReward("testAdUnit");
         assertThat(moPubReward.getAmount()).isEqualTo(123);
@@ -305,7 +308,6 @@ public class
     }
     
     @Test
-    @Ignore("Flaky")
     public void playVideo_whenNotHasVideo_shouldFail() {
         AdResponse testResponse = new AdResponse.Builder()
                 .setCustomEventClassName("com.mopub.mobileads.MoPubRewardedVideoManagerTest$NoVideoCustomEvent")
@@ -329,7 +331,6 @@ public class
     }
 
     @Test
-    @Ignore("Flaky")
     public void playVideo_shouldUpdateLastShownCustomEventRewardMapping() throws Exception {
         AdResponse testResponse = new AdResponse.Builder()
                 .setCustomEventClassName(

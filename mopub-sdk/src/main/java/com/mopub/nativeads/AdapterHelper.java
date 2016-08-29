@@ -1,6 +1,5 @@
 package com.mopub.nativeads;
 
-import android.app.Activity;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -19,7 +18,10 @@ import java.lang.ref.WeakReference;
  */
 @Deprecated
 public final class AdapterHelper {
-    @NonNull private final WeakReference<Activity> mActivity;
+    /**
+     * Preferably an Activity Context.
+     */
+    @NonNull private final WeakReference<Context> mContext;
     @NonNull private final Context mApplicationContext;
     private final int mStart;
     private final int mInterval;
@@ -27,11 +29,10 @@ public final class AdapterHelper {
     @Deprecated
     public AdapterHelper(@NonNull final Context context, final int start, final int interval) {
         Preconditions.checkNotNull(context, "Context cannot be null.");
-        Preconditions.checkArgument(context instanceof Activity, "Context must be an Activity.");
         Preconditions.checkArgument(start >= 0, "start position must be non-negative");
         Preconditions.checkArgument(interval >= 2, "interval must be at least 2");
 
-        mActivity = new WeakReference<Activity>((Activity) context);
+        mContext = new WeakReference<Context>(context);
         mApplicationContext = context.getApplicationContext();
         mStart = start;
         mInterval = interval;
@@ -43,9 +44,9 @@ public final class AdapterHelper {
             @Nullable final ViewGroup parent,
             @Nullable final NativeAd nativeAd,
             @Nullable final ViewBinder viewBinder) {
-        final Activity activity = mActivity.get();
-        if (activity == null) {
-            MoPubLog.w("Weak reference to Activity Context in"
+        final Context context = mContext.get();
+        if (context == null) {
+            MoPubLog.w("Weak reference to Context in"
                     + " AdapterHelper became null. Returning empty view.");
             return new View(mApplicationContext);
         }
@@ -53,7 +54,7 @@ public final class AdapterHelper {
         return NativeAdViewHelper.getAdView(
                 convertView,
                 parent,
-                activity,
+                context,
                 nativeAd,
                 viewBinder
         );
@@ -113,7 +114,7 @@ public final class AdapterHelper {
     // Testing
     @Deprecated
     @VisibleForTesting
-    void clearActivityContext() {
-        mActivity.clear();
+    void clearContext() {
+        mContext.clear();
     }
 }

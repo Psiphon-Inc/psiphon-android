@@ -1,7 +1,6 @@
 package com.mopub.nativeads;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.media.AudioManager;
@@ -56,7 +55,7 @@ import static com.mopub.nativeads.NativeVideoController.VisibilityTrackingEvent;
 public class MoPubCustomEventVideoNative extends CustomEventNative {
 
     @Override
-    protected void loadNativeAd(@NonNull final Activity activity,
+    protected void loadNativeAd(@NonNull final Context context,
             @NonNull final CustomEventNativeListener customEventNativeListener,
             @NonNull final Map<String, Object> localExtras,
             @NonNull final Map<String, String> serverExtras) {
@@ -87,7 +86,7 @@ public class MoPubCustomEventVideoNative extends CustomEventNative {
         }
 
         final String clickTrackingUrlFromHeader = (String) clickTrackingUrlFromHeaderObject;
-        final MoPubVideoNativeAd videoNativeAd = new MoPubVideoNativeAd(activity, (JSONObject) json,
+        final MoPubVideoNativeAd videoNativeAd = new MoPubVideoNativeAd(context, (JSONObject) json,
                 customEventNativeListener, videoResponseHeaders, eventDetails,
                 clickTrackingUrlFromHeader);
         try {
@@ -185,20 +184,20 @@ public class MoPubCustomEventVideoNative extends CustomEventNative {
         private boolean mEnded;
 
         public MoPubVideoNativeAd(
-                @NonNull final Activity activity,
+                @NonNull final Context context,
                 @NonNull final JSONObject jsonObject,
                 @NonNull final CustomEventNativeListener customEventNativeListener,
                 @NonNull final VideoResponseHeaders videoResponseHeaders,
                 @Nullable final EventDetails eventDetails,
                 @NonNull final String clickTrackingUrl) {
-            this(activity, jsonObject, customEventNativeListener, videoResponseHeaders,
-                    new VisibilityTracker(activity), new NativeVideoControllerFactory(),
-                    eventDetails, clickTrackingUrl, VastManagerFactory.create(activity.getApplicationContext(), false));
+            this(context, jsonObject, customEventNativeListener, videoResponseHeaders,
+                    new VisibilityTracker(context), new NativeVideoControllerFactory(),
+                    eventDetails, clickTrackingUrl, VastManagerFactory.create(context.getApplicationContext(), false));
         }
 
         @VisibleForTesting
         MoPubVideoNativeAd(
-                @NonNull final Activity activity,
+                @NonNull final Context context,
                 @NonNull final JSONObject jsonObject,
                 @NonNull final CustomEventNativeListener customEventNativeListener,
                 @NonNull final VideoResponseHeaders videoResponseHeaders,
@@ -207,7 +206,7 @@ public class MoPubCustomEventVideoNative extends CustomEventNative {
                 @Nullable final EventDetails eventDetails,
                 @NonNull final String clickTrackingUrl,
                 @NonNull final VastManager vastManager) {
-            Preconditions.checkNotNull(activity);
+            Preconditions.checkNotNull(context);
             Preconditions.checkNotNull(jsonObject);
             Preconditions.checkNotNull(customEventNativeListener);
             Preconditions.checkNotNull(videoResponseHeaders);
@@ -216,7 +215,7 @@ public class MoPubCustomEventVideoNative extends CustomEventNative {
             Preconditions.checkNotNull(clickTrackingUrl);
             Preconditions.checkNotNull(vastManager);
 
-            mContext = activity.getApplicationContext();
+            mContext = context.getApplicationContext();
             mJsonObject = jsonObject;
             mCustomEventNativeListener = customEventNativeListener;
             mVideoResponseHeaders = videoResponseHeaders;

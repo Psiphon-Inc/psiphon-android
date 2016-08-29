@@ -1,6 +1,7 @@
 package com.mopub.nativeads;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Rect;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -44,8 +45,8 @@ class VisibilityTracker {
         void onVisibilityChanged(List<View> visibleViews, List<View> invisibleViews);
     }
 
-    @Nullable @VisibleForTesting OnPreDrawListener mOnPreDrawListener;
-    @NonNull @VisibleForTesting final WeakReference<View> mRootView;
+    @NonNull @VisibleForTesting final OnPreDrawListener mOnPreDrawListener;
+    @NonNull @VisibleForTesting WeakReference<ViewTreeObserver> mWeakViewTreeObserver;
 
     static class TrackingInfo {
         int mMinViewablePercent;
@@ -73,15 +74,15 @@ class VisibilityTracker {
     // Whether the visibility runnable is scheduled
     private boolean mIsVisibilityScheduled;
 
-    public VisibilityTracker(@NonNull final Activity activity) {
-        this(activity,
+    public VisibilityTracker(@NonNull final Context context) {
+        this(context,
                 new WeakHashMap<View, TrackingInfo>(10),
                 new VisibilityChecker(),
                 new Handler());
     }
 
     @VisibleForTesting
-    VisibilityTracker(@NonNull final Activity activity,
+    VisibilityTracker(@NonNull final Context context,
             @NonNull final Map<View, TrackingInfo> trackedViews,
             @NonNull final VisibilityChecker visibilityChecker,
             @NonNull final Handler visibilityHandler) {
@@ -91,22 +92,57 @@ class VisibilityTracker {
         mVisibilityRunnable = new VisibilityRunnable();
         mTrimmedViews = new ArrayList<View>(NUM_ACCESSES_BEFORE_TRIMMING);
 
-        final View rootView = activity.getWindow().getDecorView();
-        mRootView = new WeakReference<View>(rootView);
+        mOnPreDrawListener = new OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                scheduleVisibilityCheck();
+                return true;
+            }
+        };
+
+        mWeakViewTreeObserver = new WeakReference<ViewTreeObserver>(null);
+        setViewTreeObserver(context, null);
+    }
+
+    private void setViewTreeObserver(@Nullable final Context context, @Nullable final View view) {
+        final ViewTreeObserver originalViewTreeObserver = mWeakViewTreeObserver.get();
+        if (originalViewTreeObserver != null && originalViewTreeObserver.isAlive()) {
+            return;
+        }
+
+        final View rootView = getBestRootView(context, view);
+        if (rootView == null) {
+            MoPubLog.d("Unable to set Visibility Tracker due to no available root view.");
+            return;
+        }
+
         final ViewTreeObserver viewTreeObserver = rootView.getViewTreeObserver();
         if (!viewTreeObserver.isAlive()) {
             MoPubLog.w("Visibility Tracker was unable to track views because the"
                     + " root view tree observer was not alive");
-        } else {
-            mOnPreDrawListener = new OnPreDrawListener() {
-                @Override
-                public boolean onPreDraw() {
-                    scheduleVisibilityCheck();
-                    return true;
-                }
-            };
-            viewTreeObserver.addOnPreDrawListener(mOnPreDrawListener);
+            return;
         }
+
+        mWeakViewTreeObserver = new WeakReference<ViewTreeObserver>(viewTreeObserver);
+        viewTreeObserver.addOnPreDrawListener(mOnPreDrawListener);
+    }
+
+    @VisibleForTesting
+    @Nullable
+    static View getBestRootView(@Nullable final Context context, @Nullable final View view) {
+        if (context instanceof Activity) {
+            return ((Activity) context).getWindow().getDecorView();
+        }
+
+        if (view != null) {
+            final View rootView = view.getRootView();
+            if (rootView != null) {
+                final View rootContentView = rootView.findViewById(android.R.id.content);
+                return rootContentView != null ? rootContentView : rootView;
+            }
+        }
+
+        return null;
     }
 
     void setVisibilityTrackerListener(
@@ -126,6 +162,8 @@ class VisibilityTracker {
     }
 
     void addView(@NonNull View rootView, @NonNull final View view, final int minVisiblePercentageViewed, final int maxInvisiblePercentageViewed) {
+        setViewTreeObserver(view.getContext(), view);
+
         // Find the view if already tracked
         TrackingInfo trackingInfo = mTrackedViews.get(view);
         if (trackingInfo == null) {
@@ -183,14 +221,11 @@ class VisibilityTracker {
      */
     void destroy() {
         clear();
-        final View rootView = mRootView.get();
-        if (rootView != null && mOnPreDrawListener != null) {
-            final ViewTreeObserver viewTreeObserver = rootView.getViewTreeObserver();
-            if (viewTreeObserver.isAlive()) {
-                viewTreeObserver.removeOnPreDrawListener(mOnPreDrawListener);
-            }
-            mOnPreDrawListener = null;
+        final ViewTreeObserver viewTreeObserver = mWeakViewTreeObserver.get();
+        if (viewTreeObserver != null && viewTreeObserver.isAlive()) {
+            viewTreeObserver.removeOnPreDrawListener(mOnPreDrawListener);
         }
+        mWeakViewTreeObserver.clear();
         mVisibilityTrackerListener = null;
     }
 

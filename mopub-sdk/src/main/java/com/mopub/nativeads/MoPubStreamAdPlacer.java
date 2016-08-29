@@ -388,7 +388,7 @@ public class MoPubStreamAdPlacer {
      * Gets the ad at the given position, or {@code null} if there is no ad at the given position.
      *
      * This method will attempt to reuse the convertView if it is not {@code null}, and will
-     * otherwise create it. See {@link MoPubAdRenderer#createAdView(Activity, ViewGroup)}.
+     * otherwise create it. See {@link MoPubAdRenderer#createAdView(Context, ViewGroup)}.
      *
      * @param position The position to place an ad into.
      * @param convertView A recycled view into which to render data, or {@code null}.

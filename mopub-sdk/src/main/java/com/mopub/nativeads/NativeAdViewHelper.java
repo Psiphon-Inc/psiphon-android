@@ -1,6 +1,5 @@
 package com.mopub.nativeads;
 
-import android.app.Activity;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -38,31 +37,31 @@ class NativeAdViewHelper {
     @NonNull
     static View getAdView(@Nullable View convertView,
             @Nullable final ViewGroup parent,
-            @NonNull final Activity activity,
+            @NonNull final Context context,
             @Nullable final NativeAd nativeAd,
             @Nullable final ViewBinder viewBinder) {
 
         Preconditions.NoThrow.checkNotNull(viewBinder, "ViewBinder is null.");
 
         if (convertView != null) {
-            clearNativeAd(activity, convertView);
+            clearNativeAd(context, convertView);
         }
 
         if (nativeAd == null || nativeAd.isDestroyed() || viewBinder == null) {
             MoPubLog.d("NativeAd or viewBinder null or invalid. Returning empty view");
             // Only create a view if one hasn't been created already
             if (convertView == null || !ViewType.EMPTY.equals(convertView.getTag())) {
-                convertView = new View(activity);
+                convertView = new View(context);
                 convertView.setTag(ViewType.EMPTY);
                 convertView.setVisibility(View.GONE);
             }
         } else {
             // Only create a view if one hasn't been created already
             if (convertView == null || !ViewType.AD.equals(convertView.getTag())) {
-                convertView = nativeAd.createAdView(activity, parent);
+                convertView = nativeAd.createAdView(context, parent);
                 convertView.setTag(ViewType.AD);
             }
-            prepareNativeAd(activity, convertView, nativeAd);
+            prepareNativeAd(context, convertView, nativeAd);
             nativeAd.renderAdView(convertView);
         }
 

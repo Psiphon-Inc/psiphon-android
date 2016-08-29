@@ -1,6 +1,5 @@
 package com.mopub.nativeads;
 
-import android.app.Activity;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -11,7 +10,6 @@ import com.mopub.common.logging.MoPubLog;
 import com.mopub.nativeads.NativeImageHelper.ImageListener;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -29,7 +27,7 @@ import static com.mopub.nativeads.NativeImageHelper.preCacheImages;
 public class MoPubCustomEventNative extends CustomEventNative {
 
     @Override
-    protected void loadNativeAd(@NonNull final Activity activity,
+    protected void loadNativeAd(@NonNull final Context context,
             @NonNull final CustomEventNativeListener customEventNativeListener,
             @NonNull final Map<String, Object> localExtras,
             @NonNull final Map<String, String> serverExtras) {
@@ -42,10 +40,10 @@ public class MoPubCustomEventNative extends CustomEventNative {
         }
 
         final MoPubStaticNativeAd moPubStaticNativeAd =
-                new MoPubStaticNativeAd(activity,
+                new MoPubStaticNativeAd(context,
                         (JSONObject) json,
-                        new ImpressionTracker(activity),
-                        new NativeClickHandler(activity),
+                        new ImpressionTracker(context),
+                        new NativeClickHandler(context),
                         customEventNativeListener);
 
         try {

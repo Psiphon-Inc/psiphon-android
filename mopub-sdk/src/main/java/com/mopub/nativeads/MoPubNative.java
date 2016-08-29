@@ -1,6 +1,6 @@
 package com.mopub.nativeads;
 
-import android.app.Activity;
+import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -54,8 +54,8 @@ public class MoPubNative {
         }
     };
 
-    // must be an activity since 3rd party networks need it
-    @NonNull private final WeakReference<Activity> mActivity;
+    // Highly recommended to be an Activity since 3rd party networks need it
+    @NonNull private final WeakReference<Context> mContext;
     @NonNull private final String mAdUnitId;
     @NonNull private MoPubNativeNetworkListener mMoPubNativeNetworkListener;
 
@@ -65,25 +65,25 @@ public class MoPubNative {
     @Nullable private AdRequest mNativeRequest;
     @NonNull AdRendererRegistry mAdRendererRegistry;
 
-    public MoPubNative(@NonNull final Activity activity,
+    public MoPubNative(@NonNull final Context context,
             @NonNull final String adUnitId,
             @NonNull final MoPubNativeNetworkListener moPubNativeNetworkListener) {
-        this(activity, adUnitId, new AdRendererRegistry(), moPubNativeNetworkListener);
+        this(context, adUnitId, new AdRendererRegistry(), moPubNativeNetworkListener);
     }
 
     @VisibleForTesting
-    public MoPubNative(@NonNull final Activity activity,
+    public MoPubNative(@NonNull final Context context,
             @NonNull final String adUnitId,
             @NonNull AdRendererRegistry adRendererRegistry,
             @NonNull final MoPubNativeNetworkListener moPubNativeNetworkListener) {
-        Preconditions.checkNotNull(activity, "Activity may not be null.");
+        Preconditions.checkNotNull(context, "context may not be null.");
         Preconditions.checkNotNull(adUnitId, "AdUnitId may not be null.");
         Preconditions.checkNotNull(adRendererRegistry, "AdRendererRegistry may not be null.");
         Preconditions.checkNotNull(moPubNativeNetworkListener, "MoPubNativeNetworkListener may not be null.");
 
-        ManifestUtils.checkNativeActivitiesDeclared(activity);
+        ManifestUtils.checkNativeActivitiesDeclared(context);
 
-        mActivity = new WeakReference<Activity>(activity);
+        mContext = new WeakReference<Context>(context);
         mAdUnitId = adUnitId;
         mMoPubNativeNetworkListener = moPubNativeNetworkListener;
         mAdRendererRegistry = adRendererRegistry;
@@ -100,7 +100,7 @@ public class MoPubNative {
         };
 
         // warm up cache for google play services info
-        fetchAdvertisingInfoAsync(activity, null);
+        fetchAdvertisingInfoAsync(context, null);
     }
 
     /**
@@ -113,7 +113,7 @@ public class MoPubNative {
     }
 
     public void destroy() {
-        mActivity.clear();
+        mContext.clear();
         if (mNativeRequest != null) {
             mNativeRequest.cancel();
             mNativeRequest = null;
@@ -139,12 +139,12 @@ public class MoPubNative {
 
     public void makeRequest(@Nullable final RequestParameters requestParameters,
             @Nullable Integer sequenceNumber) {
-        final Activity activity = getActivityOrDestroy();
-        if (activity == null) {
+        final Context context = getContextOrDestroy();
+        if (context == null) {
             return;
         }
 
-        if (!DeviceUtils.isNetworkAvailable(activity)) {
+        if (!DeviceUtils.isNetworkAvailable(context)) {
             mMoPubNativeNetworkListener.onNativeFail(CONNECTION_ERROR);
             return;
         }
@@ -155,12 +155,12 @@ public class MoPubNative {
     private void loadNativeAd(
             @Nullable final RequestParameters requestParameters,
             @Nullable final Integer sequenceNumber) {
-        final Activity activity = getActivityOrDestroy();
-        if (activity == null) {
+        final Context context = getContextOrDestroy();
+        if (context == null) {
             return;
         }
 
-        final NativeUrlGenerator generator = new NativeUrlGenerator(activity)
+        final NativeUrlGenerator generator = new NativeUrlGenerator(context)
                 .withAdUnitId(mAdUnitId)
                 .withRequest(requestParameters);
 
@@ -178,8 +178,8 @@ public class MoPubNative {
     }
 
     void requestNativeAd(@Nullable final String endpointUrl) {
-        final Activity activity = getActivityOrDestroy();
-        if (activity == null) {
+        final Context context = getContextOrDestroy();
+        if (context == null) {
             return;
         }
 
@@ -188,22 +188,22 @@ public class MoPubNative {
             return;
         }
 
-        mNativeRequest = new AdRequest(endpointUrl, AdFormat.NATIVE, mAdUnitId, activity, mVolleyListener);
-        RequestQueue requestQueue = Networking.getRequestQueue(activity);
+        mNativeRequest = new AdRequest(endpointUrl, AdFormat.NATIVE, mAdUnitId, context, mVolleyListener);
+        RequestQueue requestQueue = Networking.getRequestQueue(context);
         requestQueue.add(mNativeRequest);
     }
 
     private void onAdLoad(@NonNull final AdResponse response) {
-        final Activity activity = getActivityOrDestroy();
-        if (activity == null) {
+        final Context context = getContextOrDestroy();
+        if (context == null) {
             return;
         }
         final CustomEventNativeListener customEventNativeListener =
                 new CustomEventNativeListener() {
                     @Override
                     public void onNativeAdLoaded(@NonNull final BaseNativeAd nativeAd) {
-                        final Activity activity = getActivityOrDestroy();
-                        if (activity == null) {
+                        final Context context = getContextOrDestroy();
+                        if (context == null) {
                             return;
                         }
 
@@ -213,7 +213,7 @@ public class MoPubNative {
                             return;
                         }
 
-                        mMoPubNativeNetworkListener.onNativeLoad(new NativeAd(activity,
+                        mMoPubNativeNetworkListener.onNativeLoad(new NativeAd(context,
                                         response.getImpressionTrackingUrl(),
                                         response.getClickTrackingUrl(),
                                         mAdUnitId,
@@ -230,7 +230,7 @@ public class MoPubNative {
                 };
 
         CustomEventNativeAdapter.loadNativeAd(
-                activity,
+                context,
                 mLocalExtras,
                 response,
                 customEventNativeListener
@@ -268,7 +268,7 @@ public class MoPubNative {
             NetworkResponse response = volleyError.networkResponse;
             if (response != null && response.statusCode >= 500 && response.statusCode < 600) {
                 mMoPubNativeNetworkListener.onNativeFail(SERVER_ERROR_RESPONSE_CODE);
-            } else if (response == null && !DeviceUtils.isNetworkAvailable(mActivity.get())) {
+            } else if (response == null && !DeviceUtils.isNetworkAvailable(mContext.get())) {
                 MoPubLog.c(String.valueOf(MoPubErrorCode.NO_CONNECTION.toString()));
                 mMoPubNativeNetworkListener.onNativeFail(CONNECTION_ERROR);
             } else {
@@ -277,14 +277,16 @@ public class MoPubNative {
         }
     }
 
-    Activity getActivityOrDestroy() {
-        final Activity activity = mActivity.get();
-        if (activity == null) {
+    @VisibleForTesting
+    @Nullable
+    Context getContextOrDestroy() {
+        final Context context = mContext.get();
+        if (context == null) {
             destroy();
-            MoPubLog.d("Weak reference to Activity in MoPubNative became null. This instance" +
+            MoPubLog.d("Weak reference to Context in MoPubNative became null. This instance" +
                     " of MoPubNative is destroyed and No more requests will be processed.");
         }
-        return activity;
+        return context;
     }
 
     @VisibleForTesting

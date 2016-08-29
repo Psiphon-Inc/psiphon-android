@@ -1,6 +1,5 @@
 package com.mopub.nativeads;
 
-import android.app.Activity;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -33,7 +32,7 @@ import static com.mopub.nativeads.BaseNativeAd.NativeEventListener;
  *
  * When you have a {@link NativeAd} instance and wish to show a view you should:
  *
- * 1. Call {@link #createAdView(Activity, ViewGroup)} to inflate a {@link View} that can show this ad.
+ * 1. Call {@link #createAdView(Context, ViewGroup)} to inflate a {@link View} that can show this ad.
  * 2. Call {@link #renderAdView(View)} with a compatible {@link View} to render the ad data into the view.
  * 3. Just before the ad is shown to the user, call {@link #prepare(View)}.
  * 4. When the ad view is no longer shown to the user, call {@link #clear(View)}. You can later
@@ -132,9 +131,17 @@ public class NativeAd {
         return mBaseNativeAd;
     }
 
+    /**
+     * Renders the ad view. It is highly recommended that this context is an Activity to preserve
+     * the current activity's theme.
+     *
+     * @param context The context, preferably the Activity.
+     * @param parent  An optional parent.
+     * @return The rendered ad view.
+     */
     @NonNull
-    public View createAdView(@NonNull final Activity activity, @Nullable final ViewGroup parent) {
-        return mMoPubAdRenderer.createAdView(activity, parent);
+    public View createAdView(@NonNull final Context context, @Nullable final ViewGroup parent) {
+        return mMoPubAdRenderer.createAdView(context, parent);
     }
 
     public void renderAdView(View view) {

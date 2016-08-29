@@ -93,9 +93,9 @@ public class VisibilityTrackerTest {
         when(viewTreeObserver.isAlive()).thenReturn(true);
 
         subject = new VisibilityTracker(activity1, trackedViews, visibilityChecker, visibilityHandler);
-        assertThat(subject.mRootView.get()).isEqualTo(decorView);
         assertThat(subject.mOnPreDrawListener).isNotNull();
         verify(viewTreeObserver).addOnPreDrawListener(subject.mOnPreDrawListener);
+        assertThat(subject.mWeakViewTreeObserver.get()).isEqualTo(viewTreeObserver);
     }
 
     @Test
@@ -111,9 +111,72 @@ public class VisibilityTrackerTest {
         when(viewTreeObserver.isAlive()).thenReturn(false);
 
         subject = new VisibilityTracker(activity1, trackedViews, visibilityChecker, visibilityHandler);
-        assertThat(subject.mRootView.get()).isEqualTo(decorView);
-        assertThat(subject.mOnPreDrawListener).isNull();
         verify(viewTreeObserver, never()).addOnPreDrawListener(subject.mOnPreDrawListener);
+        assertThat(subject.mWeakViewTreeObserver.get()).isNull();
+    }
+
+    @Test
+    public void constructor_withApplicationContext_shouldNotSetOnPreDrawListener() {
+        subject = new VisibilityTracker(activity.getApplicationContext(), trackedViews,
+                visibilityChecker, visibilityHandler);
+
+        assertThat(subject.mWeakViewTreeObserver.get()).isNull();
+    }
+
+    @Test
+    public void getBestRootView_withActivity_withNullView_shouldReturnActivityDecorView() {
+        Activity activity1 = mock(Activity.class);
+        Window window = mock(Window.class);
+        View decorView = mock(View.class);
+        ViewTreeObserver viewTreeObserver = mock(ViewTreeObserver.class);
+
+        when(activity1.getWindow()).thenReturn(window);
+        when(window.getDecorView()).thenReturn(decorView);
+        when(decorView.getViewTreeObserver()).thenReturn(viewTreeObserver);
+        when(viewTreeObserver.isAlive()).thenReturn(true);
+
+        View view = VisibilityTracker.getBestRootView(activity1, null);
+
+        assertThat(view).isEqualTo(decorView);
+    }
+
+    @Test
+    public void getBestRootView_withApplicationContext_withRootView_shouldReturnRootView() {
+        View rootView = new View(activity.getApplicationContext());
+
+        View view = VisibilityTracker.getBestRootView(activity.getApplicationContext(), rootView);
+
+        assertThat(view).isEqualTo(rootView);
+    }
+
+    @Test
+    public void getBestRootView_withApplicationContext_withContentView_shouldReturnContentView() {
+        View rootView = mock(View.class);
+        View contentView = mock(View.class);
+
+        when(rootView.findViewById(android.R.id.content)).thenReturn(contentView);
+        when(rootView.getRootView()).thenReturn(rootView);
+
+        View view = VisibilityTracker.getBestRootView(activity.getApplicationContext(), rootView);
+
+        assertThat(view).isEqualTo(contentView);
+    }
+
+    @Test
+    public void getBestRootView_withApplicationContext_withNullView_shouldReturnNull() {
+        View view = VisibilityTracker.getBestRootView(activity.getApplicationContext(), null);
+
+        assertThat(view).isNull();
+    }
+
+    @Test
+    public void getBestRootView_withApplicationContext_withNullRootView_withNullParentView_shouldReturnNull() {
+        View originalView = mock(View.class);
+        when(originalView.getRootView()).thenReturn(null);
+
+        View view = VisibilityTracker.getBestRootView(activity.getApplicationContext(), originalView);
+
+        assertThat(view).isNull();
     }
 
     @Test
@@ -123,7 +186,24 @@ public class VisibilityTrackerTest {
         assertThat(trackedViews).hasSize(1);
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
+    public void addView_withViewTreeObserverNotSet_shouldSetViewTreeObserver() {
+        ViewTreeObserver viewTreeObserver = mock(ViewTreeObserver.class);
+        View rootView = mock(View.class);
+
+        when(view.getContext()).thenReturn(activity.getApplicationContext());
+        when(view.getRootView()).thenReturn(rootView);
+        when(rootView.getViewTreeObserver()).thenReturn(viewTreeObserver);
+        when(viewTreeObserver.isAlive()).thenReturn(true);
+
+        subject = new VisibilityTracker(activity.getApplicationContext(), trackedViews,
+                visibilityChecker, visibilityHandler);
+        subject.addView(view, MIN_PERCENTAGE_VIEWED);
+
+        assertThat(subject.mWeakViewTreeObserver.get()).isEqualTo(viewTreeObserver);
+    }
+
+    @Test(expected = NullPointerException.class)
     public void addView_whenViewIsNull_shouldThrowNPE() throws Exception {
         subject.addView(null, MIN_PERCENTAGE_VIEWED);
 
@@ -177,7 +257,7 @@ public class VisibilityTrackerTest {
         assertThat(trackedViews).isEmpty();
         verify(visibilityHandler).removeMessages(0);
         verify(viewTreeObserver).removeOnPreDrawListener(any(OnPreDrawListener.class));
-        assertThat(subject.mOnPreDrawListener).isNull();
+        assertThat(subject.mWeakViewTreeObserver.get()).isNull();
     }
 
     @Test

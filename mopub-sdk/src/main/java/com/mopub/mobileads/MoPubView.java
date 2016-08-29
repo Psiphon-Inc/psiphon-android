@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.Location;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.AttributeSet;
@@ -134,8 +135,11 @@ public class MoPubView extends FrameLayout {
         return (mAdViewController != null) ? mAdViewController.getAdTimeoutDelay() : null;
     }
 
-    protected void loadFailUrl(MoPubErrorCode errorCode) {
-        if (mAdViewController != null) mAdViewController.loadFailUrl(errorCode);
+    protected boolean loadFailUrl(@NonNull final MoPubErrorCode errorCode) {
+        if (mAdViewController == null) {
+            return false;
+        }
+        return mAdViewController.loadFailUrl(errorCode);
     }
 
     protected void loadCustomEvent(String customEventClassName, Map<String, String> serverExtras) {
@@ -330,7 +334,9 @@ public class MoPubView extends FrameLayout {
             mCustomEventBannerAdapter = null;
         }
 
-        if (mAdViewController != null) mAdViewController.forceRefresh();
+        if (mAdViewController != null) {
+            mAdViewController.forceRefresh();
+        }
     }
 
     AdViewController getAdViewController() {

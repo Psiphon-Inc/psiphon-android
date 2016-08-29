@@ -617,6 +617,7 @@ public class MraidController {
     private void setViewState(@NonNull ViewState viewState, @Nullable Runnable successRunnable) {
         // Make sure this is a valid transition.
         MoPubLog.d("MRAID state set to " + viewState);
+        final ViewState previousViewState = mViewState;
         mViewState = viewState;
         mMraidBridge.notifyViewState(viewState);
 
@@ -628,6 +629,8 @@ public class MraidController {
         if (mMraidListener != null) {
             if (viewState == ViewState.EXPANDED) {
                 mMraidListener.onExpand();
+            } else if (previousViewState == ViewState.EXPANDED && viewState == ViewState.DEFAULT) {
+                mMraidListener.onClose();
             } else if (viewState == ViewState.HIDDEN) {
                 mMraidListener.onClose();
             }
