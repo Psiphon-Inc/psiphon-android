@@ -501,9 +501,9 @@ public class StatusActivity
 
     static final String MOPUB_UNTUNNELED_BANNER_PROPERTY_ID = "3e7b44ad12be4c3b935abdfb7f1dbce7";
     static final String MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID = "97b7033b9dc14e9cab29605922ae9451";
-    static final String MOPUB_TUNNELED_BANNER_PROPERTY_ID = "a671197931e94a6b85f4a31a2aa3022e";
-    static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "cc43734b96384aae9538716ceadc3935";
-    static final String MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID = "8ca0fb406d2e4dbaa9c4737956acd9fa";
+    static final String MOPUB_TUNNELED_BANNER_PROPERTY_ID = "6848f6c3bce64522b771ea8ce9b5f1cd";
+    static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "0ad7bcfc9b17444aa80b1c198e5ebda5";
+    static final String MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID = "b17a746d77c9436bb805c958f7879342";
 
     @Override
     protected void updateAdsForServiceState() {
