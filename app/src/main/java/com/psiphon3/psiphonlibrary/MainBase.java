@@ -956,7 +956,11 @@ public abstract class MainBase {
                 updateSubscriptionAndAdOptions(false);
                 m_localProxySettingsHaveBeenReset = false;
             }
+
+            updateAdsForServiceState();
         }
+
+        protected abstract void updateAdsForServiceState();
 
         protected abstract void updateSubscriptionAndAdOptions(boolean show);
 

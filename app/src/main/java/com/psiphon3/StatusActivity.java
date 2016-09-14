@@ -1080,6 +1080,15 @@ public class StatusActivity
     static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "6efb5aa4e0d74a679a6219f9b3aa6221";
     static final String MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID = "1f9cb36809f04c8d9feaff5deb9f17ed";
 
+    @Override
+    protected void updateAdsForServiceState() {
+        if (isServiceRunning()) {
+            deInitUntunneledAds();
+        } else {
+            deInitTunneledAds();
+        }
+    }
+
     private void initUntunneledBanner()
     {
         if (m_moPubUntunneledBannerLargeAdView == null)
