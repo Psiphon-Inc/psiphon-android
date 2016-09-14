@@ -3,8 +3,7 @@
     package="com.psiphon3.subscription"
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
-
-    <uses-sdk tools:overrideLibrary="com.mopub.mobileads,com.millennialmedia" />
+    <uses-sdk tools:overrideLibrary="com.mopub.mobileads,com.millennialmedia,ca.psiphon" />
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"
