@@ -472,6 +472,16 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         }
     };
 
+    private Handler periodicMaintenanceHandler = new Handler();
+    private final long periodicMaintenanceIntervalMs = 12 * 60 * 60 * 1000;
+    private final Runnable periodicMaintenance = new Runnable() {
+        @Override
+        public void run() {
+            LoggingProvider.LogDatabaseHelper.truncateLogs(getContext());
+            periodicMaintenanceHandler.postDelayed(this, periodicMaintenanceIntervalMs);
+        }
+    };
+
     private void runTunnel() {
 
         Utils.initializeSecureRandom();
@@ -492,6 +502,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
         DataTransferStats.getDataTransferStatsForService().startSession();
         sendDataTransferStatsHandler.postDelayed(sendDataTransferStats, sendDataTransferStatsIntervalMs);
+        periodicMaintenanceHandler.postDelayed(periodicMaintenance, periodicMaintenanceIntervalMs);
 
         boolean runVpn =
                 m_tunnelConfig.wholeDevice &&
@@ -527,6 +538,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             m_tunnel.stop();
 
+            periodicMaintenanceHandler.removeCallbacks(periodicMaintenance);
             sendDataTransferStatsHandler.removeCallbacks(sendDataTransferStats);
             DataTransferStats.getDataTransferStatsForService().stop();
 
