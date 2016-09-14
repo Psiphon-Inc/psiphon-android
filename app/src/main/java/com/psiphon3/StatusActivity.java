@@ -1110,8 +1110,6 @@ public class StatusActivity
                 @Override
                 public void onBannerFailed(MoPubView arg0,
                                            MoPubErrorCode arg1) {
-                    LinearLayout layout = (LinearLayout)findViewById(R.id.largeAdSlot);
-                    layout.removeAllViewsInLayout();
                 }
             });
 
