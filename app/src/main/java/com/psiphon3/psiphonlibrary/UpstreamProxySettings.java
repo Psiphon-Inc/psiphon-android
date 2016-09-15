@@ -23,12 +23,15 @@ import android.content.Context;
 import android.os.Build;
 import android.text.TextUtils;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -72,6 +75,10 @@ public class UpstreamProxySettings {
 
     public static synchronized String getProxyDomain(Context context) {
         return new AppPreferences(context).getString(context.getString(R.string.useProxyDomainPreference), "");
+    }
+
+    public static boolean getAddCustomHeadersPreference(Context context) {
+        return new AppPreferences(context).getBoolean(context.getString(R.string.addCustomHeadersPreference), false);
     }
 
     public static class ProxySettings {
@@ -174,6 +181,18 @@ public class UpstreamProxySettings {
         return settings;
     }
 
+    public static ProxySettings getOriginalSystemProxySettings(Context context) {
+        ProxySettings settings;
+
+        if (m_isSystemProxySaved) {
+            settings = m_savedProxySettings;
+        } else {
+            settings = getSystemProxySettings(context);
+        }
+
+        return settings;
+    }
+
     // Returns a tunnel-core compatible proxy URL for the
     // current user configured proxy settings.
     // e.g., http://NTDOMAIN\NTUser:password@proxyhost:3375,
@@ -206,5 +225,36 @@ public class UpstreamProxySettings {
         url.append(proxySettings.proxyPort);
 
         return url.toString();
+    }
+
+    public synchronized static JSONObject getUpstreamProxyCustomHeaders(Context context) {
+        JSONObject headersJson = new JSONObject();
+
+        if(!getAddCustomHeadersPreference(context)) {
+            return headersJson;
+        }
+
+        AppPreferences ap = new AppPreferences(context);
+
+        for (int position = 1; position <= 3; position++) {
+            int nameID = context.getResources().getIdentifier("customProxyHeaderName" + position, "string", context.getPackageName());
+            int valueID = context.getResources().getIdentifier("customProxyHeaderValue" + position, "string", context.getPackageName());
+
+            String namePrefStr = context.getResources().getString(nameID);
+            String valuePrefStr = context.getResources().getString(valueID);
+
+            String name = ap.getString(namePrefStr, "");
+            String value = ap.getString(valuePrefStr, "");
+            try {
+                if (!TextUtils.isEmpty(name)) {
+                    JSONArray arr = new JSONArray();
+                    arr.put(value);
+                    headersJson.put(name, arr);
+                }
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return headersJson;
     }
 }
