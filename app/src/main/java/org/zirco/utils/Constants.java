@@ -15,7 +15,7 @@
 
 package org.zirco.utils;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 
 import android.content.Context;
 import android.os.Build;
