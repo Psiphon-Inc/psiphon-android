@@ -701,16 +701,16 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 long rateLimitBytesPerSecond = tunnelConfig.rateLimitMbps * 1024 * 1024 / 8;
 
                 JSONObject rateLimits = new JSONObject();
-                rateLimits.put("DownstreamUnlimitedBytes", 0);
-                rateLimits.put("DownstreamBytesPerSecond", rateLimitBytesPerSecond);
-                rateLimits.put("UpstreamUnlimitedBytes", 0);
-                rateLimits.put("UpstreamBytesPerSecond", rateLimitBytesPerSecond);
+                rateLimits.put("ReadUnthrottledBytes", 0);
+                rateLimits.put("ReadBytesPerSecond", rateLimitBytesPerSecond);
+                rateLimits.put("WriteUnthrottledBytes", 0);
+                rateLimits.put("WriteBytesPerSecond", rateLimitBytesPerSecond);
 
                 MyLog.g("RateLimit",
-                        "DownstreamUnlimitedBytes", 0,
-                        "DownstreamBytesPerSecond", rateLimitBytesPerSecond,
-                        "UpstreamUnlimitedBytes", 0,
-                        "UpstreamBytesPerSecond", rateLimitBytesPerSecond);
+                        "ReadUnthrottledBytes", 0,
+                        "ReadBytesPerSecond", rateLimitBytesPerSecond,
+                        "WriteUnthrottledBytes", 0,
+                        "WriteBytesPerSecond", rateLimitBytesPerSecond);
 
                 json.put("RateLimits", rateLimits);
             }
