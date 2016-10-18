@@ -491,7 +491,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     private final Runnable periodicMaintenance = new Runnable() {
         @Override
         public void run() {
-            LoggingProvider.LogDatabaseHelper.truncateLogs(getContext());
+            LoggingProvider.LogDatabaseHelper.truncateLogs(getContext(), false);
             periodicMaintenanceHandler.postDelayed(this, periodicMaintenanceIntervalMs);
         }
     };
