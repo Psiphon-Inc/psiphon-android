@@ -45,12 +45,9 @@ import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
-import com.psiphon3.psiphonlibrary.SupersonicInterstitialAdWrapper;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
-import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
-import com.supersonic.mediationsdk.logger.SupersonicError;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
@@ -64,13 +61,14 @@ public class StatusActivity
     extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
 {
     public static final String BANNER_FILE_NAME = "bannerImage";
-    private static final int UNTUNNELED_AD_COUNTDOWN_SECONDS = 10;
 
     private ImageView m_banner;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
     private MoPubView m_moPubUntunneledBannerAdView = null;
     private MoPubView m_moPubUntunneledBannerLargeAdView = null;
+    private MoPubInterstitial m_moPubUntunneledInterstitial = null;
+    private boolean m_moPubUntunneledInterstitialShowWhenLoaded = false;
     private static boolean m_startupPending = false;
     private MoPubView m_moPubTunneledBannerAdView = null;
     private MoPubView m_moPubTunneledBannerLargeAdView = null;
@@ -78,33 +76,6 @@ public class StatusActivity
     private int m_tunneledFullScreenAdCounter = 0;
     private boolean m_temporarilyDisableTunneledInterstitial = false;
     private boolean m_tunneledFullScreenAdPending = false;
-    private SupersonicInterstitialAdWrapper m_SupersonicInterstitialAdWrapper;
-    private int m_SupersonicCountdown = 0;
-
-    private final Handler delayHandler = new Handler();
-
-    private final Runnable countdownRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (m_SupersonicCountdown > 0) {
-                if (m_toggleButton != null) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            m_toggleButton.setText(String.valueOf(m_SupersonicCountdown));
-                        }
-                    });
-                }
-                m_SupersonicCountdown--;
-                delayHandler.postDelayed(this, 1000);
-            }
-            else {
-                resumeServiceStateUI();
-                doStartUp();
-            }
-        }
-    };
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -170,18 +141,12 @@ public class StatusActivity
     @Override
     public void onPause()
     {
-        if(m_SupersonicInterstitialAdWrapper != null) {
-            m_SupersonicInterstitialAdWrapper.onPause();
-        }
         super.onPause();
     }
     
     @Override
     public void onResume() {
         super.onResume();
-        if(m_SupersonicInterstitialAdWrapper != null) {
-            m_SupersonicInterstitialAdWrapper.onResume();
-        }
         if (m_startupPending) {
             m_startupPending = false;
             resumeServiceStateUI();
@@ -199,10 +164,7 @@ public class StatusActivity
     public void onDestroy()
     {
         deInitAllAds();
-        delayHandler.removeCallbacks(countdownRunnable);
-        if(m_SupersonicInterstitialAdWrapper != null) {
-            m_SupersonicInterstitialAdWrapper.onDestroy();
-        }
+        delayHandler.removeCallbacks(enableAdMode);
         super.onDestroy();
     }
     
@@ -344,9 +306,11 @@ public class StatusActivity
 
     @Override
     protected void startUp() {
-        if (shouldShowUntunneledAds() &&
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            showSuperSonicInterstitialAd();
+        if (shouldShowUntunneledAds()) {
+            pauseServiceStateUI();
+            adModeCountdown = 10;
+            delayHandler.postDelayed(enableAdMode, 1000);
+            showUntunneledFullScreenAd();
         } else {
             doStartUp();
         }
@@ -499,8 +463,30 @@ public class StatusActivity
         }
     }
 
+    private Handler delayHandler = new Handler();
+    private Runnable enableAdMode = new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            if (adModeCountdown > 0)
+            {
+                m_toggleButton.setText(String.valueOf(adModeCountdown));
+                adModeCountdown--;
+                delayHandler.postDelayed(this, 1000);
+            }
+            else
+            {
+                resumeServiceStateUI();
+                doStartUp();
+            }
+        }
+    };
+    private int adModeCountdown;
+
     static final String MOPUB_UNTUNNELED_BANNER_PROPERTY_ID = "3e7b44ad12be4c3b935abdfb7f1dbce7";
     static final String MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID = "97b7033b9dc14e9cab29605922ae9451";
+    static final String MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID = "4126820fe551437ab468a8f8186e1267";
     static final String MOPUB_TUNNELED_BANNER_PROPERTY_ID = "6848f6c3bce64522b771ea8ce9b5f1cd";
     static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "0ad7bcfc9b17444aa80b1c198e5ebda5";
     static final String MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID = "b17a746d77c9436bb805c958f7879342";
@@ -529,6 +515,11 @@ public class StatusActivity
     private void initUntunneledAds() {
         if (shouldShowUntunneledAds()) {
             initUntunneledBanners();
+
+            if (m_moPubUntunneledInterstitial == null)
+            {
+                loadUntunneledFullScreenAd();
+            }
         }
     }
 
@@ -606,6 +597,63 @@ public class StatusActivity
     }
 
     synchronized
+    private void loadUntunneledFullScreenAd()
+    {
+        if (m_moPubUntunneledInterstitial != null)
+        {
+            m_moPubUntunneledInterstitial.destroy();
+        }
+        m_moPubUntunneledInterstitial = new MoPubInterstitial(this, MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
+
+        m_moPubUntunneledInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
+
+            @Override
+            public void onInterstitialClicked(MoPubInterstitial arg0) {
+            }
+            @Override
+            public void onInterstitialDismissed(MoPubInterstitial arg0) {
+            }
+            @Override
+            public void onInterstitialFailed(MoPubInterstitial interstitial,
+                                             MoPubErrorCode errorCode) {
+            }
+            @Override
+            public void onInterstitialLoaded(MoPubInterstitial interstitial) {
+                if (interstitial != null && interstitial.isReady() &&
+                        m_moPubUntunneledInterstitialShowWhenLoaded)
+                {
+                    interstitial.show();
+                }
+            }
+            @Override
+            public void onInterstitialShown(MoPubInterstitial arg0) {
+                // Enable the free trial right away
+                m_startupPending = true;
+                delayHandler.removeCallbacks(enableAdMode);
+                resumeServiceStateUI();
+            }
+        });
+
+        m_moPubUntunneledInterstitialShowWhenLoaded = false;
+        m_moPubUntunneledInterstitial.load();
+    }
+
+    private void showUntunneledFullScreenAd()
+    {
+        if (m_moPubUntunneledInterstitial != null)
+        {
+            if (m_moPubUntunneledInterstitial.isReady())
+            {
+                m_moPubUntunneledInterstitial.show();
+            }
+            else
+            {
+                m_moPubUntunneledInterstitialShowWhenLoaded = true;
+            }
+        }
+    }
+
+    synchronized
     private void deInitUntunneledAds()
     {
         if (m_moPubUntunneledBannerAdView != null)
@@ -625,6 +673,12 @@ public class StatusActivity
             m_moPubUntunneledBannerLargeAdView.destroy();
         }
         m_moPubUntunneledBannerLargeAdView = null;
+
+        if (m_moPubUntunneledInterstitial != null)
+        {
+            m_moPubUntunneledInterstitial.destroy();
+        }
+        m_moPubUntunneledInterstitial = null;
     }
 
     private boolean shouldShowTunneledAds()
@@ -808,41 +862,5 @@ public class StatusActivity
     {
         deInitUntunneledAds();
         deInitTunneledAds();
-    }
-
-    private void showSuperSonicInterstitialAd() {
-        // TODO: split load and show, try to load untunnelled ad as early as posible
-
-        m_SupersonicCountdown = UNTUNNELED_AD_COUNTDOWN_SECONDS;
-        pauseServiceStateUI();
-        delayHandler.post(countdownRunnable);
-
-        if(m_SupersonicInterstitialAdWrapper == null) {
-            m_SupersonicInterstitialAdWrapper  = new SupersonicInterstitialAdWrapper(this);
-            m_SupersonicInterstitialAdWrapper.setAdListener(new SupersonicInterstitialAdWrapper.WrapperAdListener() {
-                @Override
-                public void onFailed(SupersonicError supersonicError) {
-                    Utils.MyLog.d("Supersonic interstitial ad failed: " + supersonicError.toString());
-                }
-
-                @Override
-                public void onShowSuccess() {
-                    m_startupPending = true;
-                    delayHandler.removeCallbacks(countdownRunnable);
-                }
-
-                @Override
-                public void onClose() {
-                }
-
-                @Override
-                public void onReady() {
-                    if (m_SupersonicCountdown > 0) {
-                        m_SupersonicInterstitialAdWrapper.showInterstitial();
-                    }
-                }
-            });
-        }
-        m_SupersonicInterstitialAdWrapper.loadInterstitial();
     }
 }

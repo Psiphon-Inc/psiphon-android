@@ -109,7 +109,9 @@ dependencies {
     compile 'com.google.android.exoplayer:exoplayer:r1.5.6'
     // anchor: additional dependencies
     compile 'com.inmobi.monetization:inmobi-ads:5.3.1'
-    compile(name: 'mm-ad-sdk-6.0.0', ext: 'aar')
+    compile(name: 'mm-ad-sdk-6.1.0', ext: 'aar')
+    compile(name: 'adcolony', ext: 'jar')
+    compile(name: 'vungle-publisher-adaptive-id-3.3.5', ext: 'jar')
 
     javadocDeps 'com.google.android.exoplayer:exoplayer:r1.5.6:sources'
     javadocDeps 'com.mopub.volley:mopub-volley:1.1.0:sources'
