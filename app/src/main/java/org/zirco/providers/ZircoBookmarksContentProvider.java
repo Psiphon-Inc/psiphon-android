@@ -29,7 +29,7 @@ import android.net.Uri;
 
 public class ZircoBookmarksContentProvider extends ContentProvider {
 	
-	public static final String AUTHORITY = "org.zirco.providers.psiphonzircobookmarkscontentprovider";
+	public static final String AUTHORITY = "org.zirco.providers.psiphonsubscriptionzircobookmarkscontentprovider";
 	
 	public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.zirco.bookmarks";
 	public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.zirco.bookmarks";
