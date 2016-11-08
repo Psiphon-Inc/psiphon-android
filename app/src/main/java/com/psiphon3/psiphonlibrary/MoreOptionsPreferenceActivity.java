@@ -39,6 +39,10 @@ import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
         OnSharedPreferenceChangeListener, OnPreferenceClickListener {
 
