@@ -80,9 +80,6 @@ android {
 
 repositories {
     jcenter()
-    flatDir {
-        dirs project(':mopub-sdk').file('libs')
-    }
 }
 
 dependencies {
@@ -92,10 +89,18 @@ dependencies {
     compile files('libs/achartengine-1.0.0.jar')
     compile files('libs/snakeyaml-1.10-android.jar')
     compile(name:'ca.psiphon', ext:'aar')
-    compile project(':tray')
-    compile project(':mopub-sdk')
-    compile project(':unity-ads-2')
-    compile 'com.google.android.gms:play-services:9.0.2'
     compile 'com.google.android.gms:play-services-safetynet:9.0.2'
+    compile project(':tray')
+    compile('com.mopub:mopub-sdk-banner:4.10.0@aar') {
+        transitive = true
+    }
+    compile('com.mopub:mopub-sdk-interstitial:4.10.0@aar') {
+        transitive = true
+    }
+    compile 'com.inmobi.monetization:inmobi-ads:5.3.1'
+    compile 'com.google.android.gms:play-services-ads:9.0.2'
+    compile(name: 'mm-ad-sdk-6.1.0', ext: 'aar')
+    compile(name: 'adcolony', ext: 'jar')
+    compile(name: 'vungle-publisher-adaptive-id-3.3.5', ext: 'jar')
     compile 'com.android.support:cardview-v7:23.4.0'
 }
