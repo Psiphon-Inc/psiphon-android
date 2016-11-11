@@ -772,12 +772,6 @@ public abstract class MainBase {
                 return;
             }
 
-            if (!Utils.getHasValidSubscription(this)) {
-                m_regionSelector.setSelection(m_regionAdapter.getPositionForRegionCode(PsiphonConstants.REGION_CODE_ANY));
-                onSubscribeButtonClick(null);
-                return;
-            }
-
             String selectedRegionCode = m_regionAdapter.getSelectedRegionCode(position);
 
             String egressRegionPreference = m_multiProcessPreferences.getString(EGRESS_REGION_PREFERENCE,

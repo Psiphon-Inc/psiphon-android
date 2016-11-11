@@ -83,10 +83,17 @@ public class PaymentChooserActivity extends Activity {
 
         float pricePerDay = skuInfo.priceMicros / 1000000.0f / lifetimeInDays;
 
-        Currency currency = Currency.getInstance(skuInfo.priceCurrency);
-        NumberFormat priceFormatter = NumberFormat.getCurrencyInstance();
-        priceFormatter.setCurrency(currency);
-        String pricePerDayText = priceFormatter.format(pricePerDay);
+        // If the formatting for pricePerDayText fails below, use this as a default.
+        String pricePerDayText = skuInfo.priceCurrency + " " + pricePerDay;
+
+        try {
+            Currency currency = Currency.getInstance(skuInfo.priceCurrency);
+            NumberFormat priceFormatter = NumberFormat.getCurrencyInstance();
+            priceFormatter.setCurrency(currency);
+            pricePerDayText = priceFormatter.format(pricePerDay);
+        } catch (IllegalArgumentException e) {
+            // do nothing
+        }
 
         String formatString = skuInfo.button.getText().toString();
         String buttonText = String.format(formatString, skuInfo.price, pricePerDayText);
