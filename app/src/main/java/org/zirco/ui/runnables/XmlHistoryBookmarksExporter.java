@@ -5,7 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URLEncoder;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 
 import org.zirco.providers.BookmarksProviderWrapper;
 import org.zirco.utils.ApplicationUtils;
