@@ -688,8 +688,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             json.put("RemoteServerListSignaturePublicKey", EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY);
 
-            if(UpstreamProxySettings.getProxySettings(context) != null) {
-                json.put("UpstreamProxyUrl", UpstreamProxySettings.getUpstreamProxyUrl(context));
+            if (UpstreamProxySettings.getUseHTTPProxy(context)) {
+                if (UpstreamProxySettings.getProxySettings(context) != null) {
+                    json.put("UpstreamProxyUrl", UpstreamProxySettings.getUpstreamProxyUrl(context));
+                }
                 json.put("UpstreamProxyCustomHeaders", UpstreamProxySettings.getUpstreamProxyCustomHeaders(context));
             }
 
