@@ -42,7 +42,6 @@ import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
-import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -820,9 +819,6 @@ public class StatusActivity
         // Tunnel throughput is limited without a valid subscription.
         setRateLimit(AD_MODE_RATE_LIMIT_MBPS);
 
-        // Region selection is only available to paid users.
-        updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
-
         if (isTunnelConnected()) {
             // If we're already connected, make sure we're using a tunnel with
             // no-valid-subscription capabilities.
@@ -966,7 +962,6 @@ public class StatusActivity
     {
         Utils.MyLog.g("StatusActivity::onSubscribeButtonClick");
 
-        // This function is also called when an unsubscribed user selects a region.
         // Do nothing in this case (instead of crashing).
         if (mInventory == null)
         {
