@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The name of the app. "Pro" is intended to indicate that this version of
+         Psiphon has additional features and is not totally free; it's supported
+         by ads or subscription. -->
+    <string name="app_name_psiphon_pro">Psiphon Pro</string>
+
+    <!-- Descriptive text telling the user how they can use Psiphon Pro: either
+         by subscribing or by having ads in the app.
+         Insert one or more newline characters as needed to keep the lines approximately as short
+         as the English. -->
+    <string name="SubscriptionPromptMessage">Melden Sie sich jetzt für eine anzeigenfreie unbeschränkte Nutzung von Psiphon Pro an.\n\nSie können auch auf \"Start\" klicken, um eine anzeigengestützte Psiphon Pro-Version 700 Minuten lang kostenlos auszuprobieren.\n\nDanke, dass Sie Psiphon unterstützen!</string>
+
+    <!-- Prompt text telling the user that can continue to use Psiphon by watching
+         a video ad. (This is an alternative to subscribing.) -->
+    <string name="RewardedVideoPrompt">NEU! Sehen Sie sich ein Video an, um 100 Minuten ununterbrochenes Psiphon Pro zu erhalten.</string>
+
+    <!-- Text indicating to the user how much time they have left in their free trial. -->
+    <string name="FreeTrialRemainingTime">Kostenlose Probeversion: %s</string>
+
+    <!-- Label for button that leads user to buy subscription or time pass to premium service.
+         When the user has a subscription or time pass, advertisements are removed from the app
+         ("ad-free"), additional features are enabled, and the app no longer periodically disconnects. -->
+    <string name="SubscribeButton">Holen Sie sich eine unbeschränkte anzeigenfreie Psiphon Pro-Version!</string>
+    
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">Benutzerdefinierte HTTP-Kopfzeilen</string>
+
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">Benutzerdefinierte HTTP-Kopfzeilen für Proxyanforderungen einrichten</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">Benutzerdefinierte HTTP-Kopfzeilen hinzufügen</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">Benutzerdefinierte HTTP-Kopfzeilen für alle ausgehenden Proxyanforderungen hinzufügen</string>
+    <string name="custom_proxy_header_group_1">Kopfzeile 1</string>
+    <string name="custom_proxy_header_group_2">Kopfzeile 2</string>
+    <string name="custom_proxy_header_group_3">Kopfzeile 3</string>
+    <string name="custom_proxy_header_name">Kopfzeilenname eingeben</string>
+    <string name="custom_proxy_header_value">Kopfzeilenwert eingeben</string>
+    <string name="custom_proxy_header_ignored_values">Warnung: Kopfzeilen mit leeren Namen werden ignoriert!</string>
+    <string name="custom_proxy_header_invalid_name">Fehler: Kopfzeilenname enthält ungültige Zeichen!</string>
+    
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass7Day">7-Tage-Pass - %1$s\n(%2$s/Tag)</string>
+
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass30Day">30-Tage-Pass - %1$s\n(%2$s/Tag)</string>
+
+    <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass90Day">90-Tage-Pass - %1$s\n(%2$s/Tag)</string>
+
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass360Day">360-Tage-Pass - %1$s\n(%2$s/Tag)</string>
+
+    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
+         exclamatory. Indicates that premium access results in all in-app advertisements being
+         removed. -->
+    <string name="PaymentChooserFragment.NoAdsExclaim">Keine Anzeigen!</string>
+
+    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
+         exclamatory. Indicates that premium access results in additional features being unlocked
+         (such as egress region selection). -->
+    <string name="PaymentChooserFragment.FeaturesExclaim">Freigeschaltete Funktionen!</string>
+
+    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
+         exclamatory. Indicates that premium access results in no interruptions due to free trial
+         time expiring (as happens with non-premium access). -->
+    <string name="PaymentChooserFragment.InterruptionsExclaim">Keine Unterbrechungen!</string>
+
+    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
+         amount of time. This string is a description specifically about buying a subscription.
+         The parenthetical remark about credit card requirements should be separated by a newline. -->
+    <string name="PaymentChooserFragment.SubscriptionDescription">Melden Sie sich für einen ununterbrochenen Dienst zum besten Preis an.\n(Gültige Kreditkarte erforderlich.)</string>
+
+    </resources>
