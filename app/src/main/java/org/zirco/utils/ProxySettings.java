@@ -8,7 +8,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.impl.client.DefaultHttpClient;
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 
 import android.content.ContentResolver;
 import android.content.Context;

@@ -30,6 +30,49 @@
             android:shouldDisableView="true"
             android:title="@string/use_proxy_settings_toggle" >
         </CheckBoxPreference>
+        <PreferenceScreen
+            android:key="@string/customProxyHeadersPreference"
+            android:title="@string/custom_proxy_headers_title"
+            android:summary="@string/custom_proxy_headers_summary">
+            <CheckBoxPreference
+                android:defaultValue="false"
+                android:enabled="true"
+                android:shouldDisableView="true"
+                android:key="@string/addCustomHeadersPreference"
+                android:selectable="true"
+                android:title="@string/custom_proxy_headers_checkbox_title"
+                android:summary="@string/custom_proxy_headers_checkbox_description"/>
+            <PreferenceCategory
+                android:title="@string/custom_proxy_header_group_1" >
+                <EditTextPreference
+                    android:key="@string/customProxyHeaderName1"
+                    android:singleLine="true"
+                    android:summary="@string/custom_proxy_header_name" />
+                <EditTextPreference
+                    android:key="@string/customProxyHeaderValue1"
+                    android:summary="@string/custom_proxy_header_value" />
+            </PreferenceCategory>
+            <PreferenceCategory
+                android:title="@string/custom_proxy_header_group_2" >
+                <EditTextPreference
+                    android:key="@string/customProxyHeaderName2"
+                    android:singleLine="true"
+                    android:summary="@string/custom_proxy_header_name" />
+                <EditTextPreference
+                    android:key="@string/customProxyHeaderValue2"
+                    android:summary="@string/custom_proxy_header_value" />
+            </PreferenceCategory>
+            <PreferenceCategory
+                android:title="@string/custom_proxy_header_group_3" >
+                <EditTextPreference
+                    android:key="@string/customProxyHeaderName3"
+                    android:singleLine="true"
+                    android:summary="@string/custom_proxy_header_name" />
+                <EditTextPreference
+                    android:key="@string/customProxyHeaderValue3"
+                    android:summary="@string/custom_proxy_header_value" />
+            </PreferenceCategory>
+        </PreferenceScreen>
         <com.psiphon3.psiphonlibrary.RadioButtonPreference
             android:defaultValue="true"
             android:enabled="true"
