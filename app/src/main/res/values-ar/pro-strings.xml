@@ -75,7 +75,7 @@
     <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
          exclamatory. Indicates that premium access results in all in-app advertisements being
          removed. -->
-    <string name="PaymentChooserFragment.NoAdsExclaim">خالي من إعلانات!</string>
+    <string name="PaymentChooserFragment.NoAdsExclaim">خالٍ من الاعلانات!</string>
 
     <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
          exclamatory. Indicates that premium access results in additional features being unlocked
@@ -90,7 +90,7 @@
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string is a description specifically about buying a subscription.
          The parenthetical remark about credit card requirements should be separated by a newline. -->
-    <string name="PaymentChooserFragment.SubscriptionDescription">إختر بين خدماتنا الشهرية السريعة بأسعارممتازة.\n(التجديد أوتوماتيكي عبر بطاقة إئتمان)</string>
+    <string name="PaymentChooserFragment.SubscriptionDescription">إختر بين خدماتنا الشهرية السريعة بأسعار ممتازة.\n(التجديد أوتوماتيكي عبر بطاقة إئتمان)</string>
 
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string announces that subscriptions include a free trial. -->
