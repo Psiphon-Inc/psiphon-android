@@ -1,2 +1,0 @@
-configurations.maybeCreate("default")
-artifacts.add("default", file('unity-ads-2.aar'))
