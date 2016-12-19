@@ -38,12 +38,6 @@
 -dontwarn android.webkit.WebSettings
 -dontwarn com.google.android.exoplayer.**
 
--keepclassmembers class com.supersonicads.sdk.controller.SupersonicWebView$JSInterface {
-    public *;
-}
--keepclassmembers class * implements android.os.Parcelable {
-    public static final android.os.Parcelable$Creator *;
-}
--keep public class com.google.android.gms.ads.** {
-   public *;
-}
+-dontwarn com.vungle.**
+-keep class com.vungle.** { *; }
+-keep class javax.inject.*
