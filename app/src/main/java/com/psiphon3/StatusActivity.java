@@ -616,6 +616,7 @@ public class StatusActivity
             @Override
             public void onInterstitialFailed(MoPubInterstitial interstitial,
                                              MoPubErrorCode errorCode) {
+                m_moPubUntunneledInterstitial.load();
             }
             @Override
             public void onInterstitialLoaded(MoPubInterstitial interstitial) {
