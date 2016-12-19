@@ -93,6 +93,11 @@ public class StatusActivity
         
         super.onCreate(savedInstanceState);
 
+        if (shouldShowUntunneledAds()) {
+            // Start at the Home tab if the service isn't running and we want to show ads
+            m_tabHost.setCurrentTabByTag("home");
+        }
+
         // EmbeddedValues.initialize(this); is called in MainBase.OnCreate
 
         // Play Store Build instances should use existing banner from previously installed APK
