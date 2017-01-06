@@ -41,8 +41,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
@@ -81,6 +85,14 @@ dependencies {
     compile files('libs/achartengine-1.0.0.jar')
     compile files('libs/snakeyaml-1.10-android.jar')
     compile(name:'ca.psiphon', ext:'aar')
-    compile 'com.google.android.gms:play-services-safetynet:9.0.2'
+    compile 'com.google.android.gms:play-services-safetynet:9.4.0'
     compile project(':tray')
+    compile('com.mopub:mopub-sdk-banner:4.11.0@aar') {
+        transitive = true
+    }
+    compile('com.mopub:mopub-sdk-interstitial:4.11.0@aar') {
+        transitive = true
+    }
+    compile 'com.inmobi.monetization:inmobi-ads:5.3.1'
+    compile(name: 'mm-ad-sdk-6.3.1', ext: 'aar')
 }
