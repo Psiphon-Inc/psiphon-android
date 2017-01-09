@@ -44,6 +44,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
+import android.text.TextUtils;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.KeyEvent;
@@ -75,9 +76,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
-import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.SharedPreferencesImport;
@@ -88,6 +89,9 @@ import org.achartengine.model.XYMultipleSeriesDataset;
 import org.achartengine.model.XYSeries;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -601,7 +605,7 @@ public abstract class MainBase {
         @Override
         protected void onResume() {
             super.onResume();
-
+            
             m_localProxySettingsHaveBeenReset = false;
 
             // Load new logs from the logging provider now
@@ -701,6 +705,8 @@ public abstract class MainBase {
                 });
             }
         }
+
+        public abstract void onSubscribeButtonClick(View v);
 
         protected abstract void startUp();
 
@@ -920,7 +926,8 @@ public abstract class MainBase {
                 if (!isServiceRunning()) {
                     m_toggleButton.setText(getText(R.string.start));
                     enableToggleServiceUI();
-
+                    updateSubscriptionAndAdOptions(true);
+                
                     if (!m_localProxySettingsHaveBeenReset) {
                         WebViewProxySettings.resetLocalProxy(this);
                         m_localProxySettingsHaveBeenReset = true;
@@ -928,7 +935,8 @@ public abstract class MainBase {
                 } else {
                     m_toggleButton.setText(getText(R.string.waiting));
                     disableToggleServiceUI();
-
+                    updateSubscriptionAndAdOptions(false);
+                
                     if (!m_localProxySettingsHaveBeenReset) {
                         WebViewProxySettings.resetLocalProxy(this);
                         m_localProxySettingsHaveBeenReset = true;
@@ -942,6 +950,7 @@ public abstract class MainBase {
                 }
                 m_toggleButton.setText(getText(R.string.stop));
                 enableToggleServiceUI();
+                updateSubscriptionAndAdOptions(false);
                 m_localProxySettingsHaveBeenReset = false;
             }
 
@@ -949,7 +958,9 @@ public abstract class MainBase {
         }
 
         protected abstract void updateAdsForServiceState();
-        
+
+        protected abstract void updateSubscriptionAndAdOptions(boolean show);
+
         protected void enableToggleServiceUI() {
             m_toggleButton.setEnabled(true);
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
@@ -965,7 +976,7 @@ public abstract class MainBase {
             m_regionSelector.setEnabled(false);
             m_moreOptionsButton.setEnabled(false);
         }
-
+        
         protected void pauseServiceStateUI() {
             m_serviceStateUIPaused = true;
             disableToggleServiceUI();
@@ -985,7 +996,7 @@ public abstract class MainBase {
             }
         }
 
-        private void scheduleRunningTunnelServiceRestart() {
+        protected void scheduleRunningTunnelServiceRestart() {
             if (isServiceRunning()) {
                 m_restartTunnel = true;
                 stopTunnelService();
@@ -1091,6 +1102,45 @@ public abstract class MainBase {
                 return false;
             }
 
+            //check if "add custom headers" checkbox changed
+            boolean addCustomHeadersPreference = prefs.getBoolean(
+                    getString(R.string.addCustomHeadersPreference), false);
+            if (addCustomHeadersPreference != UpstreamProxySettings.getAddCustomHeadersPreference(this)) {
+                return true;
+            }
+
+            // "add custom headers" is selected, check if
+            // upstream headers string has changed
+            if (addCustomHeadersPreference) {
+                JSONObject newHeaders = new JSONObject();
+
+                for (int position = 1; position <= 3; position++) {
+                    int nameID = getResources().getIdentifier("customProxyHeaderName" + position, "string", getPackageName());
+                    int valueID = getResources().getIdentifier("customProxyHeaderValue" + position, "string", getPackageName());
+
+                    String namePrefStr = getResources().getString(nameID);
+                    String valuePrefStr = getResources().getString(valueID);
+
+                    String name = prefs.getString(namePrefStr, "");
+                    String value = prefs.getString(valuePrefStr, "");
+                    try {
+                        if (!TextUtils.isEmpty(name)) {
+                            JSONArray arr = new JSONArray();
+                            arr.put(value);
+                            newHeaders.put(name, arr);
+                        }
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                JSONObject oldHeaders = UpstreamProxySettings.getUpstreamProxyCustomHeaders(this);
+
+                if (0 != oldHeaders.toString().compareTo(newHeaders.toString())) {
+                    return true;
+                }
+            }
+
             // check if "use custom proxy settings"
             // radio has changed
             boolean useCustomProxySettingsPreference = prefs.getBoolean(
@@ -1162,7 +1212,14 @@ public abstract class MainBase {
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyAuthenticationPreference), getString(R.string.useProxyAuthenticationPreference)),
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyUsernamePreference), getString(R.string.useProxyUsernamePreference)),
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyPasswordPreference), getString(R.string.useProxyPasswordPreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference))
+                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.addCustomHeadersPreference), getString(R.string.addCustomHeadersPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName1), getString(R.string.customProxyHeaderName1)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue1), getString(R.string.customProxyHeaderValue1)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName2), getString(R.string.customProxyHeaderName2)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue2), getString(R.string.customProxyHeaderValue2)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName3), getString(R.string.customProxyHeaderName3)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue3), getString(R.string.customProxyHeaderValue3))
                 );
 
                 if (bRestartRequired) {
@@ -1201,6 +1258,14 @@ public abstract class MainBase {
             return m_tunnelConfig.disableTimeouts;
         }
 
+        protected void setTunnelConfigRateLimit(int rateLimitMbps) {
+            m_tunnelConfig.rateLimitMbps = rateLimitMbps;
+        }
+
+        protected int getTunnelConfigRateLimitMbps() {
+            return m_tunnelConfig.rateLimitMbps;
+        }
+
         protected PendingIntent getHandshakePendingIntent() {
             return null;
         }
@@ -1224,6 +1289,9 @@ public abstract class MainBase {
 
             intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS,
                     getTunnelConfigDisableTimeouts());
+
+            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_RATE_LIMIT_MBPS,
+                    getTunnelConfigRateLimitMbps());
         }
 
         protected void startAndBindTunnelService() {
@@ -1275,6 +1343,15 @@ public abstract class MainBase {
             return m_tunnelState.clientRegion;
         }
 
+        /**
+         * Indicates the currently connected tunnel's rate-limit.
+         * Invalid if there is no currently connected tunnel.
+         * @return The rate limit if currently connected tunnel is rate-limited. 0 otherwise.
+         */
+        protected int getRateLimitMbps() {
+            return m_tunnelState.rateLimitMbps;
+        }
+
         protected void getTunnelStateFromHandshakeIntent(Intent intent) {
             if (!intent.getAction().equals(TunnelManager.INTENT_ACTION_HANDSHAKE)) {
                 return;
@@ -1305,6 +1382,7 @@ public abstract class MainBase {
             if (homePages != null) {
                 m_tunnelState.homePages = homePages;
             }
+            m_tunnelState.rateLimitMbps = data.getInt(TunnelManager.DATA_TUNNEL_STATE_RATE_LIMIT_MBPS);
 
             onTunnelStateReceived();
         }

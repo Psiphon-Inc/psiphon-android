@@ -41,3 +41,7 @@
 -dontwarn com.vungle.**
 -keep class com.vungle.** { *; }
 -keep class javax.inject.*
+
+-keep public class com.google.android.gms.ads.** {
+   public *;
+}

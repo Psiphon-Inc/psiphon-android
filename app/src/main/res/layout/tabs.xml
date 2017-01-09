@@ -53,6 +53,17 @@
                     android:padding="10dp"
                     android:orientation="vertical" >
 
+                    <Button
+                        android:id="@+id/subscribeButton"
+                        android:onClick="onSubscribeButtonClick"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_margin="10dp"
+                        android:padding="10dp"
+                        android:text="@string/SubscribeButton"
+                        android:textAppearance="?android:attr/textAppearanceSmall" />
+
                     <LinearLayout
                         android:id="@+id/largeAdSlot"
                         android:orientation="vertical"
@@ -212,6 +223,7 @@
                         android:text="@string/about"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
                 </LinearLayout>
+
             </LinearLayout>
         </ScrollView>
 
