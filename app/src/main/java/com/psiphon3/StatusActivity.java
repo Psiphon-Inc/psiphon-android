@@ -106,7 +106,6 @@ public class StatusActivity
         
         super.onCreate(savedInstanceState);
 
-        !!!! TODO: implement this function
         if (shouldShowUntunneledAds()) {
             // Start at the Home tab if the service isn't running and we want to show ads
             m_tabHost.setCurrentTabByTag("home");
@@ -1090,6 +1089,16 @@ public class StatusActivity
         }
     }
 
+    private boolean getShowAds() {
+        return !Utils.getHasValidSubscription(this) &&
+                Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO;
+    }
+
+    private boolean shouldShowUntunneledAds()
+    {
+        return getShowAds() && !isServiceRunning();
+    }
+
     private void initUntunneledBanner()
     {
         if (m_moPubUntunneledBannerLargeAdView == null)
@@ -1205,9 +1214,7 @@ public class StatusActivity
 
     private boolean shouldShowTunneledAds()
     {
-        return !Utils.getHasValidSubscription(this) &&
-                isTunnelConnected() &&
-                Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO;
+        return getShowAds() && isTunnelConnected();
     }
 
     private void initTunneledAds()
