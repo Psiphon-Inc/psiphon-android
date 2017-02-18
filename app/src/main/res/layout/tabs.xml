@@ -11,10 +11,18 @@
     android:layout_weight="1.0"
     android:orientation="vertical" >
 
+    <LinearLayout
+        android:id="@+id/largeAdSlot"
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center" />
+
     <RelativeLayout
         android:id="@+id/tablayout"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/largeAdSlot" >
 
         <HorizontalScrollView
             android:layout_width="fill_parent"
@@ -63,13 +71,6 @@
                         android:padding="10dp"
                         android:text="@string/SubscribeButton"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
-
-                    <LinearLayout
-                        android:id="@+id/largeAdSlot"
-                        android:orientation="vertical"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center" />
 
                     <ImageButton
                         android:id="@+id/statusViewImage"
