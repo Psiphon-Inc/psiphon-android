@@ -149,7 +149,9 @@ public class StatusActivity
     @Override
     protected void onTunnelStateReceived() {
         m_temporarilyDisableTunneledInterstitial = false;
-        initTunneledAds();
+        if (m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
+            initTunneledAds();
+        }
     }
     
     @Override
