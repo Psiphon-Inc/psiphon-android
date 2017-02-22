@@ -25,6 +25,7 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -66,12 +67,10 @@ public class StatusActivity
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
     private MoPubView m_moPubUntunneledBannerAdView = null;
-    private MoPubView m_moPubUntunneledBannerLargeAdView = null;
     private MoPubInterstitial m_moPubUntunneledInterstitial = null;
     private boolean m_moPubUntunneledInterstitialShowWhenLoaded = false;
     private static boolean m_startupPending = false;
     private MoPubView m_moPubTunneledBannerAdView = null;
-    private MoPubView m_moPubTunneledBannerLargeAdView = null;
     private MoPubInterstitial m_moPubTunneledInterstitial = null;
     private int m_tunneledFullScreenAdCounter = 0;
     private boolean m_temporarilyDisableTunneledInterstitial = false;
@@ -533,7 +532,10 @@ public class StatusActivity
         if (m_moPubUntunneledBannerAdView == null)
         {
             m_moPubUntunneledBannerAdView = new MoPubView(this);
-            m_moPubUntunneledBannerAdView.setAdUnitId(MOPUB_UNTUNNELED_BANNER_PROPERTY_ID);
+            m_moPubUntunneledBannerAdView.setAdUnitId(
+                    getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ?
+                    MOPUB_UNTUNNELED_BANNER_PROPERTY_ID :
+                    MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
 
             m_moPubUntunneledBannerAdView.setBannerAdListener(new MoPubView.BannerAdListener() {
                 @Override
@@ -563,41 +565,6 @@ public class StatusActivity
 
             m_moPubUntunneledBannerAdView.loadAd();
             m_moPubUntunneledBannerAdView.setAutorefreshEnabled(true);
-        }
-
-        if (m_moPubUntunneledBannerLargeAdView == null)
-        {
-            m_moPubUntunneledBannerLargeAdView = new MoPubView(this);
-            m_moPubUntunneledBannerLargeAdView.setAdUnitId(MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
-
-            m_moPubUntunneledBannerLargeAdView.setBannerAdListener(new MoPubView.BannerAdListener() {
-                @Override
-                public void onBannerLoaded(MoPubView banner)
-                {
-                    if (m_moPubUntunneledBannerLargeAdView.getParent() == null)
-                    {
-                        LinearLayout layout = (LinearLayout)findViewById(R.id.largeAdSlot);
-                        layout.removeAllViewsInLayout();
-                        layout.addView(m_moPubUntunneledBannerLargeAdView);
-                    }
-                }
-                @Override
-                public void onBannerClicked(MoPubView arg0) {
-                }
-                @Override
-                public void onBannerCollapsed(MoPubView arg0) {
-                }
-                @Override
-                public void onBannerExpanded(MoPubView arg0) {
-                }
-                @Override
-                public void onBannerFailed(MoPubView arg0,
-                                           MoPubErrorCode arg1) {
-                }
-            });
-
-            m_moPubUntunneledBannerLargeAdView.loadAd();
-            m_moPubUntunneledBannerLargeAdView.setAutorefreshEnabled(true);
         }
     }
 
@@ -674,12 +641,6 @@ public class StatusActivity
         }
         m_moPubUntunneledBannerAdView = null;
 
-        if (m_moPubUntunneledBannerLargeAdView != null)
-        {
-            m_moPubUntunneledBannerLargeAdView.destroy();
-        }
-        m_moPubUntunneledBannerLargeAdView = null;
-
         if (m_moPubUntunneledInterstitial != null)
         {
             m_moPubUntunneledInterstitial.destroy();
@@ -716,7 +677,10 @@ public class StatusActivity
             if (m_moPubTunneledBannerAdView == null)
             {
                 m_moPubTunneledBannerAdView = new MoPubView(this);
-                m_moPubTunneledBannerAdView.setAdUnitId(MOPUB_TUNNELED_BANNER_PROPERTY_ID);
+                m_moPubTunneledBannerAdView.setAdUnitId(
+                        getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ?
+                                MOPUB_TUNNELED_BANNER_PROPERTY_ID :
+                                MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
                 if (isTunnelConnected()) {
                     m_moPubTunneledBannerAdView.setKeywords("client_region:" + getClientRegion());
                 }
@@ -749,44 +713,6 @@ public class StatusActivity
 
                 m_moPubTunneledBannerAdView.loadAd();
                 m_moPubTunneledBannerAdView.setAutorefreshEnabled(true);
-            }
-
-            if (!showFirstHomePageInApp() && m_moPubTunneledBannerLargeAdView == null)
-            {
-                m_moPubTunneledBannerLargeAdView = new MoPubView(this);
-                m_moPubTunneledBannerLargeAdView.setAdUnitId(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
-                if (isTunnelConnected()) {
-                    m_moPubTunneledBannerLargeAdView.setKeywords("client_region:" + getClientRegion());
-                }
-
-                m_moPubTunneledBannerLargeAdView.setBannerAdListener(new BannerAdListener() {
-                    @Override
-                    public void onBannerLoaded(MoPubView banner)
-                    {
-                        if (m_moPubTunneledBannerLargeAdView.getParent() == null)
-                        {
-                            LinearLayout layout = (LinearLayout)findViewById(R.id.largeAdSlot);
-                            layout.removeAllViewsInLayout();
-                            layout.addView(m_moPubTunneledBannerLargeAdView);
-                        }
-                    }
-                    @Override
-                    public void onBannerClicked(MoPubView arg0) {
-                    }
-                    @Override
-                    public void onBannerCollapsed(MoPubView arg0) {
-                    }
-                    @Override
-                    public void onBannerExpanded(MoPubView arg0) {
-                    }
-                    @Override
-                    public void onBannerFailed(MoPubView arg0,
-                                               MoPubErrorCode arg1) {
-                    }
-                });
-
-                m_moPubTunneledBannerLargeAdView.loadAd();
-                m_moPubTunneledBannerLargeAdView.setAutorefreshEnabled(true);
             }
         }
     }
@@ -849,12 +775,6 @@ public class StatusActivity
             m_moPubTunneledBannerAdView.destroy();
         }
         m_moPubTunneledBannerAdView = null;
-
-        if (m_moPubTunneledBannerLargeAdView != null)
-        {
-            m_moPubTunneledBannerLargeAdView.destroy();
-        }
-        m_moPubTunneledBannerLargeAdView = null;
 
         if (m_moPubTunneledInterstitial != null)
         {

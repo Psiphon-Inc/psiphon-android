@@ -32,7 +32,7 @@
         <LinearLayout
             android:id="@+id/bannerLayout"
             android:layout_width="fill_parent"
-            android:layout_height="50dp"
+            android:layout_height="wrap_content"
             android:gravity="center_horizontal"
             android:background="#FFFFFFFF" >
             
