@@ -1159,7 +1159,12 @@ public class StatusActivity
             @Override
             public void onInterstitialFailed(MoPubInterstitial interstitial,
                     MoPubErrorCode errorCode) {
-                m_moPubUntunneledInterstitial.load();
+                if (m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
+                    m_moPubUntunneledInterstitial.load();
+                } else {
+                    m_moPubUntunneledInterstitial.destroy();
+                    m_moPubUntunneledInterstitial = null;
+                }
             }
             @Override
             public void onInterstitialLoaded(MoPubInterstitial interstitial) {
@@ -1296,7 +1301,12 @@ public class StatusActivity
                 @Override
                 public void onInterstitialFailed(MoPubInterstitial arg0,
                                                  MoPubErrorCode arg1) {
-                    m_moPubTunneledInterstitial.load();
+                    if (m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
+                        m_moPubTunneledInterstitial.load();
+                    } else {
+                        m_moPubTunneledInterstitial.destroy();
+                        m_moPubTunneledInterstitial = null;
+                    }
                 }
                 @Override
                 public void onInterstitialLoaded(MoPubInterstitial interstitial) {
