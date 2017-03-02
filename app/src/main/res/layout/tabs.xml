@@ -53,13 +53,6 @@
                     android:padding="10dp"
                     android:orientation="vertical" >
 
-                    <LinearLayout
-                        android:id="@+id/largeAdSlot"
-                        android:orientation="vertical"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center" />
-
                     <ImageButton
                         android:id="@+id/statusViewImage"
                         android:layout_width="wrap_content"
