@@ -41,3 +41,9 @@
 -dontwarn com.vungle.**
 -keep class com.vungle.** { *; }
 -keep class javax.inject.*
+
+-keep class com.aerserv.** { *; }
+-keepclassmembers class com.aerserv.** { *; }
+-dontwarn com.aerserv.**
+-dontwarn com.moat.**
+
