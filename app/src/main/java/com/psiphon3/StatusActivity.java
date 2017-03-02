@@ -74,7 +74,6 @@ public class StatusActivity
     private MoPubInterstitial m_moPubTunneledInterstitial = null;
     private int m_tunneledFullScreenAdCounter = 0;
     private boolean m_temporarilyDisableTunneledInterstitial = false;
-    private boolean m_tunneledFullScreenAdPending = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -161,7 +160,9 @@ public class StatusActivity
     @Override
     protected void onTunnelStateReceived() {
         m_temporarilyDisableTunneledInterstitial = false;
-        initTunneledAds();
+        if (m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
+            initTunneledAds();
+        }
     }
     
     @Override
@@ -273,9 +274,6 @@ public class StatusActivity
                 m_temporarilyDisableTunneledInterstitial = true;
                 m_tunneledFullScreenAdCounter = 0;
 
-                // Show the full screen ad after OnResume() has initialized ads
-                m_tunneledFullScreenAdPending = true;
-                
                 m_tabHost.setCurrentTabByTag("home");
                 loadSponsorTab(true);
                 m_loadedSponsorTab = true;
@@ -588,7 +586,12 @@ public class StatusActivity
             @Override
             public void onInterstitialFailed(MoPubInterstitial interstitial,
                                              MoPubErrorCode errorCode) {
-                m_moPubUntunneledInterstitial.load();
+                if (m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
+                    m_moPubUntunneledInterstitial.load();
+                } else {
+                    m_moPubUntunneledInterstitial.destroy();
+                    m_moPubUntunneledInterstitial = null;
+                }
             }
             @Override
             public void onInterstitialLoaded(MoPubInterstitial interstitial) {
@@ -661,12 +664,7 @@ public class StatusActivity
             WebViewProxySettings.setLocalProxy(this, getListeningLocalHttpProxyPort());
 
             initTunneledBanners();
-
-            if (m_tunneledFullScreenAdPending)
-            {
-                showTunneledFullScreenAd();
-                m_tunneledFullScreenAdPending = false;
-            }
+            loadTunneledFullScreenAd();
         }
     }
 
@@ -717,47 +715,60 @@ public class StatusActivity
         }
     }
 
+    synchronized
+    private void loadTunneledFullScreenAd()
+    {
+        if (shouldShowTunneledAds() && m_moPubTunneledInterstitial == null)
+        {
+            m_moPubTunneledInterstitial = new MoPubInterstitial(this, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
+            if (isTunnelConnected()) {
+                m_moPubTunneledInterstitial.setKeywords("client_region:" + getClientRegion());
+            }
+
+            m_moPubTunneledInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
+                @Override
+                public void onInterstitialClicked(MoPubInterstitial arg0) {
+                }
+                @Override
+                public void onInterstitialDismissed(MoPubInterstitial arg0) {
+                    m_moPubTunneledInterstitial.load();
+                }
+                @Override
+                public void onInterstitialFailed(MoPubInterstitial arg0,
+                                                 MoPubErrorCode arg1) {
+                    if (m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
+                        m_moPubTunneledInterstitial.load();
+                    } else {
+                        m_moPubTunneledInterstitial.destroy();
+                        m_moPubTunneledInterstitial = null;
+                    }
+                }
+                @Override
+                public void onInterstitialLoaded(MoPubInterstitial interstitial) {
+                }
+                @Override
+                public void onInterstitialShown(MoPubInterstitial arg0) {
+                }
+            });
+            m_moPubTunneledInterstitial.load();
+        }
+    }
+
     private void showTunneledFullScreenAd()
     {
         if (shouldShowTunneledAds() && !m_temporarilyDisableTunneledInterstitial)
         {
-            m_tunneledFullScreenAdCounter++;
-
-            if (m_tunneledFullScreenAdCounter % 3 == 1)
+            if (m_tunneledFullScreenAdCounter % 3 == 0)
             {
-                if (m_moPubTunneledInterstitial != null)
+                if (m_moPubTunneledInterstitial != null && m_moPubTunneledInterstitial.isReady())
                 {
-                    m_moPubTunneledInterstitial.destroy();
+                    m_tunneledFullScreenAdCounter++;
+                    m_moPubTunneledInterstitial.show();
                 }
-                m_moPubTunneledInterstitial = new MoPubInterstitial(this, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
-                if (isTunnelConnected()) {
-                    m_moPubTunneledInterstitial.setKeywords("client_region:" + getClientRegion());
-                }
-
-                m_moPubTunneledInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
-                    @Override
-                    public void onInterstitialClicked(MoPubInterstitial arg0) {
-                    }
-                    @Override
-                    public void onInterstitialDismissed(MoPubInterstitial arg0) {
-                    }
-                    @Override
-                    public void onInterstitialFailed(MoPubInterstitial arg0,
-                                                     MoPubErrorCode arg1) {
-                    }
-                    @Override
-                    public void onInterstitialLoaded(MoPubInterstitial interstitial) {
-                        if (interstitial != null && interstitial.isReady())
-                        {
-                            interstitial.show();
-                        }
-                    }
-                    @Override
-                    public void onInterstitialShown(MoPubInterstitial arg0) {
-                    }
-                });
-
-                m_moPubTunneledInterstitial.load();
+            }
+            else
+            {
+                m_tunneledFullScreenAdCounter++;
             }
         }
     }
