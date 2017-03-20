@@ -76,6 +76,7 @@ public class StatusActivity
     private boolean m_loadedSponsorTab = false;
     private MoPubView m_moPubUntunneledBannerLargeAdView = null;
     private MoPubInterstitial m_moPubUntunneledInterstitial = null;
+    private boolean m_moPubUntunneledInterstitialFailed = false;
     private boolean m_moPubUntunneledInterstitialShowWhenLoaded = false;
     private static boolean m_startupPending = false;
     private MoPubView m_moPubTunneledBannerLargeAdView = null;
@@ -149,9 +150,7 @@ public class StatusActivity
     @Override
     protected void onTunnelStateReceived() {
         m_temporarilyDisableTunneledInterstitial = false;
-        if (m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
-            initTunneledAds();
-        }
+        initTunneledAds();
     }
     
     @Override
@@ -1159,12 +1158,7 @@ public class StatusActivity
             @Override
             public void onInterstitialFailed(MoPubInterstitial interstitial,
                     MoPubErrorCode errorCode) {
-                if (m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
-                    m_moPubUntunneledInterstitial.load();
-                } else {
-                    m_moPubUntunneledInterstitial.destroy();
-                    m_moPubUntunneledInterstitial = null;
-                }
+                m_moPubUntunneledInterstitialFailed = true;
             }
             @Override
             public void onInterstitialLoaded(MoPubInterstitial interstitial) {
@@ -1182,7 +1176,7 @@ public class StatusActivity
                 resumeServiceStateUI();
             }
         });
-
+        m_moPubUntunneledInterstitialFailed = false;
         m_moPubUntunneledInterstitialShowWhenLoaded = false;
         m_moPubUntunneledInterstitial.load();
     }
@@ -1197,6 +1191,10 @@ public class StatusActivity
             }
             else
             {
+                if (m_moPubUntunneledInterstitialFailed)
+                {
+                    loadUntunneledFullScreenAd();
+                }
                 m_moPubUntunneledInterstitialShowWhenLoaded = true;
             }
         }
@@ -1226,7 +1224,7 @@ public class StatusActivity
 
     private void initTunneledAds()
     {
-        if (shouldShowTunneledAds())
+        if (shouldShowTunneledAds() && m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false))
         {
             // make sure WebView proxy settings are up to date
             WebViewProxySettings.setLocalProxy(this, getListeningLocalHttpProxyPort());
@@ -1301,12 +1299,8 @@ public class StatusActivity
                 @Override
                 public void onInterstitialFailed(MoPubInterstitial arg0,
                                                  MoPubErrorCode arg1) {
-                    if (m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
-                        m_moPubTunneledInterstitial.load();
-                    } else {
-                        m_moPubTunneledInterstitial.destroy();
-                        m_moPubTunneledInterstitial = null;
-                    }
+                    m_moPubTunneledInterstitial.destroy();
+                    m_moPubTunneledInterstitial = null;
                 }
                 @Override
                 public void onInterstitialLoaded(MoPubInterstitial interstitial) {
@@ -1321,6 +1315,8 @@ public class StatusActivity
 
     private void showTunneledFullScreenAd()
     {
+        initTunneledAds();
+
         if (shouldShowTunneledAds() && !m_temporarilyDisableTunneledInterstitial)
         {
             if (m_tunneledFullScreenAdCounter % 3 == 0)
