@@ -1312,6 +1312,7 @@ public class StatusActivity
                             m_moPubTunneledInterstitialShowWhenLoaded &&
                             m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false))
                     {
+                        m_tunneledFullScreenAdCounter++;
                         interstitial.show();
                     }
                 }
@@ -1334,9 +1335,9 @@ public class StatusActivity
             {
                 if (m_moPubTunneledInterstitial != null)
                 {
-                    m_tunneledFullScreenAdCounter++;
                     if (m_moPubTunneledInterstitial.isReady())
                     {
+                        m_tunneledFullScreenAdCounter++;
                         m_moPubTunneledInterstitial.show();
                     }
                     else
