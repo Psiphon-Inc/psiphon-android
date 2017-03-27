@@ -884,7 +884,7 @@ public class StatusActivity
         @Override
         public void run()
         {
-            if (adModeCountdown > 0)
+            if (adModeCountdown > 0 && !m_moPubUntunneledInterstitialFailed)
             {
                 m_toggleButton.setText(String.valueOf(adModeCountdown));
                 adModeCountdown--;
