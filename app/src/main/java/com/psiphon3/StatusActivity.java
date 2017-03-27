@@ -1297,6 +1297,7 @@ public class StatusActivity
                 }
                 @Override
                 public void onInterstitialDismissed(MoPubInterstitial arg0) {
+                    m_moPubTunneledInterstitialShowWhenLoaded = false;
                     m_moPubTunneledInterstitial.load();
                 }
                 @Override
