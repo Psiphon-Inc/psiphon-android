@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The name of the app. "Pro" is intended to indicate that this version of
+         Psiphon has additional features and is not totally free; it's supported
+         by ads or subscription. -->
+    <string name="app_name_psiphon_pro">Psiphon Pro</string>
+
+    <!-- Descriptive text telling the user how they can use Psiphon Pro: either
+         by subscribing or by having ads in the app.
+         Insert one or more newline characters as needed to keep the lines approximately as short
+         as the English. -->
+    <string name="SubscriptionPromptMessage">Subscribe now for unlimited ad-free use of Psiphon Pro.\n\nOr press Start to try ad-supported Psiphon Pro for free for 700 minutes.\n\nThank you for supporting Psiphon!</string>
+
+    <!-- Prompt text telling the user that can continue to use Psiphon by watching
+         a video ad. (This is an alternative to subscribing.) -->
+    <string name="RewardedVideoPrompt">NEW! Watch a video to earn 100 minutes of uninterrupted Psiphon Pro.</string>
+
+    <!-- Text indicating to the user how much time they have left in their free trial. -->
+    <string name="FreeTrialRemainingTime">Free trial: %s</string>
+
+    <!-- Label for button that leads user to buy subscription or time pass to premium service.
+         When the user has a subscription or time pass, advertisements are removed from the app
+         ("ad-free"), additional features are enabled, and the app no longer periodically disconnects. -->
+    <string name="SubscribeButton">Get unlimited ad-free Psiphon Pro!</string>
+    
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">Custom HTTP headers</string>
+
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">Setup additional custom HTTP headers for proxy requests</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">Add custom HTTP headers</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">Add custom HTTP headers to all outgoing HTTP proxy requests</string>
+    <string name="custom_proxy_header_group_1">Header 1</string>
+    <string name="custom_proxy_header_group_2">Header 2</string>
+    <string name="custom_proxy_header_group_3">Header 3</string>
+    <string name="custom_proxy_header_name">Enter header name</string>
+    <string name="custom_proxy_header_value">Enter header value</string>
+    <string name="custom_proxy_header_ignored_values">Warning: headers with empty names will be ignored!</string>
+    <string name="custom_proxy_header_invalid_name">Error: header name contains illegal characters!</string>
+    
+    <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day.
+         Insert one or more newline characters as needed to keep the lines approximately as short
+         as the English. -->
+    <string name="PaymentChooserFragment.UnlimitedSubscription">Maximum Speed - %1$s / month\n(%2$s / day)</string>
+
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day.
+         Insert one or more newline characters as needed to keep the lines approximately as short
+         as the English. -->
+    <string name="PaymentChooserFragment.LimitedSubscription">High Speed - %1$s / month\n(%2$s / day)</string>
+
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass7Day">7-day Pass - %1$s\n(%2$s / day)</string>
+
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass30Day">30-day Pass - %1$s\n(%2$s / day)</string>
+
+    <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass90Day">90-day Pass - %1$s\n(%2$s / day)</string>
+
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass360Day">360-day Pass - %1$s\n(%2$s / day)</string>
+
+    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
+         exclamatory. Indicates that premium access results in all in-app advertisements being
+         removed. -->
+    <string name="PaymentChooserFragment.NoAdsExclaim">No ads!</string>
+
+    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
+         exclamatory. Indicates that premium access results in additional features being unlocked
+         (such as egress region selection). -->
+    <string name="PaymentChooserFragment.FeaturesExclaim">Unlocked features!</string>
+
+    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
+         exclamatory. Indicates that premium access results in no interruptions due to free trial
+         time expiring (as happens with non-premium access). -->
+    <string name="PaymentChooserFragment.InterruptionsExclaim">No interruptions!</string>
+
+    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
+         amount of time. This string is a description specifically about buying a subscription.
+         The parenthetical remark about credit card requirements should be separated by a newline. -->
+    <string name="PaymentChooserFragment.SubscriptionDescription">Subscribe for uninterrupted service at the best price.\n(Requires a valid credit card.)</string>
+
+    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
+         amount of time. This string announces that subscriptions include a free trial. -->
+    <string name="PaymentChooserFragment.FreeTrialDescription">NEW! 30 day free trial with each subscription.</string>
+
+    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
+         amount of time. This string is a description specifically about buying a time pass.
+         The parenthetical remark about credit card requirements should be separated by a newline. -->
+    <string name="PaymentChooserFragment.TimePassDescription">Buy a Maximum Speed time pass.\n(Does not require a credit card. Google Play gift cards or credit may be used.)</string>
+
+    <!-- Title for other text showing what the user's current speed limit is. Users have limited
+         speed if they have not paid for premium service. -->
+    <string name="rate_limit_text_title">Psiphon speed limit:</string>
+
+    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
+         and is in megabits-per-second. Users have limited speed if they have not paid for premium
+         service. -->
+    <string name="rate_limit_text_limited">%d Mb/s</string>
+
+    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
+         have access to a full-speed connection. Users have limited speed if they have not paid for
+         premium service. -->
+    <string name="rate_limit_text_unlimited">Unlimited</string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">Upgrade now!</string>
+
+</resources>
