@@ -115,8 +115,10 @@ public class StatusActivity
             m_tabHost.setCurrentTabByTag("home");
         }
 
-        Presage.getInstance().setContext(this.getBaseContext());
-        Presage.getInstance().start();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            Presage.getInstance().setContext(this.getBaseContext());
+            Presage.getInstance().start();
+        }
 
         // EmbeddedValues.initialize(this); is called in MainBase.OnCreate
 
