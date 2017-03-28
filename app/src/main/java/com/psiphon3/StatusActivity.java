@@ -63,6 +63,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.presage.Presage;
+
 
 public class StatusActivity
     extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
@@ -112,6 +114,9 @@ public class StatusActivity
             // Start at the Home tab if the service isn't running and we want to show ads
             m_tabHost.setCurrentTabByTag("home");
         }
+
+        Presage.getInstance().setContext(this.getBaseContext());
+        Presage.getInstance().start();
 
         // EmbeddedValues.initialize(this); is called in MainBase.OnCreate
 
