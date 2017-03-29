@@ -68,6 +68,7 @@ public class StatusActivity
     private MoPubView m_moPubUntunneledBannerAdView = null;
     private MoPubView m_moPubUntunneledBannerLargeAdView = null;
     private MoPubInterstitial m_moPubUntunneledInterstitial = null;
+    private boolean m_moPubUntunneledInterstitialFailed = false;
     private boolean m_moPubUntunneledInterstitialShowWhenLoaded = false;
     private static boolean m_startupPending = false;
     private MoPubView m_moPubTunneledBannerAdView = null;
@@ -474,7 +475,7 @@ public class StatusActivity
         @Override
         public void run()
         {
-            if (adModeCountdown > 0)
+            if (adModeCountdown > 0 && !m_moPubUntunneledInterstitialFailed)
             {
                 m_toggleButton.setText(String.valueOf(adModeCountdown));
                 adModeCountdown--;
@@ -621,7 +622,7 @@ public class StatusActivity
             @Override
             public void onInterstitialFailed(MoPubInterstitial interstitial,
                                              MoPubErrorCode errorCode) {
-                m_moPubUntunneledInterstitial.load();
+                m_moPubUntunneledInterstitialFailed = true;
             }
             @Override
             public void onInterstitialLoaded(MoPubInterstitial interstitial) {
@@ -640,6 +641,7 @@ public class StatusActivity
             }
         });
 
+        m_moPubUntunneledInterstitialFailed = false;
         m_moPubUntunneledInterstitialShowWhenLoaded = false;
         m_moPubUntunneledInterstitial.load();
     }
@@ -654,6 +656,10 @@ public class StatusActivity
             }
             else
             {
+                if (m_moPubUntunneledInterstitialFailed)
+                {
+                    loadUntunneledFullScreenAd();
+                }
                 m_moPubUntunneledInterstitialShowWhenLoaded = true;
             }
         }
