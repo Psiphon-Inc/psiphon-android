@@ -116,8 +116,12 @@ public class StatusActivity
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            Presage.getInstance().setContext(this.getBaseContext());
-            Presage.getInstance().start();
+            try {
+                Presage.getInstance().setContext(this.getBaseContext());
+                Presage.getInstance().start();
+            } catch (Exception e) {
+                // just prevent this from crashing
+            }
         }
 
         // EmbeddedValues.initialize(this); is called in MainBase.OnCreate
