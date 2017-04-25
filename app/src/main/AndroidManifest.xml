@@ -174,7 +174,7 @@
             android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
 
         <!-- PRESAGE LIBRARY -->
-        <meta-data android:name="presage_key" android:value="269793"/>
+        <meta-data android:name="presage_key" android:value="000000"/>
         <service
             android:name="io.presage.PresageService"
             android:enabled="true"

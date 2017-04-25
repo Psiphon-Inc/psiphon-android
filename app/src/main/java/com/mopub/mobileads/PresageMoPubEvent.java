@@ -21,10 +21,11 @@ public class PresageMoPubEvent extends CustomEventInterstitial {
 
     @Override
     protected void loadInterstitial(Context context,
-            CustomEventInterstitialListener listener, Map<String, Object> arg2,
-            Map<String, String> arg3) {
+                                    CustomEventInterstitialListener listener, Map<String, Object> arg2,
+                                    Map<String, String> arg3) {
 
         if (listener == null) {
+            // log error
             return;
         }
 
@@ -35,17 +36,21 @@ public class PresageMoPubEvent extends CustomEventInterstitial {
             return;
         }
 
-        Presage.getInstance().loadInterstitial(new IADHandler() {
-
+        Presage.getInstance().load(new IADHandler() {
             @Override
-            public void onAdNotFound() {
+            public void onAdNotAvailable() {
                 if (mListener != null) {
                     mListener.onInterstitialFailed(MoPubErrorCode.NETWORK_NO_FILL);
                 }
             }
 
             @Override
-            public void onAdFound() {
+            public void onAdAvailable() {
+
+            }
+
+            @Override
+            public void onAdLoaded() {
                 if (mListener != null) {
                     mListener.onInterstitialLoaded();
                 }
@@ -55,7 +60,7 @@ public class PresageMoPubEvent extends CustomEventInterstitial {
             public void onAdClosed() {}
 
             @Override
-            public void onAdError(int code) {
+            public void onAdError(int i) {
                 if (mListener != null) {
                     mListener.onInterstitialFailed(MoPubErrorCode.NETWORK_NO_FILL);
                 }
@@ -68,13 +73,24 @@ public class PresageMoPubEvent extends CustomEventInterstitial {
 
     @Override
     protected void showInterstitial() {
-        if (Presage.getInstance().isInterstitialLoaded()) {
-            Presage.getInstance().showInterstitial(new IADHandler() {
+        if (Presage.getInstance().canShow()) {
+            Presage.getInstance().show(new IADHandler() {
                 @Override
-                public void onAdFound() {}
+                public void onAdNotAvailable() {
+
+                }
 
                 @Override
-                public void onAdNotFound() {}
+                public void onAdAvailable() {
+
+                }
+
+                @Override
+                public void onAdLoaded() {
+                    if (mListener != null) {
+                        mListener.onInterstitialLoaded();
+                    }
+                }
 
                 @Override
                 public void onAdClosed() {
@@ -106,4 +122,3 @@ public class PresageMoPubEvent extends CustomEventInterstitial {
     }
 
 }
-
