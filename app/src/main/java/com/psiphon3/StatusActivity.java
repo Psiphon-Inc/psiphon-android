@@ -68,6 +68,7 @@ public class StatusActivity
     private boolean m_loadedSponsorTab = false;
     private MoPubView m_moPubUntunneledBannerAdView = null;
     private MoPubInterstitial m_moPubUntunneledInterstitial = null;
+    private boolean m_moPubUntunneledInterstitialFailed = false;
     private boolean m_moPubUntunneledInterstitialShowWhenLoaded = false;
     private static boolean m_startupPending = false;
     private MoPubView m_moPubTunneledBannerAdView = null;
@@ -471,7 +472,7 @@ public class StatusActivity
         @Override
         public void run()
         {
-            if (adModeCountdown > 0)
+            if (adModeCountdown > 0 && !m_moPubUntunneledInterstitialFailed)
             {
                 m_toggleButton.setText(String.valueOf(adModeCountdown));
                 adModeCountdown--;
@@ -586,12 +587,7 @@ public class StatusActivity
             @Override
             public void onInterstitialFailed(MoPubInterstitial interstitial,
                                              MoPubErrorCode errorCode) {
-                if (m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
-                    m_moPubUntunneledInterstitial.load();
-                } else {
-                    m_moPubUntunneledInterstitial.destroy();
-                    m_moPubUntunneledInterstitial = null;
-                }
+                m_moPubUntunneledInterstitialFailed = true;
             }
             @Override
             public void onInterstitialLoaded(MoPubInterstitial interstitial) {
@@ -610,6 +606,7 @@ public class StatusActivity
             }
         });
 
+        m_moPubUntunneledInterstitialFailed = false;
         m_moPubUntunneledInterstitialShowWhenLoaded = false;
         m_moPubUntunneledInterstitial.load();
     }
@@ -624,6 +621,10 @@ public class StatusActivity
             }
             else
             {
+                if (m_moPubUntunneledInterstitialFailed)
+                {
+                    loadUntunneledFullScreenAd();
+                }
                 m_moPubUntunneledInterstitialShowWhenLoaded = true;
             }
         }
