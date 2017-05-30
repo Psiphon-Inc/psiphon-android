@@ -73,6 +73,7 @@ public class StatusActivity
     private static boolean m_startupPending = false;
     private MoPubView m_moPubTunneledBannerAdView = null;
     private MoPubInterstitial m_moPubTunneledInterstitial = null;
+    private boolean m_moPubTunneledInterstitialShowWhenLoaded = false;
     private int m_tunneledFullScreenAdCounter = 0;
     private boolean m_temporarilyDisableTunneledInterstitial = false;
 
@@ -161,9 +162,7 @@ public class StatusActivity
     @Override
     protected void onTunnelStateReceived() {
         m_temporarilyDisableTunneledInterstitial = false;
-        if (m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
-            initTunneledAds();
-        }
+        initTunneledAds(false);
     }
     
     @Override
@@ -657,15 +656,17 @@ public class StatusActivity
         return getShowAds() && isTunnelConnected();
     }
 
-    private void initTunneledAds()
+    private void initTunneledAds(boolean initFullScreenAd)
     {
-        if (shouldShowTunneledAds())
+        if (shouldShowTunneledAds() && m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false))
         {
             // make sure WebView proxy settings are up to date
             WebViewProxySettings.setLocalProxy(this, getListeningLocalHttpProxyPort());
 
             initTunneledBanners();
-            loadTunneledFullScreenAd();
+            if (initFullScreenAd) {
+                loadTunneledFullScreenAd();
+            }
         }
     }
 
@@ -732,39 +733,53 @@ public class StatusActivity
                 }
                 @Override
                 public void onInterstitialDismissed(MoPubInterstitial arg0) {
+                    m_moPubTunneledInterstitialShowWhenLoaded = false;
                     m_moPubTunneledInterstitial.load();
                 }
                 @Override
                 public void onInterstitialFailed(MoPubInterstitial arg0,
                                                  MoPubErrorCode arg1) {
-                    if (m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
-                        m_moPubTunneledInterstitial.load();
-                    } else {
-                        m_moPubTunneledInterstitial.destroy();
-                        m_moPubTunneledInterstitial = null;
-                    }
+                    m_moPubTunneledInterstitial.destroy();
+                    m_moPubTunneledInterstitial = null;
                 }
                 @Override
                 public void onInterstitialLoaded(MoPubInterstitial interstitial) {
+                    if (interstitial != null && interstitial.isReady() &&
+                            m_moPubTunneledInterstitialShowWhenLoaded &&
+                            m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false))
+                    {
+                        m_tunneledFullScreenAdCounter++;
+                        interstitial.show();
+                    }
                 }
                 @Override
                 public void onInterstitialShown(MoPubInterstitial arg0) {
                 }
             });
+            m_moPubTunneledInterstitialShowWhenLoaded = false;
             m_moPubTunneledInterstitial.load();
         }
     }
 
     private void showTunneledFullScreenAd()
     {
+        initTunneledAds(true);
+
         if (shouldShowTunneledAds() && !m_temporarilyDisableTunneledInterstitial)
         {
             if (m_tunneledFullScreenAdCounter % 3 == 0)
             {
-                if (m_moPubTunneledInterstitial != null && m_moPubTunneledInterstitial.isReady())
+                if (m_moPubTunneledInterstitial != null)
                 {
-                    m_tunneledFullScreenAdCounter++;
-                    m_moPubTunneledInterstitial.show();
+                    if (m_moPubTunneledInterstitial.isReady())
+                    {
+                        m_tunneledFullScreenAdCounter++;
+                        m_moPubTunneledInterstitial.show();
+                    }
+                    else
+                    {
+                        m_moPubTunneledInterstitialShowWhenLoaded = true;
+                    }
                 }
             }
             else
