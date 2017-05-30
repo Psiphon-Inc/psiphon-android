@@ -56,6 +56,7 @@ import net.grandcentrix.tray.core.ItemNotFoundException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Random;
 
 
 public class StatusActivity
@@ -531,9 +532,10 @@ public class StatusActivity
         {
             m_moPubUntunneledBannerAdView = new MoPubView(this);
             m_moPubUntunneledBannerAdView.setAdUnitId(
-                    getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ?
-                    MOPUB_UNTUNNELED_BANNER_PROPERTY_ID :
-                    MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
+                    getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT &&
+                            new Random().nextBoolean() ?
+                    MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID :
+                    MOPUB_UNTUNNELED_BANNER_PROPERTY_ID);
 
             m_moPubUntunneledBannerAdView.setBannerAdListener(new MoPubView.BannerAdListener() {
                 @Override
@@ -678,9 +680,10 @@ public class StatusActivity
             {
                 m_moPubTunneledBannerAdView = new MoPubView(this);
                 m_moPubTunneledBannerAdView.setAdUnitId(
-                        getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ?
-                                MOPUB_TUNNELED_BANNER_PROPERTY_ID :
-                                MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
+                        getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT &&
+                                new Random().nextBoolean() ?
+                                MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID :
+                                MOPUB_TUNNELED_BANNER_PROPERTY_ID);
                 if (isTunnelConnected()) {
                     m_moPubTunneledBannerAdView.setKeywords("client_region:" + getClientRegion());
                 }
