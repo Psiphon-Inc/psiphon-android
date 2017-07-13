@@ -1258,6 +1258,9 @@ public class StatusActivity
                 m_moPubTunneledBannerLargeAdView.setAdUnitId(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
                 if (isTunnelConnected()) {
                     m_moPubTunneledBannerLargeAdView.setKeywords("client_region:" + getClientRegion());
+                    Map<String,Object> localExtras = new HashMap<>();
+                    localExtras.put("client_region", getClientRegion());
+                    m_moPubTunneledBannerLargeAdView.setLocalExtras(localExtras);
                 }
 
                 m_moPubTunneledBannerLargeAdView.setBannerAdListener(new BannerAdListener() {
@@ -1300,6 +1303,9 @@ public class StatusActivity
             m_moPubTunneledInterstitial = new MoPubInterstitial(this, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
             if (isTunnelConnected()) {
                 m_moPubTunneledInterstitial.setKeywords("client_region:" + getClientRegion());
+                Map<String,Object> localExtras = new HashMap<>();
+                localExtras.put("client_region", getClientRegion());
+                m_moPubTunneledInterstitial.setLocalExtras(localExtras);
             }
 
             m_moPubTunneledInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
