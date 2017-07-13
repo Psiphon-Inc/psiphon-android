@@ -72,6 +72,36 @@
                     android:key="@string/customProxyHeaderValue3"
                     android:summary="@string/custom_proxy_header_value" />
             </PreferenceCategory>
+            <PreferenceCategory
+                android:title="@string/custom_proxy_header_group_4" >
+                <EditTextPreference
+                    android:key="@string/customProxyHeaderName4"
+                    android:singleLine="true"
+                    android:summary="@string/custom_proxy_header_name" />
+                <EditTextPreference
+                    android:key="@string/customProxyHeaderValue4"
+                    android:summary="@string/custom_proxy_header_value" />
+            </PreferenceCategory>
+            <PreferenceCategory
+                android:title="@string/custom_proxy_header_group_5" >
+                <EditTextPreference
+                    android:key="@string/customProxyHeaderName5"
+                    android:singleLine="true"
+                    android:summary="@string/custom_proxy_header_name" />
+                <EditTextPreference
+                    android:key="@string/customProxyHeaderValue5"
+                    android:summary="@string/custom_proxy_header_value" />
+            </PreferenceCategory>
+            <PreferenceCategory
+                android:title="@string/custom_proxy_header_group_6" >
+                <EditTextPreference
+                    android:key="@string/customProxyHeaderName6"
+                    android:singleLine="true"
+                    android:summary="@string/custom_proxy_header_name" />
+                <EditTextPreference
+                    android:key="@string/customProxyHeaderValue6"
+                    android:summary="@string/custom_proxy_header_value" />
+            </PreferenceCategory>
         </PreferenceScreen>
         <com.psiphon3.psiphonlibrary.RadioButtonPreference
             android:defaultValue="true"

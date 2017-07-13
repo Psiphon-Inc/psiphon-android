@@ -69,6 +69,12 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
     EditTextPreference mHeaderValue2;
     EditTextPreference mHeaderName3;
     EditTextPreference mHeaderValue3;
+    EditTextPreference mHeaderName4;
+    EditTextPreference mHeaderValue4;
+    EditTextPreference mHeaderName5;
+    EditTextPreference mHeaderValue5;
+    EditTextPreference mHeaderName6;
+    EditTextPreference mHeaderValue6;
 
     private class HeaderValueChangeListener implements Preference.OnPreferenceChangeListener {
         EditTextPreference mHeaderName;
@@ -235,6 +241,21 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
         mHeaderValue3 = (EditTextPreference) preferences
                 .findPreference(getString(R.string.customProxyHeaderValue3));
 
+        mHeaderName4 = (EditTextPreference) preferences
+                .findPreference(getString(R.string.customProxyHeaderName4));
+        mHeaderValue4 = (EditTextPreference) preferences
+                .findPreference(getString(R.string.customProxyHeaderValue4));
+
+        mHeaderName5 = (EditTextPreference) preferences
+                .findPreference(getString(R.string.customProxyHeaderName5));
+        mHeaderValue5 = (EditTextPreference) preferences
+                .findPreference(getString(R.string.customProxyHeaderValue5));
+
+        mHeaderName6 = (EditTextPreference) preferences
+                .findPreference(getString(R.string.customProxyHeaderName6));
+        mHeaderValue6 = (EditTextPreference) preferences
+                .findPreference(getString(R.string.customProxyHeaderValue6));
+
 
         // Initialize with tray preferences values
         AppPreferences mpPreferences = new AppPreferences(this);
@@ -279,6 +300,12 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
         mHeaderValue2.setText(mpPreferences.getString(getString(R.string.customProxyHeaderValue2), ""));
         mHeaderName3.setText(mpPreferences.getString(getString(R.string.customProxyHeaderName3), ""));
         mHeaderValue3.setText(mpPreferences.getString(getString(R.string.customProxyHeaderValue3), ""));
+        mHeaderName4.setText(mpPreferences.getString(getString(R.string.customProxyHeaderName4), ""));
+        mHeaderValue4.setText(mpPreferences.getString(getString(R.string.customProxyHeaderValue4), ""));
+        mHeaderName5.setText(mpPreferences.getString(getString(R.string.customProxyHeaderName5), ""));
+        mHeaderValue5.setText(mpPreferences.getString(getString(R.string.customProxyHeaderValue5), ""));
+        mHeaderName6.setText(mpPreferences.getString(getString(R.string.customProxyHeaderName6), ""));
+        mHeaderValue6.setText(mpPreferences.getString(getString(R.string.customProxyHeaderValue6), ""));
 
 
         // Set listeners
@@ -319,10 +346,16 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
         mHeaderName1.setOnPreferenceChangeListener(headerNameChangeListener);
         mHeaderName2.setOnPreferenceChangeListener(headerNameChangeListener);
         mHeaderName3.setOnPreferenceChangeListener(headerNameChangeListener);
+        mHeaderName4.setOnPreferenceChangeListener(headerNameChangeListener);
+        mHeaderName5.setOnPreferenceChangeListener(headerNameChangeListener);
+        mHeaderName6.setOnPreferenceChangeListener(headerNameChangeListener);
 
         mHeaderValue1.setOnPreferenceChangeListener(new HeaderValueChangeListener(mHeaderName1));
         mHeaderValue2.setOnPreferenceChangeListener(new HeaderValueChangeListener(mHeaderName2));
         mHeaderValue3.setOnPreferenceChangeListener(new HeaderValueChangeListener(mHeaderName3));
+        mHeaderValue4.setOnPreferenceChangeListener(new HeaderValueChangeListener(mHeaderName4));
+        mHeaderValue5.setOnPreferenceChangeListener(new HeaderValueChangeListener(mHeaderName5));
+        mHeaderValue6.setOnPreferenceChangeListener(new HeaderValueChangeListener(mHeaderName6));
 
 
         initSummary();
@@ -472,6 +505,12 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
         mHeaderValue2.setEnabled(false);
         mHeaderName3.setEnabled(false);
         mHeaderValue3.setEnabled(false);
+        mHeaderName4.setEnabled(false);
+        mHeaderValue4.setEnabled(false);
+        mHeaderName5.setEnabled(false);
+        mHeaderValue5.setEnabled(false);
+        mHeaderName6.setEnabled(false);
+        mHeaderValue6.setEnabled(false);
     }
 
     private void enableCustomHeaderSettings() {
@@ -481,6 +520,12 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
         mHeaderValue2.setEnabled(true);
         mHeaderName3.setEnabled(true);
         mHeaderValue3.setEnabled(true);
+        mHeaderName4.setEnabled(true);
+        mHeaderValue4.setEnabled(true);
+        mHeaderName5.setEnabled(true);
+        mHeaderValue5.setEnabled(true);
+        mHeaderName6.setEnabled(true);
+        mHeaderValue6.setEnabled(true);
     }
 
     protected void updatePreferencesScreen() {

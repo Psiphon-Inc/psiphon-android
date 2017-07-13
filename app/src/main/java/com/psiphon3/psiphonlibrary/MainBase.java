@@ -1114,7 +1114,7 @@ public abstract class MainBase {
             if (addCustomHeadersPreference) {
                 JSONObject newHeaders = new JSONObject();
 
-                for (int position = 1; position <= 3; position++) {
+                for (int position = 1; position <= 6; position++) {
                     int nameID = getResources().getIdentifier("customProxyHeaderName" + position, "string", getPackageName());
                     int valueID = getResources().getIdentifier("customProxyHeaderValue" + position, "string", getPackageName());
 
@@ -1219,7 +1219,13 @@ public abstract class MainBase {
                         new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName2), getString(R.string.customProxyHeaderName2)),
                         new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue2), getString(R.string.customProxyHeaderValue2)),
                         new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName3), getString(R.string.customProxyHeaderName3)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue3), getString(R.string.customProxyHeaderValue3))
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue3), getString(R.string.customProxyHeaderValue3)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName4), getString(R.string.customProxyHeaderName4)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue4), getString(R.string.customProxyHeaderValue4)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName5), getString(R.string.customProxyHeaderName5)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue5), getString(R.string.customProxyHeaderValue5)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName6), getString(R.string.customProxyHeaderName6)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue6), getString(R.string.customProxyHeaderValue6))
                 );
 
                 if (bRestartRequired) {

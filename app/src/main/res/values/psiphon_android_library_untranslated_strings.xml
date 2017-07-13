@@ -40,6 +40,12 @@
     <string name="customProxyHeaderValue2">customProxyHeaderValue2</string>
     <string name="customProxyHeaderName3" >customProxyHeaderName3</string>
     <string name="customProxyHeaderValue3">customProxyHeaderValue3</string>
+    <string name="customProxyHeaderName4" >customProxyHeaderName4</string>
+    <string name="customProxyHeaderValue4">customProxyHeaderValue4</string>
+    <string name="customProxyHeaderName5" >customProxyHeaderName5</string>
+    <string name="customProxyHeaderValue5">customProxyHeaderValue5</string>
+    <string name="customProxyHeaderName6" >customProxyHeaderName6</string>
+    <string name="customProxyHeaderValue6">customProxyHeaderValue6</string>
 
 
     <!-- When Psiphon disconnects it sends a one last ("final") status request. This message is shown if that request fails. -->

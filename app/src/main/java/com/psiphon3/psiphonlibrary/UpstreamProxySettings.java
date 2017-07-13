@@ -236,7 +236,7 @@ public class UpstreamProxySettings {
 
         AppPreferences ap = new AppPreferences(context);
 
-        for (int position = 1; position <= 3; position++) {
+        for (int position = 1; position <= 6; position++) {
             int nameID = context.getResources().getIdentifier("customProxyHeaderName" + position, "string", context.getPackageName());
             int valueID = context.getResources().getIdentifier("customProxyHeaderValue" + position, "string", context.getPackageName());
 

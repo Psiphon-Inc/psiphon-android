@@ -39,6 +39,9 @@
     <string name="custom_proxy_header_group_1">Header 1</string>
     <string name="custom_proxy_header_group_2">Header 2</string>
     <string name="custom_proxy_header_group_3">Header 3</string>
+    <string name="custom_proxy_header_group_4">Header 4</string>
+    <string name="custom_proxy_header_group_5">Header 5</string>
+    <string name="custom_proxy_header_group_6">Header 6</string>
     <string name="custom_proxy_header_name">Enter header name</string>
     <string name="custom_proxy_header_value">Enter header value</string>
     <string name="custom_proxy_header_ignored_values">Warning: headers with empty names will be ignored!</string>
