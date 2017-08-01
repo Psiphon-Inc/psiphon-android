@@ -1,6 +1,7 @@
 package com.mopub.mobileads;
 
 import android.content.Context;
+import android.location.Location;
 import android.util.Log;
 
 import com.google.android.gms.ads.AdListener;
@@ -66,7 +67,16 @@ class GooglePlayServicesBanner extends CustomEventBanner {
 
         mGoogleAdView.setAdSize(adSize);
 
-        final AdRequest adRequest = new AdRequest.Builder()
+        final AdRequest.Builder builder = new AdRequest.Builder();
+
+        if (localExtras.containsKey("client_region")) {
+            final Location location = LocationUtil.locationFromCountryCode((String)localExtras.get("client_region"));
+            if (location != null) {
+                builder.setLocation(location);
+            }
+        }
+
+        final AdRequest adRequest = builder
                 .setRequestAgent("MoPub")
                 .build();
 
