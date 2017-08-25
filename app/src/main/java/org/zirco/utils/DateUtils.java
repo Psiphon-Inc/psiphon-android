@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 
 import android.content.Context;
 import android.util.Log;

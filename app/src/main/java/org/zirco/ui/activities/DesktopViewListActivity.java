@@ -1,6 +1,6 @@
 package org.zirco.ui.activities;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 import org.zirco.controllers.Controller;
 import org.zirco.model.DbAdapter;
 import org.zirco.utils.ApplicationUtils;

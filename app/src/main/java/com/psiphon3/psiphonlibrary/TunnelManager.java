@@ -38,10 +38,8 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
-
-import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-
+import com.psiphon3.subscription.R;
 import net.grandcentrix.tray.AppPreferences;
 
 import org.json.JSONArray;
@@ -95,6 +93,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT = "listeningLocalHttpProxyPort";
     public static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
     public static final String DATA_TUNNEL_STATE_HOME_PAGES = "homePages";
+    public static final String DATA_TUNNEL_STATE_RATE_LIMIT_MBPS = "rateLimitMbps";
     public static final String DATA_TRANSFER_STATS_CONNECTED_TIME = "dataTransferStatsConnectedTime";
     public static final String DATA_TRANSFER_STATS_TOTAL_BYTES_SENT = "dataTransferStatsTotalBytesSent";
     public static final String DATA_TRANSFER_STATS_TOTAL_BYTES_RECEIVED = "dataTransferStatsTotalBytesReceived";
@@ -112,6 +111,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String DATA_TUNNEL_CONFIG_WHOLE_DEVICE = "tunnelConfigWholeDevice";
     public static final String DATA_TUNNEL_CONFIG_EGRESS_REGION = "tunnelConfigEgressRegion";
     public static final String DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS = "tunnelConfigDisableTimeouts";
+    public static final String DATA_TUNNEL_CONFIG_RATE_LIMIT_MBPS = "tunnelConfigRateLimitMbps";
 
     // Tunnel config, received from the client.
     public static class Config {
@@ -120,6 +120,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         boolean wholeDevice = false;
         String egressRegion = PsiphonConstants.REGION_CODE_ANY;
         boolean disableTimeouts = false;
+        int rateLimitMbps = 0;
     }
 
     private Config m_tunnelConfig = new Config();
@@ -133,6 +134,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         int listeningLocalHttpProxyPort = 0;
         String clientRegion;
         ArrayList<String> homePages = new ArrayList<>();
+        int rateLimitMbps = 0;
     }
 
     private State m_tunnelState = new State();
@@ -257,6 +259,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
         m_tunnelConfig.disableTimeouts = intent.getBooleanExtra(
                 TunnelManager.DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS, false);
+
+        m_tunnelConfig.rateLimitMbps = intent.getIntExtra(
+                TunnelManager.DATA_TUNNEL_CONFIG_RATE_LIMIT_MBPS, 0);
+
     }
 
     private Notification createNotification(boolean alert) {
@@ -277,15 +283,19 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             iconID = R.drawable.notification_icon_connecting_animation;
         }
 
+        String notificationTitle = m_parentService.getText(R.string.app_name_psiphon_pro).toString();
+        String notificationText = m_parentService.getText(contentTextID).toString();
+        
         mNotificationBuilder
                 .setSmallIcon(iconID)
-                .setContentTitle(m_parentService.getText(R.string.app_name))
-                .setContentText(m_parentService.getText(contentTextID))
+                .setContentTitle(notificationTitle)
+                .setContentText(notificationText)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationText))
                 .setTicker(ticker)
                 .setContentIntent(m_tunnelConfig.notificationPendingIntent);
 
         Notification notification = mNotificationBuilder.build();
-
+        
         if (alert) {
             final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
 
@@ -307,6 +317,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
         m_tunnelState.isConnected = isConnected;
 
+        doNotify(alert);
+    }
+
+    private synchronized void doNotify(boolean alert) {
         // Don't update notification to CONNECTING, etc., when a stop was commanded.
         if (!m_serviceDestroyed && !m_isStopping.get()) {
             if (mNotificationManager != null) {
@@ -411,6 +425,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT, m_tunnelState.listeningLocalHttpProxyPort);
         data.putString(DATA_TUNNEL_STATE_CLIENT_REGION, m_tunnelState.clientRegion);
         data.putStringArrayList(DATA_TUNNEL_STATE_HOME_PAGES, m_tunnelState.homePages);
+        data.putInt(DATA_TUNNEL_STATE_RATE_LIMIT_MBPS, m_tunnelState.rateLimitMbps);
         return data;
     }
 
@@ -505,6 +520,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         MyLog.v(R.string.starting_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
         m_tunnelState.homePages.clear();
+        m_tunnelState.rateLimitMbps = m_tunnelConfig.rateLimitMbps;
 
         DataTransferStats.getDataTransferStatsForService().startSession();
         sendDataTransferStatsHandler.postDelayed(sendDataTransferStats, sendDataTransferStatsIntervalMs);
@@ -566,7 +582,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     @Override
     public String getAppName() {
-        return m_parentService.getString(R.string.app_name);
+        return m_parentService.getString(R.string.app_name_psiphon_pro);
     }
 
     @Override
@@ -618,6 +634,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
      * tunnel and the UpgradeChecker temp tunnel).
      *
      * @param context
+     * @param tunnelConfig         Config values to be set in the tunnel core config.
      * @param tempTunnelName       null if not a temporary tunnel. If set, must be a valid to use in file path.
      * @param clientPlatformPrefix null if not applicable (i.e., for main Psiphon app); should be provided
      *                             for temp tunnels. Will be prepended to standard client platform value.
@@ -673,7 +690,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             json.put("RemoteServerListSignaturePublicKey", EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY);
 
-            json.put("UpstreamProxyUrl", UpstreamProxySettings.getUpstreamProxyUrl(context));
+            if (UpstreamProxySettings.getUseHTTPProxy(context)) {
+                if (UpstreamProxySettings.getProxySettings(context) != null) {
+                    json.put("UpstreamProxyUrl", UpstreamProxySettings.getUpstreamProxyUrl(context));
+                }
+                json.put("UpstreamProxyCustomHeaders", UpstreamProxySettings.getUpstreamProxyCustomHeaders(context));
+            }
 
             json.put("EmitDiagnosticNotices", true);
 
@@ -724,6 +746,22 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 String egressRegion = tunnelConfig.egressRegion;
                 MyLog.g("EgressRegion", "regionCode", egressRegion);
                 json.put("EgressRegion", egressRegion);
+
+                long rateLimitBytesPerSecond = tunnelConfig.rateLimitMbps * 1024 * 1024 / 8;
+
+                JSONObject rateLimits = new JSONObject();
+                rateLimits.put("ReadUnthrottledBytes", 0);
+                rateLimits.put("ReadBytesPerSecond", rateLimitBytesPerSecond);
+                rateLimits.put("WriteUnthrottledBytes", 0);
+                rateLimits.put("WriteBytesPerSecond", rateLimitBytesPerSecond);
+
+                MyLog.g("RateLimit",
+                        "ReadUnthrottledBytes", 0,
+                        "ReadBytesPerSecond", rateLimitBytesPerSecond,
+                        "WriteUnthrottledBytes", 0,
+                        "WriteBytesPerSecond", rateLimitBytesPerSecond);
+
+                json.put("RateLimits", rateLimits);
             }
 
             if (tunnelConfig.disableTimeouts) {
@@ -737,6 +775,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 json.put("PsiphonApiServerTimeoutSeconds", 0);
                 json.put("FetchRoutesTimeoutSeconds", 0);
                 json.put("HttpProxyOriginServerTimeoutSeconds", 0);
+            } else {
+                // TEMP: The default value is too aggressive, it will be adjusted in a future release
+                json.put("TunnelPortForwardTimeoutSeconds", 30);
             }
 
             return json.toString();
@@ -898,6 +939,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     }
                 }
                 m_tunnelState.homePages.add(url);
+
+        boolean showAds = false;
+        for (String homePage : m_tunnelState.homePages) {
+            if (homePage.contains("psiphon_show_ads")) {
+                showAds = true;
+            }
+        }
+        final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
+        multiProcessPreferences.put(
+                m_parentService.getString(R.string.persistent_show_ads_setting),
+                showAds);
             }
         });
     }
