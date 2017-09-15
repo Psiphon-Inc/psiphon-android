@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.emergent.android.weave.client.WeaveAccountInfo;
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 import org.zirco.model.DbAdapter;
 import org.zirco.model.adapters.WeaveBookmarksCursorAdapter;
 import org.zirco.model.items.WeaveBookmarkItem;
