@@ -145,6 +145,12 @@
         <activity android:name="com.mopub.mobileads.MraidVideoPlayerActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
         <activity android:name="com.google.android.gms.ads.AdActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
 
+        <provider
+            android:name="com.millennialmedia.internal.utils.MediaContentProvider"
+            android:authorities="${applicationId}.MediaContentProvider"
+            android:grantUriPermissions="true"
+            android:exported="false" />
+
         <activity
             android:name="com.jirbo.adcolony.AdColonyOverlay"
             android:configChanges="keyboardHidden|orientation|screenSize"
