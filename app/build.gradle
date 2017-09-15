@@ -25,7 +25,7 @@ android {
                 applicationId "com.psiphon3.subscription"
                 resValue "string", "tray__authority", "${applicationId}.tray"
                 minSdkVersion 9
-                targetSdkVersion 25
+                targetSdkVersion 23
                 versionCode verCode
                 versionName verName
             }
