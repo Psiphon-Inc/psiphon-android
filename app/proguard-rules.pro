@@ -122,6 +122,9 @@
 -dontwarn okhttp3.**
 -dontwarn okio.**
 
+-dontwarn javax.annotation.Nullable
+-dontwarn javax.annotation.ParametersAreNonnullByDefault
+
 -dontnote sun.misc.Unsafe
 -dontnote android.net.http.*
 
