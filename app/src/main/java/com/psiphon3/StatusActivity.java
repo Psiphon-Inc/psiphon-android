@@ -1104,7 +1104,7 @@ public class StatusActivity
 
     private boolean getShowAds() {
         return !Utils.getHasValidSubscription(this) &&
-                Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO;
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN;
     }
 
     private boolean shouldShowUntunneledAds()
