@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
     <uses-sdk tools:overrideLibrary="ca.psiphon,com.mopub.mobileads.banner,com.mopub.mobileads.base,
-    com.mopub.mobileads.interstitial,com.moat.analytics.mobile.mpub,com.millennialmedia" />
+    com.mopub.mobileads.interstitial,com.moat.analytics.mobile.mpub,com.millennialmedia,com.vungle.publisher" />
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"
@@ -165,6 +165,10 @@
 
         <activity
             android:name="com.vungle.publisher.MraidFullScreenAdActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"/>
+
+        <activity android:name="com.vungle.publisher.FlexViewAdActivity"
             android:configChanges="keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize"
             android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"/>
 
