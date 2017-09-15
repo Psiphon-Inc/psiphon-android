@@ -179,13 +179,10 @@
             android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"/>
 
         <activity android:name="com.aerserv.sdk.view.ASVastInterstitialActivity"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
-            android:theme="@android:style/Theme.Translucent" />
+            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
         <activity android:name="com.aerserv.sdk.view.ASWebviewInterstitialActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
         <activity android:name="com.aerserv.sdk.view.ASVpaidInterstitalActivity"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
-        <activity android:name="com.aerserv.sdk.view.AerServFullScreenAdActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
 
         <!-- PRESAGE LIBRARY -->
