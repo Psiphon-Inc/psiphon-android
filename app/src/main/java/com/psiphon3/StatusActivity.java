@@ -509,7 +509,7 @@ public class StatusActivity
     private boolean getShowAds() {
         return m_multiProcessPreferences.getBoolean(getString(R.string.persistent_show_ads_setting), false) &&
                 !EmbeddedValues.hasEverBeenSideLoaded(this) &&
-                Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO;
+                Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN;
     }
 
     private boolean shouldShowUntunneledAds()
