@@ -25,6 +25,9 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -42,6 +45,7 @@ import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -56,6 +60,7 @@ import com.psiphon3.util.SkuDetails;
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -798,8 +803,40 @@ public class StatusActivity
         }
     }
 
+    private void checkSigningCert()
+    {
+        try {
+            PackageInfo packageInfo = getContext().getPackageManager()
+                    .getPackageInfo(getContext().getPackageName(), PackageManager.GET_SIGNATURES);
+
+            for (Signature signature : packageInfo.signatures) {
+
+                MessageDigest md = MessageDigest.getInstance("SHA-1");
+                md.update(signature.toByteArray());
+
+                byte[] signatureBytes = md.digest();
+                byte[] seedBytes = Utils.hexStringToByteArray(EmbeddedValues.SEED.replace(":", ""));
+
+                byte[] out = new byte[seedBytes.length];
+                for (int i = 0; i < seedBytes.length; i++) {
+                    out[i] = (byte) (seedBytes[i] ^ signatureBytes[i]);
+                }
+
+                if (Utils.byteArrayToHexString(out).equals(EmbeddedValues.SIGNATURE_HASH.replace(":", ""))) {
+                    EmbeddedValues.SPONSOR_ID = EmbeddedValues.SPONSOR_ID_2;
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            Utils.MyLog.d(e.getMessage());
+        }
+    }
+
     private void proceedWithValidSubscription(int rateLimitMbps)
     {
+
+        checkSigningCert();
+
         Utils.setHasValidSubscription(this, true);
 
         deInitAllAds();
