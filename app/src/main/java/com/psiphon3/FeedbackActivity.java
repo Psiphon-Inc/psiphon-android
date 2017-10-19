@@ -48,6 +48,7 @@ import android.widget.Toast;
 import com.psiphon3.psiphonlibrary.Diagnostics;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.subscription.R;
 
 public class FeedbackActivity extends Activity
 {
