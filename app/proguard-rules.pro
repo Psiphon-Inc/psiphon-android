@@ -83,9 +83,11 @@
 
 # MOAT
 -dontwarn com.moat.**
--keep class com.moat.** {
-   public protected private *;
-}
+-keep class com.moat.** { public protected private *; }
+
+# Retrofit
+-dontwarn okio.**
+-dontwarn retrofit2.Platform$Java8
 
 -keep class com.aerserv.** { *; }
 -keepclassmembers class com.aerserv.** { *; }
