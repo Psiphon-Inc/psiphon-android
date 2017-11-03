@@ -94,6 +94,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
     public static final String DATA_TUNNEL_STATE_HOME_PAGES = "homePages";
     public static final String DATA_TUNNEL_STATE_RATE_LIMIT_MBPS = "rateLimitMbps";
+    public static final String DATA_TUNNEL_STATE_SPONSOR_ID = "sponsorId";
     public static final String DATA_TRANSFER_STATS_CONNECTED_TIME = "dataTransferStatsConnectedTime";
     public static final String DATA_TRANSFER_STATS_TOTAL_BYTES_SENT = "dataTransferStatsTotalBytesSent";
     public static final String DATA_TRANSFER_STATS_TOTAL_BYTES_RECEIVED = "dataTransferStatsTotalBytesReceived";
@@ -112,6 +113,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String DATA_TUNNEL_CONFIG_EGRESS_REGION = "tunnelConfigEgressRegion";
     public static final String DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS = "tunnelConfigDisableTimeouts";
     public static final String DATA_TUNNEL_CONFIG_RATE_LIMIT_MBPS = "tunnelConfigRateLimitMbps";
+    public static final String DATA_TUNNEL_CONFIG_SPONSOR_ID = "tunnelConfigSponsorId";
 
     // Tunnel config, received from the client.
     public static class Config {
@@ -121,6 +123,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         String egressRegion = PsiphonConstants.REGION_CODE_ANY;
         boolean disableTimeouts = false;
         int rateLimitMbps = 0;
+        String sponsorId = EmbeddedValues.SPONSOR_ID;
     }
 
     private Config m_tunnelConfig = new Config();
@@ -135,6 +138,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         String clientRegion;
         ArrayList<String> homePages = new ArrayList<>();
         int rateLimitMbps = 0;
+        String sponsorId = "";
     }
 
     private State m_tunnelState = new State();
@@ -263,6 +267,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_tunnelConfig.rateLimitMbps = intent.getIntExtra(
                 TunnelManager.DATA_TUNNEL_CONFIG_RATE_LIMIT_MBPS, 0);
 
+        m_tunnelConfig.sponsorId = intent.getStringExtra(
+                TunnelManager.DATA_TUNNEL_CONFIG_SPONSOR_ID);
     }
 
     private Notification createNotification(boolean alert) {
@@ -426,6 +432,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         data.putString(DATA_TUNNEL_STATE_CLIENT_REGION, m_tunnelState.clientRegion);
         data.putStringArrayList(DATA_TUNNEL_STATE_HOME_PAGES, m_tunnelState.homePages);
         data.putInt(DATA_TUNNEL_STATE_RATE_LIMIT_MBPS, m_tunnelState.rateLimitMbps);
+        data.putString(DATA_TUNNEL_STATE_SPONSOR_ID, m_tunnelState.sponsorId);
         return data;
     }
 
@@ -521,6 +528,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
         m_tunnelState.homePages.clear();
         m_tunnelState.rateLimitMbps = m_tunnelConfig.rateLimitMbps;
+        m_tunnelState.sponsorId = m_tunnelConfig.sponsorId;
 
         DataTransferStats.getDataTransferStatsForService().startSession();
         sendDataTransferStatsHandler.postDelayed(sendDataTransferStats, sendDataTransferStatsIntervalMs);
@@ -682,7 +690,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             json.put("PropagationChannelId", EmbeddedValues.PROPAGATION_CHANNEL_ID);
 
-            json.put("SponsorId", EmbeddedValues.SPONSOR_ID);
+            json.put("SponsorId", tunnelConfig.sponsorId);
 
             json.put("RemoteServerListURLs", new JSONArray(EmbeddedValues.REMOTE_SERVER_LIST_URLS_JSON));
 

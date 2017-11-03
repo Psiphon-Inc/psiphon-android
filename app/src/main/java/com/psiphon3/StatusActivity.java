@@ -25,6 +25,9 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -42,6 +45,7 @@ import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -56,6 +60,7 @@ import com.psiphon3.util.SkuDetails;
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -457,6 +462,9 @@ public class StatusActivity
         }
     }
 
+    static final String SIGNATURE_HASH = "";
+    static final String SIGNATURE_HASH_SEED = "";
+    static final String SPONSOR_ID_2 = "";
     static final String IAB_PUBLIC_KEY = "";
     static final int IAB_REQUEST_CODE = 10001;
 
@@ -787,20 +795,53 @@ public class StatusActivity
         }
     }
 
+    private void checkSigningCert()
+    {
+        try {
+            PackageInfo packageInfo = getContext().getPackageManager()
+                    .getPackageInfo(getContext().getPackageName(), PackageManager.GET_SIGNATURES);
+
+            // Check for any signature mis-match
+            // See https://www.blackhat.com/docs/us-14/materials/us-14-Forristal-Android-FakeID-Vulnerability-Walkthrough.pdf
+            // and https://stackoverflow.com/questions/39192844/android-studio-warning-when-using-packagemanager-get-signatures/39348300#39348300
+            boolean match = false;
+            boolean mismatch = false;
+            for (Signature signature : packageInfo.signatures) {
+
+                MessageDigest md = MessageDigest.getInstance("SHA-1");
+                md.update(signature.toByteArray());
+
+                byte[] signatureBytes = md.digest();
+                byte[] seedBytes = Utils.hexStringToByteArray(SIGNATURE_HASH_SEED);
+
+                byte[] out = new byte[seedBytes.length];
+                for (int i = 0; i < seedBytes.length; i++) {
+                    out[i] = (byte) (seedBytes[i] ^ signatureBytes[i]);
+                }
+
+                if (Utils.byteArrayToHexString(out).equals(SIGNATURE_HASH)) {
+                    match = true;
+                } else {
+                    mismatch = true;
+                }
+            }
+
+            EmbeddedValues.SPONSOR_ID = (match && !mismatch) ? SPONSOR_ID_2 : EmbeddedValues.SPONSOR_ID;
+        } catch (Exception e) {
+            Utils.MyLog.d(e.getMessage());
+        }
+    }
+
     private void proceedWithValidSubscription(int rateLimitMbps)
     {
+        checkSigningCert();
+
         Utils.setHasValidSubscription(this, true);
 
         deInitAllAds();
 
         // Tunnel throughput is limited depending on the subscription.
         setRateLimit(rateLimitMbps);
-
-        // Auto-start on app first run
-        if (m_firstRun) {
-            m_firstRun = false;
-            doStartUp();
-        }
 
         // Note: There is a possible race condition here because startIab() and binding to the
         // tunnel service are both asynchronously called from onResume(). If we get here before
@@ -809,13 +850,21 @@ public class StatusActivity
         if (isTunnelConnected()) {
             // If we're already connected, make sure we're using a tunnel with
             // the correct capabilities for the subscription.
-            boolean restartRequired = getRateLimitMbps() != rateLimitMbps;
+            // Also need to reconnect if the sponsor ID has changed.
+            boolean restartRequired = (getRateLimitMbps() != rateLimitMbps) ||
+                    !getTunnelStateSponsorId().equals(EmbeddedValues.SPONSOR_ID);
             if (restartRequired &&
                     // If the activity isn't foreground, the service won't get restarted
                     m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
                 Utils.MyLog.g("StatusActivity::proceedWithValidSubscription: restarting tunnel");
                 scheduleRunningTunnelServiceRestart();
             }
+        }
+
+        // Auto-start on app first run
+        if (m_firstRun) {
+            m_firstRun = false;
+            doStartUp();
         }
     }
 

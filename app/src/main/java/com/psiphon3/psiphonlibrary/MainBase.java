@@ -1298,6 +1298,9 @@ public abstract class MainBase {
 
             intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_RATE_LIMIT_MBPS,
                     getTunnelConfigRateLimitMbps());
+
+            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_SPONSOR_ID,
+                    EmbeddedValues.SPONSOR_ID);
         }
 
         protected void startAndBindTunnelService() {
@@ -1358,6 +1361,10 @@ public abstract class MainBase {
             return m_tunnelState.rateLimitMbps;
         }
 
+        protected String getTunnelStateSponsorId() {
+            return m_tunnelState.sponsorId;
+        }
+
         protected void getTunnelStateFromHandshakeIntent(Intent intent) {
             if (!intent.getAction().equals(TunnelManager.INTENT_ACTION_HANDSHAKE)) {
                 return;
@@ -1389,6 +1396,7 @@ public abstract class MainBase {
                 m_tunnelState.homePages = homePages;
             }
             m_tunnelState.rateLimitMbps = data.getInt(TunnelManager.DATA_TUNNEL_STATE_RATE_LIMIT_MBPS);
+            m_tunnelState.sponsorId = data.getString(TunnelManager.DATA_TUNNEL_STATE_SPONSOR_ID);
 
             onTunnelStateReceived();
         }
