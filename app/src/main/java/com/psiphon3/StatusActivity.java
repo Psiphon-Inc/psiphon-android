@@ -462,6 +462,9 @@ public class StatusActivity
         }
     }
 
+    static final String SIGNATURE_HASH = "";
+    static final String SIGNATURE_HASH_SEED = "";
+    static final String SPONSOR_ID_2 = "";
     static final String IAB_PUBLIC_KEY = "";
     static final int IAB_REQUEST_CODE = 10001;
 
@@ -798,24 +801,32 @@ public class StatusActivity
             PackageInfo packageInfo = getContext().getPackageManager()
                     .getPackageInfo(getContext().getPackageName(), PackageManager.GET_SIGNATURES);
 
+            // Check for any signature mis-match
+            // See https://www.blackhat.com/docs/us-14/materials/us-14-Forristal-Android-FakeID-Vulnerability-Walkthrough.pdf
+            // and https://stackoverflow.com/questions/39192844/android-studio-warning-when-using-packagemanager-get-signatures/39348300#39348300
+            boolean match = false;
+            boolean mismatch = false;
             for (Signature signature : packageInfo.signatures) {
 
                 MessageDigest md = MessageDigest.getInstance("SHA-1");
                 md.update(signature.toByteArray());
 
                 byte[] signatureBytes = md.digest();
-                byte[] seedBytes = Utils.hexStringToByteArray(EmbeddedValues.SEED.replace(":", ""));
+                byte[] seedBytes = Utils.hexStringToByteArray(SIGNATURE_HASH_SEED);
 
                 byte[] out = new byte[seedBytes.length];
                 for (int i = 0; i < seedBytes.length; i++) {
                     out[i] = (byte) (seedBytes[i] ^ signatureBytes[i]);
                 }
 
-                if (Utils.byteArrayToHexString(out).equals(EmbeddedValues.SIGNATURE_HASH.replace(":", ""))) {
-                    EmbeddedValues.SPONSOR_ID = EmbeddedValues.SPONSOR_ID_2;
-                    break;
+                if (Utils.byteArrayToHexString(out).equals(SIGNATURE_HASH)) {
+                    match = true;
+                } else {
+                    mismatch = true;
                 }
             }
+
+            EmbeddedValues.SPONSOR_ID = (match && !mismatch) ? SPONSOR_ID_2 : EmbeddedValues.SPONSOR_ID;
         } catch (Exception e) {
             Utils.MyLog.d(e.getMessage());
         }
@@ -823,6 +834,7 @@ public class StatusActivity
 
     private void proceedWithValidSubscription(int rateLimitMbps)
     {
+        String original_sponsor_id = EmbeddedValues.SPONSOR_ID;
 
         checkSigningCert();
 
@@ -846,7 +858,9 @@ public class StatusActivity
         if (isTunnelConnected()) {
             // If we're already connected, make sure we're using a tunnel with
             // the correct capabilities for the subscription.
-            boolean restartRequired = getRateLimitMbps() != rateLimitMbps;
+            // Also need to reconnect if the sponsor ID has changed.
+            boolean restartRequired = (getRateLimitMbps() != rateLimitMbps) ||
+                    !original_sponsor_id.equals(EmbeddedValues.SPONSOR_ID);
             if (restartRequired &&
                     // If the activity isn't foreground, the service won't get restarted
                     m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
