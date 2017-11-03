@@ -834,8 +834,6 @@ public class StatusActivity
 
     private void proceedWithValidSubscription(int rateLimitMbps)
     {
-        String original_sponsor_id = EmbeddedValues.SPONSOR_ID;
-
         checkSigningCert();
 
         Utils.setHasValidSubscription(this, true);
@@ -854,7 +852,7 @@ public class StatusActivity
             // the correct capabilities for the subscription.
             // Also need to reconnect if the sponsor ID has changed.
             boolean restartRequired = (getRateLimitMbps() != rateLimitMbps) ||
-                    !original_sponsor_id.equals(EmbeddedValues.SPONSOR_ID);
+                    !getTunnelStateSponsorId().equals(EmbeddedValues.SPONSOR_ID);
             if (restartRequired &&
                     // If the activity isn't foreground, the service won't get restarted
                     m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
