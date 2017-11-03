@@ -845,12 +845,6 @@ public class StatusActivity
         // Tunnel throughput is limited depending on the subscription.
         setRateLimit(rateLimitMbps);
 
-        // Auto-start on app first run
-        if (m_firstRun) {
-            m_firstRun = false;
-            doStartUp();
-        }
-
         // Note: There is a possible race condition here because startIab() and binding to the
         // tunnel service are both asynchronously called from onResume(). If we get here before
         // having bound to the tunnel service, we will not perform the following restart to upgrade
@@ -867,6 +861,12 @@ public class StatusActivity
                 Utils.MyLog.g("StatusActivity::proceedWithValidSubscription: restarting tunnel");
                 scheduleRunningTunnelServiceRestart();
             }
+        }
+
+        // Auto-start on app first run
+        if (m_firstRun) {
+            m_firstRun = false;
+            doStartUp();
         }
     }
 

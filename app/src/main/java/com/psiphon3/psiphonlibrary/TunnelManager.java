@@ -112,6 +112,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String DATA_TUNNEL_CONFIG_EGRESS_REGION = "tunnelConfigEgressRegion";
     public static final String DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS = "tunnelConfigDisableTimeouts";
     public static final String DATA_TUNNEL_CONFIG_RATE_LIMIT_MBPS = "tunnelConfigRateLimitMbps";
+    public static final String DATA_TUNNEL_CONFIG_SPONSOR_ID = "tunnelConfigSponsorId";
 
     // Tunnel config, received from the client.
     public static class Config {
@@ -121,6 +122,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         String egressRegion = PsiphonConstants.REGION_CODE_ANY;
         boolean disableTimeouts = false;
         int rateLimitMbps = 0;
+        String sponsorId = EmbeddedValues.SPONSOR_ID;
     }
 
     private Config m_tunnelConfig = new Config();
@@ -263,6 +265,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_tunnelConfig.rateLimitMbps = intent.getIntExtra(
                 TunnelManager.DATA_TUNNEL_CONFIG_RATE_LIMIT_MBPS, 0);
 
+        m_tunnelConfig.sponsorId = intent.getStringExtra(
+                TunnelManager.DATA_TUNNEL_CONFIG_SPONSOR_ID);
     }
 
     private Notification createNotification(boolean alert) {
@@ -682,7 +686,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             json.put("PropagationChannelId", EmbeddedValues.PROPAGATION_CHANNEL_ID);
 
-            json.put("SponsorId", EmbeddedValues.SPONSOR_ID);
+            json.put("SponsorId", tunnelConfig.sponsorId);
 
             json.put("RemoteServerListURLs", new JSONArray(EmbeddedValues.REMOTE_SERVER_LIST_URLS_JSON));
 

@@ -1298,6 +1298,9 @@ public abstract class MainBase {
 
             intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_RATE_LIMIT_MBPS,
                     getTunnelConfigRateLimitMbps());
+
+            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_SPONSOR_ID,
+                    EmbeddedValues.SPONSOR_ID);
         }
 
         protected void startAndBindTunnelService() {
