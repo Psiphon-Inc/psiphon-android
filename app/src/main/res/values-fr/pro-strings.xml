@@ -42,10 +42,10 @@
     <string name="custom_proxy_header_group_4">En-tête 4</string>
     <string name="custom_proxy_header_group_5">En-tête 5</string>
     <string name="custom_proxy_header_group_6">En-tête 6</string>
-    <string name="custom_proxy_header_name">Saisir le nom de l\'en-tête</string>
-    <string name="custom_proxy_header_value">Saisir la valeur de l\'en-tête</string>
+    <string name="custom_proxy_header_name">Saisir le nom de l’en-tête</string>
+    <string name="custom_proxy_header_value">Saisir la valeur de l’en-tête</string>
     <string name="custom_proxy_header_ignored_values">Avertissement : les en-têtes sans nom seront ignorés !</string>
-    <string name="custom_proxy_header_invalid_name">Erreur : le nom de l\'en-tête contient des caractères illégaux !</string>
+    <string name="custom_proxy_header_invalid_name">Erreur : le nom de l’en-tête contient des caractères interdits !</string>
     
     <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day.
@@ -102,7 +102,7 @@
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string is a description specifically about buying a time pass.
          The parenthetical remark about credit card requirements should be separated by a newline. -->
-    <string name="PaymentChooserFragment.TimePassDescription">Acheter un abonnement limité à vitesse maximale.\n(Aucune carte de crédit n\'est exigée. Les cartes cadeau Google Play ou de crédit peuvent être utilisées.)</string>
+    <string name="PaymentChooserFragment.TimePassDescription">Acheter un abonnement limité à vitesse maximale.\n(Aucune carte de crédit n’est exigée. Les cartes cadeau Google Play ou de crédit peuvent être utilisées.)</string>
 
     <!-- Title for other text showing what the user's current speed limit is. Users have limited
          speed if they have not paid for premium service. -->
