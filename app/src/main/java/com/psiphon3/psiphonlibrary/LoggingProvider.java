@@ -34,7 +34,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-import com.psiphon3.BuildConfig;
+import com.psiphon3.subscription.BuildConfig;
 
 import org.json.JSONArray;
 import org.json.JSONException;
