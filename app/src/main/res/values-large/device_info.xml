@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- If the device has a large screen, adjust the layout. -->
+    <bool name="large_layout">true</bool>
+</resources>
