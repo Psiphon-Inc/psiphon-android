@@ -1,13 +1,16 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.3"
+    compileSdkVersion 26
+    buildToolsVersion "26.0.3"
     useLibrary 'org.apache.http.legacy'
 
     repositories{
         flatDir{
             dirs 'libs'
+        }
+        maven {
+            url "https://maven.google.com"
         }
     }
 
@@ -24,8 +27,8 @@ android {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
                 applicationId "com.psiphon3"
                 resValue "string", "tray__authority", "${applicationId}.tray"
-                minSdkVersion 9
-                targetSdkVersion 23
+                minSdkVersion 14
+                targetSdkVersion 26
                 versionCode verCode
                 versionName verName
             }
@@ -86,12 +89,12 @@ repositories {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'com.android.support:appcompat-v7:26.1.0'
     compile files('libs/jackson-core-2.2.0.jar')
     compile files('libs/achartengine-1.0.0.jar')
     compile files('libs/snakeyaml-1.10-android.jar')
     compile(name:'ca.psiphon', ext:'aar')
-    compile 'com.google.android.gms:play-services-safetynet:10.0.1'
+    compile 'com.google.android.gms:play-services-safetynet:11.0.4'
     compile project(':tray')
     compile('com.mopub:mopub-sdk-banner:4.17.0@aar') {
         transitive = true
