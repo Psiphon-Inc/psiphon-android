@@ -44,8 +44,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
@@ -77,6 +81,12 @@ android {
 
 }
 
+repositories {
+    jcenter()
+    maven { url "https://s3.amazonaws.com/moat-sdk-builds" }
+    maven { url 'https://jitpack.io' }
+}
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:26.1.0'
@@ -84,6 +94,13 @@ dependencies {
     implementation files('libs/achartengine-1.0.0.jar')
     implementation files('libs/snakeyaml-1.10-android.jar')
     implementation(name:'ca.psiphon', ext:'aar')
-    implementation 'com.google.android.gms:play-services-safetynet:11.0.4'
+    implementation 'com.google.android.gms:play-services-safetynet:11.8.0'
     implementation project(':tray')
+    implementation('com.mopub:mopub-sdk-banner:4.20.0@aar') {
+        transitive = true
+    }
+    implementation('com.mopub:mopub-sdk-interstitial:4.20.0@aar') {
+        transitive = true
+    }
+    implementation 'com.google.android.gms:play-services-ads:11.8.0'
 }
