@@ -78,12 +78,12 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:26.1.0'
-    compile files('libs/jackson-core-2.2.0.jar')
-    compile files('libs/achartengine-1.0.0.jar')
-    compile files('libs/snakeyaml-1.10-android.jar')
-    compile(name:'ca.psiphon', ext:'aar')
-    compile 'com.google.android.gms:play-services-safetynet:11.0.4'
-    compile project(':tray')
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation files('libs/jackson-core-2.2.0.jar')
+    implementation files('libs/achartengine-1.0.0.jar')
+    implementation files('libs/snakeyaml-1.10-android.jar')
+    implementation(name:'ca.psiphon', ext:'aar')
+    implementation 'com.google.android.gms:play-services-safetynet:11.0.4'
+    implementation project(':tray')
 }
