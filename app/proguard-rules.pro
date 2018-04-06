@@ -19,78 +19,52 @@
 # Only strip these
 -keep class !com.google.android.gms.**,!com.google.ads.**,!android.support.** { *; }
 
--keep class com.google.android.gms.common.api.GoogleApiClient { public *; }
--keep class com.google.android.gms.common.api.GoogleApiClient$* {public *;}
--keep class com.google.android.gms.location.LocationServices {public *;}
--keep class com.google.android.gms.location.FusedLocationProviderApi {public *;}
--keep class com.google.android.gms.location.ActivityRecognition {public *;}
--keep class com.google.android.gms.location.ActivityRecognitionApi {public *;}
--keep class com.google.android.gms.location.ActivityRecognitionResult {public *;}
--keep class com.google.android.gms.location.DetectedActivity {public *;}
--keep class com.google.android.gms.ads.identifier.AdvertisingIdClient{public *;}
--keep class com.google.android.gms.ads.identifier.AdvertisingIdClient$Info{public *;}
+# MoPub Proguard Config
+# NOTE: You should also include the Android Proguard config found with the build tools:
+# $ANDROID_HOME/tools/proguard/proguard-android.txt
 
--keepattributes SourceFile,LineNumberTable,InnerClasses
--keep class com.inmobi.** { *; }
--dontwarn com.inmobi.**
--keep public class com.google.android.gms.**
--dontwarn com.google.android.gms**
--dontwarn com.squareup.picasso.**
--keep class com.google.android.gms.ads.identifier.AdvertisingIdClient{
-     public *;
+# Keep public classes and methods.
+-keepclassmembers class com.mopub.** { public *; }
+-keep public class com.mopub.**
+-keep public class android.webkit.JavascriptInterface {}
+
+# Explicitly keep any custom event classes in any package.
+-keep class * extends com.mopub.mobileads.CustomEventBanner {}
+-keep class * extends com.mopub.mobileads.CustomEventInterstitial {}
+-keep class * extends com.mopub.nativeads.CustomEventNative {}
+-keep class * extends com.mopub.nativeads.CustomEventRewardedAd {}
+
+# Keep methods that are accessed via reflection
+-keepclassmembers class ** { @com.mopub.common.util.ReflectionTarget *; }
+
+# Viewability support
+-keepclassmembers class com.integralads.avid.library.mopub.** { public *; }
+-keep public class com.integralads.avid.library.mopub.**
+-keepclassmembers class com.moat.analytics.mobile.mpub.** { public *; }
+-keep public class com.moat.analytics.mobile.mpub.**
+
+# Support for Android Advertiser ID.
+-keep class com.google.android.gms.common.GooglePlayServicesUtil {*;}
+-keep class com.google.android.gms.ads.identifier.AdvertisingIdClient {*;}
+-keep class com.google.android.gms.ads.identifier.AdvertisingIdClient$Info {*;}
+
+# Support for Google Play Services
+# http://developer.android.com/google/play-services/setup.html
+-keep class * extends java.util.ListResourceBundle {
+    protected Object[][] getContents();
 }
--keep class com.google.android.gms.ads.identifier.AdvertisingIdClient$Info{
-     public *;
+
+-keep public class com.google.android.gms.common.internal.safeparcel.SafeParcelable {
+    public static final *** NULL;
 }
-# skip the Picasso library classes
--keep class com.squareup.picasso.** {*;}
--dontwarn com.squareup.picasso.**
--dontwarn com.squareup.okhttp.**
-# skip Moat classes
--keep class com.moat.** {*;}
--dontwarn com.moat.**
-# skip AVID classes
--keep class com.integralads.avid.library.* {*;}
 
--dontwarn android.webkit.WebSettings
--dontwarn com.google.android.exoplayer.**
-
-# Vungle
--dontwarn com.vungle.**
--dontnote com.vungle.**
--keep class com.vungle.** { *; }
--keep class javax.inject.*
-
-# GreenRobot
--dontwarn de.greenrobot.event.util.**
-
-# RxJava
--dontwarn rx.internal.util.unsafe.**
--keepclassmembers class rx.internal.util.unsafe.*ArrayQueue*Field* {
-   long producerIndex;
-   long consumerIndex;
+-keepnames @com.google.android.gms.common.annotation.KeepName class *
+-keepclassmembernames class * {
+    @com.google.android.gms.common.annotation.KeepName *;
 }
--keepclassmembers class rx.internal.util.unsafe.BaseLinkedQueueProducerNodeRef {
-   rx.internal.util.atomic.LinkedQueueNode producerNode;
+
+-keepnames class * implements android.os.Parcelable {
+    public static final ** CREATOR;
 }
--keepclassmembers class rx.internal.util.unsafe.BaseLinkedQueueConsumerNodeRef {
-   rx.internal.util.atomic.LinkedQueueNode consumerNode;
-}
--keep class rx.schedulers.Schedulers { public static <methods>; }
--keep class rx.schedulers.ImmediateScheduler { public <methods>; }
--keep class rx.schedulers.TestScheduler { public <methods>; }
--keep class rx.schedulers.Schedulers { public static ** test(); }
 
-# MOAT
--dontwarn com.moat.**
--keep class com.moat.** { public protected private *; }
-
-# Retrofit
--dontwarn okio.**
--dontwarn retrofit2.Platform$Java8
-
--keep class com.aerserv.** { *; }
--keepclassmembers class com.aerserv.** { *; }
--dontwarn com.aerserv.**
--dontwarn com.moat.**
-
+-dontwarn org.jacoco.**
