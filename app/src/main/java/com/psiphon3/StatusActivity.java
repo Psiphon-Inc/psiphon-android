@@ -54,6 +54,7 @@ import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
+import net.pubnative.lite.sdk.PNLite;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -537,6 +538,8 @@ public class StatusActivity
 
     private void initUntunneledAds() {
         if (shouldShowUntunneledAds()) {
+            PNLite.initialize("APP_TOKEN", getApplication());
+
             initUntunneledBanners();
 
             if (m_moPubUntunneledInterstitial == null)
@@ -684,6 +687,8 @@ public class StatusActivity
         {
             // make sure WebView proxy settings are up to date
             WebViewProxySettings.setLocalProxy(this, getListeningLocalHttpProxyPort());
+
+            PNLite.initialize("APP_TOKEN", getApplication());
 
             initTunneledBanners();
             if (initFullScreenAd) {

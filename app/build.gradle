@@ -84,7 +84,7 @@ android {
 repositories {
     jcenter()
     maven { url "https://s3.amazonaws.com/moat-sdk-builds" }
-    maven { url 'https://jitpack.io' }
+    maven { url 'https://dl.bintray.com/pubnative/maven' }
 }
 
 dependencies {
@@ -103,4 +103,6 @@ dependencies {
         transitive = true
     }
     implementation 'com.google.android.gms:play-services-ads:11.8.0'
+    implementation 'net.pubnative:lite.sdk:0.1.7-master.86'
+    implementation 'net.pubnative:lite.adapters.mopub:0.1.7-master.86'
 }
