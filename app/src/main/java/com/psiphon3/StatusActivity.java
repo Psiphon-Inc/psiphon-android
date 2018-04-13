@@ -538,7 +538,7 @@ public class StatusActivity
 
     private void initUntunneledAds() {
         if (shouldShowUntunneledAds()) {
-            PNLite.initialize("APP_TOKEN", getApplication());
+            PNLite.initialize("f9703b12a93b4283acc59be8d10ed144", getApplication());
 
             initUntunneledBanners();
 
@@ -688,7 +688,7 @@ public class StatusActivity
             // make sure WebView proxy settings are up to date
             WebViewProxySettings.setLocalProxy(this, getListeningLocalHttpProxyPort());
 
-            PNLite.initialize("APP_TOKEN", getApplication());
+            PNLite.initialize("f9703b12a93b4283acc59be8d10ed144", getApplication());
 
             initTunneledBanners();
             if (initFullScreenAd) {
