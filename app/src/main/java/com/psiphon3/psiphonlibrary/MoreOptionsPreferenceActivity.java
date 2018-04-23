@@ -99,8 +99,13 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
         // Initialize with tray preferences values
         AppPreferences mpPreferences = new AppPreferences(this);
 
-        mNotificationSound.setChecked(mpPreferences.getBoolean(getString(R.string.preferenceNotificationsWithSound), false));
-        mNotificationVibration.setChecked(mpPreferences.getBoolean(getString(R.string.preferenceNotificationsWithVibrate), false));
+        if (mNotificationSound != null) {
+            mNotificationSound.setChecked(mpPreferences.getBoolean(getString(R.string.preferenceNotificationsWithSound), false));
+        }
+
+        if (mNotificationVibration != null) {
+            mNotificationVibration.setChecked(mpPreferences.getBoolean(getString(R.string.preferenceNotificationsWithVibrate), false));
+        }
 
         // R.xml.preferences is conditionally loaded at API version 11 and higher from the xml-v11 folder
         // If it isn't null here, we can reasonably assume it can be cast to our MultiSelectListPreference
