@@ -67,9 +67,5 @@
     public static final ** CREATOR;
 }
 
-# PubNative Proguard Config
--keepattributes Signature
--keep class net.pubnative.** { *; }
-
 
 -dontwarn org.jacoco.**
