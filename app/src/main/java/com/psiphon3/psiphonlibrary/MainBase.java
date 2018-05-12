@@ -46,6 +46,7 @@ import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -1348,9 +1349,9 @@ public abstract class MainBase {
                         break;
 
                     case TunnelManager.MSG_KNOWN_SERVER_REGIONS:
-                        RegionAdapter.setServersExist(
-                                MainBase.TabbedActivityBase.this,
-                                data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_AVAILABLE_EGRESS_REGIONS));
+                        List<String> availableRegions = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_AVAILABLE_EGRESS_REGIONS);
+                        RegionAdapter.setServersExist(MainBase.TabbedActivityBase.this, availableRegions);
+                        checkSelectedEgressRegion(availableRegions);
                         break;
 
                     case TunnelManager.MSG_TUNNEL_STARTING:
@@ -1382,6 +1383,37 @@ public abstract class MainBase {
                     default:
                         super.handleMessage(msg);
                 }
+            }
+        }
+
+        private  void checkSelectedEgressRegion(List<String> availableRegions) {
+            boolean isSelectedRegionAvailable = false;
+            String selectedEgressRegion = getTunnelConfigEgressRegion();
+            if (selectedEgressRegion == null || selectedEgressRegion.equals(PsiphonConstants.REGION_CODE_ANY)) {
+                // User region is either not set or set to 'Best Performance', do nothing
+                return;
+            }
+
+            for (String regionCode : availableRegions) {
+                if (selectedEgressRegion.equals(regionCode)) {
+                    isSelectedRegionAvailable = true;
+                    break;
+                }
+            }
+
+            if(!isSelectedRegionAvailable) {
+                // command service stop
+                stopTunnelService();
+
+                // Set region selector position to 'Best Performance'
+                String egressRegionPreference = PsiphonConstants.REGION_CODE_ANY;
+                int position = m_regionAdapter.getPositionForRegionCode(egressRegionPreference);
+                m_regionSelector.setSelection(position);
+
+                // Show "Selected region unavailable" toast
+                Toast toast = Toast.makeText(this, R.string.selected_region_currently_not_available, Toast.LENGTH_LONG);
+                toast.setGravity(Gravity.CENTER, 0, 0);
+                toast.show();
             }
         }
 

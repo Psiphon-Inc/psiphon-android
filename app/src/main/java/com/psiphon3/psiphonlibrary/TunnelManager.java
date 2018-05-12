@@ -27,7 +27,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
-import android.net.Uri;
 import android.net.VpnService;
 import android.net.VpnService.Builder;
 import android.os.Build;
