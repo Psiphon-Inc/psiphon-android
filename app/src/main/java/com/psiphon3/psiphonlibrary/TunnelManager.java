@@ -27,7 +27,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
-import android.net.Uri;
 import android.net.VpnService;
 import android.net.VpnService.Builder;
 import android.os.Build;
@@ -729,14 +728,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             if (tunnelConfig.disableTimeouts) {
                 //disable timeouts
                 MyLog.g("DisableTimeouts", "disableTimeouts", true);
-                json.put("TunnelConnectTimeoutSeconds", 0);
-                json.put("TunnelPortForwardDialTimeoutSeconds", 0);
-                json.put("TunnelSshKeepAliveProbeTimeoutSeconds", 0);
-                json.put("TunnelSshKeepAlivePeriodicTimeoutSeconds", 0);
-                json.put("FetchRemoteServerListTimeoutSeconds", 0);
-                json.put("PsiphonApiServerTimeoutSeconds", 0);
-                json.put("FetchRoutesTimeoutSeconds", 0);
-                json.put("HttpProxyOriginServerTimeoutSeconds", 0);
+                json.put("NetworkLatencyMultiplier", 3.0);
             }
 
             return json.toString();
@@ -898,6 +890,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     }
                 }
                 m_tunnelState.homePages.add(url);
+
+        boolean showAds = false;
+        for (String homePage : m_tunnelState.homePages) {
+            if (homePage.contains("psiphon_show_ads")) {
+                showAds = true;
+            }
+        }
+        final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
+        multiProcessPreferences.put(
+                m_parentService.getString(R.string.persistent_show_ads_setting),
+                showAds);
             }
         });
     }
@@ -1000,4 +1003,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             m_tunnel.setClientVerificationPayload(payload);
         }
     }
+
+    @Override
+    public void onActiveAuthorizationIDs(List<String> authorizations) {}
 }
