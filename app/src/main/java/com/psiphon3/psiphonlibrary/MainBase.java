@@ -1225,6 +1225,8 @@ public abstract class MainBase {
 
             intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS,
                     getTunnelConfigDisableTimeouts());
+
+            intent.putExtra(TunnelManager.CLIENT_MESSENGER, m_incomingMessenger);
         }
 
         protected void startAndBindTunnelService() {

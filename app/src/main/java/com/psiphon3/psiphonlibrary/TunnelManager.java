@@ -111,6 +111,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String DATA_TUNNEL_CONFIG_WHOLE_DEVICE = "tunnelConfigWholeDevice";
     public static final String DATA_TUNNEL_CONFIG_EGRESS_REGION = "tunnelConfigEgressRegion";
     public static final String DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS = "tunnelConfigDisableTimeouts";
+    public static final String CLIENT_MESSENGER = "incomingClientMessenger";
 
     // Tunnel config, received from the client.
     public static class Config {
@@ -168,6 +169,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         }
 
         if (m_firstStart && intent != null) {
+            m_outgoingMessenger = (Messenger) intent.getParcelableExtra(CLIENT_MESSENGER);
             getTunnelConfig(intent);
             m_parentService.startForeground(R.string.psiphon_service_notification_id, this.createNotification(false));
             MyLog.v(R.string.client_version, MyLog.Sensitivity.NOT_SENSITIVE, EmbeddedValues.CLIENT_VERSION);
@@ -368,7 +370,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         }
         try {
             Message msg = Message.obtain(null, what);
-            msg.replyTo = m_incomingMessenger;
             if (data != null) {
                 msg.setData(data);
             }
