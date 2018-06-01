@@ -44,6 +44,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -99,7 +100,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public abstract class MainBase {
-    public static abstract class Activity extends android.app.Activity implements MyLog.ILogger {
+    public static abstract class Activity extends AppCompatActivity implements MyLog.ILogger {
         public Activity() {
             Utils.initializeSecureRandom();
         }
