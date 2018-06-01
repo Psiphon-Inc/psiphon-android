@@ -33,6 +33,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -43,6 +44,13 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.mopub.common.MoPub;
+import com.mopub.common.SdkConfiguration;
+import com.mopub.common.SdkInitializationListener;
+import com.mopub.common.privacy.ConsentDialogListener;
+import com.mopub.common.privacy.ConsentStatus;
+import com.mopub.common.privacy.ConsentStatusChangeListener;
+import com.mopub.common.privacy.PersonalInfoManager;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
@@ -54,6 +62,7 @@ import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.R;
 import com.psiphon3.util.IabHelper;
 import com.psiphon3.util.IabResult;
@@ -160,7 +169,12 @@ public class StatusActivity
     @Override
     protected void onTunnelStateReceived() {
         m_temporarilyDisableTunneledInterstitial = false;
-        initTunneledAds(false);
+        initMoPubAds(new Runnable() {
+            @Override
+            public void run() {
+                initTunneledAds(false);
+            }
+        });
     }
     
     @Override
@@ -1027,12 +1041,17 @@ public class StatusActivity
 
         if (show)
         {
-            initUntunneledBanner();
+            initMoPubAds(new Runnable() {
+                @Override
+                public void run() {
+                    initUntunneledBanner();
 
-            if (m_moPubUntunneledInterstitial == null)
-            {
-                loadUntunneledFullScreenAd();
-            }
+                    if (m_moPubUntunneledInterstitial == null)
+                    {
+                        loadUntunneledFullScreenAd();
+                    }
+                }
+            });
         }
         else
         {
@@ -1439,7 +1458,12 @@ public class StatusActivity
 
     private void showTunneledFullScreenAd()
     {
-        initTunneledAds(true);
+        initMoPubAds(new Runnable() {
+            @Override
+            public void run() {
+               initTunneledAds(true);
+           }
+        });
 
         if (shouldShowTunneledAds() && !m_temporarilyDisableTunneledInterstitial)
         {
@@ -1486,5 +1510,71 @@ public class StatusActivity
     {
         deInitUntunneledAds();
         deInitTunneledAds();
+    }
+
+    // New MoPub initializer with GDPR consent dialog
+    static class MoPubConsentDialogHelper {
+        public static ConsentDialogListener initDialogLoadListener() {
+            return new ConsentDialogListener() {
+
+                @Override
+                public void onConsentDialogLoaded() {
+                    PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                    if (personalInfoManager != null) {
+                        personalInfoManager.showConsentDialog();
+                    }
+                }
+
+                @Override
+                public void onConsentDialogLoadFailed(@NonNull MoPubErrorCode moPubErrorCode) {
+                    MyLog.d( "MoPub consent dialog failed to load.");
+                }
+            };
+        }
+    }
+
+    private void initMoPubAds(final Runnable runnable) {
+        PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+        // initialized MoPub SDK if needed
+        if (personalInfoManager == null) {
+            SdkConfiguration sdkConfiguration = new SdkConfiguration.Builder(MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID)
+                    .build();
+
+            MoPub.initializeSdk(this, sdkConfiguration, new SdkInitializationListener() {
+                @Override
+                public void onInitializationFinished() {
+                    PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                    if(personalInfoManager != null) {
+                        // subscribe to consent change state event
+                        personalInfoManager.subscribeConsentStatusChangeListener(new ConsentStatusChangeListener() {
+
+                            @Override
+                            public void onConsentStateChange(@NonNull ConsentStatus oldConsentStatus,
+                                                             @NonNull ConsentStatus newConsentStatus,
+                                                             boolean canCollectPersonalInformation) {
+                                PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                                if (personalInfoManager != null && personalInfoManager.shouldShowConsentDialog()) {
+                                    personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
+                                }
+                            }
+                        });
+
+                        // If consent is required load the consent dialog
+                        // otherwise initialize and show the ads
+                        if(personalInfoManager.shouldShowConsentDialog()) {
+                            personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
+
+                        } else {
+                            runnable.run();
+                        }
+                    } else {
+                        MyLog.d( "MoPub SDK has failed to initialize.");
+                    }
+                }
+            });
+
+        } else {
+            runnable.run();
+        }
     }
 }

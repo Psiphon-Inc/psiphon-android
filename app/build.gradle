@@ -95,12 +95,12 @@ dependencies {
     implementation files('libs/snakeyaml-1.10-android.jar')
     implementation(name:'ca.psiphon', ext:'aar')
     implementation project(':tray')
-    implementation('com.mopub:mopub-sdk-banner:4.20.0@aar') {
+    implementation('com.mopub:mopub-sdk-banner:5.0.0@aar') {
         transitive = true
     }
-    implementation('com.mopub:mopub-sdk-interstitial:4.20.0@aar') {
+    implementation('com.mopub:mopub-sdk-interstitial:5.0.0@aar') {
         transitive = true
     }
-    implementation 'com.google.android.gms:play-services-ads:11.8.0'
+    implementation 'com.google.android.gms:play-services-ads:15.0.1'
     implementation 'com.android.support:cardview-v7:26.1.0'
 }
