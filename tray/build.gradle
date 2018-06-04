@@ -6,7 +6,6 @@ def final int VERSION_CODE = 10
 
 android {
     compileSdkVersion 26
-    buildToolsVersion "26.0.3"
 
     repositories{
         maven {

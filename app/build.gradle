@@ -2,7 +2,6 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 26
-    buildToolsVersion "26.0.3"
     useLibrary 'org.apache.http.legacy'
 
     repositories{
@@ -84,6 +83,5 @@ dependencies {
     implementation files('libs/achartengine-1.0.0.jar')
     implementation files('libs/snakeyaml-1.10-android.jar')
     implementation(name:'ca.psiphon', ext:'aar')
-    implementation 'com.google.android.gms:play-services-safetynet:11.0.4'
     implementation project(':tray')
 }
