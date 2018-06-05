@@ -401,7 +401,19 @@ public abstract class MainBase {
             if (m_firstRun) {
                 EmbeddedValues.initialize(this);
             }
+        }
 
+        @Override
+        protected void onDestroy() {
+            super.onDestroy();
+
+            if (m_sponsorHomePage != null) {
+                m_sponsorHomePage.stop();
+                m_sponsorHomePage = null;
+            }
+        }
+
+        protected void setupActivityLayout() {
             // Set up tabs
             m_tabHost.setup();
 
@@ -538,16 +550,6 @@ public abstract class MainBase {
 
             // Force the UI to display logs already loaded into the StatusList message history
             LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
-        }
-
-        @Override
-        protected void onDestroy() {
-            super.onDestroy();
-
-            if (m_sponsorHomePage != null) {
-                m_sponsorHomePage.stop();
-                m_sponsorHomePage = null;
-            }
         }
 
         /**
@@ -904,7 +906,7 @@ public abstract class MainBase {
             m_tunnelWholeDeviceToggle.setEnabled(false);
             m_disableTimeoutsToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
-            m_moreOptionsButton.setEnabled(false);
+            m_moreOptionsButton.setEnabled(true);
         }
 
         private void checkRestartTunnel() {

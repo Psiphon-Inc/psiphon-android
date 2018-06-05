@@ -65,15 +65,14 @@ public class StatusActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
         m_banner = (ImageView) findViewById(R.id.banner);
         m_tabHost = (TabHost) findViewById(R.id.tabHost);
         m_toggleButton = (Button) findViewById(R.id.toggleButton);
 
-        // NOTE: super class assumes m_tabHost is initialized in its onCreate
-
-        super.onCreate(savedInstanceState);
+        setupActivityLayout();
 
         // EmbeddedValues.initialize(this); is called in MainBase.OnCreate
 
