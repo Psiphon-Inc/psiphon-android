@@ -906,7 +906,7 @@ public abstract class MainBase {
             m_tunnelWholeDeviceToggle.setEnabled(false);
             m_disableTimeoutsToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
-            m_moreOptionsButton.setEnabled(true);
+            m_moreOptionsButton.setEnabled(false);
         }
 
         private void checkRestartTunnel() {
