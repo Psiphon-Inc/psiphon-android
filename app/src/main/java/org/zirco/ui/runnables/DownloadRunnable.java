@@ -33,7 +33,7 @@ import org.zirco.utils.IOUtils;
 import android.os.Handler;
 import android.os.Message;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 

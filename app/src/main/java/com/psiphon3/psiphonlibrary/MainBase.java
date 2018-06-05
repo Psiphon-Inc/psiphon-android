@@ -51,6 +51,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.KeyEvent;
@@ -74,6 +75,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TabHost.TabSpec;
@@ -81,9 +83,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
-import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.SharedPreferencesImport;
@@ -94,6 +96,9 @@ import org.achartengine.model.XYMultipleSeriesDataset;
 import org.achartengine.model.XYSeries;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -146,9 +151,9 @@ public abstract class MainBase {
 
         protected Button m_toggleButton;
         private StatusListViewManager m_statusListManager = null;
-        private AppPreferences m_multiProcessPreferences;
+        protected AppPreferences m_multiProcessPreferences;
         private ViewFlipper m_sponsorViewFlipper;
-        private LinearLayout m_statusLayout;
+        private ScrollView m_statusLayout;
         private TextView m_statusTabLogLine;
         private TextView m_statusTabVersionLine;
         private SponsorHomePage m_sponsorHomePage;
@@ -171,9 +176,35 @@ public abstract class MainBase {
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
         private LoggingObserver m_loggingObserver;
+        private boolean m_localProxySettingsHaveBeenReset = false;
+        private boolean m_serviceStateUIPaused = false;
 
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
+        }
+
+        protected boolean getSkipHomePage() {
+            for (String homepage : getHomePages()) {
+                if (homepage.contains("psiphon_skip_homepage")) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        protected boolean showFirstHomePageInApp() {
+            boolean showHomePage = false;
+            List<String> homepages = getHomePages();
+            if (!getSkipHomePage() && homepages.size() > 0) {
+                showHomePage = true;
+                for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
+                    if (homepages.get(0).contains(homeTabUrlExclusion)) {
+                        showHomePage = false;
+                        break;
+                    }
+                }
+            }
+            return showHomePage;
         }
 
         // Avoid calling m_statusTabToggleButton.setImageResource() every 250 ms
@@ -192,19 +223,7 @@ public abstract class MainBase {
 
                 // Show the sponsor web view, but only if there's a home page to
                 // show and it's isn't excluded from being embedded.
-                boolean showHomePage = false;
-                List<String> homepages = getHomePages();
-                if (homepages.size() > 0) {
-                    showHomePage = true;
-                    for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
-                        if (homepages.get(0).contains(homeTabUrlExclusion)) {
-                            showHomePage = false;
-                            break;
-                        }
-                    }
-                }
-
-                if (showHomePage && statusShowing) {
+                if (showFirstHomePageInApp() && statusShowing) {
                     m_sponsorViewFlipper.showNext();
                 }
             } else {
@@ -451,7 +470,7 @@ public abstract class MainBase {
             };
 
             m_tabHost.setOnTouchListener(onTouchListener);
-            m_statusLayout = (LinearLayout) findViewById(R.id.statusLayout);
+            m_statusLayout = (ScrollView) findViewById(R.id.statusLayout);
             m_statusViewImage = (ImageButton) findViewById(R.id.statusViewImage);
             m_statusViewImage.setOnTouchListener(onTouchListener);
             findViewById(R.id.sponsorViewFlipper).setOnTouchListener(onTouchListener);
@@ -562,6 +581,10 @@ public abstract class MainBase {
          *            time the activity is created.
          */
         protected void resetSponsorHomePage(boolean freshConnect) {
+            if (getSkipHomePage()) {
+                return;
+            }
+
             String url;
             List<String> homepages = getHomePages();
             if (homepages.size() > 0) {
@@ -570,14 +593,11 @@ public abstract class MainBase {
                 return;
             }
 
-            // Some URLs are excluded from being embedded as home pages.
-            for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
-                if (url.contains(homeTabUrlExclusion)) {
-                    if (freshConnect) {
-                        displayBrowser(getContext(), Uri.parse(url));
-                    }
-                    return;
+            if (!showFirstHomePageInApp()) {
+                if (freshConnect) {
+                    displayBrowser(getContext(), Uri.parse(url));
                 }
+                return;
             }
 
             // At this point we're showing the URL in the embedded webview.
@@ -588,6 +608,8 @@ public abstract class MainBase {
         @Override
         protected void onResume() {
             super.onResume();
+            
+            m_localProxySettingsHaveBeenReset = false;
 
             // Load new logs from the logging provider now
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -686,6 +708,8 @@ public abstract class MainBase {
                 });
             }
         }
+
+        public abstract void onSubscribeButtonClick(View v);
 
         protected abstract void startUp();
 
@@ -873,14 +897,30 @@ public abstract class MainBase {
         }
 
         private void updateServiceStateUI() {
+            if (m_serviceStateUIPaused) {
+                return;
+            }
+
             if (!m_boundToTunnelService) {
                 setStatusState(R.drawable.status_icon_disconnected);
                 if (!isServiceRunning()) {
                     m_toggleButton.setText(getText(R.string.start));
                     enableToggleServiceUI();
+                    updateSubscriptionAndAdOptions(true);
+                
+                    if (!m_localProxySettingsHaveBeenReset) {
+                        WebViewProxySettings.resetLocalProxy(this);
+                        m_localProxySettingsHaveBeenReset = true;
+                    }
                 } else {
                     m_toggleButton.setText(getText(R.string.waiting));
                     disableToggleServiceUI();
+                    updateSubscriptionAndAdOptions(false);
+                
+                    if (!m_localProxySettingsHaveBeenReset) {
+                        WebViewProxySettings.resetLocalProxy(this);
+                        m_localProxySettingsHaveBeenReset = true;
+                    }
                 }
             } else {
                 if (isTunnelConnected()) {
@@ -890,9 +930,17 @@ public abstract class MainBase {
                 }
                 m_toggleButton.setText(getText(R.string.stop));
                 enableToggleServiceUI();
+                updateSubscriptionAndAdOptions(false);
+                m_localProxySettingsHaveBeenReset = false;
             }
+
+            updateAdsForServiceState();
         }
-        
+
+        protected abstract void updateAdsForServiceState();
+
+        protected abstract void updateSubscriptionAndAdOptions(boolean show);
+
         protected void enableToggleServiceUI() {
             m_toggleButton.setEnabled(true);
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
@@ -908,6 +956,16 @@ public abstract class MainBase {
             m_regionSelector.setEnabled(false);
             m_moreOptionsButton.setEnabled(false);
         }
+        
+        protected void pauseServiceStateUI() {
+            m_serviceStateUIPaused = true;
+            disableToggleServiceUI();
+        }
+
+        protected void resumeServiceStateUI() {
+            m_serviceStateUIPaused = false;
+            updateServiceStateUI();
+        }
 
         private void checkRestartTunnel() {
             if (m_restartTunnel &&
@@ -918,7 +976,7 @@ public abstract class MainBase {
             }
         }
 
-        private void scheduleRunningTunnelServiceRestart() {
+        protected void scheduleRunningTunnelServiceRestart() {
             if (isServiceRunning()) {
                 m_restartTunnel = true;
                 stopTunnelService();
@@ -1087,6 +1145,45 @@ public abstract class MainBase {
                 return false;
             }
 
+            //check if "add custom headers" checkbox changed
+            boolean addCustomHeadersPreference = prefs.getBoolean(
+                    getString(R.string.addCustomHeadersPreference), false);
+            if (addCustomHeadersPreference != UpstreamProxySettings.getAddCustomHeadersPreference(this)) {
+                return true;
+            }
+
+            // "add custom headers" is selected, check if
+            // upstream headers string has changed
+            if (addCustomHeadersPreference) {
+                JSONObject newHeaders = new JSONObject();
+
+                for (int position = 1; position <= 6; position++) {
+                    int nameID = getResources().getIdentifier("customProxyHeaderName" + position, "string", getPackageName());
+                    int valueID = getResources().getIdentifier("customProxyHeaderValue" + position, "string", getPackageName());
+
+                    String namePrefStr = getResources().getString(nameID);
+                    String valuePrefStr = getResources().getString(valueID);
+
+                    String name = prefs.getString(namePrefStr, "");
+                    String value = prefs.getString(valuePrefStr, "");
+                    try {
+                        if (!TextUtils.isEmpty(name)) {
+                            JSONArray arr = new JSONArray();
+                            arr.put(value);
+                            newHeaders.put(name, arr);
+                        }
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                JSONObject oldHeaders = UpstreamProxySettings.getUpstreamProxyCustomHeaders(this);
+
+                if (0 != oldHeaders.toString().compareTo(newHeaders.toString())) {
+                    return true;
+                }
+            }
+
             // check if "use custom proxy settings"
             // radio has changed
             boolean useCustomProxySettingsPreference = prefs.getBoolean(
@@ -1158,7 +1255,20 @@ public abstract class MainBase {
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyAuthenticationPreference), getString(R.string.useProxyAuthenticationPreference)),
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyUsernamePreference), getString(R.string.useProxyUsernamePreference)),
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyPasswordPreference), getString(R.string.useProxyPasswordPreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference))
+                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.addCustomHeadersPreference), getString(R.string.addCustomHeadersPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName1), getString(R.string.customProxyHeaderName1)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue1), getString(R.string.customProxyHeaderValue1)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName2), getString(R.string.customProxyHeaderName2)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue2), getString(R.string.customProxyHeaderValue2)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName3), getString(R.string.customProxyHeaderName3)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue3), getString(R.string.customProxyHeaderValue3)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName4), getString(R.string.customProxyHeaderName4)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue4), getString(R.string.customProxyHeaderValue4)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName5), getString(R.string.customProxyHeaderName5)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue5), getString(R.string.customProxyHeaderValue5)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName6), getString(R.string.customProxyHeaderName6)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue6), getString(R.string.customProxyHeaderValue6))
                 );
 
                 if (bRestartRequired) {
@@ -1197,6 +1307,14 @@ public abstract class MainBase {
             return m_tunnelConfig.disableTimeouts;
         }
 
+        protected void setTunnelConfigRateLimit(int rateLimitMbps) {
+            m_tunnelConfig.rateLimitMbps = rateLimitMbps;
+        }
+
+        protected int getTunnelConfigRateLimitMbps() {
+            return m_tunnelConfig.rateLimitMbps;
+        }
+
         protected PendingIntent getHandshakePendingIntent() {
             return null;
         }
@@ -1229,6 +1347,12 @@ public abstract class MainBase {
                     getTunnelConfigDisableTimeouts());
 
             intent.putExtra(TunnelManager.CLIENT_MESSENGER, m_incomingMessenger);
+
+            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_RATE_LIMIT_MBPS,
+                    getTunnelConfigRateLimitMbps());
+
+            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_SPONSOR_ID,
+                    EmbeddedValues.SPONSOR_ID);
         }
 
         protected void startAndBindTunnelService() {
@@ -1275,6 +1399,23 @@ public abstract class MainBase {
             return m_tunnelState.listeningLocalHttpProxyPort;
         }
 
+        protected String getClientRegion() {
+            return m_tunnelState.clientRegion;
+        }
+
+        /**
+         * Indicates the currently connected tunnel's rate-limit.
+         * Invalid if there is no currently connected tunnel.
+         * @return The rate limit if currently connected tunnel is rate-limited. 0 otherwise.
+         */
+        protected int getRateLimitMbps() {
+            return m_tunnelState.rateLimitMbps;
+        }
+
+        protected String getTunnelStateSponsorId() {
+            return m_tunnelState.sponsorId;
+        }
+
         protected void getTunnelStateFromHandshakeIntent(Intent intent) {
             if (!intent.getAction().equals(TunnelManager.INTENT_ACTION_HANDSHAKE)) {
                 return;
@@ -1299,6 +1440,14 @@ public abstract class MainBase {
             if (homePages != null) {
                 m_tunnelState.homePages = homePages;
             }
+            m_tunnelState.rateLimitMbps = data.getInt(TunnelManager.DATA_TUNNEL_STATE_RATE_LIMIT_MBPS);
+            m_tunnelState.sponsorId = data.getString(TunnelManager.DATA_TUNNEL_STATE_SPONSOR_ID);
+
+            onTunnelStateReceived();
+        }
+
+        protected void onTunnelStateReceived() {
+            // do nothing
         }
 
         private void getDataTransferStatsFromBundle(Bundle data) {
@@ -1348,6 +1497,7 @@ public abstract class MainBase {
 
                     case TunnelManager.MSG_TUNNEL_STOPPING:
                         m_tunnelState.isConnected = false;
+                        onTunnelDisconnected();
 
                         // When the tunnel self-stops, we also need to unbind to ensure
                         // the service is destroyed
@@ -1356,6 +1506,9 @@ public abstract class MainBase {
 
                     case TunnelManager.MSG_TUNNEL_CONNECTION_STATE:
                         m_tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
+                        if (!m_tunnelState.isConnected) {
+                            onTunnelDisconnected();
+                        }
                         updateServiceStateUI();
                         break;
 
@@ -1432,6 +1585,10 @@ public abstract class MainBase {
                 }
             }
             updateServiceStateUI();
+        }
+
+        protected void onTunnelDisconnected() {
+            // do nothing
         }
 
         /**
@@ -1544,7 +1701,8 @@ public abstract class MainBase {
             private final SponsorWebChromeClient mWebChromeClient;
             private final ProgressBar mProgressBar;
 
-            @TargetApi(Build.VERSION_CODES.HONEYCOMB) public SponsorHomePage(WebView webView, ProgressBar progressBar) {
+            @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+            public SponsorHomePage(WebView webView, ProgressBar progressBar) {
                 mWebView = webView;
                 mProgressBar = progressBar;
                 mWebChromeClient = new SponsorWebChromeClient(mProgressBar);
@@ -1566,6 +1724,7 @@ public abstract class MainBase {
             }
 
             public void load(String url) {
+                m_localProxySettingsHaveBeenReset = false;
                 WebViewProxySettings.setLocalProxy(mWebView.getContext(), getListeningLocalHttpProxyPort());
                 mProgressBar.setVisibility(View.VISIBLE);
                 mWebView.loadUrl(url);
