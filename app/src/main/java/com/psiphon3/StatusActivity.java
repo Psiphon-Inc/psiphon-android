@@ -1533,6 +1533,8 @@ public class StatusActivity
     }
 
     private void initMoPubAds(final Runnable runnable) {
+        MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
+
         PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
         // initialized MoPub SDK if needed
         if (personalInfoManager == null) {
