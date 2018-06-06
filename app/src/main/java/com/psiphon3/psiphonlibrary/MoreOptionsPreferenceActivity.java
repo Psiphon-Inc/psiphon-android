@@ -27,10 +27,10 @@ import android.preference.DialogPreference;
 import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
-import android.preference.PreferenceActivity;
 import android.preference.PreferenceGroup;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
+import android.support.annotation.NonNull;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.widget.Toast;
@@ -47,6 +47,44 @@ import java.util.Set;
 public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity implements
         OnSharedPreferenceChangeListener, OnPreferenceClickListener {
 
+    private interface PreferenceGetter {
+        boolean getBoolean(@NonNull final String key, final boolean defaultValue);
+        String getString(@NonNull final String key, final String defaultValue);
+    }
+
+    private class AppPreferencesWrapper implements PreferenceGetter {
+        AppPreferences prefs;
+
+        public AppPreferencesWrapper(AppPreferences prefs) {
+            this.prefs = prefs;
+        }
+
+        @Override
+        public boolean getBoolean(@NonNull String key, boolean defaultValue) {
+            return prefs.getBoolean(key, defaultValue);
+        }
+        @Override
+        public String getString(@NonNull String key, String defaultValue) {
+            return prefs.getString(key, defaultValue);
+        }
+    }
+
+    private class SharedPreferencesWrapper implements PreferenceGetter {
+        SharedPreferences prefs;
+
+        public SharedPreferencesWrapper(SharedPreferences prefs) {
+            this.prefs = prefs;
+        }
+
+        @Override
+        public boolean getBoolean(@NonNull String key, boolean defaultValue) {
+            return prefs.getBoolean(key, defaultValue);
+        }
+        @Override
+        public String getString(@NonNull String key, String defaultValue) {
+            return prefs.getString(key, defaultValue);
+        }
+    }
     Bundle mDefaultSummaryBundle;
 
     CheckBoxPreference mNotificationSound;
@@ -257,21 +295,29 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
                 .findPreference(getString(R.string.customProxyHeaderValue6));
 
 
-        // Initialize with tray preferences values
-        AppPreferences mpPreferences = new AppPreferences(this);
+        PreferenceGetter preferenceGetter;
+
+        // Initialize with current shared preferences if restoring from configuration change,
+        // otherwise initialize with tray preferences values.
+        if (savedInstanceState != null &&
+                savedInstanceState.getBoolean("onSaveInstanceState", false) == true) {
+            preferenceGetter = new SharedPreferencesWrapper(PreferenceManager.getDefaultSharedPreferences(this));
+        } else {
+            preferenceGetter = new AppPreferencesWrapper(new AppPreferences(this));
+        }
 
         if (mNotificationSound != null) {
-            mNotificationSound.setChecked(mpPreferences.getBoolean(getString(R.string.preferenceNotificationsWithSound), false));
+            mNotificationSound.setChecked(preferenceGetter.getBoolean(getString(R.string.preferenceNotificationsWithSound), false));
         }
 
         if (mNotificationVibration != null) {
-            mNotificationVibration.setChecked(mpPreferences.getBoolean(getString(R.string.preferenceNotificationsWithVibrate), false));
+            mNotificationVibration.setChecked(preferenceGetter.getBoolean(getString(R.string.preferenceNotificationsWithVibrate), false));
         }
 
         // R.xml.preferences is conditionally loaded at API version 11 and higher from the xml-v11 folder
         // If it isn't null here, we can reasonably assume it can be cast to our MultiSelectListPreference
         if (mVpnAppExclusions != null) {
-            String excludedValuesFromPreference = mpPreferences.getString(getString(R.string.preferenceExcludeAppsFromVpnString), "");
+            String excludedValuesFromPreference = preferenceGetter.getString(getString(R.string.preferenceExcludeAppsFromVpnString), "");
 
             SharedPreferences.Editor e = preferences.getEditor();
             e.putString(getString(R.string.preferenceExcludeAppsFromVpnString), excludedValuesFromPreference);
@@ -288,29 +334,29 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
             }
         }
 
-        mUseProxy.setChecked(mpPreferences.getBoolean(getString(R.string.useProxySettingsPreference), false));
+        mUseProxy.setChecked(preferenceGetter.getBoolean(getString(R.string.useProxySettingsPreference), false));
         // set use system proxy preference by default
-        mUseSystemProxy.setChecked(mpPreferences.getBoolean(getString(R.string.useSystemProxySettingsPreference), true));
-        mUseCustomProxy.setChecked(mpPreferences.getBoolean(getString(R.string.useCustomProxySettingsPreference), false));
-        mProxyHost.setText(mpPreferences.getString(getString(R.string.useCustomProxySettingsHostPreference), ""));
-        mProxyPort.setText(mpPreferences.getString(getString(R.string.useCustomProxySettingsPortPreference), ""));
-        mUseProxyAuthentication.setChecked(mpPreferences.getBoolean(getString(R.string.useProxyAuthenticationPreference), false));
-        mProxyUsername.setText(mpPreferences.getString(getString(R.string.useProxyUsernamePreference), ""));
-        mProxyPassword.setText(mpPreferences.getString(getString(R.string.useProxyPasswordPreference), ""));
-        mProxyDomain.setText(mpPreferences.getString(getString(R.string.useProxyDomainPreference), ""));
-        mAddCustomHeadersPreference.setChecked(mpPreferences.getBoolean(getString(R.string.addCustomHeadersPreference), false));
-        mHeaderName1.setText(mpPreferences.getString(getString(R.string.customProxyHeaderName1), ""));
-        mHeaderValue1.setText(mpPreferences.getString(getString(R.string.customProxyHeaderValue1), ""));
-        mHeaderName2.setText(mpPreferences.getString(getString(R.string.customProxyHeaderName2), ""));
-        mHeaderValue2.setText(mpPreferences.getString(getString(R.string.customProxyHeaderValue2), ""));
-        mHeaderName3.setText(mpPreferences.getString(getString(R.string.customProxyHeaderName3), ""));
-        mHeaderValue3.setText(mpPreferences.getString(getString(R.string.customProxyHeaderValue3), ""));
-        mHeaderName4.setText(mpPreferences.getString(getString(R.string.customProxyHeaderName4), ""));
-        mHeaderValue4.setText(mpPreferences.getString(getString(R.string.customProxyHeaderValue4), ""));
-        mHeaderName5.setText(mpPreferences.getString(getString(R.string.customProxyHeaderName5), ""));
-        mHeaderValue5.setText(mpPreferences.getString(getString(R.string.customProxyHeaderValue5), ""));
-        mHeaderName6.setText(mpPreferences.getString(getString(R.string.customProxyHeaderName6), ""));
-        mHeaderValue6.setText(mpPreferences.getString(getString(R.string.customProxyHeaderValue6), ""));
+        mUseSystemProxy.setChecked(preferenceGetter.getBoolean(getString(R.string.useSystemProxySettingsPreference), true));
+        mUseCustomProxy.setChecked(preferenceGetter.getBoolean(getString(R.string.useCustomProxySettingsPreference), false));
+        mProxyHost.setText(preferenceGetter.getString(getString(R.string.useCustomProxySettingsHostPreference), ""));
+        mProxyPort.setText(preferenceGetter.getString(getString(R.string.useCustomProxySettingsPortPreference), ""));
+        mUseProxyAuthentication.setChecked(preferenceGetter.getBoolean(getString(R.string.useProxyAuthenticationPreference), false));
+        mProxyUsername.setText(preferenceGetter.getString(getString(R.string.useProxyUsernamePreference), ""));
+        mProxyPassword.setText(preferenceGetter.getString(getString(R.string.useProxyPasswordPreference), ""));
+        mProxyDomain.setText(preferenceGetter.getString(getString(R.string.useProxyDomainPreference), ""));
+        mAddCustomHeadersPreference.setChecked(preferenceGetter.getBoolean(getString(R.string.addCustomHeadersPreference), false));
+        mHeaderName1.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderName1), ""));
+        mHeaderValue1.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderValue1), ""));
+        mHeaderName2.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderName2), ""));
+        mHeaderValue2.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderValue2), ""));
+        mHeaderName3.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderName3), ""));
+        mHeaderValue3.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderValue3), ""));
+        mHeaderName4.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderName4), ""));
+        mHeaderValue4.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderValue4), ""));
+        mHeaderName5.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderName5), ""));
+        mHeaderValue5.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderValue5), ""));
+        mHeaderName6.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderName6), ""));
+        mHeaderValue6.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderValue6), ""));
 
 
         // Set listeners
@@ -408,6 +454,12 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
             mUseCustomProxy.setChecked(true);
         }
         return false;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        savedInstanceState.putBoolean("onSaveInstanceState", true);
+        super.onSaveInstanceState(savedInstanceState);
     }
 
     protected void updatePrefsSummary(Preference pref) {
