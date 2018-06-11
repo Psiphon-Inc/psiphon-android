@@ -940,6 +940,20 @@ public class StatusActivity
 
     private void proceedWithoutValidSubscription()
     {
+        // Try and present AdMob consent form only if tunnel service is not running
+        if(!isServiceRunning()) {
+            final AdMobGDPRHelper adMobGDPRHelper = new AdMobGDPRHelper(this, new AdMobGDPRHelper.AdMobGDPRHelperCallback() {
+                @Override
+                public void onComplete() {
+                    // Do something on complete
+                }
+            });
+
+            // Optional 'Pay for ad-free' button, launches purchase flow when clicked.
+            adMobGDPRHelper.setShowBuyAdFree(true);
+            adMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
+        }
+
         Utils.setHasValidSubscription(this, false);
 
         // Tunnel throughput is limited without a valid subscription.

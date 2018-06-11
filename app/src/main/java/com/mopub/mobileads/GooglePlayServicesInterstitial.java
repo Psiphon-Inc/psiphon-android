@@ -2,8 +2,12 @@ package com.mopub.mobileads;
 
 import android.content.Context;
 import android.location.Location;
+import android.os.Bundle;
 import android.util.Log;
 
+import com.google.ads.consent.ConsentInformation;
+import com.google.ads.consent.ConsentStatus;
+import com.google.ads.mediation.admob.AdMobAdapter;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
@@ -53,6 +57,20 @@ public class GooglePlayServicesInterstitial extends CustomEventInterstitial {
             if (location != null) {
                 builder.setLocation(location);
             }
+        }
+
+        /*
+        From https://developers.google.com/admob/android/eu-consent#forward_consent_to_the_google_mobile_ads_sdk
+
+        "The default behavior of the Google Mobile Ads SDK is to serve personalized ads. If a user has consented to
+        receive only non-personalized ads, you can configure an AdRequest object with the following code to specify
+        that only non-personalized ads should be requested."
+        */
+
+        if (ConsentInformation.getInstance(context).getConsentStatus() == ConsentStatus.NON_PERSONALIZED) {
+            Bundle extras = new Bundle();
+            extras.putString("npa", "1");
+            builder.addNetworkExtrasBundle(AdMobAdapter.class, extras);
         }
 
         final AdRequest adRequest = builder

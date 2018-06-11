@@ -19,6 +19,8 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
@@ -27,6 +29,7 @@ import android.preference.DialogPreference;
 import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
+import android.preference.PreferenceCategory;
 import android.preference.PreferenceGroup;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
@@ -35,6 +38,8 @@ import android.text.InputType;
 import android.text.TextUtils;
 import android.widget.Toast;
 
+import com.google.ads.consent.ConsentInformation;
+import com.google.ads.consent.ConsentStatus;
 import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
@@ -408,7 +413,6 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
         mHeaderValue5.setOnPreferenceChangeListener(new HeaderValueChangeListener(mHeaderName5));
         mHeaderValue6.setOnPreferenceChangeListener(new HeaderValueChangeListener(mHeaderName6));
 
-
         initSummary();
         updatePreferencesScreen();
     }
@@ -435,7 +439,6 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
         Preference curPref = findPreference(key);
         updatePrefsSummary(curPref);
         updatePreferencesScreen();
-
     }
 
     @Override
@@ -605,6 +608,44 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
             } else {
                 disableCustomHeaderSettings();
             }
+        }
+
+        updateAdsConsentPreference();
+    }
+
+    private void updateAdsConsentPreference() {
+        // Conditionally add / remove 'revoke ads consent' preference
+        final ConsentInformation consentInformation = ConsentInformation.getInstance(this);
+        PreferenceScreen screen = this.getPreferenceScreen();
+        Preference adConsentPref = screen.findPreference(getString(R.string.adConsentPref));
+
+        if(consentInformation.getConsentStatus() != ConsentStatus.UNKNOWN && adConsentPref == null) {
+            PreferenceCategory category = new PreferenceCategory(screen.getContext());
+            category.setTitle(R.string.ads_consent_preference_category_title);
+            category.setKey(getString(R.string.adConsentPref));
+            screen.addPreference(category);
+
+            DialogPreference revokeConsentPref = new DialogPreference(screen.getContext()) {
+                @Override
+                protected void onPrepareDialogBuilder(AlertDialog.Builder builder) {
+                    builder.setTitle(R.string.ads_consent_preference_dialog_title)
+                            .setMessage(getString(R.string.ads_consent_preference_dialog_preference_message))
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int whichButton) {
+                                    consentInformation.setConsentStatus(ConsentStatus.UNKNOWN);
+                                    updateAdsConsentPreference();
+                                }
+                            })
+                            .setNegativeButton(android.R.string.no, null);
+                }
+
+            };
+            revokeConsentPref.setTitle(R.string.ads_consent_preference_title);
+            revokeConsentPref.setSummary(R.string.ads_consent_preference_summary);
+            category.addPreference(revokeConsentPref);
+        } else if(adConsentPref != null){
+            screen.removePreference(adConsentPref);
         }
     }
 }
