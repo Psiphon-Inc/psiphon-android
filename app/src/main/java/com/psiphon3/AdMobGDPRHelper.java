@@ -23,7 +23,6 @@ import com.psiphon3.subscription.R;
 import java.util.List;
 
 public class AdMobGDPRHelper {
-
     private Context context;
     private boolean showBuyAdFree;
     private static GDPRDialog gdprDialog;
@@ -58,9 +57,8 @@ public class AdMobGDPRHelper {
         });
     }
 
-
     private class GDPRDialog {
-        private final AlertDialog alertDialog;
+        private AlertDialog alertDialog;
         private GDPRAdProvidersDialog gdprAdProvidersDialog;
 
         public GDPRDialog(final Context context) {
@@ -124,14 +122,10 @@ public class AdMobGDPRHelper {
         public void show() {
             alertDialog.show();
         }
-
-        public boolean isShowing() {
-            return alertDialog.isShowing();
-        }
     }
 
     private class GDPRAdProvidersDialog {
-        private final AlertDialog alertDialog;
+        private AlertDialog alertDialog;
 
         public GDPRAdProvidersDialog(final Context context) {
             AlertDialog.Builder builder;
