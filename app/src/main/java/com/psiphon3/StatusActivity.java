@@ -942,12 +942,8 @@ public class StatusActivity
     {
         // Try and present AdMob consent form only if tunnel service is not running
         if(!isServiceRunning()) {
-            final AdMobGDPRHelper adMobGDPRHelper = new AdMobGDPRHelper(this, new AdMobGDPRHelper.AdMobGDPRHelperCallback() {
-                @Override
-                public void onComplete() {
-                    // Do something on complete
-                }
-            });
+            String[] publisherIds = {"pub-1072041961750291"};
+            final AdMobGDPRHelper adMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds);
 
             // Optional 'Pay for ad-free' button, launches purchase flow when clicked.
             adMobGDPRHelper.setShowBuyAdFree(true);

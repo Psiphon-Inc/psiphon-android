@@ -17,27 +17,22 @@ import com.google.ads.consent.AdProvider;
 import com.google.ads.consent.ConsentInfoUpdateListener;
 import com.google.ads.consent.ConsentInformation;
 import com.google.ads.consent.ConsentStatus;
-import com.google.ads.consent.DebugGeography;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
 import java.util.List;
 
 public class AdMobGDPRHelper {
-    // callback interface
-    interface AdMobGDPRHelperCallback {
-        void onComplete();
-    }
 
     private Context context;
     private boolean showBuyAdFree;
     private static GDPRDialog gdprDialog;
-    private AdMobGDPRHelperCallback callback;
+    private String[] publisherIds;
 
-    public AdMobGDPRHelper(Context context, AdMobGDPRHelperCallback callback) {
+    public AdMobGDPRHelper(Context context, String[] publisherIds) {
         this.showBuyAdFree = false;
         this.context = context;
-        this.callback = callback;
+        this.publisherIds = publisherIds;
     }
 
     public void setShowBuyAdFree(boolean show) {
@@ -45,12 +40,6 @@ public class AdMobGDPRHelper {
     }
 
     public void presentGDPRConsentDialogIfNeeded() {
-        String[] publisherIds = {"pub-1072041961750291"};
-        // TODO: remove testing debug info
-        ConsentInformation.getInstance(context).addTestDevice("4F95EFD7B82BC0F1E99B48909DF1C8C4");
-        ConsentInformation.getInstance(context).
-                setDebugGeography(DebugGeography.DEBUG_GEOGRAPHY_EEA);
-
         ConsentInformation.getInstance(context).requestConsentInfoUpdate(publisherIds, new ConsentInfoUpdateListener() {
             @Override
             public void onConsentInfoUpdated(com.google.ads.consent.ConsentStatus consentStatus) {
@@ -59,19 +48,12 @@ public class AdMobGDPRHelper {
                         && ConsentInformation.getInstance(context).isRequestLocationInEeaOrUnknown()) {
                     gdprDialog = new GDPRDialog(context);
                     gdprDialog.show();
-                } else {
-                    if(callback != null) {
-                        callback.onComplete();
-                    }
                 }
             }
 
             @Override
             public void onFailedToUpdateConsentInfo(String errorDescription) {
                 Utils.MyLog.d(errorDescription);
-                if(callback != null) {
-                    callback.onComplete();
-                }
             }
         });
     }
@@ -111,9 +93,6 @@ public class AdMobGDPRHelper {
                         @Override
                         public void onClick(View v) {
                             ConsentInformation.getInstance(context).setConsentStatus(ConsentStatus.PERSONALIZED);
-                            if(callback != null) {
-                                callback.onComplete();
-                            }
                             alertDialog.dismiss();
                         }
                     });
@@ -123,9 +102,6 @@ public class AdMobGDPRHelper {
                         @Override
                         public void onClick(View v) {
                             ConsentInformation.getInstance(context).setConsentStatus(ConsentStatus.NON_PERSONALIZED);
-                            if(callback != null) {
-                                callback.onComplete();
-                            }
                             alertDialog.dismiss();
                         }
                     });
@@ -135,9 +111,6 @@ public class AdMobGDPRHelper {
                         .setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
-                                if(callback != null) {
-                                    callback.onComplete();
-                                }
                                 alertDialog.dismiss();
                                 StatusActivity statusActivity = (StatusActivity) context;
                                 statusActivity.onRateLimitUpgradeButtonClick(v);
