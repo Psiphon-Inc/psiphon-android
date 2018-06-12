@@ -945,16 +945,6 @@ public class StatusActivity
 
     private void proceedWithoutValidSubscription()
     {
-        // Try and present AdMob consent form only if tunnel service is not running
-        if(!isServiceRunning()) {
-            String[] publisherIds = {"pub-1072041961750291"};
-            final AdMobGDPRHelper adMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds);
-
-            // Optional 'Pay for ad-free' button, launches purchase flow when clicked.
-            adMobGDPRHelper.setShowBuyAdFree(true);
-            adMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
-        }
-
         Utils.setHasValidSubscription(this, false);
 
         // Tunnel throughput is limited without a valid subscription.
@@ -1549,66 +1539,84 @@ public class StatusActivity
 
     private void initMoPubAds(final Runnable runnable) {
         MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
+        final Context context = this;
 
-        PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-        // initialized MoPub SDK if needed
-        if (personalInfoManager == null) {
-            SdkConfiguration.Builder builder = new SdkConfiguration.Builder(MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
+        AdMobGDPRHelper.AdMobGDPRHelperCallback admobCallback = new AdMobGDPRHelper.AdMobGDPRHelperCallback() {
+            @Override
+            public void onComplete() {
+                PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                // initialized MoPub SDK if needed
+                if (personalInfoManager == null) {
+                    SdkConfiguration.Builder builder = new SdkConfiguration.Builder(MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
 
-            // Forward personalization preference to Google
-            // https://developers.mopub.com/docs/mediation/networks/google/#android
+                    // Forward personalization preference to Google
+                    // https://developers.mopub.com/docs/mediation/networks/google/#android
 
-            // Publishers must work with Google for GDPR compliance by collecting consents on their own.
-            // To faciliate the process, the AdMob adapters (Android: 15.0.0.x / iOS: 7.30.0.x) will forward
-            // the user’s npa preference to Google. Publishers must make sure to complete the remaining steps
-            // below in their app:
+                    // Publishers must work with Google for GDPR compliance by collecting consents on their own.
+                    // To facilitate the process, the AdMob adapters (Android: 15.0.0.x / iOS: 7.30.0.x) will forward
+                    // the user’s npa preference to Google. Publishers must make sure to complete the remaining steps
+                    // below in their app:
 
-            if (ConsentInformation.getInstance(this).getConsentStatus() == com.google.ads.consent.ConsentStatus.NON_PERSONALIZED) {
-                Bundle extras = new Bundle();
-                extras.putString("npa", "1");
-                builder.withMediationSettings(new GooglePlayServicesBanner.GooglePlayServicesMediationSettings(extras),
-                        new GooglePlayServicesInterstitial.GooglePlayServicesMediationSettings(extras),
-                        new GooglePlayServicesRewardedVideo.GooglePlayServicesMediationSettings(extras),
-                        new GooglePlayServicesNative.GooglePlayServicesMediationSettings(extras));
-            }
-
-            SdkConfiguration sdkConfiguration = builder.build();
-
-            MoPub.initializeSdk(this, sdkConfiguration, new SdkInitializationListener() {
-                @Override
-                public void onInitializationFinished() {
-                    PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-                    if(personalInfoManager != null) {
-                        // subscribe to consent change state event
-                        personalInfoManager.subscribeConsentStatusChangeListener(new ConsentStatusChangeListener() {
-
-                            @Override
-                            public void onConsentStateChange(@NonNull ConsentStatus oldConsentStatus,
-                                                             @NonNull ConsentStatus newConsentStatus,
-                                                             boolean canCollectPersonalInformation) {
-                                PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-                                if (personalInfoManager != null && personalInfoManager.shouldShowConsentDialog()) {
-                                    personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
-                                }
-                            }
-                        });
-
-                        // If consent is required load the consent dialog
-                        // otherwise initialize and show the ads
-                        if(personalInfoManager.shouldShowConsentDialog()) {
-                            personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
-
-                        } else {
-                            runnable.run();
-                        }
-                    } else {
-                        MyLog.d( "MoPub SDK has failed to initialize.");
+                    if (ConsentInformation.getInstance(context).getConsentStatus() == com.google.ads.consent.ConsentStatus.NON_PERSONALIZED) {
+                        Bundle extras = new Bundle();
+                        extras.putString("npa", "1");
+                        builder.withMediationSettings(new GooglePlayServicesBanner.GooglePlayServicesMediationSettings(extras),
+                                new GooglePlayServicesInterstitial.GooglePlayServicesMediationSettings(extras),
+                                new GooglePlayServicesRewardedVideo.GooglePlayServicesMediationSettings(extras),
+                                new GooglePlayServicesNative.GooglePlayServicesMediationSettings(extras));
                     }
-                }
-            });
 
+                    SdkConfiguration sdkConfiguration = builder.build();
+
+                    MoPub.initializeSdk(context, sdkConfiguration, new SdkInitializationListener() {
+                        @Override
+                        public void onInitializationFinished() {
+                            PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                            if(personalInfoManager != null) {
+                                // subscribe to consent change state event
+                                personalInfoManager.subscribeConsentStatusChangeListener(new ConsentStatusChangeListener() {
+
+                                    @Override
+                                    public void onConsentStateChange(@NonNull ConsentStatus oldConsentStatus,
+                                                                     @NonNull ConsentStatus newConsentStatus,
+                                                                     boolean canCollectPersonalInformation) {
+                                        PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                                        if (personalInfoManager != null && personalInfoManager.shouldShowConsentDialog()) {
+                                            personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
+                                        }
+                                    }
+                                });
+
+                                // If consent is required load the consent dialog
+                                // otherwise initialize and show the ads
+                                if(personalInfoManager.shouldShowConsentDialog()) {
+                                    personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
+
+                                } else {
+                                    runnable.run();
+                                }
+                            } else {
+                                MyLog.d( "MoPub SDK has failed to initialize.");
+                            }
+                        }
+                    });
+
+                } else {
+                    runnable.run();
+                }
+            }
+        };
+
+        // Try and present AdMob consent form only if tunnel service is not running
+        if(!isServiceRunning()) {
+            String[] publisherIds = {"pub-1072041961750291"};
+            final AdMobGDPRHelper adMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, admobCallback);
+
+            // Optional 'Pay for ad-free' button, launches purchase flow when clicked.
+            adMobGDPRHelper.setShowBuyAdFree(true);
+            adMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
         } else {
-            runnable.run();
+            admobCallback.onComplete();
         }
     }
 }
