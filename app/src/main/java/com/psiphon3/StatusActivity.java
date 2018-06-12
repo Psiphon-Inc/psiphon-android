@@ -110,8 +110,9 @@ public class StatusActivity
     private IabHelper mIabHelper = null;
     private boolean mStartIabInProgress = false;
     private boolean mIabHelperIsInitialized = false;
+
     private boolean mAdsConsentInitialized;
-    private AdMobGDPRHelper mAdMobGDPRHelper = null;
+    private AdMobGDPRHelper mAdMobGDPRHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -130,7 +131,11 @@ public class StatusActivity
         // OnResume() will reset this flag
         m_temporarilyDisableTunneledInterstitial = true;
 
+        // mAdsConsentInitialized flag is for ensuring that ads consent check is done only once per
+        // Activity lifetime. This will also make the consent dialog show again if needed after
+        // device rotation.
         mAdsConsentInitialized = false;
+        mAdMobGDPRHelper = null;
 
         setupActivityLayout();
 
@@ -1566,7 +1571,11 @@ public class StatusActivity
         MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
         final Context context = this;
 
-        AdMobGDPRHelper.AdMobGDPRHelperCallback adMobCallback = new AdMobGDPRHelper.AdMobGDPRHelperCallback() {
+        // If tunnel is not running run AdMob GDPR check and pass
+        // MoPub GDPR consent check as a completion callback.
+        // Otherwise just run MoPub GDPR consent check
+
+        AdMobGDPRHelper.AdMobGDPRHelperCallback moPubGDPRCheckCallback = new AdMobGDPRHelper.AdMobGDPRHelperCallback() {
             @Override
             public void onComplete() {
                 PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
@@ -1632,16 +1641,15 @@ public class StatusActivity
             }
         };
 
-        // Try and present AdMob consent form only if tunnel service is not running
         if(!isServiceRunning() && mAdMobGDPRHelper == null) {
             String[] publisherIds = {"pub-1072041961750291"};
-            mAdMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, adMobCallback);
+            mAdMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, moPubGDPRCheckCallback);
 
             // Optional 'Pay for ad-free' button, launches purchase flow when clicked.
             mAdMobGDPRHelper.setShowBuyAdFree(true);
             mAdMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
         } else {
-            adMobCallback.onComplete();
+            moPubGDPRCheckCallback.onComplete();
         }
     }
 }
