@@ -44,6 +44,7 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.ads.consent.ConsentInformation;
 import com.mopub.common.MoPub;
 import com.mopub.common.SdkConfiguration;
 import com.mopub.common.SdkInitializationListener;
@@ -51,11 +52,15 @@ import com.mopub.common.privacy.ConsentDialogListener;
 import com.mopub.common.privacy.ConsentStatus;
 import com.mopub.common.privacy.ConsentStatusChangeListener;
 import com.mopub.common.privacy.PersonalInfoManager;
+import com.mopub.mobileads.GooglePlayServicesBanner;
+import com.mopub.mobileads.GooglePlayServicesInterstitial;
+import com.mopub.mobileads.GooglePlayServicesRewardedVideo;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
+import com.mopub.nativeads.GooglePlayServicesNative;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
@@ -1548,8 +1553,26 @@ public class StatusActivity
         PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
         // initialized MoPub SDK if needed
         if (personalInfoManager == null) {
-            SdkConfiguration sdkConfiguration = new SdkConfiguration.Builder(MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID)
-                    .build();
+            SdkConfiguration.Builder builder = new SdkConfiguration.Builder(MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
+
+            // Forward personalization preference to Google
+            // https://developers.mopub.com/docs/mediation/networks/google/#android
+
+            // Publishers must work with Google for GDPR compliance by collecting consents on their own.
+            // To faciliate the process, the AdMob adapters (Android: 15.0.0.x / iOS: 7.30.0.x) will forward
+            // the user’s npa preference to Google. Publishers must make sure to complete the remaining steps
+            // below in their app:
+
+            if (ConsentInformation.getInstance(this).getConsentStatus() == com.google.ads.consent.ConsentStatus.NON_PERSONALIZED) {
+                Bundle extras = new Bundle();
+                extras.putString("npa", "1");
+                builder.withMediationSettings(new GooglePlayServicesBanner.GooglePlayServicesMediationSettings(extras),
+                        new GooglePlayServicesInterstitial.GooglePlayServicesMediationSettings(extras),
+                        new GooglePlayServicesRewardedVideo.GooglePlayServicesMediationSettings(extras),
+                        new GooglePlayServicesNative.GooglePlayServicesMediationSettings(extras));
+            }
+
+            SdkConfiguration sdkConfiguration = builder.build();
 
             MoPub.initializeSdk(this, sdkConfiguration, new SdkInitializationListener() {
                 @Override

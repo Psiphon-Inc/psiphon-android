@@ -123,11 +123,11 @@
     <string name="learn_more_about_our_ad_providers"><u>Learn more about our ad providers</u></string>
     <string name="yes_continue_to_see_relevant_ads">Yes, continue to see relevant ads</string>
     <string name="no_see_ads_that_are_less_relevant">No, see ads that are less relevant</string>
-    <string name="pay_for_the_ad_free_version">Pay for the ad-free version</string>
+    <string name="pay_for_the_ad_free_version">Upgrade to the ad-free version</string>
     <string name="click_ad_provider_name_to_see_privacy_policy">Click ad provider name to see their privacy policy</string>
-    <string name="ads_consent_preference_category_title">Advertisement consent preference</string>
-    <string name="ads_consent_preference_dialog_preference_message">Do you really want to revoke your ads consent preference?</string>
-    <string name="ads_consent_preference_title">Reset ads consent preference</string>
-    <string name="ads_consent_preference_dialog_title">Revoke consent</string>
-    <string name="ads_consent_preference_summary">Revoke your consent to use cookies and personal data by ad networks</string>
+    <string name="ads_consent_preference_category_title">Advertising personalization</string>
+    <string name="ads_consent_preference_dialog_preference_message">Do you really want to reset your ads personalization preference?</string>
+    <string name="ads_consent_preference_title">Reset ads personalization preference</string>
+    <string name="ads_consent_preference_dialog_title">Reset</string>
+    <string name="ads_consent_preference_summary">Reset your preference to allow ad networks to use cookies and your personal data</string>
 </resources>
