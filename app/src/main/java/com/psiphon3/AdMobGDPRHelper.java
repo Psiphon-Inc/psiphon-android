@@ -30,7 +30,7 @@ public class AdMobGDPRHelper {
 
     private Context context;
     private boolean showBuyAdFree;
-    private static GDPRDialog gdprDialog;
+    private GDPRDialog gdprDialog;
     private String[] publisherIds;
     private AdMobGDPRHelperCallback callback;
 
@@ -70,6 +70,12 @@ public class AdMobGDPRHelper {
                 }
             }
         });
+    }
+
+    public void destroy() {
+        if (gdprDialog != null) {
+            gdprDialog.destroy();
+        }
     }
 
     private class GDPRDialog {
@@ -146,50 +152,67 @@ public class AdMobGDPRHelper {
         public void show() {
             alertDialog.show();
         }
-    }
-
-    private class GDPRAdProvidersDialog {
-        private AlertDialog alertDialog;
-
-        public GDPRAdProvidersDialog(final Context context) {
-            AlertDialog.Builder builder;
-
-            builder = new AlertDialog.Builder(context);
-
-            LayoutInflater inflater = LayoutInflater.from(context);
-            View dialogView = inflater.inflate(R.layout.admob_gdpr_ad_providers, null);
-            final List<AdProvider> adProviders =
-                    ConsentInformation.getInstance(context).getAdProviders();
-
-            ListView lv = dialogView.findViewById(R.id.lv);
-            lv.setAdapter(new ArrayAdapter<AdProvider>(context, android.R.layout.simple_list_item_1, adProviders) {
-                @NonNull
-                @Override
-                public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-                    AdProvider ap = adProviders.get(position);
-                    TextView tv = (TextView)convertView;
-
-                    if (tv == null) {
-                        LayoutInflater inflater = LayoutInflater.from(context);
-                        tv = (TextView)inflater.inflate(android.R.layout.simple_list_item_1, null);
-                    }
-                    tv.setText(Html.fromHtml(String.format("<a href=\"%s\">%s</a>", ap.getPrivacyPolicyUrlString(),  ap.getName())));
-                    tv.setMovementMethod(LinkMovementMethod.getInstance());
-                    return tv;
-                }
-            });
-
-            alertDialog = builder
-                    .setView(dialogView)
-                    .setCancelable(true)
-                    .setTitle(R.string.app_name_psiphon_pro)
-                    .setIcon(R.drawable.ic_launcher)
-                    .setPositiveButton(R.string.abc_action_mode_done, null)
-                    .create();
+        public void destroy() {
+            if (gdprAdProvidersDialog != null) {
+                gdprAdProvidersDialog.destroy();
+                gdprAdProvidersDialog = null;
+            }
+            if (alertDialog != null) {
+                alertDialog.dismiss();
+                alertDialog = null;
+            }
         }
 
-        public void show () {
-            alertDialog.show();
+        private class GDPRAdProvidersDialog {
+            private AlertDialog alertDialog;
+
+            public GDPRAdProvidersDialog(final Context context) {
+                AlertDialog.Builder builder;
+
+                builder = new AlertDialog.Builder(context);
+
+                LayoutInflater inflater = LayoutInflater.from(context);
+                View dialogView = inflater.inflate(R.layout.admob_gdpr_ad_providers, null);
+                final List<AdProvider> adProviders =
+                        ConsentInformation.getInstance(context).getAdProviders();
+
+                ListView lv = dialogView.findViewById(R.id.lv);
+                lv.setAdapter(new ArrayAdapter<AdProvider>(context, android.R.layout.simple_list_item_1, adProviders) {
+                    @NonNull
+                    @Override
+                    public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                        AdProvider ap = adProviders.get(position);
+                        TextView tv = (TextView)convertView;
+
+                        if (tv == null) {
+                            LayoutInflater inflater = LayoutInflater.from(context);
+                            tv = (TextView)inflater.inflate(android.R.layout.simple_list_item_1, null);
+                        }
+                        tv.setText(Html.fromHtml(String.format("<a href=\"%s\">%s</a>", ap.getPrivacyPolicyUrlString(),  ap.getName())));
+                        tv.setMovementMethod(LinkMovementMethod.getInstance());
+                        return tv;
+                    }
+                });
+
+                alertDialog = builder
+                        .setView(dialogView)
+                        .setCancelable(true)
+                        .setTitle(R.string.app_name_psiphon_pro)
+                        .setIcon(R.drawable.ic_launcher)
+                        .setPositiveButton(R.string.abc_action_mode_done, null)
+                        .create();
+            }
+
+            public void show () {
+                alertDialog.show();
+            }
+
+            public void destroy() {
+                if (alertDialog != null) {
+                    alertDialog.dismiss();
+                    alertDialog = null;
+                }
+            }
         }
     }
 }

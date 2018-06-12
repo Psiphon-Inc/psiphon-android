@@ -110,6 +110,8 @@ public class StatusActivity
     private IabHelper mIabHelper = null;
     private boolean mStartIabInProgress = false;
     private boolean mIabHelperIsInitialized = false;
+    private boolean mAdsConsentInitialized;
+    private AdMobGDPRHelper mAdMobGDPRHelper = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,6 +129,8 @@ public class StatusActivity
         // Don't let this tab change trigger an interstitial ad
         // OnResume() will reset this flag
         m_temporarilyDisableTunneledInterstitial = true;
+
+        mAdsConsentInitialized = false;
 
         setupActivityLayout();
 
@@ -173,12 +177,17 @@ public class StatusActivity
     @Override
     protected void onTunnelStateReceived() {
         m_temporarilyDisableTunneledInterstitial = false;
-        initMoPubAds(new Runnable() {
+        Runnable adsRunnable = new Runnable() {
             @Override
             public void run() {
                 initTunneledAds(false);
             }
-        });
+        };
+        if(mAdsConsentInitialized) {
+            adsRunnable.run();
+        } else {
+            initAdsConsent(adsRunnable);
+        }
     }
     
     @Override
@@ -186,6 +195,10 @@ public class StatusActivity
     {
         deInitAllAds();
         delayHandler.removeCallbacks(enableAdMode);
+        if(mAdMobGDPRHelper != null) {
+            mAdMobGDPRHelper.destroy();
+            mAdMobGDPRHelper = null;
+        }
         super.onDestroy();
     }
     
@@ -1045,7 +1058,7 @@ public class StatusActivity
 
         if (show)
         {
-            initMoPubAds(new Runnable() {
+            Runnable adsRunnable = new Runnable() {
                 @Override
                 public void run() {
                     initUntunneledBanner();
@@ -1055,7 +1068,12 @@ public class StatusActivity
                         loadUntunneledFullScreenAd();
                     }
                 }
-            });
+            };
+            if(mAdsConsentInitialized) {
+                adsRunnable.run();
+            } else {
+                initAdsConsent(adsRunnable);
+            }
         }
         else
         {
@@ -1462,12 +1480,18 @@ public class StatusActivity
 
     private void showTunneledFullScreenAd()
     {
-        initMoPubAds(new Runnable() {
+        Runnable adsRunnable = new Runnable() {
             @Override
             public void run() {
-               initTunneledAds(true);
-           }
-        });
+                initTunneledAds(true);
+            }
+        };
+        if(mAdsConsentInitialized) {
+            adsRunnable.run();
+        } else {
+            initAdsConsent(adsRunnable);
+        }
+
 
         if (shouldShowTunneledAds() && !m_temporarilyDisableTunneledInterstitial)
         {
@@ -1537,11 +1561,12 @@ public class StatusActivity
         }
     }
 
-    private void initMoPubAds(final Runnable runnable) {
+    private void initAdsConsent(final Runnable runnable) {
+        mAdsConsentInitialized = true;
         MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
         final Context context = this;
 
-        AdMobGDPRHelper.AdMobGDPRHelperCallback admobCallback = new AdMobGDPRHelper.AdMobGDPRHelperCallback() {
+        AdMobGDPRHelper.AdMobGDPRHelperCallback adMobCallback = new AdMobGDPRHelper.AdMobGDPRHelperCallback() {
             @Override
             public void onComplete() {
                 PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
@@ -1608,15 +1633,15 @@ public class StatusActivity
         };
 
         // Try and present AdMob consent form only if tunnel service is not running
-        if(!isServiceRunning()) {
+        if(!isServiceRunning() && mAdMobGDPRHelper == null) {
             String[] publisherIds = {"pub-1072041961750291"};
-            final AdMobGDPRHelper adMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, admobCallback);
+            mAdMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, adMobCallback);
 
             // Optional 'Pay for ad-free' button, launches purchase flow when clicked.
-            adMobGDPRHelper.setShowBuyAdFree(true);
-            adMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
+            mAdMobGDPRHelper.setShowBuyAdFree(true);
+            mAdMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
         } else {
-            admobCallback.onComplete();
+            adMobCallback.onComplete();
         }
     }
 }
