@@ -68,3 +68,6 @@
 }
 
 -dontwarn org.jacoco.**
+-dontwarn com.mopub.nativeads.**
+-dontwarn com.mopub.mobileads.**
+
