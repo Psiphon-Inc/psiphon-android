@@ -44,6 +44,7 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.ads.consent.ConsentInformation;
 import com.mopub.common.MoPub;
 import com.mopub.common.SdkConfiguration;
 import com.mopub.common.SdkInitializationListener;
@@ -51,11 +52,15 @@ import com.mopub.common.privacy.ConsentDialogListener;
 import com.mopub.common.privacy.ConsentStatus;
 import com.mopub.common.privacy.ConsentStatusChangeListener;
 import com.mopub.common.privacy.PersonalInfoManager;
+import com.mopub.mobileads.GooglePlayServicesBanner;
+import com.mopub.mobileads.GooglePlayServicesInterstitial;
+import com.mopub.mobileads.GooglePlayServicesRewardedVideo;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
+import com.mopub.nativeads.GooglePlayServicesNative;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
@@ -106,6 +111,9 @@ public class StatusActivity
     private boolean mStartIabInProgress = false;
     private boolean mIabHelperIsInitialized = false;
 
+    private boolean mAdsConsentInitialized;
+    private AdMobGDPRHelper mAdMobGDPRHelper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -122,6 +130,12 @@ public class StatusActivity
         // Don't let this tab change trigger an interstitial ad
         // OnResume() will reset this flag
         m_temporarilyDisableTunneledInterstitial = true;
+
+        // mAdsConsentInitialized flag is for ensuring that ads consent check is done only once per
+        // Activity lifetime. This will also make the consent dialog show again if needed after
+        // device rotation.
+        mAdsConsentInitialized = false;
+        mAdMobGDPRHelper = null;
 
         setupActivityLayout();
 
@@ -168,12 +182,17 @@ public class StatusActivity
     @Override
     protected void onTunnelStateReceived() {
         m_temporarilyDisableTunneledInterstitial = false;
-        initMoPubAds(new Runnable() {
+        Runnable adsRunnable = new Runnable() {
             @Override
             public void run() {
                 initTunneledAds(false);
             }
-        });
+        };
+        if(mAdsConsentInitialized) {
+            adsRunnable.run();
+        } else {
+            initAdsConsent(adsRunnable);
+        }
     }
     
     @Override
@@ -181,6 +200,10 @@ public class StatusActivity
     {
         deInitAllAds();
         delayHandler.removeCallbacks(enableAdMode);
+        if(mAdMobGDPRHelper != null) {
+            mAdMobGDPRHelper.destroy();
+            mAdMobGDPRHelper = null;
+        }
         super.onDestroy();
     }
     
@@ -1040,7 +1063,7 @@ public class StatusActivity
 
         if (show)
         {
-            initMoPubAds(new Runnable() {
+            Runnable adsRunnable = new Runnable() {
                 @Override
                 public void run() {
                     initUntunneledBanner();
@@ -1050,7 +1073,12 @@ public class StatusActivity
                         loadUntunneledFullScreenAd();
                     }
                 }
-            });
+            };
+            if(mAdsConsentInitialized) {
+                adsRunnable.run();
+            } else {
+                initAdsConsent(adsRunnable);
+            }
         }
         else
         {
@@ -1457,12 +1485,18 @@ public class StatusActivity
 
     private void showTunneledFullScreenAd()
     {
-        initMoPubAds(new Runnable() {
+        Runnable adsRunnable = new Runnable() {
             @Override
             public void run() {
-               initTunneledAds(true);
-           }
-        });
+                initTunneledAds(true);
+            }
+        };
+        if(mAdsConsentInitialized) {
+            adsRunnable.run();
+        } else {
+            initAdsConsent(adsRunnable);
+        }
+
 
         if (shouldShowTunneledAds() && !m_temporarilyDisableTunneledInterstitial)
         {
@@ -1532,50 +1566,90 @@ public class StatusActivity
         }
     }
 
-    private void initMoPubAds(final Runnable runnable) {
+    private void initAdsConsent(final Runnable runnable) {
+        mAdsConsentInitialized = true;
         MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
+        final Context context = this;
 
-        PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-        // initialized MoPub SDK if needed
-        if (personalInfoManager == null) {
-            SdkConfiguration sdkConfiguration = new SdkConfiguration.Builder(MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID)
-                    .build();
+        // If tunnel is not running run AdMob GDPR check and pass
+        // MoPub GDPR consent check as a completion callback.
+        // Otherwise just run MoPub GDPR consent check
 
-            MoPub.initializeSdk(this, sdkConfiguration, new SdkInitializationListener() {
-                @Override
-                public void onInitializationFinished() {
-                    PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-                    if(personalInfoManager != null) {
-                        // subscribe to consent change state event
-                        personalInfoManager.subscribeConsentStatusChangeListener(new ConsentStatusChangeListener() {
+        AdMobGDPRHelper.AdMobGDPRHelperCallback moPubGDPRCheckCallback = new AdMobGDPRHelper.AdMobGDPRHelperCallback() {
+            @Override
+            public void onComplete() {
+                PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                // initialized MoPub SDK if needed
+                if (personalInfoManager == null) {
+                    SdkConfiguration.Builder builder = new SdkConfiguration.Builder(MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
 
-                            @Override
-                            public void onConsentStateChange(@NonNull ConsentStatus oldConsentStatus,
-                                                             @NonNull ConsentStatus newConsentStatus,
-                                                             boolean canCollectPersonalInformation) {
-                                PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-                                if (personalInfoManager != null && personalInfoManager.shouldShowConsentDialog()) {
-                                    personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
-                                }
-                            }
-                        });
+                    // Forward personalization preference to Google
+                    // https://developers.mopub.com/docs/mediation/networks/google/#android
 
-                        // If consent is required load the consent dialog
-                        // otherwise initialize and show the ads
-                        if(personalInfoManager.shouldShowConsentDialog()) {
-                            personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
+                    // Publishers must work with Google for GDPR compliance by collecting consents on their own.
+                    // To facilitate the process, the AdMob adapters (Android: 15.0.0.x / iOS: 7.30.0.x) will forward
+                    // the user’s npa preference to Google. Publishers must make sure to complete the remaining steps
+                    // below in their app:
 
-                        } else {
-                            runnable.run();
-                        }
-                    } else {
-                        MyLog.d( "MoPub SDK has failed to initialize.");
+                    if (ConsentInformation.getInstance(context).getConsentStatus() == com.google.ads.consent.ConsentStatus.NON_PERSONALIZED) {
+                        Bundle extras = new Bundle();
+                        extras.putString("npa", "1");
+                        builder.withMediationSettings(new GooglePlayServicesBanner.GooglePlayServicesMediationSettings(extras),
+                                new GooglePlayServicesInterstitial.GooglePlayServicesMediationSettings(extras),
+                                new GooglePlayServicesRewardedVideo.GooglePlayServicesMediationSettings(extras),
+                                new GooglePlayServicesNative.GooglePlayServicesMediationSettings(extras));
                     }
-                }
-            });
 
+                    SdkConfiguration sdkConfiguration = builder.build();
+
+                    MoPub.initializeSdk(context, sdkConfiguration, new SdkInitializationListener() {
+                        @Override
+                        public void onInitializationFinished() {
+                            PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                            if(personalInfoManager != null) {
+                                // subscribe to consent change state event
+                                personalInfoManager.subscribeConsentStatusChangeListener(new ConsentStatusChangeListener() {
+
+                                    @Override
+                                    public void onConsentStateChange(@NonNull ConsentStatus oldConsentStatus,
+                                                                     @NonNull ConsentStatus newConsentStatus,
+                                                                     boolean canCollectPersonalInformation) {
+                                        PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                                        if (personalInfoManager != null && personalInfoManager.shouldShowConsentDialog()) {
+                                            personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
+                                        }
+                                    }
+                                });
+
+                                // If consent is required load the consent dialog
+                                // otherwise initialize and show the ads
+                                if(personalInfoManager.shouldShowConsentDialog()) {
+                                    personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
+
+                                } else {
+                                    runnable.run();
+                                }
+                            } else {
+                                MyLog.d( "MoPub SDK has failed to initialize.");
+                            }
+                        }
+                    });
+
+                } else {
+                    runnable.run();
+                }
+            }
+        };
+
+        if(!isServiceRunning() && mAdMobGDPRHelper == null) {
+            String[] publisherIds = {"pub-1072041961750291"};
+            mAdMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, moPubGDPRCheckCallback);
+
+            // Optional 'Pay for ad-free' button, launches purchase flow when clicked.
+            mAdMobGDPRHelper.setShowBuyAdFree(true);
+            mAdMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
         } else {
-            runnable.run();
+            moPubGDPRCheckCallback.onComplete();
         }
     }
 }
