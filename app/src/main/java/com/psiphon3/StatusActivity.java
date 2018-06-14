@@ -146,6 +146,15 @@ public class StatusActivity
 
         // EmbeddedValues.initialize(this); is called in MainBase.OnCreate
 
+        if (isServiceRunning()) {
+            // m_firstRun indicates if we should automatically start the tunnel. If the service is
+            // already running, we can reset this flag.
+            // This mitigates the scenario where the user starts the Activity while the tunnel is
+            // running and presses Stop before the IAB flow has completed, causing handleIabFailure
+            // to immediately restart the tunnel.
+            m_firstRun = false;
+        }
+
         m_loadedSponsorTab = false;
         HandleCurrentIntent();
 
