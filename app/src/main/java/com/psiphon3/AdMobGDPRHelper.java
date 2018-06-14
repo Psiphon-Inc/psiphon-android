@@ -75,6 +75,7 @@ public class AdMobGDPRHelper {
     public void destroy() {
         if (gdprDialog != null) {
             gdprDialog.destroy();
+            gdprDialog = null;
         }
     }
 
