@@ -39,7 +39,7 @@ import org.greendroid.QuickActionWidget;
 import org.greendroid.QuickActionWidget.OnQuickActionClickListener;
 import org.json.JSONArray;
 import org.json.JSONException;
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 import org.zirco.controllers.Controller;
 import org.zirco.events.EventConstants;
 import org.zirco.events.EventController;
@@ -439,9 +439,7 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
         {
             if (service.uid == android.os.Process.myUid() &&
                     this.mPsiphonServiceClassName.equals(service.service.getClassName()))
-            {
-                return true;
-            }
+            return true;
         }
         
         Class psiphonStatusActivityClass;

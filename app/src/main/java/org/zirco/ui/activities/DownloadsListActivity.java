@@ -17,7 +17,7 @@ package org.zirco.ui.activities;
 
 import java.io.File;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 import org.zirco.controllers.Controller;
 import org.zirco.events.EventConstants;
 import org.zirco.events.EventController;
