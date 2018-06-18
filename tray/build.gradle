@@ -5,11 +5,17 @@ def final String VERSION_NAME = "0.10.0"
 def final int VERSION_CODE = 10
 
 android {
-    compileSdkVersion 23
+    compileSdkVersion 26
+
+    repositories{
+        maven {
+            url "https://maven.google.com"
+        }
+    }
 
     defaultConfig {
-        minSdkVersion 9
-        targetSdkVersion 23
+        minSdkVersion 14
+        targetSdkVersion 26
         versionCode VERSION_CODE
         versionName VERSION_NAME
 
@@ -38,7 +44,7 @@ android {
 }
 
 dependencies {
-    implementation 'com.android.support:support-annotations:23.0.1'
+    implementation 'com.android.support:support-annotations:26.1.0'
 
     androidTestImplementation 'com.google.dexmaker:dexmaker-mockito:1.2'
     androidTestImplementation 'com.google.dexmaker:dexmaker:1.2'
