@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
@@ -53,8 +54,16 @@ public class AdMobGDPRHelper {
                 // User's consent status successfully updated.
                 if(consentStatus == com.google.ads.consent.ConsentStatus.UNKNOWN
                         && ConsentInformation.getInstance(context).isRequestLocationInEeaOrUnknown()) {
-                    gdprDialog = new GDPRDialog(context);
-                    gdprDialog.show();
+
+                    AppCompatActivity activity = (AppCompatActivity) context;
+                    if (activity != null && !activity.isFinishing())
+                        activity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                gdprDialog = new GDPRDialog(context);
+                                gdprDialog.show();
+                            }
+                        });
                 } else {
                     if(callback != null) {
                         callback.onComplete();

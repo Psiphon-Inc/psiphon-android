@@ -131,10 +131,6 @@ public class StatusActivity
         // OnResume() will reset this flag
         m_temporarilyDisableTunneledInterstitial = true;
 
-        // mAdsConsentInitialized flag is for ensuring that ads consent check is done only once per
-        // Activity lifetime. This will also make the consent dialog show again if needed after
-        // device rotation.
-        mAdsConsentInitialized = false;
         mAdMobGDPRHelper = null;
 
         setupActivityLayout();
@@ -179,6 +175,9 @@ public class StatusActivity
     @Override
     protected void onResume()
     {
+        // Don't miss a chance to get personalized ads consent if user hasn't set it yet.
+        mAdsConsentInitialized = false;
+
         startIab();
         super.onResume();
         if (m_startupPending) {
@@ -197,11 +196,8 @@ public class StatusActivity
                 initTunneledAds(false);
             }
         };
-        if(mAdsConsentInitialized) {
-            adsRunnable.run();
-        } else {
-            initAdsConsent(adsRunnable);
-        }
+
+        initAdsConsentAndRunAds(adsRunnable);
     }
     
     @Override
@@ -460,7 +456,7 @@ public class StatusActivity
                                     startTunnel();
                                 }})
                     .show();
-                
+
                 // Our text no longer fits in the AlertDialog buttons on Lollipop, so force the
                 // font size (on older versions, the text seemed to be scaled down to fit).
                 // TODO: custom layout
@@ -469,7 +465,7 @@ public class StatusActivity
                     dialog.getButton(DialogInterface.BUTTON_POSITIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
                     dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
                 }
-                
+
                 m_tunnelWholeDevicePromptShown = true;
             }
             else
@@ -1083,11 +1079,8 @@ public class StatusActivity
                     }
                 }
             };
-            if(mAdsConsentInitialized) {
-                adsRunnable.run();
-            } else {
-                initAdsConsent(adsRunnable);
-            }
+
+            initAdsConsentAndRunAds(adsRunnable);
         }
         else
         {
@@ -1500,12 +1493,8 @@ public class StatusActivity
                 initTunneledAds(true);
             }
         };
-        if(mAdsConsentInitialized) {
-            adsRunnable.run();
-        } else {
-            initAdsConsent(adsRunnable);
-        }
 
+        initAdsConsentAndRunAds(adsRunnable);
 
         if (shouldShowTunneledAds() && !m_temporarilyDisableTunneledInterstitial)
         {
@@ -1575,7 +1564,13 @@ public class StatusActivity
         }
     }
 
-    private void initAdsConsent(final Runnable runnable) {
+    private void initAdsConsentAndRunAds(final Runnable runnable) {
+        if (mAdsConsentInitialized == true) {
+            runnable.run();
+            return;
+        }
+
+
         mAdsConsentInitialized = true;
         MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
         final Context context = this;
@@ -1650,7 +1645,11 @@ public class StatusActivity
             }
         };
 
-        if(!isServiceRunning() && mAdMobGDPRHelper == null) {
+        if(!isServiceRunning()  && !this.isFinishing()) {
+            if(mAdMobGDPRHelper != null) {
+                mAdMobGDPRHelper.destroy();
+                mAdMobGDPRHelper = null;
+            }
             String[] publisherIds = {"pub-1072041961750291"};
             mAdMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, moPubGDPRCheckCallback);
 
