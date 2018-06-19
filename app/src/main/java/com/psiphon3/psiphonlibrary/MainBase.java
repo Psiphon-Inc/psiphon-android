@@ -1247,7 +1247,21 @@ public abstract class MainBase {
                 intent = new Intent(this, TunnelService.class);
             }
             configureServiceIntent(intent);
-            startService(intent);
+
+            // Use a wrapper to start a service in SDK >= 26
+            // which is defined like following
+            /*
+                public static void startForegroundService(Context context, Intent intent) {
+                    if (Build.VERSION.SDK_INT >= 26) {
+                        context.startForegroundService(intent);
+                    } else {
+                        // Pre-O behavior.
+                        context.startService(intent);
+                    }
+                }
+             */
+            ContextCompat.startForegroundService(this, intent);
+
             if (bindService(intent, m_tunnelServiceConnection, 0)) {
                 m_boundToTunnelService = true;
             }
