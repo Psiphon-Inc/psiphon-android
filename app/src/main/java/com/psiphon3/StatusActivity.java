@@ -33,24 +33,41 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TabHost;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.ads.consent.ConsentInformation;
+import com.mopub.common.MoPub;
+import com.mopub.common.SdkConfiguration;
+import com.mopub.common.SdkInitializationListener;
+import com.mopub.common.privacy.ConsentDialogListener;
+import com.mopub.common.privacy.ConsentStatus;
+import com.mopub.common.privacy.ConsentStatusChangeListener;
+import com.mopub.common.privacy.PersonalInfoManager;
+import com.mopub.mobileads.GooglePlayServicesBanner;
+import com.mopub.mobileads.GooglePlayServicesInterstitial;
+import com.mopub.mobileads.GooglePlayServicesRewardedVideo;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
+import com.mopub.nativeads.GooglePlayServicesNative;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.R;
 import com.psiphon3.util.IabHelper;
 import com.psiphon3.util.IabResult;
@@ -94,8 +111,12 @@ public class StatusActivity
     private boolean mStartIabInProgress = false;
     private boolean mIabHelperIsInitialized = false;
 
+    private boolean mAdsConsentInitialized;
+    private AdMobGDPRHelper mAdMobGDPRHelper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
@@ -106,13 +127,13 @@ public class StatusActivity
         mRateUnlimitedText = (TextView)findViewById(R.id.rateUnlimitedText);
         mRateLimitSubscribeButton = (Button)findViewById(R.id.rateLimitUpgradeButton);
 
-        // NOTE: super class assumes m_tabHost is initialized in its onCreate
-
         // Don't let this tab change trigger an interstitial ad
         // OnResume() will reset this flag
         m_temporarilyDisableTunneledInterstitial = true;
-        
-        super.onCreate(savedInstanceState);
+
+        mAdMobGDPRHelper = null;
+
+        setupActivityLayout();
 
         if (shouldShowUntunneledAds()) {
             // Start at the Home tab if the service isn't running and we want to show ads
@@ -120,6 +141,15 @@ public class StatusActivity
         }
 
         // EmbeddedValues.initialize(this); is called in MainBase.OnCreate
+
+        if (isServiceRunning()) {
+            // m_firstRun indicates if we should automatically start the tunnel. If the service is
+            // already running, we can reset this flag.
+            // This mitigates the scenario where the user starts the Activity while the tunnel is
+            // running and presses Stop before the IAB flow has completed, causing handleIabFailure
+            // to immediately restart the tunnel.
+            m_firstRun = false;
+        }
 
         m_loadedSponsorTab = false;
         HandleCurrentIntent();
@@ -145,6 +175,9 @@ public class StatusActivity
     @Override
     protected void onResume()
     {
+        // Don't miss a chance to get personalized ads consent if user hasn't set it yet.
+        mAdsConsentInitialized = false;
+
         startIab();
         super.onResume();
         if (m_startupPending) {
@@ -157,7 +190,14 @@ public class StatusActivity
     @Override
     protected void onTunnelStateReceived() {
         m_temporarilyDisableTunneledInterstitial = false;
-        initTunneledAds(false);
+        Runnable adsRunnable = new Runnable() {
+            @Override
+            public void run() {
+                initTunneledAds(false);
+            }
+        };
+
+        initAdsConsentAndRunAds(adsRunnable);
     }
     
     @Override
@@ -165,6 +205,10 @@ public class StatusActivity
     {
         deInitAllAds();
         delayHandler.removeCallbacks(enableAdMode);
+        if(mAdMobGDPRHelper != null) {
+            mAdMobGDPRHelper.destroy();
+            mAdMobGDPRHelper = null;
+        }
         super.onDestroy();
     }
     
@@ -210,6 +254,21 @@ public class StatusActivity
     protected PendingIntent getServiceNotificationPendingIntent() {
         Intent intent = new Intent(
                 "ACTION_VIEW",
+                null,
+                this,
+                com.psiphon3.StatusActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        return PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    @Override
+    protected PendingIntent getRegionNotAvailablePendingIntent() {
+        Intent intent = new Intent(
+                TunnelManager.INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE,
                 null,
                 this,
                 com.psiphon3.StatusActivity.class);
@@ -281,6 +340,28 @@ public class StatusActivity
                             null,
                             this,
                             this.getClass()));
+        } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE)) {
+            // Switch to settings tab
+            m_tabHost.setCurrentTabByTag("settings");
+
+            // Set egress region preference to 'Best Performance'
+            updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
+
+            // Set region selection to 'Best Performance' too
+            m_regionSelector.setSelectionByValue(PsiphonConstants.REGION_CODE_ANY);
+
+            // Show "Selected region unavailable" toast
+            Toast toast = Toast.makeText(this, R.string.selected_region_currently_not_available, Toast.LENGTH_LONG);
+            toast.setGravity(Gravity.CENTER, 0, 0);
+            toast.show();
+
+            // We only want to respond to the INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE action once,
+            // so we need to clear it (by setting it to a non-special intent).
+            setIntent(new Intent(
+                    "ACTION_VIEW",
+                    null,
+                    this,
+                    this.getClass()));
         }
     }
     
@@ -335,56 +416,64 @@ public class StatusActivity
             !hasPreference &&
             !isServiceRunning())
         {
-            if (!m_tunnelWholeDevicePromptShown)
+            if (!m_tunnelWholeDevicePromptShown && !this.isFinishing())
             {
                 final Context context = this;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        AlertDialog dialog = new AlertDialog.Builder(context)
+                                .setCancelable(false)
+                                .setOnKeyListener(
+                                        new DialogInterface.OnKeyListener() {
+                                            @Override
+                                            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                                                // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
+                                                return keyCode == KeyEvent.KEYCODE_SEARCH;
+                                            }
+                                        })
+                                .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
+                                .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
+                                .setPositiveButton(R.string.StatusActivity_WholeDeviceTunnelPositiveButton,
+                                        new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int whichButton) {
+                                                // Persist the "on" setting
+                                                updateWholeDevicePreference(true);
+                                                startTunnel();
+                                            }
+                                        })
+                                .setNegativeButton(R.string.StatusActivity_WholeDeviceTunnelNegativeButton,
+                                        new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int whichButton) {
+                                                // Turn off and persist the "off" setting
+                                                m_tunnelWholeDeviceToggle.setChecked(false);
+                                                updateWholeDevicePreference(false);
+                                                startTunnel();
+                                            }
+                                        })
+                                .setOnCancelListener(
+                                        new DialogInterface.OnCancelListener() {
+                                            @Override
+                                            public void onCancel(DialogInterface dialog) {
+                                                // Don't change or persist preference (this prompt may reappear)
+                                                startTunnel();
+                                            }
+                                        })
+                                .show();
 
-                AlertDialog dialog = new AlertDialog.Builder(context)
-                    .setCancelable(false)
-                    .setOnKeyListener(
-                            new DialogInterface.OnKeyListener() {
-                                @Override
-                                public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
-                                    // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
-                                    return keyCode == KeyEvent.KEYCODE_SEARCH;
-                                }})
-                    .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
-                    .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
-                    .setPositiveButton(R.string.StatusActivity_WholeDeviceTunnelPositiveButton,
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int whichButton) {
-                                    // Persist the "on" setting
-                                    updateWholeDevicePreference(true);
-                                    startTunnel();
-                                }})
-                    .setNegativeButton(R.string.StatusActivity_WholeDeviceTunnelNegativeButton,
-                                new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int whichButton) {
-                                        // Turn off and persist the "off" setting
-                                        m_tunnelWholeDeviceToggle.setChecked(false);
-                                        updateWholeDevicePreference(false);
-                                        startTunnel();
-                                    }})
-                    .setOnCancelListener(
-                            new DialogInterface.OnCancelListener() {
-                                @Override
-                                public void onCancel(DialogInterface dialog) {
-                                    // Don't change or persist preference (this prompt may reappear)
-                                    startTunnel();
-                                }})
-                    .show();
-                
-                // Our text no longer fits in the AlertDialog buttons on Lollipop, so force the
-                // font size (on older versions, the text seemed to be scaled down to fit).
-                // TODO: custom layout
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                {
-                    dialog.getButton(DialogInterface.BUTTON_POSITIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
-                    dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
-                }
-                
+                        // Our text no longer fits in the AlertDialog buttons on Lollipop, so force the
+                        // font size (on older versions, the text seemed to be scaled down to fit).
+                        // TODO: custom layout
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+                        {
+                            dialog.getButton(DialogInterface.BUTTON_POSITIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
+                            dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
+                        }
+                    }
+                });
+
                 m_tunnelWholeDevicePromptShown = true;
             }
             else
@@ -987,12 +1076,19 @@ public class StatusActivity
 
         if (show)
         {
-            initUntunneledBanner();
+            Runnable adsRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    initUntunneledBanner();
 
-            if (m_moPubUntunneledInterstitial == null)
-            {
-                loadUntunneledFullScreenAd();
-            }
+                    if (m_moPubUntunneledInterstitial == null)
+                    {
+                        loadUntunneledFullScreenAd();
+                    }
+                }
+            };
+
+            initAdsConsentAndRunAds(adsRunnable);
         }
         else
         {
@@ -1399,7 +1495,14 @@ public class StatusActivity
 
     private void showTunneledFullScreenAd()
     {
-        initTunneledAds(true);
+        Runnable adsRunnable = new Runnable() {
+            @Override
+            public void run() {
+                initTunneledAds(true);
+            }
+        };
+
+        initAdsConsentAndRunAds(adsRunnable);
 
         if (shouldShowTunneledAds() && !m_temporarilyDisableTunneledInterstitial)
         {
@@ -1446,5 +1549,123 @@ public class StatusActivity
     {
         deInitUntunneledAds();
         deInitTunneledAds();
+    }
+
+    // New MoPub initializer with GDPR consent dialog
+    static class MoPubConsentDialogHelper {
+        public static ConsentDialogListener initDialogLoadListener() {
+            return new ConsentDialogListener() {
+
+                @Override
+                public void onConsentDialogLoaded() {
+                    PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                    if (personalInfoManager != null) {
+                        personalInfoManager.showConsentDialog();
+                    }
+                }
+
+                @Override
+                public void onConsentDialogLoadFailed(@NonNull MoPubErrorCode moPubErrorCode) {
+                    MyLog.d( "MoPub consent dialog failed to load.");
+                }
+            };
+        }
+    }
+
+    private void initAdsConsentAndRunAds(final Runnable runnable) {
+        if (mAdsConsentInitialized == true) {
+            runnable.run();
+            return;
+        }
+
+
+        mAdsConsentInitialized = true;
+        MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
+        final Context context = this;
+
+        // If tunnel is not running run AdMob GDPR check and pass
+        // MoPub GDPR consent check as a completion callback.
+        // Otherwise just run MoPub GDPR consent check
+
+        AdMobGDPRHelper.AdMobGDPRHelperCallback moPubGDPRCheckCallback = new AdMobGDPRHelper.AdMobGDPRHelperCallback() {
+            @Override
+            public void onComplete() {
+                PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                // initialized MoPub SDK if needed
+                if (personalInfoManager == null) {
+                    SdkConfiguration.Builder builder = new SdkConfiguration.Builder(MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
+
+                    // Forward personalization preference to Google
+                    // https://developers.mopub.com/docs/mediation/networks/google/#android
+
+                    // Publishers must work with Google for GDPR compliance by collecting consents on their own.
+                    // To facilitate the process, the AdMob adapters (Android: 15.0.0.x / iOS: 7.30.0.x) will forward
+                    // the user’s npa preference to Google. Publishers must make sure to complete the remaining steps
+                    // below in their app:
+
+                    if (ConsentInformation.getInstance(context).getConsentStatus() == com.google.ads.consent.ConsentStatus.NON_PERSONALIZED) {
+                        Bundle extras = new Bundle();
+                        extras.putString("npa", "1");
+                        builder.withMediationSettings(new GooglePlayServicesBanner.GooglePlayServicesMediationSettings(extras),
+                                new GooglePlayServicesInterstitial.GooglePlayServicesMediationSettings(extras),
+                                new GooglePlayServicesRewardedVideo.GooglePlayServicesMediationSettings(extras),
+                                new GooglePlayServicesNative.GooglePlayServicesMediationSettings(extras));
+                    }
+
+                    SdkConfiguration sdkConfiguration = builder.build();
+
+                    MoPub.initializeSdk(context, sdkConfiguration, new SdkInitializationListener() {
+                        @Override
+                        public void onInitializationFinished() {
+                            PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                            if(personalInfoManager != null) {
+                                // subscribe to consent change state event
+                                personalInfoManager.subscribeConsentStatusChangeListener(new ConsentStatusChangeListener() {
+
+                                    @Override
+                                    public void onConsentStateChange(@NonNull ConsentStatus oldConsentStatus,
+                                                                     @NonNull ConsentStatus newConsentStatus,
+                                                                     boolean canCollectPersonalInformation) {
+                                        PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                                        if (personalInfoManager != null && personalInfoManager.shouldShowConsentDialog()) {
+                                            personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
+                                        }
+                                    }
+                                });
+
+                                // If consent is required load the consent dialog
+                                // otherwise initialize and show the ads
+                                if(personalInfoManager.shouldShowConsentDialog()) {
+                                    personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
+
+                                } else {
+                                    runnable.run();
+                                }
+                            } else {
+                                MyLog.d( "MoPub SDK has failed to initialize.");
+                            }
+                        }
+                    });
+
+                } else {
+                    runnable.run();
+                }
+            }
+        };
+
+        if(!isServiceRunning()  && !this.isFinishing()) {
+            if(mAdMobGDPRHelper != null) {
+                mAdMobGDPRHelper.destroy();
+                mAdMobGDPRHelper = null;
+            }
+            String[] publisherIds = {"pub-1072041961750291"};
+            mAdMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, moPubGDPRCheckCallback);
+
+            // Optional 'Pay for ad-free' button, launches purchase flow when clicked.
+            mAdMobGDPRHelper.setShowBuyAdFree(true);
+            mAdMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
+        } else {
+            moPubGDPRCheckCallback.onComplete();
+        }
     }
 }

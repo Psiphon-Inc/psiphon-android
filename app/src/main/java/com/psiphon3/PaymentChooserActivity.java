@@ -19,9 +19,9 @@
 
 package com.psiphon3;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 
@@ -37,7 +37,7 @@ import java.util.Currency;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PaymentChooserActivity extends Activity {
+public class PaymentChooserActivity extends AppCompatActivity {
     public static final String SKU_INFO_EXTRA = "SKU_INFO";
     public static final String BUY_TYPE_EXTRA = "BUY_TYPE";
     public static final int BUY_SUBSCRIPTION = 1;

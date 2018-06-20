@@ -19,19 +19,23 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.net.VpnService;
@@ -43,6 +47,8 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
@@ -133,10 +139,12 @@ public abstract class MainBase {
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.MainBase.TabbedActivityBase.STATUS_ENTRY_AVAILABLE";
         protected static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
         protected static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
+        protected static final String ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION = "askedToAccessCoarseLocationPermission";
         protected static final String CURRENT_TAB = "currentTab";
 
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
         protected static final int REQUEST_CODE_PREFERENCE = 101;
+        protected static final int REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 102;
 
         protected static boolean m_firstRun = true;
         private boolean m_canWholeDevice = false;
@@ -161,7 +169,7 @@ public abstract class MainBase {
         private DataTransferGraph m_fastSentGraph;
         private DataTransferGraph m_fastReceivedGraph;
         private RegionAdapter m_regionAdapter;
-        private SpinnerHelper m_regionSelector;
+        protected SpinnerHelper m_regionSelector;
         protected CheckBox m_tunnelWholeDeviceToggle;
         protected CheckBox m_downloadOnWifiOnlyToggle;
         protected CheckBox m_disableTimeoutsToggle;
@@ -412,7 +420,19 @@ public abstract class MainBase {
             if (m_firstRun) {
                 EmbeddedValues.initialize(this);
             }
+        }
 
+        @Override
+        protected void onDestroy() {
+            super.onDestroy();
+
+            if (m_sponsorHomePage != null) {
+                m_sponsorHomePage.stop();
+                m_sponsorHomePage = null;
+            }
+        }
+
+        protected void setupActivityLayout() {
             // Set up tabs
             m_tabHost.setup();
 
@@ -497,24 +517,16 @@ public abstract class MainBase {
 
             updateServiceStateUI();
 
-            if (m_firstRun)
-            {
-                RegionAdapter.initialize(this);
-            }
             m_regionAdapter = new RegionAdapter(this);
             m_regionSelector.setAdapter(m_regionAdapter);
             String egressRegionPreference = m_multiProcessPreferences.getString(EGRESS_REGION_PREFERENCE,
                     PsiphonConstants.REGION_CODE_ANY);
-            int position = m_regionAdapter.getPositionForRegionCode(egressRegionPreference);
-            m_regionSelector.setSelection(position);
+
+            m_regionSelector.setSelectionByValue(egressRegionPreference);
+
             setTunnelConfigEgressRegion(egressRegionPreference);
 
             m_regionSelector.setOnItemSelectedListener(regionSpinnerOnItemSelected);
-            // Re-populate the spinner when it is expanded -- the underlying
-            // region list could change
-            // due to background server discovery or remote server list fetch.
-            m_regionSelector.getSpinner().setOnTouchListener(regionSpinnerOnTouch);
-            m_regionSelector.getSpinner().setOnKeyListener(regionSpinnerOnKey);
 
             m_canWholeDevice = Utils.hasVpnService();
 
@@ -557,16 +569,6 @@ public abstract class MainBase {
 
             // Force the UI to display logs already loaded into the StatusList message history
             LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
-        }
-
-        @Override
-        protected void onDestroy() {
-            super.onDestroy();
-
-            if (m_sponsorHomePage != null) {
-                m_sponsorHomePage.stop();
-                m_sponsorHomePage = null;
-            }
         }
 
         /**
@@ -736,7 +738,8 @@ public abstract class MainBase {
 
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                onRegionSelected(position);
+                String regionCode = parent.getItemAtPosition(position).toString();
+                onRegionSelected(regionCode);
             }
 
             @Override
@@ -744,36 +747,12 @@ public abstract class MainBase {
             }
         };
 
-        private final View.OnTouchListener regionSpinnerOnTouch = new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_UP) {
-                    m_regionAdapter.populate();
-                }
-                return false;
-            }
-        };
-
-        private final View.OnKeyListener regionSpinnerOnKey = new View.OnKeyListener() {
-            @Override
-            public boolean onKey(View v, int keyCode, KeyEvent event) {
-                if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-                    m_regionAdapter.populate();
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        };
-
-        public void onRegionSelected(int position) {
+        public void onRegionSelected(String selectedRegionCode) {
             // Just in case an OnItemSelected message is in transit before
             // setEnabled is processed...(?)
             if (!m_regionSelector.isEnabled()) {
                 return;
             }
-
-            String selectedRegionCode = m_regionAdapter.getSelectedRegionCode(position);
 
             String egressRegionPreference = m_multiProcessPreferences.getString(EGRESS_REGION_PREFERENCE,
                     PsiphonConstants.REGION_CODE_ANY);
@@ -1004,8 +983,71 @@ public abstract class MainBase {
                 // The tunnel will get restarted in m_updateServiceStateTimer
             }
         }
-        
+
         protected void startTunnel() {
+            // Tunnel core needs this dangerous permission to obtain the WiFi BSSID, which is used
+            // as a key for applying tactics
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                            == PackageManager.PERMISSION_GRANTED) {
+                proceedStartTunnel();
+            } else {
+                AppPreferences mpPreferences = new AppPreferences(this);
+                if (mpPreferences.getBoolean(ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION, false)) {
+                    proceedStartTunnel();
+                } else {
+                    new AlertDialog.Builder(this)
+                            .setCancelable(false)
+                            .setOnKeyListener(
+                                    new DialogInterface.OnKeyListener() {
+                                        @Override
+                                        public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                                            // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
+                                            return keyCode == KeyEvent.KEYCODE_SEARCH;
+                                        }})
+                            .setTitle(R.string.MainBase_AccessCoarseLocationPermissionPromptTitle)
+                            .setMessage(R.string.MainBase_AccessCoarseLocationPermissionPromptMessage)
+                            .setPositiveButton(R.string.MainBase_AccessCoarseLocationPermissionPositiveButton,
+                                    new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int whichButton) {
+                                            m_multiProcessPreferences.put(ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION, true);
+                                            ActivityCompat.requestPermissions(TabbedActivityBase.this,
+                                                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                                                    REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION);
+                                        }})
+                            .setNegativeButton(R.string.MainBase_AccessCoarseLocationPermissionNegativeButton,
+                                    new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int whichButton) {
+                                            m_multiProcessPreferences.put(ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION, true);
+                                            proceedStartTunnel();
+                                        }})
+                            .setOnCancelListener(
+                                    new DialogInterface.OnCancelListener() {
+                                        @Override
+                                        public void onCancel(DialogInterface dialog) {
+                                            // Do nothing (this prompt may reappear)
+                                        }})
+                            .show();
+                }
+            }
+        }
+
+        @Override
+        public void onRequestPermissionsResult(int requestCode,
+                                               String permissions[], int[] grantResults) {
+            switch (requestCode) {
+                case REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION:
+                    proceedStartTunnel();
+                    break;
+
+                default:
+                    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            }
+        }
+
+        private void proceedStartTunnel() {
             // Don't start if custom proxy settings is selected and values are
             // invalid
             boolean useHTTPProxyPreference = UpstreamProxySettings.getUseHTTPProxy(this);
@@ -1281,12 +1323,19 @@ public abstract class MainBase {
             return null;
         }
 
+        protected PendingIntent getRegionNotAvailablePendingIntent() {
+            return null;
+        }
+
         protected void configureServiceIntent(Intent intent) {
             intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_HANDSHAKE_PENDING_INTENT,
                     getHandshakePendingIntent());
 
             intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_NOTIFICATION_PENDING_INTENT,
                     getServiceNotificationPendingIntent());
+
+            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_REGION_NOT_AVAILABLE_PENDING_INTENT,
+                    getRegionNotAvailablePendingIntent());
 
             intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_WHOLE_DEVICE,
                     getTunnelConfigWholeDevice());
@@ -1296,6 +1345,8 @@ public abstract class MainBase {
 
             intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS,
                     getTunnelConfigDisableTimeouts());
+
+            intent.putExtra(TunnelManager.CLIENT_MESSENGER, m_incomingMessenger);
 
             intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_RATE_LIMIT_MBPS,
                     getTunnelConfigRateLimitMbps());
@@ -1320,11 +1371,24 @@ public abstract class MainBase {
                 intent = new Intent(this, TunnelService.class);
             }
             configureServiceIntent(intent);
-            startService(intent);
+
+            // Use a wrapper to start a service in SDK >= 26
+            // which is defined like following
+            /*
+                public static void startForegroundService(Context context, Intent intent) {
+                    if (Build.VERSION.SDK_INT >= 26) {
+                        context.startForegroundService(intent);
+                    } else {
+                        // Pre-O behavior.
+                        context.startService(intent);
+                    }
+                }
+             */
+            ContextCompat.startForegroundService(this, intent);
+
             if (bindService(intent, m_tunnelServiceConnection, 0)) {
                 m_boundToTunnelService = true;
             }
-            sendServiceMessage(TunnelManager.MSG_REGISTER);
         }
 
         private Intent startVpnServiceIntent() {
@@ -1376,12 +1440,6 @@ public abstract class MainBase {
         private void getTunnelStateFromBundle(Bundle data) {
             if (data == null) {
                 return;
-            }
-
-            ArrayList<String> availableEgressRegions = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_AVAILABLE_EGRESS_REGIONS);
-            if (availableEgressRegions != null) {
-                m_tunnelState.availableEgressRegions = availableEgressRegions;
-                RegionAdapter.setServersExist(this, availableEgressRegions);
             }
             m_tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
             if (m_tunnelState.isConnected) {
@@ -1441,9 +1499,9 @@ public abstract class MainBase {
                         break;
 
                     case TunnelManager.MSG_KNOWN_SERVER_REGIONS:
-                        RegionAdapter.setServersExist(
-                                MainBase.TabbedActivityBase.this,
-                                data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_AVAILABLE_EGRESS_REGIONS));
+                        m_regionAdapter.updateRegionsFromPreferences();
+                        // Make sure we preserve the selection in case the dataset has changed
+                        m_regionSelector.setSelectionByValue(m_tunnelConfig.egressRegion);
                         break;
 
                     case TunnelManager.MSG_TUNNEL_STARTING:
@@ -1481,7 +1539,6 @@ public abstract class MainBase {
         private void sendServiceMessage(int what) {
             try {
                 Message msg = Message.obtain(null, what);
-                msg.replyTo = m_incomingMessenger;
                 if (m_outgoingMessenger == null) {
                     synchronized (m_queue) {
                         m_queue.add(msg);
