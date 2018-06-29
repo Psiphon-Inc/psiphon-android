@@ -30,7 +30,7 @@ import android.os.SystemClock;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import net.grandcentrix.tray.AppPreferences;
@@ -389,6 +389,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
 
             String tunnelCoreConfig = TunnelManager.buildTunnelCoreConfig(
                     this,                       // context
+                    mTunnel,
                     tunnelManagerConfig,
                     "upgradechecker",           // tempTunnelName
                     "Psiphon_UpgradeChecker_"); // clientPlatformPrefix
