@@ -1,12 +1,15 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 23
+    compileSdkVersion 26
     useLibrary 'org.apache.http.legacy'
 
     repositories{
         flatDir{
             dirs 'libs'
+        }
+        maven {
+            url "https://maven.google.com"
         }
     }
 
@@ -21,10 +24,10 @@ android {
             def verCode = verName.toInteger()
             defaultConfig {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
-                applicationId "com.psiphon3"
+                applicationId "com.psiphon3.subscription"
                 resValue "string", "tray__authority", "${applicationId}.tray"
-                minSdkVersion 9
-                targetSdkVersion 23
+                minSdkVersion 14
+                targetSdkVersion 26
                 versionCode verCode
                 versionName verName
             }
@@ -40,8 +43,11 @@ android {
     }
 
     buildTypes {
+        debug {
+        }
         release {
-            minifyEnabled false
+            minifyEnabled true
+            useProguard true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
@@ -73,12 +79,27 @@ android {
 
 }
 
+repositories {
+    jcenter()
+    maven { url "https://s3.amazonaws.com/moat-sdk-builds" }
+}
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:appcompat-v7:23.4.0'
+    implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation files('libs/jackson-core-2.2.0.jar')
     implementation files('libs/achartengine-1.0.0.jar')
     implementation files('libs/snakeyaml-1.10-android.jar')
     implementation(name:'ca.psiphon', ext:'aar')
     implementation project(':tray')
+    implementation('com.mopub:mopub-sdk-banner:5.1.0@aar') {
+        transitive = true
+    }
+    implementation('com.mopub:mopub-sdk-interstitial:5.1.0@aar') {
+        transitive = true
+    }
+    implementation 'com.google.android.gms:play-services-ads:15.0.1'
+    implementation 'com.mopub.mediation:admob:15.0.0.8'
+    implementation 'com.android.support:cardview-v7:26.1.0'
+    implementation 'com.google.android.ads.consent:consent-library:1.0.4'
 }
