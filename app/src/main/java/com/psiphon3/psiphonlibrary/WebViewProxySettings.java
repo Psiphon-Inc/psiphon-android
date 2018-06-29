@@ -38,6 +38,21 @@ import java.lang.reflect.Method;
 
 public class WebViewProxySettings 
 {
+    public static void resetLocalProxy(Context ctx)
+    {
+        UpstreamProxySettings.ProxySettings systemProxySettings = UpstreamProxySettings.getOriginalSystemProxySettings(ctx);
+        if (systemProxySettings == null) {
+            systemProxySettings = new UpstreamProxySettings.ProxySettings();
+        }
+        setProxy(ctx, systemProxySettings.proxyHost, systemProxySettings.proxyPort);
+    }
+    
+    private static boolean proxySettingsAreEmpty(String host, int port)
+    {
+        return (host == null ||
+                host.length() == 0 ||
+                port <= 0);
+    }
 
     public static void setLocalProxy(Context ctx, int port)
     {
@@ -88,7 +103,10 @@ public class WebViewProxySettings
             Object requestQueueObject = getRequestQueue(ctx);
             if (requestQueueObject != null) {
                 //Create Proxy config object and set it into request Q
-                HttpHost httpHost = new HttpHost(host, port, "http");   
+                HttpHost httpHost = null;
+                if (!proxySettingsAreEmpty(host, port)){
+                    httpHost = new HttpHost(host, port, "http");
+                }
                 setDeclaredField(requestQueueObject, "mProxyHost", httpHost);
                 
                 return true;
@@ -113,17 +131,31 @@ public class WebViewProxySettings
             if (webViewCoreClass != null && proxyPropertiesClass != null) 
             {
                 Method m = webViewCoreClass.getDeclaredMethod("sendStaticMessage", Integer.TYPE, Object.class);
-                Constructor c = proxyPropertiesClass.getConstructor(String.class, Integer.TYPE, String.class);
-                
-                if (m != null && c != null)
+                if (proxySettingsAreEmpty(host, port))
                 {
-                    m.setAccessible(true);
-                    c.setAccessible(true);
-                    Object properties = c.newInstance(host, port, null);
-                
-                    // android.webkit.WebViewCore.EventHub.PROXY_CHANGED = 193;
-                    m.invoke(null, 193, properties);
-                    return true;
+                    if (m != null)
+                    {
+                        m.setAccessible(true);
+                    
+                        // android.webkit.WebViewCore.EventHub.PROXY_CHANGED = 193;
+                        m.invoke(null, 193, null);
+                        return true;
+                    }
+                }
+                else
+                {
+                    Constructor c = proxyPropertiesClass.getConstructor(String.class, Integer.TYPE, String.class);
+                    
+                    if (m != null && c != null)
+                    {
+                        m.setAccessible(true);
+                        c.setAccessible(true);
+                        Object properties = c.newInstance(host, port, null);
+                    
+                        // android.webkit.WebViewCore.EventHub.PROXY_CHANGED = 193;
+                        m.invoke(null, 193, properties);
+                        return true;
+                    }
                 }
             }
         }
@@ -145,10 +177,20 @@ public class WebViewProxySettings
     @SuppressWarnings("rawtypes")
     private static boolean setWebkitProxyKitKat(Context appContext, String host, int port)
     {
-        System.setProperty("http.proxyHost", host);
-        System.setProperty("http.proxyPort", port + "");
-        System.setProperty("https.proxyHost", host);
-        System.setProperty("https.proxyPort", port + "");
+        if (proxySettingsAreEmpty(host, port))
+        {
+            System.clearProperty("http.proxyHost");
+            System.clearProperty("http.proxyPort");
+            System.clearProperty("https.proxyHost");
+            System.clearProperty("https.proxyPort");
+        }
+        else
+        {
+            System.setProperty("http.proxyHost", host);
+            System.setProperty("http.proxyPort", port + "");
+            System.setProperty("https.proxyHost", host);
+            System.setProperty("https.proxyPort", port + "");
+        }
         try
         {
             Class applicationClass = Class.forName("android.app.Application");
@@ -163,6 +205,9 @@ public class WebViewProxySettings
             {
                 for (Object receiver : ((ArrayMap) receiverMap).keySet())
                 {
+                    if (receiver == null) {
+                        continue;
+                    }
                     Class receiverClass = receiver.getClass();
                     if (receiverClass.getName().contains("ProxyChangeListener"))
                     {
@@ -218,10 +263,20 @@ public class WebViewProxySettings
     @SuppressWarnings("rawtypes")
     private static boolean setWebkitProxyLollipop(Context appContext, String host, int port)
     {
-        System.setProperty("http.proxyHost", host);
-        System.setProperty("http.proxyPort", port + "");
-        System.setProperty("https.proxyHost", host);
-        System.setProperty("https.proxyPort", port + "");
+        if (proxySettingsAreEmpty(host, port))
+        {
+            System.clearProperty("http.proxyHost");
+            System.clearProperty("http.proxyPort");
+            System.clearProperty("https.proxyHost");
+            System.clearProperty("https.proxyPort");
+        }
+        else
+        {
+            System.setProperty("http.proxyHost", host);
+            System.setProperty("http.proxyPort", port + "");
+            System.setProperty("https.proxyHost", host);
+            System.setProperty("https.proxyPort", port + "");
+        }
         try {
             Class applictionClass = Class.forName("android.app.Application");
             Field mLoadedApkField = applictionClass.getDeclaredField("mLoadedApk");
@@ -235,12 +290,27 @@ public class WebViewProxySettings
             {
                 for (Object receiver : ((ArrayMap) receiverMap).keySet())
                 {
+                    if (receiver == null) {
+                        continue;
+                    }
                     Class clazz = receiver.getClass();
-                    if (clazz.getName().contains("ProxyChangeListener"))
-                    {
-                        Method onReceiveMethod = clazz.getDeclaredMethod("onReceive", Context.class, Intent.class);
-                        Intent intent = new Intent(Proxy.PROXY_CHANGE_ACTION);
+                    // NOTE: as of Chrome 67 the ProxyChangeListener now has an obfuscated name,
+                    // so we are unable to identify the receiver by name. Instead we'll send the
+                    // PROXY_CHANGE intent to all receivers.
+                    Method onReceiveMethod = clazz.getDeclaredMethod("onReceive", Context.class, Intent.class);
+                    Intent intent = new Intent(Proxy.PROXY_CHANGE_ACTION);
+
+                    final String CLASS_NAME = "android.net.ProxyInfo";
+                    Class proxyInfoClass = Class.forName(CLASS_NAME);
+                    Constructor constructor = proxyInfoClass.getConstructor(String.class, Integer.TYPE, String.class);
+                    constructor.setAccessible(true);
+                    Object proxyInfo = constructor.newInstance(host, port, null);
+                    intent.putExtra("android.intent.extra.PROXY_INFO", (Parcelable) proxyInfo);
+
+                    try {
                         onReceiveMethod.invoke(receiver, appContext, intent);
+                    } catch (InvocationTargetException e) {
+                        // This receiver may throw on an unexpected intent, continue to the next one
                     }
                 }
             }
@@ -263,6 +333,10 @@ public class WebViewProxySettings
             MyLog.d("Exception setting WebKit proxy on Lollipop through ProxyChangeListener: " + e.toString());
         }
         catch (InvocationTargetException e)
+        {
+            MyLog.d("Exception setting WebKit proxy on Lollipop through ProxyChangeListener: " + e.toString());
+        }
+        catch (InstantiationException e)
         {
             MyLog.d("Exception setting WebKit proxy on Lollipop through ProxyChangeListener: " + e.toString());
         }
