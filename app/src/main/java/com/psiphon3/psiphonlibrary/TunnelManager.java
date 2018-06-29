@@ -165,6 +165,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         }
 
         if (m_firstStart && intent != null) {
+            m_outgoingMessenger = (Messenger) intent.getParcelableExtra(CLIENT_MESSENGER);
             getTunnelConfig(intent);
             m_parentService.startForeground(R.string.psiphon_service_notification_id, this.createNotification(false));
             MyLog.v(R.string.client_version, MyLog.Sensitivity.NOT_SENSITIVE, EmbeddedValues.CLIENT_VERSION);
@@ -382,7 +383,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             }
             m_outgoingMessenger.send(msg);
         } catch (RemoteException e) {
-            MyLog.g("sendClientMessage failed: %s", e.getMessage());
+            MyLog.g(String.format("sendClientMessage failed: %s", e.getMessage()));
         }
     }
 
@@ -405,7 +406,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 m_tunnelConfig.handshakePendingIntent.send(
                         m_parentService, 0, fillInExtras);
             } catch (PendingIntent.CanceledException e) {
-                MyLog.g("sendHandshakeIntent failed: %s", e.getMessage());
+                MyLog.g(String.format("sendHandshakeIntent failed: %s", e.getMessage()));
             }
         }
     }
@@ -468,7 +469,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         } catch (FileNotFoundException e) {
             // pass
         } catch (IOException | JSONException | OutOfMemoryError e) {
-            MyLog.g("prepareServerEntries failed: %s", e.getMessage());
+            MyLog.g(String.format("prepareServerEntries failed: %s", e.getMessage()));
         }
 
         return list.toString();
@@ -778,7 +779,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                         m_tunnelConfig.regionNotAvailablePendingIntent.send(
                                 m_parentService, 0, null);
                     } catch (PendingIntent.CanceledException e) {
-                        MyLog.g("regionNotAvailablePendingIntent failed: %s", e.getMessage());
+                        MyLog.g(String.format("regionNotAvailablePendingIntent failed: %s", e.getMessage()));
                     }
 
                 }
@@ -904,6 +905,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     }
                 }
                 m_tunnelState.homePages.add(url);
+
+        boolean showAds = false;
+        for (String homePage : m_tunnelState.homePages) {
+            if (homePage.contains("psiphon_show_ads")) {
+                showAds = true;
+            }
+        }
+        final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
+        multiProcessPreferences.put(
+                m_parentService.getString(R.string.persistent_show_ads_setting),
+                showAds);
             }
         });
     }
