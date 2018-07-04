@@ -34,6 +34,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -44,15 +45,28 @@ import android.widget.LinearLayout;
 import android.widget.TabHost;
 import android.widget.Toast;
 
+import com.google.ads.consent.ConsentInformation;
+import com.mopub.common.MoPub;
+import com.mopub.common.SdkConfiguration;
+import com.mopub.common.SdkInitializationListener;
+import com.mopub.common.privacy.ConsentDialogListener;
+import com.mopub.common.privacy.ConsentStatus;
+import com.mopub.common.privacy.ConsentStatusChangeListener;
+import com.mopub.common.privacy.PersonalInfoManager;
+import com.mopub.mobileads.GooglePlayServicesBanner;
+import com.mopub.mobileads.GooglePlayServicesInterstitial;
+import com.mopub.mobileads.GooglePlayServicesRewardedVideo;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
+import com.mopub.nativeads.GooglePlayServicesNative;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
+import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 
 import net.grandcentrix.tray.AppPreferences;
@@ -84,6 +98,10 @@ public class StatusActivity
     private boolean m_moPubTunneledInterstitialShowWhenLoaded = false;
     private int m_tunneledFullScreenAdCounter = 0;
     private boolean m_temporarilyDisableTunneledInterstitial = false;
+
+    private boolean mAdsConsentInitialized;
+    private AdMobGDPRHelper mAdMobGDPRHelper;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -584,12 +602,19 @@ public class StatusActivity
 
     private void initUntunneledAds() {
         if (shouldShowUntunneledAds()) {
-            initUntunneledBanners();
+            Runnable adsRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    initUntunneledBanners();
 
-            if (m_moPubUntunneledInterstitial == null)
-            {
-                loadUntunneledFullScreenAd();
-            }
+                    if (m_moPubUntunneledInterstitial == null)
+                    {
+                        loadUntunneledFullScreenAd();
+                    }
+                }
+            };
+
+            initAdsConsentAndRunAds(adsRunnable);
         }
     }
 
@@ -725,17 +750,25 @@ public class StatusActivity
         return getShowAds() && isTunnelConnected();
     }
 
-    private void initTunneledAds(boolean initFullScreenAd)
+    private void initTunneledAds(final boolean initFullScreenAd)
     {
         if (shouldShowTunneledAds() && m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false))
         {
-            // make sure WebView proxy settings are up to date
-            WebViewProxySettings.setLocalProxy(this, getListeningLocalHttpProxyPort());
+            final Context that = this;
+            Runnable adsRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    // make sure WebView proxy settings are up to date
+                    WebViewProxySettings.setLocalProxy(that, getListeningLocalHttpProxyPort());
 
-            initTunneledBanners();
-            if (initFullScreenAd) {
-                loadTunneledFullScreenAd();
-            }
+                    initTunneledBanners();
+                    if (initFullScreenAd) {
+                        loadTunneledFullScreenAd();
+                    }
+                }
+            };
+
+            initAdsConsentAndRunAds(adsRunnable);
         }
     }
 
@@ -891,5 +924,123 @@ public class StatusActivity
     {
         deInitUntunneledAds();
         deInitTunneledAds();
+    }
+
+    // New MoPub initializer with GDPR consent dialog
+    static class MoPubConsentDialogHelper {
+        public static ConsentDialogListener initDialogLoadListener() {
+            return new ConsentDialogListener() {
+
+                @Override
+                public void onConsentDialogLoaded() {
+                    PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                    if (personalInfoManager != null) {
+                        personalInfoManager.showConsentDialog();
+                    }
+                }
+
+                @Override
+                public void onConsentDialogLoadFailed(@NonNull MoPubErrorCode moPubErrorCode) {
+                    Utils.MyLog.d( "MoPub consent dialog failed to load.");
+                }
+            };
+        }
+    }
+
+    private void initAdsConsentAndRunAds(final Runnable runnable) {
+        if (mAdsConsentInitialized == true) {
+            runnable.run();
+            return;
+        }
+
+
+        mAdsConsentInitialized = true;
+        MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
+        final Context context = this;
+
+        // If tunnel is not running run AdMob GDPR check and pass
+        // MoPub GDPR consent check as a completion callback.
+        // Otherwise just run MoPub GDPR consent check
+
+        AdMobGDPRHelper.AdMobGDPRHelperCallback moPubGDPRCheckCallback = new AdMobGDPRHelper.AdMobGDPRHelperCallback() {
+            @Override
+            public void onComplete() {
+                PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                // initialized MoPub SDK if needed
+                if (personalInfoManager == null) {
+                    SdkConfiguration.Builder builder = new SdkConfiguration.Builder(MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
+
+                    // Forward personalization preference to Google
+                    // https://developers.mopub.com/docs/mediation/networks/google/#android
+
+                    // Publishers must work with Google for GDPR compliance by collecting consents on their own.
+                    // To facilitate the process, the AdMob adapters (Android: 15.0.0.x / iOS: 7.30.0.x) will forward
+                    // the user’s npa preference to Google. Publishers must make sure to complete the remaining steps
+                    // below in their app:
+
+                    if (ConsentInformation.getInstance(context).getConsentStatus() == com.google.ads.consent.ConsentStatus.NON_PERSONALIZED) {
+                        Bundle extras = new Bundle();
+                        extras.putString("npa", "1");
+                        builder.withMediationSettings(new GooglePlayServicesBanner.GooglePlayServicesMediationSettings(extras),
+                                new GooglePlayServicesInterstitial.GooglePlayServicesMediationSettings(extras),
+                                new GooglePlayServicesRewardedVideo.GooglePlayServicesMediationSettings(extras),
+                                new GooglePlayServicesNative.GooglePlayServicesMediationSettings(extras));
+                    }
+
+                    SdkConfiguration sdkConfiguration = builder.build();
+
+                    MoPub.initializeSdk(context, sdkConfiguration, new SdkInitializationListener() {
+                        @Override
+                        public void onInitializationFinished() {
+                            PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                            if(personalInfoManager != null) {
+                                // subscribe to consent change state event
+                                personalInfoManager.subscribeConsentStatusChangeListener(new ConsentStatusChangeListener() {
+
+                                    @Override
+                                    public void onConsentStateChange(@NonNull ConsentStatus oldConsentStatus,
+                                                                     @NonNull ConsentStatus newConsentStatus,
+                                                                     boolean canCollectPersonalInformation) {
+                                        PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                                        if (personalInfoManager != null && personalInfoManager.shouldShowConsentDialog()) {
+                                            personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
+                                        }
+                                    }
+                                });
+
+                                // If consent is required load the consent dialog
+                                // otherwise initialize and show the ads
+                                if(personalInfoManager.shouldShowConsentDialog()) {
+                                    personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
+
+                                } else {
+                                    runnable.run();
+                                }
+                            } else {
+                                Utils.MyLog.d( "MoPub SDK has failed to initialize.");
+                            }
+                        }
+                    });
+
+                } else {
+                    runnable.run();
+                }
+            }
+        };
+
+        if(!isServiceRunning()  && !this.isFinishing()) {
+            if(mAdMobGDPRHelper != null) {
+                mAdMobGDPRHelper.destroy();
+                mAdMobGDPRHelper = null;
+            }
+            String[] publisherIds = {"pub-1072041961750291"};
+            mAdMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, moPubGDPRCheckCallback);
+
+            // Do not show 'Upgrade to ad-free" button
+            mAdMobGDPRHelper.setShowBuyAdFree(false);
+            mAdMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
+        } else {
+            moPubGDPRCheckCallback.onComplete();
+        }
     }
 }
