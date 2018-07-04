@@ -67,5 +67,6 @@
     public static final ** CREATOR;
 }
 
-
 -dontwarn org.jacoco.**
+-dontwarn com.mopub.nativeads.**
+-dontwarn com.mopub.mobileads.**
