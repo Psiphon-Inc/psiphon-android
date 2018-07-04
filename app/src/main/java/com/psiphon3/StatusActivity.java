@@ -87,20 +87,19 @@ public class StatusActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
         m_banner = (ImageView) findViewById(R.id.banner);
         m_tabHost = (TabHost) findViewById(R.id.tabHost);
         m_toggleButton = (Button) findViewById(R.id.toggleButton);
 
-        // NOTE: super class assumes m_tabHost is initialized in its onCreate
+        setupActivityLayout();
 
         // Don't let this tab change trigger an interstitial ad
         // OnResume() will reset this flag
         m_temporarilyDisableTunneledInterstitial = true;
         
-        super.onCreate(savedInstanceState);
-
         if (shouldShowUntunneledAds()) {
             // Start at the Home tab if the service isn't running and we want to show ads
             m_tabHost.setCurrentTabByTag("home");
