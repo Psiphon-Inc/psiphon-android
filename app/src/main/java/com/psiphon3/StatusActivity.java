@@ -35,12 +35,14 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TabHost;
+import android.widget.Toast;
 
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
@@ -48,6 +50,7 @@ import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
@@ -231,6 +234,21 @@ public class StatusActivity
                 PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
+    @Override
+    protected PendingIntent getRegionNotAvailablePendingIntent() {
+        Intent intent = new Intent(
+                TunnelManager.INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE,
+                null,
+                this,
+                com.psiphon3.StatusActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        return PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
     protected void doToggle()
     {
         super.doToggle();
@@ -291,6 +309,28 @@ public class StatusActivity
                             null,
                             this,
                             this.getClass()));
+        } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE)) {
+            // Switch to settings tab
+            m_tabHost.setCurrentTabByTag("settings");
+
+            // Set egress region preference to 'Best Performance'
+            updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
+
+            // Set region selection to 'Best Performance' too
+            m_regionSelector.setSelectionByValue(PsiphonConstants.REGION_CODE_ANY);
+
+            // Show "Selected region unavailable" toast
+            Toast toast = Toast.makeText(this, R.string.selected_region_currently_not_available, Toast.LENGTH_LONG);
+            toast.setGravity(Gravity.CENTER, 0, 0);
+            toast.show();
+
+            // We only want to respond to the INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE action once,
+            // so we need to clear it (by setting it to a non-special intent).
+            setIntent(new Intent(
+                    "ACTION_VIEW",
+                    null,
+                    this,
+                    this.getClass()));
         }
     }
 
@@ -341,55 +381,63 @@ public class StatusActivity
             !hasPreference &&
             !isServiceRunning())
         {
-            if (!m_tunnelWholeDevicePromptShown)
+            if (!m_tunnelWholeDevicePromptShown && !this.isFinishing())
             {
                 final Context context = this;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        AlertDialog dialog = new AlertDialog.Builder(context)
+                                .setCancelable(false)
+                                .setOnKeyListener(
+                                        new DialogInterface.OnKeyListener() {
+                                            @Override
+                                            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                                                // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
+                                                return keyCode == KeyEvent.KEYCODE_SEARCH;
+                                            }
+                                        })
+                                .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
+                                .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
+                                .setPositiveButton(R.string.StatusActivity_WholeDeviceTunnelPositiveButton,
+                                        new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int whichButton) {
+                                                // Persist the "on" setting
+                                                updateWholeDevicePreference(true);
+                                                startTunnel();
+                                            }
+                                        })
+                                .setNegativeButton(R.string.StatusActivity_WholeDeviceTunnelNegativeButton,
+                                        new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int whichButton) {
+                                                // Turn off and persist the "off" setting
+                                                m_tunnelWholeDeviceToggle.setChecked(false);
+                                                updateWholeDevicePreference(false);
+                                                startTunnel();
+                                            }
+                                        })
+                                .setOnCancelListener(
+                                        new DialogInterface.OnCancelListener() {
+                                            @Override
+                                            public void onCancel(DialogInterface dialog) {
+                                                // Don't change or persist preference (this prompt may reappear)
+                                                startTunnel();
+                                            }
+                                        })
+                                .show();
 
-                AlertDialog dialog = new AlertDialog.Builder(context)
-                    .setCancelable(false)
-                    .setOnKeyListener(
-                            new DialogInterface.OnKeyListener() {
-                                @Override
-                                public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
-                                    // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
-                                    return keyCode == KeyEvent.KEYCODE_SEARCH;
-                                }})
-                    .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
-                    .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
-                    .setPositiveButton(R.string.StatusActivity_WholeDeviceTunnelPositiveButton,
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int whichButton) {
-                                    // Persist the "on" setting
-                                    updateWholeDevicePreference(true);
-                                    startTunnel();
-                                }})
-                    .setNegativeButton(R.string.StatusActivity_WholeDeviceTunnelNegativeButton,
-                                new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int whichButton) {
-                                        // Turn off and persist the "off" setting
-                                        m_tunnelWholeDeviceToggle.setChecked(false);
-                                        updateWholeDevicePreference(false);
-                                        startTunnel();
-                                    }})
-                    .setOnCancelListener(
-                            new DialogInterface.OnCancelListener() {
-                                @Override
-                                public void onCancel(DialogInterface dialog) {
-                                    // Don't change or persist preference (this prompt may reappear)
-                                    startTunnel();
-                                }})
-                    .show();
-                
-                // Our text no longer fits in the AlertDialog buttons on Lollipop, so force the
-                // font size (on older versions, the text seemed to be scaled down to fit).
-                // TODO: custom layout
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                {
-                    dialog.getButton(DialogInterface.BUTTON_POSITIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
-                    dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
-                }
+                        // Our text no longer fits in the AlertDialog buttons on Lollipop, so force the
+                        // font size (on older versions, the text seemed to be scaled down to fit).
+                        // TODO: custom layout
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+                        {
+                            dialog.getButton(DialogInterface.BUTTON_POSITIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
+                            dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
+                        }
+                    }
+                });
                 
                 m_tunnelWholeDevicePromptShown = true;
             }

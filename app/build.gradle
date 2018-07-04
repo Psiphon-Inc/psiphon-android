@@ -95,7 +95,6 @@ dependencies {
     implementation files('libs/achartengine-1.0.0.jar')
     implementation files('libs/snakeyaml-1.10-android.jar')
     implementation(name:'ca.psiphon', ext:'aar')
-    implementation 'com.google.android.gms:play-services-safetynet:11.8.0'
     implementation project(':tray')
     implementation('com.mopub:mopub-sdk-banner:4.20.0@aar') {
         transitive = true
