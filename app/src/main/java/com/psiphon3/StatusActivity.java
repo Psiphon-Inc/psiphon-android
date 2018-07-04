@@ -176,6 +176,9 @@ public class StatusActivity
     
     @Override
     public void onResume() {
+        // Don't miss a chance to get personalized ads consent if user hasn't set it yet.
+        mAdsConsentInitialized = false;
+
         super.onResume();
         if (m_startupPending) {
             m_startupPending = false;

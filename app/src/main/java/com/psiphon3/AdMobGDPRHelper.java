@@ -103,7 +103,7 @@ public class AdMobGDPRHelper {
             alertDialog = builder
                     .setView(dialogView)
                     .setCancelable(false)
-                    .setTitle(R.string.app_name_psiphon_pro)
+                    .setTitle(R.string.app_name)
                     .setIcon(R.drawable.ic_launcher)
                     .create();
 
@@ -150,8 +150,9 @@ public class AdMobGDPRHelper {
                                     callback.onComplete();
                                 }
                                 alertDialog.dismiss();
-                                StatusActivity statusActivity = (StatusActivity) context;
-                                statusActivity.onRateLimitUpgradeButtonClick(v);
+                                /*
+                                    Launch custom payment flow here
+                                */
                             }
                         });
             } else {
@@ -207,7 +208,7 @@ public class AdMobGDPRHelper {
                 alertDialog = builder
                         .setView(dialogView)
                         .setCancelable(true)
-                        .setTitle(R.string.app_name_psiphon_pro)
+                        .setTitle(R.string.app_name)
                         .setIcon(R.drawable.ic_launcher)
                         .setPositiveButton(R.string.abc_action_mode_done, null)
                         .create();
