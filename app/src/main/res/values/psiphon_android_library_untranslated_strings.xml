@@ -62,4 +62,5 @@
     <string name="current_local_http_proxy_port">currentLocalHttpProxyPort</string>
     <string name="status_activity_foreground">statusActivityForeground</string>
     <string name="persistent_show_ads_setting">persistentShowAdsSetting</string>
+    <string name="adConsentPref">adConsentPref</string>
 </resources>
