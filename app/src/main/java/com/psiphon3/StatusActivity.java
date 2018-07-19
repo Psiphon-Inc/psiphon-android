@@ -27,24 +27,47 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TabHost;
 import android.widget.Toast;
 
+import com.google.ads.consent.ConsentInformation;
+import com.mopub.common.MoPub;
+import com.mopub.common.SdkConfiguration;
+import com.mopub.common.SdkInitializationListener;
+import com.mopub.common.privacy.ConsentDialogListener;
+import com.mopub.common.privacy.ConsentStatus;
+import com.mopub.common.privacy.ConsentStatusChangeListener;
+import com.mopub.common.privacy.PersonalInfoManager;
+import com.mopub.mobileads.GooglePlayServicesBanner;
+import com.mopub.mobileads.GooglePlayServicesInterstitial;
+import com.mopub.mobileads.GooglePlayServicesRewardedVideo;
+import com.mopub.mobileads.MoPubErrorCode;
+import com.mopub.mobileads.MoPubInterstitial;
+import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
+import com.mopub.mobileads.MoPubView;
+import com.mopub.mobileads.MoPubView.BannerAdListener;
+import com.mopub.nativeads.GooglePlayServicesNative;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
+import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
@@ -52,6 +75,9 @@ import net.grandcentrix.tray.core.ItemNotFoundException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
 
 public class StatusActivity
@@ -62,18 +88,40 @@ public class StatusActivity
     private ImageView m_banner;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
+    private MoPubView m_moPubUntunneledBannerAdView = null;
+    private MoPubInterstitial m_moPubUntunneledInterstitial = null;
+    private boolean m_moPubUntunneledInterstitialFailed = false;
+    private boolean m_moPubUntunneledInterstitialShowWhenLoaded = false;
+    private static boolean m_startupPending = false;
+    private MoPubView m_moPubTunneledBannerAdView = null;
+    private MoPubInterstitial m_moPubTunneledInterstitial = null;
+    private boolean m_moPubTunneledInterstitialShowWhenLoaded = false;
+    private int m_tunneledFullScreenAdCounter = 0;
+    private boolean m_temporarilyDisableTunneledInterstitial = false;
+
+    private boolean mAdsConsentInitialized;
+    private AdMobGDPRHelper mAdMobGDPRHelper;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
         m_banner = (ImageView) findViewById(R.id.banner);
         m_tabHost = (TabHost) findViewById(R.id.tabHost);
         m_toggleButton = (Button) findViewById(R.id.toggleButton);
 
-        // NOTE: super class assumes m_tabHost is initialized in its onCreate
+        setupActivityLayout();
 
-        super.onCreate(savedInstanceState);
+        // Don't let this tab change trigger an interstitial ad
+        // OnResume() will reset this flag
+        m_temporarilyDisableTunneledInterstitial = true;
+        
+        if (shouldShowUntunneledAds()) {
+            // Start at the Home tab if the service isn't running and we want to show ads
+            m_tabHost.setCurrentTabByTag("home");
+        }
 
         // EmbeddedValues.initialize(this); is called in MainBase.OnCreate
 
@@ -100,7 +148,7 @@ public class StatusActivity
         }
 
         // Auto-start on app first run
-        if (m_firstRun) {
+        if (m_firstRun && !shouldShowUntunneledAds()) {
             m_firstRun = false;
             startUp();
         }
@@ -120,9 +168,45 @@ public class StatusActivity
         }
     }
 
+    @Override
+    public void onPause()
+    {
+        super.onPause();
+    }
+    
+    @Override
+    public void onResume() {
+        // Don't miss a chance to get personalized ads consent if user hasn't set it yet.
+        mAdsConsentInitialized = false;
+
+        super.onResume();
+        if (m_startupPending) {
+            m_startupPending = false;
+            resumeServiceStateUI();
+            doStartUp();
+        }
+    }
+
+    @Override
+    protected void onTunnelStateReceived() {
+        m_temporarilyDisableTunneledInterstitial = false;
+        initTunneledAds(false);
+    }
+    
+    @Override
+    public void onDestroy()
+    {
+        deInitAllAds();
+        delayHandler.removeCallbacks(enableAdMode);
+        super.onDestroy();
+    }
+    
     private void loadSponsorTab(boolean freshConnect)
     {
-        resetSponsorHomePage(freshConnect);
+        if (!getSkipHomePage())
+        {
+            resetSponsorHomePage(freshConnect);
+        }
     }
 
     @Override
@@ -185,6 +269,23 @@ public class StatusActivity
                 PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
+    protected void doToggle()
+    {
+        super.doToggle();
+    }
+    
+    @Override
+    public void onTabChanged(String tabId)
+    {
+        showTunneledFullScreenAd();
+        super.onTabChanged(tabId);
+    }
+
+    @Override
+    protected void onTunnelDisconnected() {
+        deInitTunneledAds();
+    }
+
     protected void HandleCurrentIntent()
     {
         Intent intent = getIntent();
@@ -211,6 +312,11 @@ public class StatusActivity
             // since the homepage should already be showing.
             if (!intent.getBooleanExtra(TunnelManager.DATA_HANDSHAKE_IS_RECONNECT, false))
             {
+                // Don't let this tab change trigger an interstitial ad
+                // OnResume() will reset this flag
+                m_temporarilyDisableTunneledInterstitial = true;
+                m_tunneledFullScreenAdCounter = 0;
+
                 m_tabHost.setCurrentTabByTag("home");
                 loadSponsorTab(true);
                 m_loadedSponsorTab = true;
@@ -266,7 +372,18 @@ public class StatusActivity
     }
 
     @Override
-    protected void startUp()
+    protected void startUp() {
+        if (shouldShowUntunneledAds()) {
+            pauseServiceStateUI();
+            adModeCountdown = 10;
+            delayHandler.postDelayed(enableAdMode, 1000);
+            showUntunneledFullScreenAd();
+        } else {
+            doStartUp();
+        }
+    }
+
+    private void doStartUp()
     {
         // If the user hasn't set a whole-device-tunnel preference, show a prompt
         // (and delay starting the tunnel service until the prompt is completed)
@@ -434,6 +551,499 @@ public class StatusActivity
         catch (ActivityNotFoundException e)
         {
             // Thrown by startActivity; in this case, we ignore and the URI isn't opened
+        }
+    }
+
+    private Handler delayHandler = new Handler();
+    private Runnable enableAdMode = new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            if (adModeCountdown > 0 && !m_moPubUntunneledInterstitialFailed)
+            {
+                m_toggleButton.setText(String.valueOf(adModeCountdown));
+                adModeCountdown--;
+                delayHandler.postDelayed(this, 1000);
+            }
+            else
+            {
+                resumeServiceStateUI();
+                doStartUp();
+            }
+        }
+    };
+    private int adModeCountdown;
+
+    static final String MOPUB_UNTUNNELED_BANNER_PROPERTY_ID = "3e7b44ad12be4c3b935abdfb7f1dbce7";
+    static final String MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID = "97b7033b9dc14e9cab29605922ae9451";
+    static final String MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID = "4126820fe551437ab468a8f8186e1267";
+    static final String MOPUB_TUNNELED_BANNER_PROPERTY_ID = "6848f6c3bce64522b771ea8ce9b5f1cd";
+    static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "0ad7bcfc9b17444aa80b1c198e5ebda5";
+    static final String MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID = "b17a746d77c9436bb805c958f7879342";
+
+    @Override
+    protected void updateAdsForServiceState() {
+        if (isServiceRunning()) {
+            deInitUntunneledAds();
+        } else {
+            deInitTunneledAds();
+            initUntunneledAds();
+        }
+    }
+
+    private boolean getShowAds() {
+        return m_multiProcessPreferences.getBoolean(getString(R.string.persistent_show_ads_setting), false) &&
+                !EmbeddedValues.hasEverBeenSideLoaded(this) &&
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN;
+    }
+
+    private boolean shouldShowUntunneledAds()
+    {
+        return getShowAds() && !isServiceRunning();
+    }
+
+    private void initUntunneledAds() {
+        if (shouldShowUntunneledAds()) {
+            Runnable adsRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    initUntunneledBanners();
+
+                    if (m_moPubUntunneledInterstitial == null)
+                    {
+                        loadUntunneledFullScreenAd();
+                    }
+                }
+            };
+
+            initAdsConsentAndRunAds(adsRunnable);
+        }
+    }
+
+    private void initUntunneledBanners()
+    {
+        if (m_moPubUntunneledBannerAdView == null)
+        {
+            m_moPubUntunneledBannerAdView = new MoPubView(this);
+            m_moPubUntunneledBannerAdView.setAdUnitId(
+                    getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT &&
+                            new Random().nextBoolean() ?
+                    MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID :
+                    MOPUB_UNTUNNELED_BANNER_PROPERTY_ID);
+
+            m_moPubUntunneledBannerAdView.setBannerAdListener(new MoPubView.BannerAdListener() {
+                @Override
+                public void onBannerLoaded(MoPubView banner)
+                {
+                    if (m_moPubUntunneledBannerAdView.getParent() == null)
+                    {
+                        LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
+                        layout.removeAllViewsInLayout();
+                        layout.addView(m_moPubUntunneledBannerAdView);
+                    }
+                }
+                @Override
+                public void onBannerClicked(MoPubView arg0) {
+                }
+                @Override
+                public void onBannerCollapsed(MoPubView arg0) {
+                }
+                @Override
+                public void onBannerExpanded(MoPubView arg0) {
+                }
+                @Override
+                public void onBannerFailed(MoPubView arg0,
+                                           MoPubErrorCode arg1) {
+                }
+            });
+
+            m_moPubUntunneledBannerAdView.loadAd();
+            m_moPubUntunneledBannerAdView.setAutorefreshEnabled(true);
+        }
+    }
+
+    synchronized
+    private void loadUntunneledFullScreenAd()
+    {
+        if (m_moPubUntunneledInterstitial != null)
+        {
+            m_moPubUntunneledInterstitial.destroy();
+        }
+        m_moPubUntunneledInterstitial = new MoPubInterstitial(this, MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
+
+        m_moPubUntunneledInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
+
+            @Override
+            public void onInterstitialClicked(MoPubInterstitial arg0) {
+            }
+            @Override
+            public void onInterstitialDismissed(MoPubInterstitial arg0) {
+            }
+            @Override
+            public void onInterstitialFailed(MoPubInterstitial interstitial,
+                                             MoPubErrorCode errorCode) {
+                m_moPubUntunneledInterstitialFailed = true;
+            }
+            @Override
+            public void onInterstitialLoaded(MoPubInterstitial interstitial) {
+                if (interstitial != null && interstitial.isReady() &&
+                        m_moPubUntunneledInterstitialShowWhenLoaded)
+                {
+                    interstitial.show();
+                }
+            }
+            @Override
+            public void onInterstitialShown(MoPubInterstitial arg0) {
+                // Enable the free trial right away
+                m_startupPending = true;
+                delayHandler.removeCallbacks(enableAdMode);
+                resumeServiceStateUI();
+            }
+        });
+
+        m_moPubUntunneledInterstitialFailed = false;
+        m_moPubUntunneledInterstitialShowWhenLoaded = false;
+        m_moPubUntunneledInterstitial.load();
+    }
+
+    private void showUntunneledFullScreenAd()
+    {
+        if (m_moPubUntunneledInterstitial != null)
+        {
+            if (m_moPubUntunneledInterstitial.isReady())
+            {
+                m_moPubUntunneledInterstitial.show();
+            }
+            else
+            {
+                if (m_moPubUntunneledInterstitialFailed)
+                {
+                    loadUntunneledFullScreenAd();
+                }
+                m_moPubUntunneledInterstitialShowWhenLoaded = true;
+            }
+        }
+    }
+
+    synchronized
+    private void deInitUntunneledAds()
+    {
+        if (m_moPubUntunneledBannerAdView != null)
+        {
+            if (m_moPubUntunneledBannerAdView.getParent() != null) {
+                LinearLayout layout = (LinearLayout) findViewById(R.id.bannerLayout);
+                layout.removeAllViewsInLayout();
+                layout.addView(m_banner);
+            }
+
+            m_moPubUntunneledBannerAdView.destroy();
+        }
+        m_moPubUntunneledBannerAdView = null;
+
+        if (m_moPubUntunneledInterstitial != null)
+        {
+            m_moPubUntunneledInterstitial.destroy();
+        }
+        m_moPubUntunneledInterstitial = null;
+    }
+
+    private boolean shouldShowTunneledAds()
+    {
+        return getShowAds() && isTunnelConnected();
+    }
+
+    private void initTunneledAds(final boolean initFullScreenAd)
+    {
+        if (shouldShowTunneledAds() && m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false))
+        {
+            final Context that = this;
+            Runnable adsRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    // make sure WebView proxy settings are up to date
+                    WebViewProxySettings.setLocalProxy(that, getListeningLocalHttpProxyPort());
+
+                    initTunneledBanners();
+                    if (initFullScreenAd) {
+                        loadTunneledFullScreenAd();
+                    }
+                }
+            };
+
+            initAdsConsentAndRunAds(adsRunnable);
+        }
+    }
+
+    private void initTunneledBanners()
+    {
+        if (shouldShowTunneledAds())
+        {
+            if (m_moPubTunneledBannerAdView == null)
+            {
+                m_moPubTunneledBannerAdView = new MoPubView(this);
+                m_moPubTunneledBannerAdView.setAdUnitId(
+                        getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT &&
+                                new Random().nextBoolean() ?
+                                MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID :
+                                MOPUB_TUNNELED_BANNER_PROPERTY_ID);
+                if (isTunnelConnected()) {
+                    m_moPubTunneledBannerAdView.setKeywords("client_region:" + getClientRegion());
+                    Map<String,Object> localExtras = new HashMap<>();
+                    localExtras.put("client_region", getClientRegion());
+                    m_moPubTunneledBannerAdView.setLocalExtras(localExtras);
+                }
+
+                m_moPubTunneledBannerAdView.setBannerAdListener(new BannerAdListener() {
+                    @Override
+                    public void onBannerLoaded(MoPubView banner)
+                    {
+                        if (m_moPubTunneledBannerAdView.getParent() == null)
+                        {
+                            LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
+                            layout.removeAllViewsInLayout();
+                            layout.addView(m_moPubTunneledBannerAdView);
+                        }
+                    }
+                    @Override
+                    public void onBannerClicked(MoPubView arg0) {
+                    }
+                    @Override
+                    public void onBannerCollapsed(MoPubView arg0) {
+                    }
+                    @Override
+                    public void onBannerExpanded(MoPubView arg0) {
+                    }
+                    @Override
+                    public void onBannerFailed(MoPubView arg0,
+                                               MoPubErrorCode arg1) {
+                    }
+                });
+
+                m_moPubTunneledBannerAdView.loadAd();
+                m_moPubTunneledBannerAdView.setAutorefreshEnabled(true);
+            }
+        }
+    }
+
+    synchronized
+    private void loadTunneledFullScreenAd()
+    {
+        if (shouldShowTunneledAds() && m_moPubTunneledInterstitial == null)
+        {
+            m_moPubTunneledInterstitial = new MoPubInterstitial(this, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
+            if (isTunnelConnected()) {
+                m_moPubTunneledInterstitial.setKeywords("client_region:" + getClientRegion());
+                Map<String,Object> localExtras = new HashMap<>();
+                localExtras.put("client_region", getClientRegion());
+                m_moPubTunneledInterstitial.setLocalExtras(localExtras);
+            }
+
+            m_moPubTunneledInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
+                @Override
+                public void onInterstitialClicked(MoPubInterstitial arg0) {
+                }
+                @Override
+                public void onInterstitialDismissed(MoPubInterstitial arg0) {
+                    m_moPubTunneledInterstitialShowWhenLoaded = false;
+                    m_moPubTunneledInterstitial.load();
+                }
+                @Override
+                public void onInterstitialFailed(MoPubInterstitial arg0,
+                                                 MoPubErrorCode arg1) {
+                    m_moPubTunneledInterstitial.destroy();
+                    m_moPubTunneledInterstitial = null;
+                }
+                @Override
+                public void onInterstitialLoaded(MoPubInterstitial interstitial) {
+                    if (interstitial != null && interstitial.isReady() &&
+                            m_moPubTunneledInterstitialShowWhenLoaded &&
+                            m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false))
+                    {
+                        m_tunneledFullScreenAdCounter++;
+                        interstitial.show();
+                    }
+                }
+                @Override
+                public void onInterstitialShown(MoPubInterstitial arg0) {
+                }
+            });
+            m_moPubTunneledInterstitialShowWhenLoaded = false;
+            m_moPubTunneledInterstitial.load();
+        }
+    }
+
+    private void showTunneledFullScreenAd()
+    {
+        initTunneledAds(true);
+
+        if (shouldShowTunneledAds() && !m_temporarilyDisableTunneledInterstitial)
+        {
+            if (m_tunneledFullScreenAdCounter % 3 == 0)
+            {
+                if (m_moPubTunneledInterstitial != null)
+                {
+                    if (m_moPubTunneledInterstitial.isReady())
+                    {
+                        m_tunneledFullScreenAdCounter++;
+                        m_moPubTunneledInterstitial.show();
+                    }
+                    else
+                    {
+                        m_moPubTunneledInterstitialShowWhenLoaded = true;
+                    }
+                }
+            }
+            else
+            {
+                m_tunneledFullScreenAdCounter++;
+            }
+        }
+    }
+
+    private void deInitTunneledAds()
+    {
+        if (m_moPubTunneledBannerAdView != null)
+        {
+            if (m_moPubTunneledBannerAdView.getParent() != null) {
+                LinearLayout layout = (LinearLayout) findViewById(R.id.bannerLayout);
+                layout.removeAllViewsInLayout();
+                layout.addView(m_banner);
+            }
+
+            m_moPubTunneledBannerAdView.destroy();
+        }
+        m_moPubTunneledBannerAdView = null;
+
+        if (m_moPubTunneledInterstitial != null)
+        {
+            m_moPubTunneledInterstitial.destroy();
+        }
+        m_moPubTunneledInterstitial = null;
+    }
+
+    synchronized
+    private void deInitAllAds()
+    {
+        deInitUntunneledAds();
+        deInitTunneledAds();
+    }
+
+    // New MoPub initializer with GDPR consent dialog
+    static class MoPubConsentDialogHelper {
+        public static ConsentDialogListener initDialogLoadListener() {
+            return new ConsentDialogListener() {
+
+                @Override
+                public void onConsentDialogLoaded() {
+                    PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                    if (personalInfoManager != null) {
+                        personalInfoManager.showConsentDialog();
+                    }
+                }
+
+                @Override
+                public void onConsentDialogLoadFailed(@NonNull MoPubErrorCode moPubErrorCode) {
+                    Utils.MyLog.d( "MoPub consent dialog failed to load.");
+                }
+            };
+        }
+    }
+
+    private void initAdsConsentAndRunAds(final Runnable runnable) {
+        if (mAdsConsentInitialized == true) {
+            runnable.run();
+            return;
+        }
+
+
+        mAdsConsentInitialized = true;
+        MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
+        final Context context = this;
+
+        // If tunnel is not running run AdMob GDPR check and pass
+        // MoPub GDPR consent check as a completion callback.
+        // Otherwise just run MoPub GDPR consent check
+
+        AdMobGDPRHelper.AdMobGDPRHelperCallback moPubGDPRCheckCallback = new AdMobGDPRHelper.AdMobGDPRHelperCallback() {
+            @Override
+            public void onComplete() {
+                PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                // initialized MoPub SDK if needed
+                if (personalInfoManager == null) {
+                    SdkConfiguration.Builder builder = new SdkConfiguration.Builder(MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
+
+                    // Forward personalization preference to Google
+                    // https://developers.mopub.com/docs/mediation/networks/google/#android
+
+                    // Publishers must work with Google for GDPR compliance by collecting consents on their own.
+                    // To facilitate the process, the AdMob adapters (Android: 15.0.0.x / iOS: 7.30.0.x) will forward
+                    // the user’s npa preference to Google. Publishers must make sure to complete the remaining steps
+                    // below in their app:
+
+                    if (ConsentInformation.getInstance(context).getConsentStatus() == com.google.ads.consent.ConsentStatus.NON_PERSONALIZED) {
+                        Bundle extras = new Bundle();
+                        extras.putString("npa", "1");
+                        builder.withMediationSettings(new GooglePlayServicesBanner.GooglePlayServicesMediationSettings(extras),
+                                new GooglePlayServicesInterstitial.GooglePlayServicesMediationSettings(extras),
+                                new GooglePlayServicesRewardedVideo.GooglePlayServicesMediationSettings(extras),
+                                new GooglePlayServicesNative.GooglePlayServicesMediationSettings(extras));
+                    }
+
+                    SdkConfiguration sdkConfiguration = builder.build();
+
+                    MoPub.initializeSdk(context, sdkConfiguration, new SdkInitializationListener() {
+                        @Override
+                        public void onInitializationFinished() {
+                            PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                            if(personalInfoManager != null) {
+                                // subscribe to consent change state event
+                                personalInfoManager.subscribeConsentStatusChangeListener(new ConsentStatusChangeListener() {
+
+                                    @Override
+                                    public void onConsentStateChange(@NonNull ConsentStatus oldConsentStatus,
+                                                                     @NonNull ConsentStatus newConsentStatus,
+                                                                     boolean canCollectPersonalInformation) {
+                                        PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                                        if (personalInfoManager != null && personalInfoManager.shouldShowConsentDialog()) {
+                                            personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
+                                        }
+                                    }
+                                });
+
+                                // If consent is required load the consent dialog
+                                // otherwise initialize and show the ads
+                                if(personalInfoManager.shouldShowConsentDialog()) {
+                                    personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
+
+                                } else {
+                                    runnable.run();
+                                }
+                            } else {
+                                Utils.MyLog.d( "MoPub SDK has failed to initialize.");
+                            }
+                        }
+                    });
+
+                } else {
+                    runnable.run();
+                }
+            }
+        };
+
+        if(!isServiceRunning()  && !this.isFinishing()) {
+            if(mAdMobGDPRHelper != null) {
+                mAdMobGDPRHelper.destroy();
+                mAdMobGDPRHelper = null;
+            }
+            String[] publisherIds = {"pub-1072041961750291"};
+            mAdMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, moPubGDPRCheckCallback);
+
+            // Do not show 'Upgrade to ad-free" button
+            mAdMobGDPRHelper.setShowBuyAdFree(false);
+            mAdMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
+        } else {
+            moPubGDPRCheckCallback.onComplete();
         }
     }
 }
