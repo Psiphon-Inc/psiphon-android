@@ -19,19 +19,23 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.net.VpnService;
@@ -43,7 +47,10 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AppCompatActivity;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.Gravity;
@@ -96,7 +103,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public abstract class MainBase {
-    public static abstract class Activity extends android.app.Activity implements MyLog.ILogger {
+    public static abstract class Activity extends AppCompatActivity implements MyLog.ILogger {
         public Activity() {
             Utils.initializeSecureRandom();
         }
@@ -129,10 +136,12 @@ public abstract class MainBase {
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.MainBase.TabbedActivityBase.STATUS_ENTRY_AVAILABLE";
         protected static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
         protected static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
+        protected static final String ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION = "askedToAccessCoarseLocationPermission";
         protected static final String CURRENT_TAB = "currentTab";
 
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
         protected static final int REQUEST_CODE_PREFERENCE = 101;
+        protected static final int REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 102;
 
         protected static boolean m_firstRun = true;
         private boolean m_canWholeDevice = false;
@@ -408,7 +417,19 @@ public abstract class MainBase {
             if (m_firstRun) {
                 EmbeddedValues.initialize(this);
             }
+        }
 
+        @Override
+        protected void onDestroy() {
+            super.onDestroy();
+
+            if (m_sponsorHomePage != null) {
+                m_sponsorHomePage.stop();
+                m_sponsorHomePage = null;
+            }
+        }
+
+        protected void setupActivityLayout() {
             // Set up tabs
             m_tabHost.setup();
 
@@ -545,16 +566,6 @@ public abstract class MainBase {
 
             // Force the UI to display logs already loaded into the StatusList message history
             LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
-        }
-
-        @Override
-        protected void onDestroy() {
-            super.onDestroy();
-
-            if (m_sponsorHomePage != null) {
-                m_sponsorHomePage.stop();
-                m_sponsorHomePage = null;
-            }
         }
 
         /**
@@ -962,8 +973,77 @@ public abstract class MainBase {
                 // The tunnel will get restarted in m_updateServiceStateTimer
             }
         }
-        
+
         protected void startTunnel() {
+            // Tunnel core needs this dangerous permission to obtain the WiFi BSSID, which is used
+            // as a key for applying tactics
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                            == PackageManager.PERMISSION_GRANTED) {
+                proceedStartTunnel();
+            } else {
+                AppPreferences mpPreferences = new AppPreferences(this);
+                if (mpPreferences.getBoolean(ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION, false)) {
+                    proceedStartTunnel();
+                } else if(!this.isFinishing()){
+                    final Context context = this;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            new AlertDialog.Builder(context)
+                                    .setCancelable(false)
+                                    .setOnKeyListener(
+                                            new DialogInterface.OnKeyListener() {
+                                                @Override
+                                                public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                                                    // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
+                                                    return keyCode == KeyEvent.KEYCODE_SEARCH;
+                                                }})
+                                    .setTitle(R.string.MainBase_AccessCoarseLocationPermissionPromptTitle)
+                                    .setMessage(R.string.MainBase_AccessCoarseLocationPermissionPromptMessage)
+                                    .setPositiveButton(R.string.MainBase_AccessCoarseLocationPermissionPositiveButton,
+                                            new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int whichButton) {
+                                                    m_multiProcessPreferences.put(ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION, true);
+                                                    ActivityCompat.requestPermissions(TabbedActivityBase.this,
+                                                            new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                                                            REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION);
+                                                }})
+                                    .setNegativeButton(R.string.MainBase_AccessCoarseLocationPermissionNegativeButton,
+                                            new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int whichButton) {
+                                                    m_multiProcessPreferences.put(ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION, true);
+                                                    proceedStartTunnel();
+                                                }})
+                                    .setOnCancelListener(
+                                            new DialogInterface.OnCancelListener() {
+                                                @Override
+                                                public void onCancel(DialogInterface dialog) {
+                                                    // Do nothing (this prompt may reappear)
+                                                }})
+                                    .show();
+                        }
+                    });
+                }
+            }
+        }
+
+        @Override
+        public void onRequestPermissionsResult(int requestCode,
+                                               String permissions[], int[] grantResults) {
+            switch (requestCode) {
+                case REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION:
+                    proceedStartTunnel();
+                    break;
+
+                default:
+                    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            }
+        }
+
+        private void proceedStartTunnel() {
             // Don't start if custom proxy settings is selected and values are
             // invalid
             boolean useHTTPProxyPreference = UpstreamProxySettings.getUseHTTPProxy(this);
@@ -1221,7 +1301,21 @@ public abstract class MainBase {
                 intent = new Intent(this, TunnelService.class);
             }
             configureServiceIntent(intent);
-            startService(intent);
+
+            // Use a wrapper to start a service in SDK >= 26
+            // which is defined like following
+            /*
+                public static void startForegroundService(Context context, Intent intent) {
+                    if (Build.VERSION.SDK_INT >= 26) {
+                        context.startForegroundService(intent);
+                    } else {
+                        // Pre-O behavior.
+                        context.startService(intent);
+                    }
+                }
+             */
+            ContextCompat.startForegroundService(this, intent);
+
             if (bindService(intent, m_tunnelServiceConnection, 0)) {
                 m_boundToTunnelService = true;
             }
