@@ -17,7 +17,7 @@
 #}
 
 # Only strip these
--keep class !com.google.android.gms.**,!com.google.ads.**,!android.support.** { *; }
+-keep class !com.google.android.gms.**,!android.support.** { *; }
 
 # MoPub Proguard Config
 # NOTE: You should also include the Android Proguard config found with the build tools:
