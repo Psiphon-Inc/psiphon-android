@@ -19,6 +19,11 @@
 # Only strip these
 -keep class !com.google.android.gms.**,!android.support.** { *; }
 
+# From https://github.com/googleads/googleads-consent-sdk-android/blob/master/consent-library/proguard-rules.pro
+-keep class com.google.ads.consent.** { <fields>; }
+-keepattributes *Annotation*
+-keepattributes Signature
+
 # MoPub Proguard Config
 # NOTE: You should also include the Android Proguard config found with the build tools:
 # $ANDROID_HOME/tools/proguard/proguard-android.txt
