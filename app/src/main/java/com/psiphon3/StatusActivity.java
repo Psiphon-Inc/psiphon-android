@@ -792,7 +792,7 @@ public class StatusActivity
     {
         if (shouldShowTunneledAds())
         {
-            if (m_moPubTunneledBannerAdView == null)
+            if (m_moPubTunneledBannerAdView == null && MoPub.isSdkInitialized())
             {
                 m_moPubTunneledBannerAdView = new MoPubView(this);
                 m_moPubTunneledBannerAdView.setAdUnitId(
@@ -842,7 +842,7 @@ public class StatusActivity
     synchronized
     private void loadTunneledFullScreenAd()
     {
-        if (shouldShowTunneledAds() && m_moPubTunneledInterstitial == null)
+        if (shouldShowTunneledAds() && m_moPubTunneledInterstitial == null && MoPub.isSdkInitialized())
         {
             m_moPubTunneledInterstitial = new MoPubInterstitial(this, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
             if (isTunnelConnected()) {
