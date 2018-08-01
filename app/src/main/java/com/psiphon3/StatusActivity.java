@@ -51,6 +51,7 @@ import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.InterstitialAd;
 import com.google.android.gms.ads.MobileAds;
 import com.mopub.common.MoPub;
 import com.mopub.common.SdkConfiguration;
@@ -59,15 +60,11 @@ import com.mopub.common.privacy.ConsentDialogListener;
 import com.mopub.common.privacy.ConsentStatus;
 import com.mopub.common.privacy.ConsentStatusChangeListener;
 import com.mopub.common.privacy.PersonalInfoManager;
-import com.mopub.mobileads.GooglePlayServicesBanner;
-import com.mopub.mobileads.GooglePlayServicesInterstitial;
-import com.mopub.mobileads.GooglePlayServicesRewardedVideo;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
-import com.mopub.nativeads.GooglePlayServicesNative;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
@@ -94,10 +91,10 @@ public class StatusActivity
     private ImageView m_banner;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
-    private MoPubInterstitial m_moPubUntunneledInterstitial = null;
     private AdView m_adMobUntunneledBannerAdView = null;
-    private boolean m_moPubUntunneledInterstitialFailed = false;
-    private boolean m_moPubUntunneledInterstitialShowWhenLoaded = false;
+    private InterstitialAd m_adMobUntunneledInterstitial = null;
+    private boolean m_adMobUntunneledInterstitialFailed = false;
+    private boolean m_adMobUntunneledInterstitialShowWhenLoaded = false;
     private static boolean m_startupPending = false;
     private MoPubView m_moPubTunneledBannerAdView = null;
     private MoPubInterstitial m_moPubTunneledInterstitial = null;
@@ -566,7 +563,7 @@ public class StatusActivity
         @Override
         public void run()
         {
-            if (adModeCountdown > 0 && !m_moPubUntunneledInterstitialFailed)
+            if (adModeCountdown > 0 && !m_adMobUntunneledInterstitialFailed)
             {
                 m_toggleButton.setText(String.valueOf(adModeCountdown));
                 adModeCountdown--;
@@ -584,7 +581,7 @@ public class StatusActivity
     static final String ADMOB_APP_ID = "ca-app-pub-1072041961750291~3741619967";
     static final String ADMOB_UNTUNNELED_BANNER_PROPERTY_ID = "ca-app-pub-1072041961750291/7238659523";
     static final String ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID = "ca-app-pub-1072041961750291/3275363789";
-    static final String MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID = "4126820fe551437ab468a8f8186e1267";
+    static final String ADMOB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID = "ca-app-pub-1072041961750291/9298519104";
     static final String MOPUB_TUNNELED_BANNER_PROPERTY_ID = "6848f6c3bce64522b771ea8ce9b5f1cd";
     static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "0ad7bcfc9b17444aa80b1c198e5ebda5";
     static final String MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID = "b17a746d77c9436bb805c958f7879342";
@@ -620,7 +617,7 @@ public class StatusActivity
                     MobileAds.initialize(context, ADMOB_APP_ID);
                     initUntunneledBanners();
 
-                    if (m_moPubUntunneledInterstitial == null)
+                    if (m_adMobUntunneledInterstitial == null)
                     {
                         loadUntunneledFullScreenAd();
                     }
@@ -683,35 +680,30 @@ public class StatusActivity
     synchronized
     private void loadUntunneledFullScreenAd()
     {
-        if (m_moPubUntunneledInterstitial != null)
-        {
-            m_moPubUntunneledInterstitial.destroy();
-        }
-        m_moPubUntunneledInterstitial = new MoPubInterstitial(this, MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
+        m_adMobUntunneledInterstitial = new InterstitialAd(this);
+        m_adMobUntunneledInterstitial.setAdUnitId(ADMOB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
 
-        m_moPubUntunneledInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
-
+        m_adMobUntunneledInterstitial.setAdListener(new AdListener() {
             @Override
-            public void onInterstitialClicked(MoPubInterstitial arg0) {
-            }
-            @Override
-            public void onInterstitialDismissed(MoPubInterstitial arg0) {
-            }
-            @Override
-            public void onInterstitialFailed(MoPubInterstitial interstitial,
-                                             MoPubErrorCode errorCode) {
-                m_moPubUntunneledInterstitialFailed = true;
-            }
-            @Override
-            public void onInterstitialLoaded(MoPubInterstitial interstitial) {
-                if (interstitial != null && interstitial.isReady() &&
-                        m_moPubUntunneledInterstitialShowWhenLoaded)
+            public void onAdLoaded() {
+                if (m_adMobUntunneledInterstitial != null && m_adMobUntunneledInterstitial.isLoaded() &&
+                        m_adMobUntunneledInterstitialShowWhenLoaded)
                 {
-                    interstitial.show();
+                    m_adMobUntunneledInterstitial.show();
                 }
             }
             @Override
-            public void onInterstitialShown(MoPubInterstitial arg0) {
+            public void onAdFailedToLoad(int errorCode) {
+                m_adMobUntunneledInterstitialFailed = true;
+            }
+            @Override
+            public void onAdOpened() {
+            }
+            @Override
+            public void onAdLeftApplication() {
+            }
+            @Override
+            public void onAdClosed() {
                 // Enable the free trial right away
                 m_startupPending = true;
                 delayHandler.removeCallbacks(enableAdMode);
@@ -719,26 +711,34 @@ public class StatusActivity
             }
         });
 
-        m_moPubUntunneledInterstitialFailed = false;
-        m_moPubUntunneledInterstitialShowWhenLoaded = false;
-        m_moPubUntunneledInterstitial.load();
+        m_adMobUntunneledInterstitialFailed = false;
+        m_adMobUntunneledInterstitialShowWhenLoaded = false;
+
+        Bundle extras = new Bundle();
+        if (ConsentInformation.getInstance(this).getConsentStatus() == com.google.ads.consent.ConsentStatus.NON_PERSONALIZED) {
+            extras.putString("npa", "1");
+        }
+        AdRequest adRequest = new AdRequest.Builder()
+                .addNetworkExtrasBundle(AdMobAdapter.class, extras)
+                .build();
+        m_adMobUntunneledInterstitial.loadAd(adRequest);
     }
 
     private void showUntunneledFullScreenAd()
     {
-        if (m_moPubUntunneledInterstitial != null)
+        if (m_adMobUntunneledInterstitial != null)
         {
-            if (m_moPubUntunneledInterstitial.isReady())
+            if (m_adMobUntunneledInterstitial.isLoaded())
             {
-                m_moPubUntunneledInterstitial.show();
+                m_adMobUntunneledInterstitial.show();
             }
             else
             {
-                if (m_moPubUntunneledInterstitialFailed)
+                if (m_adMobUntunneledInterstitialFailed)
                 {
                     loadUntunneledFullScreenAd();
                 }
-                m_moPubUntunneledInterstitialShowWhenLoaded = true;
+                m_adMobUntunneledInterstitialShowWhenLoaded = true;
             }
         }
     }
@@ -758,11 +758,7 @@ public class StatusActivity
         }
         m_adMobUntunneledBannerAdView = null;
 
-        if (m_moPubUntunneledInterstitial != null)
-        {
-            m_moPubUntunneledInterstitial.destroy();
-        }
-        m_moPubUntunneledInterstitial = null;
+        m_adMobUntunneledInterstitial = null;
     }
 
     private boolean shouldShowTunneledAds()
@@ -973,7 +969,6 @@ public class StatusActivity
             return;
         }
 
-
         mAdsConsentInitialized = true;
         MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
         final Context context = this;
@@ -989,24 +984,6 @@ public class StatusActivity
                 // initialized MoPub SDK if needed
                 if (personalInfoManager == null) {
                     SdkConfiguration.Builder builder = new SdkConfiguration.Builder(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
-
-                    // Forward personalization preference to Google
-                    // https://developers.mopub.com/docs/mediation/networks/google/#android
-
-                    // Publishers must work with Google for GDPR compliance by collecting consents on their own.
-                    // To facilitate the process, the AdMob adapters (Android: 15.0.0.x / iOS: 7.30.0.x) will forward
-                    // the user’s npa preference to Google. Publishers must make sure to complete the remaining steps
-                    // below in their app:
-
-                    if (ConsentInformation.getInstance(context).getConsentStatus() == com.google.ads.consent.ConsentStatus.NON_PERSONALIZED) {
-                        Bundle extras = new Bundle();
-                        extras.putString("npa", "1");
-                        builder.withMediationSettings(new GooglePlayServicesBanner.GooglePlayServicesMediationSettings(extras),
-                                new GooglePlayServicesInterstitial.GooglePlayServicesMediationSettings(extras),
-                                new GooglePlayServicesRewardedVideo.GooglePlayServicesMediationSettings(extras),
-                                new GooglePlayServicesNative.GooglePlayServicesMediationSettings(extras));
-                    }
-
                     SdkConfiguration sdkConfiguration = builder.build();
 
                     MoPub.initializeSdk(context, sdkConfiguration, new SdkInitializationListener() {
