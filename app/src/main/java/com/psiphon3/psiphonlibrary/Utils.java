@@ -144,7 +144,7 @@ public class Utils
      * 
      * @author Nate Sammons
      * @author Daniel Matuschek
-     * @version $Id: Base64.java,v 1.4 2001/04/17 10:09:27 matuschd Exp $
+     * @version $id: Base64.java,v 1.4 2001/04/17 10:09:27 matuschd Exp $
      */
     public static class Base64 {
 

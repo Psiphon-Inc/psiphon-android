@@ -25,10 +25,8 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.content.pm.Signature;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -61,13 +59,13 @@ import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
 import com.mopub.nativeads.GooglePlayServicesNative;
-import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.psiphonlibrary.WebViewProxySettings;
+import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 import com.psiphon3.util.IabHelper;
 import com.psiphon3.util.IabResult;
@@ -78,7 +76,6 @@ import com.psiphon3.util.SkuDetails;
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -568,10 +565,7 @@ public class StatusActivity
         }
     }
 
-    static final String SIGNATURE_HASH = "";
-    static final String SIGNATURE_HASH_SEED = "";
-    static final String SPONSOR_ID_2 = "";
-    static final String IAB_PUBLIC_KEY = "";
+    static final String IAB_PUBLIC_KEY = BuildConfig.IAB_PUBLIC_KEY;
     static final int IAB_REQUEST_CODE = 10001;
 
     static final String IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU = "speed_limited_ad_free_subscription";
@@ -666,10 +660,12 @@ public class StatusActivity
             //
 
             int rateLimit = AD_MODE_RATE_LIMIT_MBPS;
+            Purchase purchase = null;
 
             for (String limitedMonthlySubscriptionSku : IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKUS) {
                 if (inventory.hasPurchase(limitedMonthlySubscriptionSku)) {
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid limited subscription: %s", limitedMonthlySubscriptionSku));
+                    purchase = inventory.getPurchase(limitedMonthlySubscriptionSku);
                     rateLimit = LIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS;
                     hasValidSubscription = true;
                     break;
@@ -679,6 +675,7 @@ public class StatusActivity
             for (String unlimitedMonthlySubscriptionSku : IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKUS) {
                 if (inventory.hasPurchase(unlimitedMonthlySubscriptionSku)) {
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid unlimited subscription: %s", unlimitedMonthlySubscriptionSku));
+                    purchase = inventory.getPurchase(unlimitedMonthlySubscriptionSku);
                     rateLimit = UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS;
                     hasValidSubscription = true;
                     break;
@@ -687,7 +684,7 @@ public class StatusActivity
 
             if (hasValidSubscription)
             {
-                proceedWithValidSubscription(rateLimit);
+                proceedWithValidSubscription(purchase, rateLimit);
                 return;
             }
 
@@ -705,7 +702,7 @@ public class StatusActivity
                 // DEBUG: This line will convert days to minutes. Useful for testing.
                 //lifetime = lifetime / 24 / 60;
 
-                Purchase purchase = inventory.getPurchase(sku);
+                purchase = inventory.getPurchase(sku);
                 if (purchase == null)
                 {
                     continue;
@@ -729,7 +726,7 @@ public class StatusActivity
 
             if (hasValidSubscription)
             {
-                proceedWithValidSubscription(rateLimit);
+                proceedWithValidSubscription(purchase, rateLimit);
             }
             else
             {
@@ -759,12 +756,12 @@ public class StatusActivity
             else if (purchase.getSku().equals(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU))
             {
                 Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
-                proceedWithValidSubscription(LIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS);
+                proceedWithValidSubscription(purchase, LIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS);
             }
             else if (purchase.getSku().equals(IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU))
             {
                 Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
-                proceedWithValidSubscription(UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS);
+                proceedWithValidSubscription(purchase, UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS);
             }
             else if (IAB_TIMEPASS_SKUS_TO_TIME.containsKey(purchase.getSku()))
             {
@@ -772,7 +769,7 @@ public class StatusActivity
 
                 // We're not going to check the validity time here -- assume no time-pass is so
                 // short that it's already expired right after it's purchased.
-                proceedWithValidSubscription(UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS);
+                proceedWithValidSubscription(purchase, UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS);
             }
         }
     };
@@ -901,70 +898,21 @@ public class StatusActivity
         }
     }
 
-    private void checkSigningCert()
+    private void proceedWithValidSubscription(Purchase purchase, int rateLimitMbps)
     {
-        try {
-            PackageInfo packageInfo = getContext().getPackageManager()
-                    .getPackageInfo(getContext().getPackageName(), PackageManager.GET_SIGNATURES);
-
-            // Check for any signature mis-match
-            // See https://www.blackhat.com/docs/us-14/materials/us-14-Forristal-Android-FakeID-Vulnerability-Walkthrough.pdf
-            // and https://stackoverflow.com/questions/39192844/android-studio-warning-when-using-packagemanager-get-signatures/39348300#39348300
-            boolean match = false;
-            boolean mismatch = false;
-            for (Signature signature : packageInfo.signatures) {
-
-                MessageDigest md = MessageDigest.getInstance("SHA-1");
-                md.update(signature.toByteArray());
-
-                byte[] signatureBytes = md.digest();
-                byte[] seedBytes = Utils.hexStringToByteArray(SIGNATURE_HASH_SEED);
-
-                byte[] out = new byte[seedBytes.length];
-                for (int i = 0; i < seedBytes.length; i++) {
-                    out[i] = (byte) (seedBytes[i] ^ signatureBytes[i]);
-                }
-
-                if (Utils.byteArrayToHexString(out).equals(SIGNATURE_HASH)) {
-                    match = true;
-                } else {
-                    mismatch = true;
-                }
-            }
-
-            EmbeddedValues.SPONSOR_ID = (match && !mismatch) ? SPONSOR_ID_2 : EmbeddedValues.SPONSOR_ID;
-        } catch (Exception e) {
-            Utils.MyLog.d(e.getMessage());
-        }
-    }
-
-    private void proceedWithValidSubscription(int rateLimitMbps)
-    {
-        checkSigningCert();
-
         Utils.setHasValidSubscription(this, true);
+        setRateLimitUI(rateLimitMbps);
+        this.m_retainedDataFragment.setPurchase(purchase);
 
         deInitAllAds();
 
-        // Tunnel throughput is limited depending on the subscription.
-        setRateLimit(rateLimitMbps);
-
-        // Note: There is a possible race condition here because startIab() and binding to the
-        // tunnel service are both asynchronously called from onResume(). If we get here before
-        // having bound to the tunnel service, we will not perform the following restart to upgrade
-        // the tunnel to unthrottled mode.
-        if (isTunnelConnected()) {
-            // If we're already connected, make sure we're using a tunnel with
-            // the correct capabilities for the subscription.
-            // Also need to reconnect if the sponsor ID has changed.
-            boolean restartRequired = (getRateLimitMbps() != rateLimitMbps) ||
-                    !getTunnelStateSponsorId().equals(EmbeddedValues.SPONSOR_ID);
-            if (restartRequired &&
-                    // If the activity isn't foreground, the service won't get restarted
-                    m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
-                Utils.MyLog.g("StatusActivity::proceedWithValidSubscription: restarting tunnel");
-                scheduleRunningTunnelServiceRestart();
-            }
+        // Pass the most current purchase data to the service if it is running so the tunnel has a
+        // chance to update authorization and restart if the purchase is new.
+        // NOTE: we assume there can be only one valid purchase and authorization at a time
+        if (isTunnelConnected() &&
+                // If the activity isn't foreground, the service won't get restarted
+                m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
+                startAndBindTunnelService();
         }
 
         // Auto-start on app first run
@@ -977,27 +925,12 @@ public class StatusActivity
     private void proceedWithoutValidSubscription()
     {
         Utils.setHasValidSubscription(this, false);
-
-        // Tunnel throughput is limited without a valid subscription.
-        setRateLimit(AD_MODE_RATE_LIMIT_MBPS);
-
-        if (isTunnelConnected()) {
-            // If we're already connected, make sure we're using a tunnel with
-            // no-valid-subscription capabilities.
-            boolean restartRequired = getRateLimitMbps() != AD_MODE_RATE_LIMIT_MBPS;
-            if (restartRequired &&
-                    // If the activity isn't foreground, the service won't get restarted
-                    m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
-                Utils.MyLog.g("StatusActivity::proceedWithoutValidSubscription: restarting tunnel");
-                scheduleRunningTunnelServiceRestart();
-            }
-        }
+        setRateLimitUI(AD_MODE_RATE_LIMIT_MBPS);
+        this.m_retainedDataFragment.setPurchase(null);
     }
 
-    private void setRateLimit(int rateLimitMbps) {
-        setTunnelConfigRateLimit(rateLimitMbps);
-
-        // Update UI elements showing the current speed.
+    private void setRateLimitUI(int rateLimitMbps) {
+        // Update UI elements showing the current speed.^M
         if (rateLimitMbps > 0) {
             mRateLimitedText.setText(getString(R.string.rate_limit_text_limited, rateLimitMbps));
             mRateLimitedText.setVisibility(View.VISIBLE);
