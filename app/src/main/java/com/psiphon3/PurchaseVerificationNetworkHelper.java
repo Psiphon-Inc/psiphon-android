@@ -19,6 +19,7 @@
 
 package com.psiphon3;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -109,6 +110,7 @@ public class PurchaseVerificationNetworkHelper {
         this.ctx = ctx;
     }
 
+    @SuppressLint("DefaultLocale")
     public Observable<String> fetchAuthorizationObservable() {
         // In case the downstream unsubscribes from this observable while
         // the httpClient request is in flight and it happens to
@@ -151,9 +153,16 @@ public class PurchaseVerificationNetworkHelper {
                 .retryWhen(
                         errors -> errors
                                 .zipWith(Observable.range(1, TRIES_COUNT), (err, i) ->
-                                        i < TRIES_COUNT ?
-                                                Observable.timer((long) Math.pow(4, i), TimeUnit.SECONDS) :
-                                                Observable.error(err))
+                                {
+                                    if(i < TRIES_COUNT ) {
+                                        // exponential backoff with timer
+                                        double retryInSeconds = Math.pow(4, i);
+                                        MyLog.g(String.format("Will retry authorization request in %d seconds due to error: %s",
+                                                retryInSeconds, err.getMessage()));
+                                       return  Observable.timer((long) retryInSeconds, TimeUnit.SECONDS);
+                                    } // else
+                                    return Observable.error(err);
+                                })
                                 .flatMap(x -> x))
                 .flatMap(response -> {
                             try {

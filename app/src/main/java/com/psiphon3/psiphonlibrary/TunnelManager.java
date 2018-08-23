@@ -240,7 +240,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         if (m_firstStart && intent != null) {
             getTunnelConfig(intent);
 
-            // Bootstrap the observables and start purchase check flow
+            // Bootstrap the connection observable
             m_tunnelConnectedSubject.onNext(Boolean.FALSE);
 
             m_parentService.startForeground(R.string.psiphon_service_notification_id, this.createNotification(false));
@@ -889,16 +889,18 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_compositeDisposable.clear();
         m_compositeDisposable.add(
                 purchaseObservable()
-                        .map(purchase -> {
+//                        .doOnNext(purchase -> Log.d("PurchaseCheckFlow", "got new purchase: " + purchase.id + " " + purchase.token))
+                        .switchMap(purchase ->
+                                connectionObservable().map(isConnected -> new Pair(isConnected, purchase))
+                        )
+                        .doOnNext(pair -> {
+                            Purchase purchase = (Purchase) pair.second;
                             if(!hasAuthorizationForPurchase(purchase)) {
                                 persistPurchaseTokenAndAuthorization(purchase.token, "");
                                 m_activeAuthorizationSubject.onNext(PurchaseAuthorizationStatus.EMPTY);
                             }
-                            return purchase;
                         })
-                        .switchMap(purchase ->
-                                connectionObservable().map(isConnected ->new Pair(isConnected, purchase))
-                        )
+//                        .doOnNext(pair -> Log.d("PurchaseCheckFlow", "got new connection status : " + pair.first))
                         .switchMap(pair -> {
                                     Boolean isConnected = (Boolean)pair.first;
                                     Purchase purchase = (Purchase) pair.second;
@@ -911,10 +913,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                                     return  observable.map(status -> new Pair(status, purchase));
                                 }
                         )
+//                        .doOnNext(pair -> Log.d("PurchaseCheckFlow", "got new PurchaseAuthorizationStatus status: " + pair.first))
                         .switchMap(pair -> {
                             PurchaseAuthorizationStatus status = (PurchaseAuthorizationStatus) pair.first;
                             Purchase purchase = (Purchase)pair.second;
                             if (status == PurchaseAuthorizationStatus.EMPTY || status == PurchaseAuthorizationStatus.REJECTED) {
+                                MyLog.g("TunnelManager::startPurchaseCheckFlow: will fetch new authorization");
+
                                 Proxy localProxy = null;
 
                                 if (m_parentService instanceof TunnelService) {
@@ -922,6 +927,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                                     if (port > 0) {
                                         localProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", port));
                                     } else {
+                                        MyLog.g("TunnelManager::startPurchaseCheckFlow: failed to get local proxy port in non WDM mode, will proceed with no action");
                                         return Observable.just(PurchaseVerificationAction.NO_ACTION);
                                     }
                                 }
@@ -936,7 +942,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
                                 return purchaseVerificationNetworkHelper.fetchAuthorizationObservable()
                                         .map(json -> new JSONObject(json).getString("signed_authorization"))
-                                        .doOnError(e -> MyLog.g(String.format("PurchaseVerificationNetworkHelper::fetchAuthorizationObservable: error: %s",
+                                        .doOnError(e -> MyLog.g(String.format("PurchaseVerificationNetworkHelper::fetchAuthorizationObservable: failed with error: %s",
                                                 e.getMessage())))
                                         .onErrorResumeNext(Observable.just(""))
                                         .doOnNext(authorization -> persistPurchaseTokenAndAuthorization(purchase.token, authorization))
@@ -956,6 +962,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                                 return Observable.just(PurchaseVerificationAction.NO_ACTION);
                             }
                         })
+//                        .doOnNext(action -> Log.d("PurchaseCheckFlow", "got new PurchaseVerificationAction : " + action))
                         .subscribeWith(new DisposableObserver<PurchaseVerificationAction>() {
                             @Override
                             public void onNext(PurchaseVerificationAction action) {
@@ -964,15 +971,19 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                                 }
 
                                 if (action == PurchaseVerificationAction.RESTART_AS_NON_SUBSCRIBER) {
+                                    MyLog.g("TunnelManager::startPurchaseCheckFlow: will restart as a non subscriber");
                                     m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
                                 } else if (action == PurchaseVerificationAction.RESTART_AS_SUBSCRIBER) {
+                                    MyLog.g("TunnelManager::startPurchaseCheckFlow: will restart as a subscriber");
                                     m_tunnelConfig.sponsorId = BuildConfig.SUBSCRIPTION_SPONSOR_ID;
                                 }
                                 restartTunnel();
                             }
 
                             @Override
-                            public void onError(Throwable e) {}
+                            public void onError(Throwable e) {
+                                MyLog.g(String.format("TunnelManager::startPurchaseCheckFlow: received unhandled subscription error: %s", e.getMessage()));
+                            }
 
                             @Override
                             public void onComplete() {}
@@ -1255,8 +1266,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             @Override
             public void run() {
                 String storedAuthorizationID = extractAuthorizationID(getPersistedPurchaseAuthorization(getContext()));
+                if (TextUtils.isEmpty(storedAuthorizationID)) {
+                    // Do nothing, the case of empty authorization is already handled in the startPurchaseCheckFlow()
+                    return;
+                }
 
                 if (authorizations.isEmpty() || !authorizations.contains(storedAuthorizationID)) {
+                    MyLog.g("TunnelManager::onActiveAuthorizationIDs: stored authorization has been rejected");
                     // Delete rejected authorization
                     persistPurchaseTokenAndAuthorization("", "");
 
