@@ -177,7 +177,6 @@ public class StatusActivity
     protected void onResume()
     {
         // Don't miss a chance to get personalized ads consent if user hasn't set it yet.
-        mAdsConsentInitializing = false;
         mAdsConsentInitialized = false;
 
         startIab();
