@@ -111,6 +111,7 @@ public class StatusActivity
     private boolean mStartIabInProgress = false;
     private boolean mIabHelperIsInitialized = false;
 
+    private boolean mAdsConsentInitializing;
     private boolean mAdsConsentInitialized;
     private AdMobGDPRHelper mAdMobGDPRHelper;
 
@@ -176,6 +177,7 @@ public class StatusActivity
     protected void onResume()
     {
         // Don't miss a chance to get personalized ads consent if user hasn't set it yet.
+        mAdsConsentInitializing = false;
         mAdsConsentInitialized = false;
 
         startIab();
@@ -1575,14 +1577,19 @@ public class StatusActivity
         }
     }
 
+    synchronized
     private void initAdsConsentAndRunAds(final Runnable runnable) {
-        if (mAdsConsentInitialized == true) {
+        if (mAdsConsentInitialized) {
             runnable.run();
             return;
         }
 
 
-        mAdsConsentInitialized = true;
+        if (mAdsConsentInitializing) {
+            return;
+        }
+        mAdsConsentInitializing = true;
+
         MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
         final Context context = this;
 
@@ -1621,7 +1628,7 @@ public class StatusActivity
                         @Override
                         public void onInitializationFinished() {
                             PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-                            if(personalInfoManager != null) {
+                            if (personalInfoManager != null) {
                                 // subscribe to consent change state event
                                 personalInfoManager.subscribeConsentStatusChangeListener(new ConsentStatusChangeListener() {
 
@@ -1637,21 +1644,24 @@ public class StatusActivity
                                 });
 
                                 // If consent is required load the consent dialog
-                                // otherwise initialize and show the ads
-                                if(personalInfoManager.shouldShowConsentDialog()) {
+                                if (personalInfoManager.shouldShowConsentDialog()) {
                                     personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
-
-                                } else {
-                                    runnable.run();
                                 }
                             } else {
                                 MyLog.d( "MoPub SDK has failed to initialize.");
                             }
+                            // Don't retry if MoPub SDK fails to initialize.
+                            // We don't want this failure case to prevent loading AdMob ads.
+                            runnable.run();
+                            mAdsConsentInitializing = false;
+                            mAdsConsentInitialized = true;
                         }
                     });
 
                 } else {
                     runnable.run();
+                    mAdsConsentInitializing = false;
+                    mAdsConsentInitialized = true;
                 }
             }
         };
