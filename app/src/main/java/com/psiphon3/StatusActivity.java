@@ -703,25 +703,26 @@ public class StatusActivity
                 // DEBUG: This line will convert days to minutes. Useful for testing.
                 //lifetime = lifetime / 24 / 60;
 
-                purchase = inventory.getPurchase(sku);
-                if (purchase == null)
+                Purchase tempPurchase = inventory.getPurchase(sku);
+                if (tempPurchase == null)
                 {
                     continue;
                 }
 
-                long timepassExpiry = purchase.getPurchaseTime() + lifetime;
+                long timepassExpiry = tempPurchase.getPurchaseTime() + lifetime;
                 if (now < timepassExpiry)
                 {
                     // This time pass is still valid.
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid time pass: %s", sku));
                     rateLimit = UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS;
                     hasValidSubscription = true;
+                    purchase = tempPurchase;
                 }
                 else
                 {
                     // This time pass is no longer valid. Consider it invalid and consume it below.
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: consuming old time pass: %s", sku));
-                    timepassesToConsume.add(purchase);
+                    timepassesToConsume.add(tempPurchase);
                 }
             }
 
@@ -903,8 +904,7 @@ public class StatusActivity
     {
         Utils.setHasValidSubscription(this, true);
         setRateLimitUI(rateLimitMbps);
-        this.m_retainedDataFragment.setPurchase(purchase);
-
+        this.m_retainedDataFragment.setCurrentPurchase(purchase);
         deInitAllAds();
 
         // Pass the most current purchase data to the service if it is running so the tunnel has a
@@ -927,7 +927,7 @@ public class StatusActivity
     {
         Utils.setHasValidSubscription(this, false);
         setRateLimitUI(AD_MODE_RATE_LIMIT_MBPS);
-        this.m_retainedDataFragment.setPurchase(null);
+        this.m_retainedDataFragment.setCurrentPurchase(null);
     }
 
     private void setRateLimitUI(int rateLimitMbps) {

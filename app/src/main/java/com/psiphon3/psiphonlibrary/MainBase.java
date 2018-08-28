@@ -105,7 +105,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -145,6 +147,7 @@ public abstract class MainBase {
         protected static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
         protected static final String ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION = "askedToAccessCoarseLocationPermission";
         protected static final String CURRENT_TAB = "currentTab";
+        protected static final String CURRENT_PURCHASE = "currentPurchase";
 
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
         protected static final int REQUEST_CODE_PREFERENCE = 101;
@@ -188,19 +191,50 @@ public abstract class MainBase {
         private static final String TAG_RETAINED_DATA_FRAGMENT = "com.psiphon3.RetainedDataFragment";
 
         public static class RetainedDataFragment extends Fragment {
-            private Purchase purchase;
+            private final Map<String, Map<Class<?>, Object>> internalMap = new HashMap<>();
+
             @Override
             public void onCreate(Bundle savedInstanceState) {
-                this.purchase = null;
                 super.onCreate(savedInstanceState);
                 // retain this fragment
                 setRetainInstance(true);
             }
-            public Purchase getPurchase() {
-                return purchase;
+
+            private <T> void put(String key, Class<T> type, T value) {
+                if (!internalMap.containsKey(key)) {
+                    final Map<Class<?>, Object> typeValueMap = new HashMap<>();
+                    typeValueMap.put(type, value);
+                    internalMap.put(key, typeValueMap);
+                } else {
+                    internalMap.get(key).put(type, value);
+                }
             }
-            public void setPurchase(Purchase purchase) {
-                this.purchase = purchase;
+
+            private <T> T get(String key, Class<T> type) {
+                if (internalMap.containsKey(key))
+                    return type.cast(internalMap.get(key).get(type));
+                else
+                    return null;
+            }
+
+            public Purchase getCurrentPurchase() {
+                return get(CURRENT_PURCHASE, Purchase.class);
+            }
+
+            public void setCurrentPurchase(Purchase value) {
+                put(CURRENT_PURCHASE, Purchase.class, value);
+            }
+
+            public Boolean getBoolean(String key, Boolean devaultValue) {
+                Boolean b = get(key, Boolean.class);
+                if(b == null) {
+                    return devaultValue;
+                } //else
+                return b;
+            }
+
+            public void putBoolean(String key, Boolean value) {
+                put(key, Boolean.class, value);
             }
         }
 
@@ -1378,7 +1412,7 @@ public abstract class MainBase {
 
             intent.putExtra(TunnelManager.CLIENT_MESSENGER, m_incomingMessenger);
 
-            Purchase currentPurchase = m_retainedDataFragment.getPurchase();
+            Purchase currentPurchase = m_retainedDataFragment.getCurrentPurchase();
             if(currentPurchase != null) {
                 intent.putExtra(TunnelManager.DATA_PURCHASE_ID,
                         currentPurchase.getSku());
