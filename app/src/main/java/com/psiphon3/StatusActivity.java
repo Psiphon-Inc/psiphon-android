@@ -108,6 +108,7 @@ public class StatusActivity
     private boolean mStartIabInProgress = false;
     private boolean mIabHelperIsInitialized = false;
 
+    private boolean mAdsConsentInitializing;
     private boolean mAdsConsentInitialized;
     private AdMobGDPRHelper mAdMobGDPRHelper;
 
@@ -1198,7 +1199,7 @@ public class StatusActivity
 
     private void initUntunneledBanner()
     {
-        if (m_moPubUntunneledBannerLargeAdView == null)
+        if (m_moPubUntunneledBannerLargeAdView == null && MoPub.isSdkInitialized())
         {
             m_moPubUntunneledBannerLargeAdView = new MoPubView(this);
             m_moPubUntunneledBannerLargeAdView.setAdUnitId(MOPUB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
@@ -1241,40 +1242,43 @@ public class StatusActivity
         {
             m_moPubUntunneledInterstitial.destroy();
         }
-        m_moPubUntunneledInterstitial = new MoPubInterstitial(this, MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
+        if (MoPub.isSdkInitialized())
+        {
+            m_moPubUntunneledInterstitial = new MoPubInterstitial(this, MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
 
-        m_moPubUntunneledInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
+            m_moPubUntunneledInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
 
-            @Override
-            public void onInterstitialClicked(MoPubInterstitial arg0) {
-            }
-            @Override
-            public void onInterstitialDismissed(MoPubInterstitial arg0) {
-            }
-            @Override
-            public void onInterstitialFailed(MoPubInterstitial interstitial,
-                    MoPubErrorCode errorCode) {
-                m_moPubUntunneledInterstitialFailed = true;
-            }
-            @Override
-            public void onInterstitialLoaded(MoPubInterstitial interstitial) {
-                if (interstitial != null && interstitial.isReady() &&
-                        m_moPubUntunneledInterstitialShowWhenLoaded)
-                {
-                    interstitial.show();
+                @Override
+                public void onInterstitialClicked(MoPubInterstitial arg0) {
                 }
-            }
-            @Override
-            public void onInterstitialShown(MoPubInterstitial arg0) {
-                // Enable the free trial right away
-                m_startupPending = true;
-                delayHandler.removeCallbacks(enableAdMode);
-                resumeServiceStateUI();
-            }
-        });
-        m_moPubUntunneledInterstitialFailed = false;
-        m_moPubUntunneledInterstitialShowWhenLoaded = false;
-        m_moPubUntunneledInterstitial.load();
+                @Override
+                public void onInterstitialDismissed(MoPubInterstitial arg0) {
+                }
+                @Override
+                public void onInterstitialFailed(MoPubInterstitial interstitial,
+                                                 MoPubErrorCode errorCode) {
+                    m_moPubUntunneledInterstitialFailed = true;
+                }
+                @Override
+                public void onInterstitialLoaded(MoPubInterstitial interstitial) {
+                    if (interstitial != null && interstitial.isReady() &&
+                            m_moPubUntunneledInterstitialShowWhenLoaded)
+                    {
+                        interstitial.show();
+                    }
+                }
+                @Override
+                public void onInterstitialShown(MoPubInterstitial arg0) {
+                    // Enable the free trial right away
+                    m_startupPending = true;
+                    delayHandler.removeCallbacks(enableAdMode);
+                    resumeServiceStateUI();
+                }
+            });
+            m_moPubUntunneledInterstitialFailed = false;
+            m_moPubUntunneledInterstitialShowWhenLoaded = false;
+            m_moPubUntunneledInterstitial.load();
+        }
     }
 
     private void showUntunneledFullScreenAd()
@@ -1336,7 +1340,7 @@ public class StatusActivity
     {
         if (shouldShowTunneledAds())
         {
-            if (!showFirstHomePageInApp() && m_moPubTunneledBannerLargeAdView == null)
+            if (!showFirstHomePageInApp() && m_moPubTunneledBannerLargeAdView == null && MoPub.isSdkInitialized())
             {
                 m_moPubTunneledBannerLargeAdView = new MoPubView(this);
                 m_moPubTunneledBannerLargeAdView.setAdUnitId(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
@@ -1382,7 +1386,7 @@ public class StatusActivity
     synchronized
     private void loadTunneledFullScreenAd()
     {
-        if (shouldShowTunneledAds() && m_moPubTunneledInterstitial == null)
+        if (shouldShowTunneledAds() && m_moPubTunneledInterstitial == null && MoPub.isSdkInitialized())
         {
             m_moPubTunneledInterstitial = new MoPubInterstitial(this, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
             if (isTunnelConnected()) {
@@ -1505,14 +1509,19 @@ public class StatusActivity
         }
     }
 
+    synchronized
     private void initAdsConsentAndRunAds(final Runnable runnable) {
-        if (mAdsConsentInitialized == true) {
+        if (mAdsConsentInitialized) {
             runnable.run();
             return;
         }
 
 
-        mAdsConsentInitialized = true;
+        if (mAdsConsentInitializing) {
+            return;
+        }
+        mAdsConsentInitializing = true;
+
         MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
         final Context context = this;
 
@@ -1551,7 +1560,7 @@ public class StatusActivity
                         @Override
                         public void onInitializationFinished() {
                             PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-                            if(personalInfoManager != null) {
+                            if (personalInfoManager != null) {
                                 // subscribe to consent change state event
                                 personalInfoManager.subscribeConsentStatusChangeListener(new ConsentStatusChangeListener() {
 
@@ -1567,21 +1576,24 @@ public class StatusActivity
                                 });
 
                                 // If consent is required load the consent dialog
-                                // otherwise initialize and show the ads
-                                if(personalInfoManager.shouldShowConsentDialog()) {
+                                if (personalInfoManager.shouldShowConsentDialog()) {
                                     personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
-
-                                } else {
-                                    runnable.run();
                                 }
                             } else {
                                 MyLog.d( "MoPub SDK has failed to initialize.");
                             }
+                            // Don't retry if MoPub SDK fails to initialize.
+                            // We don't want this failure case to prevent loading AdMob ads.
+                            runnable.run();
+                            mAdsConsentInitializing = false;
+                            mAdsConsentInitialized = true;
                         }
                     });
 
                 } else {
                     runnable.run();
+                    mAdsConsentInitializing = false;
+                    mAdsConsentInitialized = true;
                 }
             }
         };
