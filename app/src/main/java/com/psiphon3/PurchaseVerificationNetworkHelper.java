@@ -27,6 +27,7 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketException;
 import java.util.concurrent.TimeUnit;
@@ -48,18 +49,19 @@ public class PurchaseVerificationNetworkHelper {
     static final MediaType JSON = MediaType.parse("application/json");
     static final int TRIES_COUNT = 5;
 
-    OkHttpClient okHttpClient;
+    OkHttpClient.Builder okHttpClientBuilder;
     Context ctx;
     boolean isSubscription;
     String productId;
     String purchaseToken;
+    private int httpProxyPort = 0;
 
     public static class Builder {
         private Context ctx;
         private boolean isSubscription;
         private String productId;
         private String purchaseToken;
-        private Proxy httpProxy;
+        private int httpProxyPort = 0;
 
         public Builder(Context ctx) {
             this.ctx = ctx;
@@ -80,8 +82,8 @@ public class PurchaseVerificationNetworkHelper {
             return this;
         }
 
-        public Builder withHttpProxy(Proxy httpProxy) {
-            this.httpProxy = httpProxy;
+        public Builder withHttpProxyPort(int httpProxyPort) {
+            this.httpProxyPort = httpProxyPort;
             return this;
         }
 
@@ -90,17 +92,12 @@ public class PurchaseVerificationNetworkHelper {
             helper.isSubscription = this.isSubscription;
             helper.productId = this.productId;
             helper.purchaseToken = this.purchaseToken;
+            helper.httpProxyPort = this.httpProxyPort;
 
-            OkHttpClient.Builder builder = new OkHttpClient.Builder()
+            helper.okHttpClientBuilder = new OkHttpClient.Builder()
                     .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                     .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                     .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-
-            if(this.httpProxy != null) {
-                builder.proxy(this.httpProxy);
-            }
-
-            helper.okHttpClient = builder.build();
 
             return helper;
         }
@@ -148,7 +145,11 @@ public class PurchaseVerificationNetworkHelper {
                             .post(requestBody)
                             .build();
 
-                    return okHttpClient.newCall(request).execute();
+                    if(httpProxyPort > 0) {
+                        okHttpClientBuilder.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", httpProxyPort)));
+                    }
+
+                    return okHttpClientBuilder.build().newCall(request).execute();
                 })
                 .retryWhen(
                         errors -> errors

@@ -40,7 +40,6 @@ import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.util.Pair;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.psiphon3.PurchaseVerificationNetworkHelper;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -60,8 +59,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -921,24 +918,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                             if (status == PurchaseAuthorizationStatus.EMPTY || status == PurchaseAuthorizationStatus.REJECTED) {
                                 MyLog.g("TunnelManager::startPurchaseCheckFlow: will fetch new authorization");
 
-                                Proxy localProxy = null;
-
-                                if (m_parentService instanceof TunnelService) {
-                                    int port = m_tunnelState.listeningLocalHttpProxyPort;
-                                    if (port > 0) {
-                                        localProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", port));
-                                    } else {
-                                        MyLog.g("TunnelManager::startPurchaseCheckFlow: failed to get local proxy port in non WDM mode, will proceed with no action");
-                                        return Observable.just(PurchaseVerificationAction.NO_ACTION);
-                                    }
-                                }
-
                                 PurchaseVerificationNetworkHelper purchaseVerificationNetworkHelper =
                                         new PurchaseVerificationNetworkHelper.Builder(getContext())
                                                 .withProductId(purchase.id)
                                                 .withIsSubscription(purchase.isSubscription)
                                                 .withPurchaseToken(purchase.token)
-                                                .withHttpProxy(localProxy)
+                                                .withHttpProxyPort(m_parentService instanceof TunnelService ? m_tunnelState.listeningLocalHttpProxyPort : 0)
                                                 .build();
 
                                 return purchaseVerificationNetworkHelper.fetchAuthorizationObservable()
@@ -983,7 +968,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
                             @Override
                             public void onError(Throwable e) {
-                                MyLog.g(String.format("TunnelManager::startPurchaseCheckFlow: received unhandled subscription error: %s", e.getMessage()));
+                                MyLog.g(String.format("TunnelManager::startPurchaseCheckFlow: received unhandled subscription error: %s, with message: %s",
+                                        e.getClass().getCanonicalName(), e.getMessage()));
                             }
 
                             @Override
