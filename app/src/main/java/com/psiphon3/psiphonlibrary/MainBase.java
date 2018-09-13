@@ -25,6 +25,8 @@ import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
@@ -86,6 +88,8 @@ import android.widget.ViewFlipper;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.R;
+import com.psiphon3.util.IabHelper;
+import com.psiphon3.util.Purchase;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.SharedPreferencesImport;
@@ -101,7 +105,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -141,6 +147,7 @@ public abstract class MainBase {
         protected static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
         protected static final String ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION = "askedToAccessCoarseLocationPermission";
         protected static final String CURRENT_TAB = "currentTab";
+        protected static final String CURRENT_PURCHASE = "currentPurchase";
 
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
         protected static final int REQUEST_CODE_PREFERENCE = 101;
@@ -178,6 +185,58 @@ public abstract class MainBase {
         private LoggingObserver m_loggingObserver;
         private boolean m_localProxySettingsHaveBeenReset = false;
         private boolean m_serviceStateUIPaused = false;
+
+        // This fragment helps retain data across configuration changes
+        protected RetainedDataFragment m_retainedDataFragment;
+        private static final String TAG_RETAINED_DATA_FRAGMENT = "com.psiphon3.RetainedDataFragment";
+
+        public static class RetainedDataFragment extends Fragment {
+            private final Map<String, Map<Class<?>, Object>> internalMap = new HashMap<>();
+
+            @Override
+            public void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                // retain this fragment
+                setRetainInstance(true);
+            }
+
+            private <T> void put(String key, Class<T> type, T value) {
+                if (!internalMap.containsKey(key)) {
+                    final Map<Class<?>, Object> typeValueMap = new HashMap<>();
+                    typeValueMap.put(type, value);
+                    internalMap.put(key, typeValueMap);
+                } else {
+                    internalMap.get(key).put(type, value);
+                }
+            }
+
+            private <T> T get(String key, Class<T> type) {
+                if (internalMap.containsKey(key))
+                    return type.cast(internalMap.get(key).get(type));
+                else
+                    return null;
+            }
+
+            public Purchase getCurrentPurchase() {
+                return get(CURRENT_PURCHASE, Purchase.class);
+            }
+
+            public void setCurrentPurchase(Purchase value) {
+                put(CURRENT_PURCHASE, Purchase.class, value);
+            }
+
+            public Boolean getBoolean(String key, Boolean devaultValue) {
+                Boolean b = get(key, Boolean.class);
+                if(b == null) {
+                    return devaultValue;
+                } //else
+                return b;
+            }
+
+            public void putBoolean(String key, Boolean value) {
+                put(key, Boolean.class, value);
+            }
+        }
 
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
@@ -419,6 +478,13 @@ public abstract class MainBase {
 
             if (m_firstRun) {
                 EmbeddedValues.initialize(this);
+            }
+
+            FragmentManager fm = getFragmentManager();
+            m_retainedDataFragment = (RetainedDataFragment) fm.findFragmentByTag(TAG_RETAINED_DATA_FRAGMENT);
+            if (m_retainedDataFragment == null) {
+                m_retainedDataFragment = new RetainedDataFragment();
+                fm.beginTransaction().add(m_retainedDataFragment, TAG_RETAINED_DATA_FRAGMENT).commit();
             }
         }
 
@@ -1313,14 +1379,6 @@ public abstract class MainBase {
             return m_tunnelConfig.disableTimeouts;
         }
 
-        protected void setTunnelConfigRateLimit(int rateLimitMbps) {
-            m_tunnelConfig.rateLimitMbps = rateLimitMbps;
-        }
-
-        protected int getTunnelConfigRateLimitMbps() {
-            return m_tunnelConfig.rateLimitMbps;
-        }
-
         protected PendingIntent getHandshakePendingIntent() {
             return null;
         }
@@ -1354,11 +1412,15 @@ public abstract class MainBase {
 
             intent.putExtra(TunnelManager.CLIENT_MESSENGER, m_incomingMessenger);
 
-            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_RATE_LIMIT_MBPS,
-                    getTunnelConfigRateLimitMbps());
-
-            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_SPONSOR_ID,
-                    EmbeddedValues.SPONSOR_ID);
+            Purchase currentPurchase = m_retainedDataFragment.getCurrentPurchase();
+            if(currentPurchase != null) {
+                intent.putExtra(TunnelManager.DATA_PURCHASE_ID,
+                        currentPurchase.getSku());
+                intent.putExtra(TunnelManager.DATA_PURCHASE_TOKEN,
+                        currentPurchase.getToken());
+                intent.putExtra(TunnelManager.DATA_PURCHASE_IS_SUBSCRIPTION,
+                        currentPurchase.getItemType().equals(IabHelper.ITEM_TYPE_SUBS));
+            }
         }
 
         protected void startAndBindTunnelService() {
@@ -1423,19 +1485,6 @@ public abstract class MainBase {
             return m_tunnelState.clientRegion;
         }
 
-        /**
-         * Indicates the currently connected tunnel's rate-limit.
-         * Invalid if there is no currently connected tunnel.
-         * @return The rate limit if currently connected tunnel is rate-limited. 0 otherwise.
-         */
-        protected int getRateLimitMbps() {
-            return m_tunnelState.rateLimitMbps;
-        }
-
-        protected String getTunnelStateSponsorId() {
-            return m_tunnelState.sponsorId;
-        }
-
         protected void getTunnelStateFromHandshakeIntent(Intent intent) {
             if (!intent.getAction().equals(TunnelManager.INTENT_ACTION_HANDSHAKE)) {
                 return;
@@ -1460,9 +1509,6 @@ public abstract class MainBase {
             if (homePages != null) {
                 m_tunnelState.homePages = homePages;
             }
-            m_tunnelState.rateLimitMbps = data.getInt(TunnelManager.DATA_TUNNEL_STATE_RATE_LIMIT_MBPS);
-            m_tunnelState.sponsorId = data.getString(TunnelManager.DATA_TUNNEL_STATE_SPONSOR_ID);
-
             onTunnelStateReceived();
         }
 
