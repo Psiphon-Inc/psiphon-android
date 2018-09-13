@@ -72,6 +72,8 @@
     public static final ** CREATOR;
 }
 
+-dontwarn okhttp3.**
+-dontwarn okio.**
 -dontwarn org.jacoco.**
 -dontwarn com.mopub.nativeads.**
 -dontwarn com.mopub.mobileads.**
