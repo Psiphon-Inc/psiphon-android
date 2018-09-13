@@ -183,7 +183,6 @@ public abstract class MainBase {
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
         private LoggingObserver m_loggingObserver;
-        private boolean m_localProxySettingsHaveBeenReset = false;
         private boolean m_serviceStateUIPaused = false;
 
         // This fragment helps retain data across configuration changes
@@ -675,8 +674,6 @@ public abstract class MainBase {
         protected void onResume() {
             super.onResume();
             
-            m_localProxySettingsHaveBeenReset = false;
-
             // Load new logs from the logging provider now
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                 m_loggingObserver.dispatchChange(false, LoggingProvider.INSERT_URI);
@@ -974,18 +971,16 @@ public abstract class MainBase {
                     enableToggleServiceUI();
                     updateSubscriptionAndAdOptions(true);
                 
-                    if (!m_localProxySettingsHaveBeenReset) {
+                    if (WebViewProxySettings.isLocalProxySet()) {
                         WebViewProxySettings.resetLocalProxy(this);
-                        m_localProxySettingsHaveBeenReset = true;
                     }
                 } else {
                     m_toggleButton.setText(getText(R.string.waiting));
                     disableToggleServiceUI();
                     updateSubscriptionAndAdOptions(false);
                 
-                    if (!m_localProxySettingsHaveBeenReset) {
+                    if (WebViewProxySettings.isLocalProxySet()) {
                         WebViewProxySettings.resetLocalProxy(this);
-                        m_localProxySettingsHaveBeenReset = true;
                     }
                 }
             } else {
@@ -997,7 +992,6 @@ public abstract class MainBase {
                 m_toggleButton.setText(getText(R.string.stop));
                 enableToggleServiceUI();
                 updateSubscriptionAndAdOptions(false);
-                m_localProxySettingsHaveBeenReset = false;
             }
 
             updateAdsForServiceState();
@@ -1790,7 +1784,6 @@ public abstract class MainBase {
             }
 
             public void load(String url) {
-                m_localProxySettingsHaveBeenReset = false;
                 WebViewProxySettings.setLocalProxy(mWebView.getContext(), getListeningLocalHttpProxyPort());
                 mProgressBar.setVisibility(View.VISIBLE);
                 mWebView.loadUrl(url);

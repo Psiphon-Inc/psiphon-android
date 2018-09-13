@@ -38,6 +38,10 @@ import java.lang.reflect.Method;
 
 public class WebViewProxySettings 
 {
+    private static boolean mIsLocalProxySet = false;
+
+    public static boolean isLocalProxySet() {return mIsLocalProxySet;}
+
     public static void resetLocalProxy(Context ctx)
     {
         UpstreamProxySettings.ProxySettings systemProxySettings = UpstreamProxySettings.getOriginalSystemProxySettings(ctx);
@@ -45,6 +49,7 @@ public class WebViewProxySettings
             systemProxySettings = new UpstreamProxySettings.ProxySettings();
         }
         setProxy(ctx, systemProxySettings.proxyHost, systemProxySettings.proxyPort);
+        mIsLocalProxySet = false;
     }
     
     private static boolean proxySettingsAreEmpty(String host, int port)
@@ -57,6 +62,7 @@ public class WebViewProxySettings
     public static void setLocalProxy(Context ctx, int port)
     {
         setProxy(ctx, "localhost", port);
+        mIsLocalProxySet = true;
     }
     
     /* 
