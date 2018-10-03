@@ -273,6 +273,21 @@ public class StatusActivity
                 PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
+    @Override
+    protected PendingIntent getVpnRevokedPendingIntent() {
+        Intent intent = new Intent(
+                TunnelManager.INTENT_ACTION_VPN_REVOKED,
+                null,
+                this,
+                com.psiphon3.StatusActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        return PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
     protected void doToggle()
     {
         super.doToggle();
@@ -355,6 +370,8 @@ public class StatusActivity
                     null,
                     this,
                     this.getClass()));
+        } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_VPN_REVOKED)) {
+            showVpnAlertDialog(R.string.StatusActivity_VpnRevokedTitle, R.string.StatusActivity_VpnRevokedMessage);
         }
     }
 
@@ -1048,5 +1065,20 @@ public class StatusActivity
         } else {
             moPubGDPRCheckCallback.onComplete();
         }
+    }
+
+    @Override
+    protected void onVpnPromptCancelled() {
+        showVpnAlertDialog(R.string.StatusActivity_VpnPromptCancelledTitle, R.string.StatusActivity_VpnPromptCancelledMessage);
+    }
+
+    private void showVpnAlertDialog(int titleId, int messageId) {
+        new AlertDialog.Builder(getContext())
+                .setCancelable(true)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setTitle(titleId)
+                .setMessage(messageId)
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
     }
 }
