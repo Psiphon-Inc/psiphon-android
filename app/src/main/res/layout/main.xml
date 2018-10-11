@@ -31,20 +31,6 @@
     
         <LinearLayout
             android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:background="#FFFFFFFF" >
-            
-            <ImageView
-                android:id="@+id/banner"
-                android:layout_width="fill_parent"
-                android:layout_height="48dp"
-                android:contentDescription="@string/banner_desc"
-                android:src="@drawable/banner" />
-    
-        </LinearLayout>
-    
-        <LinearLayout
-            android:layout_width="fill_parent"
             android:layout_height="0dp"
             android:orientation="vertical"
             android:layout_weight="1.0">
@@ -55,7 +41,12 @@
                 layout="@layout/tabs" />
                                         
         </LinearLayout>
-    
+
+        <include
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            layout="@layout/rate_limit_info" />
+
         <LinearLayout
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
