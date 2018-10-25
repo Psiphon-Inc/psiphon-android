@@ -786,7 +786,15 @@ public class StatusActivity
                 @Override
                 public void run() {
                     // make sure WebView proxy settings are up to date
-                    WebViewProxySettings.setLocalProxy(that, getListeningLocalHttpProxyPort());
+                    // Set WebView proxy only if we are not running in WD mode.
+                    if (!getTunnelConfigWholeDevice() || !Utils.hasVpnService()) {
+                        WebViewProxySettings.setLocalProxy(that, getListeningLocalHttpProxyPort());
+                    } else {
+                        // We are running in WDM, reset WebView proxy if it has been previously set.
+                        if (WebViewProxySettings.isLocalProxySet()){
+                            WebViewProxySettings.resetLocalProxy(that);
+                        }
+                    }
 
                     initTunneledBanners();
                     if (initFullScreenAd) {
