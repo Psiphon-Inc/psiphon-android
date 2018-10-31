@@ -68,7 +68,6 @@ import com.mopub.mobileads.MoPubView.BannerAdListener;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
-import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 
@@ -557,9 +556,6 @@ public class StatusActivity
 
                 intent.putExtra("localProxyPort", getListeningLocalHttpProxyPort());
                 intent.putExtra("homePages", getHomePages());
-                intent.putExtra("serviceClassName", TunnelService.class.getName());
-                intent.putExtra("statusActivityClassName", StatusActivity.class.getName());
-                intent.putExtra("feedbackActivityClassName", FeedbackActivity.class.getName());
 
                 context.startActivity(intent);
             }
