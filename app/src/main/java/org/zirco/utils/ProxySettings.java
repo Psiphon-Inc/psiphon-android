@@ -1,15 +1,5 @@
 package org.zirco.utils;
 
-import java.io.IOException;
-
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.impl.client.DefaultHttpClient;
-import com.psiphon3.subscription.R;
-
 import android.content.ContentResolver;
 import android.content.Context;
 import android.provider.Settings;
@@ -17,8 +7,18 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
+
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.params.ConnRoutePNames;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+import java.io.IOException;
 
 
 /**
@@ -166,8 +166,9 @@ public class ProxySettings
 	
 	public static void setLocalProxy(Context ctx)
 	{
-        final AppPreferences multiProcessPreferences = new AppPreferences(ctx);
-	    WebViewProxySettings.setLocalProxy(ctx,
-                multiProcessPreferences.getInt(ctx.getString(R.string.current_local_http_proxy_port), 0));
+		final AppPreferences multiProcessPreferences = new AppPreferences(ctx);
+		WebViewProxySettings.initialize(ctx);
+		WebViewProxySettings.setLocalProxy(ctx,
+				multiProcessPreferences.getInt(ctx.getString(R.string.current_local_http_proxy_port), 0));
 	}
 }
