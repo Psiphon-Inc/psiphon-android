@@ -67,7 +67,6 @@ import com.mopub.mobileads.MoPubView.BannerAdListener;
 import com.mopub.nativeads.GooglePlayServicesNative;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
-import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
@@ -1354,7 +1353,15 @@ public class StatusActivity
         if (shouldShowTunneledAds() && m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false))
         {
             // make sure WebView proxy settings are up to date
-            WebViewProxySettings.setLocalProxy(this, getListeningLocalHttpProxyPort());
+            // Set WebView proxy only if we are not running in WD mode.
+            if (!getTunnelConfigWholeDevice() || !Utils.hasVpnService()) {
+                WebViewProxySettings.setLocalProxy(this, getListeningLocalHttpProxyPort());
+            } else {
+                // We are running in WDM, reset WebView proxy if it has been previously set.
+                if (WebViewProxySettings.isLocalProxySet()){
+                    WebViewProxySettings.resetLocalProxy(this);
+                }
+            }
 
             initTunneledBanner();
             if (initFullScreenAd) {
