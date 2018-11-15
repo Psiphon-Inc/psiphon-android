@@ -131,12 +131,6 @@ public abstract class MainBase {
             MyLog.unsetLogger();
         }
 
-        @Override
-        protected void onStart() {
-            super.onStart();
-            WebViewProxySettings.initialize(this);
-        }
-
         /*
          * Partial MyLog.ILogger implementation
          */

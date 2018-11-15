@@ -154,6 +154,9 @@ public class StatusActivity
             m_firstRun = false;
         }
 
+        // Initialize WebView proxy settings before attempting to load any URLs
+        WebViewProxySettings.initialize(this);
+
         m_loadedSponsorTab = false;
         HandleCurrentIntent();
 
