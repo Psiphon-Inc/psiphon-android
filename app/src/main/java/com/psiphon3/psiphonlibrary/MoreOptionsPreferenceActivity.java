@@ -19,6 +19,8 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
@@ -27,7 +29,6 @@ import android.preference.DialogPreference;
 import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
-import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
@@ -36,6 +37,8 @@ import android.text.InputType;
 import android.text.TextUtils;
 import android.widget.Toast;
 
+import com.google.ads.consent.ConsentInformation;
+import com.google.ads.consent.ConsentStatus;
 import com.psiphon3.R;
 
 import net.grandcentrix.tray.AppPreferences;
@@ -45,7 +48,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class MoreOptionsPreferenceActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceClickListener {
+public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceClickListener {
 
     private interface PreferenceGetter {
         boolean getBoolean(@NonNull final String key, final boolean defaultValue);
@@ -148,8 +151,13 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
             preferenceGetter = new AppPreferencesWrapper(new AppPreferences(this));
         }
 
-        mNotificationSound.setChecked(preferenceGetter.getBoolean(getString(R.string.preferenceNotificationsWithSound), false));
-        mNotificationVibration.setChecked(preferenceGetter.getBoolean(getString(R.string.preferenceNotificationsWithVibrate), false));
+        if (mNotificationSound != null) {
+            mNotificationSound.setChecked(preferenceGetter.getBoolean(getString(R.string.preferenceNotificationsWithSound), false));
+        }
+        
+        if (mNotificationVibration != null) {
+            mNotificationVibration.setChecked(preferenceGetter.getBoolean(getString(R.string.preferenceNotificationsWithVibrate), false));
+        }
 
         // R.xml.preferences is conditionally loaded at API version 11 and higher from the xml-v11 folder
         // If it isn't null here, we can reasonably assume it can be cast to our MultiSelectListPreference
@@ -279,6 +287,7 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
                 }
             }
         }
+        updateAdsConsentPreference();
     }
 
     protected void updatePrefsSummary(SharedPreferences sharedPreferences, Preference pref) {
@@ -376,5 +385,41 @@ public class MoreOptionsPreferenceActivity extends PreferenceActivity implements
     public void onSaveInstanceState(Bundle savedInstanceState) {
         savedInstanceState.putBoolean("onSaveInstanceState", true);
         super.onSaveInstanceState(savedInstanceState);
+    }
+
+    private void updateAdsConsentPreference() {
+        // Conditionally add / remove 'revoke ads consent' preference
+        final ConsentInformation consentInformation = ConsentInformation.getInstance(this);
+        PreferenceScreen screen = this.getPreferenceScreen();
+        Preference adConsentPref = screen.findPreference(getString(R.string.adConsentPref));
+
+        if(consentInformation.getConsentStatus() != ConsentStatus.UNKNOWN && adConsentPref == null) {
+            PreferenceCategory category = new PreferenceCategory(screen.getContext());
+            category.setTitle(R.string.ads_consent_preference_category_title);
+            category.setKey(getString(R.string.adConsentPref));
+            screen.addPreference(category);
+
+            DialogPreference revokeConsentPref = new DialogPreference(screen.getContext()) {
+                @Override
+                protected void onPrepareDialogBuilder(AlertDialog.Builder builder) {
+                    builder.setTitle(R.string.ads_consent_preference_dialog_title)
+                            .setMessage(getString(R.string.ads_consent_preference_dialog_preference_message))
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int whichButton) {
+                                    consentInformation.setConsentStatus(ConsentStatus.UNKNOWN);
+                                    updateAdsConsentPreference();
+                                }
+                            })
+                            .setNegativeButton(android.R.string.no, null);
+                }
+
+            };
+            revokeConsentPref.setTitle(R.string.ads_consent_preference_title);
+            revokeConsentPref.setSummary(R.string.ads_consent_preference_summary);
+            category.addPreference(revokeConsentPref);
+        } else if(adConsentPref != null){
+            screen.removePreference(adConsentPref);
+        }
     }
 }
