@@ -82,9 +82,9 @@ import android.widget.Toast;
 import android.widget.ViewFlipper;
 
 import com.psiphon3.FeedbackActivity;
-import com.psiphon3.R;
 import com.psiphon3.StatusActivity;
 import com.psiphon3.psiphonlibrary.TunnelService;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
@@ -129,6 +129,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+;
 
 /**
  * The application main activity.
@@ -259,7 +260,7 @@ public class MainActivity extends Activity implements IToolbarsContainer, OnTouc
 
         setProgressBarVisibility(true);
         
-        setContentView(R.layout.zirco_main);                        
+        setContentView(R.layout.zirco_main);
         
         mCircularProgress = getResources().getDrawable(R.drawable.spinner);
         
