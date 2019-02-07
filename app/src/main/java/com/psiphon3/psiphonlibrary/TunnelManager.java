@@ -124,8 +124,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String DATA_PURCHASE_ID = "purchaseId";
     public static final String DATA_PURCHASE_TOKEN = "purchaseToken";
     public static final String DATA_PURCHASE_IS_SUBSCRIPTION = "purchaseIsSubscription";
-    static final String PREFERENCE_PURCHASE_AUTHORIZATION = "preferencePurchaseAuthorization";
+    static final String PREFERENCE_PURCHASE_AUTHORIZATION_ID = "preferencePurchaseAuthorization";
     static final String PREFERENCE_PURCHASE_TOKEN = "preferencePurchaseToken";
+
+    // a snapshot of all authorizations pulled by getPsiphonConfig
+    private static List<Authorization> tunnelConfigAuthorizations;
 
 
     // Tunnel config, received from the client.
@@ -183,6 +186,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         String id;
         String token;
         boolean isSubscription;
+
         public Purchase(String id, String token, boolean isSubscription) {
             this.id = id;
             this.token = token;
@@ -233,7 +237,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             String purchaseId = intent.getStringExtra(TunnelManager.DATA_PURCHASE_ID);
             String purchaseToken = intent.getStringExtra(TunnelManager.DATA_PURCHASE_TOKEN);
             boolean isSubscription = intent.getBooleanExtra(TunnelManager.DATA_PURCHASE_IS_SUBSCRIPTION, false);
-            Purchase purchase = new Purchase (purchaseId, purchaseToken, isSubscription);
+            Purchase purchase = new Purchase(purchaseId, purchaseToken, isSubscription);
             m_purchaseSubject.onNext(purchase);
         }
 
@@ -712,7 +716,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 MyLog.v(R.string.no_apps_excluded, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS);
             } else {
                 excludedApps = Arrays.asList(excludedAppsFromPreference.split(","));
-            };
+            }
+            ;
 
             if (excludedApps.size() > 0) {
                 for (String packageId : excludedApps) {
@@ -773,10 +778,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             json.put("ClientVersion", EmbeddedValues.CLIENT_VERSION);
 
-            String authorization =  getPersistedPurchaseAuthorization(context);
+            tunnelConfigAuthorizations = Authorization.geAllPersistedAuthorizations(context);
 
-            if (!TextUtils.isEmpty(authorization)) {
-                json.put("Authorizations", new JSONArray().put(authorization));
+            if (tunnelConfigAuthorizations != null && tunnelConfigAuthorizations.size() > 0) {
+                JSONArray jsonArray = new JSONArray();
+                for (Authorization a : tunnelConfigAuthorizations) {
+                    jsonArray.put(a.base64EncodedAuthorization());
+                }
+                json.put("Authorizations", jsonArray);
             }
 
 
@@ -908,14 +917,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                         )
                         .doOnNext(pair -> {
                             Purchase purchase = (Purchase) pair.second;
-                            if(!hasAuthorizationForPurchase(purchase)) {
-                                persistPurchaseTokenAndAuthorization(purchase.token, "");
+                            if (!hasAuthorizationIdForPurchase(purchase)) {
+                                persistPurchaseTokenAndAuthorizationId(purchase.token, "");
                                 m_activeAuthorizationSubject.onNext(PurchaseAuthorizationStatus.EMPTY);
                             }
                         })
 //                        .doOnNext(pair -> Log.d("PurchaseCheckFlow", "got new connection status : " + pair.first))
                         .switchMap(pair -> {
-                                    Boolean isConnected = (Boolean)pair.first;
+                                    Boolean isConnected = (Boolean) pair.first;
                                     Purchase purchase = (Purchase) pair.second;
                                     Boolean isExpiredPurchase = TextUtils.equals(m_expiredPurchaseToken, purchase.token);
 
@@ -923,13 +932,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                                             authorizationStatusObservable() :
                                             Observable.empty();
 
-                                    return  observable.map(status -> new Pair(status, purchase));
+                                    return observable.map(status -> new Pair(status, purchase));
                                 }
                         )
 //                        .doOnNext(pair -> Log.d("PurchaseCheckFlow", "got new PurchaseAuthorizationStatus status: " + pair.first))
                         .switchMap(pair -> {
                             PurchaseAuthorizationStatus status = (PurchaseAuthorizationStatus) pair.first;
-                            Purchase purchase = (Purchase)pair.second;
+                            Purchase purchase = (Purchase) pair.second;
                             if (status == PurchaseAuthorizationStatus.EMPTY || status == PurchaseAuthorizationStatus.REJECTED) {
                                 MyLog.g("TunnelManager::startPurchaseCheckFlow: will fetch new authorization");
 
@@ -942,23 +951,26 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                                                 .build();
 
                                 return purchaseVerificationNetworkHelper.fetchAuthorizationObservable()
-                                        .map(json -> new JSONObject(json).getString("signed_authorization"))
+                                        .map(json -> {
+                                            String encodedAuth = new JSONObject(json).getString("signed_authorization");
+                                                    Authorization authorization = Authorization.fromBase64Encoded(encodedAuth);
+                                                    if (authorization == null) {
+                                                        persistPurchaseTokenAndAuthorizationId(purchase.token, "");
+                                                        // Mark the purchase token as expired which means
+                                                        // no action will be taken next time we receive the same token
+                                                        // from main activity
+                                                        m_expiredPurchaseToken = purchase.token;
+                                                        return PurchaseVerificationAction.RESTART_AS_NON_SUBSCRIBER;
+                                                    } else {
+                                                        persistPurchaseTokenAndAuthorizationId(purchase.token, authorization.Id());
+                                                        Authorization.storeAuthorization(getContext(), authorization);
+                                                        return PurchaseVerificationAction.RESTART_AS_SUBSCRIBER;
+                                                    }
+                                                }
+                                        )
                                         .doOnError(e -> MyLog.g(String.format("PurchaseVerificationNetworkHelper::fetchAuthorizationObservable: failed with error: %s",
                                                 e.getMessage())))
-                                        .onErrorResumeNext(Observable.just(""))
-                                        .doOnNext(authorization -> persistPurchaseTokenAndAuthorization(purchase.token, authorization))
-                                        .map(authorization ->
-                                                {
-                                                    boolean isEmpty = TextUtils.isEmpty(authorization);
-                                                    if(isEmpty) {
-                                                        // Mark the purchase as expired
-                                                        m_expiredPurchaseToken = purchase.token;
-                                                    }
-                                                    return isEmpty ?
-                                                            PurchaseVerificationAction.RESTART_AS_NON_SUBSCRIBER :
-                                                            PurchaseVerificationAction.RESTART_AS_SUBSCRIBER;
-                                                }
-                                        );
+                                        .onErrorResumeNext(Observable.just(PurchaseVerificationAction.NO_ACTION));
                             } else {
                                 return Observable.just(PurchaseVerificationAction.NO_ACTION);
                             }
@@ -988,31 +1000,32 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                             }
 
                             @Override
-                            public void onComplete() {}
+                            public void onComplete() {
+                            }
                         }));
     }
 
-    private boolean hasAuthorizationForPurchase(Purchase purchase) {
+    private boolean hasAuthorizationIdForPurchase(Purchase purchase) {
         final AppPreferences mp = new AppPreferences(getContext());
-        String authorization = mp.getString(PREFERENCE_PURCHASE_AUTHORIZATION, "");
+        String authorizationId = mp.getString(PREFERENCE_PURCHASE_AUTHORIZATION_ID, "");
         String purchaseToken = mp.getString(PREFERENCE_PURCHASE_TOKEN, "");
-        if (!TextUtils.isEmpty(authorization)
+        if (!TextUtils.isEmpty(authorizationId)
                 && purchase.token.equals(purchaseToken)) {
             return true;
         }
         return false;
     }
 
-    private static String getPersistedPurchaseAuthorization(Context context) {
+    private static String getPersistedPurchaseAuthorizationId(Context context) {
         final AppPreferences mp = new AppPreferences(context);
-        String authorization = mp.getString(PREFERENCE_PURCHASE_AUTHORIZATION, "");
-        return authorization;
+        String authorizationId = mp.getString(PREFERENCE_PURCHASE_AUTHORIZATION_ID, "");
+        return authorizationId;
     }
 
-    private void persistPurchaseTokenAndAuthorization( String purchaseToken, String authorization) {
+    private void persistPurchaseTokenAndAuthorizationId(String purchaseToken, String authorizationId) {
         final AppPreferences mp = new AppPreferences(getContext());
         mp.put(PREFERENCE_PURCHASE_TOKEN, purchaseToken);
-        mp.put(PREFERENCE_PURCHASE_AUTHORIZATION, authorization);
+        mp.put(PREFERENCE_PURCHASE_AUTHORIZATION_ID, authorizationId);
     }
 
     @Override
@@ -1260,40 +1273,60 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     }
 
     @Override
-    public void onExiting() {}
-
-    @Override
-    public void onActiveAuthorizationIDs(List<String> authorizations) {
-        m_Handler.post(new Runnable() {
-            @Override
-            public void run() {
-                String storedAuthorizationID = extractAuthorizationID(getPersistedPurchaseAuthorization(getContext()));
-                if (TextUtils.isEmpty(storedAuthorizationID)) {
-                    // Do nothing, the case of empty authorization is already handled in the startPurchaseCheckFlow()
-                    return;
-                }
-
-                if (authorizations.isEmpty() || !authorizations.contains(storedAuthorizationID)) {
-                    MyLog.g("TunnelManager::onActiveAuthorizationIDs: stored authorization has been rejected");
-                    // Delete rejected authorization
-                    persistPurchaseTokenAndAuthorization("", "");
-
-                    m_activeAuthorizationSubject.onNext(PurchaseAuthorizationStatus.REJECTED);
-                    return;
-                }
-                m_activeAuthorizationSubject.onNext(PurchaseAuthorizationStatus.ACTIVE);
-            }
-        });
+    public void onExiting() {
     }
 
-    private String extractAuthorizationID(String authorization) {
-        byte [] decoded =  android.util.Base64.decode(authorization,
-                android.util.Base64.DEFAULT);
-        try {
-            JSONObject jsonObject = new JSONObject(new String(decoded));
-            return jsonObject.getJSONObject("Authorization").getString("ID");
-        } catch(JSONException e) {
-            return null;
-        }
+    @Override
+    public void onActiveAuthorizationIDs(List<String> acceptedAuthorizationIds) {
+        m_Handler.post(() -> {
+            // Build a list of accepted authorizations from the authorizations snapshot.
+            List<Authorization> acceptedAuthorizations = new ArrayList<>();
+
+            for (String Id : acceptedAuthorizationIds) {
+                for (Authorization a : tunnelConfigAuthorizations) {
+                    if (a.Id().equals(Id)) {
+                        acceptedAuthorizations.add(a);
+                    }
+                }
+            }
+
+            // Build a list if not accepted authorizations from the authorizations snapshot
+            // by removing all elements of the  accepted authorizations list.
+            List<Authorization> notAcceptedAuthorizations = tunnelConfigAuthorizations;
+            notAcceptedAuthorizations.removeAll(acceptedAuthorizations);
+
+            // Remove all not accepted authorizations from the database
+            Authorization.removeAuthorizations(getContext(), notAcceptedAuthorizations);
+
+            // Get not accepted authorization ids of speed-boost type
+            // and store them to be used by PsiCash library later.
+            List<String> notAcceptedSpeedBoostAuthorizationIds = new ArrayList<>();
+            for (Authorization a : notAcceptedAuthorizations) {
+                if (a.accessType().equals(Authorization.SPEED_BOOST_TYPE)) {
+                    notAcceptedSpeedBoostAuthorizationIds.add(a.Id());
+                }
+            }
+
+            // Subscription check
+            String purchaseAuthorizationID = getPersistedPurchaseAuthorizationId(getContext());
+
+            if (TextUtils.isEmpty(purchaseAuthorizationID)) {
+                // There is no authorization for this purchase, do nothing
+                return;
+            }
+
+            // If server hasn't accepted any authorizations or previously stored authorization id hasn't been accepted
+            // then send authorizationStatusObservable() subscriber(s) a PurchaseAuthorizationStatus.REJECTED.
+            if (acceptedAuthorizationIds.isEmpty() || !acceptedAuthorizationIds.contains(purchaseAuthorizationID)) {
+                MyLog.g("TunnelManager::onActiveAuthorizationIDs: stored authorization has been rejected");
+
+                // clear all persisted values too
+                persistPurchaseTokenAndAuthorizationId("", "");
+
+                m_activeAuthorizationSubject.onNext(PurchaseAuthorizationStatus.REJECTED);
+                return;
+            } //else
+            m_activeAuthorizationSubject.onNext(PurchaseAuthorizationStatus.ACTIVE);
+        });
     }
 }
