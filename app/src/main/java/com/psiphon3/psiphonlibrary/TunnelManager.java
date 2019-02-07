@@ -128,7 +128,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     static final String PREFERENCE_PURCHASE_TOKEN = "preferencePurchaseToken";
 
     // a snapshot of all authorizations pulled by getPsiphonConfig
-    private static List<Authorization> tunnelConfigAuthorizations;
+    private static List<Authorization> m_tunnelConfigAuthorizations;
 
 
     // Tunnel config, received from the client.
@@ -778,11 +778,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             json.put("ClientVersion", EmbeddedValues.CLIENT_VERSION);
 
-            tunnelConfigAuthorizations = Authorization.geAllPersistedAuthorizations(context);
+            m_tunnelConfigAuthorizations = Authorization.geAllPersistedAuthorizations(context);
 
-            if (tunnelConfigAuthorizations != null && tunnelConfigAuthorizations.size() > 0) {
+            if (m_tunnelConfigAuthorizations != null && m_tunnelConfigAuthorizations.size() > 0) {
                 JSONArray jsonArray = new JSONArray();
-                for (Authorization a : tunnelConfigAuthorizations) {
+                for (Authorization a : m_tunnelConfigAuthorizations) {
                     jsonArray.put(a.base64EncodedAuthorization());
                 }
                 json.put("Authorizations", jsonArray);
@@ -1283,7 +1283,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             List<Authorization> acceptedAuthorizations = new ArrayList<>();
 
             for (String Id : acceptedAuthorizationIds) {
-                for (Authorization a : tunnelConfigAuthorizations) {
+                for (Authorization a : m_tunnelConfigAuthorizations) {
                     if (a.Id().equals(Id)) {
                         acceptedAuthorizations.add(a);
                     }
@@ -1292,7 +1292,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             // Build a list if not accepted authorizations from the authorizations snapshot
             // by removing all elements of the  accepted authorizations list.
-            List<Authorization> notAcceptedAuthorizations = tunnelConfigAuthorizations;
+            List<Authorization> notAcceptedAuthorizations = m_tunnelConfigAuthorizations;
             notAcceptedAuthorizations.removeAll(acceptedAuthorizations);
 
             // Remove all not accepted authorizations from the database
@@ -1302,12 +1302,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             // and store them to be used by PsiCash library later.
             List<String> notAcceptedSpeedBoostAuthorizationIds = new ArrayList<>();
             for (Authorization a : notAcceptedAuthorizations) {
-                if (a.accessType().equals(Authorization.SPEED_BOOST_TYPE)) {
+                if (a.accessType().equals(Authorization.ACCESS_TYPE_SPEED_BOOST)) {
                     notAcceptedSpeedBoostAuthorizationIds.add(a.Id());
                 }
             }
+            Authorization.storeRemovedSpeedBoostAuthorizationIds(getContext(),notAcceptedSpeedBoostAuthorizationIds);
 
-            // Subscription check
+            // Subscription check below
             String purchaseAuthorizationID = getPersistedPurchaseAuthorizationId(getContext());
 
             if (TextUtils.isEmpty(purchaseAuthorizationID)) {
