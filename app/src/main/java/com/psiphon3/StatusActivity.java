@@ -1610,19 +1610,21 @@ public class StatusActivity
             }
         };
 
-        if(!isServiceRunning()  && !this.isFinishing()) {
-            if(mAdMobGDPRHelper != null) {
-                mAdMobGDPRHelper.destroy();
-                mAdMobGDPRHelper = null;
-            }
-            String[] publisherIds = {"pub-1072041961750291"};
-            mAdMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, moPubGDPRCheckCallback);
+        if (!this.isFinishing()){
+            if (!isServiceRunning()) {
+                if (mAdMobGDPRHelper != null) {
+                    mAdMobGDPRHelper.destroy();
+                    mAdMobGDPRHelper = null;
+                }
+                String[] publisherIds = {"pub-1072041961750291"};
+                mAdMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, moPubGDPRCheckCallback);
 
-            // Optional 'Pay for ad-free' button, launches purchase flow when clicked.
-            mAdMobGDPRHelper.setShowBuyAdFree(true);
-            mAdMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
-        } else {
-            moPubGDPRCheckCallback.onComplete();
+                // Optional 'Pay for ad-free' button, launches purchase flow when clicked.
+                mAdMobGDPRHelper.setShowBuyAdFree(true);
+                mAdMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
+            } else {
+                moPubGDPRCheckCallback.onComplete();
+            }
         }
     }
 
