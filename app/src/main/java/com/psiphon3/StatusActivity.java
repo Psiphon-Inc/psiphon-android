@@ -1051,19 +1051,21 @@ public class StatusActivity
             }
         };
 
-        if(!isServiceRunning()  && !this.isFinishing()) {
-            if(mAdMobGDPRHelper != null) {
-                mAdMobGDPRHelper.destroy();
-                mAdMobGDPRHelper = null;
-            }
-            String[] publisherIds = {"pub-1072041961750291"};
-            mAdMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, moPubGDPRCheckCallback);
+        if (!this.isFinishing()) {
+            if (!isServiceRunning()) {
+                if (mAdMobGDPRHelper != null) {
+                    mAdMobGDPRHelper.destroy();
+                    mAdMobGDPRHelper = null;
+                }
+                String[] publisherIds = {"pub-1072041961750291"};
+                mAdMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, moPubGDPRCheckCallback);
 
-            // Do not show 'Upgrade to ad-free" button
-            mAdMobGDPRHelper.setShowBuyAdFree(false);
-            mAdMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
-        } else {
-            moPubGDPRCheckCallback.onComplete();
+                // Do not show 'Upgrade to ad-free" button
+                mAdMobGDPRHelper.setShowBuyAdFree(false);
+                mAdMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
+            } else {
+                moPubGDPRCheckCallback.onComplete();
+            }
         }
     }
 

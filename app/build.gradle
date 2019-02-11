@@ -102,5 +102,5 @@ dependencies {
         transitive = true
     }
     implementation 'com.google.android.gms:play-services-ads:15.0.1'
-    implementation 'com.google.android.ads.consent:consent-library:1.0.6'
+    implementation 'com.google.android.ads.consent:consent-library:1.0.7'
 }
