@@ -1176,7 +1176,6 @@ public class StatusActivity
         }
     }
 
-    static final String ADMOB_APP_ID = "ca-app-pub-1072041961750291~1127965968";
     static final String ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID = "ca-app-pub-1072041961750291/1062483935";
     static final String MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID = "0d4cf70da6504af5878f0b3592808852";
     static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "6efb5aa4e0d74a679a6219f9b3aa6221";
@@ -1207,7 +1206,7 @@ public class StatusActivity
         Runnable adsRunnable = new Runnable() {
             @Override
             public void run() {
-                MobileAds.initialize(context, ADMOB_APP_ID);
+                MobileAds.initialize(context, BuildConfig.ADMOB_APP_ID);
                 initUntunneledBanner();
 
                 if (m_moPubUntunneledInterstitial == null)

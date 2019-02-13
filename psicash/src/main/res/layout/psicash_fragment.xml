@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="0dp"
+    android:gravity="center"
+    android:orientation="vertical" >
+
+    <TextView
+        android:padding="10dp"
+        android:id="@+id/countdown_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="IDLE" />
+<TextView
+        android:padding="10dp"
+        android:id="@+id/balance_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="IDLE" />
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal">
+
+        <ProgressBar
+            android:padding="3dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/speedboost_purchase_progress"
+            android:layout_below="@+id/purchase_speedboost_btn"
+            android:layout_alignRight="@+id/purchase_speedboost_btn"
+            android:layout_alignLeft="@+id/purchase_speedboost_btn"
+            style="?android:attr/progressBarStyleSmall" />
+
+
+        <Button
+            android:id="@+id/purchase_speedboost_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Purchase speed boost"/>
+    </RelativeLayout>
+
+
+</LinearLayout>
