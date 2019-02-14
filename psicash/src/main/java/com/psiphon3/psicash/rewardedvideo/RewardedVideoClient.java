@@ -3,6 +3,8 @@ package com.psiphon3.psicash.rewardedvideo;
 import android.app.Activity;
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.v4.util.Pair;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.android.gms.ads.AdRequest;
@@ -12,15 +14,12 @@ import com.google.android.gms.ads.reward.RewardedVideoAd;
 import com.google.android.gms.ads.reward.RewardedVideoAdListener;
 import com.mopub.common.MoPub;
 import com.mopub.common.MoPubReward;
-import com.mopub.common.SdkConfiguration;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubRewardedVideoListener;
 import com.mopub.mobileads.MoPubRewardedVideos;
-import com.psiphon3.psicash.util.TunnelConnectionStatus;
 import com.psiphon3.psicash.psicash.PsiCashClient;
+import com.psiphon3.psicash.util.TunnelConnectionStatus;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,8 +34,8 @@ public class RewardedVideoClient {
     public static final String MOPUB_VIDEO_AD_UNIT_ID = "15173ac6d3e54c9389b9a5ddca69b34b";
 
     private static final String TAG = "PsiCashRewardedVideo";
-    //Test video
-    private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-3940256099942544/5224354917";
+    // Real video unit id
+    private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-1072041961750291/5751207671";
 
     private static RewardedVideoClient INSTANCE = null;
     private RewardedVideoAd rewardedVideoAd = null;
@@ -176,60 +175,53 @@ public class RewardedVideoClient {
             rewardedVideoAd.setCustomData(customData);
             rewardedVideoAd.setRewardedVideoAdListener(listener);
             rewardedVideoAd.loadAd(ADMOB_VIDEO_AD_ID, new AdRequest.Builder()
+                    // TODO remove test device
+                    .addTestDevice("4F95EFD7B82BC0F1E99B48909DF1C8C4")
                     .build());
 
         });
     }
 
 
-    public Observable<? extends RewardedVideoModel> loadRewardedVideo(TunnelConnectionStatus status) {
-        if (!PsiCashClient.getInstance(context).hasEarnerToken()) {
-            return Observable.error(new IllegalStateException("PsiCash lib has no earner token"));
-        }
-
-        String customData = PsiCashClient.getInstance(context).rewardedVideoCustomData();
-
-        Observable<? extends RewardedVideoModel> videoLoadObservable;
-
-        if (status == TunnelConnectionStatus.DISCONNECTED) {
-            videoLoadObservable = loadAdMobVideos(customData);
-        } else if (status == TunnelConnectionStatus.CONNECTED) {
-            videoLoadObservable = loadMoPubVideos(customData);
-        } else {
-            throw new IllegalArgumentException("Loading video for " + status + " is not implemented");
-        }
-
-        return videoLoadObservable
-                .subscribeOn(AndroidSchedulers.mainThread())
-                // if error retry once with 2 seconds delay and complete
+    public Observable<? extends RewardedVideoModel> loadRewardedVideo(TunnelConnectionStatus connectionStatus) {
+        return Observable.just(Pair.create(connectionStatus, PsiCashClient.getInstance(context).rewardedVideoCustomData()))
+//                .observeOn(Schedulers.io())
+                .flatMap(pair -> {
+                    TunnelConnectionStatus status = pair.first;
+                    String customData = pair.second;
+                    if (TextUtils.isEmpty(customData)) {
+                        return Observable.error(new IllegalStateException("Video customData is empty"));
+                    }
+                    if (!PsiCashClient.getInstance(context).hasEarnerToken()) {
+                        return Observable.error(new IllegalStateException("PsiCash lib has no earner token."));
+                    }
+                    if (status == TunnelConnectionStatus.DISCONNECTED) {
+                        return loadAdMobVideos(customData)
+                                .subscribeOn(AndroidSchedulers.mainThread());
+                    }
+                    if (status == TunnelConnectionStatus.CONNECTED) {
+                        return loadMoPubVideos(customData)
+                                .subscribeOn(AndroidSchedulers.mainThread());
+                    }
+                    throw new IllegalArgumentException("Loading video for " + status + " is not implemented.");
+                })
+                // if error retry once with 2 seconds delay
                 .retryWhen(throwableObservable -> {
                     AtomicInteger counter = new AtomicInteger();
                     return throwableObservable
-                            .takeWhile(e -> counter.getAndIncrement() < 1)
                             .flatMap(err -> {
-                                Log.d(TAG, "Ad loading error:" + err);
-                                return Observable.timer(2, TimeUnit.SECONDS);
+                                if (counter.getAndIncrement() < 1) {
+                                    Log.d(TAG, "Ad loading error: " + err + ",  will retry");
+                                    return Observable.timer(2, TimeUnit.SECONDS);
+                                }
+                                return Observable.error(err);
                             });
                 });
     }
 
-    public void initAdsWithActivity(Activity activity, String admobId) {
-        // MoPub init
-        if (!MoPub.isSdkInitialized()) {
-            SdkConfiguration sdkConfiguration;
-            List<String> networksToInit = new ArrayList<String>();
-            // TODO: networks and mediation settings
-//                    networksToInit.add("com.mopub.mobileads.VungleRewardedVideo");
-            sdkConfiguration = new SdkConfiguration.Builder(RewardedVideoClient.MOPUB_VIDEO_AD_UNIT_ID)
-//                            .withMediationSettings("MEDIATION_SETTINGS")
-                    .withNetworksToInit(networksToInit)
-                    .build();
-            MoPub.initializeSdk(activity, sdkConfiguration, () -> {
-            });
-        }
+    public void initAdsWithActivity(Activity activity) {
 
         if (rewardedVideoAd == null) {
-            MobileAds.initialize(activity, admobId);
             rewardedVideoAd = MobileAds.getRewardedVideoAdInstance(activity);
         }
     }

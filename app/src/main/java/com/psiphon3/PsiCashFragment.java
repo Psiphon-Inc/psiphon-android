@@ -1,4 +1,4 @@
-package com.psiphon3.psicash.psicash;
+package com.psiphon3;
 
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.BroadcastReceiver;
@@ -21,12 +21,21 @@ import com.jakewharton.rxbinding2.view.RxView;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
-import com.psiphon3.psicash.R;
 import com.psiphon3.psicash.mvibase.MviView;
+import com.psiphon3.psicash.psicash.Intent;
+import com.psiphon3.psicash.psicash.PsiCashClient;
+import com.psiphon3.psicash.psicash.PsiCashError;
+import com.psiphon3.psicash.psicash.ExpiringPurchaseListener;
+import com.psiphon3.psicash.psicash.PsiCashViewModel;
+import com.psiphon3.psicash.psicash.PsiCashViewModelFactory;
+import com.psiphon3.psicash.psicash.PsiCashViewState;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psicash.util.TunnelConnectionStatus;
+import com.psiphon3.psiphonlibrary.Authorization;
+import com.psiphon3.subscription.R;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
@@ -58,14 +67,24 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        psiCashViewModel = ViewModelProviders.of(this).get(PsiCashViewModel.class);
+        ExpiringPurchaseListener purchaseListener = (context, purchase) -> {
+            // Store authorization from the purchase
+            Authorization authorization = Authorization.fromBase64Encoded(purchase.authorization);
+            Authorization.storeAuthorization(context, authorization);
+
+            // Send broadcast to restart the tunnel
+            android.content.Intent intent = new android.content.Intent(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
+            LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
+        };
+
+        psiCashViewModel = ViewModelProviders.of(this, new PsiCashViewModelFactory(getActivity().getApplication(), purchaseListener))
+                .get(PsiCashViewModel.class);
         intentsPublishRelay = PublishRelay.<Intent>create().toSerialized();
         tunnelConnectionStatusBehaviourRelay = BehaviorRelay.<TunnelConnectionStatus>create().toSerialized();
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BroadcastIntent.GOT_REWARD_FOR_VIDEO_INTENT);
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(broadcastReceiver, intentFilter);
-
     }
 
     @Override
@@ -80,6 +99,7 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
 
     @Override
     public void onResume() {
+        removeExpiredPurchases();
         super.onResume();
         bind();
     }
@@ -221,6 +241,13 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
         // clear view state error immediately
         intentsPublishRelay.accept(Intent.ClearErrorState.create());
     }
+
+    private void removeExpiredPurchases() {
+        List<String> purchasesToRemove = Authorization.getRemovedSpeedBoostAuthorizationIds(getContext());
+        PsiCashClient.getInstance(getContext()).removePurchases(purchasesToRemove);
+        Authorization.clearRemovedSpeedBoostAuthorizationIds(getContext());
+    }
+
 
 
     public void onTunnelConnectionStatus(TunnelConnectionStatus status) {

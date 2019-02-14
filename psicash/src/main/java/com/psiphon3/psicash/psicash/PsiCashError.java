@@ -2,7 +2,7 @@ package com.psiphon3.psicash.psicash;
 
 import ca.psiphon.psicashlib.PsiCashLib;
 
-interface PsiCashError {
+public interface PsiCashError {
     String getUIMessage();
 
     class TransactionError extends RuntimeException implements PsiCashError {

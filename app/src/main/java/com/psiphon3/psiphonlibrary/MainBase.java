@@ -513,6 +513,10 @@ public abstract class MainBase {
             settingsTab.setContent(R.id.settingsView);
             settingsTab.setIndicator(getText(R.string.settings_tab_name));
 
+            TabSpec psicashTab = m_tabHost.newTabSpec("psicash");
+            psicashTab.setContent(R.id.psicashTab);
+            psicashTab.setIndicator(getText(R.string.psicash_tab_name));
+
             TabSpec logsTab = m_tabHost.newTabSpec("logs");
             logsTab.setContent(R.id.logsTab);
             logsTab.setIndicator(getText(R.string.logs_tab_name));
@@ -520,6 +524,7 @@ public abstract class MainBase {
             m_tabHost.addTab(homeTab);
             m_tabHost.addTab(statisticsTab);
             m_tabHost.addTab(settingsTab);
+            m_tabHost.addTab(psicashTab);
             m_tabHost.addTab(logsTab);
 
             m_gestureDetector = new GestureDetector(this, new LateralGestureDetector());

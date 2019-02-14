@@ -42,7 +42,7 @@ public interface Intent extends MviIntent {
             return new AutoValue_Intent_ConnectionStatus(status);
         }
 
-        abstract TunnelConnectionStatus connectionStatus();
+        public abstract TunnelConnectionStatus connectionStatus();
     }
 
 }

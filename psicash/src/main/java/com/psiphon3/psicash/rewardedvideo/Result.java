@@ -11,17 +11,17 @@ public interface Result {
     abstract class VideoReady implements Result {
         @NonNull
         static VideoReady success(RewardedVideoModel.VideoReady model) {
-            return new AutoValue_Result_VideoReady(LceStatus.SUCCESS, model);
+            return new AutoValue_Result_VideoReady(LceStatus.SUCCESS, model, null);
         }
         @NonNull
         static VideoReady inFlight() {
-            return new AutoValue_Result_VideoReady(LceStatus.IN_FLIGHT, null);
+            return new AutoValue_Result_VideoReady(LceStatus.IN_FLIGHT, null, null);
         }
 
         @NonNull
         static VideoReady failure(Throwable error) {
             // TODO log error
-            return new AutoValue_Result_VideoReady(LceStatus.FAILURE, null);
+            return new AutoValue_Result_VideoReady(LceStatus.FAILURE, null, error);
         }
 
         @NonNull
@@ -29,6 +29,9 @@ public interface Result {
 
         @Nullable
         abstract RewardedVideoModel.VideoReady model();
+
+        @Nullable
+        abstract Throwable error();
     }
 
     @AutoValue

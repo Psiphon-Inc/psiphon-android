@@ -24,14 +24,14 @@ import static com.psiphon3.psiphonlibrary.Utils.MyLog;
 import static com.psiphon3.psiphonlibrary.Utils.parseRFC3339Date;
 
 @AutoValue
-abstract class Authorization {
+public abstract class Authorization {
     static final String ACCESS_TYPE_SPEED_BOOST = "speed-boost";
     static final String ACCESS_TYPE_GOOGLE_SUBSCRIPTION = "google-subscription";
     private static final String PREFERENCE_AUTHORIZATIONS_LIST = "preferenceAuthorizations";
     private static final String PREFERENCE_DELETED_SPEEDBOOST_AUTHORIZATION_IDS_LIST = "preferenceSpeedBoostDeletedIds";
 
     @Nullable
-    static Authorization fromBase64Encoded(String base64EncodedAuthorization) {
+    public static Authorization fromBase64Encoded(String base64EncodedAuthorization) {
         String Id, accessType, expiresDateString;
         Date expires;
 
@@ -83,7 +83,7 @@ abstract class Authorization {
         try {
             encodedAuthList = preferences.getStringList(PREFERENCE_AUTHORIZATIONS_LIST);
         } catch (ItemNotFoundException e) {
-            return new ArrayList<Authorization>();
+            return new ArrayList<>();
         }
         List<Authorization> resultList = new ArrayList<>();
         for (String encodedAuth : encodedAuthList) {
@@ -95,7 +95,7 @@ abstract class Authorization {
         return resultList;
     }
 
-    synchronized static void replaceAllPersistedAuthorizations(Context context, List<Authorization> authorizations) {
+    private synchronized static void replaceAllPersistedAuthorizations(Context context, List<Authorization> authorizations) {
         List<String> base64EncodedAuthorizations = new ArrayList<>();
         for (Authorization a: authorizations) {
             base64EncodedAuthorizations.add(a.base64EncodedAuthorization());
@@ -104,19 +104,19 @@ abstract class Authorization {
         preferences.put(PREFERENCE_AUTHORIZATIONS_LIST, base64EncodedAuthorizations);
     }
 
-    synchronized static void storeAuthorization(Context context, Authorization authorization) {
+    public synchronized static void storeAuthorization(Context context, Authorization authorization) {
         if (authorization == null) {
             return;
         }
         List<Authorization> authorizationList = Authorization.geAllPersistedAuthorizations(context);
-        if (authorizationList.contains(authorization.base64EncodedAuthorization())) {
+        if (authorizationList.contains(authorization)) {
             return;
         }
         authorizationList.add(authorization);
         replaceAllPersistedAuthorizations(context, authorizationList);
     }
 
-    public synchronized static void storeRemovedSpeedBoostAuthorizationIds(Context context, List<String> Ids) {
+    synchronized static void storeRemovedSpeedBoostAuthorizationIds(Context context, List<String> Ids) {
         if(Ids.size() == 0) {
             return;
         }
@@ -137,22 +137,22 @@ abstract class Authorization {
         try {
             return preferences.getStringList(PREFERENCE_DELETED_SPEEDBOOST_AUTHORIZATION_IDS_LIST);
         } catch (ItemNotFoundException e) {
-            return new ArrayList<String>();
+            return new ArrayList<>();
         }
     }
 
     public synchronized static void clearRemovedSpeedBoostAuthorizationIds(Context context) {
         StringListPreferences preferences = new StringListPreferences(context);
-        preferences.put(PREFERENCE_DELETED_SPEEDBOOST_AUTHORIZATION_IDS_LIST, new ArrayList<String>());
+        preferences.put(PREFERENCE_DELETED_SPEEDBOOST_AUTHORIZATION_IDS_LIST, new ArrayList<>());
     }
 
-    public synchronized static void removeAuthorizations(Context context, List<Authorization> toRemove) {
+    synchronized static void removeAuthorizations(Context context, List<Authorization> toRemove) {
         if (toRemove.size() == 0) {
             return;
         }
         List<Authorization> authorizations = Authorization.geAllPersistedAuthorizations(context);
         authorizations.removeAll(toRemove);
-        Authorization.replaceAllPersistedAuthorizations(context, authorizations);
+        replaceAllPersistedAuthorizations(context, authorizations);
     }
 
     abstract String base64EncodedAuthorization();

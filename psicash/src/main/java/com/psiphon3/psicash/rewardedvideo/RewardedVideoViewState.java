@@ -9,14 +9,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 @AutoValue
-abstract class RewardedVideoViewState implements MviViewState {
+public abstract class RewardedVideoViewState implements MviViewState {
 
     public enum ViewAction{LOAD_VIDEO_ACTION, REWARD_ACTION};
 
     @Nullable
-    abstract Runnable videoPlayRunnable();
+    public abstract Runnable videoPlayRunnable();
 
-    abstract List<RewardedVideoViewState.ViewAction> viewActions();
+    public abstract List<RewardedVideoViewState.ViewAction> viewActions();
 
 
     @Nullable

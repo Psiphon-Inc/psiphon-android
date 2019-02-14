@@ -24,8 +24,24 @@ import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
 
 public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
-    public static final String DISTINGUISHER_1HR = "1hr";
+    private static final String DISTINGUISHER_1HR = "1hr";
     private static final String TAG = "PsiCashViewModel";
+    private PublishRelay<Intent> intentPublishRelay;
+    private Observable<PsiCashViewState> psiCashViewStateObservable;
+    private CompositeDisposable compositeDisposable;
+
+    @NonNull
+    private PsiCashActionProcessorHolder psiCashActionProcessorHolder;
+
+    PsiCashViewModel(@NonNull Application application, ExpiringPurchaseListener expiringPurchaseListener) {
+        super(application);
+
+        intentPublishRelay = PublishRelay.create();
+        psiCashActionProcessorHolder = new PsiCashActionProcessorHolder(application, expiringPurchaseListener);
+        psiCashViewStateObservable = compose();
+        compositeDisposable = new CompositeDisposable();
+    }
+
     /**
      * The Reducer is where {@link MviViewState}, that the {@link MviView} will use to
      * render itself, are created.
@@ -50,15 +66,17 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                         balance = model.balance();
                         reward = model.reward();
                         List<PsiCashLib.PurchasePrice> purchasePriceList = model.purchasePrices();
-                        for (PsiCashLib.PurchasePrice p : purchasePriceList) {
-                            if (p.distinguisher.equals(DISTINGUISHER_1HR)) {
-                                price = p;
+                        if(purchasePriceList != null) {
+                            for (PsiCashLib.PurchasePrice p : purchasePriceList) {
+                                if (p.distinguisher.equals(DISTINGUISHER_1HR)) {
+                                    price = p;
+                                }
                             }
                         }
 
                         PsiCashLib.Purchase nextExpiringPurchase = model.nextExpiringPurchase();
                         if (nextExpiringPurchase != null) {
-                            nextPurchaseExpiryDate = model.nextExpiringPurchase().expiry;
+                            nextPurchaseExpiryDate = nextExpiringPurchase.expiry;
                         }
                     }
                     switch (getPsiCashResult.status()) {
@@ -110,20 +128,6 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
 
                 throw new IllegalArgumentException("Don't know this result " + result);
             };
-    private PublishRelay<Intent> intentPublishRelay;
-    private Observable<PsiCashViewState> psiCashViewStateObservable;
-    private CompositeDisposable compositeDisposable;
-    @NonNull
-    private PsiCashActionProcessorHolder psiCashActionProcessorHolder;
-
-    public PsiCashViewModel(@NonNull Application application) {
-        super(application);
-
-        intentPublishRelay = PublishRelay.create();
-        psiCashActionProcessorHolder = new PsiCashActionProcessorHolder(application);
-        psiCashViewStateObservable = compose();
-        compositeDisposable = new CompositeDisposable();
-    }
 
     private Observable<PsiCashViewState> compose() {
         return intentPublishRelay

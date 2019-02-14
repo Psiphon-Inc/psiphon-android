@@ -53,7 +53,7 @@ public class PsiCashClient {
                 .proxySelector(new ProxySelector() {
                     @Override
                     public List<Proxy> select(URI uri) {
-                        List<Proxy> list = new ArrayList<Proxy>();
+                        List<Proxy> list = new ArrayList<>();
                         Proxy proxy;
                         if (httpProxyPort > 0) {
                             proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", httpProxyPort));
@@ -111,9 +111,8 @@ public class PsiCashClient {
                         result.code = PsiCashLib.HTTPRequester.Result.RECOVERABLE_ERROR;
                         result.error = e.toString();
                         result.body = null;
-                    } finally {
-                        return result;
                     }
+                    return result;
                 });
         if (err != null) {
             throw new RuntimeException("Could not initialize PsiCash lib, error: " + err.message);
@@ -253,8 +252,6 @@ public class PsiCashClient {
         return Observable.just(Pair.create(connectionStatus, price))
                 .observeOn(Schedulers.io())
                 .flatMap(pair -> Single.fromCallable(() -> {
-                    setPsiCashRequestMetaData();
-
                     TunnelConnectionStatus s = pair.first;
                     PsiCashLib.PurchasePrice p = pair.second;
 
@@ -264,6 +261,8 @@ public class PsiCashClient {
                     if (p == null) {
                         throw new PsiCashError.CriticalError("Purchase price is null!");
                     }
+
+                    setPsiCashRequestMetaData();
 
                     PsiCashLib.NewExpiringPurchaseResult result =
                             psiCashLib.newExpiringPurchase(p.transactionClass,
@@ -338,6 +337,10 @@ public class PsiCashClient {
 
     private long getVideoReward() {
         return sharedPreferences.getLong(PSICASH_PERSISTED_VIDEO_REWARD_KEY, 0);
+    }
+
+    public void removePurchases(List<String> purchasesToRemove) {
+        psiCashLib.removePurchases(purchasesToRemove);
     }
 
     public class PsiCashLibTester extends PsiCashLib {

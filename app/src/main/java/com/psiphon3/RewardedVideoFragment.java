@@ -1,4 +1,4 @@
-package com.psiphon3.psicash.rewardedvideo;
+package com.psiphon3;
 
 import android.arch.lifecycle.ViewModelProviders;
 import android.os.Bundle;
@@ -13,9 +13,12 @@ import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.psicash.mvibase.MviView;
+import com.psiphon3.psicash.rewardedvideo.Intent;
+import com.psiphon3.psicash.rewardedvideo.RewardedVideoViewModel;
+import com.psiphon3.psicash.rewardedvideo.RewardedVideoViewState;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psicash.util.TunnelConnectionStatus;
-import com.psiphon3.psicash.R;
+import com.psiphon3.subscription.R;
 
 import java.util.List;
 

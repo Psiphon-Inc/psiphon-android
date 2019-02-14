@@ -22,9 +22,11 @@ package com.psiphon3;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
@@ -32,6 +34,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -65,6 +69,9 @@ import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
 import com.mopub.nativeads.GooglePlayServicesNative;
+import com.psiphon3.psicash.rewardedvideo.RewardedVideoClient;
+import com.psiphon3.psicash.util.BroadcastIntent;
+import com.psiphon3.psicash.util.TunnelConnectionStatus;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -117,6 +124,9 @@ public class StatusActivity
     private boolean mAdsConsentInitialized;
     private AdMobGDPRHelper mAdMobGDPRHelper;
 
+    private PsiCashFragment psiCashFragment;
+    private RewardedVideoFragment rewardedVideoFragment;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -136,6 +146,18 @@ public class StatusActivity
 
         mAdMobGDPRHelper = null;
 
+        RewardedVideoClient.getInstance(this).initAdsWithActivity(this);
+
+        FragmentManager fm = getSupportFragmentManager();
+        psiCashFragment = (PsiCashFragment) fm.findFragmentById(R.id.psicash_fragment_container);
+        rewardedVideoFragment = (RewardedVideoFragment) fm.findFragmentById(R.id.rewarded_fragment_container);
+
+
+        // Listen to GOT_NEW_EXPIRING_PURCHASE intent from psicash module
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
+        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter);
+
         setupActivityLayout();
 
         if (shouldShowUntunneledAds()) {
@@ -152,6 +174,9 @@ public class StatusActivity
             // running and presses Stop before the IAB flow has completed, causing handleIabFailure
             // to immediately restart the tunnel.
             m_firstRun = false;
+        } else {
+            psiCashFragment.onTunnelConnectionStatus(TunnelConnectionStatus.DISCONNECTED);
+            rewardedVideoFragment.onTunnelConnectionStatus(TunnelConnectionStatus.DISCONNECTED);
         }
 
         // Initialize WebView proxy settings before attempting to load any URLs
@@ -1664,4 +1689,16 @@ public class StatusActivity
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
     }
+
+    private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, android.content.Intent intent) {
+            String action = intent.getAction();
+            if (action != null) {
+                if (action == BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE) {
+                    scheduleRunningTunnelServiceRestart();
+                }
+            }
+        }
+    };
 }

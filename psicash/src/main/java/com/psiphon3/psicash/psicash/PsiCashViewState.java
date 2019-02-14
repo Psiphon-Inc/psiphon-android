@@ -10,20 +10,20 @@ import java.util.Date;
 import ca.psiphon.psicashlib.PsiCashLib;
 
 @AutoValue
-abstract class PsiCashViewState implements MviViewState {
+public abstract class PsiCashViewState implements MviViewState {
 
-    abstract long balance();
-    abstract long reward();
-    abstract boolean purchaseInFlight();
-
-    @Nullable
-    abstract PsiCashLib.PurchasePrice purchasePrice();
+    public abstract long balance();
+    public abstract long reward();
+    public abstract boolean purchaseInFlight();
 
     @Nullable
-    abstract Date nextPurchaseExpiryDate();
+    public abstract PsiCashLib.PurchasePrice purchasePrice();
 
     @Nullable
-    abstract Throwable error();
+    public abstract Date nextPurchaseExpiryDate();
+
+    @Nullable
+    public abstract Throwable error();
 
     abstract Builder withState();
 

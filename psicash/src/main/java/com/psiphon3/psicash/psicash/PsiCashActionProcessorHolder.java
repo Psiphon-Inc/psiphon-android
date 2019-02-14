@@ -7,6 +7,7 @@ import io.reactivex.ObservableTransformer;
 
 public class PsiCashActionProcessorHolder {
     private static final String TAG = "PsiCashActionProcessor";
+    private ExpiringPurchaseListener expiringPurchaseListener;
     private Context context;
 
     private ObservableTransformer<Action.ClearErrorState, Result.ClearErrorState>
@@ -34,6 +35,9 @@ public class PsiCashActionProcessorHolder {
                     PsiCashClient.getInstance(context).makeExpiringPurchase(action.connectionStatus(), action.purchasePrice())
                             .map(r -> {
                                 if (r instanceof PsiCashModel.ExpiringPurchase) {
+                                    if (expiringPurchaseListener != null) {
+                                        expiringPurchaseListener.onNewExpiringPurchase(context, ((PsiCashModel.ExpiringPurchase) r).expiringPurchase());
+                                    }
                                     return Result.ExpiringPurchase.success((PsiCashModel.ExpiringPurchase) r);
                                 } else if (r instanceof PsiCashModel.PsiCash) {
                                     return Result.GetPsiCash.success((PsiCashModel.PsiCash) r);
@@ -59,7 +63,8 @@ public class PsiCashActionProcessorHolder {
                                     .flatMap(w -> Observable.error(
                                             new IllegalArgumentException("Unknown action: " + w)))));
 
-    public PsiCashActionProcessorHolder(Context context) {
+    public PsiCashActionProcessorHolder(Context context, ExpiringPurchaseListener listener) {
         this.context = context;
+        this.expiringPurchaseListener = listener;
     }
 }

@@ -4,7 +4,7 @@ import com.google.auto.value.AutoValue;
 import com.psiphon3.psicash.util.TunnelConnectionStatus;
 import com.psiphon3.psicash.mvibase.MviIntent;
 
-interface Intent extends MviIntent {
+public interface Intent extends MviIntent {
     @AutoValue
     abstract class LoadVideoAd implements Intent {
         public static LoadVideoAd create(TunnelConnectionStatus status) {
