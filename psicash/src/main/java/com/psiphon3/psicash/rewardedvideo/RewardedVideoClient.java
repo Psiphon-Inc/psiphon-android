@@ -18,7 +18,7 @@ import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubRewardedVideoListener;
 import com.mopub.mobileads.MoPubRewardedVideos;
 import com.psiphon3.psicash.psicash.PsiCashClient;
-import com.psiphon3.psicash.util.TunnelConnectionStatus;
+import com.psiphon3.psicash.util.TunnelConnectionState;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -174,20 +174,16 @@ public class RewardedVideoClient {
 
             rewardedVideoAd.setCustomData(customData);
             rewardedVideoAd.setRewardedVideoAdListener(listener);
-            rewardedVideoAd.loadAd(ADMOB_VIDEO_AD_ID, new AdRequest.Builder()
-                    // TODO remove test device
-                    .addTestDevice("4F95EFD7B82BC0F1E99B48909DF1C8C4")
-                    .build());
-
+            rewardedVideoAd.loadAd(ADMOB_VIDEO_AD_ID, new AdRequest.Builder().build());
         });
     }
 
 
-    public Observable<? extends RewardedVideoModel> loadRewardedVideo(TunnelConnectionStatus connectionStatus) {
-        return Observable.just(Pair.create(connectionStatus, PsiCashClient.getInstance(context).rewardedVideoCustomData()))
+    public Observable<? extends RewardedVideoModel> loadRewardedVideo(TunnelConnectionState connectionState) {
+        return Observable.just(Pair.create(connectionState, PsiCashClient.getInstance(context).rewardedVideoCustomData()))
 //                .observeOn(Schedulers.io())
                 .flatMap(pair -> {
-                    TunnelConnectionStatus status = pair.first;
+                    TunnelConnectionState state = pair.first;
                     String customData = pair.second;
                     if (TextUtils.isEmpty(customData)) {
                         return Observable.error(new IllegalStateException("Video customData is empty"));
@@ -195,15 +191,22 @@ public class RewardedVideoClient {
                     if (!PsiCashClient.getInstance(context).hasEarnerToken()) {
                         return Observable.error(new IllegalStateException("PsiCash lib has no earner token."));
                     }
-                    if (status == TunnelConnectionStatus.DISCONNECTED) {
+
+                    // Either disconnected or BOM should load AdMob ads
+                    if (state.status() == TunnelConnectionState.Status.DISCONNECTED ||
+                            (state.status() == TunnelConnectionState.Status.CONNECTED && !state.vpnMode())) {
                         return loadAdMobVideos(customData)
                                 .subscribeOn(AndroidSchedulers.mainThread());
                     }
-                    if (status == TunnelConnectionStatus.CONNECTED) {
+
+                    // Connected WDM should load MoPub
+                    if (state.status() == TunnelConnectionState.Status.CONNECTED && state.vpnMode()) {
                         return loadMoPubVideos(customData)
                                 .subscribeOn(AndroidSchedulers.mainThread());
                     }
-                    throw new IllegalArgumentException("Loading video for " + status + " is not implemented.");
+
+                    // Did we miss a case?
+                    throw new IllegalArgumentException("Loading video for " + state + " is not implemented.");
                 })
                 // if error retry once with 2 seconds delay
                 .retryWhen(throwableObservable -> {

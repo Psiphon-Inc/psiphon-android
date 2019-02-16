@@ -11,7 +11,7 @@ class RewardedVideoActionProcessorHolder {
     private ObservableTransformer<Action.LoadVideoAd, Result>
             loadVideoAdProcessor = actions ->
             actions.switchMap(action ->
-                    RewardedVideoClient.getInstance(context).loadRewardedVideo(action.connectionStatus())
+                    RewardedVideoClient.getInstance(context).loadRewardedVideo(action.connectionState())
                             .map(r -> {
                                 if (r instanceof RewardedVideoModel.VideoReady) {
                                     return Result.VideoReady.success((RewardedVideoModel.VideoReady) r);

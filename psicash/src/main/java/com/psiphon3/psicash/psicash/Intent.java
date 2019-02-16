@@ -3,7 +3,7 @@ package com.psiphon3.psicash.psicash;
 import android.support.annotation.Nullable;
 
 import com.google.auto.value.AutoValue;
-import com.psiphon3.psicash.util.TunnelConnectionStatus;
+import com.psiphon3.psicash.util.TunnelConnectionState;
 import com.psiphon3.psicash.mvibase.MviIntent;
 
 import ca.psiphon.psicashlib.PsiCashLib;
@@ -12,11 +12,11 @@ import ca.psiphon.psicashlib.PsiCashLib;
 public interface Intent extends MviIntent {
     @AutoValue
     abstract class PurchaseSpeedBoost implements Intent {
-        public static PurchaseSpeedBoost create(TunnelConnectionStatus status, @Nullable PsiCashLib.PurchasePrice price) {
-            return new AutoValue_Intent_PurchaseSpeedBoost(status, price);
+        public static PurchaseSpeedBoost create(TunnelConnectionState state, @Nullable PsiCashLib.PurchasePrice price) {
+            return new AutoValue_Intent_PurchaseSpeedBoost(state, price);
         }
 
-        abstract TunnelConnectionStatus connectionStatus();
+        abstract TunnelConnectionState connectionState();
 
         @Nullable
         abstract PsiCashLib.PurchasePrice purchasePrice();
@@ -37,12 +37,12 @@ public interface Intent extends MviIntent {
     }
 
     @AutoValue
-    abstract class ConnectionStatus implements Intent {
-        public static ConnectionStatus create(TunnelConnectionStatus status) {
-            return new AutoValue_Intent_ConnectionStatus(status);
+    abstract class ConnectionState implements Intent {
+        public static ConnectionState create(TunnelConnectionState state) {
+            return new AutoValue_Intent_ConnectionState(state);
         }
 
-        public abstract TunnelConnectionStatus connectionStatus();
+        public abstract TunnelConnectionState connectionState();
     }
 
 }

@@ -42,7 +42,8 @@ public class WebViewProxySettings
 {
     private static boolean mIsLocalProxySet = false;
     private static boolean mIsInitialized = false;
-    private static List<String> mReceiversList;
+    private static List<Object> mReceiversList;
+    private static List<Object> mExcludedReceiversList;
 
     public static boolean isLocalProxySet() {return mIsLocalProxySet;}
 
@@ -95,11 +96,12 @@ public class WebViewProxySettings
 
         mIsInitialized = true;
         mReceiversList = new ArrayList<>();
+        mReceiversList.addAll(getCurrentReceiversSet(ctx));
+    }
 
-        for (Object receiver : getCurrentReceiversSet(ctx)) {
-            mReceiversList.add(receiver.getClass().getName());
-        }
-
+    public static void excludeReceivers(Context ctx) {
+        mExcludedReceiversList = new ArrayList<>();
+        mExcludedReceiversList.addAll(getCurrentReceiversSet(ctx));
     }
 
     public static void resetLocalProxy(Context ctx)
@@ -139,7 +141,7 @@ public class WebViewProxySettings
     public static boolean setProxy (Context ctx, String host, int port)
     {
         if (!mIsInitialized) {
-            throw new AssertionError("Assertion error: WebViewProxySettings is not initialized!");
+            throw new IllegalStateException("Attempting to set WebView proxy before WebViewProxySettings is initialized.");
         }
 
         UpstreamProxySettings.saveSystemProxySettings(ctx);
@@ -332,18 +334,17 @@ public class WebViewProxySettings
         try {
             for (Object receiver : getCurrentReceiversSet(appContext))
             {
-                Class clazz = receiver.getClass();
-
-                // Check if receiver class name is in the list of
+                // Check if receiver object is in the list of
                 // receivers names we stored during initialization
-                if (!mReceiversList.contains(clazz.getName())) {
+                // and also not in the exclusion list.
+                if (!mReceiversList.contains(receiver) || mExcludedReceiversList.contains(receiver)) {
                     continue;
                 }
 
                 // NOTE: as of Chrome 67 the ProxyChangeListener now has an obfuscated name,
                 // so we are unable to identify the receiver by name. Instead we'll send the
                 // PROXY_CHANGE intent to all receivers.
-                Method onReceiveMethod = clazz.getDeclaredMethod("onReceive", Context.class, Intent.class);
+                Method onReceiveMethod = receiver.getClass().getDeclaredMethod("onReceive", Context.class, Intent.class);
                 Intent intent = new Intent(Proxy.PROXY_CHANGE_ACTION);
 
                 final String CLASS_NAME = "android.net.ProxyInfo";

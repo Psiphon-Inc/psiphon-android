@@ -17,7 +17,7 @@ import com.psiphon3.psicash.rewardedvideo.Intent;
 import com.psiphon3.psicash.rewardedvideo.RewardedVideoViewModel;
 import com.psiphon3.psicash.rewardedvideo.RewardedVideoViewState;
 import com.psiphon3.psicash.util.BroadcastIntent;
-import com.psiphon3.psicash.util.TunnelConnectionStatus;
+import com.psiphon3.psicash.util.TunnelConnectionState;
 import com.psiphon3.subscription.R;
 
 import java.util.List;
@@ -29,7 +29,7 @@ import io.reactivex.disposables.CompositeDisposable;
 public class RewardedVideoFragment extends Fragment implements MviView<Intent, RewardedVideoViewState> {
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private Button watchRewardedVideoBtn;
-    private Relay<TunnelConnectionStatus> tunnelConnectionStatusBehaviourRelay;
+    private Relay<TunnelConnectionState> tunnelConnectionStateBehaviourRelay;
     private Relay<RewardedVideoViewState.ViewAction> loadVideoActionPublishRelay;
 
     private RewardedVideoViewModel viewModel;
@@ -44,7 +44,7 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
         super.onCreate(savedInstanceState);
         viewModel = ViewModelProviders.of(this).get(RewardedVideoViewModel.class);
 
-        tunnelConnectionStatusBehaviourRelay = BehaviorRelay.<TunnelConnectionStatus>create().toSerialized();
+        tunnelConnectionStateBehaviourRelay = BehaviorRelay.<TunnelConnectionState>create().toSerialized();
         loadVideoActionPublishRelay = PublishRelay.<RewardedVideoViewState.ViewAction>create().toSerialized();
     }
 
@@ -88,7 +88,7 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
     public Observable<Intent> intents() {
         return Observable.combineLatest(loadVideoActionPublishObservable()
                         .startWith(RewardedVideoViewState.ViewAction.LOAD_VIDEO_ACTION)
-                , connectionStatusObservable(),
+                , connectionStateObservable(),
                 (__, s) -> Intent.LoadVideoAd.create(s));
     }
 
@@ -96,8 +96,10 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
         return loadVideoActionPublishRelay.hide();
     }
 
-    private Observable<TunnelConnectionStatus> connectionStatusObservable() {
-        return tunnelConnectionStatusBehaviourRelay.hide();
+    private Observable<TunnelConnectionState> connectionStateObservable() {
+        return tunnelConnectionStateBehaviourRelay
+                .hide()
+                .distinctUntilChanged();
     }
 
     @Override
@@ -136,7 +138,7 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
         LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
     }
 
-    public void onTunnelConnectionStatus(TunnelConnectionStatus status) {
-        tunnelConnectionStatusBehaviourRelay.accept(status);
+    public void onTunnelConnectionState(TunnelConnectionState status) {
+        tunnelConnectionStateBehaviourRelay.accept(status);
     }
 }

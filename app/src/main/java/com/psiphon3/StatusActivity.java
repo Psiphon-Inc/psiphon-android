@@ -71,7 +71,7 @@ import com.mopub.mobileads.MoPubView.BannerAdListener;
 import com.mopub.nativeads.GooglePlayServicesNative;
 import com.psiphon3.psicash.rewardedvideo.RewardedVideoClient;
 import com.psiphon3.psicash.util.BroadcastIntent;
-import com.psiphon3.psicash.util.TunnelConnectionStatus;
+import com.psiphon3.psicash.util.TunnelConnectionState;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -175,8 +175,8 @@ public class StatusActivity
             // to immediately restart the tunnel.
             m_firstRun = false;
         } else {
-            psiCashFragment.onTunnelConnectionStatus(TunnelConnectionStatus.DISCONNECTED);
-            rewardedVideoFragment.onTunnelConnectionStatus(TunnelConnectionStatus.DISCONNECTED);
+            psiCashFragment.onTunnelConnectionState(TunnelConnectionState.disconnected());
+            rewardedVideoFragment.onTunnelConnectionState(TunnelConnectionState.disconnected());
         }
 
         // Initialize WebView proxy settings before attempting to load any URLs
@@ -339,8 +339,16 @@ public class StatusActivity
     }
 
     @Override
-    protected void onTunnelDisconnected() {
-        deInitTunneledAds();
+    protected void onTunnelConnectionState(TunnelManager.State state) {
+        if(!state.isConnected) {
+            deInitTunneledAds();
+        }
+        TunnelConnectionState status = state.isConnected ?
+                TunnelConnectionState.connected(state.isVPN, state.listeningLocalHttpProxyPort) :
+                TunnelConnectionState.disconnected();
+
+        psiCashFragment.onTunnelConnectionState(status);
+        rewardedVideoFragment.onTunnelConnectionState(status);
     }
 
     protected void HandleCurrentIntent()

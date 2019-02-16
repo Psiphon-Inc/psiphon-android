@@ -30,7 +30,7 @@ import com.psiphon3.psicash.psicash.PsiCashViewModel;
 import com.psiphon3.psicash.psicash.PsiCashViewModelFactory;
 import com.psiphon3.psicash.psicash.PsiCashViewState;
 import com.psiphon3.psicash.util.BroadcastIntent;
-import com.psiphon3.psicash.util.TunnelConnectionStatus;
+import com.psiphon3.psicash.util.TunnelConnectionState;
 import com.psiphon3.psiphonlibrary.Authorization;
 import com.psiphon3.subscription.R;
 
@@ -50,7 +50,7 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
     private PsiCashViewModel psiCashViewModel;
 
     private Relay<Intent> intentsPublishRelay;
-    private Relay<TunnelConnectionStatus> tunnelConnectionStatusBehaviourRelay;
+    private Relay<TunnelConnectionState> tunnelConnectionStateBehaviorRelay;
 
     private TextView balanceLabel;
     private TextView countDownLabel;
@@ -80,7 +80,7 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
         psiCashViewModel = ViewModelProviders.of(this, new PsiCashViewModelFactory(getActivity().getApplication(), purchaseListener))
                 .get(PsiCashViewModel.class);
         intentsPublishRelay = PublishRelay.<Intent>create().toSerialized();
-        tunnelConnectionStatusBehaviourRelay = BehaviorRelay.<TunnelConnectionStatus>create().toSerialized();
+        tunnelConnectionStateBehaviorRelay = BehaviorRelay.<TunnelConnectionState>create().toSerialized();
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BroadcastIntent.GOT_REWARD_FOR_VIDEO_INTENT);
@@ -124,11 +124,11 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
 
         compositeDisposable.add(RxView.clicks(buySpeedBoostBtn)
                 .debounce(200, TimeUnit.MILLISECONDS)
-                .withLatestFrom(connectionStatusObservable(), (__, s) ->
-                        Intent.PurchaseSpeedBoost.create(s.connectionStatus(), (PsiCashLib.PurchasePrice) buySpeedBoostBtn.getTag()))
+                .withLatestFrom(connectionStateObservable(), (__, s) ->
+                        Intent.PurchaseSpeedBoost.create(s.connectionState(), (PsiCashLib.PurchasePrice) buySpeedBoostBtn.getTag()))
                 .subscribe(intentsPublishRelay));
 
-        compositeDisposable.add(connectionStatusObservable()
+        compositeDisposable.add(connectionStateObservable()
                 .subscribe(intentsPublishRelay));
 
     }
@@ -137,9 +137,9 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
         compositeDisposable.clear();
     }
 
-    private Observable<Intent.ConnectionStatus> connectionStatusObservable() {
-        return tunnelConnectionStatusBehaviourRelay.hide()
-                .map(s -> Intent.ConnectionStatus.create(s));
+    private Observable<Intent.ConnectionState> connectionStateObservable() {
+        return tunnelConnectionStateBehaviorRelay.hide()
+                .map(s -> Intent.ConnectionState.create(s));
     }
 
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
@@ -250,7 +250,7 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
 
 
 
-    public void onTunnelConnectionStatus(TunnelConnectionStatus status) {
-        tunnelConnectionStatusBehaviourRelay.accept(status);
+    public void onTunnelConnectionState(TunnelConnectionState status) {
+        tunnelConnectionStateBehaviorRelay.accept(status);
     }
 }

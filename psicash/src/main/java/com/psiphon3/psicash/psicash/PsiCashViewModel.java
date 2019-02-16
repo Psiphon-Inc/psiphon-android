@@ -12,7 +12,7 @@ import com.psiphon3.psicash.mvibase.MviResult;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.mvibase.MviViewModel;
 import com.psiphon3.psicash.mvibase.MviViewState;
-import com.psiphon3.psicash.util.TunnelConnectionStatus;
+import com.psiphon3.psicash.util.TunnelConnectionState;
 
 import java.util.Date;
 import java.util.List;
@@ -157,9 +157,9 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
      * Used to decouple the UI and the business logic to allow easy testings and reusability.
      */
     private Observable<Action> actionFromIntent(MviIntent intent) {
-        if (intent instanceof Intent.ConnectionStatus) {
-            Intent.ConnectionStatus connectionStatusIntent = (Intent.ConnectionStatus) intent;
-            final TunnelConnectionStatus status = connectionStatusIntent.connectionStatus();
+        if (intent instanceof Intent.ConnectionState) {
+            Intent.ConnectionState connectionState = (Intent.ConnectionState) intent;
+            final TunnelConnectionState status = connectionState.connectionState();
             return Observable.just(Action.GetPsiCash.create(status));
         }
         if (intent instanceof Intent.GetPsiCashLocal) {
@@ -171,8 +171,8 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
         if (intent instanceof Intent.PurchaseSpeedBoost) {
             Intent.PurchaseSpeedBoost purchaseSpeedBoostIntent = (Intent.PurchaseSpeedBoost) intent;
             final PsiCashLib.PurchasePrice price = purchaseSpeedBoostIntent.purchasePrice();
-            final TunnelConnectionStatus status = purchaseSpeedBoostIntent.connectionStatus();
-            return Observable.just(Action.MakeExpiringPurchase.create(status, price));
+            final TunnelConnectionState tunnelConnectionState = purchaseSpeedBoostIntent.connectionState();
+            return Observable.just(Action.MakeExpiringPurchase.create(tunnelConnectionState, price));
         }
         throw new IllegalArgumentException("Do not know how to treat this intent " + intent);
     }

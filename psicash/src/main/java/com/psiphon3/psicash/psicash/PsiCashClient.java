@@ -6,7 +6,7 @@ import android.content.SharedPreferences;
 import android.support.v4.util.Pair;
 import android.util.Log;
 
-import com.psiphon3.psicash.util.TunnelConnectionStatus;
+import com.psiphon3.psicash.util.TunnelConnectionState;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -58,7 +58,7 @@ public class PsiCashClient {
                         if (httpProxyPort > 0) {
                             proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", httpProxyPort));
                         } else {
-                            proxy = Proxy.NO_PROXY;
+                            throw new IllegalStateException("Bad local HTTP proxy port value: " + httpProxyPort);
                         }
                         list.add(proxy);
                         return list;
@@ -148,6 +148,9 @@ public class PsiCashClient {
 
     // TODO use this
     public void setOkHttpClientHttpProxyPort(int httpProxyPort) {
+        if (httpProxyPort <= 0) {
+            throw new IllegalStateException("Bad OkHttp client proxy port value: " + httpProxyPort);
+        }
         this.httpProxyPort = httpProxyPort;
     }
 
@@ -248,14 +251,14 @@ public class PsiCashClient {
     }
 
     // May return either PsiCashModel.PsiCash or PsiCashModel.ExpiringPurchase
-    Observable<? extends PsiCashModel> makeExpiringPurchase(TunnelConnectionStatus connectionStatus, PsiCashLib.PurchasePrice price) {
-        return Observable.just(Pair.create(connectionStatus, price))
+    Observable<? extends PsiCashModel> makeExpiringPurchase(TunnelConnectionState connectionState, PsiCashLib.PurchasePrice price) {
+        return Observable.just(Pair.create(connectionState, price))
                 .observeOn(Schedulers.io())
                 .flatMap(pair -> Single.fromCallable(() -> {
-                    TunnelConnectionStatus s = pair.first;
+                    TunnelConnectionState state = pair.first;
                     PsiCashLib.PurchasePrice p = pair.second;
 
-                    if (s == TunnelConnectionStatus.DISCONNECTED) {
+                    if (state.status() == TunnelConnectionState.Status.DISCONNECTED) {
                         throw new PsiCashError.RecoverableError("makeExpiringPurchase: not connected.", "Please connect to make a Speed Boost purchase.");
                     }
                     if (p == null) {
@@ -263,6 +266,7 @@ public class PsiCashClient {
                     }
 
                     setPsiCashRequestMetaData();
+                    setOkHttpClientHttpProxyPort(state.httpPort());
 
                     PsiCashLib.NewExpiringPurchaseResult result =
                             psiCashLib.newExpiringPurchase(p.transactionClass,
@@ -300,14 +304,15 @@ public class PsiCashClient {
     }
 
 
-    Observable<PsiCashModel.PsiCash> getPsiCash(TunnelConnectionStatus connectionStatus) {
-        return Observable.just(connectionStatus)
+    Observable<PsiCashModel.PsiCash> getPsiCash(TunnelConnectionState connectionState) {
+        return Observable.just(connectionState)
                 .observeOn(Schedulers.io())
                 .flatMap(c -> {
-                    if (c == TunnelConnectionStatus.DISCONNECTED) {
+                    if (c.status() == TunnelConnectionState.Status.DISCONNECTED) {
                         cancelOutstandingNetworkRequests();
                         return getPsiCashLocal();
-                    } else if (c == TunnelConnectionStatus.CONNECTED) {
+                    } else if (c.status() == TunnelConnectionState.Status.CONNECTED) {
+                        setOkHttpClientHttpProxyPort(c.httpPort());
                         setPsiCashRequestMetaData();
                         return Completable.fromAction(() -> {
                             PsiCashLib.RefreshStateResult result = psiCashLib.refreshState(getPurchaseClasses());
@@ -324,7 +329,7 @@ public class PsiCashClient {
                         })
                                 .andThen(getPsiCashLocal());
                     }
-                    throw new IllegalArgumentException("Unknown TunnelConnectionStatus: " + c);
+                    throw new IllegalArgumentException("Unknown TunnelConnectionState: " + c);
                 });
     }
 

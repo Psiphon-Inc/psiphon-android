@@ -17,7 +17,7 @@ public class PsiCashActionProcessorHolder {
             getPsiCashProcessor = actions ->
             // only react to distinct connection status actions
             actions.distinctUntilChanged()
-                    .switchMap(action -> PsiCashClient.getInstance(context).getPsiCash(action.connectionStatus())
+                    .switchMap(action -> PsiCashClient.getInstance(context).getPsiCash(action.connectionState())
                             .map(Result.GetPsiCash::success)
                             .onErrorReturn(Result.GetPsiCash::failure)
                             .startWith(Result.GetPsiCash.inFlight()));
@@ -32,7 +32,7 @@ public class PsiCashActionProcessorHolder {
     private ObservableTransformer<Action.MakeExpiringPurchase, Result>
             makeExpiringPurchaseProcessor = actions ->
             actions.flatMap(action ->
-                    PsiCashClient.getInstance(context).makeExpiringPurchase(action.connectionStatus(), action.purchasePrice())
+                    PsiCashClient.getInstance(context).makeExpiringPurchase(action.connectionState(), action.purchasePrice())
                             .map(r -> {
                                 if (r instanceof PsiCashModel.ExpiringPurchase) {
                                     if (expiringPurchaseListener != null) {

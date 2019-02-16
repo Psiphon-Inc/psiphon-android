@@ -3,7 +3,7 @@ package com.psiphon3.psicash.psicash;
 import android.support.annotation.Nullable;
 
 import com.google.auto.value.AutoValue;
-import com.psiphon3.psicash.util.TunnelConnectionStatus;
+import com.psiphon3.psicash.util.TunnelConnectionState;
 import com.psiphon3.psicash.mvibase.MviAction;
 
 import ca.psiphon.psicashlib.PsiCashLib;
@@ -11,20 +11,20 @@ import ca.psiphon.psicashlib.PsiCashLib;
 public interface Action extends MviAction {
     @AutoValue
     abstract class GetPsiCash implements Action {
-        public static GetPsiCash create(TunnelConnectionStatus status) {
+        public static GetPsiCash create(TunnelConnectionState status) {
             return new AutoValue_Action_GetPsiCash(status);
         }
 
-        abstract TunnelConnectionStatus connectionStatus();
+        abstract TunnelConnectionState connectionState();
     }
 
     @AutoValue
     abstract class MakeExpiringPurchase implements Action {
-        public static MakeExpiringPurchase create(TunnelConnectionStatus status, @Nullable PsiCashLib.PurchasePrice price) {
+        public static MakeExpiringPurchase create(TunnelConnectionState status, @Nullable PsiCashLib.PurchasePrice price) {
             return new AutoValue_Action_MakeExpiringPurchase(status, price);
         }
 
-        abstract TunnelConnectionStatus connectionStatus();
+        abstract TunnelConnectionState connectionState();
 
         @Nullable
         abstract PsiCashLib.PurchasePrice purchasePrice();

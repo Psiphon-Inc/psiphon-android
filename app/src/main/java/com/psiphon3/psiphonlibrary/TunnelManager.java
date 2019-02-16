@@ -80,52 +80,51 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     // Android IPC messages
 
     // Client -> Service
-    public static final int MSG_UNREGISTER = 1;
-    public static final int MSG_STOP_SERVICE = 2;
+    static final int MSG_UNREGISTER = 1;
+    static final int MSG_STOP_SERVICE = 2;
 
     // Service -> Client
-    public static final int MSG_REGISTER_RESPONSE = 3;
-    public static final int MSG_KNOWN_SERVER_REGIONS = 4;
-    public static final int MSG_TUNNEL_STARTING = 5;
-    public static final int MSG_TUNNEL_STOPPING = 6;
-    public static final int MSG_TUNNEL_CONNECTION_STATE = 7;
-    public static final int MSG_DATA_TRANSFER_STATS = 8;
+    static final int MSG_KNOWN_SERVER_REGIONS = 3;
+    static final int MSG_TUNNEL_STOPPING = 4;
+    static final int MSG_TUNNEL_CONNECTION_STATE = 5;
+    static final int MSG_DATA_TRANSFER_STATS = 6;
 
     public static final String INTENT_ACTION_HANDSHAKE = "com.psiphon3.psiphonlibrary.TunnelManager.HANDSHAKE";
     public static final String INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE = "com.psiphon3.psiphonlibrary.TunnelManager.SELECTED_REGION_NOT_AVAILABLE";
     public static final String INTENT_ACTION_VPN_REVOKED = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_VPN_REVOKED";
 
     // Service -> Client bundle parameter names
-    public static final String DATA_TUNNEL_STATE_IS_CONNECTED = "isConnected";
-    public static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT = "listeningLocalSocksProxyPort";
-    public static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT = "listeningLocalHttpProxyPort";
-    public static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
-    public static final String DATA_TUNNEL_STATE_HOME_PAGES = "homePages";
-    public static final String DATA_TRANSFER_STATS_CONNECTED_TIME = "dataTransferStatsConnectedTime";
-    public static final String DATA_TRANSFER_STATS_TOTAL_BYTES_SENT = "dataTransferStatsTotalBytesSent";
-    public static final String DATA_TRANSFER_STATS_TOTAL_BYTES_RECEIVED = "dataTransferStatsTotalBytesReceived";
-    public static final String DATA_TRANSFER_STATS_SLOW_BUCKETS = "dataTransferStatsSlowBuckets";
-    public static final String DATA_TRANSFER_STATS_SLOW_BUCKETS_LAST_START_TIME = "dataTransferStatsSlowBucketsLastStartTime";
-    public static final String DATA_TRANSFER_STATS_FAST_BUCKETS = "dataTransferStatsFastBuckets";
-    public static final String DATA_TRANSFER_STATS_FAST_BUCKETS_LAST_START_TIME = "dataTransferStatsFastBucketsLastStartTime";
+    static final String DATA_TUNNEL_STATE_IS_VPN = "isVpn";
+    static final String DATA_TUNNEL_STATE_IS_CONNECTED = "isConnected";
+    static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT = "listeningLocalSocksProxyPort";
+    static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT = "listeningLocalHttpProxyPort";
+    static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
+    static final String DATA_TUNNEL_STATE_HOME_PAGES = "homePages";
+    static final String DATA_TRANSFER_STATS_CONNECTED_TIME = "dataTransferStatsConnectedTime";
+    static final String DATA_TRANSFER_STATS_TOTAL_BYTES_SENT = "dataTransferStatsTotalBytesSent";
+    static final String DATA_TRANSFER_STATS_TOTAL_BYTES_RECEIVED = "dataTransferStatsTotalBytesReceived";
+    static final String DATA_TRANSFER_STATS_SLOW_BUCKETS = "dataTransferStatsSlowBuckets";
+    static final String DATA_TRANSFER_STATS_SLOW_BUCKETS_LAST_START_TIME = "dataTransferStatsSlowBucketsLastStartTime";
+    static final String DATA_TRANSFER_STATS_FAST_BUCKETS = "dataTransferStatsFastBuckets";
+    static final String DATA_TRANSFER_STATS_FAST_BUCKETS_LAST_START_TIME = "dataTransferStatsFastBucketsLastStartTime";
 
     // Extras in handshake intent
     public static final String DATA_HANDSHAKE_IS_RECONNECT = "isReconnect";
 
     // Extras in start service intent (Client -> Service)
-    public static final String DATA_TUNNEL_CONFIG_HANDSHAKE_PENDING_INTENT = "tunnelConfigHandshakePendingIntent";
-    public static final String DATA_TUNNEL_CONFIG_NOTIFICATION_PENDING_INTENT = "tunnelConfigNotificationPendingIntent";
-    public static final String DATA_TUNNEL_CONFIG_REGION_NOT_AVAILABLE_PENDING_INTENT = "tunnelConfigRegionNotAvailablePendingIntent";
-    public static final String DATA_TUNNEL_CONFIG_WHOLE_DEVICE = "tunnelConfigWholeDevice";
-    public static final String DATA_TUNNEL_CONFIG_VPN_REVOKED_PENDING_INTENT = "tunnelConfigVpnRevokedPendingIntent";
-    public static final String DATA_TUNNEL_CONFIG_EGRESS_REGION = "tunnelConfigEgressRegion";
-    public static final String DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS = "tunnelConfigDisableTimeouts";
-    public static final String CLIENT_MESSENGER = "incomingClientMessenger";
-    public static final String DATA_PURCHASE_ID = "purchaseId";
-    public static final String DATA_PURCHASE_TOKEN = "purchaseToken";
-    public static final String DATA_PURCHASE_IS_SUBSCRIPTION = "purchaseIsSubscription";
-    static final String PREFERENCE_PURCHASE_AUTHORIZATION_ID = "preferencePurchaseAuthorization";
-    static final String PREFERENCE_PURCHASE_TOKEN = "preferencePurchaseToken";
+    static final String DATA_TUNNEL_CONFIG_HANDSHAKE_PENDING_INTENT = "tunnelConfigHandshakePendingIntent";
+    static final String DATA_TUNNEL_CONFIG_NOTIFICATION_PENDING_INTENT = "tunnelConfigNotificationPendingIntent";
+    static final String DATA_TUNNEL_CONFIG_REGION_NOT_AVAILABLE_PENDING_INTENT = "tunnelConfigRegionNotAvailablePendingIntent";
+    static final String DATA_TUNNEL_CONFIG_WHOLE_DEVICE = "tunnelConfigWholeDevice";
+    static final String DATA_TUNNEL_CONFIG_VPN_REVOKED_PENDING_INTENT = "tunnelConfigVpnRevokedPendingIntent";
+    static final String DATA_TUNNEL_CONFIG_EGRESS_REGION = "tunnelConfigEgressRegion";
+    static final String DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS = "tunnelConfigDisableTimeouts";
+    static final String CLIENT_MESSENGER = "incomingClientMessenger";
+    static final String DATA_PURCHASE_ID = "purchaseId";
+    static final String DATA_PURCHASE_TOKEN = "purchaseToken";
+    static final String DATA_PURCHASE_IS_SUBSCRIPTION = "purchaseIsSubscription";
+    private static final String PREFERENCE_PURCHASE_AUTHORIZATION_ID = "preferencePurchaseAuthorization";
+    private static final String PREFERENCE_PURCHASE_TOKEN = "preferencePurchaseToken";
 
     // a snapshot of all authorizations pulled by getPsiphonConfig
     private static List<Authorization> m_tunnelConfigAuthorizations;
@@ -146,11 +145,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     private Config m_tunnelConfig = new Config();
 
     // Shared tunnel state, sent to the client in the HANDSHAKE
-    // intent and various state-related Messages.
+    // intent and in the MSG_TUNNEL_CONNECTION_STATE service message.
     public static class State {
-        boolean isConnected = false;
+        public boolean isConnected = false;
+        public boolean isVPN = false;
         int listeningLocalSocksProxyPort = 0;
-        int listeningLocalHttpProxyPort = 0;
+        public int listeningLocalHttpProxyPort = 0;
         String clientRegion;
         ArrayList<String> homePages = new ArrayList<>();
     }
@@ -216,6 +216,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public int onStartCommand(Intent intent, int flags, int startId) {
         final String NOTIFICATION_CHANNEL_ID = "psiphon_notification_channel";
 
+        m_tunnelState.isVPN = m_parentService instanceof TunnelVpnService;
+
         if (mNotificationManager == null) {
             mNotificationManager = (NotificationManager) m_parentService.getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -263,7 +265,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
         if (intent != null) {
             m_outgoingMessenger = (Messenger) intent.getParcelableExtra(CLIENT_MESSENGER);
-            sendClientMessage(MSG_REGISTER_RESPONSE, getTunnelStateBundle());
+            sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, getTunnelStateBundle());
+
         }
 
         return Service.START_REDELIVER_INTENT;
@@ -475,7 +478,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     }
 
     private void sendClientMessage(int what, Bundle data) {
-        if (m_incomingMessenger == null || m_outgoingMessenger == null) {
+        if (m_outgoingMessenger == null) {
             return;
         }
         try {
@@ -516,6 +519,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     private Bundle getTunnelStateBundle() {
         Bundle data = new Bundle();
+        data.putBoolean(DATA_TUNNEL_STATE_IS_VPN, m_tunnelState.isVPN);
         data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, m_tunnelState.isConnected);
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT, m_tunnelState.listeningLocalSocksProxyPort);
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT, m_tunnelState.listeningLocalHttpProxyPort);
@@ -607,7 +611,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         // Notify if an upgrade has already been downloaded and is waiting for install
         UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentService);
 
-        sendClientMessage(MSG_TUNNEL_STARTING, null);
+        sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, getTunnelStateBundle());
 
         MyLog.v(R.string.current_network_type, MyLog.Sensitivity.NOT_SENSITIVE, Utils.getNetworkTypeName(m_parentService));
 
@@ -655,6 +659,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             // state bundle (specifically DATA_TUNNEL_STATE_IS_CONNECTED) that is consistent with
             // the MSG_TUNNEL_STOPPING message it just received
             setIsConnected(false);
+            sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, getTunnelStateBundle());
+
             m_tunnelConnectedSubject.onNext(Boolean.FALSE);
 
             m_tunnel.stop();
@@ -1149,11 +1155,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     MyLog.v(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
                 }
 
-                setIsConnected(false);
                 m_tunnelState.homePages.clear();
-                Bundle data = new Bundle();
-                data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, false);
-                sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, data);
+
+                setIsConnected(false);
+                sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, getTunnelStateBundle());
             }
         });
     }
@@ -1173,9 +1178,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 m_isReconnect.set(true);
 
                 setIsConnected(true);
-                Bundle data = new Bundle();
-                data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, true);
-                sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, data);
+                sendClientMessage(MSG_TUNNEL_CONNECTION_STATE, getTunnelStateBundle());
             }
         });
     }

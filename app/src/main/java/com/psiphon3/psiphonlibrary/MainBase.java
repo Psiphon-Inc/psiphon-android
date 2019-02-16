@@ -1507,6 +1507,7 @@ public abstract class MainBase {
             if (data == null) {
                 return;
             }
+            m_tunnelState.isVPN = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_VPN);
             m_tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
             if (m_tunnelState.isConnected) {
                 setStatusState(R.drawable.status_icon_connected);
@@ -1549,43 +1550,32 @@ public abstract class MainBase {
         private final List<Message> m_queue = new ArrayList<>();
 
         private class IncomingMessageHandler extends Handler {
+            boolean shouldRestoreSponsorTAb = false;
             @Override
             public void handleMessage(Message msg) {
                 Bundle data = msg.getData();
+                // Only MSG_TUNNEL_CONNECTION_STATE has a tunnel state data bundle
                 switch (msg.what) {
-                    case TunnelManager.MSG_REGISTER_RESPONSE:
-                        getTunnelStateFromBundle(data);
-                        // An activity created while the service is already running will learn
-                        // the sponsor home page at this point, so now load it.
-                        restoreSponsorTab();
-                        updateServiceStateUI();
-                        break;
-
                     case TunnelManager.MSG_KNOWN_SERVER_REGIONS:
                         m_regionAdapter.updateRegionsFromPreferences();
                         // Make sure we preserve the selection in case the dataset has changed
                         m_regionSelector.setSelectionByValue(m_tunnelConfig.egressRegion);
                         break;
 
-                    case TunnelManager.MSG_TUNNEL_STARTING:
-                        m_tunnelState.isConnected = false;
-                        updateServiceStateUI();
-                        break;
-
                     case TunnelManager.MSG_TUNNEL_STOPPING:
-                        m_tunnelState.isConnected = false;
-                        onTunnelDisconnected();
-
-                        // When the tunnel self-stops, we also need to unbind to ensure
+                        // When the tunnel self-stops, we need to unbind to ensure
                         // the service is destroyed
                         unbindTunnelService();
                         break;
 
                     case TunnelManager.MSG_TUNNEL_CONNECTION_STATE:
-                        m_tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
-                        if (!m_tunnelState.isConnected) {
-                            onTunnelDisconnected();
-                        }
+                        getTunnelStateFromBundle(data);
+                        onTunnelConnectionState(m_tunnelState);
+
+                        // An activity created needs to load a sponsor the tab when tunnel connects
+                        // once per its lifecycle. Both conditions are taken care of inside
+                        // of restoreSponsorTab function
+                        restoreSponsorTab();
                         updateServiceStateUI();
                         break;
 
@@ -1664,7 +1654,7 @@ public abstract class MainBase {
             updateServiceStateUI();
         }
 
-        protected void onTunnelDisconnected() {
+        protected void onTunnelConnectionState(TunnelManager.State state) {
             // do nothing
         }
 
