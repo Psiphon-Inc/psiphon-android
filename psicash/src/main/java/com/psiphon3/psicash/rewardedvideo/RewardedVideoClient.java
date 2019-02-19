@@ -31,7 +31,7 @@ public class RewardedVideoClient {
     private Context context;
     // TODO: replace test values
     // Test video
-    public static final String MOPUB_VIDEO_AD_UNIT_ID = "15173ac6d3e54c9389b9a5ddca69b34b";
+    public static final String MOPUB_VIDEO_AD_UNIT_ID = "7ef66892f0a6417091119b94ce07d6e5";
 
     private static final String TAG = "PsiCashRewardedVideo";
     // Real video unit id

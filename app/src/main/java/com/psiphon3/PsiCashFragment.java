@@ -234,12 +234,14 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
     }
 
     private void uiNotification(String message) {
-        View view = getView();
-        if (view == null) return;
-        Snackbar.make(view, message, Snackbar.LENGTH_LONG).show();
-
         // clear view state error immediately
         intentsPublishRelay.accept(Intent.ClearErrorState.create());
+
+        View view = getActivity().findViewById(R.id.psicashTab);
+        if (view == null) {
+            return;
+        }
+        Snackbar.make(view, message, Snackbar.LENGTH_LONG).show();
     }
 
     private void removeExpiredPurchases() {

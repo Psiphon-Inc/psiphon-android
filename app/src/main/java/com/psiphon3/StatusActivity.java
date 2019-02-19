@@ -69,7 +69,6 @@ import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
 import com.mopub.nativeads.GooglePlayServicesNative;
-import com.psiphon3.psicash.rewardedvideo.RewardedVideoClient;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psicash.util.TunnelConnectionState;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
@@ -145,8 +144,6 @@ public class StatusActivity
         m_temporarilyDisableTunneledInterstitial = true;
 
         mAdMobGDPRHelper = null;
-
-        RewardedVideoClient.getInstance(this).initAdsWithActivity(this);
 
         FragmentManager fm = getSupportFragmentManager();
         psiCashFragment = (PsiCashFragment) fm.findFragmentById(R.id.psicash_fragment_container);

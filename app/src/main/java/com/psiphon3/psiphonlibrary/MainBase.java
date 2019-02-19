@@ -502,7 +502,7 @@ public abstract class MainBase {
             m_tabHost.setup();
 
             TabSpec homeTab = m_tabHost.newTabSpec("home");
-            homeTab.setContent(R.id.sponsorViewFlipper);
+            homeTab.setContent(R.id.homeTab);
             homeTab.setIndicator(getText(R.string.home_tab_name));
 
             TabSpec statisticsTab = m_tabHost.newTabSpec("statistics");

@@ -14,6 +14,7 @@ import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.rewardedvideo.Intent;
+import com.psiphon3.psicash.rewardedvideo.RewardedVideoClient;
 import com.psiphon3.psicash.rewardedvideo.RewardedVideoViewModel;
 import com.psiphon3.psicash.rewardedvideo.RewardedVideoViewState;
 import com.psiphon3.psicash.util.BroadcastIntent;
@@ -51,6 +52,7 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        RewardedVideoClient.getInstance(getContext()).initAdsWithActivity(getActivity());
         watchRewardedVideoBtn = getActivity().findViewById(R.id.watch_rewardedvideo_btn);
     }
 
