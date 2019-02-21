@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import ca.psiphon.psicashlib.PsiCashLib;
 import io.reactivex.Completable;
@@ -216,25 +217,37 @@ public class PsiCashClient {
     private PsiCashModel.PsiCash psiCashModelFromLib() {
         PsiCashModel.PsiCash.Builder builder = PsiCashModel.PsiCash.builder();
 
-
-        // TODO replace this with the server side expiration mechanism
-        psiCashLib.expirePurchases();
-
         PsiCashLib.BalanceResult balanceResult = psiCashLib.balance();
         if (balanceResult.error != null) {
-            throw new RuntimeException("PsiCashLib.BalanceResult error: " + balanceResult.error);
+            String errorMessage = "PsiCashLib.BalanceResult error: " + balanceResult.error.message;
+            if (balanceResult.error.critical) {
+                throw new PsiCashError.CriticalError(errorMessage);
+            } else {
+                throw new PsiCashError.RecoverableError(errorMessage);
+            }
         }
+
         builder.balance(balanceResult.balance);
 
         PsiCashLib.GetPurchasePricesResult getPurchasePricesResult = psiCashLib.getPurchasePrices();
         if (getPurchasePricesResult.error != null) {
-            throw new RuntimeException("PsiCashLib.BalanceResult error: " + getPurchasePricesResult.error);
+            String errorMessage = "PsiCashLib.GetPurchasePricesResult error: " + balanceResult.error.message;
+            if (getPurchasePricesResult.error.critical) {
+                throw new PsiCashError.CriticalError(errorMessage);
+            } else {
+                throw new PsiCashError.RecoverableError(errorMessage);
+            }
         }
         builder.purchasePrices(getPurchasePricesResult.purchasePrices);
 
         PsiCashLib.NextExpiringPurchaseResult nextExpiringPurchaseResult = psiCashLib.nextExpiringPurchase();
         if (nextExpiringPurchaseResult.error != null) {
-            throw new RuntimeException("PsiCashLib.NextExpiringPurchaseResult error: " + nextExpiringPurchaseResult.error);
+            String errorMessage = "PsiCashLib.NextExpiringPurchaseResult error: " + balanceResult.error.message;
+            if (nextExpiringPurchaseResult.error.critical) {
+                throw new PsiCashError.CriticalError(errorMessage);
+            } else {
+                throw new PsiCashError.RecoverableError(errorMessage);
+            }
         }
         builder.nextExpiringPurchase(nextExpiringPurchaseResult.purchase);
 
@@ -305,6 +318,7 @@ public class PsiCashClient {
 
 
     Observable<PsiCashModel.PsiCash> getPsiCash(TunnelConnectionState connectionState) {
+        int retryCount = 5;
         return Observable.just(connectionState)
                 .observeOn(Schedulers.io())
                 .flatMap(c -> {
@@ -317,6 +331,7 @@ public class PsiCashClient {
                         return Completable.fromAction(() -> {
                             PsiCashLib.RefreshStateResult result = psiCashLib.refreshState(getPurchaseClasses());
                             if (result.error != null) {
+                                // TODO UI facing error messages
                                 if (result.error.critical) {
                                     throw new PsiCashError.CriticalError(result.error.message);
                                 } else {
@@ -330,7 +345,16 @@ public class PsiCashClient {
                                 .andThen(getPsiCashLocal());
                     }
                     throw new IllegalArgumentException("Unknown TunnelConnectionState: " + c);
-                });
+                })
+                // retry {retryCount} times every 2 seconds before giving up
+                .retryWhen(errors -> errors
+                        .zipWith(Observable.range(1, retryCount), (err, i) -> {
+                            if (i < retryCount && !(err instanceof PsiCashError.CriticalError)) {
+                                return Observable.timer(2, TimeUnit.SECONDS);
+                            } // else
+                            return Observable.error(err);
+                        })
+                        .flatMap(x -> x));
     }
 
     public synchronized void putVideoReward (long reward) {
