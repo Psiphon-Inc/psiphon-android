@@ -2,6 +2,8 @@ package com.psiphon3.psicash.rewardedvideo;
 
 import android.content.Context;
 
+import com.psiphon3.psicash.psicash.PsiCashClient;
+
 import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
 
@@ -11,11 +13,13 @@ class RewardedVideoActionProcessorHolder {
     private ObservableTransformer<Action.LoadVideoAd, Result>
             loadVideoAdProcessor = actions ->
             actions.switchMap(action ->
-                    RewardedVideoClient.getInstance(context).loadRewardedVideo(action.connectionState())
+                    RewardedVideoClient.getInstance().loadRewardedVideo(context, action.connectionState(), PsiCashClient.getInstance(context).rewardedVideoCustomData())
                             .map(r -> {
                                 if (r instanceof RewardedVideoModel.VideoReady) {
                                     return Result.VideoReady.success((RewardedVideoModel.VideoReady) r);
                                 } else if (r instanceof RewardedVideoModel.Reward) {
+                                    // Store the reward amount
+                                    PsiCashClient.getInstance(context).putVideoReward(((RewardedVideoModel.Reward) r).amount());
                                     return Result.Reward.success((RewardedVideoModel.Reward) r);
                                 } else if (r instanceof RewardedVideoModel.VideoClosed) {
                                     return Result.VideoClosed.success();
@@ -35,7 +39,7 @@ class RewardedVideoActionProcessorHolder {
                                             new IllegalArgumentException("Unknown action: " + w)))));
 
 
-    public RewardedVideoActionProcessorHolder(Context context) {
+    RewardedVideoActionProcessorHolder(Context context) {
         this.context = context;
     }
 

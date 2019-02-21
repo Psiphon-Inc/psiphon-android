@@ -69,6 +69,8 @@ import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
 import com.mopub.nativeads.GooglePlayServicesNative;
+import com.psiphon3.psicash.psicash.PsiCashClient;
+import com.psiphon3.psicash.psicash.PsiCashError;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psicash.util.TunnelConnectionState;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
@@ -132,6 +134,7 @@ public class StatusActivity
         setContentView(R.layout.main);
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
+        m_tabSpecsList = new ArrayList<>();
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
 
         mRateLimitedTextSection = findViewById(R.id.rateLimitedTextSection);
@@ -145,17 +148,17 @@ public class StatusActivity
 
         mAdMobGDPRHelper = null;
 
+        // PsiCash and rewarded video modules
         FragmentManager fm = getSupportFragmentManager();
         psiCashFragment = (PsiCashFragment) fm.findFragmentById(R.id.psicash_fragment_container);
         rewardedVideoFragment = (RewardedVideoFragment) fm.findFragmentById(R.id.rewarded_fragment_container);
 
+        setupActivityLayout();
 
         // Listen to GOT_NEW_EXPIRING_PURCHASE intent from psicash module
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
         LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter);
-
-        setupActivityLayout();
 
         if (shouldShowUntunneledAds()) {
             // Start at the Home tab if the service isn't running and we want to show ads
@@ -213,6 +216,17 @@ public class StatusActivity
             resumeServiceStateUI();
             doStartUp();
         }
+
+        // Hide or show the PsiCash tab depending on whether PsiCash has valid tokens
+        try  {
+            if (PsiCashClient.getInstance(this).hasValidTokens()) {
+                showPsiCashTab();
+            } else {
+                hidePsiCashTab();
+            }
+        } catch (PsiCashError.CriticalError error) {
+            MyLog.g("Error showing Psicash tab: " + error);
+        }
     }
 
     @Override
@@ -239,7 +253,23 @@ public class StatusActivity
         }
         super.onDestroy();
     }
-    
+
+    private void hidePsiCashTab() {
+        for (int i = 0; i < m_tabSpecsList.size(); i++) {
+            TabHost.TabSpec tabSpec = m_tabSpecsList.get(i);
+            if (tabSpec != null && tabSpec.getTag().equals(PSICASH_TAB_TAG))
+                m_tabHost.getTabWidget().getChildTabViewAt(i).setVisibility(View.GONE);
+        }
+    }
+
+    private void showPsiCashTab() {
+        for (int i = 0; i < m_tabSpecsList.size(); i++) {
+            TabHost.TabSpec tabSpec = m_tabSpecsList.get(i);
+            if (tabSpec != null && tabSpec.getTag().equals(PSICASH_TAB_TAG))
+                m_tabHost.getTabWidget().getChildTabViewAt(i).setVisibility(View.VISIBLE);
+        }
+    }
+
     private void loadSponsorTab(boolean freshConnect)
     {
         if (!getSkipHomePage())
@@ -1700,7 +1730,7 @@ public class StatusActivity
         public void onReceive(Context context, android.content.Intent intent) {
             String action = intent.getAction();
             if (action != null) {
-                if (action == BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE) {
+                if (action.equals(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE)) {
                     scheduleRunningTunnelServiceRestart();
                 }
             }

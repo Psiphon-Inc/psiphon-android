@@ -153,6 +153,13 @@ public abstract class MainBase {
         protected static final int REQUEST_CODE_PREFERENCE = 101;
         protected static final int REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 102;
 
+        public static final String HOME_TAB_TAG = "home_tab_tag";
+        public static final String PSICASH_TAB_TAG = "psicash_tab_tag";
+        public static final String STATISTICS_TAB_TAG = "statistics_tab_tag";
+        public static final String SETTINGS_TAB_TAG = "settings_tab_tag";
+        public static final String LOGS_TAB_TAG = "logs_tab_tag";
+
+
         protected static boolean m_firstRun = true;
         private boolean m_canWholeDevice = false;
 
@@ -300,6 +307,7 @@ public abstract class MainBase {
         // http://danielkvist.net/code/animated-tabhost-with-slide-gesture-in-android
         private static final int ANIMATION_TIME = 240;
         protected TabHost m_tabHost;
+        protected List<TabSpec> m_tabSpecsList;
         private int m_currentTab;
         private View m_previousView;
         private View m_currentView;
@@ -501,31 +509,16 @@ public abstract class MainBase {
             // Set up tabs
             m_tabHost.setup();
 
-            TabSpec homeTab = m_tabHost.newTabSpec("home");
-            homeTab.setContent(R.id.homeTab);
-            homeTab.setIndicator(getText(R.string.home_tab_name));
+            m_tabSpecsList.clear();
+            m_tabSpecsList.add(0, m_tabHost.newTabSpec(HOME_TAB_TAG).setContent(R.id.homeTab).setIndicator(getText(R.string.home_tab_name)));
+            m_tabSpecsList.add(1, m_tabHost.newTabSpec(PSICASH_TAB_TAG).setContent(R.id.psicashTab).setIndicator(getText(R.string.psicash_tab_name)));
+            m_tabSpecsList.add(2, m_tabHost.newTabSpec(STATISTICS_TAB_TAG).setContent(R.id.statisticsView).setIndicator(getText(R.string.statistics_tab_name)));
+            m_tabSpecsList.add(3, m_tabHost.newTabSpec(SETTINGS_TAB_TAG).setContent(R.id.settingsView).setIndicator(getText(R.string.settings_tab_name)));
+            m_tabSpecsList.add(4, m_tabHost.newTabSpec(LOGS_TAB_TAG).setContent(R.id.logsTab).setIndicator(getText(R.string.logs_tab_name)));
 
-            TabSpec statisticsTab = m_tabHost.newTabSpec("statistics");
-            statisticsTab.setContent(R.id.statisticsView);
-            statisticsTab.setIndicator(getText(R.string.statistics_tab_name));
-
-            TabSpec settingsTab = m_tabHost.newTabSpec("settings");
-            settingsTab.setContent(R.id.settingsView);
-            settingsTab.setIndicator(getText(R.string.settings_tab_name));
-
-            TabSpec psicashTab = m_tabHost.newTabSpec("psicash");
-            psicashTab.setContent(R.id.psicashTab);
-            psicashTab.setIndicator(getText(R.string.psicash_tab_name));
-
-            TabSpec logsTab = m_tabHost.newTabSpec("logs");
-            logsTab.setContent(R.id.logsTab);
-            logsTab.setIndicator(getText(R.string.logs_tab_name));
-
-            m_tabHost.addTab(homeTab);
-            m_tabHost.addTab(statisticsTab);
-            m_tabHost.addTab(settingsTab);
-            m_tabHost.addTab(psicashTab);
-            m_tabHost.addTab(logsTab);
+            for (TabSpec tabSpec : m_tabSpecsList) {
+                m_tabHost.addTab(tabSpec);
+            }
 
             m_gestureDetector = new GestureDetector(this, new LateralGestureDetector());
             OnTouchListener onTouchListener = new OnTouchListener() {

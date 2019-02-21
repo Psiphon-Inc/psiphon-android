@@ -67,7 +67,7 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ExpiringPurchaseListener purchaseListener = (context, purchase) -> {
+        ExpiringPurchaseListener expiringPurchaseListener = (context, purchase) -> {
             // Store authorization from the purchase
             Authorization authorization = Authorization.fromBase64Encoded(purchase.authorization);
             Authorization.storeAuthorization(context, authorization);
@@ -77,7 +77,7 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
             LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
         };
 
-        psiCashViewModel = ViewModelProviders.of(this, new PsiCashViewModelFactory(getActivity().getApplication(), purchaseListener))
+        psiCashViewModel = ViewModelProviders.of(this, new PsiCashViewModelFactory(getActivity().getApplication(), expiringPurchaseListener))
                 .get(PsiCashViewModel.class);
         intentsPublishRelay = PublishRelay.<Intent>create().toSerialized();
         tunnelConnectionStateBehaviorRelay = BehaviorRelay.<TunnelConnectionState>create().toSerialized();

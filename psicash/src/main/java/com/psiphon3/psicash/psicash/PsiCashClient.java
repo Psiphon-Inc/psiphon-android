@@ -180,7 +180,7 @@ public class PsiCashClient {
         return "";
     }
 
-    public boolean hasValidTokens() throws RuntimeException {
+    public boolean hasValidTokens() throws PsiCashError.CriticalError {
         PsiCashLib.ValidTokenTypesResult validTokenTypesResult = psiCashLib.validTokenTypes();
         if (validTokenTypesResult.error != null) {
             throw new PsiCashError.CriticalError("PsiCashLib.ValidTokenTypesResult error: " + validTokenTypesResult.error);
@@ -188,7 +188,7 @@ public class PsiCashClient {
         return validTokenTypesResult.validTokenTypes.size() > 0;
     }
 
-    private boolean hasToken(PsiCashLib.TokenType tokenType) throws RuntimeException {
+    private boolean hasToken(PsiCashLib.TokenType tokenType) throws PsiCashError.CriticalError {
         PsiCashLib.ValidTokenTypesResult validTokenTypesResult = psiCashLib.validTokenTypes();
         if (validTokenTypesResult.error != null) {
             throw new PsiCashError.CriticalError("PsiCashLib.ValidTokenTypesResult error: " + validTokenTypesResult.error);
@@ -196,19 +196,19 @@ public class PsiCashClient {
         return validTokenTypesResult.validTokenTypes.contains(tokenType);
     }
 
-    public boolean hasEarnerToken() {
+    public boolean hasEarnerToken() throws PsiCashError.CriticalError {
         return hasToken(PsiCashLib.TokenType.EARNER);
     }
 
-    boolean hasSpenderToken() {
+    public boolean hasSpenderToken() throws PsiCashError.CriticalError {
         return hasToken(PsiCashLib.TokenType.SPENDER);
     }
 
-    boolean hasIndicatorToken() {
+    public boolean hasIndicatorToken() throws PsiCashError.CriticalError {
         return hasToken(PsiCashLib.TokenType.INDICATOR);
     }
 
-    boolean hasAccountToken() {
+    boolean hasAccountToken() throws PsiCashError.CriticalError {
         return hasToken(PsiCashLib.TokenType.ACCOUNT);
     }
 

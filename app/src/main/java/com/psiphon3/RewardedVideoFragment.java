@@ -4,6 +4,7 @@ import android.arch.lifecycle.ViewModelProviders;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +14,7 @@ import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.psicash.mvibase.MviView;
+import com.psiphon3.psicash.psicash.PsiCashClient;
 import com.psiphon3.psicash.rewardedvideo.Intent;
 import com.psiphon3.psicash.rewardedvideo.RewardedVideoClient;
 import com.psiphon3.psicash.rewardedvideo.RewardedVideoViewModel;
@@ -52,7 +54,7 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        RewardedVideoClient.getInstance(getContext()).initAdsWithActivity(getActivity());
+        RewardedVideoClient.getInstance().initWithActivity(getActivity());
         watchRewardedVideoBtn = getActivity().findViewById(R.id.watch_rewardedvideo_btn);
     }
 
@@ -88,14 +90,23 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
 
     @Override
     public Observable<Intent> intents() {
-        return Observable.combineLatest(loadVideoActionPublishObservable()
-                        .startWith(RewardedVideoViewState.ViewAction.LOAD_VIDEO_ACTION)
-                , connectionStateObservable(),
-                (__, s) -> Intent.LoadVideoAd.create(s));
+        return Observable.combineLatest(
+                hasValidTokensObservable(),
+                loadVideoActionPublishObservable()
+                        .startWith(RewardedVideoViewState.ViewAction.LOAD_VIDEO_ACTION),
+                connectionStateObservable(),
+                (ignore1, ignore2, s) -> Intent.LoadVideoAd.create(s));
     }
 
     private Observable<RewardedVideoViewState.ViewAction> loadVideoActionPublishObservable() {
         return loadVideoActionPublishRelay.hide();
+    }
+
+    private Observable<Boolean> hasValidTokensObservable() {
+        return Observable.fromCallable(() -> PsiCashClient.getInstance(getContext()).hasValidTokens())
+                .doOnError(err -> Log.d("PsiCash", this.getClass().getSimpleName() + err))
+                .onErrorResumeNext(Observable.just(Boolean.FALSE))
+                .filter(s -> s);
     }
 
     private Observable<TunnelConnectionState> connectionStateObservable() {
