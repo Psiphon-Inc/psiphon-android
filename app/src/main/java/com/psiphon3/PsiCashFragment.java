@@ -24,7 +24,7 @@ import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.psicash.Intent;
 import com.psiphon3.psicash.psicash.PsiCashClient;
-import com.psiphon3.psicash.psicash.PsiCashError;
+import com.psiphon3.psicash.psicash.PsiCashException;
 import com.psiphon3.psicash.psicash.ExpiringPurchaseListener;
 import com.psiphon3.psicash.psicash.PsiCashViewModel;
 import com.psiphon3.psicash.psicash.PsiCashViewModelFactory;
@@ -32,6 +32,7 @@ import com.psiphon3.psicash.psicash.PsiCashViewState;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psicash.util.TunnelConnectionState;
 import com.psiphon3.psiphonlibrary.Authorization;
+import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
 import java.util.Date;
@@ -193,8 +194,8 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
         if (error != null) {
             String errorMessage;
 
-            if (error instanceof PsiCashError) {
-                PsiCashError e = (PsiCashError) error;
+            if (error instanceof PsiCashException) {
+                PsiCashException e = (PsiCashException) error;
                 errorMessage = e.getUIMessage();
             } else {
                 // TODO: log and show 'unknown error' to the user
@@ -245,12 +246,14 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
     }
 
     private void removeExpiredPurchases() {
-        List<String> purchasesToRemove = Authorization.getRemovedSpeedBoostAuthorizationIds(getContext());
-        PsiCashClient.getInstance(getContext()).removePurchases(purchasesToRemove);
-        Authorization.clearRemovedSpeedBoostAuthorizationIds(getContext());
+        try {
+            List<String> purchasesToRemove = Authorization.getRemovedSpeedBoostAuthorizationIds(getContext());
+            PsiCashClient.getInstance(getContext()).removePurchases(purchasesToRemove);
+            Authorization.clearRemovedSpeedBoostAuthorizationIds(getContext());
+        } catch (PsiCashException e) {
+            Utils.MyLog.g("Error removing expired purchases: " + e);
+        }
     }
-
-
 
     public void onTunnelConnectionState(TunnelConnectionState status) {
         tunnelConnectionStateBehaviorRelay.accept(status);

@@ -2,13 +2,21 @@ package com.psiphon3.psicash.psicash;
 
 import ca.psiphon.psicashlib.PsiCashLib;
 
-public interface PsiCashError {
-    String getUIMessage();
+public abstract class PsiCashException extends Exception {
+    public PsiCashException(String message) {
+        super(message);
+    }
 
-    class TransactionError extends RuntimeException implements PsiCashError {
+    public PsiCashException() {
+        super();
+    }
+
+    public abstract String getUIMessage();
+
+    static class Transaction extends PsiCashException {
         private PsiCashLib.Status status;
 
-        public TransactionError(PsiCashLib.Status s) {
+        public Transaction(PsiCashLib.Status s) {
             status = s;
         }
 
@@ -46,14 +54,14 @@ public interface PsiCashError {
         }
     }
 
-    class CriticalError extends RuntimeException implements PsiCashError {
+    static class Critical extends PsiCashException {
         String uiMesssage = null;
 
-        public CriticalError(String message) {
+        public Critical(String message) {
             super(message);
         }
 
-        public CriticalError(String errorMessage, String uiMessage) {
+        public Critical(String errorMessage, String uiMessage) {
             super(errorMessage);
             this.uiMesssage = uiMessage;
         }
@@ -68,15 +76,15 @@ public interface PsiCashError {
         }
     }
 
-    class RecoverableError extends RuntimeException implements PsiCashError {
+    static class Recoverable extends PsiCashException {
         String uiMesssage = null;
 
-        public RecoverableError(String errorMessage, String uiMessage) {
+        public Recoverable(String errorMessage, String uiMessage) {
             super(errorMessage);
             this.uiMesssage = uiMessage;
         }
 
-        public RecoverableError(String message) {
+        public Recoverable(String message) {
             super(message);
         }
 

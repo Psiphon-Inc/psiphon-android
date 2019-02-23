@@ -99,6 +99,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT = "listeningLocalSocksProxyPort";
     static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT = "listeningLocalHttpProxyPort";
     static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
+    static final String DATA_TUNNEL_STATE_SPONSOR_ID = "sponsorId";
     static final String DATA_TUNNEL_STATE_HOME_PAGES = "homePages";
     static final String DATA_TRANSFER_STATS_CONNECTED_TIME = "dataTransferStatsConnectedTime";
     static final String DATA_TRANSFER_STATS_TOTAL_BYTES_SENT = "dataTransferStatsTotalBytesSent";
@@ -151,7 +152,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         public boolean isVPN = false;
         int listeningLocalSocksProxyPort = 0;
         public int listeningLocalHttpProxyPort = 0;
-        String clientRegion;
+        public String clientRegion;
+        public String sponsorId;
         ArrayList<String> homePages = new ArrayList<>();
     }
 
@@ -518,12 +520,16 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     }
 
     private Bundle getTunnelStateBundle() {
+        // Update with the latest sponsorId from the tunnel config
+        m_tunnelState.sponsorId = m_tunnelConfig.sponsorId;
+
         Bundle data = new Bundle();
         data.putBoolean(DATA_TUNNEL_STATE_IS_VPN, m_tunnelState.isVPN);
         data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, m_tunnelState.isConnected);
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT, m_tunnelState.listeningLocalSocksProxyPort);
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT, m_tunnelState.listeningLocalHttpProxyPort);
         data.putString(DATA_TUNNEL_STATE_CLIENT_REGION, m_tunnelState.clientRegion);
+        data.putString(DATA_TUNNEL_STATE_SPONSOR_ID, m_tunnelState.sponsorId);
         data.putStringArrayList(DATA_TUNNEL_STATE_HOME_PAGES, m_tunnelState.homePages);
         return data;
     }

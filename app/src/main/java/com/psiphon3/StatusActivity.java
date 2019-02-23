@@ -70,9 +70,10 @@ import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
 import com.mopub.nativeads.GooglePlayServicesNative;
 import com.psiphon3.psicash.psicash.PsiCashClient;
-import com.psiphon3.psicash.psicash.PsiCashError;
+import com.psiphon3.psicash.psicash.PsiCashException;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psicash.util.TunnelConnectionState;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -216,16 +217,15 @@ public class StatusActivity
             resumeServiceStateUI();
             doStartUp();
         }
-
-        // Hide or show the PsiCash tab depending on whether PsiCash has valid tokens
-        try  {
+        // Hide or show the PsiCash tab depending on presence of valid PsiCash tokens
+        try {
             if (PsiCashClient.getInstance(this).hasValidTokens()) {
                 showPsiCashTab();
             } else {
                 hidePsiCashTab();
             }
-        } catch (PsiCashError.CriticalError error) {
-            MyLog.g("Error showing Psicash tab: " + error);
+        } catch (PsiCashException e) {
+            MyLog.g("Error showing or hiding PsiCash tab: " + e);
         }
     }
 
@@ -370,12 +370,20 @@ public class StatusActivity
         if(!state.isConnected) {
             deInitTunneledAds();
         }
-        TunnelConnectionState status = state.isConnected ?
-                TunnelConnectionState.connected(state.isVPN, state.listeningLocalHttpProxyPort) :
-                TunnelConnectionState.disconnected();
-
-        psiCashFragment.onTunnelConnectionState(status);
-        rewardedVideoFragment.onTunnelConnectionState(status);
+        TunnelConnectionState tunnelConnectionState;
+        if (state.isConnected) {
+            TunnelConnectionState.PsiCashMetaData psiCashMetaData = TunnelConnectionState.PsiCashMetaData.builder()
+                    .setClientRegion(state.clientRegion)
+                    .setClientVersion(EmbeddedValues.CLIENT_VERSION)
+                    .setPropagationChannelId(EmbeddedValues.PROPAGATION_CHANNEL_ID)
+                    .setSponsorId(state.sponsorId)
+                    .build();
+            tunnelConnectionState = TunnelConnectionState.connected(state.isVPN, state.listeningLocalHttpProxyPort, psiCashMetaData);
+        } else {
+            tunnelConnectionState = TunnelConnectionState.disconnected();
+        }
+        psiCashFragment.onTunnelConnectionState(tunnelConnectionState);
+        rewardedVideoFragment.onTunnelConnectionState(tunnelConnectionState);
     }
 
     protected void HandleCurrentIntent()

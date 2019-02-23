@@ -20,7 +20,6 @@ public interface Result {
 
         @NonNull
         static VideoReady failure(Throwable error) {
-            // TODO log error
             return new AutoValue_Result_VideoReady(LceStatus.FAILURE, null, error);
         }
 

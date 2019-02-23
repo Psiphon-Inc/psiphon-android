@@ -26,8 +26,8 @@ class RewardedVideoActionProcessorHolder {
                                 }
                                 throw new IllegalArgumentException("Unknown result: " + r);
                             })
-                            .startWith(Result.VideoReady.inFlight())
-                            .onErrorReturn(Result.VideoReady::failure));
+                            .startWith(Result.VideoReady.inFlight()))
+                    .onErrorReturn(Result.VideoReady::failure);
 
     ObservableTransformer<Action, Result> actionProcessor =
             actions -> actions.publish(shared ->

@@ -85,6 +85,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
+import com.psiphon3.psicash.psicash.PsiCashClient;
+import com.psiphon3.psicash.psicash.PsiCashException;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.R;
@@ -1477,7 +1479,20 @@ public abstract class MainBase {
 
         protected ArrayList<String> getHomePages() {
             ArrayList<String> homePages = new ArrayList<>();
-            homePages.addAll(m_tunnelState.homePages);
+            try {
+                PsiCashClient psiCashClient = PsiCashClient.getInstance(getContext());
+                if (psiCashClient.hasValidTokens()) {
+                    for (String homePageUrl : m_tunnelState.homePages) {
+                        homePages.add(PsiCashClient.getInstance(getContext()).modifiedHomePageURL(homePageUrl));
+                    }
+                } else {
+                    homePages.addAll(m_tunnelState.homePages);
+                }
+            } catch (PsiCashException e) {
+                MyLog.g("Error modifying home pages: " + e);
+                homePages.clear();
+                homePages.addAll(m_tunnelState.homePages);
+            }
             return homePages;
         }
 
@@ -1510,6 +1525,7 @@ public abstract class MainBase {
             m_tunnelState.listeningLocalSocksProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT);
             m_tunnelState.listeningLocalHttpProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT);
             m_tunnelState.clientRegion = data.getString(TunnelManager.DATA_TUNNEL_STATE_CLIENT_REGION);
+            m_tunnelState.sponsorId = data.getString(TunnelManager.DATA_TUNNEL_STATE_SPONSOR_ID);
             ArrayList<String> homePages = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_HOME_PAGES);
             if (homePages != null) {
                 m_tunnelState.homePages = homePages;
