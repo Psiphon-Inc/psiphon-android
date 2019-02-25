@@ -196,6 +196,7 @@ public class StatusActivity
         if (!getSkipHomePage())
         {
             resetSponsorHomePage(freshConnect);
+        }
     }
 
     private void setUpBanner() {
@@ -270,7 +271,6 @@ public class StatusActivity
             }
         });
         return entries.get(0).getKey();
-        }
     }
 
     @Override
