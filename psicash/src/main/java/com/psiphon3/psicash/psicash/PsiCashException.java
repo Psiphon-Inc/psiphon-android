@@ -3,18 +3,18 @@ package com.psiphon3.psicash.psicash;
 import ca.psiphon.psicashlib.PsiCashLib;
 
 public abstract class PsiCashException extends Exception {
-    public PsiCashException(String message) {
+    PsiCashException(String message) {
         super(message);
     }
 
-    public PsiCashException() {
+    PsiCashException() {
         super();
     }
 
     public abstract String getUIMessage();
 
     static class Transaction extends PsiCashException {
-        private PsiCashLib.Status status;
+        private final PsiCashLib.Status status;
 
         public Transaction(PsiCashLib.Status s) {
             status = s;

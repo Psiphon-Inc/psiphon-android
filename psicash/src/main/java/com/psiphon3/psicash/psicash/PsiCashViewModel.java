@@ -26,12 +26,12 @@ import io.reactivex.schedulers.Schedulers;
 public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
     private static final String DISTINGUISHER_1HR = "1hr";
     private static final String TAG = "PsiCashViewModel";
-    private PublishRelay<Intent> intentPublishRelay;
-    private Observable<PsiCashViewState> psiCashViewStateObservable;
-    private CompositeDisposable compositeDisposable;
+    private final PublishRelay<Intent> intentPublishRelay;
+    private final Observable<PsiCashViewState> psiCashViewStateObservable;
+    private final CompositeDisposable compositeDisposable;
 
     @NonNull
-    private PsiCashActionProcessorHolder psiCashActionProcessorHolder;
+    private final PsiCashActionProcessorHolder psiCashActionProcessorHolder;
 
     PsiCashViewModel(@NonNull Application application, ExpiringPurchaseListener expiringPurchaseListener) {
         super(application);
@@ -50,7 +50,7 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
      * This is basically like a big switch statement of all possible types for the {@link MviResult}
      */
 
-    private static BiFunction<PsiCashViewState, Result, PsiCashViewState> reducer =
+    private static final BiFunction<PsiCashViewState, Result, PsiCashViewState> reducer =
             (previousState, result) -> {
                 Log.d(TAG, "reducer: result: " + result);
                 PsiCashViewState.Builder stateBuilder = previousState.withState();

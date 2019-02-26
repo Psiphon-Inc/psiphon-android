@@ -15,7 +15,7 @@ import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,10 +40,10 @@ public class PsiCashClient {
 
     private static PsiCashClient INSTANCE = null;
 
-    private PsiCashLib psiCashLib;
+    private final PsiCashLib psiCashLib;
     private int httpProxyPort;
-    private OkHttpClient okHttpClient;
-    private SharedPreferences sharedPreferences;
+    private final OkHttpClient okHttpClient;
+    private final SharedPreferences sharedPreferences;
 
     private PsiCashClient(final Context context) throws PsiCashException {
         sharedPreferences = context.getSharedPreferences(PSICASH_PREFERENCES_KEY, Context.MODE_PRIVATE);
@@ -124,7 +124,7 @@ public class PsiCashClient {
     }
 
     private List<String> getPurchaseClasses() {
-        return new ArrayList<>(Arrays.asList("speed-boost"));
+        return Collections.singletonList("speed-boost");
     }
 
     private void setPsiCashRequestMetaData(TunnelConnectionState.PsiCashMetaData psiCashMetaData) throws PsiCashException {
@@ -146,7 +146,7 @@ public class PsiCashClient {
         }
     }
 
-    public void setOkHttpClientHttpProxyPort(int httpProxyPort) throws PsiCashException.Critical {
+    private void setOkHttpClientHttpProxyPort(int httpProxyPort) throws PsiCashException.Critical {
         if (httpProxyPort <= 0) {
             throw new PsiCashException.Critical("Bad OkHttp client proxy port value: " + httpProxyPort);
         }
@@ -179,11 +179,6 @@ public class PsiCashClient {
                 throw new PsiCashException.Critical(errorMessage);
             }
         }
-    }
-
-    // TODO implement and use this
-    public String logForFeedback() {
-        return "";
     }
 
     public boolean hasValidTokens() throws PsiCashException {
@@ -234,6 +229,17 @@ public class PsiCashClient {
     private PsiCashModel.PsiCash psiCashModelFromLib() throws PsiCashException {
         PsiCashModel.PsiCash.Builder builder = PsiCashModel.PsiCash.builder();
 
+        PsiCashLib.GetDiagnosticInfoResult diagnosticInfoResult = psiCashLib.getDiagnosticInfo();
+        if (diagnosticInfoResult.error != null) {
+            String errorMessage = "PsiCashLib.GetPurchasePricesResult error: " + diagnosticInfoResult.error.message;
+            if (diagnosticInfoResult.error.critical) {
+                throw new PsiCashException.Recoverable(errorMessage);
+            } else {
+                throw new PsiCashException.Critical(errorMessage);
+            }
+        }
+        builder.diagnosticInfo(diagnosticInfoResult.jsonString);
+
         PsiCashLib.BalanceResult balanceResult = psiCashLib.balance();
         if (balanceResult.error != null) {
             String errorMessage = "PsiCashLib.BalanceResult error: " + balanceResult.error.message;
@@ -243,7 +249,6 @@ public class PsiCashClient {
                 throw new PsiCashException.Recoverable(errorMessage);
             }
         }
-
         builder.balance(balanceResult.balance);
 
         PsiCashLib.GetPurchasePricesResult getPurchasePricesResult = psiCashLib.getPurchasePrices();
@@ -273,7 +278,7 @@ public class PsiCashClient {
         return builder.build();
     }
 
-    // May return either PsiCashModel.PsiCash or PsiCashModel.ExpiringPurchase
+    // Emits both PsiCashModel.PsiCash and PsiCashModel.ExpiringPurchase
     Observable<? extends PsiCashModel> makeExpiringPurchase(TunnelConnectionState connectionState, PsiCashLib.PurchasePrice price) {
         return Observable.just(Pair.create(connectionState, price))
                 .observeOn(Schedulers.io())
@@ -285,11 +290,12 @@ public class PsiCashClient {
                         throw new PsiCashException.Recoverable("makeExpiringPurchase: not connected.", "Please connect to make a Speed Boost purchase.");
                     }
                     if (p == null) {
-                        throw new PsiCashException.Critical("Purchase price is null!");
+                        throw new PsiCashException.Critical("makeExpiringPurchase: purchase price is null.");
                     }
 
-                    if (connectionState.psiCashMetaData() != null) {
-                        setPsiCashRequestMetaData(connectionState.psiCashMetaData());
+                    TunnelConnectionState.PsiCashMetaData psiCashMetaData = state.psiCashMetaData();
+                    if (psiCashMetaData != null) {
+                        setPsiCashRequestMetaData(psiCashMetaData);
                     }
                     setOkHttpClientHttpProxyPort(state.httpPort());
 
@@ -335,9 +341,12 @@ public class PsiCashClient {
                         return getPsiCashLocal();
                     } else if (c.status() == TunnelConnectionState.Status.CONNECTED) {
                         setOkHttpClientHttpProxyPort(c.httpPort());
-                        if (c.psiCashMetaData() != null) {
-                            setPsiCashRequestMetaData(c.psiCashMetaData());
+
+                        TunnelConnectionState.PsiCashMetaData psiCashMetaData = c.psiCashMetaData();
+                        if (psiCashMetaData != null) {
+                            setPsiCashRequestMetaData(psiCashMetaData);
                         }
+
                         return Completable.fromAction(() -> {
                             PsiCashLib.RefreshStateResult result = psiCashLib.refreshState(getPurchaseClasses());
                             if (result.error != null) {
@@ -381,7 +390,7 @@ public class PsiCashClient {
         psiCashLib.removePurchases(purchasesToRemove);
     }
 
-    public class PsiCashLibTester extends PsiCashLib {
+    class PsiCashLibTester extends PsiCashLib {
         @Override
         public Error init(String fileStoreRoot, HTTPRequester httpRequester) {
             return init(fileStoreRoot, httpRequester, true);

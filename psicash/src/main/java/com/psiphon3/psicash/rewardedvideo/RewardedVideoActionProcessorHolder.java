@@ -8,39 +8,35 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
 
 class RewardedVideoActionProcessorHolder {
-    private Context context;
+    private final ObservableTransformer<Action.LoadVideoAd, Result> loadVideoAdProcessor;
+    final ObservableTransformer<Action, Result> actionProcessor;
 
-    private ObservableTransformer<Action.LoadVideoAd, Result>
-            loadVideoAdProcessor = actions ->
-            actions.switchMap(action ->
-                    RewardedVideoClient.getInstance().loadRewardedVideo(context, action.connectionState(), PsiCashClient.getInstance(context).rewardedVideoCustomData())
-                            .map(r -> {
-                                if (r instanceof RewardedVideoModel.VideoReady) {
-                                    return Result.VideoReady.success((RewardedVideoModel.VideoReady) r);
-                                } else if (r instanceof RewardedVideoModel.Reward) {
-                                    // Store the reward amount
-                                    PsiCashClient.getInstance(context).putVideoReward(((RewardedVideoModel.Reward) r).amount());
-                                    return Result.Reward.success((RewardedVideoModel.Reward) r);
-                                } else if (r instanceof RewardedVideoModel.VideoClosed) {
-                                    return Result.VideoClosed.success();
-                                }
-                                throw new IllegalArgumentException("Unknown result: " + r);
-                            })
-                            .startWith(Result.VideoReady.inFlight()))
-                    .onErrorReturn(Result.VideoReady::failure);
+    RewardedVideoActionProcessorHolder(Context context, RewardListener rewardListener) {
+        this.loadVideoAdProcessor = actions ->
+                actions.switchMap(action ->
+                        RewardedVideoClient.getInstance().loadRewardedVideo(context, action.connectionState(), PsiCashClient.getInstance(context).rewardedVideoCustomData())
+                                .map(r -> {
+                                    if (r instanceof RewardedVideoModel.VideoReady) {
+                                        return Result.VideoReady.success((RewardedVideoModel.VideoReady) r);
+                                    } else if (r instanceof RewardedVideoModel.Reward) {
+                                        rewardListener.onNewReward(context, ((RewardedVideoModel.Reward) r).amount());
+                                        return Result.Reward.success((RewardedVideoModel.Reward) r);
+                                    }
+                                    throw new IllegalArgumentException("Unknown result: " + r);
+                                })
+                                .startWith(Result.VideoReady.inFlight())
+                                // load a new one after completion until disposed of by switchMap to next action
+                                .repeat()
+                                .onErrorReturn(Result.VideoReady::failure));
 
-    ObservableTransformer<Action, Result> actionProcessor =
-            actions -> actions.publish(shared ->
-                    shared.ofType(Action.LoadVideoAd.class).compose(loadVideoAdProcessor)
-                            .cast(Result.class).mergeWith(
-                            // Error for not implemented actions
-                            shared.filter(v -> !(v instanceof Action.LoadVideoAd))
-                                    .flatMap(w -> Observable.error(
-                                            new IllegalArgumentException("Unknown action: " + w)))));
+        this.actionProcessor = actions -> actions.publish(
+                shared -> shared.ofType(Action.LoadVideoAd.class).compose(loadVideoAdProcessor)
+                        .cast(Result.class).mergeWith(
+                                // Error for not implemented actions
+                                shared.filter(v -> !(v instanceof Action.LoadVideoAd))
+                                        .flatMap(w -> Observable.error(
+                                                new IllegalArgumentException("Unknown action: " + w)))));
 
-
-    RewardedVideoActionProcessorHolder(Context context) {
-        this.context = context;
     }
 
 }

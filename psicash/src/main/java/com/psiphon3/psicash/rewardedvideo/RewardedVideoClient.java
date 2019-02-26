@@ -90,7 +90,7 @@ public class RewardedVideoClient {
                 @Override
                 public void onRewardedVideoClosed(@NonNull String adUnitId) {
                     if (!emitter.isDisposed()) {
-                        emitter.onNext(RewardedVideoModel.VideoClosed.create());
+                        emitter.onComplete();
                     }
                 }
 
@@ -126,7 +126,7 @@ public class RewardedVideoClient {
                 @Override
                 public void onRewardedVideoAdClosed() {
                     if (!emitter.isDisposed()) {
-                        emitter.onNext(RewardedVideoModel.VideoClosed.create());
+                        emitter.onComplete();
                     }
                 }
 
@@ -166,6 +166,7 @@ public class RewardedVideoClient {
 
     Observable<? extends RewardedVideoModel> loadRewardedVideo(Context context, TunnelConnectionState connectionState, String rewardCustomData) {
         return Observable.just(Pair.create(connectionState, rewardCustomData))
+                .observeOn(AndroidSchedulers.mainThread())
                 .flatMap(pair -> {
                     TunnelConnectionState state = pair.first;
                     String customData = pair.second;
@@ -178,13 +179,11 @@ public class RewardedVideoClient {
                     // Either disconnected or BOM should load AdMob ads
                     if (state.status() == TunnelConnectionState.Status.DISCONNECTED ||
                             (state.status() == TunnelConnectionState.Status.CONNECTED && !state.vpnMode())) {
-                        return loadAdMobVideos(customData)
-                                .subscribeOn(AndroidSchedulers.mainThread());
+                        return loadAdMobVideos(customData);
                     }
                     // Connected WDM should load MoPub
                     if (state.status() == TunnelConnectionState.Status.CONNECTED && state.vpnMode()) {
-                        return loadMoPubVideos(customData)
-                                .subscribeOn(AndroidSchedulers.mainThread());
+                        return loadMoPubVideos(customData);
                     }
                     // Did we miss a case?
                     throw new IllegalArgumentException("Loading video for " + state + " is not implemented.");

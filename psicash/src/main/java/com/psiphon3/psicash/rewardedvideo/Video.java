@@ -22,11 +22,4 @@ interface RewardedVideoModel {
 
         public abstract long amount();
     }
-
-    @AutoValue
-    abstract class VideoClosed implements RewardedVideoModel {
-        public static VideoClosed create() {
-            return new AutoValue_RewardedVideoModel_VideoClosed();
-        }
-    }
 }

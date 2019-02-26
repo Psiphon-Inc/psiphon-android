@@ -43,12 +43,4 @@ public interface Result {
         @Nullable
         abstract RewardedVideoModel.Reward model();
     }
-
-    @AutoValue
-    abstract class VideoClosed implements Result {
-        @NonNull
-        static VideoClosed success() {
-            return new AutoValue_Result_VideoClosed();
-        }
-    }
 }

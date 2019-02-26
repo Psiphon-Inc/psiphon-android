@@ -17,7 +17,7 @@ public class PsiCashViewModelFactory implements ViewModelProvider.Factory {
 
     @NonNull
     @Override
-    public <T extends ViewModel> T create(Class<T> modelClass) {
+    public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
         if (modelClass.isAssignableFrom(PsiCashViewModel.class)) {
             return (T) new PsiCashViewModel(application, expiringPurchaseListener);
         }

@@ -29,7 +29,7 @@ public class RewardedVideoViewModel extends AndroidViewModel implements MviViewM
      * This is basically like a big switch statement of all possible types for the {@link MviResult}
      */
 
-    private static BiFunction<RewardedVideoViewState, Result, RewardedVideoViewState> reducer =
+    private static final BiFunction<RewardedVideoViewState, Result, RewardedVideoViewState> reducer =
             (previousState, result) -> {
                 Log.d(TAG, "reducer: result: " + result);
                 RewardedVideoViewState.Builder stateBuilder = previousState.withLastState();
@@ -37,40 +37,41 @@ public class RewardedVideoViewModel extends AndroidViewModel implements MviViewM
                     Result.VideoReady loadResult = (Result.VideoReady) result;
                     switch (loadResult.status()) {
                         case SUCCESS:
+                            RewardedVideoModel.VideoReady model = loadResult.model();
+                            if ( model != null ) {
+                                stateBuilder.videoPlayRunnable(model.videoPlayRunnable());
+                            }
                             return stateBuilder
-                                    .videoPlayRunnable(loadResult.model().videoPlayRunnable())
                                     .build();
                         case FAILURE:
                             return stateBuilder
+                                    .error(loadResult.error())
                                     .videoPlayRunnable(null)
                                     .build();
                         case IN_FLIGHT:
                             return stateBuilder
+                                    .error(null)
                                     .videoPlayRunnable(null)
                                     .build();
                     }
 
                 } else if (result instanceof Result.Reward) {
-                    return stateBuilder
-                            .addViewAction(RewardedVideoViewState.ViewAction.REWARD_ACTION)
-                            .build();
-                } else if (result instanceof Result.VideoClosed) {
-                    return stateBuilder
-                            .addViewAction(RewardedVideoViewState.ViewAction.LOAD_VIDEO_ACTION)
-                            .build();
+                    // Reward is taken care of by the processor, just return previous state
+                    return  previousState;
                 }
                 throw new IllegalArgumentException("Don't know how to reduce result: " + result);
             };
-    private Observable<RewardedVideoViewState> rewardedVideoViewStateObservable;
-    private CompositeDisposable compositeDisposable;
-    private PublishRelay<Intent> intentPublishRelay;
-    @NonNull
-    private RewardedVideoActionProcessorHolder rewardedVideoActionProcessorHolder;
 
-    public RewardedVideoViewModel(@NonNull Application application) {
+    private final Observable<RewardedVideoViewState> rewardedVideoViewStateObservable;
+    private final CompositeDisposable compositeDisposable;
+    private final PublishRelay<Intent> intentPublishRelay;
+    @NonNull
+    private final RewardedVideoActionProcessorHolder rewardedVideoActionProcessorHolder;
+
+    public RewardedVideoViewModel(@NonNull Application application, @NonNull RewardListener rewardListener) {
         super(application);
 
-        rewardedVideoActionProcessorHolder = new RewardedVideoActionProcessorHolder(application);
+        rewardedVideoActionProcessorHolder = new RewardedVideoActionProcessorHolder(application, rewardListener);
         intentPublishRelay = PublishRelay.create();
         rewardedVideoViewStateObservable = compose();
         compositeDisposable = new CompositeDisposable();
@@ -80,7 +81,7 @@ public class RewardedVideoViewModel extends AndroidViewModel implements MviViewM
         return intentPublishRelay
                 .observeOn(Schedulers.computation())
                 // Translate intents to actions, some intents may map to multiple actions
-                .flatMap(this::actionFromIntent)
+                .map(this::actionFromIntent)
                 .compose(rewardedVideoActionProcessorHolder.actionProcessor)
                 // Cache each state and pass it to the reducer to create a new state from
                 // the previous cached one and the latest Result emitted from the action processor.
@@ -103,11 +104,11 @@ public class RewardedVideoViewModel extends AndroidViewModel implements MviViewM
      * Translate an {@link MviIntent} to an {@link MviAction}.
      * Used to decouple the UI and the business logic to allow easy testings and reusability.
      */
-    private Observable<Action> actionFromIntent(MviIntent intent) {
+    private Action actionFromIntent(MviIntent intent) {
         if (intent instanceof Intent.LoadVideoAd) {
             Intent.LoadVideoAd i = (Intent.LoadVideoAd) intent;
             final TunnelConnectionState status = i.connectionState();
-            return Observable.just(Action.LoadVideoAd.create(status));
+            return Action.LoadVideoAd.create(status);
         }
         throw new IllegalArgumentException("Do not know how to treat this intent " + intent);
     }

@@ -19,6 +19,8 @@ public interface PsiCashModel {
 
         public abstract long reward();
 
+        public abstract String diagnosticInfo();
+
         @Nullable
         public abstract List<PsiCashLib.PurchasePrice> purchasePrices();
 
@@ -29,7 +31,9 @@ public interface PsiCashModel {
         abstract static class Builder {
             abstract Builder balance(long balance);
 
-            abstract Builder reward(long balance);
+            abstract Builder reward(long reward);
+
+            abstract Builder diagnosticInfo(String info);
 
             abstract Builder purchasePrices(@Nullable List<PsiCashLib.PurchasePrice> purchasePrices);
 

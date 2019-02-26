@@ -15,27 +15,31 @@ import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.psicash.PsiCashClient;
+import com.psiphon3.psicash.psicash.PsiCashException;
 import com.psiphon3.psicash.rewardedvideo.Intent;
+import com.psiphon3.psicash.rewardedvideo.RewardListener;
 import com.psiphon3.psicash.rewardedvideo.RewardedVideoClient;
 import com.psiphon3.psicash.rewardedvideo.RewardedVideoViewModel;
+import com.psiphon3.psicash.rewardedvideo.RewardedVideoViewModelFactory;
 import com.psiphon3.psicash.rewardedvideo.RewardedVideoViewState;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psicash.util.TunnelConnectionState;
+import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
-
-import java.util.List;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 
 public class RewardedVideoFragment extends Fragment implements MviView<Intent, RewardedVideoViewState> {
+    enum LoadVideoIntent {LOAD_VIDEO_INTENT};
+
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private Button watchRewardedVideoBtn;
     private Relay<TunnelConnectionState> tunnelConnectionStateBehaviourRelay;
-    private Relay<RewardedVideoViewState.ViewAction> loadVideoActionPublishRelay;
+    private Relay<LoadVideoIntent> loadVideoActionPublishRelay;
 
-    private RewardedVideoViewModel viewModel;
+    private RewardedVideoViewModel rewardedVideoViewModel;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -45,10 +49,23 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        viewModel = ViewModelProviders.of(this).get(RewardedVideoViewModel.class);
+        RewardListener rewardListener = (context, reward) -> {
+            try {
+                // Store the reward amount
+                PsiCashClient.getInstance(context).putVideoReward(reward);
+                // Send broadcast to iPsiCash fragment to pull PsiCash local state
+                android.content.Intent intent = new android.content.Intent(BroadcastIntent.GOT_REWARD_FOR_VIDEO_INTENT);
+                LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
+            } catch (PsiCashException e) {
+                Utils.MyLog.g("Failed to store video reward: " + e);
+            }
+        };
+
+        rewardedVideoViewModel = ViewModelProviders.of(this, new RewardedVideoViewModelFactory(getActivity().getApplication(), rewardListener))
+                .get(RewardedVideoViewModel.class);
 
         tunnelConnectionStateBehaviourRelay = BehaviorRelay.<TunnelConnectionState>create().toSerialized();
-        loadVideoActionPublishRelay = PublishRelay.<RewardedVideoViewState.ViewAction>create().toSerialized();
+        loadVideoActionPublishRelay = PublishRelay.<LoadVideoIntent>create().toSerialized();
     }
 
     @Override
@@ -74,13 +91,13 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
         compositeDisposable.clear();
 
         // Subscribe to the RewardedVideoViewModel and render every emitted state
-        compositeDisposable.add(viewModel.states()
+        compositeDisposable.add(rewardedVideoViewModel.states()
                 // make sure onError doesn't cut ahead of onNext with the observeOn overload
                 .observeOn(AndroidSchedulers.mainThread(), true)
                 .subscribe(this::render));
 
         // Pass the UI's intents to the RewardedVideoViewModel
-        viewModel.processIntents(intents());
+        rewardedVideoViewModel.processIntents(intents());
     }
 
     private void unbind() {
@@ -93,12 +110,12 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
         return Observable.combineLatest(
                 hasValidTokensObservable(),
                 loadVideoActionPublishObservable()
-                        .startWith(RewardedVideoViewState.ViewAction.LOAD_VIDEO_ACTION),
+                        .startWith(LoadVideoIntent.LOAD_VIDEO_INTENT),
                 connectionStateObservable(),
                 (ignore1, ignore2, s) -> Intent.LoadVideoAd.create(s));
     }
 
-    private Observable<RewardedVideoViewState.ViewAction> loadVideoActionPublishObservable() {
+    private Observable<LoadVideoIntent> loadVideoActionPublishObservable() {
         return loadVideoActionPublishRelay.hide();
     }
 
@@ -124,26 +141,6 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
                 videoPlayRunnable.run();
             }
         });
-
-        List<RewardedVideoViewState.ViewAction> actions = state.viewActions();
-        if (actions != null) {
-            for (RewardedVideoViewState.ViewAction action : actions) {
-                performAction(action);
-            }
-        }
-    }
-
-    private void performAction(RewardedVideoViewState.ViewAction action) {
-        switch (action) {
-            case REWARD_ACTION:
-                sendGotRewardForVideoIntent();
-                break;
-            case LOAD_VIDEO_ACTION:
-                loadVideoActionPublishRelay.accept(action);
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown PsiCashViewState.ViewAction: " + action);
-        }
     }
 
     private void sendGotRewardForVideoIntent() {
