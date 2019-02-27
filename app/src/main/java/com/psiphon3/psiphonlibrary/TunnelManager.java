@@ -1307,16 +1307,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             // Remove all not accepted authorizations from the database
             Authorization.removeAuthorizations(getContext(), notAcceptedAuthorizations);
 
-            // Get not accepted authorization ids of speed-boost type
-            // and store them to be used by PsiCash library later.
-            List<String> notAcceptedSpeedBoostAuthorizationIds = new ArrayList<>();
-            for (Authorization a : notAcceptedAuthorizations) {
-                if (a.accessType().equals(Authorization.ACCESS_TYPE_SPEED_BOOST)) {
-                    notAcceptedSpeedBoostAuthorizationIds.add(a.Id());
-                }
-            }
-            Authorization.storeRemovedSpeedBoostAuthorizationIds(getContext(),notAcceptedSpeedBoostAuthorizationIds);
-
             // Subscription check below
             String purchaseAuthorizationID = getPersistedPurchaseAuthorizationId(getContext());
 

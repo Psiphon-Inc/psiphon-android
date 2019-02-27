@@ -25,10 +25,7 @@ import static com.psiphon3.psiphonlibrary.Utils.parseRFC3339Date;
 
 @AutoValue
 public abstract class Authorization {
-    static final String ACCESS_TYPE_SPEED_BOOST = "speed-boost";
-    static final String ACCESS_TYPE_GOOGLE_SUBSCRIPTION = "google-subscription";
     private static final String PREFERENCE_AUTHORIZATIONS_LIST = "preferenceAuthorizations";
-    private static final String PREFERENCE_DELETED_SPEEDBOOST_AUTHORIZATION_IDS_LIST = "preferenceSpeedBoostDeletedIds";
 
     @Nullable
     public static Authorization fromBase64Encoded(String base64EncodedAuthorization) {
@@ -77,7 +74,7 @@ public abstract class Authorization {
     }
 
     @NonNull
-    static List<Authorization> geAllPersistedAuthorizations(Context context) {
+    public static List<Authorization> geAllPersistedAuthorizations(Context context) {
         StringListPreferences preferences = new StringListPreferences(context);
         List<String> encodedAuthList;
         try {
@@ -116,36 +113,6 @@ public abstract class Authorization {
         replaceAllPersistedAuthorizations(context, authorizationList);
     }
 
-    synchronized static void storeRemovedSpeedBoostAuthorizationIds(Context context, List<String> Ids) {
-        if(Ids.size() == 0) {
-            return;
-        }
-        StringListPreferences preferences = new StringListPreferences(context);
-
-        List<String> currentIds = Authorization.getRemovedSpeedBoostAuthorizationIds(context);
-
-        // Merge with no dupes
-        currentIds.removeAll(Ids);
-        currentIds.addAll(Ids);
-
-        preferences.put(PREFERENCE_DELETED_SPEEDBOOST_AUTHORIZATION_IDS_LIST, currentIds);
-    }
-
-    @NonNull
-    public static List<String> getRemovedSpeedBoostAuthorizationIds(Context context) {
-        StringListPreferences preferences = new StringListPreferences(context);
-        try {
-            return preferences.getStringList(PREFERENCE_DELETED_SPEEDBOOST_AUTHORIZATION_IDS_LIST);
-        } catch (ItemNotFoundException e) {
-            return new ArrayList<>();
-        }
-    }
-
-    public synchronized static void clearRemovedSpeedBoostAuthorizationIds(Context context) {
-        StringListPreferences preferences = new StringListPreferences(context);
-        preferences.put(PREFERENCE_DELETED_SPEEDBOOST_AUTHORIZATION_IDS_LIST, new ArrayList<>());
-    }
-
     synchronized static void removeAuthorizations(Context context, List<Authorization> toRemove) {
         if (toRemove.size() == 0) {
             return;
@@ -155,7 +122,7 @@ public abstract class Authorization {
         replaceAllPersistedAuthorizations(context, authorizations);
     }
 
-    abstract String base64EncodedAuthorization();
+    public abstract String base64EncodedAuthorization();
 
     public abstract String Id();
 

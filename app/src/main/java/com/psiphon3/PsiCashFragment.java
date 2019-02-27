@@ -247,22 +247,28 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
     }
 
     private void removeExpiredPurchases() {
+        // remove purchases that are not in the authorizations database.
         try {
-            List<String> purchasesToRemove = new ArrayList<>();
+            // get all persisted authorizations as base64 encoded strings
+            List<String> authorizationsAsString = new ArrayList<>();
+            for (Authorization a : Authorization.geAllPersistedAuthorizations(getContext())) {
+                authorizationsAsString.add(a.base64EncodedAuthorization());
+            }
 
-            List<String> authorizationIds = Authorization.getRemovedSpeedBoostAuthorizationIds(getContext());
             List<PsiCashLib.Purchase> purchases = PsiCashClient.getInstance(getContext()).getPurchases();
 
+            // build a list of purchases to remove by cross referencing
+            // each purchase authorization against the authorization strings list
+            List<String> purchasesToRemove = new ArrayList<>();
             for (PsiCashLib.Purchase purchase : purchases) {
-                Authorization authorization = Authorization.fromBase64Encoded(purchase.authorization);
-                if (authorizationIds.contains(authorization.Id())) {
+                if (!authorizationsAsString.contains(purchase.authorization)) {
                     purchasesToRemove.add(purchase.id);
                 }
             }
+
             if(purchasesToRemove.size() > 0) {
                 PsiCashClient.getInstance(getContext()).removePurchases(purchasesToRemove);
             }
-            Authorization.clearRemovedSpeedBoostAuthorizationIds(getContext());
         } catch (PsiCashException e) {
             Utils.MyLog.g("Error removing expired purchases: " + e);
         }
