@@ -35,6 +35,7 @@ import com.psiphon3.psiphonlibrary.Authorization;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -247,8 +248,20 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
 
     private void removeExpiredPurchases() {
         try {
-            List<String> purchasesToRemove = Authorization.getRemovedSpeedBoostAuthorizationIds(getContext());
-            PsiCashClient.getInstance(getContext()).removePurchases(purchasesToRemove);
+            List<String> purchasesToRemove = new ArrayList<>();
+
+            List<String> authorizationIds = Authorization.getRemovedSpeedBoostAuthorizationIds(getContext());
+            List<PsiCashLib.Purchase> purchases = PsiCashClient.getInstance(getContext()).getPurchases();
+
+            for (PsiCashLib.Purchase purchase : purchases) {
+                Authorization authorization = Authorization.fromBase64Encoded(purchase.authorization);
+                if (authorizationIds.contains(authorization.Id())) {
+                    purchasesToRemove.add(purchase.id);
+                }
+            }
+            if(purchasesToRemove.size() > 0) {
+                PsiCashClient.getInstance(getContext()).removePurchases(purchasesToRemove);
+            }
             Authorization.clearRemovedSpeedBoostAuthorizationIds(getContext());
         } catch (PsiCashException e) {
             Utils.MyLog.g("Error removing expired purchases: " + e);

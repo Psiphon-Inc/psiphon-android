@@ -157,7 +157,7 @@ public abstract class Authorization {
 
     abstract String base64EncodedAuthorization();
 
-    abstract String Id();
+    public abstract String Id();
 
     abstract String accessType();
 

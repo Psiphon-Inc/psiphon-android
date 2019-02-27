@@ -81,14 +81,14 @@ public class RewardedVideoViewModel extends AndroidViewModel implements MviViewM
         return intentPublishRelay
                 .observeOn(Schedulers.computation())
                 // Translate intents to actions, some intents may map to multiple actions
-                .map(this::actionFromIntent)
+                .flatMap(this::actionFromIntent)
                 .compose(rewardedVideoActionProcessorHolder.actionProcessor)
                 // Cache each state and pass it to the reducer to create a new state from
                 // the previous cached one and the latest Result emitted from the action processor.
                 // The Scan operator is used here for the caching.
                 .scan(RewardedVideoViewState.idle(), reducer)
                 // When a reducer just emits previousState, there's no reason to call render. In fact,
-                // redrawing the UI in cases like this can cause jank (e.g. messing up snackbar animations
+                // redrawing the UI in cases like this can cause junk (e.g. messing up snackbar animations
                 // by showing the same snackbar twice in rapid succession).
                 .distinctUntilChanged()
                 // Emit the last one event of the stream on subscription
@@ -104,11 +104,11 @@ public class RewardedVideoViewModel extends AndroidViewModel implements MviViewM
      * Translate an {@link MviIntent} to an {@link MviAction}.
      * Used to decouple the UI and the business logic to allow easy testings and reusability.
      */
-    private Action actionFromIntent(MviIntent intent) {
+    private Observable<Action> actionFromIntent(MviIntent intent) {
         if (intent instanceof Intent.LoadVideoAd) {
             Intent.LoadVideoAd i = (Intent.LoadVideoAd) intent;
             final TunnelConnectionState status = i.connectionState();
-            return Action.LoadVideoAd.create(status);
+            return Observable.just(Action.LoadVideoAd.create(status));
         }
         throw new IllegalArgumentException("Do not know how to treat this intent " + intent);
     }

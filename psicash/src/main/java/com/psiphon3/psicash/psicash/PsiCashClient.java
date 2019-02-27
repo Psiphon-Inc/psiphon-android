@@ -15,6 +15,7 @@ import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +29,7 @@ import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
@@ -48,8 +50,9 @@ public class PsiCashClient {
     private PsiCashClient(final Context context) throws PsiCashException {
         sharedPreferences = context.getSharedPreferences(PSICASH_PREFERENCES_KEY, Context.MODE_PRIVATE);
         httpProxyPort = 0;
-        psiCashLib = new PsiCashLibTester();
+        psiCashLib = new PsiCashLib();
         okHttpClient = new OkHttpClient.Builder()
+                .protocols(Arrays.asList(Protocol.HTTP_1_1))
                 .retryOnConnectionFailure(false)
                 .proxySelector(new ProxySelector() {
                     @Override
@@ -88,6 +91,9 @@ public class PsiCashClient {
                         if (reqParams.headers != null) {
                             reqBuilder.headers(Headers.of(reqParams.headers));
                         }
+
+                        reqBuilder.addHeader("Connection", "close");
+
                         Request request = reqBuilder.build();
                         Response response = okHttpClient.newCall(request).execute();
                         result.code = response.code();
@@ -262,16 +268,19 @@ public class PsiCashClient {
         }
         builder.purchasePrices(getPurchasePricesResult.purchasePrices);
 
-        PsiCashLib.NextExpiringPurchaseResult nextExpiringPurchaseResult = psiCashLib.nextExpiringPurchase();
-        if (nextExpiringPurchaseResult.error != null) {
-            String errorMessage = "PsiCashLib.NextExpiringPurchaseResult error: " + balanceResult.error.message;
-            if (nextExpiringPurchaseResult.error.critical) {
+        PsiCashLib.GetPurchasesResult getPurchasesResult = psiCashLib.getPurchases();
+        if (getPurchasesResult.error != null) {
+            String errorMessage = "PsiCashLib.GetPurchasesResult error: " + getPurchasesResult.error.message;
+            if (getPurchasesResult.error.critical) {
                 throw new PsiCashException.Critical(errorMessage);
             } else {
                 throw new PsiCashException.Recoverable(errorMessage);
             }
         }
-        builder.nextExpiringPurchase(nextExpiringPurchaseResult.purchase);
+        if(getPurchasesResult.purchases.size() > 0) {
+            builder.nextExpiringPurchase(Collections.max(getPurchasesResult.purchases,
+                    (p1, p2) -> p1.expiry.compareTo(p2.expiry)));
+        }
 
         builder.reward(getVideoReward());
 
@@ -331,7 +340,6 @@ public class PsiCashClient {
                 .toObservable();
     }
 
-
     Observable<PsiCashModel.PsiCash> getPsiCash(TunnelConnectionState connectionState) {
         int retryCount = 5;
         return Observable.just(connectionState)
@@ -390,12 +398,17 @@ public class PsiCashClient {
         psiCashLib.removePurchases(purchasesToRemove);
     }
 
-    class PsiCashLibTester extends PsiCashLib {
-        @Override
-        public Error init(String fileStoreRoot, HTTPRequester httpRequester) {
-            return init(fileStoreRoot, httpRequester, true);
+    public List<PsiCashLib.Purchase> getPurchases() throws PsiCashException{
+        PsiCashLib.GetPurchasesResult getPurchasesResult = psiCashLib.getPurchases();
+        if (getPurchasesResult.error == null) {
+            return getPurchasesResult.purchases;
+        } else {
+            String errorMessage = getPurchasesResult.error.message;
+            if (getPurchasesResult.error.critical) {
+                throw new PsiCashException.Recoverable(errorMessage);
+            } else {
+                throw new PsiCashException.Critical(errorMessage);
+            }
         }
     }
 }
-
-
