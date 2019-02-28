@@ -20,6 +20,7 @@
 package com.psiphon3.psiphonlibrary;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -37,10 +38,13 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.util.Pair;
 import android.text.TextUtils;
 
-import com.psiphon3.R;
+import com.psiphon3.PurchaseVerificationNetworkHelper;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.subscription.BuildConfig;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
@@ -63,6 +67,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ca.psiphon.PsiphonTunnel;
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.observers.DisposableObserver;
+import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.ReplaySubject;
 
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
 
@@ -111,6 +121,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String DATA_TUNNEL_CONFIG_EGRESS_REGION = "tunnelConfigEgressRegion";
     public static final String DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS = "tunnelConfigDisableTimeouts";
     public static final String CLIENT_MESSENGER = "incomingClientMessenger";
+    public static final String DATA_PURCHASE_ID = "purchaseId";
+    public static final String DATA_PURCHASE_TOKEN = "purchaseToken";
+    public static final String DATA_PURCHASE_IS_SUBSCRIPTION = "purchaseIsSubscription";
+    static final String PREFERENCE_PURCHASE_AUTHORIZATION = "preferencePurchaseAuthorization";
+    static final String PREFERENCE_PURCHASE_TOKEN = "preferencePurchaseToken";
+
 
     // Tunnel config, received from the client.
     public static class Config {
@@ -121,6 +137,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         boolean wholeDevice = false;
         String egressRegion = PsiphonConstants.REGION_CODE_ANY;
         boolean disableTimeouts = false;
+        String sponsorId = EmbeddedValues.SPONSOR_ID;
     }
 
     private Config m_tunnelConfig = new Config();
@@ -150,26 +167,84 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     private String m_lastUpstreamProxyErrorMessage;
     private Handler m_Handler = new Handler();
 
+    public enum PurchaseAuthorizationStatus {
+        EMPTY,
+        ACTIVE,
+        REJECTED
+    }
+
+    public enum PurchaseVerificationAction {
+        NO_ACTION,
+        RESTART_AS_NON_SUBSCRIBER,
+        RESTART_AS_SUBSCRIBER
+    }
+
+    private class Purchase {
+        String id;
+        String token;
+        boolean isSubscription;
+        public Purchase(String id, String token, boolean isSubscription) {
+            this.id = id;
+            this.token = token;
+            this.isSubscription = isSubscription;
+        }
+    }
+
+    private ReplaySubject<PurchaseAuthorizationStatus> m_activeAuthorizationSubject;
+    private ReplaySubject<Boolean> m_tunnelConnectedSubject;
+    private ReplaySubject<Purchase> m_purchaseSubject;
+    private CompositeDisposable m_compositeDisposable;
+    private String m_expiredPurchaseToken;
+
+
     public TunnelManager(Service parentService) {
         m_parentService = parentService;
         m_isReconnect = new AtomicBoolean(false);
         m_isStopping = new AtomicBoolean(false);
         m_tunnel = PsiphonTunnel.newPsiphonTunnel(this);
+        m_tunnelConnectedSubject = ReplaySubject.createWithSize(1);
+        m_activeAuthorizationSubject = ReplaySubject.createWithSize(1);
+        m_purchaseSubject = ReplaySubject.createWithSize(1);
+        m_compositeDisposable = new CompositeDisposable();
     }
 
     // Implementation of android.app.Service.onStartCommand
     public int onStartCommand(Intent intent, int flags, int startId) {
+        final String NOTIFICATION_CHANNEL_ID = "psiphon_notification_channel";
+
         if (mNotificationManager == null) {
             mNotificationManager = (NotificationManager) m_parentService.getSystemService(Context.NOTIFICATION_SERVICE);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationChannel notificationChannel = new NotificationChannel(
+                        NOTIFICATION_CHANNEL_ID, m_parentService.getText(R.string.psiphon_service_notification_channel_name),
+                        NotificationManager.IMPORTANCE_LOW);
+                mNotificationManager.createNotificationChannel(notificationChannel);
+            }
         }
 
         if (mNotificationBuilder == null) {
-            mNotificationBuilder = new NotificationCompat.Builder(m_parentService);
+            mNotificationBuilder = new NotificationCompat.Builder(m_parentService, NOTIFICATION_CHANNEL_ID);
+        }
+
+        if (intent.hasExtra(TunnelManager.DATA_PURCHASE_ID)) {
+            m_tunnelConfig.sponsorId = BuildConfig.SUBSCRIPTION_SPONSOR_ID;
+
+            String purchaseId = intent.getStringExtra(TunnelManager.DATA_PURCHASE_ID);
+            String purchaseToken = intent.getStringExtra(TunnelManager.DATA_PURCHASE_TOKEN);
+            boolean isSubscription = intent.getBooleanExtra(TunnelManager.DATA_PURCHASE_IS_SUBSCRIPTION, false);
+            Purchase purchase = new Purchase (purchaseId, purchaseToken, isSubscription);
+            m_purchaseSubject.onNext(purchase);
         }
 
         if (m_firstStart && intent != null) {
             getTunnelConfig(intent);
+
+            // Bootstrap the connection observable
+            m_tunnelConnectedSubject.onNext(Boolean.FALSE);
+
             m_parentService.startForeground(R.string.psiphon_service_notification_id, this.createNotification(false));
+
             MyLog.v(R.string.client_version, MyLog.Sensitivity.NOT_SENSITIVE, EmbeddedValues.CLIENT_VERSION);
             m_firstStart = false;
             m_tunnelThreadStopSignal = new CountDownLatch(1);
@@ -182,7 +257,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             m_tunnelThread.start();
         }
 
-        if(intent != null) {
+        if (intent != null) {
             m_outgoingMessenger = (Messenger) intent.getParcelableExtra(CLIENT_MESSENGER);
             sendClientMessage(MSG_REGISTER_RESPONSE, getTunnelStateBundle());
         }
@@ -195,6 +270,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         EmbeddedValues.initialize(this.getContext());
 
         MyLog.setLogger(this);
+        startPurchaseCheckFlow();
     }
 
     // Implementation of android.app.Service.onDestroy
@@ -204,6 +280,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         stopAndWaitForTunnel();
 
         MyLog.unsetLogger();
+
+        m_compositeDisposable.dispose();
     }
 
     public void onRevoke() {
@@ -292,10 +370,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             iconID = R.drawable.notification_icon_connecting_animation;
         }
 
+        String notificationTitle = m_parentService.getText(R.string.app_name_psiphon_pro).toString();
+        String notificationText = m_parentService.getText(contentTextID).toString();
+
         mNotificationBuilder
                 .setSmallIcon(iconID)
-                .setContentTitle(m_parentService.getText(R.string.app_name))
-                .setContentText(m_parentService.getText(contentTextID))
+                .setContentTitle(notificationTitle)
+                .setContentText(notificationText)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationText))
                 .setTicker(ticker)
                 .setContentIntent(m_tunnelConfig.notificationPendingIntent);
 
@@ -322,6 +404,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
         m_tunnelState.isConnected = isConnected;
 
+        doNotify(alert);
+    }
+
+    private synchronized void doNotify(boolean alert) {
         // Don't update notification to CONNECTING, etc., when a stop was commanded.
         if (!m_serviceDestroyed && !m_isStopping.get()) {
             if (mNotificationManager != null) {
@@ -332,7 +418,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         }
     }
 
-    private  boolean isSelectedEgressRegionAvailable(List<String> availableRegions) {
+    private boolean isSelectedEgressRegionAvailable(List<String> availableRegions) {
         String selectedEgressRegion = m_tunnelConfig.egressRegion;
         if (selectedEgressRegion == null || selectedEgressRegion.equals(PsiphonConstants.REGION_CODE_ANY)) {
             // User region is either not set or set to 'Best Performance', do nothing
@@ -363,11 +449,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         }
 
         @Override
-        public void handleMessage(Message msg)
-        {
+        public void handleMessage(Message msg) {
             TunnelManager manager = mTunnelManager.get();
-            switch (msg.what)
-            {
+            switch (msg.what) {
                 case TunnelManager.MSG_UNREGISTER:
                     if (manager != null) {
                         manager.m_outgoingMessenger = null;
@@ -511,7 +595,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     };
 
     private void runTunnel() {
-
         Utils.initializeSecureRandom();
 
         m_isStopping.set(false);
@@ -568,6 +651,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             // state bundle (specifically DATA_TUNNEL_STATE_IS_CONNECTED) that is consistent with
             // the MSG_TUNNEL_STOPPING message it just received
             setIsConnected(false);
+            m_tunnelConnectedSubject.onNext(Boolean.FALSE);
 
             m_tunnel.stop();
 
@@ -583,9 +667,23 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         }
     }
 
+    private void restartTunnel() {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                m_isReconnect.set(false);
+                try {
+                    m_tunnel.restartPsiphon();
+                } catch (PsiphonTunnel.Exception e) {
+                    MyLog.e(R.string.start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+                }
+            }
+        });
+    }
+
     @Override
     public String getAppName() {
-        return m_parentService.getString(R.string.app_name);
+        return m_parentService.getString(R.string.app_name_psiphon_pro);
     }
 
     @Override
@@ -637,6 +735,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
      * tunnel and the UpgradeChecker temp tunnel).
      *
      * @param context
+     * @param tunnelConfig         Config values to be set in the tunnel core config.
      * @param tempTunnelName       null if not a temporary tunnel. If set, must be a valid to use in file path.
      * @param clientPlatformPrefix null if not applicable (i.e., for main Psiphon app); should be provided
      *                             for temp tunnels. Will be prepended to standard client platform value.
@@ -674,6 +773,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             json.put("ClientVersion", EmbeddedValues.CLIENT_VERSION);
 
+            String authorization =  getPersistedPurchaseAuthorization(context);
+
+            if (!TextUtils.isEmpty(authorization)) {
+                json.put("Authorizations", new JSONArray().put(authorization));
+            }
+
+
             if (UpgradeChecker.upgradeCheckNeeded(context)) {
 
                 json.put("UpgradeDownloadURLs", new JSONArray(EmbeddedValues.UPGRADE_URLS_JSON));
@@ -686,7 +792,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             json.put("PropagationChannelId", EmbeddedValues.PROPAGATION_CHANNEL_ID);
 
-            json.put("SponsorId", EmbeddedValues.SPONSOR_ID);
+            json.put("SponsorId", tunnelConfig.sponsorId);
 
             json.put("RemoteServerListURLs", new JSONArray(EmbeddedValues.REMOTE_SERVER_LIST_URLS_JSON));
 
@@ -694,7 +800,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             json.put("RemoteServerListSignaturePublicKey", EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY);
 
-            json.put("UpstreamProxyUrl", UpstreamProxySettings.getUpstreamProxyUrl(context));
+            if (UpstreamProxySettings.getUseHTTPProxy(context)) {
+                if (UpstreamProxySettings.getProxySettings(context) != null) {
+                    json.put("UpstreamProxyUrl", UpstreamProxySettings.getUpstreamProxyUrl(context));
+                }
+                json.put("UpstreamProxyCustomHeaders", UpstreamProxySettings.getUpstreamProxyCustomHeaders(context));
+            }
 
             json.put("EmitDiagnosticNotices", true);
 
@@ -732,16 +843,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 json.put("EstablishTunnelTimeoutSeconds", 300);
 
                 json.put("TunnelWholeDevice", 0);
-
-                json.put("LocalHttpProxyPort", 0);
-                json.put("LocalSocksProxyPort", 0);
-
                 json.put("EgressRegion", "");
             } else {
-                // TODO: configure local proxy ports
-                json.put("LocalHttpProxyPort", 0);
-                json.put("LocalSocksProxyPort", 0);
-
                 String egressRegion = tunnelConfig.egressRegion;
                 MyLog.g("EgressRegion", "regionCode", egressRegion);
                 json.put("EgressRegion", egressRegion);
@@ -751,12 +854,165 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 //disable timeouts
                 MyLog.g("DisableTimeouts", "disableTimeouts", true);
                 json.put("NetworkLatencyMultiplier", 3.0);
+            } else {
+                // TEMP: The default value is too aggressive, it will be adjusted in a future release
+                json.put("TunnelPortForwardTimeoutSeconds", 30);
             }
 
             return json.toString();
         } catch (JSONException e) {
             return null;
         }
+    }
+
+    // Creates an observable from ReplaySubject of size(1) that holds the last connection state
+    // value. The result is additionally filtered to output only distinct consecutive values.
+    // Emits its current value to every new subscriber.
+    private Observable<Boolean> connectionObservable() {
+        return m_tunnelConnectedSubject
+                .hide()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .distinctUntilChanged();
+    }
+
+    // Creates an observable from ReplaySubject of size(1) that holds the last authorization status
+    // value. The result is additionally filtered to output only distinct consecutive values.
+    // Emits its current value to every new subscriber.
+    private Observable<PurchaseAuthorizationStatus> authorizationStatusObservable() {
+        return m_activeAuthorizationSubject
+                .hide()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .distinctUntilChanged();
+    }
+
+    // Creates an observable from ReplaySubject of size(1) that holds the last purchase data
+    // value. The result is additionally filtered to output only distinct consecutive values.
+    // Emits its current value to every new subscriber.
+    private Observable<Purchase> purchaseObservable() {
+        return m_purchaseSubject
+                .hide()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .distinctUntilChanged((purchase, purchase2) -> purchase.token.equals(purchase2.token));
+    }
+
+    private void startPurchaseCheckFlow() {
+        m_compositeDisposable.clear();
+        m_compositeDisposable.add(
+                purchaseObservable()
+//                        .doOnNext(purchase -> Log.d("PurchaseCheckFlow", "got new purchase: " + purchase.id + " " + purchase.token))
+                        .switchMap(purchase ->
+                                connectionObservable().map(isConnected -> new Pair(isConnected, purchase))
+                        )
+                        .doOnNext(pair -> {
+                            Purchase purchase = (Purchase) pair.second;
+                            if(!hasAuthorizationForPurchase(purchase)) {
+                                persistPurchaseTokenAndAuthorization(purchase.token, "");
+                                m_activeAuthorizationSubject.onNext(PurchaseAuthorizationStatus.EMPTY);
+                            }
+                        })
+//                        .doOnNext(pair -> Log.d("PurchaseCheckFlow", "got new connection status : " + pair.first))
+                        .switchMap(pair -> {
+                                    Boolean isConnected = (Boolean)pair.first;
+                                    Purchase purchase = (Purchase) pair.second;
+                                    Boolean isExpiredPurchase = TextUtils.equals(m_expiredPurchaseToken, purchase.token);
+
+                                    Observable<PurchaseAuthorizationStatus> observable = isConnected && !isExpiredPurchase ?
+                                            authorizationStatusObservable() :
+                                            Observable.empty();
+
+                                    return  observable.map(status -> new Pair(status, purchase));
+                                }
+                        )
+//                        .doOnNext(pair -> Log.d("PurchaseCheckFlow", "got new PurchaseAuthorizationStatus status: " + pair.first))
+                        .switchMap(pair -> {
+                            PurchaseAuthorizationStatus status = (PurchaseAuthorizationStatus) pair.first;
+                            Purchase purchase = (Purchase)pair.second;
+                            if (status == PurchaseAuthorizationStatus.EMPTY || status == PurchaseAuthorizationStatus.REJECTED) {
+                                MyLog.g("TunnelManager::startPurchaseCheckFlow: will fetch new authorization");
+
+                                PurchaseVerificationNetworkHelper purchaseVerificationNetworkHelper =
+                                        new PurchaseVerificationNetworkHelper.Builder(getContext())
+                                                .withProductId(purchase.id)
+                                                .withIsSubscription(purchase.isSubscription)
+                                                .withPurchaseToken(purchase.token)
+                                                .withHttpProxyPort(m_parentService instanceof TunnelService ? m_tunnelState.listeningLocalHttpProxyPort : 0)
+                                                .build();
+
+                                return purchaseVerificationNetworkHelper.fetchAuthorizationObservable()
+                                        .map(json -> new JSONObject(json).getString("signed_authorization"))
+                                        .doOnError(e -> MyLog.g(String.format("PurchaseVerificationNetworkHelper::fetchAuthorizationObservable: failed with error: %s",
+                                                e.getMessage())))
+                                        .onErrorResumeNext(Observable.just(""))
+                                        .doOnNext(authorization -> persistPurchaseTokenAndAuthorization(purchase.token, authorization))
+                                        .map(authorization ->
+                                                {
+                                                    boolean isEmpty = TextUtils.isEmpty(authorization);
+                                                    if(isEmpty) {
+                                                        // Mark the purchase as expired
+                                                        m_expiredPurchaseToken = purchase.token;
+                                                    }
+                                                    return isEmpty ?
+                                                            PurchaseVerificationAction.RESTART_AS_NON_SUBSCRIBER :
+                                                            PurchaseVerificationAction.RESTART_AS_SUBSCRIBER;
+                                                }
+                                        );
+                            } else {
+                                return Observable.just(PurchaseVerificationAction.NO_ACTION);
+                            }
+                        })
+//                        .doOnNext(action -> Log.d("PurchaseCheckFlow", "got new PurchaseVerificationAction : " + action))
+                        .subscribeWith(new DisposableObserver<PurchaseVerificationAction>() {
+                            @Override
+                            public void onNext(PurchaseVerificationAction action) {
+                                if (action == PurchaseVerificationAction.NO_ACTION) {
+                                    return;
+                                }
+
+                                if (action == PurchaseVerificationAction.RESTART_AS_NON_SUBSCRIBER) {
+                                    MyLog.g("TunnelManager::startPurchaseCheckFlow: will restart as a non subscriber");
+                                    m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
+                                } else if (action == PurchaseVerificationAction.RESTART_AS_SUBSCRIBER) {
+                                    MyLog.g("TunnelManager::startPurchaseCheckFlow: will restart as a subscriber");
+                                    m_tunnelConfig.sponsorId = BuildConfig.SUBSCRIPTION_SPONSOR_ID;
+                                }
+                                restartTunnel();
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+                                MyLog.g(String.format("TunnelManager::startPurchaseCheckFlow: received unhandled subscription error: %s, with message: %s",
+                                        e.getClass().getCanonicalName(), e.getMessage()));
+                            }
+
+                            @Override
+                            public void onComplete() {}
+                        }));
+    }
+
+    private boolean hasAuthorizationForPurchase(Purchase purchase) {
+        final AppPreferences mp = new AppPreferences(getContext());
+        String authorization = mp.getString(PREFERENCE_PURCHASE_AUTHORIZATION, "");
+        String purchaseToken = mp.getString(PREFERENCE_PURCHASE_TOKEN, "");
+        if (!TextUtils.isEmpty(authorization)
+                && purchase.token.equals(purchaseToken)) {
+            return true;
+        }
+        return false;
+    }
+
+    private static String getPersistedPurchaseAuthorization(Context context) {
+        final AppPreferences mp = new AppPreferences(context);
+        String authorization = mp.getString(PREFERENCE_PURCHASE_AUTHORIZATION, "");
+        return authorization;
+    }
+
+    private void persistPurchaseTokenAndAuthorization( String purchaseToken, String authorization) {
+        final AppPreferences mp = new AppPreferences(getContext());
+        mp.put(PREFERENCE_PURCHASE_TOKEN, purchaseToken);
+        mp.put(PREFERENCE_PURCHASE_AUTHORIZATION, authorization);
     }
 
     @Override
@@ -783,7 +1039,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 // regions are already sorted alphabetically by tunnel core
                 new AppPreferences(getContext()).put(RegionAdapter.KNOWN_REGIONS_PREFERENCE, TextUtils.join(",", regions));
 
-                if(!isSelectedEgressRegionAvailable(regions)) {
+                if (!isSelectedEgressRegionAvailable(regions)) {
                     // command service stop
                     signalStopService();
 
@@ -874,6 +1130,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             @Override
             public void run() {
                 DataTransferStats.getDataTransferStatsForService().stop();
+                m_tunnelConnectedSubject.onNext(Boolean.FALSE);
 
                 if (!m_isStopping.get()) {
                     MyLog.v(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
@@ -893,6 +1150,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_Handler.post(new Runnable() {
             @Override
             public void run() {
+                m_tunnelConnectedSubject.onNext(Boolean.TRUE);
                 DataTransferStats.getDataTransferStatsForService().startConnected();
 
                 MyLog.v(R.string.tunnel_connected, MyLog.Sensitivity.NOT_SENSITIVE);
@@ -920,6 +1178,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     }
                 }
                 m_tunnelState.homePages.add(url);
+
+                boolean showAds = false;
+                for (String homePage : m_tunnelState.homePages) {
+                    if (homePage.contains("psiphon_show_ads")) {
+                        showAds = true;
+                    }
+                }
+                final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
+                multiProcessPreferences.put(
+                        m_parentService.getString(R.string.persistent_show_ads_setting),
+                        showAds);
             }
         });
     }
@@ -994,5 +1263,37 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public void onExiting() {}
 
     @Override
-    public void onActiveAuthorizationIDs(List<String> authorizations) {}
+    public void onActiveAuthorizationIDs(List<String> authorizations) {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                String storedAuthorizationID = extractAuthorizationID(getPersistedPurchaseAuthorization(getContext()));
+                if (TextUtils.isEmpty(storedAuthorizationID)) {
+                    // Do nothing, the case of empty authorization is already handled in the startPurchaseCheckFlow()
+                    return;
+                }
+
+                if (authorizations.isEmpty() || !authorizations.contains(storedAuthorizationID)) {
+                    MyLog.g("TunnelManager::onActiveAuthorizationIDs: stored authorization has been rejected");
+                    // Delete rejected authorization
+                    persistPurchaseTokenAndAuthorization("", "");
+
+                    m_activeAuthorizationSubject.onNext(PurchaseAuthorizationStatus.REJECTED);
+                    return;
+                }
+                m_activeAuthorizationSubject.onNext(PurchaseAuthorizationStatus.ACTIVE);
+            }
+        });
+    }
+
+    private String extractAuthorizationID(String authorization) {
+        byte [] decoded =  android.util.Base64.decode(authorization,
+                android.util.Base64.DEFAULT);
+        try {
+            JSONObject jsonObject = new JSONObject(new String(decoded));
+            return jsonObject.getJSONObject("Authorization").getString("ID");
+        } catch(JSONException e) {
+            return null;
+        }
+    }
 }
