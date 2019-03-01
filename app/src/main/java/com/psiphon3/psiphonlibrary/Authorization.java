@@ -155,7 +155,7 @@ public abstract class Authorization {
                 }
                 return result;
             } catch (JSONException e) {
-                MyLog.g("MultiProcessPreferences: JSON exception parsing '" + key + "': " + e.toString());
+                MyLog.g(String.format("%s : JSON exception parsing '%s': %s", getClass().getSimpleName(), key, e.toString()));
                 return result;
             }
         }

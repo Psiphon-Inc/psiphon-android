@@ -49,6 +49,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -175,8 +176,6 @@ public abstract class MainBase {
         private SponsorHomePage m_sponsorHomePage;
         private LocalBroadcastManager m_localBroadcastManager;
         private Timer m_updateStatisticsUITimer;
-        private Timer m_updateServiceStateUITimer;
-        private boolean m_restartTunnel = false;
         private TextView m_elapsedConnectionTimeView;
         private TextView m_totalSentView;
         private TextView m_totalReceivedView;
@@ -192,7 +191,6 @@ public abstract class MainBase {
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
         private LoggingObserver m_loggingObserver;
-        private boolean m_serviceStateUIPaused = false;
 
         // This fragment helps retain data across configuration changes
         protected RetainedDataFragment m_retainedDataFragment;
@@ -580,8 +578,6 @@ public abstract class MainBase {
             m_localBroadcastManager = LocalBroadcastManager.getInstance(this);
             m_localBroadcastManager.registerReceiver(new StatusEntryAdded(), new IntentFilter(STATUS_ENTRY_AVAILABLE));
 
-            updateServiceStateUI();
-
             m_regionAdapter = new RegionAdapter(this);
             m_regionSelector.setAdapter(m_regionAdapter);
             String egressRegionPreference = m_multiProcessPreferences.getString(EGRESS_REGION_PREFERENCE,
@@ -698,20 +694,6 @@ public abstract class MainBase {
                 }
             }, 0, 1000);
 
-            m_updateServiceStateUITimer = new Timer();
-            m_updateServiceStateUITimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            updateServiceStateUI();
-                            checkRestartTunnel();
-                        }
-                    });
-                }
-            }, 0, 250);
-
             // Don't show the keyboard until edit selected
             getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
@@ -725,8 +707,10 @@ public abstract class MainBase {
             }
             else {
                 // reset the tunnel state
-                m_tunnelState = new TunnelManager.State();
+                onTunnelConnectionState(new TunnelManager.State());
             }
+
+            updateServiceStateUI();
         }
 
         @Override
@@ -738,7 +722,6 @@ public abstract class MainBase {
             cancelInvalidProxySettingsToast();
 
             m_updateStatisticsUITimer.cancel();
-            m_updateServiceStateUITimer.cancel();
 
             unbindTunnelService();
 
@@ -959,29 +942,22 @@ public abstract class MainBase {
             }
         }
 
-        private void updateServiceStateUI() {
-            if (m_serviceStateUIPaused) {
-                return;
-            }
-
-            if (!m_boundToTunnelService) {
+        protected void updateServiceStateUI() {
+            if (!isServiceRunning()) {
                 setStatusState(R.drawable.status_icon_disconnected);
-                if (!isServiceRunning()) {
-                    m_toggleButton.setText(getText(R.string.start));
-                    enableToggleServiceUI();
-                    updateSubscriptionAndAdOptions(true);
-                
-                    if (WebViewProxySettings.isLocalProxySet()) {
-                        WebViewProxySettings.resetLocalProxy(this);
-                    }
-                } else {
-                    m_toggleButton.setText(getText(R.string.waiting));
-                    disableToggleServiceUI();
-                    updateSubscriptionAndAdOptions(false);
-                
-                    if (WebViewProxySettings.isLocalProxySet()) {
-                        WebViewProxySettings.resetLocalProxy(this);
-                    }
+                enableToggleServiceUI(R.string.start);
+                updateSubscriptionAndAdOptions(true);
+
+                if (WebViewProxySettings.isLocalProxySet()) {
+                    WebViewProxySettings.resetLocalProxy(this);
+                }
+            } else if (!m_boundToTunnelService) {
+                setStatusState(R.drawable.status_icon_disconnected);
+                disableToggleServiceUI();
+                updateSubscriptionAndAdOptions(false);
+
+                if (WebViewProxySettings.isLocalProxySet()) {
+                    WebViewProxySettings.resetLocalProxy(this);
                 }
             } else {
                 if (isTunnelConnected()) {
@@ -989,8 +965,7 @@ public abstract class MainBase {
                 } else {
                     setStatusState(R.drawable.status_icon_connecting);
                 }
-                m_toggleButton.setText(getText(R.string.stop));
-                enableToggleServiceUI();
+                enableToggleServiceUI(R.string.stop);
                 updateSubscriptionAndAdOptions(false);
             }
 
@@ -1001,7 +976,8 @@ public abstract class MainBase {
 
         protected abstract void updateSubscriptionAndAdOptions(boolean show);
 
-        protected void enableToggleServiceUI() {
+        protected void enableToggleServiceUI(int resId) {
+            m_toggleButton.setText(getText(resId));
             m_toggleButton.setEnabled(true);
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
             m_disableTimeoutsToggle.setEnabled(true);
@@ -1010,6 +986,7 @@ public abstract class MainBase {
         }
 
         protected void disableToggleServiceUI() {
+            m_toggleButton.setText(getText(R.string.waiting));
             m_toggleButton.setEnabled(false);
             m_tunnelWholeDeviceToggle.setEnabled(false);
             m_disableTimeoutsToggle.setEnabled(false);
@@ -1017,30 +994,26 @@ public abstract class MainBase {
             m_moreOptionsButton.setEnabled(false);
         }
         
-        protected void pauseServiceStateUI() {
-            m_serviceStateUIPaused = true;
-            disableToggleServiceUI();
-        }
-
-        protected void resumeServiceStateUI() {
-            m_serviceStateUIPaused = false;
-            updateServiceStateUI();
-        }
-
-        private void checkRestartTunnel() {
-            if (m_restartTunnel &&
-                    !m_boundToTunnelService &&
-                    !isServiceRunning()) {
-                m_restartTunnel = false;
-                startTunnel();
-            }
-        }
-
         protected void scheduleRunningTunnelServiceRestart() {
             if (isServiceRunning()) {
-                m_restartTunnel = true;
                 stopTunnelService();
-                // The tunnel will get restarted in m_updateServiceStateTimer
+                final Handler handler = new Handler();
+                final Runnable runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if(!isServiceRunning()) {
+                                    startTunnel();
+                                } else {
+                                    handler.postDelayed(this, 200);
+                                }
+                            }
+                        });
+                    }
+                };
+                handler.post(runnable);
             }
         }
 
@@ -1504,37 +1477,23 @@ public abstract class MainBase {
             return m_tunnelState.clientRegion;
         }
 
-        protected void getTunnelStateFromHandshakeIntent(Intent intent) {
-            if (!intent.getAction().equals(TunnelManager.INTENT_ACTION_HANDSHAKE)) {
-                return;
-            }
-            getTunnelStateFromBundle(intent.getExtras());
-        }
-
-        private void getTunnelStateFromBundle(Bundle data) {
+        @NonNull
+        protected TunnelManager.State getTunnelStateFromBundle(Bundle data) {
+            TunnelManager.State tunnelState = new TunnelManager.State();
             if (data == null) {
-                return;
+                return tunnelState;
             }
-            m_tunnelState.isVPN = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_VPN);
-            m_tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
-            if (m_tunnelState.isConnected) {
-                setStatusState(R.drawable.status_icon_connected);
-            } else {
-                setStatusState(R.drawable.status_icon_connecting);
-            }
-            m_tunnelState.listeningLocalSocksProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT);
-            m_tunnelState.listeningLocalHttpProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT);
-            m_tunnelState.clientRegion = data.getString(TunnelManager.DATA_TUNNEL_STATE_CLIENT_REGION);
-            m_tunnelState.sponsorId = data.getString(TunnelManager.DATA_TUNNEL_STATE_SPONSOR_ID);
+            tunnelState.isVPN = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_VPN);
+            tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
+            tunnelState.listeningLocalSocksProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT);
+            tunnelState.listeningLocalHttpProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT);
+            tunnelState.clientRegion = data.getString(TunnelManager.DATA_TUNNEL_STATE_CLIENT_REGION);
+            tunnelState.sponsorId = data.getString(TunnelManager.DATA_TUNNEL_STATE_SPONSOR_ID);
             ArrayList<String> homePages = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_HOME_PAGES);
-            if (homePages != null) {
-                m_tunnelState.homePages = homePages;
+            if (homePages != null && tunnelState.isConnected) {
+                tunnelState.homePages = homePages;
             }
-            onTunnelStateReceived();
-        }
-
-        protected void onTunnelStateReceived() {
-            // do nothing
+            return tunnelState;
         }
 
         private void getDataTransferStatsFromBundle(Bundle data) {
@@ -1571,21 +1530,13 @@ public abstract class MainBase {
                         m_regionSelector.setSelectionByValue(m_tunnelConfig.egressRegion);
                         break;
 
-                    case TunnelManager.MSG_TUNNEL_STOPPING:
-                        // When the tunnel self-stops, we need to unbind to ensure
-                        // the service is destroyed
-                        unbindTunnelService();
-                        break;
-
                     case TunnelManager.MSG_TUNNEL_CONNECTION_STATE:
-                        getTunnelStateFromBundle(data);
-                        onTunnelConnectionState(m_tunnelState);
+                        onTunnelConnectionState(getTunnelStateFromBundle(data));
 
                         // An activity created needs to load a sponsor the tab when tunnel connects
                         // once per its lifecycle. Both conditions are taken care of inside
                         // of restoreSponsorTab function
                         restoreSponsorTab();
-                        updateServiceStateUI();
                         break;
 
                     case TunnelManager.MSG_DATA_TRANSFER_STATS:
@@ -1635,7 +1586,7 @@ public abstract class MainBase {
             @Override
             public void onServiceDisconnected(ComponentName arg0) {
                 m_outgoingMessenger = null;
-                unbindTunnelService();
+                updateServiceStateUI();
             }
         };
 
@@ -1663,8 +1614,9 @@ public abstract class MainBase {
             updateServiceStateUI();
         }
 
-        protected void onTunnelConnectionState(TunnelManager.State state) {
-            // do nothing
+        protected void onTunnelConnectionState(@NonNull TunnelManager.State state) {
+            m_tunnelState = state;
+            updateServiceStateUI();
         }
 
         /**

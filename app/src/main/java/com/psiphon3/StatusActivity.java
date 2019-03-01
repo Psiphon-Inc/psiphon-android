@@ -27,6 +27,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
@@ -132,6 +133,7 @@ public class StatusActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main);
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
@@ -175,9 +177,6 @@ public class StatusActivity
             // running and presses Stop before the IAB flow has completed, causing handleIabFailure
             // to immediately restart the tunnel.
             m_firstRun = false;
-        } else {
-            psiCashFragment.onTunnelConnectionState(TunnelConnectionState.disconnected());
-            rewardedVideoFragment.onTunnelConnectionState(TunnelConnectionState.disconnected());
         }
 
         // Initialize WebView proxy settings before attempting to load any URLs
@@ -214,7 +213,6 @@ public class StatusActivity
         super.onResume();
         if (m_startupPending) {
             m_startupPending = false;
-            resumeServiceStateUI();
             doStartUp();
         }
         // Hide or show the PsiCash tab depending on presence of valid PsiCash tokens
@@ -229,19 +227,6 @@ public class StatusActivity
         }
     }
 
-    @Override
-    protected void onTunnelStateReceived() {
-        m_temporarilyDisableTunneledInterstitial = false;
-        Runnable adsRunnable = new Runnable() {
-            @Override
-            public void run() {
-                initTunneledAds(false);
-            }
-        };
-
-        initAdsConsentAndRunAds(adsRunnable);
-    }
-    
     @Override
     public void onDestroy()
     {
@@ -366,10 +351,22 @@ public class StatusActivity
     }
 
     @Override
-    protected void onTunnelConnectionState(TunnelManager.State state) {
+    protected void onTunnelConnectionState(@NonNull TunnelManager.State state) {
+        super.onTunnelConnectionState(state);
+
         if(!state.isConnected) {
             deInitTunneledAds();
+        } else {
+            m_temporarilyDisableTunneledInterstitial = false;
+            Runnable adsRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    initTunneledAds(false);
+                }
+            };
+            initAdsConsentAndRunAds(adsRunnable);
         }
+
         TunnelConnectionState tunnelConnectionState;
         if (state.isConnected) {
             TunnelConnectionState.PsiCashMetaData psiCashMetaData = TunnelConnectionState.PsiCashMetaData.builder()
@@ -397,7 +394,7 @@ public class StatusActivity
 
         if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_HANDSHAKE))
         {
-            getTunnelStateFromHandshakeIntent(intent);
+            onTunnelConnectionState(getTunnelStateFromBundle(intent.getExtras()));
 
             // OLD COMMENT:
             // Show the home page. Always do this in browser-only mode, even
@@ -482,7 +479,7 @@ public class StatusActivity
         }
         else
         {
-            pauseServiceStateUI();
+            disableToggleServiceUI();
             adModeCountdown = 10;
             delayHandler.postDelayed(enableAdMode, 1000);
             showUntunneledFullScreenAd();
@@ -1065,7 +1062,7 @@ public class StatusActivity
             }
             else
             {
-                resumeServiceStateUI();
+                updateServiceStateUI();
                 doStartUp();
             }
         }
@@ -1368,7 +1365,7 @@ public class StatusActivity
                     // Enable the free trial right away
                     m_startupPending = true;
                     delayHandler.removeCallbacks(enableAdMode);
-                    resumeServiceStateUI();
+                    updateServiceStateUI();
                 }
             });
             m_moPubUntunneledInterstitialFailed = false;

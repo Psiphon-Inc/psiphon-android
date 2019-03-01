@@ -157,10 +157,10 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
      * Used to decouple the UI and the business logic to allow easy testings and reusability.
      */
     private Observable<Action> actionFromIntent(MviIntent intent) {
-        if (intent instanceof Intent.ConnectionState) {
-            Intent.ConnectionState connectionState = (Intent.ConnectionState) intent;
-            final TunnelConnectionState status = connectionState.connectionState();
-            return Observable.just(Action.GetPsiCash.create(status));
+        if (intent instanceof Intent.GetPsiCashRemote) {
+            Intent.GetPsiCashRemote getPsiCashRemoteIntent = (Intent.GetPsiCashRemote) intent;
+            final TunnelConnectionState status = getPsiCashRemoteIntent.connectionState();
+            return Observable.just(Action.GetPsiCashRemote.create(status));
         }
         if (intent instanceof Intent.GetPsiCashLocal) {
             return Observable.just(Action.GetPsiCashLocal.create());
@@ -173,6 +173,11 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
             final PsiCashLib.PurchasePrice price = purchaseSpeedBoostIntent.purchasePrice();
             final TunnelConnectionState tunnelConnectionState = purchaseSpeedBoostIntent.connectionState();
             return Observable.just(Action.MakeExpiringPurchase.create(tunnelConnectionState, price));
+        }
+        if (intent instanceof Intent.RemovePurchases) {
+            Intent.RemovePurchases removePurchases = (Intent.RemovePurchases) intent;
+            final List<String> purchases = removePurchases.purchases();
+            return Observable.just(Action.RemovePurchases.create(purchases));
         }
         throw new IllegalArgumentException("Do not know how to treat this intent " + intent);
     }

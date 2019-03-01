@@ -6,6 +6,8 @@ import com.google.auto.value.AutoValue;
 import com.psiphon3.psicash.util.TunnelConnectionState;
 import com.psiphon3.psicash.mvibase.MviIntent;
 
+import java.util.List;
+
 import ca.psiphon.psicashlib.PsiCashLib;
 
 
@@ -37,12 +39,20 @@ public interface Intent extends MviIntent {
     }
 
     @AutoValue
-    abstract class ConnectionState implements Intent {
-        public static ConnectionState create(TunnelConnectionState state) {
-            return new AutoValue_Intent_ConnectionState(state);
+    abstract class GetPsiCashRemote implements Intent {
+        public static GetPsiCashRemote create(TunnelConnectionState state) {
+            return new AutoValue_Intent_GetPsiCashRemote(state);
         }
 
         public abstract TunnelConnectionState connectionState();
     }
 
+    @AutoValue
+    abstract class RemovePurchases implements Intent {
+        public static RemovePurchases create(List<String> purchases) {
+            return new AutoValue_Intent_RemovePurchases(purchases);
+        }
+
+        public abstract List<String> purchases();
+    }
 }

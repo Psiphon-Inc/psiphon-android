@@ -16,8 +16,12 @@ public abstract class PsiCashException extends Exception {
     static class Transaction extends PsiCashException {
         private final PsiCashLib.Status status;
 
-        public Transaction(PsiCashLib.Status s) {
+        Transaction(PsiCashLib.Status s) {
             status = s;
+        }
+
+        PsiCashLib.Status getStatus() {
+            return status;
         }
 
         @Override

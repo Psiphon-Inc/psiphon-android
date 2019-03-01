@@ -85,9 +85,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     // Service -> Client
     static final int MSG_KNOWN_SERVER_REGIONS = 3;
-    static final int MSG_TUNNEL_STOPPING = 4;
-    static final int MSG_TUNNEL_CONNECTION_STATE = 5;
-    static final int MSG_DATA_TRANSFER_STATS = 6;
+    static final int MSG_TUNNEL_CONNECTION_STATE = 4;
+    static final int MSG_DATA_TRANSFER_STATS = 5;
 
     public static final String INTENT_ACTION_HANDSHAKE = "com.psiphon3.psiphonlibrary.TunnelManager.HANDSHAKE";
     public static final String INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE = "com.psiphon3.psiphonlibrary.TunnelManager.SELECTED_REGION_NOT_AVAILABLE";
@@ -656,10 +655,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         } catch (PsiphonTunnel.Exception e) {
             MyLog.e(R.string.start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
         } finally {
-
             MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
-
-            sendClientMessage(MSG_TUNNEL_STOPPING, null);
 
             // If a client registers with the service at this point, it should be given a tunnel
             // state bundle (specifically DATA_TUNNEL_STATE_IS_CONNECTED) that is consistent with

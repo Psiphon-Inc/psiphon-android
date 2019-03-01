@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import ca.psiphon.psicashlib.PsiCashLib;
 import io.reactivex.Completable;
@@ -320,6 +321,9 @@ public class PsiCashClient {
                         }
                     }
 
+                    // Reset optimistic reward if there's a response from the server
+                    resetVideoReward();
+
                     if (result.status != PsiCashLib.Status.SUCCESS) {
                         throw new PsiCashException.Transaction(result.status);
                     }
@@ -330,6 +334,33 @@ public class PsiCashClient {
                         .cast(PsiCashModel.class)
                         .toObservable()
                         .concatWith(getPsiCashLocal())
+                        // If INSUFFICIENT_BALANCE retry for up to 30 seconds
+                        // in hope that the server-to-server reward callback will catch up
+                        .retryWhen(errors -> {
+                            AtomicReference<Throwable> capturedThrowable = new AtomicReference<>();
+                            return errors
+                                    .flatMap(throwable -> {
+                                        capturedThrowable.set(throwable);
+                                        if (!(throwable instanceof PsiCashException.Transaction)) {
+                                            return Observable.error(throwable);
+                                        } else {
+                                            PsiCashException.Transaction psiCashException = (PsiCashException.Transaction) throwable;
+                                            if (psiCashException.getStatus() == PsiCashLib.Status.INSUFFICIENT_BALANCE) {
+                                                return Observable.timer(2, TimeUnit.SECONDS);
+                                            }
+                                            return Observable.error(psiCashException);
+                                        }
+                                    })
+                                    // timeout after 30 seconds and bubble up the last captured error if any
+                                    .mergeWith(Observable.timer(30, TimeUnit.SECONDS)
+                                            .flatMap(__ -> {
+                                                final Throwable e = capturedThrowable.get();
+                                                if (e != null) {
+                                                    return Observable.error(e);
+                                                }
+                                                return Observable.empty();
+                                            }));
+                        })
                         .onErrorResumeNext(err -> {
                             return getPsiCashLocal().concatWith(Single.error(err));
                         }));
@@ -340,14 +371,16 @@ public class PsiCashClient {
                 .toObservable();
     }
 
-    Observable<PsiCashModel.PsiCash> getPsiCash(TunnelConnectionState connectionState) {
+    Observable<PsiCashModel.PsiCash> getPsiCashRemote(TunnelConnectionState connectionState) {
         int retryCount = 5;
         return Observable.just(connectionState)
                 .observeOn(Schedulers.io())
                 .flatMap(c -> {
                     if (c.status() == TunnelConnectionState.Status.DISCONNECTED) {
-                        return getPsiCashLocal();
-                    } else if (c.status() == TunnelConnectionState.Status.CONNECTED) {
+                        throw new IllegalStateException("Attempting to get PsiCash from remote while in DISCONNECTED tunnel state.");
+                    }
+
+                    if (c.status() == TunnelConnectionState.Status.CONNECTED) {
                         setOkHttpClientHttpProxyPort(c.httpPort());
 
                         TunnelConnectionState.PsiCashMetaData psiCashMetaData = c.psiCashMetaData();
@@ -367,6 +400,8 @@ public class PsiCashClient {
                             if (result.status != PsiCashLib.Status.SUCCESS) {
                                 throw new PsiCashException.Transaction(result.status);
                             }
+                            // if success reset optimistic reward
+                            resetVideoReward();
                         })
                                 .andThen(getPsiCashLocal());
                     }
@@ -390,12 +425,21 @@ public class PsiCashClient {
         editor.apply();
     }
 
+    public synchronized void resetVideoReward () {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putLong(PSICASH_PERSISTED_VIDEO_REWARD_KEY, 0);
+        editor.apply();
+    }
+
     private long getVideoReward() {
         return sharedPreferences.getLong(PSICASH_PERSISTED_VIDEO_REWARD_KEY, 0);
     }
 
-    public void removePurchases(List<String> purchasesToRemove) {
-        psiCashLib.removePurchases(purchasesToRemove);
+    public Observable<PsiCashModel.PsiCash> removePurchases(List<String> purchasesToRemove) {
+        return Observable.just(purchasesToRemove)
+                .observeOn(Schedulers.io())
+                .flatMap(p -> Completable.fromAction(() -> psiCashLib.removePurchases(p))
+                        .andThen(getPsiCashLocal()));
     }
 
     public List<PsiCashLib.Purchase> getPurchases() throws PsiCashException{
