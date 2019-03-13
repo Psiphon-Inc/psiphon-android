@@ -766,16 +766,16 @@ public class StatusActivity
             }
             @Override
             public void onAdOpened() {
+                // Enable the free trial right away
+                m_startupPending = true;
+                delayHandler.removeCallbacks(enableAdMode);
+                resumeServiceStateUI();
             }
             @Override
             public void onAdLeftApplication() {
             }
             @Override
             public void onAdClosed() {
-                // Enable the free trial right away
-                m_startupPending = true;
-                delayHandler.removeCallbacks(enableAdMode);
-                resumeServiceStateUI();
             }
         });
 
