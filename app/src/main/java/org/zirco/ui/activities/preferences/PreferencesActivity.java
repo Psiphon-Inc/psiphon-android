@@ -17,7 +17,7 @@ package org.zirco.ui.activities.preferences;
 
 import java.util.List;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import org.zirco.controllers.Controller;
 import org.zirco.providers.BookmarksProviderWrapper;

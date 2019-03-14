@@ -15,7 +15,7 @@
 
 package org.zirco.ui.activities;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import org.zirco.controllers.Controller;
 import org.zirco.model.adapters.HistoryExpandableListAdapter;
