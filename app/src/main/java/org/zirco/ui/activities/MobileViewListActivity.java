@@ -15,13 +15,13 @@
 
 package org.zirco.ui.activities;
 
-import com.psiphon3.R;
-import com.psiphon3.psiphonlibrary.LocalizedActivities;
+import com.psiphon3.subscription.R;
 import org.zirco.controllers.Controller;
 import org.zirco.model.DbAdapter;
 import org.zirco.utils.ApplicationUtils;
 
 import android.app.AlertDialog;
+import android.app.ListActivity;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -44,7 +44,7 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 /**
  * AdBlocker white list activity.
  */
-public class MobileViewListActivity extends LocalizedActivities.ListActivity {
+public class MobileViewListActivity extends ListActivity {
 	
 	private static final int MENU_ADD = Menu.FIRST;
 	private static final int MENU_CLEAR = Menu.FIRST + 1;

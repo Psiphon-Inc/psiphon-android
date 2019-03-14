@@ -19,19 +19,25 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
+import android.app.AlertDialog;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
@@ -44,9 +50,14 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
@@ -67,6 +78,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TabHost.TabSpec;
@@ -74,9 +86,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
-import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.subscription.R;
+import com.psiphon3.util.IabHelper;
+import com.psiphon3.util.Purchase;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.SharedPreferencesImport;
@@ -87,14 +101,19 @@ import org.achartengine.model.XYMultipleSeriesDataset;
 import org.achartengine.model.XYSeries;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public abstract class MainBase {
-    public static abstract class Activity extends LocalizedActivities.Activity implements MyLog.ILogger {
+    public static abstract class Activity extends AppCompatActivity implements MyLog.ILogger {
         public Activity() {
             Utils.initializeSecureRandom();
         }
@@ -127,19 +146,22 @@ public abstract class MainBase {
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.MainBase.TabbedActivityBase.STATUS_ENTRY_AVAILABLE";
         protected static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
         protected static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
+        protected static final String ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION = "askedToAccessCoarseLocationPermission";
         protected static final String CURRENT_TAB = "currentTab";
+        protected static final String CURRENT_PURCHASE = "currentPurchase";
 
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
         protected static final int REQUEST_CODE_PREFERENCE = 101;
+        protected static final int REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 102;
 
         protected static boolean m_firstRun = true;
         private boolean m_canWholeDevice = false;
 
         protected Button m_toggleButton;
         private StatusListViewManager m_statusListManager = null;
-        private AppPreferences m_multiProcessPreferences;
+        protected AppPreferences m_multiProcessPreferences;
         private ViewFlipper m_sponsorViewFlipper;
-        private LinearLayout m_statusLayout;
+        private ScrollView m_statusLayout;
         private TextView m_statusTabLogLine;
         private TextView m_statusTabVersionLine;
         private SponsorHomePage m_sponsorHomePage;
@@ -162,9 +184,86 @@ public abstract class MainBase {
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
         private LoggingObserver m_loggingObserver;
+        private boolean m_serviceStateUIPaused = false;
+
+        // This fragment helps retain data across configuration changes
+        protected RetainedDataFragment m_retainedDataFragment;
+        private static final String TAG_RETAINED_DATA_FRAGMENT = "com.psiphon3.RetainedDataFragment";
+
+        public static class RetainedDataFragment extends Fragment {
+            private final Map<String, Map<Class<?>, Object>> internalMap = new HashMap<>();
+
+            @Override
+            public void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                // retain this fragment
+                setRetainInstance(true);
+            }
+
+            private <T> void put(String key, Class<T> type, T value) {
+                if (!internalMap.containsKey(key)) {
+                    final Map<Class<?>, Object> typeValueMap = new HashMap<>();
+                    typeValueMap.put(type, value);
+                    internalMap.put(key, typeValueMap);
+                } else {
+                    internalMap.get(key).put(type, value);
+                }
+            }
+
+            private <T> T get(String key, Class<T> type) {
+                if (internalMap.containsKey(key))
+                    return type.cast(internalMap.get(key).get(type));
+                else
+                    return null;
+            }
+
+            public Purchase getCurrentPurchase() {
+                return get(CURRENT_PURCHASE, Purchase.class);
+            }
+
+            public void setCurrentPurchase(Purchase value) {
+                put(CURRENT_PURCHASE, Purchase.class, value);
+            }
+
+            public Boolean getBoolean(String key, Boolean devaultValue) {
+                Boolean b = get(key, Boolean.class);
+                if(b == null) {
+                    return devaultValue;
+                } //else
+                return b;
+            }
+
+            public void putBoolean(String key, Boolean value) {
+                put(key, Boolean.class, value);
+            }
+        }
 
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
+        }
+
+        protected boolean getSkipHomePage() {
+            for (String homepage : getHomePages()) {
+                if (homepage.contains("psiphon_skip_homepage")) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        protected boolean showFirstHomePageInApp() {
+            boolean showHomePage = false;
+            List<String> homepages = getHomePages();
+            if (!getSkipHomePage() && homepages.size() > 0) {
+                showHomePage = true;
+                for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
+                    if (homepages.get(0).contains(homeTabUrlExclusion)) {
+                        showHomePage = false;
+                        break;
+                    }
+                }
+            }
+            return showHomePage;
         }
 
         // Avoid calling m_statusTabToggleButton.setImageResource() every 250 ms
@@ -183,19 +282,7 @@ public abstract class MainBase {
 
                 // Show the sponsor web view, but only if there's a home page to
                 // show and it's isn't excluded from being embedded.
-                boolean showHomePage = false;
-                List<String> homepages = getHomePages();
-                if (homepages.size() > 0) {
-                    showHomePage = true;
-                    for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
-                        if (homepages.get(0).contains(homeTabUrlExclusion)) {
-                            showHomePage = false;
-                            break;
-                        }
-                    }
-                }
-
-                if (showHomePage && statusShowing) {
+                if (showFirstHomePageInApp() && statusShowing) {
                     m_sponsorViewFlipper.showNext();
                 }
             } else {
@@ -394,6 +481,25 @@ public abstract class MainBase {
                 EmbeddedValues.initialize(this);
             }
 
+            FragmentManager fm = getFragmentManager();
+            m_retainedDataFragment = (RetainedDataFragment) fm.findFragmentByTag(TAG_RETAINED_DATA_FRAGMENT);
+            if (m_retainedDataFragment == null) {
+                m_retainedDataFragment = new RetainedDataFragment();
+                fm.beginTransaction().add(m_retainedDataFragment, TAG_RETAINED_DATA_FRAGMENT).commit();
+            }
+        }
+
+        @Override
+        protected void onDestroy() {
+            super.onDestroy();
+
+            if (m_sponsorHomePage != null) {
+                m_sponsorHomePage.stop();
+                m_sponsorHomePage = null;
+            }
+        }
+
+        protected void setupActivityLayout() {
             // Set up tabs
             m_tabHost.setup();
 
@@ -431,7 +537,7 @@ public abstract class MainBase {
             };
 
             m_tabHost.setOnTouchListener(onTouchListener);
-            m_statusLayout = (LinearLayout) findViewById(R.id.statusLayout);
+            m_statusLayout = (ScrollView) findViewById(R.id.statusLayout);
             m_statusViewImage = (ImageButton) findViewById(R.id.statusViewImage);
             m_statusViewImage.setOnTouchListener(onTouchListener);
             findViewById(R.id.sponsorViewFlipper).setOnTouchListener(onTouchListener);
@@ -532,16 +638,6 @@ public abstract class MainBase {
             LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
         }
 
-        @Override
-        protected void onDestroy() {
-            super.onDestroy();
-
-            if (m_sponsorHomePage != null) {
-                m_sponsorHomePage.stop();
-                m_sponsorHomePage = null;
-            }
-        }
-
         /**
          * Show the sponsor home page, either in the embedded view web view or
          * in the external browser.
@@ -551,6 +647,10 @@ public abstract class MainBase {
          *                     time the activity is created.
          */
         protected void resetSponsorHomePage(boolean freshConnect) {
+            if (getSkipHomePage()) {
+                return;
+            }
+
             String url;
             List<String> homepages = getHomePages();
             if (homepages.size() > 0) {
@@ -559,14 +659,11 @@ public abstract class MainBase {
                 return;
             }
 
-            // Some URLs are excluded from being embedded as home pages.
-            for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
-                if (url.contains(homeTabUrlExclusion)) {
-                    if (freshConnect) {
-                        displayBrowser(getContext(), Uri.parse(url));
-                    }
-                    return;
+            if (!showFirstHomePageInApp()) {
+                if (freshConnect) {
+                    displayBrowser(getContext(), Uri.parse(url));
                 }
+                return;
             }
 
             // At this point we're showing the URL in the embedded webview.
@@ -577,7 +674,7 @@ public abstract class MainBase {
         @Override
         protected void onResume() {
             super.onResume();
-
+            
             // Load new logs from the logging provider now
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                 m_loggingObserver.dispatchChange(false, LoggingProvider.INSERT_URI);
@@ -674,6 +771,8 @@ public abstract class MainBase {
                 });
             }
         }
+
+        public abstract void onSubscribeButtonClick(View v);
 
         protected abstract void startUp();
 
@@ -861,14 +960,28 @@ public abstract class MainBase {
         }
 
         private void updateServiceStateUI() {
+            if (m_serviceStateUIPaused) {
+                return;
+            }
+
             if (!m_boundToTunnelService) {
                 setStatusState(R.drawable.status_icon_disconnected);
                 if (!isServiceRunning()) {
                     m_toggleButton.setText(getText(R.string.start));
                     enableToggleServiceUI();
+                    updateSubscriptionAndAdOptions(true);
+                
+                    if (WebViewProxySettings.isLocalProxySet()) {
+                        WebViewProxySettings.resetLocalProxy(this);
+                    }
                 } else {
                     m_toggleButton.setText(getText(R.string.waiting));
                     disableToggleServiceUI();
+                    updateSubscriptionAndAdOptions(false);
+                
+                    if (WebViewProxySettings.isLocalProxySet()) {
+                        WebViewProxySettings.resetLocalProxy(this);
+                    }
                 }
             } else {
                 if (isTunnelConnected()) {
@@ -878,9 +991,16 @@ public abstract class MainBase {
                 }
                 m_toggleButton.setText(getText(R.string.stop));
                 enableToggleServiceUI();
+                updateSubscriptionAndAdOptions(false);
             }
+
+            updateAdsForServiceState();
         }
-        
+
+        protected abstract void updateAdsForServiceState();
+
+        protected abstract void updateSubscriptionAndAdOptions(boolean show);
+
         protected void enableToggleServiceUI() {
             m_toggleButton.setEnabled(true);
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
@@ -896,6 +1016,16 @@ public abstract class MainBase {
             m_regionSelector.setEnabled(false);
             m_moreOptionsButton.setEnabled(false);
         }
+        
+        protected void pauseServiceStateUI() {
+            m_serviceStateUIPaused = true;
+            disableToggleServiceUI();
+        }
+
+        protected void resumeServiceStateUI() {
+            m_serviceStateUIPaused = false;
+            updateServiceStateUI();
+        }
 
         private void checkRestartTunnel() {
             if (m_restartTunnel &&
@@ -906,15 +1036,84 @@ public abstract class MainBase {
             }
         }
 
-        private void scheduleRunningTunnelServiceRestart() {
+        protected void scheduleRunningTunnelServiceRestart() {
             if (isServiceRunning()) {
                 m_restartTunnel = true;
                 stopTunnelService();
                 // The tunnel will get restarted in m_updateServiceStateTimer
             }
         }
-        
+
         protected void startTunnel() {
+            // Tunnel core needs this dangerous permission to obtain the WiFi BSSID, which is used
+            // as a key for applying tactics
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                            == PackageManager.PERMISSION_GRANTED) {
+                proceedStartTunnel();
+            } else {
+                AppPreferences mpPreferences = new AppPreferences(this);
+                if (mpPreferences.getBoolean(ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION, false)) {
+                    proceedStartTunnel();
+                } else if(!this.isFinishing()){
+                    final Context context = this;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            new AlertDialog.Builder(context)
+                                    .setCancelable(false)
+                                    .setOnKeyListener(
+                                            new DialogInterface.OnKeyListener() {
+                                                @Override
+                                                public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                                                    // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
+                                                    return keyCode == KeyEvent.KEYCODE_SEARCH;
+                                                }})
+                                    .setTitle(R.string.MainBase_AccessCoarseLocationPermissionPromptTitle)
+                                    .setMessage(R.string.MainBase_AccessCoarseLocationPermissionPromptMessage)
+                                    .setPositiveButton(R.string.MainBase_AccessCoarseLocationPermissionPositiveButton,
+                                            new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int whichButton) {
+                                                    m_multiProcessPreferences.put(ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION, true);
+                                                    ActivityCompat.requestPermissions(TabbedActivityBase.this,
+                                                            new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                                                            REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION);
+                                                }})
+                                    .setNegativeButton(R.string.MainBase_AccessCoarseLocationPermissionNegativeButton,
+                                            new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int whichButton) {
+                                                    m_multiProcessPreferences.put(ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION, true);
+                                                    proceedStartTunnel();
+                                                }})
+                                    .setOnCancelListener(
+                                            new DialogInterface.OnCancelListener() {
+                                                @Override
+                                                public void onCancel(DialogInterface dialog) {
+                                                    // Do nothing (this prompt may reappear)
+                                                }})
+                                    .show();
+                        }
+                    });
+                }
+            }
+        }
+
+        @Override
+        public void onRequestPermissionsResult(int requestCode,
+                                               String permissions[], int[] grantResults) {
+            switch (requestCode) {
+                case REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION:
+                    proceedStartTunnel();
+                    break;
+
+                default:
+                    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            }
+        }
+
+        private void proceedStartTunnel() {
             // Don't start if custom proxy settings is selected and values are
             // invalid
             boolean useHTTPProxyPreference = UpstreamProxySettings.getUseHTTPProxy(this);
@@ -1012,6 +1211,45 @@ public abstract class MainBase {
                 return false;
             }
 
+            //check if "add custom headers" checkbox changed
+            boolean addCustomHeadersPreference = prefs.getBoolean(
+                    getString(R.string.addCustomHeadersPreference), false);
+            if (addCustomHeadersPreference != UpstreamProxySettings.getAddCustomHeadersPreference(this)) {
+                return true;
+            }
+
+            // "add custom headers" is selected, check if
+            // upstream headers string has changed
+            if (addCustomHeadersPreference) {
+                JSONObject newHeaders = new JSONObject();
+
+                for (int position = 1; position <= 6; position++) {
+                    int nameID = getResources().getIdentifier("customProxyHeaderName" + position, "string", getPackageName());
+                    int valueID = getResources().getIdentifier("customProxyHeaderValue" + position, "string", getPackageName());
+
+                    String namePrefStr = getResources().getString(nameID);
+                    String valuePrefStr = getResources().getString(valueID);
+
+                    String name = prefs.getString(namePrefStr, "");
+                    String value = prefs.getString(valuePrefStr, "");
+                    try {
+                        if (!TextUtils.isEmpty(name)) {
+                            JSONArray arr = new JSONArray();
+                            arr.put(value);
+                            newHeaders.put(name, arr);
+                        }
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                JSONObject oldHeaders = UpstreamProxySettings.getUpstreamProxyCustomHeaders(this);
+
+                if (0 != oldHeaders.toString().compareTo(newHeaders.toString())) {
+                    return true;
+                }
+            }
+
             // check if "use custom proxy settings"
             // radio has changed
             boolean useCustomProxySettingsPreference = prefs.getBoolean(
@@ -1087,7 +1325,20 @@ public abstract class MainBase {
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyAuthenticationPreference), getString(R.string.useProxyAuthenticationPreference)),
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyUsernamePreference), getString(R.string.useProxyUsernamePreference)),
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyPasswordPreference), getString(R.string.useProxyPasswordPreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference))
+                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.addCustomHeadersPreference), getString(R.string.addCustomHeadersPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName1), getString(R.string.customProxyHeaderName1)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue1), getString(R.string.customProxyHeaderValue1)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName2), getString(R.string.customProxyHeaderName2)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue2), getString(R.string.customProxyHeaderValue2)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName3), getString(R.string.customProxyHeaderName3)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue3), getString(R.string.customProxyHeaderValue3)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName4), getString(R.string.customProxyHeaderName4)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue4), getString(R.string.customProxyHeaderValue4)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName5), getString(R.string.customProxyHeaderName5)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue5), getString(R.string.customProxyHeaderValue5)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName6), getString(R.string.customProxyHeaderName6)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue6), getString(R.string.customProxyHeaderValue6))
                 );
 
                 if (bRestartRequired) {
@@ -1166,6 +1417,16 @@ public abstract class MainBase {
                     getTunnelConfigDisableTimeouts());
 
             intent.putExtra(TunnelManager.CLIENT_MESSENGER, m_incomingMessenger);
+
+            Purchase currentPurchase = m_retainedDataFragment.getCurrentPurchase();
+            if(currentPurchase != null) {
+                intent.putExtra(TunnelManager.DATA_PURCHASE_ID,
+                        currentPurchase.getSku());
+                intent.putExtra(TunnelManager.DATA_PURCHASE_TOKEN,
+                        currentPurchase.getToken());
+                intent.putExtra(TunnelManager.DATA_PURCHASE_IS_SUBSCRIPTION,
+                        currentPurchase.getItemType().equals(IabHelper.ITEM_TYPE_SUBS));
+            }
         }
 
         protected void startAndBindTunnelService() {
@@ -1184,7 +1445,21 @@ public abstract class MainBase {
                 intent = new Intent(this, TunnelService.class);
             }
             configureServiceIntent(intent);
-            startService(intent);
+
+            // Use a wrapper to start a service in SDK >= 26
+            // which is defined like following
+            /*
+                public static void startForegroundService(Context context, Intent intent) {
+                    if (Build.VERSION.SDK_INT >= 26) {
+                        context.startForegroundService(intent);
+                    } else {
+                        // Pre-O behavior.
+                        context.startService(intent);
+                    }
+                }
+             */
+            ContextCompat.startForegroundService(this, intent);
+
             if (bindService(intent, m_tunnelServiceConnection, 0)) {
                 m_boundToTunnelService = true;
             }
@@ -1212,6 +1487,10 @@ public abstract class MainBase {
             return m_tunnelState.listeningLocalHttpProxyPort;
         }
 
+        protected String getClientRegion() {
+            return m_tunnelState.clientRegion;
+        }
+
         protected void getTunnelStateFromHandshakeIntent(Intent intent) {
             if (!intent.getAction().equals(TunnelManager.INTENT_ACTION_HANDSHAKE)) {
                 return;
@@ -1236,6 +1515,11 @@ public abstract class MainBase {
             if (homePages != null) {
                 m_tunnelState.homePages = homePages;
             }
+            onTunnelStateReceived();
+        }
+
+        protected void onTunnelStateReceived() {
+            // do nothing
         }
 
         private void getDataTransferStatsFromBundle(Bundle data) {
@@ -1285,6 +1569,7 @@ public abstract class MainBase {
 
                     case TunnelManager.MSG_TUNNEL_STOPPING:
                         m_tunnelState.isConnected = false;
+                        onTunnelDisconnected();
 
                         // When the tunnel self-stops, we also need to unbind to ensure
                         // the service is destroyed
@@ -1293,6 +1578,9 @@ public abstract class MainBase {
 
                     case TunnelManager.MSG_TUNNEL_CONNECTION_STATE:
                         m_tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
+                        if (!m_tunnelState.isConnected) {
+                            onTunnelDisconnected();
+                        }
                         updateServiceStateUI();
                         break;
 
@@ -1369,6 +1657,10 @@ public abstract class MainBase {
                 }
             }
             updateServiceStateUI();
+        }
+
+        protected void onTunnelDisconnected() {
+            // do nothing
         }
 
         /**
@@ -1481,7 +1773,8 @@ public abstract class MainBase {
             private final SponsorWebChromeClient mWebChromeClient;
             private final ProgressBar mProgressBar;
 
-            @TargetApi(Build.VERSION_CODES.HONEYCOMB) public SponsorHomePage(WebView webView, ProgressBar progressBar) {
+            @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+            public SponsorHomePage(WebView webView, ProgressBar progressBar) {
                 mWebView = webView;
                 mProgressBar = progressBar;
                 mWebChromeClient = new SponsorWebChromeClient(mProgressBar);

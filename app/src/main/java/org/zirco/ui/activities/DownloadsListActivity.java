@@ -17,8 +17,7 @@ package org.zirco.ui.activities;
 
 import java.io.File;
 
-import com.psiphon3.R;
-import com.psiphon3.psiphonlibrary.LocalizedActivities;
+import com.psiphon3.subscription.R;
 import org.zirco.controllers.Controller;
 import org.zirco.events.EventConstants;
 import org.zirco.events.EventController;
@@ -27,6 +26,7 @@ import org.zirco.model.adapters.DownloadListAdapter;
 import org.zirco.model.items.DownloadItem;
 
 import android.app.AlertDialog;
+import android.app.ListActivity;
 import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -44,7 +44,7 @@ import android.widget.TextView;
 /**
  * Download list activity.
  */
-public class DownloadsListActivity extends LocalizedActivities.ListActivity implements IDownloadEventsListener {
+public class DownloadsListActivity extends ListActivity implements IDownloadEventsListener {
 	
 	private static final int MENU_CLEAR_DOWNLOADS = Menu.FIRST;
 
