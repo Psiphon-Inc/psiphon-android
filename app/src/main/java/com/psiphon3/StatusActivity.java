@@ -78,7 +78,6 @@ import com.psiphon3.util.SkuDetails;
 import com.psiphon3.psiphonlibrary.*;
 
 import net.grandcentrix.tray.AppPreferences;
-import net.grandcentrix.tray.BuildConfig;
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
 import java.util.ArrayList;
