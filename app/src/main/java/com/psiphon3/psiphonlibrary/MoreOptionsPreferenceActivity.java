@@ -46,7 +46,7 @@ import org.zirco.ui.activities.MainActivity;
 
 import java.util.*;
 
-public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompatPreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceClickListener {
+public class MoreOptionsPreferenceActivity extends LocalizedActivities.PreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceClickListener {
 
     /**
      * This is a work around for SDK 9, 10 as they lack Intent.FLAG_ACTIVITY_CLEAR_TASK.
