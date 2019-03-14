@@ -25,6 +25,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 
+import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
@@ -37,7 +38,7 @@ import java.util.Currency;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PaymentChooserActivity extends AppCompatActivity {
+public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivity {
     public static final String SKU_INFO_EXTRA = "SKU_INFO";
     public static final String BUY_TYPE_EXTRA = "BUY_TYPE";
     public static final int BUY_SUBSCRIPTION = 1;
