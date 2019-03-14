@@ -17,6 +17,7 @@ package org.zirco.ui.activities.preferences;
 
 import java.util.List;
 
+import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.subscription.R;
 import org.zirco.controllers.Controller;
 import org.zirco.providers.BookmarksProviderWrapper;
@@ -54,7 +55,7 @@ import android.webkit.CookieManager;
 /**
  * Preferences activity.
  */
-public class PreferencesActivity extends PreferenceActivity {
+public class PreferencesActivity extends LocalizedActivities.PreferenceActivity {
 	
 	private ProgressDialog mProgressDialog;
 	
