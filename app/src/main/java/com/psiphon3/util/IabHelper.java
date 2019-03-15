@@ -460,6 +460,15 @@ public class IabHelper {
             return;
         }
 
+        // PSIPHON
+        if (mService == null) {
+            IabResult r = new IabResult(IABHELPER_UNKNOWN_ERROR,
+                    "Billing service is not connected.");
+            flagEndAsync();
+            if (listener != null) listener.onIabPurchaseFinished(r, null);
+            return;
+        }
+
         try {
             logDebug("Constructing buy intent for " + sku + ", item type: " + itemType);
             Bundle buyIntentBundle;
