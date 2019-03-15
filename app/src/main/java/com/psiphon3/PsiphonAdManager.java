@@ -246,7 +246,8 @@ public class PsiphonAdManager {
     private void runAdMobGdprCheck() {
         String[] publisherIds = {"pub-1072041961750291"};
         // TODO remove after testing
-        ConsentInformation.getInstance(activity).addTestDevice("4F95EFD7B82BC0F1E99B48909DF1C8C4");
+        ConsentInformation.getInstance(activity)
+                .addTestDevice("DD841979B3AEC945A788CF1196793B06");
         ConsentInformation.getInstance(activity).
                 setDebugGeography(DebugGeography.DEBUG_GEOGRAPHY_EEA);
         ConsentInformation.getInstance(activity).requestConsentInfoUpdate(publisherIds, new ConsentInfoUpdateListener() {
@@ -466,7 +467,7 @@ public class PsiphonAdManager {
                     AdRequest adRequest = new AdRequest.Builder()
                             .addNetworkExtrasBundle(AdMobAdapter.class, extras)
                             // TODO remove after testing
-                            .addTestDevice("4F95EFD7B82BC0F1E99B48909DF1C8C4")
+                            .addTestDevice("DD841979B3AEC945A788CF1196793B06")
                             .build();
                     unTunneledAdMobBannerAdView.loadAd(adRequest);
                 }));
@@ -597,7 +598,7 @@ public class PsiphonAdManager {
                             }
                             AdRequest adRequest = new AdRequest.Builder()
                                     // TODO remove after testing
-                                    .addTestDevice("4F95EFD7B82BC0F1E99B48909DF1C8C4")
+                                    .addTestDevice("DD841979B3AEC945A788CF1196793B06")
                                     .addNetworkExtrasBundle(AdMobAdapter.class, extras)
                                     .build();
                             if (unTunneledAdMobInterstitial.isLoaded()) {
