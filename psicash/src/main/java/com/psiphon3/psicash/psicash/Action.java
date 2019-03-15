@@ -22,14 +22,16 @@ public interface Action extends MviAction {
 
     @AutoValue
     abstract class MakeExpiringPurchase implements Action {
-        public static MakeExpiringPurchase create(TunnelConnectionState status, @Nullable PsiCashLib.PurchasePrice price) {
-            return new AutoValue_Action_MakeExpiringPurchase(status, price);
+        public static MakeExpiringPurchase create(TunnelConnectionState status, @Nullable PsiCashLib.PurchasePrice price, boolean hasActiveBoost) {
+            return new AutoValue_Action_MakeExpiringPurchase(status, price, hasActiveBoost);
         }
 
         abstract TunnelConnectionState connectionState();
 
         @Nullable
         abstract PsiCashLib.PurchasePrice purchasePrice();
+
+        abstract boolean hasActiveBoost();
     }
 
     @AutoValue

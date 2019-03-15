@@ -7,15 +7,7 @@
     android:padding="0dp">
 
     <TextView
-        android:id="@+id/countdown_label"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:padding="10dp"
-        android:text="IDLE" />
-
-    <TextView
-        android:id="@+id/balance_label"
+        android:id="@+id/psicash_balance_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
@@ -42,8 +34,7 @@
         <Button
             android:id="@+id/purchase_speedboost_btn"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Purchase speed boost" />
+            android:layout_height="wrap_content"/>
     </RelativeLayout>
 
 

@@ -14,14 +14,16 @@ import ca.psiphon.psicashlib.PsiCashLib;
 public interface Intent extends MviIntent {
     @AutoValue
     abstract class PurchaseSpeedBoost implements Intent {
-        public static PurchaseSpeedBoost create(TunnelConnectionState state, @Nullable PsiCashLib.PurchasePrice price) {
-            return new AutoValue_Intent_PurchaseSpeedBoost(state, price);
+        public static PurchaseSpeedBoost create(TunnelConnectionState state, @Nullable PsiCashLib.PurchasePrice price, boolean hasActiveBoost) {
+            return new AutoValue_Intent_PurchaseSpeedBoost(state, price, hasActiveBoost);
         }
 
         abstract TunnelConnectionState connectionState();
 
         @Nullable
         abstract PsiCashLib.PurchasePrice purchasePrice();
+
+        abstract boolean hasActiveBoost();
     }
 
     @AutoValue

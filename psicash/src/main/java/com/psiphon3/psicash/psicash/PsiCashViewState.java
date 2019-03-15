@@ -11,10 +11,9 @@ import ca.psiphon.psicashlib.PsiCashLib;
 
 @AutoValue
 public abstract class PsiCashViewState implements MviViewState {
-
-    public abstract long balance();
-    public abstract long reward();
+    public abstract int uiBalance();
     public abstract boolean purchaseInFlight();
+    public abstract boolean animateOnNextBalanceChange();
 
     @Nullable
     public abstract PsiCashLib.PurchasePrice purchasePrice();
@@ -29,20 +28,18 @@ public abstract class PsiCashViewState implements MviViewState {
 
     static PsiCashViewState idle() {
         return new AutoValue_PsiCashViewState.Builder()
-                .balance(0L)
-                .reward(0L)
+                .uiBalance(0)
                 .purchasePrice(null)
                 .nextPurchaseExpiryDate(null)
                 .error(null)
                 .purchaseInFlight(false)
+                .animateOnNextBalanceChange(false)
                 .build();
     }
 
     @AutoValue.Builder
     static abstract class Builder {
-        abstract Builder balance(long balance);
-
-        abstract Builder reward(long reward);
+        abstract Builder uiBalance(int balance);
 
         abstract Builder error(@Nullable Throwable error);
 
@@ -51,6 +48,8 @@ public abstract class PsiCashViewState implements MviViewState {
         abstract Builder nextPurchaseExpiryDate(@Nullable Date date);
 
         public abstract Builder purchaseInFlight(boolean b);
+
+        public abstract Builder animateOnNextBalanceChange(boolean b);
 
         abstract PsiCashViewState build();
     }

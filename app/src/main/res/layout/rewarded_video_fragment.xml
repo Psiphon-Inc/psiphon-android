@@ -7,8 +7,8 @@
     android:padding="0dp">
 
     <Button
-        android:id="@+id/watch_rewardedvideo_btn"
+        android:id="@+id/load_watch_rewarded_video_btn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="watch video for reward" />
+        android:text="Watch video &#038; earn PsiCash" />
 </LinearLayout>

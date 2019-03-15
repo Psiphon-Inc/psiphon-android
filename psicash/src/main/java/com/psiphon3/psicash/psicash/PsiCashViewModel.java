@@ -54,6 +54,7 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
             (previousState, result) -> {
                 Log.d(TAG, "reducer: result: " + result);
                 PsiCashViewState.Builder stateBuilder = previousState.withState();
+
                 if (result instanceof Result.GetPsiCash) {
                     Result.GetPsiCash getPsiCashResult = (Result.GetPsiCash) result;
 
@@ -61,10 +62,12 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                     Date nextPurchaseExpiryDate = null;
 
                     PsiCashModel.PsiCash model = getPsiCashResult.model();
-                    long balance = 0, reward = 0;
+                    int uiBalance = 0;
                     if (model != null) {
-                        balance = model.balance();
-                        reward = model.reward();
+                        long balance = model.balance();
+                        long reward = model.reward();
+                        uiBalance = (int)(Math.floor((long) ((reward * 1e9 + balance) / 1e9)));
+
                         List<PsiCashLib.PurchasePrice> purchasePriceList = model.purchasePrices();
                         if(purchasePriceList != null) {
                             for (PsiCashLib.PurchasePrice p : purchasePriceList) {
@@ -82,10 +85,11 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                     switch (getPsiCashResult.status()) {
                         case SUCCESS:
                             return stateBuilder
-                                    .balance(balance)
-                                    .reward(reward)
+                                    .uiBalance(uiBalance)
                                     .purchasePrice(price)
                                     .nextPurchaseExpiryDate(nextPurchaseExpiryDate)
+                                    // after first success animate on consecutive balance changes
+                                    .animateOnNextBalanceChange(true)
                                     .build();
                         case FAILURE:
                             return stateBuilder
@@ -172,7 +176,8 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
             Intent.PurchaseSpeedBoost purchaseSpeedBoostIntent = (Intent.PurchaseSpeedBoost) intent;
             final PsiCashLib.PurchasePrice price = purchaseSpeedBoostIntent.purchasePrice();
             final TunnelConnectionState tunnelConnectionState = purchaseSpeedBoostIntent.connectionState();
-            return Observable.just(Action.MakeExpiringPurchase.create(tunnelConnectionState, price));
+            final boolean hasActiveBoost = purchaseSpeedBoostIntent.hasActiveBoost();
+            return Observable.just(Action.MakeExpiringPurchase.create(tunnelConnectionState, price, hasActiveBoost));
         }
         if (intent instanceof Intent.RemovePurchases) {
             Intent.RemovePurchases removePurchases = (Intent.RemovePurchases) intent;

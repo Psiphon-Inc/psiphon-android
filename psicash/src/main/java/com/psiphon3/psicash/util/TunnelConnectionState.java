@@ -13,7 +13,7 @@ public abstract class TunnelConnectionState {
     }
 
     @AutoValue
-    public static abstract class PsiCashMetaData {
+    public static abstract class ConnectionData {
         public abstract String clientRegion();
 
         public abstract String clientVersion();
@@ -22,8 +22,13 @@ public abstract class TunnelConnectionState {
 
         public abstract String sponsorId();
 
+
+        public abstract boolean vpnMode();
+
+        public abstract int httpPort();
+
         public static Builder builder() {
-            return new AutoValue_TunnelConnectionState_PsiCashMetaData.Builder();
+            return new AutoValue_TunnelConnectionState_ConnectionData.Builder();
         }
 
         @AutoValue.Builder
@@ -36,24 +41,23 @@ public abstract class TunnelConnectionState {
 
             public abstract Builder setSponsorId(String value);
 
-            public abstract PsiCashMetaData build();
+            public abstract Builder setVpnMode(boolean isVpn);
+
+            public abstract Builder setHttpPort(int port);
+
+            public abstract ConnectionData build();
         }
     }
 
     public abstract Status status();
-
-    public abstract boolean vpnMode();
-
-    public abstract int httpPort();
-
     @Nullable
-    public abstract PsiCashMetaData psiCashMetaData();
+    public abstract ConnectionData connectionData();
 
     public static TunnelConnectionState disconnected() {
-        return new AutoValue_TunnelConnectionState(Status.DISCONNECTED, false, 0, null);
+        return new AutoValue_TunnelConnectionState(Status.DISCONNECTED, null);
     }
 
-    public static TunnelConnectionState connected(boolean vpnMode, int httpPort, PsiCashMetaData psiCashMetaData) {
-        return new AutoValue_TunnelConnectionState(Status.CONNECTED, vpnMode, httpPort, psiCashMetaData);
+    public static TunnelConnectionState connected(ConnectionData connectionData) {
+        return new AutoValue_TunnelConnectionState(Status.CONNECTED, connectionData);
     }
 }

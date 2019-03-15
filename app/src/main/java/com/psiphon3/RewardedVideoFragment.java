@@ -10,9 +10,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import com.jakewharton.rxbinding2.view.RxView;
 import com.jakewharton.rxrelay2.BehaviorRelay;
-import com.jakewharton.rxrelay2.PublishRelay;
-import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.psicash.PsiCashClient;
 import com.psiphon3.psicash.psicash.PsiCashException;
@@ -27,19 +26,20 @@ import com.psiphon3.psicash.util.TunnelConnectionState;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
+import java.util.concurrent.TimeUnit;
+
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 
 public class RewardedVideoFragment extends Fragment implements MviView<Intent, RewardedVideoViewState> {
-    enum LoadVideoIntent {LOAD_VIDEO_INTENT};
-
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
-    private Button watchRewardedVideoBtn;
-    private Relay<TunnelConnectionState> tunnelConnectionStateBehaviourRelay;
-    private Relay<LoadVideoIntent> loadVideoActionPublishRelay;
+    private Button loadWatchRewardedVideoBtn;
+    private BehaviorRelay<TunnelConnectionState> tunnelConnectionStateBehaviourRelay;
 
+    private boolean shouldAutoLoadNextVideo = false;
     private RewardedVideoViewModel rewardedVideoViewModel;
+    private boolean shouldAutoPlay;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -64,15 +64,15 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
         rewardedVideoViewModel = ViewModelProviders.of(this, new RewardedVideoViewModelFactory(getActivity().getApplication(), rewardListener))
                 .get(RewardedVideoViewModel.class);
 
-        tunnelConnectionStateBehaviourRelay = BehaviorRelay.<TunnelConnectionState>create().toSerialized();
-        loadVideoActionPublishRelay = PublishRelay.<LoadVideoIntent>create().toSerialized();
+        tunnelConnectionStateBehaviourRelay = BehaviorRelay.create();
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         RewardedVideoClient.getInstance().initWithActivity(getActivity());
-        watchRewardedVideoBtn = getActivity().findViewById(R.id.watch_rewardedvideo_btn);
+
+        loadWatchRewardedVideoBtn = getActivity().findViewById(R.id.load_watch_rewarded_video_btn);
     }
 
     @Override
@@ -104,19 +104,29 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
         compositeDisposable.clear();
     }
 
-
     @Override
     public Observable<Intent> intents() {
-        return Observable.combineLatest(
-                hasValidTokensObservable(),
-                loadVideoActionPublishObservable()
-                        .startWith(LoadVideoIntent.LOAD_VIDEO_INTENT),
-                connectionStateObservable(),
-                (ignore1, ignore2, s) -> Intent.LoadVideoAd.create(s));
+        return loadVideoIntent();
     }
 
-    private Observable<LoadVideoIntent> loadVideoActionPublishObservable() {
-        return loadVideoActionPublishRelay.hide();
+
+    private Observable<Intent> loadVideoIntent() {
+        shouldAutoPlay = false;
+        final Observable <Object> loadVideo;
+
+        if (shouldAutoLoadNextVideo){
+            loadVideo = Observable.just(1);
+        } else {
+            loadVideo = RxView.clicks(loadWatchRewardedVideoBtn)
+                    .debounce(200, TimeUnit.MILLISECONDS)
+                    .doOnNext(__ -> shouldAutoPlay = true);
+        }
+
+        return Observable.combineLatest(
+                loadVideo,
+                hasValidTokensObservable(),
+                connectionStateObservable(),
+                (ignore1, ignore2, s) -> Intent.LoadVideoAd.create(s));
     }
 
     private Observable<Boolean> hasValidTokensObservable() {
@@ -134,18 +144,33 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
 
     @Override
     public void render(RewardedVideoViewState state) {
-        Runnable videoPlayRunnable = state.videoPlayRunnable();
-        watchRewardedVideoBtn.setEnabled(videoPlayRunnable != null);
-        watchRewardedVideoBtn.setOnClickListener(view -> {
-            if (videoPlayRunnable != null) {
-                videoPlayRunnable.run();
-            }
-        });
-    }
+        shouldAutoLoadNextVideo = state.shouldAutoLoadOnNextForeground();
 
-    private void sendGotRewardForVideoIntent() {
-        android.content.Intent intent = new android.content.Intent(BroadcastIntent.GOT_REWARD_FOR_VIDEO_INTENT);
-        LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
+        if(state.inFlight()) {
+            loadWatchRewardedVideoBtn.setText("in flight");
+            loadWatchRewardedVideoBtn.setEnabled(false);
+            return;
+        }
+
+        if(state.error() != null) {
+            // reset autoPlay state if error
+            shouldAutoPlay = false;
+            loadWatchRewardedVideoBtn.setText(state.error().getMessage());
+            loadWatchRewardedVideoBtn.setEnabled(false);
+            return;
+        }
+
+        Runnable videoPlayRunnable = state.videoPlayRunnable();
+        if (videoPlayRunnable != null) {
+            if(shouldAutoPlay) {
+                shouldAutoPlay = false;
+                videoPlayRunnable.run();
+            } else {
+                loadWatchRewardedVideoBtn.setEnabled(true);
+                loadWatchRewardedVideoBtn.setText("Video is ready");
+                loadWatchRewardedVideoBtn.setOnClickListener(view -> videoPlayRunnable.run());
+            }
+        }
     }
 
     public void onTunnelConnectionState(TunnelConnectionState status) {

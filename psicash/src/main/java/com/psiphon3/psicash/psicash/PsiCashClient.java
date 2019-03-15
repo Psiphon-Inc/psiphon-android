@@ -3,7 +3,6 @@ package com.psiphon3.psicash.psicash;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.v4.util.Pair;
 import android.util.Log;
 
 import com.psiphon3.psicash.util.TunnelConnectionState;
@@ -134,12 +133,12 @@ public class PsiCashClient {
         return Collections.singletonList("speed-boost");
     }
 
-    private void setPsiCashRequestMetaData(TunnelConnectionState.PsiCashMetaData psiCashMetaData) throws PsiCashException {
+    private void setPsiCashRequestMetaData(TunnelConnectionState.ConnectionData connectionData) throws PsiCashException {
         Map<String, String> metaData = new HashMap<>();
-        metaData.put("client_version", psiCashMetaData.clientVersion());
-        metaData.put("propagation_channel_id", psiCashMetaData.propagationChannelId());
-        metaData.put("client_region", psiCashMetaData.clientRegion());
-        metaData.put("sponsor_id", psiCashMetaData.sponsorId());
+        metaData.put("client_version", connectionData.clientVersion());
+        metaData.put("propagation_channel_id", connectionData.propagationChannelId());
+        metaData.put("client_region", connectionData.clientRegion());
+        metaData.put("sponsor_id", connectionData.sponsorId());
         for (Map.Entry<String, String> h : metaData.entrySet()) {
             PsiCashLib.Error error = psiCashLib.setRequestMetadataItem(h.getKey(), h.getValue());
             if (error != null) {
@@ -289,29 +288,30 @@ public class PsiCashClient {
     }
 
     // Emits both PsiCashModel.PsiCash and PsiCashModel.ExpiringPurchase
-    Observable<? extends PsiCashModel> makeExpiringPurchase(TunnelConnectionState connectionState, PsiCashLib.PurchasePrice price) {
-        return Observable.just(Pair.create(connectionState, price))
+    Observable<? extends PsiCashModel> makeExpiringPurchase(TunnelConnectionState connectionState, PsiCashLib.PurchasePrice price, boolean hasActiveBoost) {
+        return Observable.just(connectionState)
                 .observeOn(Schedulers.io())
-                .flatMap(pair -> Single.fromCallable(() -> {
-                    TunnelConnectionState state = pair.first;
-                    PsiCashLib.PurchasePrice p = pair.second;
-
+                .flatMap(state -> Single.fromCallable(() -> {
                     if (state.status() == TunnelConnectionState.Status.DISCONNECTED) {
-                        throw new PsiCashException.Recoverable("makeExpiringPurchase: not connected.", "Please connect to make a Speed Boost purchase.");
+                        if(hasActiveBoost) {
+                            throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.", "Please connect to verify your Speed Boost status.");
+                        } else {
+                            throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.", "Please connect to make a Speed Boost purchase.");
+                        }
                     }
-                    if (p == null) {
+                    if (price == null) {
                         throw new PsiCashException.Critical("makeExpiringPurchase: purchase price is null.");
                     }
 
-                    TunnelConnectionState.PsiCashMetaData psiCashMetaData = state.psiCashMetaData();
-                    if (psiCashMetaData != null) {
-                        setPsiCashRequestMetaData(psiCashMetaData);
+                    TunnelConnectionState.ConnectionData connectionData = state.connectionData();
+                    if (connectionData != null) {
+                        setPsiCashRequestMetaData(connectionData);
+                        setOkHttpClientHttpProxyPort(connectionData.httpPort());
                     }
-                    setOkHttpClientHttpProxyPort(state.httpPort());
 
                     PsiCashLib.NewExpiringPurchaseResult result =
-                            psiCashLib.newExpiringPurchase(p.transactionClass,
-                                    p.distinguisher, p.price);
+                            psiCashLib.newExpiringPurchase(price.transactionClass,
+                                    price.distinguisher, price.price);
 
                     if (result.error != null) {
                         if (result.error.critical) {
@@ -381,11 +381,13 @@ public class PsiCashClient {
                     }
 
                     if (c.status() == TunnelConnectionState.Status.CONNECTED) {
-                        setOkHttpClientHttpProxyPort(c.httpPort());
+                        TunnelConnectionState.ConnectionData connectionData = c.connectionData();
+                        if(connectionData != null) {
+                            setOkHttpClientHttpProxyPort(connectionData.httpPort());
+                        }
 
-                        TunnelConnectionState.PsiCashMetaData psiCashMetaData = c.psiCashMetaData();
-                        if (psiCashMetaData != null) {
-                            setPsiCashRequestMetaData(psiCashMetaData);
+                        if (connectionData != null) {
+                            setPsiCashRequestMetaData(connectionData);
                         }
 
                         return Completable.fromAction(() -> {

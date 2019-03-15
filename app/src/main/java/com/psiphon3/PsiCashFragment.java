@@ -1,19 +1,26 @@
 package com.psiphon3;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -56,10 +63,11 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
     private Relay<TunnelConnectionState> tunnelConnectionStateBehaviorRelay;
 
     private TextView balanceLabel;
-    private TextView countDownLabel;
     private Button buySpeedBoostBtn;
     private CountDownTimer countDownTimer;
     private ProgressBar purchaseProgress;
+    private int currentUiBalance;
+    private boolean animateOnBalanceChange = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -96,19 +104,19 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
         purchaseProgress = getActivity().findViewById(R.id.speedboost_purchase_progress);
         purchaseProgress.setIndeterminate(true);
         buySpeedBoostBtn = getActivity().findViewById(R.id.purchase_speedboost_btn);
-        balanceLabel = getActivity().findViewById(R.id.balance_label);
-        countDownLabel = getActivity().findViewById(R.id.countdown_label);
+        balanceLabel = getActivity().findViewById(R.id.psicash_balance_label);
+        balanceLabel.setText("0");
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
+    public void onStart() {
+        super.onStart();
         bind();
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
+    public void onStop() {
+        super.onStop();
         unbind();
     }
 
@@ -127,6 +135,10 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
         // Unconditionally get latest local PsiCash state when app is foregrounded
         compositeDisposable.add(getPsiCashLocalDisposable());
 
+        // Remove purchases when app is foregrounded and tunnel is not connected
+        // or connection status changes from connected to disconnected
+        compositeDisposable.add(removePurchasesDisposable());
+
         // Get PsiCash tokens when tunnel connects if there are none
         compositeDisposable.add(getPsiCashTokensDisposable());
     }
@@ -141,9 +153,10 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
     private Disposable buySpeedBoostClicksDisposable() {
         return RxView.clicks(buySpeedBoostBtn)
                 .debounce(200, TimeUnit.MILLISECONDS)
-                .mergeWith(removeExpiredPurchasesObservable())
                 .withLatestFrom(connectionStateObservable(), (__, state) ->
-                        Intent.PurchaseSpeedBoost.create(state, (PsiCashLib.PurchasePrice) buySpeedBoostBtn.getTag()))
+                        Intent.PurchaseSpeedBoost.create(state,
+                                (PsiCashLib.PurchasePrice) buySpeedBoostBtn.getTag(R.id.speedBoostPrice),
+                                (boolean) buySpeedBoostBtn.getTag(R.id.hasActiveSpeedBoostTag)))
                 .subscribe(intentsPublishRelay);
     }
 
@@ -172,8 +185,9 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
                 .subscribe(intentsPublishRelay);
     }
 
-    private Observable<Intent.RemovePurchases> removeExpiredPurchasesObservable() {
-        return Observable.just(1)
+    private Disposable removePurchasesDisposable() {
+        return connectionStateObservable()
+                .filter(state -> state.status() == TunnelConnectionState.Status.DISCONNECTED)
                 .flatMap(__ -> {
                     List<String> purchasesToRemove = new ArrayList<>();
                     // remove purchases that are not in the authorizations database.
@@ -203,9 +217,9 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
                         Utils.MyLog.g("Error removing expired purchases: " + e);
                     }
                     return Observable.empty();
-                });
+                })
+                .subscribe(intentsPublishRelay);
     }
-
 
     private void unbind() {
         compositeDisposable.clear();
@@ -237,33 +251,14 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
 
     @Override
     public void render(PsiCashViewState state) {
-        Date nextPurchaseExpiryDate = state.nextPurchaseExpiryDate();
-        if (nextPurchaseExpiryDate != null && new Date().before(nextPurchaseExpiryDate)) {
-            long millisDiff = nextPurchaseExpiryDate.getTime() - new Date().getTime();
-            startActiveSpeedBoostCountDown(millisDiff);
-        } else {
-            countDownLabel.setVisibility(View.GONE);
-        }
-
-        PsiCashLib.PurchasePrice purchasePrice = state.purchasePrice();
-        buySpeedBoostBtn.setTag(purchasePrice);
-
         Log.d(TAG, "render: " + state);
+        updateUiBalanceLabel(state);
+        updateUiBuyButton(state);
+        updateUiPurchaseProgress(state);
+        updateUiErrorMessage(state);
+    }
 
-        // TODO current locale?
-        balanceLabel.setText(String.format(Locale.US, "Balance: %.2f | Reward: %.2f",
-                state.balance() / 1e9,
-                (float)state.reward()));
-
-        if (state.purchaseInFlight()) {
-            purchaseProgress.setVisibility(View.VISIBLE);
-        } else {
-            purchaseProgress.setVisibility(View.INVISIBLE);
-        }
-
-        buySpeedBoostBtn.setEnabled(!state.purchaseInFlight());
-
-
+    private void updateUiErrorMessage(PsiCashViewState state) {
         Throwable error = state.error();
         if (error != null) {
             String errorMessage;
@@ -276,17 +271,115 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
                 errorMessage = error.toString();
             }
 
-            uiNotification(errorMessage);
+            // Clear view state error immediately
+            intentsPublishRelay.accept(Intent.ClearErrorState.create());
+            View view = getActivity().findViewById(R.id.psicashTab);
+            if (view == null) {
+                return;
+            }
+            Snackbar.make(view, errorMessage, Snackbar.LENGTH_LONG).show();
         }
+    }
+
+    private void updateUiPurchaseProgress(PsiCashViewState state) {
+        if (state.purchaseInFlight()) {
+            purchaseProgress.setVisibility(View.VISIBLE);
+        } else {
+            purchaseProgress.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    private void updateUiBuyButton(PsiCashViewState state) {
+        PsiCashLib.PurchasePrice purchasePrice = state.purchasePrice();
+        buySpeedBoostBtn.setTag(R.id.speedBoostPrice, purchasePrice);
+        buySpeedBoostBtn.setEnabled(!state.purchaseInFlight());
+        Date nextPurchaseExpiryDate = state.nextPurchaseExpiryDate();
+        if (nextPurchaseExpiryDate != null && new Date().before(nextPurchaseExpiryDate)) {
+            long millisDiff = nextPurchaseExpiryDate.getTime() - new Date().getTime();
+            startActiveSpeedBoostCountDown(millisDiff);
+            buySpeedBoostBtn.setTag(R.id.hasActiveSpeedBoostTag, true);
+        } else {
+            buySpeedBoostBtn.setTag(R.id.hasActiveSpeedBoostTag, false);
+            if(purchasePrice != null && purchasePrice.price != 0) {
+                if (purchasePrice.price > state.uiBalance() * 1e9) {
+                    buySpeedBoostBtn.setEnabled(false);
+                    buySpeedBoostBtn.setText(String.format(Locale.US, "%d%s", state.uiBalance(), "%"));
+                } else {
+                    buySpeedBoostBtn.setEnabled(true);
+                    buySpeedBoostBtn.setText("purchase speed boost");
+                }
+            }
+        }
+    }
+
+    private void updateUiBalanceLabel(PsiCashViewState state) {
+        if(!animateOnBalanceChange) {
+            animateOnBalanceChange = state.animateOnNextBalanceChange();
+            balanceLabel.setText(String.format(Locale.US, "%d", state.uiBalance()));
+            // update view's current balance
+            currentUiBalance = state.uiBalance();
+            return;
+        }
+
+        int balanceDelta = state.uiBalance() - currentUiBalance;
+        // Nothing changed, bail
+        if (balanceDelta == 0) {
+            return;
+        }
+        // Animate value increase
+        ValueAnimator valueAnimator = ValueAnimator.ofInt(currentUiBalance, state.uiBalance());
+        valueAnimator.setDuration(1000);
+        valueAnimator.addUpdateListener(valueAnimator1 ->
+                balanceLabel.setText(valueAnimator1.getAnimatedValue().toString()));
+        valueAnimator.start();
+
+
+        TextView floatingDeltaTextView = new TextView(getContext());
+        floatingDeltaTextView.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        floatingDeltaTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f);
+        floatingDeltaTextView.setText(String.format(Locale.US, "%s%d", balanceDelta > 0 ? "+" : "", balanceDelta));
+
+        ViewGroup rootView = getActivity().findViewById(android.R.id.content);
+
+        Rect offsetViewBounds = new Rect();
+        balanceLabel.getDrawingRect(offsetViewBounds);
+        rootView.offsetDescendantRectToMyCoords(balanceLabel, offsetViewBounds);
+
+        int relativeTop = offsetViewBounds.top;
+
+        final FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, relativeTop, 0, 0);
+        lp.gravity = Gravity.CENTER_HORIZONTAL;
+
+        rootView.addView(floatingDeltaTextView, lp);
+
+        floatingDeltaTextView.animate()
+                .scaleX(3f).scaleY(3f)
+                .alpha(0f)
+                .setDuration(2000)
+                .translationY(-100f)
+                .translationX(50f)
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation, boolean isReverse) {
+                        rootView.removeView(floatingDeltaTextView);
+                    }
+                })
+                .start();
+
+        // update view's current balance value
+        currentUiBalance = state.uiBalance();
     }
 
     private void startActiveSpeedBoostCountDown(long millisDiff) {
         if (countDownTimer != null) {
             countDownTimer.cancel();
         }
-        countDownLabel.setVisibility(View.VISIBLE);
-        buySpeedBoostBtn.setEnabled(false);
-
         countDownTimer = new CountDownTimer(millisDiff, 1000) {
             @Override
             public void onTick(long l) {
@@ -294,28 +387,15 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
                 String hms = String.format(Locale.US, "%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(l),
                         TimeUnit.MILLISECONDS.toMinutes(l) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(l)),
                         TimeUnit.MILLISECONDS.toSeconds(l) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(l)));
-                countDownLabel.setText(hms);
+                buySpeedBoostBtn.setText(hms);
             }
 
             @Override
             public void onFinish() {
-                countDownLabel.setVisibility(View.INVISIBLE);
-                buySpeedBoostBtn.setEnabled(true);
                 // update local state
                 intentsPublishRelay.accept(Intent.GetPsiCashLocal.create());
             }
         }.start();
-    }
-
-    private void uiNotification(String message) {
-        // clear view state error immediately
-        intentsPublishRelay.accept(Intent.ClearErrorState.create());
-
-        View view = getActivity().findViewById(R.id.psicashTab);
-        if (view == null) {
-            return;
-        }
-        Snackbar.make(view, message, Snackbar.LENGTH_LONG).show();
     }
 
     public void onTunnelConnectionState(TunnelConnectionState status) {

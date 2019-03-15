@@ -86,6 +86,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
+import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.psiphon3.psicash.psicash.PsiCashClient;
 import com.psiphon3.psicash.psicash.PsiCashException;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
@@ -113,6 +114,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 public abstract class MainBase {
     public static abstract class Activity extends AppCompatActivity implements MyLog.ILogger {
@@ -192,9 +197,14 @@ public abstract class MainBase {
         private Button m_moreOptionsButton;
         private LoggingObserver m_loggingObserver;
 
+        protected boolean isAppInForeground;
+
         // This fragment helps retain data across configuration changes
         protected RetainedDataFragment m_retainedDataFragment;
         private static final String TAG_RETAINED_DATA_FRAGMENT = "com.psiphon3.RetainedDataFragment";
+
+        private BehaviorRelay<ServiceConnectionStatus> serviceConnectionStatusBehaviorRelay = BehaviorRelay.create();
+        private Disposable restartServiceDisposable = null;
 
         public static class RetainedDataFragment extends Fragment {
             private final Map<String, Map<Class<?>, Object>> internalMap = new HashMap<>();
@@ -544,13 +554,16 @@ public abstract class MainBase {
             findViewById(R.id.tunnelWholeDeviceToggle).setOnTouchListener(onTouchListener);
             findViewById(R.id.feedbackButton).setOnTouchListener(onTouchListener);
             findViewById(R.id.aboutButton).setOnTouchListener(onTouchListener);
+            findViewById(R.id.psicashTab).setOnTouchListener(onTouchListener);
             ListView statusListView = (ListView) findViewById(R.id.statusList);
             statusListView.setOnTouchListener(onTouchListener);
 
-            m_tabHost.setOnTabChangedListener(this);
-
             int currentTab = m_multiProcessPreferences.getInt(CURRENT_TAB, 0);
             m_tabHost.setCurrentTab(currentTab);
+
+            // Set TabChangedListener after restoring last tab to avoid triggering an interstitial,
+            // we only want interstitial to be triggered by user actions
+            m_tabHost.setOnTabChangedListener(this);
 
             m_sponsorViewFlipper = (ViewFlipper) findViewById(R.id.sponsorViewFlipper);
             m_sponsorViewFlipper.setInAnimation(AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left));
@@ -635,11 +648,10 @@ public abstract class MainBase {
         /**
          * Show the sponsor home page, either in the embedded view web view or
          * in the external browser.
-         * 
-         * @param freshConnect
-         *            If false, the home page will not be opened in an external
-         *            browser. This is to prevent the page from opening every
-         *            time the activity is created.
+         *
+         * @param freshConnect If false, the home page will not be opened in an external
+         * browser. This is to prevent the page from opening every
+         * time the activity is created.
          */
         protected void resetSponsorHomePage(boolean freshConnect) {
             if (getSkipHomePage()) {
@@ -669,6 +681,8 @@ public abstract class MainBase {
         @Override
         protected void onResume() {
             super.onResume();
+
+            isAppInForeground = true;
             
             // Load new logs from the logging provider now
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -697,11 +711,6 @@ public abstract class MainBase {
             // Don't show the keyboard until edit selected
             getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
-            // Set to foreground before binding to the service. Otherwise there would be a short
-            // period of time where we could miss a handshake intent after getting the
-            // tunnel state from registering with the service.
-            m_multiProcessPreferences.put(getString(R.string.status_activity_foreground), true);
-
             if (isServiceRunning()) {
                 startAndBindTunnelService();
             }
@@ -717,6 +726,8 @@ public abstract class MainBase {
         protected void onPause() {
             super.onPause();
 
+            isAppInForeground = false;
+
             getContentResolver().unregisterContentObserver(m_loggingObserver);
 
             cancelInvalidProxySettingsToast();
@@ -724,8 +735,6 @@ public abstract class MainBase {
             m_updateStatisticsUITimer.cancel();
 
             unbindTunnelService();
-
-            m_multiProcessPreferences.put(getString(R.string.status_activity_foreground), false);
         }
 
         protected void doToggle() {
@@ -946,35 +955,19 @@ public abstract class MainBase {
             if (!isServiceRunning()) {
                 setStatusState(R.drawable.status_icon_disconnected);
                 enableToggleServiceUI(R.string.start);
-                updateSubscriptionAndAdOptions(true);
-
-                if (WebViewProxySettings.isLocalProxySet()) {
-                    WebViewProxySettings.resetLocalProxy(this);
-                }
-            } else if (!m_boundToTunnelService) {
-                setStatusState(R.drawable.status_icon_disconnected);
-                disableToggleServiceUI();
-                updateSubscriptionAndAdOptions(false);
-
-                if (WebViewProxySettings.isLocalProxySet()) {
-                    WebViewProxySettings.resetLocalProxy(this);
-                }
             } else {
-                if (isTunnelConnected()) {
+                if (!m_boundToTunnelService) {
+                    setStatusState(R.drawable.status_icon_disconnected);
+                    disableToggleServiceUI();
+                } else if (isTunnelConnected()) {
                     setStatusState(R.drawable.status_icon_connected);
+                    enableToggleServiceUI(R.string.stop);
                 } else {
                     setStatusState(R.drawable.status_icon_connecting);
+                    enableToggleServiceUI(R.string.stop);
                 }
-                enableToggleServiceUI(R.string.stop);
-                updateSubscriptionAndAdOptions(false);
             }
-
-            updateAdsForServiceState();
         }
-
-        protected abstract void updateAdsForServiceState();
-
-        protected abstract void updateSubscriptionAndAdOptions(boolean show);
 
         protected void enableToggleServiceUI(int resId) {
             m_toggleButton.setText(getText(resId));
@@ -993,28 +986,26 @@ public abstract class MainBase {
             m_regionSelector.setEnabled(false);
             m_moreOptionsButton.setEnabled(false);
         }
-        
+
         protected void scheduleRunningTunnelServiceRestart() {
+            if(restartServiceDisposable != null && !restartServiceDisposable.isDisposed()) {
+                // call in progress, do nothing
+                return;
+            }
             if (isServiceRunning()) {
                 stopTunnelService();
-                final Handler handler = new Handler();
-                final Runnable runnable = new Runnable() {
-                    @Override
-                    public void run() {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                if(!isServiceRunning()) {
-                                    startTunnel();
-                                } else {
-                                    handler.postDelayed(this, 200);
-                                }
-                            }
-                        });
-                    }
-                };
-                handler.post(runnable);
+                // start observing service connection for disconnected message
+                restartServiceDisposable = serviceConnectionObservable()
+                        .observeOn(Schedulers.computation())
+                        .filter(s -> s.equals(ServiceConnectionStatus.SERVICE_DISCONNECTED))
+                        .take(1)
+                        .doOnComplete(() -> runOnUiThread(this::startTunnel))
+                        .subscribe();
             }
+        }
+
+        private Observable <ServiceConnectionStatus> serviceConnectionObservable() {
+            return serviceConnectionStatusBehaviorRelay.hide();
         }
 
         protected void startTunnel() {
@@ -1403,7 +1394,6 @@ public abstract class MainBase {
         }
 
         protected void startAndBindTunnelService() {
-
             // Disable service-toggling controls while service is starting up
             // (i.e., while isServiceRunning can't be relied upon)
             disableToggleServiceUI();
@@ -1431,7 +1421,15 @@ public abstract class MainBase {
                     }
                 }
              */
-            ContextCompat.startForegroundService(this, intent);
+            // On API >= 26 a service will get started even when the app is the background
+            // as long as the service calls its startForeground within a reasonable amount of time
+            // On API < 26 the call may throw IllegalStateException in case the app is in the state
+            // when services are not allowed, such as not in foreground
+            try {
+                ContextCompat.startForegroundService(this, intent);
+            } catch(IllegalStateException e) {
+                // do nothing
+            }
 
             if (bindService(intent, m_tunnelServiceConnection, 0)) {
                 m_boundToTunnelService = true;
@@ -1444,10 +1442,10 @@ public abstract class MainBase {
 
         // Shared tunnel state, received from service in the HANDSHAKE
         // intent and in various state-related Messages.
-        private TunnelManager.State m_tunnelState = new TunnelManager.State();
+        protected TunnelManager.State m_tunnelState;
 
         protected boolean isTunnelConnected() {
-            return m_tunnelState.isConnected;
+            return m_tunnelState != null &&m_tunnelState.isConnected;
         }
 
         protected ArrayList<String> getHomePages() {
@@ -1518,7 +1516,6 @@ public abstract class MainBase {
         private final List<Message> m_queue = new ArrayList<>();
 
         private class IncomingMessageHandler extends Handler {
-            boolean shouldRestoreSponsorTAb = false;
             @Override
             public void handleMessage(Message msg) {
                 Bundle data = msg.getData();
@@ -1531,7 +1528,8 @@ public abstract class MainBase {
                         break;
 
                     case TunnelManager.MSG_TUNNEL_CONNECTION_STATE:
-                        onTunnelConnectionState(getTunnelStateFromBundle(data));
+                        TunnelManager.State state = getTunnelStateFromBundle(data);
+                        onTunnelConnectionState(state);
 
                         // An activity created needs to load a sponsor the tab when tunnel connects
                         // once per its lifecycle. Both conditions are taken care of inside
@@ -1580,6 +1578,7 @@ public abstract class MainBase {
                     }
                     m_queue.clear();
                 }
+                serviceConnectionStatusBehaviorRelay.accept(ServiceConnectionStatus.SERVICE_CONNECTED);
                 updateServiceStateUI();
             }
 
@@ -1587,6 +1586,8 @@ public abstract class MainBase {
             public void onServiceDisconnected(ComponentName arg0) {
                 m_outgoingMessenger = null;
                 updateServiceStateUI();
+                serviceConnectionStatusBehaviorRelay.accept(ServiceConnectionStatus.SERVICE_DISCONNECTED);
+                onTunnelConnectionState(new TunnelManager.State());
             }
         };
 
@@ -1615,6 +1616,17 @@ public abstract class MainBase {
         }
 
         protected void onTunnelConnectionState(@NonNull TunnelManager.State state) {
+            // make sure WebView proxy settings are up to date
+            // Set WebView proxy only if we are connected and not in WD mode.
+            if (state.isConnected && !state.isVPN) {
+                WebViewProxySettings.setLocalProxy(this, state.listeningLocalHttpProxyPort);
+            } else {
+                // We are either not running or running in WDM,
+                // reset WebView proxy if it has been previously set.
+                if (WebViewProxySettings.isLocalProxySet()){
+                    WebViewProxySettings.resetLocalProxy(this);
+                }
+            }
             m_tunnelState = state;
             updateServiceStateUI();
         }
@@ -1632,15 +1644,11 @@ public abstract class MainBase {
             for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
                 if (service.uid == android.os.Process.myUid() &&
                         (TunnelService.class.getName().equals(service.service.getClassName())
-                        || (Utils.hasVpnService() && isVpnService(service.service.getClassName())))) {
+                        || (Utils.hasVpnService() && TunnelVpnService.class.getName().equals(service.service.getClassName())))) {
                     return true;
                 }
             }
             return false;
-        }
-
-        private boolean isVpnService(String className) {
-            return TunnelVpnService.class.getName().equals(className);
         }
 
         private class SponsorHomePage {
@@ -1752,16 +1760,6 @@ public abstract class MainBase {
             }
 
             public void load(String url) {
-                // Set WebView proxy only if we are not running in WD mode.
-                if(!getTunnelConfigWholeDevice() || !Utils.hasVpnService()) {
-                    WebViewProxySettings.setLocalProxy(mWebView.getContext(), getListeningLocalHttpProxyPort());
-                } else {
-                    // We are running in WDM, reset WebView proxy if it has been previously set.
-                    if(WebViewProxySettings.isLocalProxySet()){
-                        WebViewProxySettings.resetLocalProxy(mWebView.getContext());
-                    }
-                }
-
                 mProgressBar.setVisibility(View.VISIBLE);
                 mWebView.loadUrl(url);
             }
@@ -1773,6 +1771,11 @@ public abstract class MainBase {
 
         protected void restoreSponsorTab() {
 
+        }
+
+        private enum ServiceConnectionStatus {
+            SERVICE_CONNECTED,
+            SERVICE_DISCONNECTED
         }
     }
 }

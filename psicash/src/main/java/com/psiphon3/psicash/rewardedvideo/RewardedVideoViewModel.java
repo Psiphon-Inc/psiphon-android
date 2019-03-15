@@ -35,23 +35,35 @@ public class RewardedVideoViewModel extends AndroidViewModel implements MviViewM
                 RewardedVideoViewState.Builder stateBuilder = previousState.withLastState();
                 if (result instanceof Result.VideoReady) {
                     Result.VideoReady loadResult = (Result.VideoReady) result;
+
+                    RewardedVideoModel.VideoReady model = loadResult.model();
+
+                    Runnable videoPlayRunnable = null;
+                    if ( model != null ) {
+                        videoPlayRunnable = model.videoPlayRunnable();
+                    }
+
+                    stateBuilder = stateBuilder
+                            .shouldAutoLoadOnNextForeground(true);
+
                     switch (loadResult.status()) {
                         case SUCCESS:
-                            RewardedVideoModel.VideoReady model = loadResult.model();
-                            if ( model != null ) {
-                                stateBuilder.videoPlayRunnable(model.videoPlayRunnable());
-                            }
                             return stateBuilder
+                                    .videoPlayRunnable(videoPlayRunnable)
+                                    .inFlight(false)
+                                    .error(null)
                                     .build();
                         case FAILURE:
                             return stateBuilder
-                                    .error(loadResult.error())
                                     .videoPlayRunnable(null)
+                                    .inFlight(false)
+                                    .error(loadResult.error())
                                     .build();
                         case IN_FLIGHT:
                             return stateBuilder
-                                    .error(null)
                                     .videoPlayRunnable(null)
+                                    .inFlight(true)
+                                    .error(null)
                                     .build();
                     }
 

@@ -1,0 +1,685 @@
+package com.psiphon3;
+
+import android.app.Activity;
+import android.os.Build;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.util.Log;
+import android.view.ViewGroup;
+
+import com.google.ads.consent.ConsentForm;
+import com.google.ads.consent.ConsentFormListener;
+import com.google.ads.consent.ConsentInfoUpdateListener;
+import com.google.ads.consent.ConsentInformation;
+import com.google.ads.consent.ConsentStatus;
+import com.google.ads.consent.DebugGeography;
+import com.google.ads.mediation.admob.AdMobAdapter;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.ads.MobileAds;
+import com.google.auto.value.AutoValue;
+import com.jakewharton.rxrelay2.PublishRelay;
+import com.mopub.common.MoPub;
+import com.mopub.common.SdkConfiguration;
+import com.mopub.common.SdkInitializationListener;
+import com.mopub.common.privacy.ConsentDialogListener;
+import com.mopub.common.privacy.PersonalInfoManager;
+import com.mopub.mobileads.MoPubErrorCode;
+import com.mopub.mobileads.MoPubInterstitial;
+import com.mopub.mobileads.MoPubView;
+import com.psiphon3.psicash.util.TunnelConnectionState;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.subscription.BuildConfig;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import io.reactivex.Completable;
+import io.reactivex.Observable;
+import io.reactivex.ObservableTransformer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
+
+public class PsiphonAdManager {
+    public enum SubscriptionStatus {SUBSCRIBER, NOT_SUBSCRIBER, SUBSCRIPTION_CHECK_FAILED}
+
+    @AutoValue
+    static abstract class AdResult {
+        public enum Type {TUNNELED, UNTUNNELED, NONE}
+
+        @NonNull
+        static AdResult tunneled(TunnelConnectionState.ConnectionData connectionData) {
+            return new AutoValue_PsiphonAdManager_AdResult(Type.TUNNELED, connectionData);
+        }
+
+        static AdResult unTunneled() {
+            return new AutoValue_PsiphonAdManager_AdResult(Type.UNTUNNELED, null);
+        }
+
+        static AdResult none() {
+            return new AutoValue_PsiphonAdManager_AdResult(Type.NONE, null);
+        }
+
+        public abstract Type type();
+
+        @Nullable
+        abstract TunnelConnectionState.ConnectionData connectionData();
+    }
+
+    interface InterstitialResult {
+        enum State {LOADING, READY, SHOWING}
+
+        State state();
+
+        void show();
+
+        @AutoValue
+        abstract class MoPub implements InterstitialResult {
+            public void show() {
+                interstitial().show();
+            }
+
+            abstract MoPubInterstitial interstitial();
+
+            public abstract State state();
+
+            @NonNull
+            static InterstitialResult create(MoPubInterstitial interstitial, State state) {
+                return new AutoValue_PsiphonAdManager_InterstitialResult_MoPub(interstitial, state);
+            }
+
+        }
+
+        @AutoValue
+        abstract class AdMob implements InterstitialResult {
+
+            public void show() {
+                interstitial().show();
+            }
+
+            abstract InterstitialAd interstitial();
+
+            public abstract State state();
+
+            @NonNull
+            static AdMob create(InterstitialAd interstitial, State state) {
+                return new AutoValue_PsiphonAdManager_InterstitialResult_AdMob(interstitial, state);
+            }
+        }
+    }
+
+    static final String TAG = "PsiphonAdManager";
+
+    // ----------Production values -----------
+    private static final String ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID = "ca-app-pub-1072041961750291/1062483935";
+    private static final String ADMOB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID = "ca-app-pub-1072041961750291/6443217092";
+    private static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "6efb5aa4e0d74a679a6219f9b3aa6221";
+    private static final String MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID = "1f9cb36809f04c8d9feaff5deb9f17ed";
+
+    private AdView unTunneledAdMobBannerAdView = null;
+    private MoPubView tunneledMoPubBannerAdView = null;
+    private InterstitialAd unTunneledAdMobInterstitial = null;
+    private MoPubInterstitial tunneledMoPubInterstitial = null;
+
+    private ViewGroup bannerLayout;
+    private ConsentForm adMobConsentForm;
+
+    private Activity activity;
+    private int tabChangeCount = 0;
+
+    private final Runnable adMobPayOptionRunnable;
+    private final Completable initializeMoPubSdk;
+    private final Completable initializeAdMobSdk;
+
+    private final Observable<AdResult> currentAdTypeObservable;
+    private Disposable loadAdsDisposable;
+    private Disposable tunneledInterstitialDisposable;
+    private PublishRelay<SubscriptionStatus> subscriptionStatusPublishRelay = PublishRelay.create();
+    private PublishRelay<TunnelConnectionState> tunnelConnectionStatePublishRelay = PublishRelay.create();
+
+    PsiphonAdManager(Activity activity, ViewGroup bannerLayout, Runnable adMobPayOptionRunnable, boolean shouldCheckSubscriptionStatus) {
+        this.activity = activity;
+        this.bannerLayout = bannerLayout;
+        this.adMobPayOptionRunnable = adMobPayOptionRunnable;
+        // MoPub SDK is also tracking GDPR status and will present a GDPR consent collection dialog if needed.
+        this.initializeMoPubSdk = Completable.create(emitter -> {
+            MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
+            SdkConfiguration.Builder builder = new SdkConfiguration.Builder(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
+            SdkConfiguration sdkConfiguration = builder.build();
+            SdkInitializationListener sdkInitializationListener = () -> {
+                final PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                if (personalInfoManager != null) {
+                    // subscribe to consent change state event
+                    personalInfoManager.subscribeConsentStatusChangeListener((oldConsentStatus, newConsentStatus, canCollectPersonalInformation) -> {
+                        if (personalInfoManager.shouldShowConsentDialog()) {
+                            personalInfoManager.loadConsentDialog(moPubConsentDialogListener());
+                        }
+                    });
+                    // If consent is required load the consent dialog
+                    if (personalInfoManager.shouldShowConsentDialog()) {
+                        personalInfoManager.loadConsentDialog(moPubConsentDialogListener());
+                    }
+                    if (!emitter.isDisposed()) {
+                        emitter.onComplete();
+                    }
+                } else {
+                    if (!emitter.isDisposed()) {
+                        emitter.onError(new RuntimeException("MoPub SDK has failed to initialize, MoPub.getPersonalInformationManager is null"));
+                    }
+                }
+            };
+            MoPub.initializeSdk(activity, sdkConfiguration, sdkInitializationListener);
+        })
+                .doOnError(e -> Log.d(TAG, "initializeMoPubSdk error: " + e))
+                .cache();
+        this.initializeAdMobSdk = Completable.create(emitter -> {
+            MobileAds.initialize(this.activity, BuildConfig.ADMOB_APP_ID);
+            if (!emitter.isDisposed()) {
+                emitter.onComplete();
+            }
+        })
+                .cache();
+        if (shouldCheckSubscriptionStatus) {
+            this.currentAdTypeObservable = Observable.combineLatest(tunnelConnectionStateObservable(),
+                    subscriptionStatusObservable(),
+                    ((tunnelConnectionState, subscriptionStatus) -> {
+                        if (subscriptionStatus == SubscriptionStatus.SUBSCRIBER ||
+                                Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                            destroyAllAds();
+                            return AdResult.none();
+                        } else if (tunnelConnectionState.status() == TunnelConnectionState.Status.CONNECTED) {
+                            destroyUnTunneledAds();
+                            return AdResult.tunneled(tunnelConnectionState.connectionData());
+                        } else if (tunnelConnectionState.status() == TunnelConnectionState.Status.DISCONNECTED) {
+                            destroyTunneledAds();
+                            // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
+                            // so we need to run the check every time
+                            runAdMobGdprCheck();
+                            return AdResult.unTunneled();
+                        }
+                        // did we handle all conditions?
+                        throw new IllegalStateException(String.format("currentAdTypeObservable unhandled conditions: %s ,%s",
+                                tunnelConnectionState, subscriptionStatus));
+                    }))
+                    .replay(1)
+                    .autoConnect(0);
+        } else {
+            this.currentAdTypeObservable = tunnelConnectionStateObservable()
+                    .map(tunnelConnectionState -> {
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                            destroyAllAds();
+                            return AdResult.none();
+                        } else if (tunnelConnectionState.status() == TunnelConnectionState.Status.CONNECTED) {
+                            destroyUnTunneledAds();
+                            return AdResult.tunneled(tunnelConnectionState.connectionData());
+                        } else if (tunnelConnectionState.status() == TunnelConnectionState.Status.DISCONNECTED) {
+                            destroyTunneledAds();
+                            // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
+                            // so we need to run the check every time
+                            runAdMobGdprCheck();
+                            return AdResult.unTunneled();
+                        }
+                        // did we handle all conditions?
+                        throw new IllegalStateException(String.format("currentAdTypeObservable unhandled condition: %s",
+                                tunnelConnectionState));
+                    })
+                    .replay(1)
+                    .autoConnect(0);
+
+        }
+    }
+
+    Observable<AdResult> getCurrentAdTypeObservable() {
+        return currentAdTypeObservable;
+    }
+
+    private void runAdMobGdprCheck() {
+        String[] publisherIds = {"pub-1072041961750291"};
+        // TODO remove after testing
+        ConsentInformation.getInstance(activity).addTestDevice("4F95EFD7B82BC0F1E99B48909DF1C8C4");
+        ConsentInformation.getInstance(activity).
+                setDebugGeography(DebugGeography.DEBUG_GEOGRAPHY_EEA);
+        ConsentInformation.getInstance(activity).requestConsentInfoUpdate(publisherIds, new ConsentInfoUpdateListener() {
+            @Override
+            public void onConsentInfoUpdated(ConsentStatus consentStatus) {
+                if (consentStatus == ConsentStatus.UNKNOWN
+                        && ConsentInformation.getInstance(activity).isRequestLocationInEeaOrUnknown()) {
+                    URL privacyUrl;
+                    try {
+                        privacyUrl = new URL(EmbeddedValues.DATA_COLLECTION_INFO_URL);
+                    } catch (MalformedURLException e) {
+                        Utils.MyLog.d("Can't create privacy URL for AdMob consent form: " + e);
+                        return;
+                    }
+                    if (adMobConsentForm == null) {
+                        adMobConsentForm = new ConsentForm.Builder(activity, privacyUrl)
+                                .withListener(new ConsentFormListener() {
+                                    @Override
+                                    public void onConsentFormLoaded() {
+                                        // Consent form loaded successfully.
+                                        if (adMobConsentForm != null && !adMobConsentForm.isShowing()) {
+                                            adMobConsentForm.show();
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onConsentFormOpened() {
+                                    }
+
+                                    @Override
+                                    public void onConsentFormClosed(ConsentStatus consentStatus, Boolean userPrefersAdFree) {
+                                        if (userPrefersAdFree) {
+                                            adMobPayOptionRunnable.run();
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onConsentFormError(String errorDescription) {
+                                        Utils.MyLog.d("AdMob consent form error: " + errorDescription);
+                                    }
+                                })
+                                .withPersonalizedAdsOption()
+                                .withNonPersonalizedAdsOption()
+                                .withAdFreeOption()
+                                .build();
+                    }
+                    adMobConsentForm.load();
+                }
+            }
+
+            @Override
+            public void onFailedToUpdateConsentInfo(String errorDescription) {
+                Utils.MyLog.d("AdMob consent failed to update: " + errorDescription);
+            }
+        });
+    }
+
+    void onTunnelConnectionState(com.psiphon3.psicash.util.TunnelConnectionState state) {
+        tunnelConnectionStatePublishRelay.accept(state);
+    }
+
+    void onSubscriptionStatus(SubscriptionStatus status) {
+        subscriptionStatusPublishRelay.accept(status);
+    }
+
+    void onTabChanged() {
+        if (tunneledInterstitialDisposable != null && !tunneledInterstitialDisposable.isDisposed()) {
+            // subscription in progress, do nothing
+            return;
+        }
+        // First tab change triggers the interstitial
+        // NOTE: tabChangeCount gets reset when we ads change to AdsType.TUNNELED
+        if (tabChangeCount % 3 != 0) {
+            tabChangeCount++;
+            return;
+        }
+
+        tunneledInterstitialDisposable = getCurrentAdTypeObservable()
+                .observeOn(AndroidSchedulers.mainThread())
+                .takeWhile(adResult -> adResult.type() == AdResult.Type.TUNNELED)
+                .take(1)
+                .compose(getInterstitialWithTimeoutForAdType(3, TimeUnit.SECONDS))
+                .doOnNext(interstitialResult -> {
+                    interstitialResult.show();
+                    tabChangeCount++;
+                })
+                .onErrorResumeNext(Observable.empty())
+                .subscribe();
+    }
+
+    void startLoadingAds() {
+        if (loadAdsDisposable != null && !loadAdsDisposable.isDisposed()) {
+            return;
+        }
+        loadAdsDisposable = currentAdTypeObservable
+                .observeOn(Schedulers.computation())
+                .distinctUntilChanged()
+                .doOnNext(adResult -> {
+                    if (adResult.type() == AdResult.Type.TUNNELED) {
+                        // reset tabChange every time we go TUNNELED
+                        tabChangeCount = 0;
+                    }})
+                .publish(shared -> Observable.merge(
+                        shared.switchMap(adResult -> loadInterstitialForAdResult(adResult).onErrorResumeNext(Observable.empty())),
+                        shared.switchMap(adResult -> loadAndShowBanner(adResult).toObservable())))
+                .doOnError( e -> Log.e(TAG, "startLoadingAds: error:" + e))
+                .onErrorResumeNext(Observable.empty())
+                .subscribe();
+    }
+
+    ObservableTransformer<AdResult, InterstitialResult> getInterstitialWithTimeoutForAdType(int timeout, TimeUnit timeUnit) {
+        return observable -> observable
+                .observeOn(Schedulers.computation())
+                .switchMap(adResult -> loadInterstitialForAdResult(adResult)
+                        .filter(interstitialResult -> interstitialResult.state() == InterstitialResult.State.READY))
+                .ambWith(Observable.timer(timeout, timeUnit)
+                        .flatMap(l -> Observable.error(new TimeoutException("getInterstitialWithTimeoutForAdType timed out."))));
+    }
+
+    private Observable<TunnelConnectionState> tunnelConnectionStateObservable() {
+        return tunnelConnectionStatePublishRelay
+                .hide()
+                .distinctUntilChanged();
+    }
+
+    private Observable<SubscriptionStatus> subscriptionStatusObservable() {
+        return subscriptionStatusPublishRelay
+                .hide();
+    }
+
+    private Completable loadAndShowBanner(AdResult adResult) {
+        Completable completable;
+        switch (adResult.type()) {
+            case NONE:
+                completable = Completable.complete();
+                break;
+            case TUNNELED:
+                completable = initializeMoPubSdk.andThen(Completable.fromAction(() -> {
+                    if (tunneledMoPubBannerAdView != null) {
+                        tunneledMoPubBannerAdView.forceRefresh();
+                    }
+                    tunneledMoPubBannerAdView = new MoPubView(activity);
+                    tunneledMoPubBannerAdView.setAdUnitId(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
+                    TunnelConnectionState.ConnectionData connectionData = adResult.connectionData();
+                    if (connectionData != null) {
+                        tunneledMoPubBannerAdView.setKeywords("client_region:" + connectionData.clientRegion());
+                        Map<String, Object> localExtras = new HashMap<>();
+                        localExtras.put("client_region", connectionData.clientRegion());
+                        tunneledMoPubBannerAdView.setLocalExtras(localExtras);
+                    }
+                    tunneledMoPubBannerAdView.setBannerAdListener(new MoPubView.BannerAdListener() {
+                        @Override
+                        public void onBannerLoaded(MoPubView banner) {
+                            if (tunneledMoPubBannerAdView.getParent() == null) {
+                                bannerLayout.removeAllViewsInLayout();
+                                bannerLayout.addView(tunneledMoPubBannerAdView);
+                            }
+                        }
+
+                        @Override
+                        public void onBannerClicked(MoPubView arg0) {
+                        }
+
+                        @Override
+                        public void onBannerCollapsed(MoPubView arg0) {
+                        }
+
+                        @Override
+                        public void onBannerExpanded(MoPubView arg0) {
+                        }
+
+                        @Override
+                        public void onBannerFailed(MoPubView v, MoPubErrorCode errorCode) {
+                        }
+                    });
+                    tunneledMoPubBannerAdView.loadAd();
+                    tunneledMoPubBannerAdView.setAutorefreshEnabled(true);
+                }));
+                break;
+            case UNTUNNELED:
+                completable = initializeAdMobSdk.andThen(Completable.fromAction(() -> {
+                    if (unTunneledAdMobBannerAdView != null) {
+                        return;
+                    }
+                    unTunneledAdMobBannerAdView = new AdView(activity);
+                    unTunneledAdMobBannerAdView.setAdSize(AdSize.MEDIUM_RECTANGLE);
+                    unTunneledAdMobBannerAdView.setAdUnitId(ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
+                    unTunneledAdMobBannerAdView.setAdListener(new AdListener() {
+                        @Override
+                        public void onAdLoaded() {
+                            if (unTunneledAdMobBannerAdView.getParent() == null) {
+                                bannerLayout.removeAllViewsInLayout();
+                                bannerLayout.addView(unTunneledAdMobBannerAdView);
+                            }
+                        }
+
+                        @Override
+                        public void onAdFailedToLoad(int errorCode) {
+                        }
+
+                        @Override
+                        public void onAdOpened() {
+                        }
+
+                        @Override
+                        public void onAdLeftApplication() {
+                        }
+
+                        @Override
+                        public void onAdClosed() {
+                        }
+                    });
+                    Bundle extras = new Bundle();
+                    if (ConsentInformation.getInstance(activity).getConsentStatus() == com.google.ads.consent.ConsentStatus.NON_PERSONALIZED) {
+                        extras.putString("npa", "1");
+                    }
+                    AdRequest adRequest = new AdRequest.Builder()
+                            .addNetworkExtrasBundle(AdMobAdapter.class, extras)
+                            // TODO remove after testing
+                            .addTestDevice("4F95EFD7B82BC0F1E99B48909DF1C8C4")
+                            .build();
+                    unTunneledAdMobBannerAdView.loadAd(adRequest);
+                }));
+                break;
+            default:
+                throw new IllegalArgumentException("loadAndShowBanner: unhandled AdResult.Type: " + adResult.type());
+        }
+        return completable
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .doOnError(e -> Log.e(TAG, "loadAndShowBanner: error: " + e))
+                .onErrorComplete();
+    }
+
+    private Observable<InterstitialResult> loadInterstitialForAdResult(final AdResult adResult) {
+        AdResult.Type adType = adResult.type();
+        Observable<InterstitialResult> interstitialResult;
+        switch (adType) {
+            case NONE:
+                interstitialResult = Observable.empty();
+                break;
+            case TUNNELED:
+                interstitialResult = initializeMoPubSdk
+                        .andThen(Observable.<InterstitialResult>create(emitter -> {
+                            if (tunneledMoPubInterstitial == null) {
+                                tunneledMoPubInterstitial = new MoPubInterstitial(activity, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
+                                TunnelConnectionState.ConnectionData connectionData = adResult.connectionData();
+                                if (connectionData != null) {
+                                    tunneledMoPubInterstitial.setKeywords("client_region:" + connectionData.clientRegion());
+                                    Map<String, Object> localExtras = new HashMap<>();
+                                    localExtras.put("client_region", connectionData.clientRegion());
+                                    tunneledMoPubInterstitial.setLocalExtras(localExtras);
+                                }
+                            }
+                            tunneledMoPubInterstitial.setInterstitialAdListener(new MoPubInterstitial.InterstitialAdListener() {
+                                @Override
+                                public void onInterstitialLoaded(MoPubInterstitial interstitial) {
+                                    if (!emitter.isDisposed()) {
+                                        emitter.onNext(InterstitialResult.MoPub.create(interstitial, InterstitialResult.State.READY));
+                                    }
+                                }
+
+                                @Override
+                                public void onInterstitialFailed(MoPubInterstitial interstitial, MoPubErrorCode errorCode) {
+                                    if (!emitter.isDisposed()) {
+                                        emitter.onError(new RuntimeException("MoPub interstitial failed: " + errorCode.toString()));
+                                    }
+                                }
+
+                                @Override
+                                public void onInterstitialShown(MoPubInterstitial interstitial) {
+                                    if (!emitter.isDisposed()) {
+                                        emitter.onNext(InterstitialResult.MoPub.create(interstitial, InterstitialResult.State.SHOWING));
+                                    }
+                                }
+
+                                @Override
+                                public void onInterstitialClicked(MoPubInterstitial interstitial) {
+                                }
+
+                                @Override
+                                public void onInterstitialDismissed(MoPubInterstitial interstitial) {
+                                    if (!emitter.isDisposed()) {
+                                        emitter.onComplete();
+                                    }
+                                    interstitial.load();
+                                }
+                            });
+                            if (tunneledMoPubInterstitial.isReady()) {
+                                if (!emitter.isDisposed()) {
+                                    emitter.onNext(InterstitialResult.MoPub.create(tunneledMoPubInterstitial, InterstitialResult.State.READY));
+                                }
+                            } else {
+                                if (!emitter.isDisposed()) {
+                                    emitter.onNext(InterstitialResult.MoPub.create(tunneledMoPubInterstitial, InterstitialResult.State.LOADING));
+                                    tunneledMoPubInterstitial.load();
+                                }
+                            }
+                        }));
+                break;
+            case UNTUNNELED:
+                interstitialResult = initializeAdMobSdk
+                        .andThen(Observable.<InterstitialResult>create(emitter -> {
+                            if (unTunneledAdMobInterstitial == null) {
+                                unTunneledAdMobInterstitial = new InterstitialAd(activity);
+                                unTunneledAdMobInterstitial.setAdUnitId(ADMOB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
+                            }
+                            unTunneledAdMobInterstitial.setAdListener(new AdListener() {
+
+                                @Override
+                                public void onAdLoaded() {
+                                    if (!emitter.isDisposed()) {
+                                        emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.READY));
+                                    }
+                                }
+
+                                @Override
+                                public void onAdFailedToLoad(int errorCode) {
+                                    if (!emitter.isDisposed()) {
+                                        emitter.onError(new RuntimeException("AdMob interstitial failed with error code: " + errorCode));
+                                    }
+                                }
+
+                                @Override
+                                public void onAdOpened() {
+                                    if (!emitter.isDisposed()) {
+                                        if (unTunneledAdMobInterstitial != null) {
+                                            emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.SHOWING));
+                                        } else {
+                                            emitter.onComplete();
+                                        }
+                                    }
+                                }
+
+                                @Override
+                                public void onAdLeftApplication() {
+                                }
+
+                                @Override
+                                public void onAdClosed() {
+                                    if (!emitter.isDisposed()) {
+                                        emitter.onComplete();
+                                    }
+                                }
+                            });
+                            Bundle extras = new Bundle();
+                            if (ConsentInformation.getInstance(activity).getConsentStatus() == ConsentStatus.NON_PERSONALIZED) {
+                                extras.putString("npa", "1");
+                            }
+                            AdRequest adRequest = new AdRequest.Builder()
+                                    // TODO remove after testing
+                                    .addTestDevice("4F95EFD7B82BC0F1E99B48909DF1C8C4")
+                                    .addNetworkExtrasBundle(AdMobAdapter.class, extras)
+                                    .build();
+                            if (unTunneledAdMobInterstitial.isLoaded()) {
+                                if (!emitter.isDisposed()) {
+                                    emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.READY));
+                                }
+                            } else if (unTunneledAdMobInterstitial.isLoading()) {
+                                if (!emitter.isDisposed()) {
+                                    emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.LOADING));
+                                }
+                            } else {
+                                if (!emitter.isDisposed()) {
+                                    emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.LOADING));
+                                    unTunneledAdMobInterstitial.loadAd(adRequest);
+                                }
+                            }
+                        }));
+                break;
+                default:
+                    throw new IllegalArgumentException("loadInterstitialForAdResult unhandled AdResult.Type: " + adType);
+        }
+        return interstitialResult
+                .subscribeOn(AndroidSchedulers.mainThread());
+    }
+
+    private void destroyTunneledAds() {
+        if (tunneledMoPubBannerAdView != null) {
+            ViewGroup parent = (ViewGroup) tunneledMoPubBannerAdView.getParent();
+            if (parent != null) {
+                parent.removeView(tunneledMoPubBannerAdView);
+            }
+            tunneledMoPubBannerAdView.destroy();
+            tunneledMoPubBannerAdView = null;
+        }
+        if (tunneledMoPubInterstitial != null) {
+            tunneledMoPubInterstitial.destroy();
+            tunneledMoPubInterstitial = null;
+        }
+    }
+
+    private void destroyUnTunneledAds() {
+        if (unTunneledAdMobBannerAdView != null) {
+            ViewGroup parent = (ViewGroup) unTunneledAdMobBannerAdView.getParent();
+            if (parent != null) {
+                parent.removeView(unTunneledAdMobBannerAdView);
+            }
+            unTunneledAdMobBannerAdView.destroy();
+            unTunneledAdMobBannerAdView = null;
+        }
+        unTunneledAdMobInterstitial = null;
+    }
+
+    private void destroyAllAds() {
+        destroyTunneledAds();
+        destroyUnTunneledAds();
+    }
+
+    // implementing Activity must call this on its onDestroy lifecycle callback
+    public void onDestroy() {
+        destroyAllAds();
+        if (loadAdsDisposable != null) {
+            loadAdsDisposable.dispose();
+        }
+        if (tunneledInterstitialDisposable != null) {
+            tunneledInterstitialDisposable.dispose();
+        }
+    }
+
+    static ConsentDialogListener moPubConsentDialogListener() {
+        return new ConsentDialogListener() {
+            @Override
+            public void onConsentDialogLoaded() {
+                PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                if (personalInfoManager != null) {
+                    personalInfoManager.showConsentDialog();
+                }
+            }
+
+            @Override
+            public void onConsentDialogLoadFailed(@NonNull MoPubErrorCode moPubErrorCode) {
+                Utils.MyLog.d("MoPub consent dialog load error: " + moPubErrorCode.toString());
+            }
+        };
+    }
+}

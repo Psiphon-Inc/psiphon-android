@@ -12,7 +12,11 @@ public abstract class RewardedVideoViewState implements MviViewState {
     public abstract Runnable videoPlayRunnable();
 
     @Nullable
-    abstract Throwable error();
+    public abstract Throwable error();
+
+    public abstract boolean inFlight();
+
+    public abstract boolean shouldAutoLoadOnNextForeground();
 
     abstract Builder toBuilder();
 
@@ -20,6 +24,8 @@ public abstract class RewardedVideoViewState implements MviViewState {
         return new AutoValue_RewardedVideoViewState.Builder()
                 .videoPlayRunnable(null)
                 .error(null)
+                .inFlight(false)
+                .shouldAutoLoadOnNextForeground(false)
                 .build();
     }
 
@@ -32,6 +38,10 @@ public abstract class RewardedVideoViewState implements MviViewState {
         abstract Builder videoPlayRunnable(Runnable runnable);
 
         abstract Builder error(@Nullable Throwable error);
+
+        public abstract Builder inFlight(boolean b);
+
+        abstract Builder shouldAutoLoadOnNextForeground(boolean b);
 
         abstract RewardedVideoViewState build();
     }

@@ -178,11 +178,11 @@ public class RewardedVideoClient {
                     }
                     // Either disconnected or BOM should load AdMob ads
                     if (state.status() == TunnelConnectionState.Status.DISCONNECTED ||
-                            (state.status() == TunnelConnectionState.Status.CONNECTED && !state.vpnMode())) {
+                            (state.status() == TunnelConnectionState.Status.CONNECTED && !state.connectionData().vpnMode())) {
                         return loadAdMobVideos(customData);
                     }
                     // Connected WDM should load MoPub
-                    if (state.status() == TunnelConnectionState.Status.CONNECTED && state.vpnMode()) {
+                    if (state.status() == TunnelConnectionState.Status.CONNECTED && state.connectionData().vpnMode()) {
                         return loadMoPubVideos(customData);
                     }
                     // Did we miss a case?
@@ -209,13 +209,13 @@ public class RewardedVideoClient {
     }
 
     private void playAdMobVideo() {
-        if (rewardedVideoAd != null) {
+        if (rewardedVideoAd != null && rewardedVideoAd.isLoaded()) {
             rewardedVideoAd.show();
         }
     }
 
     private void playMoPubVideo(String customData) {
-        if (MoPub.isSdkInitialized()) {
+        if (MoPub.isSdkInitialized() && MoPubRewardedVideos.hasRewardedVideo(MOPUB_VIDEO_AD_UNIT_ID)) {
             MoPubRewardedVideos.showRewardedVideo(MOPUB_VIDEO_AD_UNIT_ID, customData);
         }
     }
