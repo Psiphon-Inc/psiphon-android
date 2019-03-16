@@ -49,7 +49,7 @@ import android.widget.Toast;
 import com.psiphon3.psicash.psicash.PsiCashClient;
 import com.psiphon3.psicash.psicash.PsiCashException;
 import com.psiphon3.psicash.util.BroadcastIntent;
-import com.psiphon3.psicash.util.TunnelConnectionState;
+import com.psiphon3.psicash.util.TunnelState;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
@@ -79,6 +79,7 @@ import java.util.concurrent.TimeoutException;
 
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 
 public class StatusActivity
@@ -124,10 +125,8 @@ public class StatusActivity
         rewardedVideoFragment = (RewardedVideoFragment) fm.findFragmentById(R.id.rewarded_fragment_container);
 
         // ads
-        psiphonAdManager = new PsiphonAdManager(this,
-                findViewById(R.id.largeAdSlot),
-                () -> onSubscribeButtonClick(null),
-                true);
+        psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.largeAdSlot),
+                () -> onSubscribeButtonClick(null), true);
 
         psiphonAdManager.startLoadingAds();
 
@@ -178,7 +177,6 @@ public class StatusActivity
             m_startupPending = false;
             doStartUp();
         }
-
     }
 
     @Override
@@ -323,9 +321,10 @@ public class StatusActivity
     @Override
     protected void onTunnelConnectionState(@NonNull TunnelManager.State state) {
         super.onTunnelConnectionState(state);
-        TunnelConnectionState tunnelConnectionState;
-        if (state.isConnected) {
-            TunnelConnectionState.ConnectionData connectionData = TunnelConnectionState.ConnectionData.builder()
+        TunnelState tunnelState;
+        if (state.isRunning) {
+            TunnelState.ConnectionData connectionData = TunnelState.ConnectionData.builder()
+                    .setIsConnected(state.isConnected)
                     .setClientRegion(state.clientRegion)
                     .setClientVersion(EmbeddedValues.CLIENT_VERSION)
                     .setPropagationChannelId(EmbeddedValues.PROPAGATION_CHANNEL_ID)
@@ -333,16 +332,14 @@ public class StatusActivity
                     .setHttpPort(state.listeningLocalHttpProxyPort)
                     .setVpnMode(state.isVPN)
                     .build();
-            tunnelConnectionState = TunnelConnectionState.connected(connectionData);
+            tunnelState = TunnelState.running(connectionData);
         } else {
-            tunnelConnectionState = TunnelConnectionState.disconnected();
+            tunnelState = TunnelState.stopped();
         }
 
-        if(tunnelConnectionState.status() == TunnelConnectionState.Status.CONNECTED || !isServiceRunning()) {
-            psiCashFragment.onTunnelConnectionState(tunnelConnectionState);
-            rewardedVideoFragment.onTunnelConnectionState(tunnelConnectionState);
-            psiphonAdManager.onTunnelConnectionState(tunnelConnectionState);
-        }
+        psiCashFragment.onTunnelConnectionState(tunnelState);
+        rewardedVideoFragment.onTunnelConnectionState(tunnelState);
+        psiphonAdManager.onTunnelConnectionState(tunnelState);
     }
 
     protected void HandleCurrentIntent()
@@ -370,13 +367,13 @@ public class StatusActivity
             // Show the home page, unless this was an automatic reconnect,
             // since the homepage should already be showing.
             // UPDATED #2:
-            // Receiving this intent means there is a home page to be shown in either external
-            // browser or in the embedded web view. Embedded web view also gets updated when
-            // a newly created app binds to an already running service and learns about homepages
-            // via MSG_TUNNEL_CONNECTION_STATE messages
+            // This intent is only sent when there was a commanded service start or a restart
+            // such as when there's a new subscription, or a speed-boost. It is not sent
+            // on automated reconnects or when the app binds to a an already running service.
+            // In later case the embedded web view gets updated via MSG_TUNNEL_CONNECTION_STATE
+            // messages from a bound service.
 
-
-            // TODO: only switch to home tab when there's an in app home page to show
+            // TODO: only switch to home tab when there's an in app home page to show?
             disableInterstitialOnNextTabChange = true;
             m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
             loadSponsorTab(true);
@@ -449,7 +446,7 @@ public class StatusActivity
                         return Observable.empty();
                     }
                     else if (adResult.type() == PsiphonAdManager.AdResult.Type.TUNNELED) {
-                        Log.w(PsiphonAdManager.TAG, "startUp: attempting to start when TUNNELED");
+                        Log.w(PsiphonAdManager.TAG, "startUp interstitial ad bad type: " + adResult.type());
                         return Observable.empty();
                     }
 
@@ -472,8 +469,8 @@ public class StatusActivity
                                 }
                                 PsiphonAdManager.InterstitialResult interstitialResult = (PsiphonAdManager.InterstitialResult) o;
                                 if (interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.READY) {
-                                    interstitialResult.show();
                                     m_startupPending = true;
+                                    interstitialResult.show();
                                 }
                             })
                             .doOnError(__ -> doStartUp());

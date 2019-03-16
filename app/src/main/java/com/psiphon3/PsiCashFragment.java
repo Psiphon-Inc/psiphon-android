@@ -37,7 +37,7 @@ import com.psiphon3.psicash.psicash.PsiCashViewModel;
 import com.psiphon3.psicash.psicash.PsiCashViewModelFactory;
 import com.psiphon3.psicash.psicash.PsiCashViewState;
 import com.psiphon3.psicash.util.BroadcastIntent;
-import com.psiphon3.psicash.util.TunnelConnectionState;
+import com.psiphon3.psicash.util.TunnelState;
 import com.psiphon3.psiphonlibrary.Authorization;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
@@ -60,7 +60,7 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
     private PsiCashViewModel psiCashViewModel;
 
     private Relay<Intent> intentsPublishRelay;
-    private Relay<TunnelConnectionState> tunnelConnectionStateBehaviorRelay;
+    private Relay<TunnelState> tunnelConnectionStateBehaviorRelay;
 
     private TextView balanceLabel;
     private Button buySpeedBoostBtn;
@@ -91,7 +91,7 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
         psiCashViewModel = ViewModelProviders.of(this, new PsiCashViewModelFactory(getActivity().getApplication(), expiringPurchaseListener))
                 .get(PsiCashViewModel.class);
         intentsPublishRelay = PublishRelay.<Intent>create().toSerialized();
-        tunnelConnectionStateBehaviorRelay = BehaviorRelay.<TunnelConnectionState>create().toSerialized();
+        tunnelConnectionStateBehaviorRelay = BehaviorRelay.<TunnelState>create().toSerialized();
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BroadcastIntent.GOT_REWARD_FOR_VIDEO_INTENT);
@@ -168,7 +168,7 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
     private Disposable getPsiCashTokensDisposable() {
         // If PsiCash doesn't have valid tokens get them from the server once the tunnel is connected
         return connectionStateObservable()
-                .filter(state -> state.status() == TunnelConnectionState.Status.CONNECTED)
+                .filter(state -> state.status() == TunnelState.Status.STOPPED)
                 .takeWhile(__ -> {
                     try {
                         if (!PsiCashClient.getInstance(getContext()).hasValidTokens()) {
@@ -187,7 +187,7 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
 
     private Disposable removePurchasesDisposable() {
         return connectionStateObservable()
-                .filter(state -> state.status() == TunnelConnectionState.Status.DISCONNECTED)
+                .filter(state -> state.status() == TunnelState.Status.STOPPED)
                 .flatMap(__ -> {
                     List<String> purchasesToRemove = new ArrayList<>();
                     // remove purchases that are not in the authorizations database.
@@ -225,7 +225,7 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
         compositeDisposable.clear();
     }
 
-    private Observable<TunnelConnectionState> connectionStateObservable() {
+    private Observable<TunnelState> connectionStateObservable() {
         return tunnelConnectionStateBehaviorRelay
                 .hide()
                 .distinctUntilChanged();
@@ -398,7 +398,7 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
         }.start();
     }
 
-    public void onTunnelConnectionState(TunnelConnectionState status) {
+    public void onTunnelConnectionState(TunnelState status) {
         tunnelConnectionStateBehaviorRelay.accept(status);
     }
 }

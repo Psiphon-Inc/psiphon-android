@@ -12,7 +12,7 @@ import com.psiphon3.psicash.mvibase.MviResult;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.mvibase.MviViewModel;
 import com.psiphon3.psicash.mvibase.MviViewState;
-import com.psiphon3.psicash.util.TunnelConnectionState;
+import com.psiphon3.psicash.util.TunnelState;
 
 import io.reactivex.Observable;
 import io.reactivex.disposables.CompositeDisposable;
@@ -119,7 +119,7 @@ public class RewardedVideoViewModel extends AndroidViewModel implements MviViewM
     private Observable<Action> actionFromIntent(MviIntent intent) {
         if (intent instanceof Intent.LoadVideoAd) {
             Intent.LoadVideoAd i = (Intent.LoadVideoAd) intent;
-            final TunnelConnectionState status = i.connectionState();
+            final TunnelState status = i.connectionState();
             return Observable.just(Action.LoadVideoAd.create(status));
         }
         throw new IllegalArgumentException("Do not know how to treat this intent " + intent);

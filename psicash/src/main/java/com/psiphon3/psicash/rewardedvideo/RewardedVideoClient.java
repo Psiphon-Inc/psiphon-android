@@ -18,7 +18,7 @@ import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubRewardedVideoListener;
 import com.mopub.mobileads.MoPubRewardedVideos;
 import com.psiphon3.psicash.psicash.PsiCashClient;
-import com.psiphon3.psicash.util.TunnelConnectionState;
+import com.psiphon3.psicash.util.TunnelState;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -164,11 +164,11 @@ public class RewardedVideoClient {
         });
     }
 
-    Observable<? extends RewardedVideoModel> loadRewardedVideo(Context context, TunnelConnectionState connectionState, String rewardCustomData) {
+    Observable<? extends RewardedVideoModel> loadRewardedVideo(Context context, TunnelState connectionState, String rewardCustomData) {
         return Observable.just(Pair.create(connectionState, rewardCustomData))
                 .observeOn(AndroidSchedulers.mainThread())
                 .flatMap(pair -> {
-                    TunnelConnectionState state = pair.first;
+                    TunnelState state = pair.first;
                     String customData = pair.second;
                     if (TextUtils.isEmpty(customData)) {
                         return Observable.error(new IllegalStateException("Video customData is empty"));
@@ -176,14 +176,27 @@ public class RewardedVideoClient {
                     if (!PsiCashClient.getInstance(context).hasEarnerToken()) {
                         return Observable.error(new IllegalStateException("PsiCash lib has no earner token."));
                     }
-                    // Either disconnected or BOM should load AdMob ads
-                    if (state.status() == TunnelConnectionState.Status.DISCONNECTED ||
-                            (state.status() == TunnelConnectionState.Status.CONNECTED && !state.connectionData().vpnMode())) {
+                    // Not running should load AdMob ads
+                    if (state.status() == TunnelState.Status.STOPPED) {
                         return loadAdMobVideos(customData);
                     }
-                    // Connected WDM should load MoPub
-                    if (state.status() == TunnelConnectionState.Status.CONNECTED && state.connectionData().vpnMode()) {
-                        return loadMoPubVideos(customData);
+
+                    if (state.status() == TunnelState.Status.RUNNING) {
+                        TunnelState.ConnectionData connectionData = state.connectionData();
+                        if(connectionData == null) {
+                            throw new IllegalStateException("Bad tunnel state: " + state);
+                        }
+                        // Return an error if running but not connected immediately to get out of in flight state
+                        if (!connectionData.isConnected()) {
+                            return Observable.error(new RuntimeException("Psiphon tunnel is not connected."));
+                        } else {
+                            // When connected VPN mode should load MoPub ads and BOM should load AdMob
+                            if(connectionData.vpnMode()) {
+                                return loadMoPubVideos(customData);
+                            } else {
+                                return loadAdMobVideos(customData);
+                            }
+                        }
                     }
                     // Did we miss a case?
                     throw new IllegalArgumentException("Loading video for " + state + " is not implemented.");

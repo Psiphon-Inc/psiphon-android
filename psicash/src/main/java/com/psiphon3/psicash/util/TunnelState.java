@@ -6,14 +6,16 @@ import android.support.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
 @AutoValue
-public abstract class TunnelConnectionState {
+public abstract class TunnelState {
     public enum Status {
-        DISCONNECTED,
-        CONNECTED,
+        RUNNING,
+        STOPPED,
     }
 
     @AutoValue
     public static abstract class ConnectionData {
+        public abstract boolean isConnected();
+
         public abstract String clientRegion();
 
         public abstract String clientVersion();
@@ -28,11 +30,13 @@ public abstract class TunnelConnectionState {
         public abstract int httpPort();
 
         public static Builder builder() {
-            return new AutoValue_TunnelConnectionState_ConnectionData.Builder();
+            return new AutoValue_TunnelState_ConnectionData.Builder();
         }
 
         @AutoValue.Builder
         public static abstract class Builder {
+            public abstract Builder setIsConnected(boolean value);
+
             public abstract Builder setClientRegion(String value);
 
             public abstract Builder setClientVersion(String value);
@@ -53,11 +57,11 @@ public abstract class TunnelConnectionState {
     @Nullable
     public abstract ConnectionData connectionData();
 
-    public static TunnelConnectionState disconnected() {
-        return new AutoValue_TunnelConnectionState(Status.DISCONNECTED, null);
+    public static TunnelState stopped() {
+        return new AutoValue_TunnelState(Status.STOPPED, null);
     }
 
-    public static TunnelConnectionState connected(ConnectionData connectionData) {
-        return new AutoValue_TunnelConnectionState(Status.CONNECTED, connectionData);
+    public static TunnelState running(ConnectionData connectionData) {
+        return new AutoValue_TunnelState(Status.RUNNING, connectionData);
     }
 }

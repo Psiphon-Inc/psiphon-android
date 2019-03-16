@@ -12,7 +12,7 @@ import com.psiphon3.psicash.mvibase.MviResult;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.mvibase.MviViewModel;
 import com.psiphon3.psicash.mvibase.MviViewState;
-import com.psiphon3.psicash.util.TunnelConnectionState;
+import com.psiphon3.psicash.util.TunnelState;
 
 import java.util.Date;
 import java.util.List;
@@ -163,7 +163,7 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
     private Observable<Action> actionFromIntent(MviIntent intent) {
         if (intent instanceof Intent.GetPsiCashRemote) {
             Intent.GetPsiCashRemote getPsiCashRemoteIntent = (Intent.GetPsiCashRemote) intent;
-            final TunnelConnectionState status = getPsiCashRemoteIntent.connectionState();
+            final TunnelState status = getPsiCashRemoteIntent.connectionState();
             return Observable.just(Action.GetPsiCashRemote.create(status));
         }
         if (intent instanceof Intent.GetPsiCashLocal) {
@@ -175,9 +175,9 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
         if (intent instanceof Intent.PurchaseSpeedBoost) {
             Intent.PurchaseSpeedBoost purchaseSpeedBoostIntent = (Intent.PurchaseSpeedBoost) intent;
             final PsiCashLib.PurchasePrice price = purchaseSpeedBoostIntent.purchasePrice();
-            final TunnelConnectionState tunnelConnectionState = purchaseSpeedBoostIntent.connectionState();
+            final TunnelState tunnelState = purchaseSpeedBoostIntent.connectionState();
             final boolean hasActiveBoost = purchaseSpeedBoostIntent.hasActiveBoost();
-            return Observable.just(Action.MakeExpiringPurchase.create(tunnelConnectionState, price, hasActiveBoost));
+            return Observable.just(Action.MakeExpiringPurchase.create(tunnelState, price, hasActiveBoost));
         }
         if (intent instanceof Intent.RemovePurchases) {
             Intent.RemovePurchases removePurchases = (Intent.RemovePurchases) intent;

@@ -40,7 +40,6 @@ import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.util.Pair;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.psiphon3.PurchaseVerificationNetworkHelper;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -95,6 +94,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String INTENT_ACTION_VPN_REVOKED = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_VPN_REVOKED";
 
     // Service -> Client bundle parameter names
+    static final String DATA_TUNNEL_STATE_IS_RUNNING = "isRunning";
     static final String DATA_TUNNEL_STATE_IS_VPN = "isVpn";
     static final String DATA_TUNNEL_STATE_IS_CONNECTED = "isConnected";
     static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT = "listeningLocalSocksProxyPort";
@@ -146,12 +146,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     // Shared tunnel state, sent to the client in the HANDSHAKE
     // intent and in the MSG_TUNNEL_CONNECTION_STATE service message.
     public static class State {
+        public boolean isRunning = false;
         public boolean isConnected = false;
         public boolean isVPN = false;
         int listeningLocalSocksProxyPort = 0;
         public int listeningLocalHttpProxyPort = 0;
-        public String clientRegion;
-        public String sponsorId;
+        public String clientRegion = "";
+        public String sponsorId = "";
         ArrayList<String> homePages = new ArrayList<>();
     }
 
@@ -271,16 +272,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     }
 
     public void onCreate() {
+        m_tunnelState.isRunning = true;
         // This service runs as a separate process, so it needs to initialize embedded values
         EmbeddedValues.initialize(this.getContext());
 
         MyLog.setLogger(this);
 
         m_compositeDisposable.clear();
-        //
         m_compositeDisposable.add(purchaseCheckFlowDisposable());
-
-        // Set up tunnel connection status subscripttion
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
     }
 
@@ -428,7 +427,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 notification.defaults |= Notification.DEFAULT_VIBRATE;
             }
 
-
             mNotificationManager.notify(
                     R.string.psiphon_service_notification_id,
                     notification);
@@ -519,6 +517,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_tunnelState.sponsorId = m_tunnelConfig.sponsorId;
 
         Bundle data = new Bundle();
+        data.putBoolean(DATA_TUNNEL_STATE_IS_RUNNING, m_tunnelState.isRunning);
         data.putBoolean(DATA_TUNNEL_STATE_IS_VPN, m_tunnelState.isVPN);
         data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, m_tunnelState.isConnected);
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT, m_tunnelState.listeningLocalSocksProxyPort);
@@ -650,7 +649,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             m_isStopping.set(true);
             m_tunnel.stop();
-            m_tunnelConnectedSubject.onNext(Boolean.FALSE);
 
             periodicMaintenanceHandler.removeCallbacks(periodicMaintenance);
             sendDataTransferStatsHandler.removeCallbacks(sendDataTransferStats);
@@ -902,7 +900,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     private DisposableObserver<PurchaseVerificationAction> purchaseCheckFlowDisposable() {
         return purchaseObservable()
-//                        .doOnNext(purchase -> Log.d("PurchaseCheckFlow", "got new purchase: " + purchase.id + " " + purchase.token))
                 .switchMap(purchase ->
                         connectionObservable().map(isConnected -> new Pair(isConnected, purchase))
                 )
@@ -913,7 +910,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                         m_activeAuthorizationSubject.onNext(PurchaseAuthorizationStatus.EMPTY);
                     }
                 })
-                        .doOnNext(pair -> Log.d("PurchaseCheckFlow", "got new connection status : " + pair.first))
                 .switchMap(pair -> {
                             Boolean isConnected = (Boolean) pair.first;
                             Purchase purchase = (Purchase) pair.second;
@@ -926,7 +922,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                             return observable.map(status -> new Pair(status, purchase));
                         }
                 )
-                        .doOnNext(pair -> Log.d("PurchaseCheckFlow", "got new PurchaseAuthorizationStatus status: " + pair.first))
                 .switchMap(pair -> {
                     PurchaseAuthorizationStatus status = (PurchaseAuthorizationStatus) pair.first;
                     Purchase purchase = (Purchase) pair.second;
@@ -966,7 +961,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                         return Observable.just(PurchaseVerificationAction.NO_ACTION);
                     }
                 })
-                        .doOnNext(action -> Log.d("PurchaseCheckFlow", "got new PurchaseVerificationAction : " + action))
                 .subscribeWith(new DisposableObserver<PurchaseVerificationAction>() {
                     @Override
                     public void onNext(PurchaseVerificationAction action) {

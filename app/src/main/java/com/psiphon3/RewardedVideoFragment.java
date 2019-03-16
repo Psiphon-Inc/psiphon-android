@@ -22,7 +22,7 @@ import com.psiphon3.psicash.rewardedvideo.RewardedVideoViewModel;
 import com.psiphon3.psicash.rewardedvideo.RewardedVideoViewModelFactory;
 import com.psiphon3.psicash.rewardedvideo.RewardedVideoViewState;
 import com.psiphon3.psicash.util.BroadcastIntent;
-import com.psiphon3.psicash.util.TunnelConnectionState;
+import com.psiphon3.psicash.util.TunnelState;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
@@ -35,7 +35,7 @@ import io.reactivex.disposables.CompositeDisposable;
 public class RewardedVideoFragment extends Fragment implements MviView<Intent, RewardedVideoViewState> {
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private Button loadWatchRewardedVideoBtn;
-    private BehaviorRelay<TunnelConnectionState> tunnelConnectionStateBehaviourRelay;
+    private BehaviorRelay<TunnelState> tunnelConnectionStateBehaviourRelay;
 
     private boolean shouldAutoLoadNextVideo = false;
     private RewardedVideoViewModel rewardedVideoViewModel;
@@ -136,7 +136,7 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
                 .filter(s -> s);
     }
 
-    private Observable<TunnelConnectionState> connectionStateObservable() {
+    private Observable<TunnelState> connectionStateObservable() {
         return tunnelConnectionStateBehaviourRelay
                 .hide()
                 .distinctUntilChanged();
@@ -173,7 +173,7 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
         }
     }
 
-    public void onTunnelConnectionState(TunnelConnectionState status) {
+    public void onTunnelConnectionState(TunnelState status) {
         tunnelConnectionStateBehaviourRelay.accept(status);
     }
 }

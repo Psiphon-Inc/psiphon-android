@@ -1421,8 +1421,8 @@ public abstract class MainBase {
                     }
                 }
              */
-            // On API >= 26 a service will get started even when the app is the background
-            // as long as the service calls its startForeground within a reasonable amount of time
+            // On API >= 26 a service will get started even when the app is in the background
+            // as long as the service calls its startForeground() within a reasonable amount of time.
             // On API < 26 the call may throw IllegalStateException in case the app is in the state
             // when services are not allowed, such as not in foreground
             try {
@@ -1481,6 +1481,7 @@ public abstract class MainBase {
             if (data == null) {
                 return tunnelState;
             }
+            tunnelState.isRunning = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_RUNNING);
             tunnelState.isVPN = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_VPN);
             tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
             tunnelState.listeningLocalSocksProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT);
@@ -1620,9 +1621,12 @@ public abstract class MainBase {
             // Set WebView proxy only if we are connected and not in WD mode.
             if (state.isConnected && !state.isVPN) {
                 WebViewProxySettings.setLocalProxy(this, state.listeningLocalHttpProxyPort);
-            } else {
-                // We are either not running or running in WDM,
-                // reset WebView proxy if it has been previously set.
+            }
+
+            // We are not running
+            // reset WebView proxy if it has been previously set.
+            if(!state.isRunning)
+            {
                 if (WebViewProxySettings.isLocalProxySet()){
                     WebViewProxySettings.resetLocalProxy(this);
                 }

@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.util.Pair;
 import android.view.ViewGroup;
 
 import com.google.ads.consent.ConsentForm;
@@ -31,7 +32,7 @@ import com.mopub.common.privacy.PersonalInfoManager;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubView;
-import com.psiphon3.psicash.util.TunnelConnectionState;
+import com.psiphon3.psicash.util.TunnelState;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.BuildConfig;
@@ -48,17 +49,18 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
 
 public class PsiphonAdManager {
-    public enum SubscriptionStatus {SUBSCRIBER, NOT_SUBSCRIBER, SUBSCRIPTION_CHECK_FAILED}
+    public enum SubscriptionStatus {SUBSCRIBER, NOT_SUBSCRIBER, SUBSCRIPTION_CHECK_FAILED, NOT_APPLICABLE}
 
     @AutoValue
     static abstract class AdResult {
         public enum Type {TUNNELED, UNTUNNELED, NONE}
 
         @NonNull
-        static AdResult tunneled(TunnelConnectionState.ConnectionData connectionData) {
+        static AdResult tunneled(TunnelState.ConnectionData connectionData) {
             return new AutoValue_PsiphonAdManager_AdResult(Type.TUNNELED, connectionData);
         }
 
@@ -73,7 +75,7 @@ public class PsiphonAdManager {
         public abstract Type type();
 
         @Nullable
-        abstract TunnelConnectionState.ConnectionData connectionData();
+        abstract TunnelState.ConnectionData connectionData();
     }
 
     interface InterstitialResult {
@@ -135,6 +137,7 @@ public class PsiphonAdManager {
     private ConsentForm adMobConsentForm;
 
     private Activity activity;
+    private final boolean hasSubscriptionFeature;
     private int tabChangeCount = 0;
 
     private final Runnable adMobPayOptionRunnable;
@@ -145,12 +148,14 @@ public class PsiphonAdManager {
     private Disposable loadAdsDisposable;
     private Disposable tunneledInterstitialDisposable;
     private PublishRelay<SubscriptionStatus> subscriptionStatusPublishRelay = PublishRelay.create();
-    private PublishRelay<TunnelConnectionState> tunnelConnectionStatePublishRelay = PublishRelay.create();
+    private PublishRelay<TunnelState> tunnelConnectionStatePublishRelay = PublishRelay.create();
 
-    PsiphonAdManager(Activity activity, ViewGroup bannerLayout, Runnable adMobPayOptionRunnable, boolean shouldCheckSubscriptionStatus) {
+    PsiphonAdManager(Activity activity, ViewGroup bannerLayout, Runnable adMobPayOptionRunnable, boolean hasSubsriptionFeature) {
         this.activity = activity;
         this.bannerLayout = bannerLayout;
         this.adMobPayOptionRunnable = adMobPayOptionRunnable;
+        this.hasSubscriptionFeature = hasSubsriptionFeature;
+
         // MoPub SDK is also tracking GDPR status and will present a GDPR consent collection dialog if needed.
         this.initializeMoPubSdk = Completable.create(emitter -> {
             MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
@@ -182,6 +187,7 @@ public class PsiphonAdManager {
         })
                 .doOnError(e -> Log.d(TAG, "initializeMoPubSdk error: " + e))
                 .cache();
+
         this.initializeAdMobSdk = Completable.create(emitter -> {
             MobileAds.initialize(this.activity, BuildConfig.ADMOB_APP_ID);
             if (!emitter.isDisposed()) {
@@ -189,54 +195,41 @@ public class PsiphonAdManager {
             }
         })
                 .cache();
-        if (shouldCheckSubscriptionStatus) {
-            this.currentAdTypeObservable = Observable.combineLatest(tunnelConnectionStateObservable(),
-                    subscriptionStatusObservable(),
-                    ((tunnelConnectionState, subscriptionStatus) -> {
-                        if (subscriptionStatus == SubscriptionStatus.SUBSCRIBER ||
-                                Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-                            destroyAllAds();
-                            return AdResult.none();
-                        } else if (tunnelConnectionState.status() == TunnelConnectionState.Status.CONNECTED) {
-                            destroyUnTunneledAds();
-                            return AdResult.tunneled(tunnelConnectionState.connectionData());
-                        } else if (tunnelConnectionState.status() == TunnelConnectionState.Status.DISCONNECTED) {
-                            destroyTunneledAds();
-                            // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
-                            // so we need to run the check every time
-                            runAdMobGdprCheck();
-                            return AdResult.unTunneled();
-                        }
-                        // did we handle all conditions?
-                        throw new IllegalStateException(String.format("currentAdTypeObservable unhandled conditions: %s ,%s",
-                                tunnelConnectionState, subscriptionStatus));
-                    }))
-                    .replay(1)
-                    .autoConnect(0);
-        } else {
-            this.currentAdTypeObservable = tunnelConnectionStateObservable()
-                    .map(tunnelConnectionState -> {
-                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-                            destroyAllAds();
-                            return AdResult.none();
-                        } else if (tunnelConnectionState.status() == TunnelConnectionState.Status.CONNECTED) {
-                            destroyUnTunneledAds();
-                            return AdResult.tunneled(tunnelConnectionState.connectionData());
-                        } else if (tunnelConnectionState.status() == TunnelConnectionState.Status.DISCONNECTED) {
-                            destroyTunneledAds();
-                            // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
-                            // so we need to run the check every time
-                            runAdMobGdprCheck();
-                            return AdResult.unTunneled();
-                        }
-                        // did we handle all conditions?
-                        throw new IllegalStateException(String.format("currentAdTypeObservable unhandled condition: %s",
-                                tunnelConnectionState));
-                    })
-                    .replay(1)
-                    .autoConnect(0);
 
-        }
+        this.currentAdTypeObservable = Observable.combineLatest(tunnelConnectionStateObservable(),
+                subscriptionStatusObservable(),
+                ((BiFunction<TunnelState, SubscriptionStatus, Pair>) Pair::new))
+                .flatMap(pair -> {
+                    TunnelState s = (TunnelState) pair.first;
+                    SubscriptionStatus subscriptionStatus = (SubscriptionStatus) pair.second;
+                    if (subscriptionStatus == SubscriptionStatus.SUBSCRIBER ||
+                            Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                        destroyAllAds();
+                        return Observable.just(AdResult.none());
+                    }
+
+                    if (s.status() == TunnelState.Status.STOPPED) {
+                        destroyTunneledBanners();
+                        // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
+                        // and we need to run the check every time
+                        runAdMobGdprCheck();
+                        return Observable.just(AdResult.unTunneled());
+                    } else {
+                        // Destroy untunneled ads when tunnel starts running immediately
+                        destroyUnTunneledBanners();
+                        TunnelState.ConnectionData connectionData = s.connectionData();
+                        // Only emit when tunnel is connected
+                        if (connectionData == null) {
+                            // Bad state, log and do not emit
+                            Log.e(TAG, "currentAdTypeObservable: bad tunnel state:" + s);
+                        } else if (connectionData.isConnected()) {
+                            return Observable.just(AdResult.tunneled(connectionData));
+                        }
+                        return Observable.empty();
+                    }
+                })
+                .replay(1)
+                .autoConnect(0);
     }
 
     Observable<AdResult> getCurrentAdTypeObservable() {
@@ -305,7 +298,7 @@ public class PsiphonAdManager {
         });
     }
 
-    void onTunnelConnectionState(com.psiphon3.psicash.util.TunnelConnectionState state) {
+    void onTunnelConnectionState(TunnelState state) {
         tunnelConnectionStatePublishRelay.accept(state);
     }
 
@@ -342,7 +335,7 @@ public class PsiphonAdManager {
         if (loadAdsDisposable != null && !loadAdsDisposable.isDisposed()) {
             return;
         }
-        loadAdsDisposable = currentAdTypeObservable
+        loadAdsDisposable = getCurrentAdTypeObservable()
                 .observeOn(Schedulers.computation())
                 .distinctUntilChanged()
                 .doOnNext(adResult -> {
@@ -350,10 +343,9 @@ public class PsiphonAdManager {
                         // reset tabChange every time we go TUNNELED
                         tabChangeCount = 0;
                     }})
-                .publish(shared -> Observable.merge(
+                .publish(shared -> Observable.mergeDelayError(
                         shared.switchMap(adResult -> loadInterstitialForAdResult(adResult).onErrorResumeNext(Observable.empty())),
                         shared.switchMap(adResult -> loadAndShowBanner(adResult).toObservable())))
-                .doOnError( e -> Log.e(TAG, "startLoadingAds: error:" + e))
                 .onErrorResumeNext(Observable.empty())
                 .subscribe();
     }
@@ -367,15 +359,16 @@ public class PsiphonAdManager {
                         .flatMap(l -> Observable.error(new TimeoutException("getInterstitialWithTimeoutForAdType timed out."))));
     }
 
-    private Observable<TunnelConnectionState> tunnelConnectionStateObservable() {
-        return tunnelConnectionStatePublishRelay
-                .hide()
-                .distinctUntilChanged();
+    private Observable<TunnelState> tunnelConnectionStateObservable() {
+        return tunnelConnectionStatePublishRelay.hide().distinctUntilChanged();
     }
 
     private Observable<SubscriptionStatus> subscriptionStatusObservable() {
-        return subscriptionStatusPublishRelay
-                .hide();
+        if (hasSubscriptionFeature) {
+            return subscriptionStatusPublishRelay.hide().distinctUntilChanged();
+        } else {
+            return Observable.just(SubscriptionStatus.NOT_APPLICABLE);
+        }
     }
 
     private Completable loadAndShowBanner(AdResult adResult) {
@@ -386,12 +379,9 @@ public class PsiphonAdManager {
                 break;
             case TUNNELED:
                 completable = initializeMoPubSdk.andThen(Completable.fromAction(() -> {
-                    if (tunneledMoPubBannerAdView != null) {
-                        tunneledMoPubBannerAdView.forceRefresh();
-                    }
                     tunneledMoPubBannerAdView = new MoPubView(activity);
                     tunneledMoPubBannerAdView.setAdUnitId(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
-                    TunnelConnectionState.ConnectionData connectionData = adResult.connectionData();
+                    TunnelState.ConnectionData connectionData = adResult.connectionData();
                     if (connectionData != null) {
                         tunneledMoPubBannerAdView.setKeywords("client_region:" + connectionData.clientRegion());
                         Map<String, Object> localExtras = new HashMap<>();
@@ -429,9 +419,6 @@ public class PsiphonAdManager {
                 break;
             case UNTUNNELED:
                 completable = initializeAdMobSdk.andThen(Completable.fromAction(() -> {
-                    if (unTunneledAdMobBannerAdView != null) {
-                        return;
-                    }
                     unTunneledAdMobBannerAdView = new AdView(activity);
                     unTunneledAdMobBannerAdView.setAdSize(AdSize.MEDIUM_RECTANGLE);
                     unTunneledAdMobBannerAdView.setAdUnitId(ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
@@ -493,7 +480,7 @@ public class PsiphonAdManager {
                         .andThen(Observable.<InterstitialResult>create(emitter -> {
                             if (tunneledMoPubInterstitial == null) {
                                 tunneledMoPubInterstitial = new MoPubInterstitial(activity, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
-                                TunnelConnectionState.ConnectionData connectionData = adResult.connectionData();
+                                TunnelState.ConnectionData connectionData = adResult.connectionData();
                                 if (connectionData != null) {
                                     tunneledMoPubInterstitial.setKeywords("client_region:" + connectionData.clientRegion());
                                     Map<String, Object> localExtras = new HashMap<>();
@@ -624,36 +611,41 @@ public class PsiphonAdManager {
                 .subscribeOn(AndroidSchedulers.mainThread());
     }
 
-    private void destroyTunneledAds() {
+    private void destroyTunneledBanners() {
         if (tunneledMoPubBannerAdView != null) {
             ViewGroup parent = (ViewGroup) tunneledMoPubBannerAdView.getParent();
             if (parent != null) {
                 parent.removeView(tunneledMoPubBannerAdView);
             }
             tunneledMoPubBannerAdView.destroy();
-            tunneledMoPubBannerAdView = null;
         }
-        if (tunneledMoPubInterstitial != null) {
+        if(tunneledMoPubInterstitial != null) {
             tunneledMoPubInterstitial.destroy();
-            tunneledMoPubInterstitial = null;
         }
     }
 
-    private void destroyUnTunneledAds() {
+    private void destroyUnTunneledBanners() {
         if (unTunneledAdMobBannerAdView != null) {
             ViewGroup parent = (ViewGroup) unTunneledAdMobBannerAdView.getParent();
             if (parent != null) {
                 parent.removeView(unTunneledAdMobBannerAdView);
             }
             unTunneledAdMobBannerAdView.destroy();
-            unTunneledAdMobBannerAdView = null;
         }
-        unTunneledAdMobInterstitial = null;
     }
 
     private void destroyAllAds() {
-        destroyTunneledAds();
-        destroyUnTunneledAds();
+        destroyTunneledBanners();
+        destroyUnTunneledBanners();
+        // destroy interstitials too
+        if (unTunneledAdMobInterstitial != null) {
+            unTunneledAdMobInterstitial.setAdListener(null);
+            unTunneledAdMobInterstitial = null;
+        }
+        if (tunneledMoPubInterstitial != null) {
+            tunneledMoPubInterstitial.destroy();
+            tunneledMoPubInterstitial = null;
+        }
     }
 
     // implementing Activity must call this on its onDestroy lifecycle callback

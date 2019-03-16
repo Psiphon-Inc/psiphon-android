@@ -5,7 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
-import com.psiphon3.psicash.util.TunnelConnectionState;
+import com.psiphon3.psicash.util.TunnelState;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -133,7 +133,7 @@ public class PsiCashClient {
         return Collections.singletonList("speed-boost");
     }
 
-    private void setPsiCashRequestMetaData(TunnelConnectionState.ConnectionData connectionData) throws PsiCashException {
+    private void setPsiCashRequestMetaData(TunnelState.ConnectionData connectionData) throws PsiCashException {
         Map<String, String> metaData = new HashMap<>();
         metaData.put("client_version", connectionData.clientVersion());
         metaData.put("propagation_channel_id", connectionData.propagationChannelId());
@@ -203,7 +203,7 @@ public class PsiCashClient {
 
     private boolean hasToken(PsiCashLib.TokenType tokenType) throws PsiCashException {
         PsiCashLib.ValidTokenTypesResult validTokenTypesResult = psiCashLib.validTokenTypes();
-        if (validTokenTypesResult.error  == null) {
+        if (validTokenTypesResult.error == null) {
             return validTokenTypesResult.validTokenTypes.contains(tokenType);
         } else {
             String errorMessage = validTokenTypesResult.error.message;
@@ -277,7 +277,7 @@ public class PsiCashClient {
                 throw new PsiCashException.Recoverable(errorMessage);
             }
         }
-        if(getPurchasesResult.purchases.size() > 0) {
+        if (getPurchasesResult.purchases.size() > 0) {
             builder.nextExpiringPurchase(Collections.max(getPurchasesResult.purchases,
                     (p1, p2) -> p1.expiry.compareTo(p2.expiry)));
         }
@@ -288,22 +288,34 @@ public class PsiCashClient {
     }
 
     // Emits both PsiCashModel.PsiCash and PsiCashModel.ExpiringPurchase
-    Observable<? extends PsiCashModel> makeExpiringPurchase(TunnelConnectionState connectionState, PsiCashLib.PurchasePrice price, boolean hasActiveBoost) {
+    Observable<? extends PsiCashModel> makeExpiringPurchase(TunnelState connectionState, PsiCashLib.PurchasePrice price, boolean hasActiveBoost) {
         return Observable.just(connectionState)
                 .observeOn(Schedulers.io())
                 .flatMap(state -> Single.fromCallable(() -> {
-                    if (state.status() == TunnelConnectionState.Status.DISCONNECTED) {
-                        if(hasActiveBoost) {
-                            throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.", "Please connect to verify your Speed Boost status.");
+                    if (state.status() == TunnelState.Status.STOPPED) {
+                        if (hasActiveBoost) {
+                            throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not running.", "Please connect to verify your Speed Boost status.");
                         } else {
-                            throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.", "Please connect to make a Speed Boost purchase.");
+                            throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not running.", "Please connect to make a Speed Boost purchase.");
+                        }
+                    } else {
+                        TunnelState.ConnectionData connectionData = state.connectionData();
+                        if (connectionData == null) {
+                            throw new IllegalStateException("Bad tunnel state: " + state);
+                        }
+                        if (!connectionData.isConnected()) {
+                            if (hasActiveBoost) {
+                                throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.", "Please wait for tunnel to connect to verify your Speed Boost status.");
+                            } else {
+                                throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.", "Please wait for tunnel to connect to make a Speed Boost purchase.");
+                            }
                         }
                     }
                     if (price == null) {
                         throw new PsiCashException.Critical("makeExpiringPurchase: purchase price is null.");
                     }
 
-                    TunnelConnectionState.ConnectionData connectionData = state.connectionData();
+                    TunnelState.ConnectionData connectionData = state.connectionData();
                     if (connectionData != null) {
                         setPsiCashRequestMetaData(connectionData);
                         setOkHttpClientHttpProxyPort(connectionData.httpPort());
@@ -371,43 +383,42 @@ public class PsiCashClient {
                 .toObservable();
     }
 
-    Observable<PsiCashModel.PsiCash> getPsiCashRemote(TunnelConnectionState connectionState) {
+    Observable<PsiCashModel.PsiCash> getPsiCashRemote(TunnelState tunnelState) {
         int retryCount = 5;
-        return Observable.just(connectionState)
+        return Observable.just(tunnelState)
                 .observeOn(Schedulers.io())
-                .flatMap(c -> {
-                    if (c.status() == TunnelConnectionState.Status.DISCONNECTED) {
-                        throw new IllegalStateException("Attempting to get PsiCash from remote while in DISCONNECTED tunnel state.");
+                .flatMap(state -> {
+                    if (state.status() == TunnelState.Status.STOPPED) {
+                        throw new IllegalStateException("Attempting to get PsiCash from remote while in STOPPED tunnel state.");
                     }
 
-                    if (c.status() == TunnelConnectionState.Status.CONNECTED) {
-                        TunnelConnectionState.ConnectionData connectionData = c.connectionData();
-                        if(connectionData != null) {
-                            setOkHttpClientHttpProxyPort(connectionData.httpPort());
-                        }
-
-                        if (connectionData != null) {
-                            setPsiCashRequestMetaData(connectionData);
-                        }
-
-                        return Completable.fromAction(() -> {
-                            PsiCashLib.RefreshStateResult result = psiCashLib.refreshState(getPurchaseClasses());
-                            if (result.error != null) {
-                                if (result.error.critical) {
-                                    throw new PsiCashException.Critical(result.error.message, "Cannot retrieve PsiCash balance from the server. Please send feedback.");
-                                } else {
-                                    throw new PsiCashException.Recoverable(result.error.message, "Cannot retrieve PsiCash balance from the server at the moment. Please try again later.");
-                                }
-                            }
-                            if (result.status != PsiCashLib.Status.SUCCESS) {
-                                throw new PsiCashException.Transaction(result.status);
-                            }
-                            // if success reset optimistic reward
-                            resetVideoReward();
-                        })
-                                .andThen(getPsiCashLocal());
+                    TunnelState.ConnectionData connectionData = state.connectionData();
+                    if (connectionData == null) {
+                        throw new IllegalStateException("Bad tunnel state:" + state);
                     }
-                    throw new IllegalArgumentException("Unknown TunnelConnectionState: " + c);
+                    if (connectionData.isConnected()) {
+                        throw new IllegalStateException("Attempting to get PsiCash from remote while in NOT CONNECTED tunnel state.");
+                    }
+
+                    setOkHttpClientHttpProxyPort(connectionData.httpPort());
+                    setPsiCashRequestMetaData(connectionData);
+
+                    return Completable.fromAction(() -> {
+                        PsiCashLib.RefreshStateResult result = psiCashLib.refreshState(getPurchaseClasses());
+                        if (result.error != null) {
+                            if (result.error.critical) {
+                                throw new PsiCashException.Critical(result.error.message, "Cannot retrieve PsiCash balance from the server. Please send feedback.");
+                            } else {
+                                throw new PsiCashException.Recoverable(result.error.message, "Cannot retrieve PsiCash balance from the server at the moment. Please try again later.");
+                            }
+                        }
+                        if (result.status != PsiCashLib.Status.SUCCESS) {
+                            throw new PsiCashException.Transaction(result.status);
+                        }
+                        // if success reset optimistic reward
+                        resetVideoReward();
+                    })
+                            .andThen(getPsiCashLocal());
                 })
                 // retry {retryCount} times every 2 seconds before giving up
                 .retryWhen(errors -> errors
@@ -420,14 +431,14 @@ public class PsiCashClient {
                         .flatMap(x -> x));
     }
 
-    public synchronized void putVideoReward (long reward) {
+    public synchronized void putVideoReward(long reward) {
         long storedReward = getVideoReward();
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putLong(PSICASH_PERSISTED_VIDEO_REWARD_KEY, storedReward + reward);
         editor.apply();
     }
 
-    public synchronized void resetVideoReward () {
+    public synchronized void resetVideoReward() {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putLong(PSICASH_PERSISTED_VIDEO_REWARD_KEY, 0);
         editor.apply();
@@ -444,7 +455,7 @@ public class PsiCashClient {
                         .andThen(getPsiCashLocal()));
     }
 
-    public List<PsiCashLib.Purchase> getPurchases() throws PsiCashException{
+    public List<PsiCashLib.Purchase> getPurchases() throws PsiCashException {
         PsiCashLib.GetPurchasesResult getPurchasesResult = psiCashLib.getPurchases();
         if (getPurchasesResult.error == null) {
             return getPurchasesResult.purchases;
