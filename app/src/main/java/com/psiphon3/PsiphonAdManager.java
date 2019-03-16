@@ -619,9 +619,6 @@ public class PsiphonAdManager {
             }
             tunneledMoPubBannerAdView.destroy();
         }
-        if(tunneledMoPubInterstitial != null) {
-            tunneledMoPubInterstitial.destroy();
-        }
     }
 
     private void destroyUnTunneledBanners() {

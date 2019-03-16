@@ -182,6 +182,9 @@ public class StatusActivity
     @Override
     public void onDestroy()
     {
+        if(startUpInterstitialDisposable != null) {
+            startUpInterstitialDisposable.dispose();
+        }
         psiphonAdManager.onDestroy();
         super.onDestroy();
     }
@@ -488,6 +491,10 @@ public class StatusActivity
     
     private void doStartUp()
     {
+        // cancel any ongoing startUp subscription
+        if(startUpInterstitialDisposable != null) {
+            startUpInterstitialDisposable.dispose();
+        }
         // If the user hasn't set a whole-device-tunnel preference, show a prompt
         // (and delay starting the tunnel service until the prompt is completed)
 

@@ -168,7 +168,7 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
     private Disposable getPsiCashTokensDisposable() {
         // If PsiCash doesn't have valid tokens get them from the server once the tunnel is connected
         return connectionStateObservable()
-                .filter(state -> state.status() == TunnelState.Status.STOPPED)
+                .filter(state -> state.status() == TunnelState.Status.RUNNING && state.connectionData().isConnected())
                 .takeWhile(__ -> {
                     try {
                         if (!PsiCashClient.getInstance(getContext()).hasValidTokens()) {
