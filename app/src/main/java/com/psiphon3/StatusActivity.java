@@ -462,26 +462,24 @@ public class StatusActivity
                                             interstitialResult.show();
                                         }
                                     })
-                                    .share();
+                                    .doOnComplete(() -> {
+                                        if(m_startupPending) {
+                                            m_startupPending = false;
+                                            doStartUp();
+                                        }
+                                    });
 
                     Observable<Long> countdown =
                             Observable.intervalRange(0, countdownSeconds, 0, 1, TimeUnit.SECONDS)
                                     .map(t -> countdownSeconds - t)
                                     .concatWith(Observable.error(new TimeoutException("Ad countdown timeout.")))
-                                    .takeUntil(interstitial)
-                                    .doOnError(e -> Log.d("HACK", "countdown: error: " + e))
                                     .doOnNext(t -> m_toggleButton.setText(String.format(Locale.US, "%d", t)));
 
-                    return Observable.mergeDelayError(countdown, interstitial)
-                            .doOnError(__ -> doStartUp());
+                    return countdown
+                            .takeUntil(interstitial)
+                            .doOnError(__->doStartUp());
                 })
                 .doOnSubscribe(__ -> disableToggleServiceUI())
-                .doOnComplete(() -> {
-                    if(m_startupPending) {
-                        m_startupPending = false;
-                        doStartUp();
-                    }
-                })
                 .onErrorResumeNext(Observable.empty())
                 .subscribe();
     }
