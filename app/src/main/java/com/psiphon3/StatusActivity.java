@@ -443,7 +443,7 @@ public class StatusActivity
         int countdownSeconds = 10;
         startUpInterstitialDisposable = psiphonAdManager.getCurrentAdTypeObservable()
                 .take(1)
-                .flatMap(adResult -> {
+                .switchMap(adResult -> {
                     if (adResult.type() == PsiphonAdManager.AdResult.Type.NONE) {
                         m_startupPending = true;
                         return Observable.empty();
@@ -456,6 +456,12 @@ public class StatusActivity
                     Observable<PsiphonAdManager.InterstitialResult> interstitial =
                             Observable.just(adResult)
                                     .compose(psiphonAdManager.getInterstitialWithTimeoutForAdType(countdownSeconds, TimeUnit.SECONDS))
+                                    .doOnNext(interstitialResult -> {
+                                        if (interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.READY) {
+                                            m_startupPending = true;
+                                            interstitialResult.show();
+                                        }
+                                    })
                                     .share();
 
                     Observable<Long> countdown =
@@ -463,19 +469,10 @@ public class StatusActivity
                                     .map(t -> countdownSeconds - t)
                                     .concatWith(Observable.error(new TimeoutException("Ad countdown timeout.")))
                                     .takeUntil(interstitial)
+                                    .doOnError(e -> Log.d("HACK", "countdown: error: " + e))
                                     .doOnNext(t -> m_toggleButton.setText(String.format(Locale.US, "%d", t)));
 
                     return Observable.mergeDelayError(countdown, interstitial)
-                            .doOnNext(o -> {
-                                if (!(o instanceof PsiphonAdManager.InterstitialResult)) {
-                                    return;
-                                }
-                                PsiphonAdManager.InterstitialResult interstitialResult = (PsiphonAdManager.InterstitialResult) o;
-                                if (interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.READY) {
-                                    m_startupPending = true;
-                                    interstitialResult.show();
-                                }
-                            })
                             .doOnError(__ -> doStartUp());
                 })
                 .doOnSubscribe(__ -> disableToggleServiceUI())

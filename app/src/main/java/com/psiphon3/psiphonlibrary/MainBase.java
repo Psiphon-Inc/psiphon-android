@@ -89,6 +89,7 @@ import android.widget.ViewFlipper;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.psiphon3.psicash.psicash.PsiCashClient;
 import com.psiphon3.psicash.psicash.PsiCashException;
+import com.psiphon3.psicash.util.TunnelState;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.R;
@@ -712,14 +713,13 @@ public abstract class MainBase {
             getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
             if (isServiceRunning()) {
+                updateServiceStateUI(null);
                 startAndBindTunnelService();
             }
             else {
                 // reset the tunnel state
                 onTunnelConnectionState(new TunnelManager.State());
             }
-
-            updateServiceStateUI();
         }
 
         @Override
@@ -735,6 +735,7 @@ public abstract class MainBase {
             m_updateStatisticsUITimer.cancel();
 
             unbindTunnelService();
+            updateServiceStateUI(null);
         }
 
         protected void doToggle() {
@@ -951,15 +952,15 @@ public abstract class MainBase {
             }
         }
 
-        protected void updateServiceStateUI() {
-            if (!isServiceRunning()) {
+        protected void updateServiceStateUI(TunnelManager.State state) {
+            if(state == null) {
+                setStatusState(R.drawable.status_icon_disconnected);
+                disableToggleServiceUI();
+            } else if(!state.isRunning) {
                 setStatusState(R.drawable.status_icon_disconnected);
                 enableToggleServiceUI(R.string.start);
             } else {
-                if (!m_boundToTunnelService) {
-                    setStatusState(R.drawable.status_icon_disconnected);
-                    disableToggleServiceUI();
-                } else if (isTunnelConnected()) {
+                if(state.isConnected) {
                     setStatusState(R.drawable.status_icon_connected);
                     enableToggleServiceUI(R.string.stop);
                 } else {
@@ -1445,7 +1446,7 @@ public abstract class MainBase {
         protected TunnelManager.State m_tunnelState;
 
         protected boolean isTunnelConnected() {
-            return m_tunnelState != null &&m_tunnelState.isConnected;
+            return m_tunnelState != null && m_tunnelState.isConnected;
         }
 
         protected ArrayList<String> getHomePages() {
@@ -1580,13 +1581,11 @@ public abstract class MainBase {
                     m_queue.clear();
                 }
                 serviceConnectionStatusBehaviorRelay.accept(ServiceConnectionStatus.SERVICE_CONNECTED);
-                updateServiceStateUI();
             }
 
             @Override
             public void onServiceDisconnected(ComponentName arg0) {
                 m_outgoingMessenger = null;
-                updateServiceStateUI();
                 serviceConnectionStatusBehaviorRelay.accept(ServiceConnectionStatus.SERVICE_DISCONNECTED);
                 onTunnelConnectionState(new TunnelManager.State());
             }
@@ -1613,7 +1612,6 @@ public abstract class MainBase {
                     // "java.lang.IllegalArgumentException: Service not registered"
                 }
             }
-            updateServiceStateUI();
         }
 
         protected void onTunnelConnectionState(@NonNull TunnelManager.State state) {
@@ -1632,7 +1630,7 @@ public abstract class MainBase {
                 }
             }
             m_tunnelState = state;
-            updateServiceStateUI();
+            updateServiceStateUI(state);
         }
 
         /**

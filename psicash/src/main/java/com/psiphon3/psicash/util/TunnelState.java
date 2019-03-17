@@ -24,13 +24,19 @@ public abstract class TunnelState {
 
         public abstract String sponsorId();
 
-
         public abstract boolean vpnMode();
 
         public abstract int httpPort();
 
         public static Builder builder() {
-            return new AutoValue_TunnelState_ConnectionData.Builder();
+            return new AutoValue_TunnelState_ConnectionData.Builder()
+                    .setIsConnected(false)
+                    .setClientRegion("")
+                    .setClientVersion("")
+                    .setPropagationChannelId("")
+                    .setSponsorId("")
+                    .setVpnMode(false)
+                    .setHttpPort(0);
         }
 
         @AutoValue.Builder
@@ -54,14 +60,18 @@ public abstract class TunnelState {
     }
 
     public abstract Status status();
-    @Nullable
+
     public abstract ConnectionData connectionData();
 
     public static TunnelState stopped() {
-        return new AutoValue_TunnelState(Status.STOPPED, null);
+        return new AutoValue_TunnelState(Status.STOPPED, ConnectionData.builder().build());
     }
 
     public static TunnelState running(ConnectionData connectionData) {
         return new AutoValue_TunnelState(Status.RUNNING, connectionData);
+    }
+
+    public boolean isRunning() {
+        return status() == Status.RUNNING;
     }
 }

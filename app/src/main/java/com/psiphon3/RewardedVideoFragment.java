@@ -126,7 +126,11 @@ public class RewardedVideoFragment extends Fragment implements MviView<Intent, R
                 loadVideo,
                 hasValidTokensObservable(),
                 connectionStateObservable(),
-                (ignore1, ignore2, s) -> Intent.LoadVideoAd.create(s));
+                (ignore1, ignore2, s) -> s)
+                .filter(state -> !state.isRunning()
+                        || (state.isRunning() && state.connectionData().isConnected()))
+                .map(Intent.LoadVideoAd::create);
+
     }
 
     private Observable<Boolean> hasValidTokensObservable() {

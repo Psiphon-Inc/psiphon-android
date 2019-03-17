@@ -292,17 +292,15 @@ public class PsiCashClient {
         return Observable.just(connectionState)
                 .observeOn(Schedulers.io())
                 .flatMap(state -> Single.fromCallable(() -> {
-                    if (state.status() == TunnelState.Status.STOPPED) {
+                    TunnelState.ConnectionData connectionData = state.connectionData();
+
+                    if (!state.isRunning()) {
                         if (hasActiveBoost) {
                             throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not running.", "Please connect to verify your Speed Boost status.");
                         } else {
                             throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not running.", "Please connect to make a Speed Boost purchase.");
                         }
                     } else {
-                        TunnelState.ConnectionData connectionData = state.connectionData();
-                        if (connectionData == null) {
-                            throw new IllegalStateException("Bad tunnel state: " + state);
-                        }
                         if (!connectionData.isConnected()) {
                             if (hasActiveBoost) {
                                 throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.", "Please wait for tunnel to connect to verify your Speed Boost status.");
@@ -315,11 +313,8 @@ public class PsiCashClient {
                         throw new PsiCashException.Critical("makeExpiringPurchase: purchase price is null.");
                     }
 
-                    TunnelState.ConnectionData connectionData = state.connectionData();
-                    if (connectionData != null) {
-                        setPsiCashRequestMetaData(connectionData);
-                        setOkHttpClientHttpProxyPort(connectionData.httpPort());
-                    }
+                    setPsiCashRequestMetaData(connectionData);
+                    setOkHttpClientHttpProxyPort(connectionData.httpPort());
 
                     PsiCashLib.NewExpiringPurchaseResult result =
                             psiCashLib.newExpiringPurchase(price.transactionClass,
@@ -388,15 +383,12 @@ public class PsiCashClient {
         return Observable.just(tunnelState)
                 .observeOn(Schedulers.io())
                 .flatMap(state -> {
-                    if (state.status() == TunnelState.Status.STOPPED) {
+                    if (!state.isRunning()) {
                         throw new IllegalStateException("Attempting to get PsiCash from remote while in STOPPED tunnel state.");
                     }
 
                     TunnelState.ConnectionData connectionData = state.connectionData();
-                    if (connectionData == null) {
-                        throw new IllegalStateException("Bad tunnel state:" + state);
-                    }
-                    if (connectionData.isConnected()) {
+                    if (!connectionData.isConnected()) {
                         throw new IllegalStateException("Attempting to get PsiCash from remote while in NOT CONNECTED tunnel state.");
                     }
 

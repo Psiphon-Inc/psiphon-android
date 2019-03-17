@@ -176,30 +176,24 @@ public class RewardedVideoClient {
                     if (!PsiCashClient.getInstance(context).hasEarnerToken()) {
                         return Observable.error(new IllegalStateException("PsiCash lib has no earner token."));
                     }
-                    // Not running should load AdMob ads
-                    if (state.status() == TunnelState.Status.STOPPED) {
-                        return loadAdMobVideos(customData);
-                    }
-
-                    if (state.status() == TunnelState.Status.RUNNING) {
+                    if (state.isRunning()) {
                         TunnelState.ConnectionData connectionData = state.connectionData();
-                        if(connectionData == null) {
-                            throw new IllegalStateException("Bad tunnel state: " + state);
-                        }
-                        // Return an error if running but not connected immediately to get out of in flight state
+                        // We shouldn't have received this state, but if we did return an error
+                        // immediately to get out of in flight state.
                         if (!connectionData.isConnected()) {
                             return Observable.error(new RuntimeException("Psiphon tunnel is not connected."));
                         } else {
-                            // When connected VPN mode should load MoPub ads and BOM should load AdMob
+                            // When connected VPN mode should load MoPub ads and BOM should load AdMob.
                             if(connectionData.vpnMode()) {
                                 return loadMoPubVideos(customData);
                             } else {
                                 return loadAdMobVideos(customData);
                             }
                         }
+                    } else {
+                        // Not running should load AdMob ads
+                        return loadAdMobVideos(customData);
                     }
-                    // Did we miss a case?
-                    throw new IllegalArgumentException("Loading video for " + state + " is not implemented.");
                 })
                 // if error retry once with 2 seconds delay
                 .retryWhen(throwableObservable -> {

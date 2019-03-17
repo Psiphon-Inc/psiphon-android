@@ -208,24 +208,21 @@ public class PsiphonAdManager {
                         return Observable.just(AdResult.none());
                     }
 
-                    if (s.status() == TunnelState.Status.STOPPED) {
+                    if (s.isRunning()) {
+                        // Destroy untunneled ads when tunnel starts running immediately
+                        destroyUnTunneledBanners();
+                        TunnelState.ConnectionData connectionData = s.connectionData();
+                        // Only emit when tunnel is connected
+                        if (connectionData.isConnected()) {
+                            return Observable.just(AdResult.tunneled(connectionData));
+                        }
+                        return Observable.empty();
+                    } else {
                         destroyTunneledBanners();
                         // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
                         // and we need to run the check every time
                         runAdMobGdprCheck();
                         return Observable.just(AdResult.unTunneled());
-                    } else {
-                        // Destroy untunneled ads when tunnel starts running immediately
-                        destroyUnTunneledBanners();
-                        TunnelState.ConnectionData connectionData = s.connectionData();
-                        // Only emit when tunnel is connected
-                        if (connectionData == null) {
-                            // Bad state, log and do not emit
-                            Log.e(TAG, "currentAdTypeObservable: bad tunnel state:" + s);
-                        } else if (connectionData.isConnected()) {
-                            return Observable.just(AdResult.tunneled(connectionData));
-                        }
-                        return Observable.empty();
                     }
                 })
                 .replay(1)
@@ -238,9 +235,6 @@ public class PsiphonAdManager {
 
     private void runAdMobGdprCheck() {
         String[] publisherIds = {"pub-1072041961750291"};
-        // TODO remove after testing
-        ConsentInformation.getInstance(activity)
-                .addTestDevice("DD841979B3AEC945A788CF1196793B06");
         ConsentInformation.getInstance(activity).
                 setDebugGeography(DebugGeography.DEBUG_GEOGRAPHY_EEA);
         ConsentInformation.getInstance(activity).requestConsentInfoUpdate(publisherIds, new ConsentInfoUpdateListener() {
@@ -453,8 +447,6 @@ public class PsiphonAdManager {
                     }
                     AdRequest adRequest = new AdRequest.Builder()
                             .addNetworkExtrasBundle(AdMobAdapter.class, extras)
-                            // TODO remove after testing
-                            .addTestDevice("DD841979B3AEC945A788CF1196793B06")
                             .build();
                     unTunneledAdMobBannerAdView.loadAd(adRequest);
                 }));
@@ -584,8 +576,6 @@ public class PsiphonAdManager {
                                 extras.putString("npa", "1");
                             }
                             AdRequest adRequest = new AdRequest.Builder()
-                                    // TODO remove after testing
-                                    .addTestDevice("DD841979B3AEC945A788CF1196793B06")
                                     .addNetworkExtrasBundle(AdMobAdapter.class, extras)
                                     .build();
                             if (unTunneledAdMobInterstitial.isLoaded()) {
