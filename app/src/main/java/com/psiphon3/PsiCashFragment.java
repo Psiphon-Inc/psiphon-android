@@ -2,6 +2,7 @@ package com.psiphon3;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.BroadcastReceiver;
@@ -17,6 +18,7 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -302,11 +304,17 @@ public class PsiCashFragment extends Fragment implements MviView<Intent, PsiCash
             buySpeedBoostBtn.setTag(R.id.hasActiveSpeedBoostTag, false);
             if(purchasePrice != null && purchasePrice.price != 0) {
                 if (purchasePrice.price > state.uiBalance() * 1e9) {
-                    buySpeedBoostBtn.setEnabled(false);
                     buySpeedBoostBtn.setText(String.format(Locale.US, "%d%s", state.uiBalance(), "%"));
+                    buySpeedBoostBtn.setOnTouchListener((view, motionEvent) -> {
+                        ObjectAnimator
+                                .ofFloat(view, "translationX", 0, 25, -25, 25, -25,15, -15, 6, -6, 0)
+                                .setDuration(500)
+                                .start();
+                        return true;
+                    });
                 } else {
-                    buySpeedBoostBtn.setEnabled(true);
                     buySpeedBoostBtn.setText("purchase speed boost");
+                    buySpeedBoostBtn.setOnTouchListener((view, motionEvent) -> false);
                 }
             }
         }

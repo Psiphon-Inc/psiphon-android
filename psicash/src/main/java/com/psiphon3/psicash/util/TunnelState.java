@@ -61,10 +61,11 @@ public abstract class TunnelState {
 
     public abstract Status status();
 
+    @Nullable
     public abstract ConnectionData connectionData();
 
     public static TunnelState stopped() {
-        return new AutoValue_TunnelState(Status.STOPPED, ConnectionData.builder().build());
+        return new AutoValue_TunnelState(Status.STOPPED, null);
     }
 
     public static TunnelState running(ConnectionData connectionData) {
