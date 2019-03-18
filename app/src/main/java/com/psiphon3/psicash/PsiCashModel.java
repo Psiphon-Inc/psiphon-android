@@ -1,4 +1,4 @@
-package com.psiphon3.psicash.psicash;
+package com.psiphon3.psicash;
 
 import android.support.annotation.Nullable;
 
@@ -45,18 +45,30 @@ public interface PsiCashModel {
 
     @AutoValue
     abstract class ExpiringPurchase implements PsiCashModel {
-
-        static Builder builder() {
-            return new AutoValue_PsiCashModel_ExpiringPurchase.Builder();
-        }
-
         public abstract PsiCashLib.Purchase expiringPurchase();
 
-        @AutoValue.Builder
-        abstract static class Builder {
-            abstract Builder expiringPurchase(@Nullable PsiCashLib.Purchase purchase);
-
-            abstract ExpiringPurchase build();
+        public static ExpiringPurchase create(PsiCashLib.Purchase purchase) {
+            return new AutoValue_PsiCashModel_ExpiringPurchase(purchase);
         }
     }
+
+    @AutoValue
+    abstract class VideoReady implements PsiCashModel {
+        @Nullable
+        public abstract Runnable videoPlayRunnable();
+
+        public static VideoReady create(Runnable videoRunnable) {
+            return new AutoValue_PsiCashModel_VideoReady(videoRunnable);
+        }
+    }
+
+    @AutoValue
+    abstract class Reward implements PsiCashModel {
+        public abstract long amount();
+
+        public static Reward create(long amount) {
+            return new AutoValue_PsiCashModel_Reward(amount);
+        }
+    }
+
 }

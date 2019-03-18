@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:padding="10dp"
-        android:text="IDLE" />
+        android:text="" />
 
 
     <RelativeLayout
@@ -21,7 +21,7 @@
         android:layout_gravity="center_horizontal">
 
         <ProgressBar
-            android:id="@+id/speedboost_purchase_progress"
+            android:id="@+id/progress_view"
             style="?android:attr/progressBarStyleSmall"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -37,5 +37,10 @@
             android:layout_height="wrap_content"/>
     </RelativeLayout>
 
+    <Button
+        android:id="@+id/load_watch_rewarded_video_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Watch video &#038; earn PsiCash" />
 
 </LinearLayout>

@@ -1,1 +1,1 @@
-include ':app', ':tray', ':psicash'
+include ':app', ':tray'

@@ -46,10 +46,9 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.psiphon3.psicash.psicash.PsiCashClient;
-import com.psiphon3.psicash.psicash.PsiCashException;
+import com.psiphon3.psicash.PsiCashClient;
+import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.util.BroadcastIntent;
-import com.psiphon3.psicash.util.TunnelState;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
@@ -79,7 +78,6 @@ import java.util.concurrent.TimeoutException;
 
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
 
 
 public class StatusActivity
@@ -98,7 +96,6 @@ public class StatusActivity
     private boolean mIabHelperIsInitialized = false;
 
     private PsiCashFragment psiCashFragment;
-    private RewardedVideoFragment rewardedVideoFragment;
 
     private PsiphonAdManager psiphonAdManager;
     private Disposable startUpInterstitialDisposable;
@@ -122,12 +119,10 @@ public class StatusActivity
         // PsiCash and rewarded video modules
         FragmentManager fm = getSupportFragmentManager();
         psiCashFragment = (PsiCashFragment) fm.findFragmentById(R.id.psicash_fragment_container);
-        rewardedVideoFragment = (RewardedVideoFragment) fm.findFragmentById(R.id.rewarded_fragment_container);
 
         // ads
         psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.largeAdSlot),
                 () -> onSubscribeButtonClick(null), true);
-
         psiphonAdManager.startLoadingAds();
 
         setupActivityLayout();
@@ -341,7 +336,6 @@ public class StatusActivity
         }
 
         psiCashFragment.onTunnelConnectionState(tunnelState);
-        rewardedVideoFragment.onTunnelConnectionState(tunnelState);
         psiphonAdManager.onTunnelConnectionState(tunnelState);
     }
 

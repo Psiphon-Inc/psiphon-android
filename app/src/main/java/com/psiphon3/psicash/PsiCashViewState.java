@@ -1,4 +1,4 @@
-package com.psiphon3.psicash.psicash;
+package com.psiphon3.psicash;
 
 import android.support.annotation.Nullable;
 
@@ -22,7 +22,16 @@ public abstract class PsiCashViewState implements MviViewState {
     public abstract Date nextPurchaseExpiryDate();
 
     @Nullable
-    public abstract Throwable error();
+    public abstract Throwable psiCashError();
+
+    @Nullable
+    public abstract Runnable videoPlayRunnable();
+
+    @Nullable
+    public abstract Throwable videoError();
+    public abstract boolean videoInFlight();
+    public abstract boolean shouldAutoLoadVideoOnNextForeground();
+
 
     abstract Builder withState();
 
@@ -31,9 +40,13 @@ public abstract class PsiCashViewState implements MviViewState {
                 .uiBalance(0)
                 .purchasePrice(null)
                 .nextPurchaseExpiryDate(null)
-                .error(null)
+                .psiCashError(null)
                 .purchaseInFlight(false)
                 .animateOnNextBalanceChange(false)
+                .videoPlayRunnable(null)
+                .videoInFlight(false)
+                .videoError(null)
+                .shouldAutoLoadVideoOnNextForeground(false)
                 .build();
     }
 
@@ -41,7 +54,7 @@ public abstract class PsiCashViewState implements MviViewState {
     static abstract class Builder {
         abstract Builder uiBalance(int balance);
 
-        abstract Builder error(@Nullable Throwable error);
+        abstract Builder psiCashError(@Nullable Throwable error);
 
         abstract Builder purchasePrice(@Nullable PsiCashLib.PurchasePrice price);
 
@@ -50,6 +63,14 @@ public abstract class PsiCashViewState implements MviViewState {
         public abstract Builder purchaseInFlight(boolean b);
 
         public abstract Builder animateOnNextBalanceChange(boolean b);
+
+        abstract Builder videoPlayRunnable(Runnable runnable);
+
+        public abstract Builder videoInFlight(boolean b);
+
+        abstract Builder videoError(@Nullable Throwable error);
+
+        abstract Builder shouldAutoLoadVideoOnNextForeground(boolean b);
 
         abstract PsiCashViewState build();
     }

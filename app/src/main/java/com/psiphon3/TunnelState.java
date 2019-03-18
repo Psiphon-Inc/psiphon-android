@@ -1,5 +1,4 @@
-package com.psiphon3.psicash.util;
-
+package com.psiphon3;
 
 import android.support.annotation.Nullable;
 

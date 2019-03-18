@@ -1,4 +1,4 @@
-package com.psiphon3.psicash.psicash;
+package com.psiphon3.psicash;
 
 import android.app.Application;
 import android.arch.lifecycle.AndroidViewModel;
@@ -12,7 +12,7 @@ import com.psiphon3.psicash.mvibase.MviResult;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.mvibase.MviViewModel;
 import com.psiphon3.psicash.mvibase.MviViewState;
-import com.psiphon3.psicash.util.TunnelState;
+import com.psiphon3.TunnelState;
 
 import java.util.Date;
 import java.util.List;
@@ -26,18 +26,18 @@ import io.reactivex.schedulers.Schedulers;
 public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
     private static final String DISTINGUISHER_1HR = "1hr";
     private static final String TAG = "PsiCashViewModel";
-    private final PublishRelay<Intent> intentPublishRelay;
+    private final PublishRelay<PsiCashIntent> intentPublishRelay;
     private final Observable<PsiCashViewState> psiCashViewStateObservable;
     private final CompositeDisposable compositeDisposable;
 
     @NonNull
     private final PsiCashActionProcessorHolder psiCashActionProcessorHolder;
 
-    PsiCashViewModel(@NonNull Application application, ExpiringPurchaseListener expiringPurchaseListener) {
+    PsiCashViewModel(@NonNull Application application, PsiCashListener psiCashListener) {
         super(application);
 
         intentPublishRelay = PublishRelay.create();
-        psiCashActionProcessorHolder = new PsiCashActionProcessorHolder(application, expiringPurchaseListener);
+        psiCashActionProcessorHolder = new PsiCashActionProcessorHolder(application, psiCashListener);
         psiCashViewStateObservable = compose();
         compositeDisposable = new CompositeDisposable();
     }
@@ -50,13 +50,13 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
      * This is basically like a big switch statement of all possible types for the {@link MviResult}
      */
 
-    private static final BiFunction<PsiCashViewState, Result, PsiCashViewState> reducer =
+    private static final BiFunction<PsiCashViewState, PsiCashResult, PsiCashViewState> reducer =
             (previousState, result) -> {
                 Log.d(TAG, "reducer: result: " + result);
                 PsiCashViewState.Builder stateBuilder = previousState.withState();
 
-                if (result instanceof Result.GetPsiCash) {
-                    Result.GetPsiCash getPsiCashResult = (Result.GetPsiCash) result;
+                if (result instanceof PsiCashResult.GetPsiCash) {
+                    PsiCashResult.GetPsiCash getPsiCashResult = (PsiCashResult.GetPsiCash) result;
 
                     PsiCashLib.PurchasePrice price = null;
                     Date nextPurchaseExpiryDate = null;
@@ -93,18 +93,18 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                                     .build();
                         case FAILURE:
                             return stateBuilder
-                                    .error(getPsiCashResult.error())
+                                    .psiCashError(getPsiCashResult.error())
                                     .build();
                         case IN_FLIGHT:
                             return stateBuilder
                                     .build();
                     }
-                } else if (result instanceof Result.ClearErrorState) {
+                } else if (result instanceof PsiCashResult.ClearErrorState) {
                     return stateBuilder
-                            .error(null)
+                            .psiCashError(null)
                             .build();
-                } else if (result instanceof Result.ExpiringPurchase) {
-                    Result.ExpiringPurchase purchaseResult = (Result.ExpiringPurchase) result;
+                } else if (result instanceof PsiCashResult.ExpiringPurchase) {
+                    PsiCashResult.ExpiringPurchase purchaseResult = (PsiCashResult.ExpiringPurchase) result;
                     Date nextPurchaseExpiryDate = null;
 
                     PsiCashModel.ExpiringPurchase model = purchaseResult.model();
@@ -121,13 +121,50 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                         case FAILURE:
                             PsiCashViewState.Builder builder = stateBuilder
                                     .purchaseInFlight(false)
-                                    .error(purchaseResult.error());
+                                    .psiCashError(purchaseResult.error());
                             return builder.build();
                         case IN_FLIGHT:
                             return stateBuilder
                                     .purchaseInFlight(true)
                                     .build();
                     }
+                } else if (result instanceof PsiCashResult.VideoReady) {
+                    PsiCashResult.VideoReady loadResult = (PsiCashResult.VideoReady) result;
+
+                    PsiCashModel.VideoReady model = loadResult.model();
+
+                    Runnable videoPlayRunnable = null;
+                    if ( model != null ) {
+                        videoPlayRunnable = model.videoPlayRunnable();
+                    }
+
+                    stateBuilder = stateBuilder
+                            .shouldAutoLoadVideoOnNextForeground(true);
+
+                    switch (loadResult.status()) {
+                        case SUCCESS:
+                            return stateBuilder
+                                    .videoPlayRunnable(videoPlayRunnable)
+                                    .videoInFlight(false)
+                                    .videoError(null)
+                                    .build();
+                        case FAILURE:
+                            return stateBuilder
+                                    .videoPlayRunnable(null)
+                                    .videoInFlight(false)
+                                    .videoError(loadResult.error())
+                                    .build();
+                        case IN_FLIGHT:
+                            return stateBuilder
+                                    .videoPlayRunnable(null)
+                                    .videoInFlight(true)
+                                    .videoError(null)
+                                    .build();
+                    }
+
+                } else if (result instanceof PsiCashResult.Reward) {
+                    // Reward is taken care of by the processor, just return previous state
+                    return  previousState;
                 }
 
                 throw new IllegalArgumentException("Don't know this result " + result);
@@ -160,29 +197,34 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
      * Translate an {@link MviIntent} to an {@link MviAction}.
      * Used to decouple the UI and the business logic to allow easy testings and reusability.
      */
-    private Observable<Action> actionFromIntent(MviIntent intent) {
-        if (intent instanceof Intent.GetPsiCashRemote) {
-            Intent.GetPsiCashRemote getPsiCashRemoteIntent = (Intent.GetPsiCashRemote) intent;
+    private Observable<PsiCashAction> actionFromIntent(MviIntent intent) {
+        if (intent instanceof PsiCashIntent.GetPsiCashRemote) {
+            PsiCashIntent.GetPsiCashRemote getPsiCashRemoteIntent = (PsiCashIntent.GetPsiCashRemote) intent;
             final TunnelState status = getPsiCashRemoteIntent.connectionState();
-            return Observable.just(Action.GetPsiCashRemote.create(status));
+            return Observable.just(PsiCashAction.GetPsiCashRemote.create(status));
         }
-        if (intent instanceof Intent.GetPsiCashLocal) {
-            return Observable.just(Action.GetPsiCashLocal.create());
+        if (intent instanceof PsiCashIntent.GetPsiCashLocal) {
+            return Observable.just(PsiCashAction.GetPsiCashLocal.create());
         }
-        if (intent instanceof Intent.ClearErrorState) {
-            return Observable.just(Action.ClearErrorState.create());
+        if (intent instanceof PsiCashIntent.ClearErrorState) {
+            return Observable.just(PsiCashAction.ClearErrorState.create());
         }
-        if (intent instanceof Intent.PurchaseSpeedBoost) {
-            Intent.PurchaseSpeedBoost purchaseSpeedBoostIntent = (Intent.PurchaseSpeedBoost) intent;
+        if (intent instanceof PsiCashIntent.PurchaseSpeedBoost) {
+            PsiCashIntent.PurchaseSpeedBoost purchaseSpeedBoostIntent = (PsiCashIntent.PurchaseSpeedBoost) intent;
             final PsiCashLib.PurchasePrice price = purchaseSpeedBoostIntent.purchasePrice();
             final TunnelState tunnelState = purchaseSpeedBoostIntent.connectionState();
             final boolean hasActiveBoost = purchaseSpeedBoostIntent.hasActiveBoost();
-            return Observable.just(Action.MakeExpiringPurchase.create(tunnelState, price, hasActiveBoost));
+            return Observable.just(PsiCashAction.MakeExpiringPurchase.create(tunnelState, price, hasActiveBoost));
         }
-        if (intent instanceof Intent.RemovePurchases) {
-            Intent.RemovePurchases removePurchases = (Intent.RemovePurchases) intent;
+        if (intent instanceof PsiCashIntent.RemovePurchases) {
+            PsiCashIntent.RemovePurchases removePurchases = (PsiCashIntent.RemovePurchases) intent;
             final List<String> purchases = removePurchases.purchases();
-            return Observable.just(Action.RemovePurchases.create(purchases));
+            return Observable.just(PsiCashAction.RemovePurchases.create(purchases));
+        }
+        if (intent instanceof PsiCashIntent.LoadVideoAd) {
+            PsiCashIntent.LoadVideoAd loadVideoAd = (PsiCashIntent.LoadVideoAd) intent;
+            final TunnelState tunnelState = loadVideoAd.connectionState();
+            return Observable.just(PsiCashAction.LoadVideoAd.create(tunnelState));
         }
         throw new IllegalArgumentException("Do not know how to treat this intent " + intent);
     }

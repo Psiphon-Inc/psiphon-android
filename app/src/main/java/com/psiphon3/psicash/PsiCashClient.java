@@ -1,11 +1,11 @@
-package com.psiphon3.psicash.psicash;
+package com.psiphon3.psicash;
 
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
-import com.psiphon3.psicash.util.TunnelState;
+import com.psiphon3.TunnelState;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -334,9 +334,7 @@ public class PsiCashClient {
                     if (result.status != PsiCashLib.Status.SUCCESS) {
                         throw new PsiCashException.Transaction(result.status);
                     }
-                    return PsiCashModel.ExpiringPurchase.builder()
-                            .expiringPurchase(result.purchase)
-                            .build();
+                    return PsiCashModel.ExpiringPurchase.create(result.purchase);
                 })
                         .cast(PsiCashModel.class)
                         .toObservable()

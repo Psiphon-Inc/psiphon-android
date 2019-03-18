@@ -1,4 +1,4 @@
-package com.psiphon3.psicash.rewardedvideo;
+package com.psiphon3.psicash;
 
 import android.app.Activity;
 import android.content.Context;
@@ -17,8 +17,7 @@ import com.mopub.common.MoPubReward;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubRewardedVideoListener;
 import com.mopub.mobileads.MoPubRewardedVideos;
-import com.psiphon3.psicash.psicash.PsiCashClient;
-import com.psiphon3.psicash.util.TunnelState;
+import com.psiphon3.TunnelState;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +43,7 @@ public class RewardedVideoClient {
         return INSTANCE;
     }
 
-    private Observable<? extends RewardedVideoModel> loadMoPubVideos(final String customData) {
+    private Observable<? extends PsiCashModel> loadMoPubVideos(final String customData) {
         return Observable.create(emitter -> {
             final int rewardAmount;
             final Set<MoPubReward> rewardsSet = MoPubRewardedVideos.getAvailableRewards(MOPUB_VIDEO_AD_UNIT_ID);
@@ -60,7 +59,7 @@ public class RewardedVideoClient {
                     if (!emitter.isDisposed()) {
                         // Called when the video for the given adUnitId has loaded. At this point you should be able to call MoPubRewardedVideos.showRewardedVideo(String) to show the video.
                         if (adUnitId.equals(MOPUB_VIDEO_AD_UNIT_ID)) {
-                            emitter.onNext(RewardedVideoModel.VideoReady.create(() ->
+                            emitter.onNext(PsiCashModel.VideoReady.create(() ->
                                     RewardedVideoClient.getInstance().playMoPubVideo(customData)));
                         } else {
                             emitter.onError(new RuntimeException("MoPub video failed, wrong ad unit id, expect: " + MOPUB_VIDEO_AD_UNIT_ID + ", got: " + adUnitId));
@@ -100,7 +99,7 @@ public class RewardedVideoClient {
                     // since MoPub videos are not closeable
                     // check https://developers.mopub.com/docs/ui/apps/rewarded-server-side-setup/ for the web hook docs
                     if (!emitter.isDisposed()) {
-                        emitter.onNext(RewardedVideoModel.Reward.create(reward.getAmount()));
+                        emitter.onNext(PsiCashModel.Reward.create(reward.getAmount()));
                     }
                 }
             };
@@ -109,13 +108,13 @@ public class RewardedVideoClient {
         });
     }
 
-    private Observable<? extends RewardedVideoModel> loadAdMobVideos(String customData) {
+    private Observable<? extends PsiCashModel> loadAdMobVideos(String customData) {
         return Observable.create(emitter -> {
             RewardedVideoAdListener listener = new RewardedVideoAdListener() {
                 @Override
                 public void onRewarded(RewardItem reward) {
                     if (!emitter.isDisposed()) {
-                        emitter.onNext(RewardedVideoModel.Reward.create(reward.getAmount()));
+                        emitter.onNext(PsiCashModel.Reward.create(reward.getAmount()));
                     }
                 }
 
@@ -140,7 +139,7 @@ public class RewardedVideoClient {
                 @Override
                 public void onRewardedVideoAdLoaded() {
                     if (!emitter.isDisposed()) {
-                        emitter.onNext(RewardedVideoModel.VideoReady.create(() ->
+                        emitter.onNext(PsiCashModel.VideoReady.create(() ->
                                 RewardedVideoClient.getInstance().playAdMobVideo()));
                     }
                 }
@@ -164,7 +163,7 @@ public class RewardedVideoClient {
         });
     }
 
-    Observable<? extends RewardedVideoModel> loadRewardedVideo(Context context, TunnelState connectionState, String rewardCustomData) {
+    public Observable<? extends PsiCashModel> loadRewardedVideo(Context context, TunnelState connectionState, String rewardCustomData) {
         return Observable.just(Pair.create(connectionState, rewardCustomData))
                 .observeOn(AndroidSchedulers.mainThread())
                 .flatMap(pair -> {

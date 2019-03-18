@@ -1,4 +1,4 @@
-package com.psiphon3.psicash.psicash;
+package com.psiphon3.psicash;
 
 import ca.psiphon.psicashlib.PsiCashLib;
 

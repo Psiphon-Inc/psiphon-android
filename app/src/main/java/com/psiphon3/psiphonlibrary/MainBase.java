@@ -87,9 +87,8 @@ import android.widget.Toast;
 import android.widget.ViewFlipper;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
-import com.psiphon3.psicash.psicash.PsiCashClient;
-import com.psiphon3.psicash.psicash.PsiCashException;
-import com.psiphon3.psicash.util.TunnelState;
+import com.psiphon3.psicash.PsiCashClient;
+import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.R;

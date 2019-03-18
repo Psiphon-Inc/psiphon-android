@@ -1,9 +1,10 @@
-package com.psiphon3.psicash.psicash;
+package com.psiphon3.psicash;
 
 import android.content.Context;
 
 import ca.psiphon.psicashlib.PsiCashLib;
 
-public interface ExpiringPurchaseListener {
+public interface PsiCashListener {
     void onNewExpiringPurchase(Context context, PsiCashLib.Purchase purchase);
+    void onNewReward(Context context, long reward);
 }

@@ -6,7 +6,7 @@ android {
 
     repositories{
         flatDir{
-            dirs 'libs', '../psicash/aar'
+            dirs 'libs'
         }
         maven {
             url "https://maven.google.com"
@@ -121,7 +121,6 @@ dependencies {
 
     implementation project(':tray')
 
-    implementation project(':psicash')
     implementation(name: 'psicashlib-release', ext: 'aar')
 
     implementation "com.android.support:multidex:$rootProject.ext.multidexVersion"
@@ -136,8 +135,12 @@ dependencies {
     implementation("com.mopub:mopub-sdk-interstitial:$rootProject.ext.mopubSdkVersion@aar") {
         transitive = true
     }
+    // MoPub rewarded videos. This will automatically also include interstitials
+    implementation("com.mopub:mopub-sdk-rewardedvideo:$rootProject.ext.mopubSdkVersion@aar") {
+        transitive = true
+    }
+
     implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
-    implementation "com.mopub.mediation:admob:$rootProject.ext.mopubMediationAdmobVersion"
     implementation "com.google.android.ads.consent:consent-library:$rootProject.ext.adsConsentLibraryVersion"
 
     implementation "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxandroidVersion"
@@ -145,6 +148,9 @@ dependencies {
     implementation "com.jakewharton.rxrelay2:rxrelay:$rootProject.ext.rxrelayVersion"
     implementation "com.jakewharton.rxbinding2:rxbinding-support-v4:$rootProject.ext.rxbindingSupportVersion"
     implementation "com.squareup.okhttp3:okhttp:$rootProject.ext.okhttpVersion"
+
+    api "android.arch.lifecycle:extensions:$rootProject.ext.androidLifecycleExtensionsVersion"
+
 
     compileOnly "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
     annotationProcessor "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
