@@ -335,8 +335,14 @@ public class StatusActivity
             tunnelState = TunnelState.stopped();
         }
 
-        psiCashFragment.onTunnelConnectionState(tunnelState);
         psiphonAdManager.onTunnelConnectionState(tunnelState);
+        psiCashFragment.onTunnelConnectionState(tunnelState);
+    }
+
+    @Override
+    protected void onAuthorizationsRemoved() {
+        super.onAuthorizationsRemoved();
+        psiCashFragment.removePurchases();
     }
 
     protected void HandleCurrentIntent()
@@ -979,6 +985,7 @@ public class StatusActivity
     private void proceedWithValidSubscription(Purchase purchase, int rateLimitMbps)
     {
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
+        psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
         Utils.setHasValidSubscription(this, true);
         setRateLimitUI(rateLimitMbps);
         this.m_retainedDataFragment.setCurrentPurchase(purchase);
@@ -1001,6 +1008,7 @@ public class StatusActivity
     private void proceedWithoutValidSubscription()
     {
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
+        psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
         Utils.setHasValidSubscription(this, false);
         setRateLimitUI(AD_MODE_RATE_LIMIT_MBPS);
         this.m_retainedDataFragment.setCurrentPurchase(null);
@@ -1027,6 +1035,7 @@ public class StatusActivity
     private void handleIabFailure(IabResult result)
     {
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
+        psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
         // try again next time
         deInitIab();
 

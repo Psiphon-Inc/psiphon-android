@@ -27,7 +27,6 @@ import com.jakewharton.rxbinding2.view.RxView;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
-import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.PsiCashIntent;
@@ -36,10 +35,13 @@ import com.psiphon3.psicash.PsiCashViewModel;
 import com.psiphon3.psicash.PsiCashViewModelFactory;
 import com.psiphon3.psicash.PsiCashViewState;
 import com.psiphon3.psicash.RewardedVideoClient;
+import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.Authorization;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
+
+import net.grandcentrix.tray.AppPreferences;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -60,6 +62,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
     private Relay<PsiCashIntent> intentsPublishRelay;
     private Relay<TunnelState> tunnelConnectionStateBehaviorRelay;
+    private Relay<PsiphonAdManager.SubscriptionStatus> subscriptionStatusPublishRelay;
+
 
     private TextView balanceLabel;
     private Button buySpeedBoostBtn;
@@ -113,6 +117,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 .get(PsiCashViewModel.class);
         intentsPublishRelay = PublishRelay.<PsiCashIntent>create().toSerialized();
         tunnelConnectionStateBehaviorRelay = BehaviorRelay.<TunnelState>create().toSerialized();
+        subscriptionStatusPublishRelay = PublishRelay.<PsiphonAdManager.SubscriptionStatus>create().toSerialized();
     }
 
     @Override
@@ -154,15 +159,20 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         // Unconditionally get latest local PsiCash state when app is foregrounded
         compositeDisposable.add(getPsiCashLocalDisposable());
 
-        // Remove purchases when app is foregrounded and tunnel is not connected
-        // or connection status changes from connected to disconnected
-        compositeDisposable.add(removePurchasesDisposable());
-
         // Get PsiCash tokens when tunnel connects if there are none
         compositeDisposable.add(getPsiCashTokensDisposable());
 
         // Load rewarded videos
         compositeDisposable.add(loadVideoAdsDisposable());
+
+        // Check if there are possibly expired purchases to remove in case activity
+        // was in the background when MSG_AUTHORIZATIONS_REMOVED was sent by the service
+        final AppPreferences mp = new AppPreferences(getContext());
+        if(mp.getBoolean(this.getString(R.string.persistentAuthorizationsRemovedFlag), false)) {
+            mp.put(this.getString(R.string.persistentAuthorizationsRemovedFlag), false);
+            removePurchases();
+        }
+
     }
 
     private Disposable viewStatesDisposable() {
@@ -207,17 +217,23 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 .subscribe(intentsPublishRelay);
     }
 
+    // Do not load ads if user is subscribed
     private Disposable loadVideoAdsDisposable() {
-
         shouldAutoPlay = false;
-        final Observable <Object> loadVideo;
+        final Observable<Object> loadVideo;
 
         if (shouldAutoLoadNextVideo){
-            loadVideo = Observable.just(1);
+            loadVideo = subscriptionStatusPublishRelay
+                    .filter(s -> s != PsiphonAdManager.SubscriptionStatus.SUBSCRIBER)
+                    .map (s -> s);
         } else {
-            loadVideo = RxView.clicks(loadWatchRewardedVideoBtn)
-                    .debounce(200, TimeUnit.MILLISECONDS)
-                    .doOnNext(__ -> shouldAutoPlay = true);
+            loadVideo = Observable.combineLatest(RxView.clicks(loadWatchRewardedVideoBtn)
+                            .debounce(200, TimeUnit.MILLISECONDS)
+                            .doOnNext(__ -> shouldAutoPlay = true),
+                    subscriptionStatusPublishRelay,
+                    (__, subscriptionStatus) -> subscriptionStatus)
+                    .filter(s -> s != PsiphonAdManager.SubscriptionStatus.SUBSCRIBER)
+                    .map(s -> s);
         }
 
         return Observable.combineLatest(
@@ -228,7 +244,6 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 .filter(state -> !state.isRunning()
                         || (state.isRunning() && state.connectionData().isConnected()))
                 .map(PsiCashIntent.LoadVideoAd::create)
-                .doOnNext(s -> Log.d(TAG, "loadVideoAdsDisposable: next" + s))
                 .subscribe(intentsPublishRelay);
 
     }
@@ -240,40 +255,32 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 .filter(s -> s);
     }
 
-    private Disposable removePurchasesDisposable() {
-        return connectionStateObservable()
-                .filter(state -> !state.isRunning())
-                .flatMap(__ -> {
-                    List<String> purchasesToRemove = new ArrayList<>();
-                    // remove purchases that are not in the authorizations database.
-                    try {
-                        // get all persisted authorizations as base64 encoded strings
-                        List<String> authorizationsAsString = new ArrayList<>();
-                        for (Authorization a : Authorization.geAllPersistedAuthorizations(getContext())) {
-                            authorizationsAsString.add(a.base64EncodedAuthorization());
-                        }
-
-                        List<PsiCashLib.Purchase> purchases = PsiCashClient.getInstance(getContext()).getPurchases();
-                        if(purchases.size() == 0) {
-                            return Observable.empty();
-                        }
-
-                        // build a list of purchases to remove by cross referencing
-                        // each purchase authorization against the authorization strings list
-                        for (PsiCashLib.Purchase purchase : purchases) {
-                            if (!authorizationsAsString.contains(purchase.authorization)) {
-                                purchasesToRemove.add(purchase.id);
-                            }
-                        }
-                        if (purchasesToRemove.size() > 0) {
-                            return Observable.just(PsiCashIntent.RemovePurchases.create(purchasesToRemove));
-                        }
-                    } catch (PsiCashException e) {
-                        Utils.MyLog.g("Error removing expired purchases: " + e);
-                    }
-                    return Observable.empty();
-                })
-                .subscribe(intentsPublishRelay);
+    public void removePurchases() {
+        List<String> purchasesToRemove = new ArrayList<>();
+        // remove purchases that are not in the authorizations database.
+        try {
+            // get all persisted authorizations as base64 encoded strings
+            List<String> authorizationsAsString = new ArrayList<>();
+            for (Authorization a : Authorization.geAllPersistedAuthorizations(getContext())) {
+                authorizationsAsString.add(a.base64EncodedAuthorization());
+            }
+            List<PsiCashLib.Purchase> purchases = PsiCashClient.getInstance(getContext()).getPurchases();
+            if (purchases.size() == 0) {
+                return;
+            }
+            // build a list of purchases to remove by cross referencing
+            // each purchase authorization against the authorization strings list
+            for (PsiCashLib.Purchase purchase : purchases) {
+                if (!authorizationsAsString.contains(purchase.authorization)) {
+                    purchasesToRemove.add(purchase.id);
+                }
+            }
+            if (purchasesToRemove.size() > 0) {
+                intentsPublishRelay.accept(PsiCashIntent.RemovePurchases.create(purchasesToRemove));
+            }
+        } catch (PsiCashException e) {
+            Utils.MyLog.g("Error removing expired purchases: " + e);
+        }
     }
 
     private void unbind() {
@@ -477,5 +484,9 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
     public void onTunnelConnectionState(TunnelState status) {
         tunnelConnectionStateBehaviorRelay.accept(status);
+    }
+
+    void onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus status) {
+        subscriptionStatusPublishRelay.accept(status);
     }
 }

@@ -88,6 +88,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     static final int MSG_KNOWN_SERVER_REGIONS = 3;
     static final int MSG_TUNNEL_CONNECTION_STATE = 4;
     static final int MSG_DATA_TRANSFER_STATS = 5;
+    static final int MSG_AUTHORIZATIONS_REMOVED = 6;
 
     public static final String INTENT_ACTION_HANDSHAKE = "com.psiphon3.psiphonlibrary.TunnelManager.HANDSHAKE";
     public static final String INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE = "com.psiphon3.psiphonlibrary.TunnelManager.SELECTED_REGION_NOT_AVAILABLE";
@@ -1271,6 +1272,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             // Remove all not accepted authorizations from the database
             Authorization.removeAuthorizations(getContext(), notAcceptedAuthorizations);
+
+            if(notAcceptedAuthorizations.size() > 0 ) {
+                final AppPreferences mp = new AppPreferences(getContext());
+                mp.put(m_parentService.getString(R.string.persistentAuthorizationsRemovedFlag), true);
+                sendClientMessage(MSG_AUTHORIZATIONS_REMOVED, null);
+            }
 
             // Subscription check below
             String purchaseAuthorizationID = getPersistedPurchaseAuthorizationId(getContext());

@@ -1542,10 +1542,19 @@ public abstract class MainBase {
                         getDataTransferStatsFromBundle(data);
                         break;
 
+                    case TunnelManager.MSG_AUTHORIZATIONS_REMOVED:
+                        onAuthorizationsRemoved();
+                        break;
+
                     default:
                         super.handleMessage(msg);
                 }
             }
+        }
+
+        protected void onAuthorizationsRemoved() {
+            final AppPreferences mp = new AppPreferences(getContext());
+            mp.put(this.getString(R.string.persistentAuthorizationsRemovedFlag), false);
         }
 
         private void sendServiceMessage(int what) {
