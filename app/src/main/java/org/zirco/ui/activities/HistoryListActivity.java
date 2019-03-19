@@ -15,6 +15,7 @@
 
 package org.zirco.ui.activities;
 
+import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.subscription.R;
 import org.zirco.controllers.Controller;
 import org.zirco.model.adapters.HistoryExpandableListAdapter;
@@ -47,7 +48,7 @@ import android.widget.ExpandableListView.ExpandableListContextMenuInfo;
 /**
  * history list activity.
  */
-public class HistoryListActivity extends ExpandableListActivity {
+public class HistoryListActivity extends LocalizedActivities.ExpandableListActivity {
 	
 	private static final int MENU_CLEAR_HISTORY = Menu.FIRST;
 	

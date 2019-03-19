@@ -38,6 +38,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
 import android.net.VpnService;
@@ -120,7 +121,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 
 public abstract class MainBase {
-    public static abstract class Activity extends AppCompatActivity implements MyLog.ILogger {
+    public static abstract class Activity extends LocalizedActivities.AppCompatActivity implements MyLog.ILogger {
         public Activity() {
             Utils.initializeSecureRandom();
         }
@@ -490,7 +491,8 @@ public abstract class MainBase {
                     new SharedPreferencesImport(this, prefName, getString(R.string.useProxyAuthenticationPreference), getString(R.string.useProxyAuthenticationPreference)),
                     new SharedPreferencesImport(this, prefName, getString(R.string.useProxyUsernamePreference), getString(R.string.useProxyUsernamePreference)),
                     new SharedPreferencesImport(this, prefName, getString(R.string.useProxyPasswordPreference), getString(R.string.useProxyPasswordPreference)),
-                    new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference))
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.preferenceLanguageSelection), getString(R.string.preferenceLanguageSelection))
             );
 
             if (m_firstRun) {
@@ -714,8 +716,7 @@ public abstract class MainBase {
             if (isServiceRunning()) {
                 updateServiceStateUI(null);
                 startAndBindTunnelService();
-            }
-            else {
+            } else {
                 // reset the tunnel state
                 onTunnelConnectionState(new TunnelManager.State());
             }

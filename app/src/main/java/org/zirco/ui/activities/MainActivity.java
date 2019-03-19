@@ -22,10 +22,7 @@ import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.SharedPreferences;
+import android.content.*;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Configuration;
 import android.database.Cursor;
@@ -83,6 +80,7 @@ import android.widget.ViewFlipper;
 
 import com.psiphon3.FeedbackActivity;
 import com.psiphon3.StatusActivity;
+import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.TunnelService;
 import com.psiphon3.subscription.R;
 
@@ -134,7 +132,7 @@ import java.util.Set;
 /**
  * The application main activity.
  */
-public class MainActivity extends Activity implements IToolbarsContainer, OnTouchListener, IDownloadEventsListener {
+public class MainActivity extends LocalizedActivities.Activity implements IToolbarsContainer, OnTouchListener, IDownloadEventsListener {
 	
 	public static MainActivity INSTANCE = null;
 	

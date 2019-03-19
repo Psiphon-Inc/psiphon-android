@@ -32,6 +32,7 @@ android {
                 targetSdkVersion 26
                 versionCode verCode
                 versionName verName
+                testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
                 multiDexEnabled true
                 manifestPlaceholders = [ admobAppId:admobAppId ]
             }
@@ -56,6 +57,7 @@ android {
             signingConfig signingConfigs.release
         }
     }
+
     lintOptions {
         checkReleaseBuilds false
         // Or, if you prefer, you can continue to check for errors in release builds,
@@ -154,4 +156,7 @@ dependencies {
 
     compileOnly "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
     annotationProcessor "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
+
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:0.5'
 }

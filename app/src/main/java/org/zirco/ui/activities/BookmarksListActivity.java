@@ -15,6 +15,7 @@
 
 package org.zirco.ui.activities;
 
+import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.subscription.R;
 import org.zirco.model.adapters.BookmarksCursorAdapter;
 import org.zirco.model.items.BookmarkItem;
@@ -48,7 +49,7 @@ import android.widget.AdapterView.OnItemClickListener;
 /**
  * Bookmarks list activity.
  */
-public class BookmarksListActivity extends Activity {
+public class BookmarksListActivity extends LocalizedActivities.Activity {
 			
 	private static final int MENU_ADD_BOOKMARK = Menu.FIRST;
 	private static final int MENU_SORT_MODE = Menu.FIRST + 1;
