@@ -389,7 +389,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                         return true;
                     });
                 } else {
-                    buySpeedBoostBtn.setText("purchase speed boost");
+                    buySpeedBoostBtn.setText("Speed Boost Ready");
                     buySpeedBoostBtn.setOnTouchListener((view, motionEvent) -> false);
                 }
             }

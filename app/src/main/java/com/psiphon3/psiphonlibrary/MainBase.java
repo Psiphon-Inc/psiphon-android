@@ -38,8 +38,9 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.OvalShape;
 import android.net.Uri;
 import android.net.VpnService;
 import android.os.Build;
@@ -54,7 +55,8 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.text.TextUtilsCompat;
+import android.support.v4.view.ViewCompat;
 import android.text.TextUtils;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -62,6 +64,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
@@ -75,10 +78,13 @@ import android.webkit.WebViewClient;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
@@ -532,6 +538,9 @@ public abstract class MainBase {
                 m_tabHost.addTab(tabSpec);
             }
 
+            LinearLayout psiCashTabLayout = (LinearLayout) m_tabHost.getTabWidget().getChildTabViewAt(1);
+            decorateWithRedDot(psiCashTabLayout);
+
             m_gestureDetector = new GestureDetector(this, new LateralGestureDetector());
             OnTouchListener onTouchListener = new OnTouchListener() {
                 @Override
@@ -645,6 +654,68 @@ public abstract class MainBase {
 
             // Force the UI to display logs already loaded into the StatusList message history
             LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
+        }
+
+        private void decorateWithRedDot(LinearLayout psiCashTabLayout) {
+            // Get parent and index of the current tab layout. We will need the index later when we
+            // wrap and replace the original layout with a wrapper layout.
+            ViewGroup parent = (ViewGroup) psiCashTabLayout.getParent();
+            final int index = parent.indexOfChild(psiCashTabLayout);
+
+            LinearLayout linearLayout = new LinearLayout(this);
+            linearLayout.setLayoutParams(psiCashTabLayout.getLayoutParams());
+
+            // Remove the tab layout from parent tab widget.
+            parent.removeView(psiCashTabLayout);
+            // Add a new linear layout in place of original one.
+            parent.addView(linearLayout, index);
+
+            // Create a new relative layout to wrap old layout.
+            RelativeLayout wrapperRelativeLayout = new RelativeLayout(this);
+            RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+            wrapperRelativeLayout.addView(psiCashTabLayout, lp);
+
+            // Add wrapper relative layout to the top tab linear layout.
+            linearLayout.addView(wrapperRelativeLayout);
+
+            // Create a frame layout which will hold a red dot image view.
+            FrameLayout redDotLayout= new FrameLayout(this);
+            FrameLayout.LayoutParams flp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+            redDotLayout.setLayoutParams(flp);
+
+            // Create the red dot image and add it to the holder frame layout
+            int redDotSize = 35;
+            ImageView redDotImage = new ImageView(getContext());
+            ShapeDrawable badge = new ShapeDrawable(new OvalShape());
+            badge.setIntrinsicWidth(redDotSize);
+            badge.setIntrinsicHeight(redDotSize);
+            badge.getPaint().setColor(Color.RED);
+            redDotImage.setImageDrawable(badge);
+            redDotImage.setLayoutParams(new LinearLayout.LayoutParams(redDotSize, redDotSize));
+            redDotLayout.addView(redDotImage);
+
+            // Position and add the red dot layout to the wrapper layout
+            lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+            lp.addRule(RelativeLayout.CENTER_VERTICAL);
+
+            psiCashTabLayout.setId(R.id.psicash_tab_layout_id);
+
+            // Calculate side margin of the red dot holder layout.
+            // Get original tab layout side padding, since it is centered
+            // we assume left padding == right padding.
+            int paddingSide = psiCashTabLayout.getPaddingLeft();
+            int redDotMargin = - (paddingSide + redDotSize) / 2;
+
+            boolean isRtl = ViewCompat.LAYOUT_DIRECTION_RTL == TextUtilsCompat.getLayoutDirectionFromLocale(getResources().getConfiguration().locale);
+            if (isRtl) {
+                lp.addRule(RelativeLayout.LEFT_OF, psiCashTabLayout.getId());
+                lp.rightMargin = redDotMargin;
+            } else {
+                lp.addRule(RelativeLayout.RIGHT_OF, psiCashTabLayout.getId());
+                lp.leftMargin = redDotMargin;
+            }
+            redDotLayout.setLayoutParams(lp);
+            wrapperRelativeLayout.addView(redDotLayout, lp);
         }
 
         /**
