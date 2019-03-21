@@ -260,7 +260,6 @@
             android:weightSum="1.0">
 
             <android.support.constraint.ConstraintLayout
-                android:padding="15dp"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent">
 

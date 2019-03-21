@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:textStyle="bold"
-            android:padding="10dp"
+            android:padding="5dp"
             android:text="" />
     </LinearLayout>
 
@@ -41,7 +41,7 @@
             android:layout_below="@+id/purchase_speedboost_btn"
             android:layout_alignLeft="@+id/purchase_speedboost_btn"
             android:layout_alignRight="@+id/purchase_speedboost_btn"
-            android:padding="3dp" />
+            android:padding="2dp" />
 
 
         <Button

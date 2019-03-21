@@ -672,7 +672,7 @@ public abstract class MainBase {
 
             // Create a new relative layout to wrap old layout.
             RelativeLayout wrapperRelativeLayout = new RelativeLayout(this);
-            RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+            RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.MATCH_PARENT);
             wrapperRelativeLayout.addView(psiCashTabLayout, lp);
 
             // Add wrapper relative layout to the top tab linear layout.
@@ -683,8 +683,12 @@ public abstract class MainBase {
             FrameLayout.LayoutParams flp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
             redDotLayout.setLayoutParams(flp);
 
+            // Get original tab layout side padding, since it is centered
+            // we assume left padding == right padding.
+            int paddingSide = psiCashTabLayout.getPaddingLeft();
+
             // Create the red dot image and add it to the holder frame layout
-            int redDotSize = 35;
+            int redDotSize = paddingSide / 3;
             ImageView redDotImage = new ImageView(getContext());
             ShapeDrawable badge = new ShapeDrawable(new OvalShape());
             badge.setIntrinsicWidth(redDotSize);
@@ -701,9 +705,6 @@ public abstract class MainBase {
             psiCashTabLayout.setId(R.id.psicash_tab_layout_id);
 
             // Calculate side margin of the red dot holder layout.
-            // Get original tab layout side padding, since it is centered
-            // we assume left padding == right padding.
-            int paddingSide = psiCashTabLayout.getPaddingLeft();
             int redDotMargin = - (paddingSide + redDotSize) / 2;
 
             boolean isRtl = ViewCompat.LAYOUT_DIRECTION_RTL == TextUtilsCompat.getLayoutDirectionFromLocale(getResources().getConfiguration().locale);

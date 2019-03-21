@@ -35,7 +35,7 @@ public abstract class PsiCashException extends Exception {
                     uiMessage = "Success.";
                     break;
                 case EXISTING_TRANSACTION:
-                    uiMessage = "You already have an active Speed Boost purchase.";
+                    uiMessage = "You have an active Speed Boost purchase.";
                     break;
                 case INSUFFICIENT_BALANCE:
                     uiMessage = "Insufficient balance for Speed Boost purchase.";
@@ -52,7 +52,6 @@ public abstract class PsiCashException extends Exception {
                 case SERVER_ERROR:
                     uiMessage = "Server error";
                     break;
-
             }
             return uiMessage;
         }
