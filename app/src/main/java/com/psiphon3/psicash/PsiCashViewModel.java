@@ -128,36 +128,61 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                                     .purchaseInFlight(true)
                                     .build();
                     }
-                } else if (result instanceof PsiCashResult.VideoReady) {
-                    PsiCashResult.VideoReady loadResult = (PsiCashResult.VideoReady) result;
+                } else if (result instanceof PsiCashResult.Video) {
+                    PsiCashResult.Video videoResult = (PsiCashResult.Video) result;
 
-                    PsiCashModel.VideoReady model = loadResult.model();
+                    PsiCashModel.VideoReady model = videoResult.model();
 
                     Runnable videoPlayRunnable = null;
                     if ( model != null ) {
                         videoPlayRunnable = model.videoPlayRunnable();
                     }
 
-                    stateBuilder = stateBuilder
-                            .shouldAutoLoadVideoOnNextForeground(true);
 
-                    switch (loadResult.status()) {
-                        case SUCCESS:
+                    switch (videoResult.status()) {
+                        case LOADING:
+                            return stateBuilder
+                                    .videoPlayRunnable(null)
+                                    .videoIsLoaded(false)
+                                    .videoIsPlaying(false)
+                                    .videoIsLoading(true)
+                                    .videoIsFinished(false)
+                                    .videoError(null)
+                                    .build();
+                        case LOADED:
                             return stateBuilder
                                     .videoPlayRunnable(videoPlayRunnable)
-                                    .videoInFlight(false)
+                                    .videoIsLoaded(true)
+                                    .videoIsPlaying(false)
+                                    .videoIsLoading(false)
+                                    .videoIsFinished(false)
                                     .videoError(null)
                                     .build();
                         case FAILURE:
                             return stateBuilder
                                     .videoPlayRunnable(null)
-                                    .videoInFlight(false)
-                                    .videoError(loadResult.error())
+                                    .videoIsLoaded(false)
+                                    .videoIsPlaying(false)
+                                    .videoIsLoading(false)
+                                    .videoIsFinished(false)
+                                    .videoError(videoResult.error())
                                     .build();
-                        case IN_FLIGHT:
+                        case OPENED:
                             return stateBuilder
                                     .videoPlayRunnable(null)
-                                    .videoInFlight(true)
+                                    .videoIsLoaded(false)
+                                    .videoIsPlaying(true)
+                                    .videoIsLoading(false)
+                                    .videoIsFinished(false)
+                                    .videoError(null)
+                                    .build();
+                        case FINISHED:
+                            return stateBuilder
+                                    .videoPlayRunnable(null)
+                                    .videoIsLoaded(false)
+                                    .videoIsPlaying(false)
+                                    .videoIsLoading(false)
+                                    .videoIsFinished(true)
                                     .videoError(null)
                                     .build();
                     }

@@ -12,7 +12,9 @@ import ca.psiphon.psicashlib.PsiCashLib;
 @AutoValue
 public abstract class PsiCashViewState implements MviViewState {
     public abstract int uiBalance();
+
     public abstract boolean purchaseInFlight();
+
     public abstract boolean animateOnNextBalanceChange();
 
     @Nullable
@@ -29,9 +31,14 @@ public abstract class PsiCashViewState implements MviViewState {
 
     @Nullable
     public abstract Throwable videoError();
-    public abstract boolean videoInFlight();
-    public abstract boolean shouldAutoLoadVideoOnNextForeground();
 
+    public abstract boolean videoIsLoading();
+
+    public abstract boolean videoIsLoaded();
+
+    public abstract boolean videoIsPlaying();
+
+    public abstract boolean videoIsFinished();
 
     abstract Builder withState();
 
@@ -44,9 +51,11 @@ public abstract class PsiCashViewState implements MviViewState {
                 .purchaseInFlight(false)
                 .animateOnNextBalanceChange(false)
                 .videoPlayRunnable(null)
-                .videoInFlight(false)
                 .videoError(null)
-                .shouldAutoLoadVideoOnNextForeground(false)
+                .videoIsLoading(false)
+                .videoIsLoaded(false)
+                .videoIsPlaying(false)
+                .videoIsFinished(false)
                 .build();
     }
 
@@ -66,11 +75,15 @@ public abstract class PsiCashViewState implements MviViewState {
 
         abstract Builder videoPlayRunnable(Runnable runnable);
 
-        public abstract Builder videoInFlight(boolean b);
+        abstract Builder videoIsLoaded(boolean b);
+
+        abstract Builder videoIsLoading(boolean b);
+
+        abstract Builder videoIsPlaying(boolean b);
+
+        abstract Builder videoIsFinished(boolean b);
 
         abstract Builder videoError(@Nullable Throwable error);
-
-        abstract Builder shouldAutoLoadVideoOnNextForeground(boolean b);
 
         abstract PsiCashViewState build();
     }

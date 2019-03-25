@@ -259,10 +259,6 @@
             android:scrollbarAlwaysDrawVerticalTrack="false"
             android:weightSum="1.0">
 
-            <android.support.constraint.ConstraintLayout
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent">
-
                 <fragment
                     android:id="@+id/psicash_fragment_container"
                     android:name="com.psiphon3.PsiCashFragment"
@@ -271,7 +267,6 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
-            </android.support.constraint.ConstraintLayout>
         </ScrollView>
 
         <LinearLayout

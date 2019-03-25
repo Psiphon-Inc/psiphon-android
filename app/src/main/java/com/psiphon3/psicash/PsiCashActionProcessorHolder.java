@@ -64,18 +64,21 @@ class PsiCashActionProcessorHolder {
                         RewardedVideoClient.getInstance().loadRewardedVideo(context, action.connectionState(), PsiCashClient.getInstance(context).rewardedVideoCustomData())
                                 .map(r -> {
                                     if (r instanceof PsiCashModel.VideoReady) {
-                                        return PsiCashResult.VideoReady.success((PsiCashModel.VideoReady) r);
+                                        PsiCashModel.VideoReady result = (PsiCashModel.VideoReady) r;
+                                        if(result.videoPlayRunnable() != null ) {
+                                            return PsiCashResult.Video.loaded((PsiCashModel.VideoReady) r);
+                                        } else {
+                                            return PsiCashResult.Video.opened();
+                                        }
                                     } else if (r instanceof PsiCashModel.Reward) {
                                         psiCashListener.onNewReward(context, ((PsiCashModel.Reward) r).amount());
                                         return PsiCashResult.Reward.success((PsiCashModel.Reward) r);
                                     }
                                     throw new IllegalArgumentException("Unknown result: " + r);
                                 })
-                                .startWith(PsiCashResult.VideoReady.inFlight())
-                                // load a new one after completion until disposed of by switchMap to next action
-                                .repeat()
-                                .onErrorReturn(PsiCashResult.VideoReady::failure));
-
+                                .startWith(PsiCashResult.Video.loading())
+                                .concatWith(Observable.just(PsiCashResult.Video.finished()))
+                                .onErrorReturn(PsiCashResult.Video::failure));
 
         this.actionProcessor = actions ->
                 actions.publish(shared -> Observable.merge(

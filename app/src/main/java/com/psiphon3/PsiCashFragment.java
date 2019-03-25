@@ -7,6 +7,8 @@ import android.animation.ValueAnimator;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.design.widget.Snackbar;
@@ -72,17 +74,18 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     private int currentUiBalance;
     private boolean animateOnBalanceChange = false;
 
-    private boolean shouldAutoLoadNextVideo = false;
     private boolean shouldAutoPlay = false;
     private Button loadWatchRewardedVideoBtn;
+    private TextView psiCashChargeProgressTextView;
+    private View psiCashLayout;
 
 
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.psicash_fragment, container, false);
+        psiCashLayout = inflater.inflate(R.layout.psicash_fragment, container, false);
+        return  psiCashLayout;
     }
-
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -127,6 +130,9 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         progressBar = getActivity().findViewById(R.id.progress_view);
         progressBar.setIndeterminate(true);
         buySpeedBoostBtn = getActivity().findViewById(R.id.purchase_speedboost_btn);
+        buySpeedBoostBtn.setVisibility(View.INVISIBLE);
+        psiCashChargeProgressTextView = getActivity().findViewById(R.id.psicash_balance_progress);
+        psiCashChargeProgressTextView.setVisibility(View.INVISIBLE);
         balanceLabel = getActivity().findViewById(R.id.psicash_balance_label);
         balanceLabel.setText("0");
         loadWatchRewardedVideoBtn = getActivity().findViewById(R.id.load_watch_rewarded_video_btn);
@@ -222,19 +228,13 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         shouldAutoPlay = false;
         final Observable<Object> loadVideo;
 
-        if (shouldAutoLoadNextVideo){
-            loadVideo = subscriptionStatusPublishRelay
-                    .filter(s -> s != PsiphonAdManager.SubscriptionStatus.SUBSCRIBER)
-                    .map (s -> s);
-        } else {
-            loadVideo = Observable.combineLatest(RxView.clicks(loadWatchRewardedVideoBtn)
-                            .debounce(200, TimeUnit.MILLISECONDS)
-                            .doOnNext(__ -> shouldAutoPlay = true),
-                    subscriptionStatusPublishRelay,
-                    (__, subscriptionStatus) -> subscriptionStatus)
-                    .filter(s -> s != PsiphonAdManager.SubscriptionStatus.SUBSCRIBER)
-                    .map(s -> s);
-        }
+        loadVideo = Observable.combineLatest(RxView.clicks(loadWatchRewardedVideoBtn)
+                        .debounce(200, TimeUnit.MILLISECONDS)
+                        .doOnNext(__ -> shouldAutoPlay = true),
+                subscriptionStatusPublishRelay,
+                (__, subscriptionStatus) -> subscriptionStatus)
+                .filter(s -> s != PsiphonAdManager.SubscriptionStatus.SUBSCRIBER)
+                .map(s -> s);
 
         return Observable.combineLatest(
                 loadVideo,
@@ -302,37 +302,48 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     public void render(PsiCashViewState state) {
         Log.d(TAG, "render: " + state);
         updateUiBalanceLabel(state);
-        updateUiBuyButton(state);
+        updateUiChargeBar(state);
         updateUiProgressView(state);
         updateUiPsiCashErrorMessage(state);
         updateUiRewardedVideoButton(state);
     }
 
     private void updateUiRewardedVideoButton(PsiCashViewState state) {
-        shouldAutoLoadNextVideo = state.shouldAutoLoadVideoOnNextForeground();
-        if(state.videoInFlight()) {
+        if(state.videoIsLoading()) {
             loadWatchRewardedVideoBtn.setText("loading");
             loadWatchRewardedVideoBtn.setEnabled(false);
             return;
+        }
+        if(state.videoIsLoaded()) {
+            Runnable videoPlayRunnable = state.videoPlayRunnable();
+            if (videoPlayRunnable != null) {
+                if(shouldAutoPlay) {
+                    shouldAutoPlay = false;
+                    videoPlayRunnable.run();
+                } else {
+                    loadWatchRewardedVideoBtn.setEnabled(true);
+                    loadWatchRewardedVideoBtn.setText("Video is ready");
+                    loadWatchRewardedVideoBtn.setOnClickListener(view -> videoPlayRunnable.run());
+                }
+            }
+            return;
+        }
+        if(state.videoIsPlaying()) {
+            loadWatchRewardedVideoBtn.setEnabled(false);
+            return;
+        }
+        if(state.videoIsFinished()) {
+            loadWatchRewardedVideoBtn.setEnabled(true);
+            loadWatchRewardedVideoBtn.setText("Watch moar!");
+            return;
+
         }
         if(state.videoError() != null) {
             // reset autoPlay state if error
             shouldAutoPlay = false;
             loadWatchRewardedVideoBtn.setText(state.videoError().getMessage());
-            loadWatchRewardedVideoBtn.setEnabled(false);
+            loadWatchRewardedVideoBtn.setEnabled(true);
             return;
-        }
-
-        Runnable videoPlayRunnable = state.videoPlayRunnable();
-        if (videoPlayRunnable != null) {
-            if(shouldAutoPlay) {
-                shouldAutoPlay = false;
-                videoPlayRunnable.run();
-            } else {
-                loadWatchRewardedVideoBtn.setEnabled(true);
-                loadWatchRewardedVideoBtn.setText("Video is ready");
-                loadWatchRewardedVideoBtn.setOnClickListener(view -> videoPlayRunnable.run());
-            }
         }
     }
 
@@ -360,14 +371,14 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     }
 
     private void updateUiProgressView(PsiCashViewState state) {
-        if (state.purchaseInFlight() || state.videoInFlight()) {
+        if (state.purchaseInFlight() || state.videoIsLoading()) {
             progressBar.setVisibility(View.VISIBLE);
         } else {
             progressBar.setVisibility(View.INVISIBLE);
         }
     }
 
-    private void updateUiBuyButton(PsiCashViewState state) {
+    private void updateUiChargeBar(PsiCashViewState state) {
         PsiCashLib.PurchasePrice purchasePrice = state.purchasePrice();
         buySpeedBoostBtn.setTag(R.id.speedBoostPrice, purchasePrice);
         buySpeedBoostBtn.setEnabled(!state.purchaseInFlight());
@@ -375,13 +386,29 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         if (nextPurchaseExpiryDate != null && new Date().before(nextPurchaseExpiryDate)) {
             long millisDiff = nextPurchaseExpiryDate.getTime() - new Date().getTime();
             startActiveSpeedBoostCountDown(millisDiff);
+            psiCashChargeProgressTextView.setVisibility(View.INVISIBLE);
+            buySpeedBoostBtn.setVisibility(View.VISIBLE);
+            // TODO: set color too
             buySpeedBoostBtn.setTag(R.id.hasActiveSpeedBoostTag, true);
         } else {
             buySpeedBoostBtn.setTag(R.id.hasActiveSpeedBoostTag, false);
             if(purchasePrice != null && purchasePrice.price != 0) {
-                if (purchasePrice.price > state.uiBalance() * 1e9) {
-                    buySpeedBoostBtn.setText(String.format(Locale.US, "%d%s", state.uiBalance(), "%"));
-                    buySpeedBoostBtn.setOnTouchListener((view, motionEvent) -> {
+                if (purchasePrice.price / 1e9 > state.uiBalance()) {
+                    buySpeedBoostBtn.setVisibility(View.INVISIBLE);
+                    psiCashChargeProgressTextView.setVisibility(View.VISIBLE);
+
+                    int chargePercentage = (int) Math.floor(state.uiBalance() / (purchasePrice.price / 1e9) * 100);
+
+                    Drawable d = psiCashChargeProgressTextView.getBackground();
+                    d.setLevel(chargePercentage * 100);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                        psiCashChargeProgressTextView.setBackground(d);
+                    } else {
+                        psiCashChargeProgressTextView.setBackgroundDrawable(d);
+                    }
+
+                    psiCashChargeProgressTextView.setText(String.format(Locale.US, "Charging Speed Boost %d%s", chargePercentage, "%"));
+                    psiCashLayout.setOnTouchListener((view, motionEvent) -> {
                         ObjectAnimator
                                 .ofFloat(view, "translationX", 0, 25, -25, 25, -25,15, -15, 6, -6, 0)
                                 .setDuration(500)
@@ -389,8 +416,10 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                         return true;
                     });
                 } else {
+                    buySpeedBoostBtn.setVisibility(View.VISIBLE);
+                    psiCashChargeProgressTextView.setVisibility(View.INVISIBLE);
                     buySpeedBoostBtn.setText("Speed Boost Ready");
-                    buySpeedBoostBtn.setOnTouchListener((view, motionEvent) -> false);
+                    psiCashLayout.setOnTouchListener((view, motionEvent) -> false);
                 }
             }
         }

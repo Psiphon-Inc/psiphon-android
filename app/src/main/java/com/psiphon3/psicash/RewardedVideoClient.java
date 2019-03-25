@@ -76,6 +76,9 @@ public class RewardedVideoClient {
 
                 @Override
                 public void onRewardedVideoStarted(String adUnitId) {
+                    if (!emitter.isDisposed()) {
+                        emitter.onNext(PsiCashModel.VideoReady.opened());
+                    }
                 }
 
                 @Override
@@ -146,6 +149,9 @@ public class RewardedVideoClient {
 
                 @Override
                 public void onRewardedVideoAdOpened() {
+                    if (!emitter.isDisposed()) {
+                        emitter.onNext(PsiCashModel.VideoReady.opened());
+                    }
                 }
 
                 @Override

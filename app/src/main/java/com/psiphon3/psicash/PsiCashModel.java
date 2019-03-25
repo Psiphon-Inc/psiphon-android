@@ -60,6 +60,10 @@ public interface PsiCashModel {
         public static VideoReady create(Runnable videoRunnable) {
             return new AutoValue_PsiCashModel_VideoReady(videoRunnable);
         }
+
+        public static VideoReady opened() {
+            return new AutoValue_PsiCashModel_VideoReady(null);
+        }
     }
 
     @AutoValue
