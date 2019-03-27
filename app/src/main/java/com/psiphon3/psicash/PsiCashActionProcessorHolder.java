@@ -1,6 +1,7 @@
 package com.psiphon3.psicash;
 
 import android.content.Context;
+import android.util.Log;
 
 import java.util.Arrays;
 
@@ -60,16 +61,21 @@ class PsiCashActionProcessorHolder {
                         .startWith(PsiCashResult.GetPsiCash.inFlight()));
 
         this.loadVideoAdProcessor = actions ->
-                actions.switchMap(action ->
+                actions
+                        .doOnEach( s -> Log.d(TAG, "PsiCashActionProcessorHolder: action each" + s))
+                        .switchMap(action ->
                         RewardedVideoClient.getInstance().loadRewardedVideo(context, action.connectionState(), PsiCashClient.getInstance(context).rewardedVideoCustomData())
                                 .map(r -> {
-                                    if (r instanceof PsiCashModel.VideoReady) {
-                                        PsiCashModel.VideoReady result = (PsiCashModel.VideoReady) r;
-                                        if(result.videoPlayRunnable() != null ) {
-                                            return PsiCashResult.Video.loaded((PsiCashModel.VideoReady) r);
-                                        } else {
-                                            return PsiCashResult.Video.opened();
+                                    if (r instanceof PsiCashModel.RewardedVideoState) {
+                                        PsiCashModel.RewardedVideoState result = (PsiCashModel.RewardedVideoState) r;
+                                        PsiCashModel.RewardedVideoState.VideoState videoState = result.videoState();
+
+                                        if(videoState == PsiCashModel.RewardedVideoState.VideoState.LOADED) {
+                                            return PsiCashResult.Video.loaded();
+                                        } else if(videoState == PsiCashModel.RewardedVideoState.VideoState.PLAYING){
+                                            return PsiCashResult.Video.playing();
                                         }
+                                        throw new IllegalArgumentException("Unknown result: " + r);
                                     } else if (r instanceof PsiCashModel.Reward) {
                                         psiCashListener.onNewReward(context, ((PsiCashModel.Reward) r).amount());
                                         return PsiCashResult.Reward.success((PsiCashModel.Reward) r);
@@ -78,7 +84,10 @@ class PsiCashActionProcessorHolder {
                                 })
                                 .startWith(PsiCashResult.Video.loading())
                                 .concatWith(Observable.just(PsiCashResult.Video.finished()))
-                                .onErrorReturn(PsiCashResult.Video::failure));
+                                .onErrorReturn(PsiCashResult.Video::failure))
+                        .doOnEach( s -> Log.d(TAG, "PsiCashActionProcessorHolder: loadRewardedVideo each" + s))
+                        .doOnDispose(() -> Log.d(TAG, "PsiCashActionProcessorHolder: loadRewardedVideo disposed"));
+
 
         this.actionProcessor = actions ->
                 actions.publish(shared -> Observable.merge(

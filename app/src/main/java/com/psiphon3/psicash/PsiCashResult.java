@@ -72,38 +72,35 @@ public interface PsiCashResult {
     @AutoValue
     abstract class Video implements PsiCashResult {
 
-        enum VideoStatus {LOADING, LOADED, OPENED, FAILURE, FINISHED}
+        enum VideoStatus {LOADING, LOADED, PLAYING, FAILURE, FINISHED}
 
         @NonNull
-        static Video loaded(PsiCashModel.VideoReady model) {
-            return new AutoValue_PsiCashResult_Video(VideoStatus.LOADED, model, null);
+        static Video loaded() {
+            return new AutoValue_PsiCashResult_Video(VideoStatus.LOADED, null);
         }
 
         @NonNull
         static Video loading() {
-            return new AutoValue_PsiCashResult_Video(VideoStatus.LOADING, null, null);
+            return new AutoValue_PsiCashResult_Video(VideoStatus.LOADING, null);
         }
 
         @NonNull
-        static Video opened() {
-            return new AutoValue_PsiCashResult_Video(VideoStatus.OPENED, null, null);
+        static Video playing() {
+            return new AutoValue_PsiCashResult_Video(VideoStatus.PLAYING, null);
         }
 
         @NonNull
         static Video failure(Throwable error) {
-            return new AutoValue_PsiCashResult_Video(VideoStatus.FAILURE, null, error);
+            return new AutoValue_PsiCashResult_Video(VideoStatus.FAILURE, error);
         }
 
         @NonNull
         static Video finished() {
-            return new AutoValue_PsiCashResult_Video(VideoStatus.FINISHED, null, null);
+            return new AutoValue_PsiCashResult_Video(VideoStatus.FINISHED, null);
         }
 
         @NonNull
         abstract VideoStatus status();
-
-        @Nullable
-        abstract PsiCashModel.VideoReady model();
 
         @Nullable
         abstract Throwable error();

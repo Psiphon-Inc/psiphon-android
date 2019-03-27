@@ -50,6 +50,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import ca.psiphon.psicashlib.PsiCashLib;
 import io.reactivex.Observable;
@@ -64,7 +65,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
     private Relay<PsiCashIntent> intentsPublishRelay;
     private Relay<TunnelState> tunnelConnectionStateBehaviorRelay;
-    private Relay<PsiphonAdManager.SubscriptionStatus> subscriptionStatusPublishRelay;
+    private Relay<PsiphonAdManager.SubscriptionStatus> subscriptionStatusBehaviorRelay;
 
 
     private TextView balanceLabel;
@@ -74,12 +75,12 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     private int currentUiBalance;
     private boolean animateOnBalanceChange = false;
 
-    private boolean shouldAutoPlay = false;
     private Button loadWatchRewardedVideoBtn;
     private TextView psiCashChargeProgressTextView;
     private View psiCashLayout;
-
-
+    private AtomicBoolean keepLoadingVideos = new AtomicBoolean(false);
+    private Disposable loadVideoAdsDisposable;
+    private boolean shouldAutoPlayVideo;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -120,7 +121,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 .get(PsiCashViewModel.class);
         intentsPublishRelay = PublishRelay.<PsiCashIntent>create().toSerialized();
         tunnelConnectionStateBehaviorRelay = BehaviorRelay.<TunnelState>create().toSerialized();
-        subscriptionStatusPublishRelay = PublishRelay.<PsiphonAdManager.SubscriptionStatus>create().toSerialized();
+        subscriptionStatusBehaviorRelay = BehaviorRelay.<PsiphonAdManager.SubscriptionStatus>create().toSerialized();
     }
 
     @Override
@@ -139,15 +140,16 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        bind();
+    public void onPause() {
+        super.onPause();
+        unbind();
+        shouldAutoPlayVideo = false;
     }
 
     @Override
-    public void onStop() {
-        super.onStop();
-        unbind();
+    public void onResume() {
+        super.onResume();
+        bind();
     }
 
     private void bind() {
@@ -168,8 +170,10 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         // Get PsiCash tokens when tunnel connects if there are none
         compositeDisposable.add(getPsiCashTokensDisposable());
 
-        // Load rewarded videos
-        compositeDisposable.add(loadVideoAdsDisposable());
+        // Load rewarded videos intent
+        if (loadVideoAdsDisposable == null || loadVideoAdsDisposable.isDisposed()) {
+            loadVideoAdsDisposable = loadVideoAdsSubscription();
+        }
 
         // Check if there are possibly expired purchases to remove in case activity
         // was in the background when MSG_AUTHORIZATIONS_REMOVED was sent by the service
@@ -222,37 +226,37 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 .map(PsiCashIntent.GetPsiCashRemote::create)
                 .subscribe(intentsPublishRelay);
     }
+    
+    private Disposable loadVideoAdsSubscription() {
+        // Do not load ads if user is subscribed
+        final Observable<PsiphonAdManager.SubscriptionStatus> isSubscriberObservable =
+                subscriptionStatusBehaviorRelay
+                        .hide()
+                        .filter(s -> s == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
 
-    // Do not load ads if user is subscribed
-    private Disposable loadVideoAdsDisposable() {
-        shouldAutoPlay = false;
-        final Observable<Object> loadVideo;
-
-        loadVideo = Observable.combineLatest(RxView.clicks(loadWatchRewardedVideoBtn)
-                        .debounce(200, TimeUnit.MILLISECONDS)
-                        .doOnNext(__ -> shouldAutoPlay = true),
-                subscriptionStatusPublishRelay,
-                (__, subscriptionStatus) -> subscriptionStatus)
-                .filter(s -> s != PsiphonAdManager.SubscriptionStatus.SUBSCRIBER)
-                .map(s -> s);
-
-        return Observable.combineLatest(
-                loadVideo,
-                hasValidTokensObservable(),
-                connectionStateObservable(),
-                (ignore1, ignore2, s) -> s)
-                .filter(state -> !state.isRunning()
-                        || (state.isRunning() && state.connectionData().isConnected()))
-                .map(PsiCashIntent.LoadVideoAd::create)
+        return RxView.clicks(loadWatchRewardedVideoBtn)
+                .debounce(200, TimeUnit.MILLISECONDS)
+                .takeWhile(__ -> hasValidTokens())
+                .takeUntil(isSubscriberObservable)
+                .switchMap(__ -> {
+                    keepLoadingVideos.set(true);
+                    return connectionStateObservable()
+                            .distinctUntilChanged()
+                            // React to connection state changes until the load video process
+                            // terminates with either success or error
+                            .takeWhile(ignore -> keepLoadingVideos.get())
+                            .map(PsiCashIntent.LoadVideoAd::create);
+                })
                 .subscribe(intentsPublishRelay);
-
     }
 
-    private Observable<Boolean> hasValidTokensObservable() {
-        return Observable.fromCallable(() -> PsiCashClient.getInstance(getContext()).hasValidTokens())
-                .doOnError(err -> Log.d("PsiCash", this.getClass().getSimpleName() + err))
-                .onErrorResumeNext(Observable.just(Boolean.FALSE))
-                .filter(s -> s);
+    private boolean hasValidTokens() {
+        try {
+            return PsiCashClient.getInstance(getContext()).hasValidTokens();
+        } catch (PsiCashException e) {
+            Utils.MyLog.g("PsiCash hasValidTokens() error: " + e);
+            return false;
+        }
     }
 
     public void removePurchases() {
@@ -310,21 +314,23 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
     private void updateUiRewardedVideoButton(PsiCashViewState state) {
         if(state.videoIsLoading()) {
-            loadWatchRewardedVideoBtn.setText("loading");
+            // reset this flag if application enters background between
+            // the LOADING and LOADED state.
+            shouldAutoPlayVideo = true;
             loadWatchRewardedVideoBtn.setEnabled(false);
             return;
         }
         if(state.videoIsLoaded()) {
-            Runnable videoPlayRunnable = state.videoPlayRunnable();
-            if (videoPlayRunnable != null) {
-                if(shouldAutoPlay) {
-                    shouldAutoPlay = false;
-                    videoPlayRunnable.run();
-                } else {
-                    loadWatchRewardedVideoBtn.setEnabled(true);
-                    loadWatchRewardedVideoBtn.setText("Video is ready");
-                    loadWatchRewardedVideoBtn.setOnClickListener(view -> videoPlayRunnable.run());
+            // success or error should stop the load video subscription
+            keepLoadingVideos.set(false);
+            loadWatchRewardedVideoBtn.setEnabled(true);
+
+            if (shouldAutoPlayVideo) {
+                if(!RewardedVideoClient.getInstance().playRewardedVideo()) {
+                    loadWatchRewardedVideoBtn.setText("Watch video & earn PsiCash");
                 }
+            } else {
+                loadWatchRewardedVideoBtn.setText("Watch video & earn PsiCash");
             }
             return;
         }
@@ -336,12 +342,11 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             loadWatchRewardedVideoBtn.setEnabled(true);
             loadWatchRewardedVideoBtn.setText("Watch moar!");
             return;
-
         }
         if(state.videoError() != null) {
-            // reset autoPlay state if error
-            shouldAutoPlay = false;
-            loadWatchRewardedVideoBtn.setText(state.videoError().getMessage());
+            // success or error should stop the load video subscription
+            keepLoadingVideos.set(false);
+            loadWatchRewardedVideoBtn.setText("No videos available, try again");
             loadWatchRewardedVideoBtn.setEnabled(true);
             return;
         }
@@ -388,7 +393,6 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             startActiveSpeedBoostCountDown(millisDiff);
             psiCashChargeProgressTextView.setVisibility(View.INVISIBLE);
             buySpeedBoostBtn.setVisibility(View.VISIBLE);
-            // TODO: set color too
             buySpeedBoostBtn.setTag(R.id.hasActiveSpeedBoostTag, true);
         } else {
             buySpeedBoostBtn.setTag(R.id.hasActiveSpeedBoostTag, false);
@@ -418,7 +422,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 } else {
                     buySpeedBoostBtn.setVisibility(View.VISIBLE);
                     psiCashChargeProgressTextView.setVisibility(View.INVISIBLE);
-                    buySpeedBoostBtn.setText("Speed Boost Ready");
+                    buySpeedBoostBtn.setText("1h of speed boost available");
                     psiCashLayout.setOnTouchListener((view, motionEvent) -> false);
                 }
             }
@@ -516,6 +520,15 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     }
 
     void onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus status) {
-        subscriptionStatusPublishRelay.accept(status);
+        subscriptionStatusBehaviorRelay.accept(status);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        compositeDisposable.dispose();
+        if (loadVideoAdsDisposable != null) {
+            loadVideoAdsDisposable.dispose();
+        }
     }
 }

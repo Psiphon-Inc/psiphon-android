@@ -5,7 +5,6 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v4.util.Pair;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.MobileAds;
@@ -20,15 +19,18 @@ import com.mopub.mobileads.MoPubRewardedVideos;
 import com.psiphon3.TunnelState;
 
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 
 public class RewardedVideoClient {
-    private static final String TAG = "PsiCashRewardedVideo";
 
+    interface RewardedVideoPlayable {
+        boolean play();
+    }
+    private RewardedVideoPlayable rewardedVideoPlayable;
+
+    private static final String TAG = "PsiCashRewardedVideo";
 
     private static final String MOPUB_VIDEO_AD_UNIT_ID = "7ef66892f0a6417091119b94ce07d6e5";
     private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-1072041961750291/5751207671";
@@ -59,8 +61,15 @@ public class RewardedVideoClient {
                     if (!emitter.isDisposed()) {
                         // Called when the video for the given adUnitId has loaded. At this point you should be able to call MoPubRewardedVideos.showRewardedVideo(String) to show the video.
                         if (adUnitId.equals(MOPUB_VIDEO_AD_UNIT_ID)) {
-                            emitter.onNext(PsiCashModel.VideoReady.create(() ->
-                                    RewardedVideoClient.getInstance().playMoPubVideo(customData)));
+                            emitter.onNext(PsiCashModel.RewardedVideoState.loaded());
+                            rewardedVideoPlayable = () -> {
+                                if (MoPub.isSdkInitialized() && MoPubRewardedVideos.hasRewardedVideo(MOPUB_VIDEO_AD_UNIT_ID)) {
+                                    MoPubRewardedVideos.showRewardedVideo(MOPUB_VIDEO_AD_UNIT_ID, customData);
+                                    return true;
+                                }
+                                return false;
+                            };
+
                         } else {
                             emitter.onError(new RuntimeException("MoPub video failed, wrong ad unit id, expect: " + MOPUB_VIDEO_AD_UNIT_ID + ", got: " + adUnitId));
                         }
@@ -77,7 +86,7 @@ public class RewardedVideoClient {
                 @Override
                 public void onRewardedVideoStarted(String adUnitId) {
                     if (!emitter.isDisposed()) {
-                        emitter.onNext(PsiCashModel.VideoReady.opened());
+                        emitter.onNext(PsiCashModel.RewardedVideoState.playing());
                     }
                 }
 
@@ -112,6 +121,7 @@ public class RewardedVideoClient {
     }
 
     private Observable<? extends PsiCashModel> loadAdMobVideos(String customData) {
+        rewardedVideoPlayable = null;
         return Observable.create(emitter -> {
             RewardedVideoAdListener listener = new RewardedVideoAdListener() {
                 @Override
@@ -142,15 +152,21 @@ public class RewardedVideoClient {
                 @Override
                 public void onRewardedVideoAdLoaded() {
                     if (!emitter.isDisposed()) {
-                        emitter.onNext(PsiCashModel.VideoReady.create(() ->
-                                RewardedVideoClient.getInstance().playAdMobVideo()));
+                        emitter.onNext(PsiCashModel.RewardedVideoState.loaded());
+                        rewardedVideoPlayable = () -> {
+                            if (rewardedVideoAd != null && rewardedVideoAd.isLoaded()) {
+                                rewardedVideoAd.show();
+                                return true;
+                            }
+                            return false;
+                        };
                     }
                 }
 
                 @Override
                 public void onRewardedVideoAdOpened() {
                     if (!emitter.isDisposed()) {
-                        emitter.onNext(PsiCashModel.VideoReady.opened());
+                        emitter.onNext(PsiCashModel.RewardedVideoState.playing());
                     }
                 }
 
@@ -160,7 +176,6 @@ public class RewardedVideoClient {
 
                 @Override
                 public void onRewardedVideoCompleted() {
-                    Log.d(TAG, "onRewardedVideoCompleted");
                 }
             };
             rewardedVideoAd.setCustomData(customData);
@@ -169,10 +184,11 @@ public class RewardedVideoClient {
         });
     }
 
-    public Observable<? extends PsiCashModel> loadRewardedVideo(Context context, TunnelState connectionState, String rewardCustomData) {
+    Observable<? extends PsiCashModel> loadRewardedVideo(Context context, TunnelState connectionState, String rewardCustomData) {
+        rewardedVideoPlayable = null;
         return Observable.just(Pair.create(connectionState, rewardCustomData))
                 .observeOn(AndroidSchedulers.mainThread())
-                .flatMap(pair -> {
+                .switchMap(pair -> {
                     TunnelState state = pair.first;
                     String customData = pair.second;
                     if (TextUtils.isEmpty(customData)) {
@@ -183,34 +199,20 @@ public class RewardedVideoClient {
                     }
                     if (state.isRunning()) {
                         TunnelState.ConnectionData connectionData = state.connectionData();
-                        // We shouldn't have received this state, but if we did return an error
-                        // immediately to get out of in flight state.
-                        if (!connectionData.isConnected()) {
-                            return Observable.error(new RuntimeException("Psiphon tunnel is not connected."));
-                        } else {
-                            // When connected VPN mode should load MoPub ads and BOM should load AdMob.
-                            if(connectionData.vpnMode()) {
+                        // When running VPN mode should load MoPub ads and BOM should load AdMob.
+                        if (connectionData.vpnMode()) {
+                            if (connectionData.isConnected()) {
                                 return loadMoPubVideos(customData);
                             } else {
-                                return loadAdMobVideos(customData);
+                                return Observable.never();
                             }
+                        } else {
+                            return loadAdMobVideos(customData);
                         }
                     } else {
                         // Not running should load AdMob ads
                         return loadAdMobVideos(customData);
                     }
-                })
-                // if error retry once with 2 seconds delay
-                .retryWhen(throwableObservable -> {
-                    AtomicInteger counter = new AtomicInteger();
-                    return throwableObservable
-                            .flatMap(err -> {
-                                if (counter.getAndIncrement() < 1) {
-                                    Log.d(TAG, "Ad loading error: " + err + ",  will retry");
-                                    return Observable.timer(2, TimeUnit.SECONDS);
-                                }
-                                return Observable.error(err);
-                            });
                 });
     }
 
@@ -220,15 +222,12 @@ public class RewardedVideoClient {
         }
     }
 
-    private void playAdMobVideo() {
-        if (rewardedVideoAd != null && rewardedVideoAd.isLoaded()) {
-            rewardedVideoAd.show();
+    public boolean playRewardedVideo() {
+        if (rewardedVideoPlayable != null) {
+            boolean attemptedToPlay = rewardedVideoPlayable.play();
+//            rewardedVideoPlayable = null;
+            return attemptedToPlay;
         }
-    }
-
-    private void playMoPubVideo(String customData) {
-        if (MoPub.isSdkInitialized() && MoPubRewardedVideos.hasRewardedVideo(MOPUB_VIDEO_AD_UNIT_ID)) {
-            MoPubRewardedVideos.showRewardedVideo(MOPUB_VIDEO_AD_UNIT_ID, customData);
-        }
+        return false;
     }
 }

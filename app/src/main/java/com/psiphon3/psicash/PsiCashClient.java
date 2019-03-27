@@ -3,7 +3,6 @@ package com.psiphon3.psicash;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Log;
 
 import com.psiphon3.TunnelState;
 
@@ -101,8 +100,6 @@ public class PsiCashClient {
                         if (response.body() != null) {
                             result.body = response.body().string();
                             response.body().close();
-                            Log.d(TAG, "got network response for " + reqParams.uri.toString() + ": " + result.body);
-
                         }
                     } catch (IOException e) {
                         result.code = PsiCashLib.HTTPRequester.Result.RECOVERABLE_ERROR;

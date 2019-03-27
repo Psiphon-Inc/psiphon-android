@@ -3,16 +3,15 @@ package com.psiphon3.psicash;
 import android.app.Application;
 import android.arch.lifecycle.AndroidViewModel;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.TunnelState;
 import com.psiphon3.psicash.mvibase.MviAction;
 import com.psiphon3.psicash.mvibase.MviIntent;
 import com.psiphon3.psicash.mvibase.MviResult;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.mvibase.MviViewModel;
 import com.psiphon3.psicash.mvibase.MviViewState;
-import com.psiphon3.TunnelState;
 
 import java.util.Date;
 import java.util.List;
@@ -52,7 +51,6 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
 
     private static final BiFunction<PsiCashViewState, PsiCashResult, PsiCashViewState> reducer =
             (previousState, result) -> {
-                Log.d(TAG, "reducer: result: " + result);
                 PsiCashViewState.Builder stateBuilder = previousState.withState();
 
                 if (result instanceof PsiCashResult.GetPsiCash) {
@@ -131,18 +129,9 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                 } else if (result instanceof PsiCashResult.Video) {
                     PsiCashResult.Video videoResult = (PsiCashResult.Video) result;
 
-                    PsiCashModel.VideoReady model = videoResult.model();
-
-                    Runnable videoPlayRunnable = null;
-                    if ( model != null ) {
-                        videoPlayRunnable = model.videoPlayRunnable();
-                    }
-
-
                     switch (videoResult.status()) {
                         case LOADING:
                             return stateBuilder
-                                    .videoPlayRunnable(null)
                                     .videoIsLoaded(false)
                                     .videoIsPlaying(false)
                                     .videoIsLoading(true)
@@ -151,7 +140,6 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                                     .build();
                         case LOADED:
                             return stateBuilder
-                                    .videoPlayRunnable(videoPlayRunnable)
                                     .videoIsLoaded(true)
                                     .videoIsPlaying(false)
                                     .videoIsLoading(false)
@@ -160,16 +148,14 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                                     .build();
                         case FAILURE:
                             return stateBuilder
-                                    .videoPlayRunnable(null)
                                     .videoIsLoaded(false)
                                     .videoIsPlaying(false)
                                     .videoIsLoading(false)
                                     .videoIsFinished(false)
                                     .videoError(videoResult.error())
                                     .build();
-                        case OPENED:
+                        case PLAYING:
                             return stateBuilder
-                                    .videoPlayRunnable(null)
                                     .videoIsLoaded(false)
                                     .videoIsPlaying(true)
                                     .videoIsLoading(false)
@@ -178,7 +164,6 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                                     .build();
                         case FINISHED:
                             return stateBuilder
-                                    .videoPlayRunnable(null)
                                     .videoIsLoaded(false)
                                     .videoIsPlaying(false)
                                     .videoIsLoading(false)
@@ -257,9 +242,7 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
     @Override
     public void processIntents(Observable intents) {
         compositeDisposable.clear();
-        compositeDisposable.add(intents
-                .doOnNext(s -> Log.d(TAG, "processIntent: " + s))
-                .subscribe(intentPublishRelay));
+        compositeDisposable.add(intents.subscribe(intentPublishRelay));
     }
 
     @Override

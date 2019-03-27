@@ -184,7 +184,7 @@ public class PsiphonAdManager {
             };
             MoPub.initializeSdk(activity, sdkConfiguration, sdkInitializationListener);
         })
-                .doOnError(e -> Log.d(TAG, "initializeMoPubSdk error: " + e))
+                .doOnError(e -> Utils.MyLog.d("initializeMoPubSdk error: " + e))
                 .cache();
 
         this.initializeAdMobSdk = Completable.create(emitter -> {

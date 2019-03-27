@@ -27,9 +27,6 @@ public abstract class PsiCashViewState implements MviViewState {
     public abstract Throwable psiCashError();
 
     @Nullable
-    public abstract Runnable videoPlayRunnable();
-
-    @Nullable
     public abstract Throwable videoError();
 
     public abstract boolean videoIsLoading();
@@ -50,7 +47,6 @@ public abstract class PsiCashViewState implements MviViewState {
                 .psiCashError(null)
                 .purchaseInFlight(false)
                 .animateOnNextBalanceChange(false)
-                .videoPlayRunnable(null)
                 .videoError(null)
                 .videoIsLoading(false)
                 .videoIsLoaded(false)
@@ -72,8 +68,6 @@ public abstract class PsiCashViewState implements MviViewState {
         public abstract Builder purchaseInFlight(boolean b);
 
         public abstract Builder animateOnNextBalanceChange(boolean b);
-
-        abstract Builder videoPlayRunnable(Runnable runnable);
 
         abstract Builder videoIsLoaded(boolean b);
 

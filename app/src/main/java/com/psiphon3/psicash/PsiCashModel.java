@@ -53,16 +53,17 @@ public interface PsiCashModel {
     }
 
     @AutoValue
-    abstract class VideoReady implements PsiCashModel {
-        @Nullable
-        public abstract Runnable videoPlayRunnable();
+    abstract class RewardedVideoState implements PsiCashModel {
+        enum VideoState {LOADED, PLAYING}
 
-        public static VideoReady create(Runnable videoRunnable) {
-            return new AutoValue_PsiCashModel_VideoReady(videoRunnable);
+        abstract VideoState videoState();
+
+        public static RewardedVideoState playing() {
+            return new AutoValue_PsiCashModel_RewardedVideoState(VideoState.PLAYING);
         }
 
-        public static VideoReady opened() {
-            return new AutoValue_PsiCashModel_VideoReady(null);
+        public static RewardedVideoState loaded() {
+            return new AutoValue_PsiCashModel_RewardedVideoState(VideoState.LOADED);
         }
     }
 
