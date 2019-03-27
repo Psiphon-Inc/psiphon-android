@@ -225,7 +225,7 @@ public class RewardedVideoClient {
     public boolean playRewardedVideo() {
         if (rewardedVideoPlayable != null) {
             boolean attemptedToPlay = rewardedVideoPlayable.play();
-//            rewardedVideoPlayable = null;
+            rewardedVideoPlayable = null;
             return attemptedToPlay;
         }
         return false;
