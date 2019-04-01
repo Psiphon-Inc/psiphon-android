@@ -196,7 +196,7 @@ public class RewardedVideoClient {
                 public void onRewardedVideoCompleted() {
                 }
             };
-            rewardedVideoAd.setCustomData(customData)
+            rewardedVideoAd.setCustomData(customData);
             rewardedVideoAd.setRewardedVideoAdListener(listener);
             rewardedVideoAd.loadAd(ADMOB_VIDEO_AD_ID, new AdRequest.Builder().build());
         });
