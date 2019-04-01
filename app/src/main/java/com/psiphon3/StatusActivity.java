@@ -129,6 +129,7 @@ public class StatusActivity
         psiphonAdManager.startLoadingAds();
 
         setupActivityLayout();
+        hidePsiCashTab();
 
         // Listen to GOT_NEW_EXPIRING_PURCHASE intent from psicash module
         IntentFilter intentFilter = new IntentFilter();
@@ -190,8 +191,16 @@ public class StatusActivity
     private void hidePsiCashTab() {
         for (int i = 0; i < m_tabSpecsList.size(); i++) {
             TabHost.TabSpec tabSpec = m_tabSpecsList.get(i);
-            if (tabSpec != null && tabSpec.getTag().equals(PSICASH_TAB_TAG))
+            if (tabSpec != null && tabSpec.getTag().equals(PSICASH_TAB_TAG)) {
                 m_tabHost.getTabWidget().getChildTabViewAt(i).setVisibility(View.GONE);
+                break;
+            }
+        }
+        // also reset current tab to HOME if PsiCash is currently selected
+        String currentTabTag = m_tabHost.getCurrentTabTag();
+        if (currentTabTag != null && currentTabTag.equals(PSICASH_TAB_TAG)) {
+            disableInterstitialOnNextTabChange = true;
+            m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
         }
     }
 
@@ -690,9 +699,7 @@ public class StatusActivity
         IAB_TIMEPASS_SKUS_TO_TIME = Collections.unmodifiableMap(m);
     }
 
-    static int AD_MODE_RATE_LIMIT_MBPS = 2;
-    static int LIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS = 5;
-    static int UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS = 0;
+    enum RateLimitMode {AD_MODE_LIMITED, LIMITED_SUBSCRIPTION, UNLIMITED_SUBSCRIPTION, SPEED_BOOST}
 
     Inventory mInventory;
 
@@ -763,14 +770,14 @@ public class StatusActivity
             // Check if the user has a subscription.
             //
 
-            int rateLimit = AD_MODE_RATE_LIMIT_MBPS;
+            RateLimitMode rateLimit = RateLimitMode.AD_MODE_LIMITED;
             Purchase purchase = null;
 
             for (String limitedMonthlySubscriptionSku : IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKUS) {
                 if (inventory.hasPurchase(limitedMonthlySubscriptionSku)) {
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid limited subscription: %s", limitedMonthlySubscriptionSku));
                     purchase = inventory.getPurchase(limitedMonthlySubscriptionSku);
-                    rateLimit = LIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS;
+                    rateLimit = RateLimitMode.LIMITED_SUBSCRIPTION;
                     hasValidSubscription = true;
                     break;
                 }
@@ -780,7 +787,7 @@ public class StatusActivity
                 if (inventory.hasPurchase(unlimitedMonthlySubscriptionSku)) {
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid unlimited subscription: %s", unlimitedMonthlySubscriptionSku));
                     purchase = inventory.getPurchase(unlimitedMonthlySubscriptionSku);
-                    rateLimit = UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS;
+                    rateLimit = RateLimitMode.UNLIMITED_SUBSCRIPTION;
                     hasValidSubscription = true;
                     break;
                 }
@@ -817,7 +824,7 @@ public class StatusActivity
                 {
                     // This time pass is still valid.
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid time pass: %s", sku));
-                    rateLimit = UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS;
+                    rateLimit = RateLimitMode.UNLIMITED_SUBSCRIPTION;
                     hasValidSubscription = true;
                     purchase = tempPurchase;
                 }
@@ -861,12 +868,12 @@ public class StatusActivity
             else if (purchase.getSku().equals(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU))
             {
                 Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
-                proceedWithValidSubscription(purchase, LIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS);
+                proceedWithValidSubscription(purchase, RateLimitMode.LIMITED_SUBSCRIPTION);
             }
             else if (purchase.getSku().equals(IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU))
             {
                 Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
-                proceedWithValidSubscription(purchase, UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS);
+                proceedWithValidSubscription(purchase, RateLimitMode.UNLIMITED_SUBSCRIPTION);
             }
             else if (IAB_TIMEPASS_SKUS_TO_TIME.containsKey(purchase.getSku()))
             {
@@ -874,7 +881,7 @@ public class StatusActivity
 
                 // We're not going to check the validity time here -- assume no time-pass is so
                 // short that it's already expired right after it's purchased.
-                proceedWithValidSubscription(purchase, UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS);
+                proceedWithValidSubscription(purchase, RateLimitMode.UNLIMITED_SUBSCRIPTION);
             }
         }
     };
@@ -1003,12 +1010,12 @@ public class StatusActivity
         }
     }
 
-    private void proceedWithValidSubscription(Purchase purchase, int rateLimitMbps)
+    private void proceedWithValidSubscription(Purchase purchase, RateLimitMode rateLimitMode)
     {
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
         psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
         Utils.setHasValidSubscription(this, true);
-        setRateLimitUI(rateLimitMbps);
+        setRateLimitUI(rateLimitMode);
         this.m_retainedDataFragment.setCurrentPurchase(purchase);
         hidePsiCashTab();
 
@@ -1031,23 +1038,29 @@ public class StatusActivity
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
         psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
         Utils.setHasValidSubscription(this, false);
-        setRateLimitUI(AD_MODE_RATE_LIMIT_MBPS);
+        setRateLimitUI(RateLimitMode.AD_MODE_LIMITED);
         this.m_retainedDataFragment.setCurrentPurchase(null);
         showPsiCashTabIfHasValidToken();
     }
 
-    private void setRateLimitUI(int rateLimitMbps) {
-        // Update UI elements showing the current speed.^M
-        if (rateLimitMbps > 0) {
-            mRateLimitedText.setText(getString(R.string.rate_limit_text_limited, rateLimitMbps));
-            mRateLimitedText.setVisibility(View.VISIBLE);
-            mRateUnlimitedText.setVisibility(View.GONE);
-            mRateLimitSubscribeButton.setVisibility(View.VISIBLE);
-            mRateLimitedTextSection.setVisibility(View.VISIBLE);
-        } else {
+    private void setRateLimitUI(RateLimitMode rateLimitMode) {
+        // Update UI elements showing the current speed.
+        if (rateLimitMode == RateLimitMode.UNLIMITED_SUBSCRIPTION) {
             mRateLimitedText.setVisibility(View.GONE);
             mRateUnlimitedText.setVisibility(View.VISIBLE);
             mRateLimitSubscribeButton.setVisibility(View.GONE);
+            mRateLimitedTextSection.setVisibility(View.VISIBLE);
+        } else{
+            if(rateLimitMode == RateLimitMode.AD_MODE_LIMITED) {
+                mRateLimitedText.setText(getString(R.string.rate_limit_text_limited, 2));
+            } else if (rateLimitMode == RateLimitMode.LIMITED_SUBSCRIPTION) {
+                mRateLimitedText.setText(getString(R.string.rate_limit_text_limited, 5));
+            } else if (rateLimitMode == RateLimitMode.SPEED_BOOST) {
+                mRateLimitedText.setText(getString(R.string.rate_limit_text_speed_boost));
+            }
+            mRateLimitedText.setVisibility(View.VISIBLE);
+            mRateUnlimitedText.setVisibility(View.GONE);
+            mRateLimitSubscribeButton.setVisibility(View.VISIBLE);
             mRateLimitedTextSection.setVisibility(View.VISIBLE);
         }
     }
