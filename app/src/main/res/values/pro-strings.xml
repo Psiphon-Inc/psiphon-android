@@ -116,7 +116,7 @@
     <!-- Indicates that the user has an active speed boost. Speed boost is a mode where the users
          have access to a full-speed connection for a limited amount of time, this mode is available
          to users via PsiCash -->
-    <string name="rate_limit_text_speed_boost">Speed boost</string>
+    <string name="rate_limit_text_speed_boost">Speed Boost</string>
 
     <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
          the workflow to subscribe for premium access. -->

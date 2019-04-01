@@ -39,6 +39,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -48,10 +49,12 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -64,7 +67,6 @@ import com.psiphon3.util.IabResult;
 import com.psiphon3.util.Inventory;
 import com.psiphon3.util.Purchase;
 import com.psiphon3.util.SkuDetails;
-import com.psiphon3.psiphonlibrary.*;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
@@ -81,10 +83,11 @@ import java.util.concurrent.TimeoutException;
 
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.BiFunction;
 
 
 public class StatusActivity
-    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
+    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase implements PsiCashFragment.ActiveSpeedBoostListener
 {
     private View mRateLimitedTextSection;
     private TextView mRateLimitedText;
@@ -103,6 +106,9 @@ public class StatusActivity
     private PsiphonAdManager psiphonAdManager;
     private Disposable startUpInterstitialDisposable;
     private boolean disableInterstitialOnNextTabChange;
+    private PublishRelay<RateLimitMode> currentRateLimitModeRelay;
+    private Disposable currentRateModeDisposable;
+    private PublishRelay<Boolean> activeSpeedBoostRelay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,9 +125,33 @@ public class StatusActivity
         mRateUnlimitedText = (TextView)findViewById(R.id.rateUnlimitedText);
         mRateLimitSubscribeButton = (Button)findViewById(R.id.rateLimitUpgradeButton);
 
-        // PsiCash and rewarded video modules
+        // PsiCash and rewarded video fragment
         FragmentManager fm = getSupportFragmentManager();
         psiCashFragment = (PsiCashFragment) fm.findFragmentById(R.id.psicash_fragment_container);
+        psiCashFragment.setActiveSpeedBoostListener(this);
+
+        // rate limit badge observable
+        currentRateLimitModeRelay = PublishRelay.create();
+        activeSpeedBoostRelay = PublishRelay.create();
+        currentRateModeDisposable = Observable.combineLatest(currentRateLimitModeRelay, activeSpeedBoostRelay,
+                ((BiFunction<RateLimitMode, Boolean, Pair>) Pair::new))
+                .map(pair -> {
+                    RateLimitMode rateLimitMode = (RateLimitMode) pair.first;
+                    Boolean hasActiveSubscription = (Boolean) pair.second;
+                    if (rateLimitMode == RateLimitMode.AD_MODE_LIMITED) {
+                        if (hasActiveSubscription) {
+                            return RateLimitMode.SPEED_BOOST;
+                        } else {
+                            return RateLimitMode.AD_MODE_LIMITED;
+                        }
+                    }
+                    return rateLimitMode;
+                })
+                .doOnNext(this::setRateLimitUI)
+                .subscribe();
+
+        // bootstrap the activeSpeedBoost observable
+        activeSpeedBoostRelay.accept(Boolean.FALSE);
 
         // ads
         psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.largeAdSlot),
@@ -184,6 +214,7 @@ public class StatusActivity
         if(startUpInterstitialDisposable != null) {
             startUpInterstitialDisposable.dispose();
         }
+        currentRateModeDisposable.dispose();
         psiphonAdManager.onDestroy();
         super.onDestroy();
     }
@@ -475,11 +506,11 @@ public class StatusActivity
                 .take(1)
                 .switchMap(adResult -> {
                     if (adResult.type() == PsiphonAdManager.AdResult.Type.NONE) {
-                        m_startupPending = true;
+                        doStartUp();
                         return Observable.empty();
                     }
                     else if (adResult.type() == PsiphonAdManager.AdResult.Type.TUNNELED) {
-                        Log.w(PsiphonAdManager.TAG, "startUp interstitial ad bad type: " + adResult.type());
+                        Log.w(PsiphonAdManager.TAG, "startUp interstitial bad ad type: " + adResult.type());
                         return Observable.empty();
                     }
 
@@ -699,6 +730,11 @@ public class StatusActivity
         IAB_TIMEPASS_SKUS_TO_TIME = Collections.unmodifiableMap(m);
     }
 
+    @Override
+    public void onActiveSpeedBoost(Boolean hasActiveSpeedBoost) {
+        activeSpeedBoostRelay.accept(hasActiveSpeedBoost);
+    }
+
     enum RateLimitMode {AD_MODE_LIMITED, LIMITED_SUBSCRIPTION, UNLIMITED_SUBSCRIPTION, SPEED_BOOST}
 
     Inventory mInventory;
@@ -778,6 +814,7 @@ public class StatusActivity
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid limited subscription: %s", limitedMonthlySubscriptionSku));
                     purchase = inventory.getPurchase(limitedMonthlySubscriptionSku);
                     rateLimit = RateLimitMode.LIMITED_SUBSCRIPTION;
+                    currentRateLimitModeRelay.accept(rateLimit);
                     hasValidSubscription = true;
                     break;
                 }
@@ -788,6 +825,7 @@ public class StatusActivity
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid unlimited subscription: %s", unlimitedMonthlySubscriptionSku));
                     purchase = inventory.getPurchase(unlimitedMonthlySubscriptionSku);
                     rateLimit = RateLimitMode.UNLIMITED_SUBSCRIPTION;
+                    currentRateLimitModeRelay.accept(rateLimit);
                     hasValidSubscription = true;
                     break;
                 }
@@ -795,7 +833,7 @@ public class StatusActivity
 
             if (hasValidSubscription)
             {
-                proceedWithValidSubscription(purchase, rateLimit);
+                proceedWithValidSubscription(purchase);
                 return;
             }
 
@@ -825,6 +863,7 @@ public class StatusActivity
                     // This time pass is still valid.
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid time pass: %s", sku));
                     rateLimit = RateLimitMode.UNLIMITED_SUBSCRIPTION;
+                    currentRateLimitModeRelay.accept(rateLimit);
                     hasValidSubscription = true;
                     purchase = tempPurchase;
                 }
@@ -838,7 +877,7 @@ public class StatusActivity
 
             if (hasValidSubscription)
             {
-                proceedWithValidSubscription(purchase, rateLimit);
+                proceedWithValidSubscription(purchase);
             }
             else
             {
@@ -868,12 +907,14 @@ public class StatusActivity
             else if (purchase.getSku().equals(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU))
             {
                 Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
-                proceedWithValidSubscription(purchase, RateLimitMode.LIMITED_SUBSCRIPTION);
+                currentRateLimitModeRelay.accept(RateLimitMode.LIMITED_SUBSCRIPTION);
+                proceedWithValidSubscription(purchase);
             }
             else if (purchase.getSku().equals(IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU))
             {
                 Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
-                proceedWithValidSubscription(purchase, RateLimitMode.UNLIMITED_SUBSCRIPTION);
+                currentRateLimitModeRelay.accept(RateLimitMode.UNLIMITED_SUBSCRIPTION);
+                proceedWithValidSubscription(purchase);
             }
             else if (IAB_TIMEPASS_SKUS_TO_TIME.containsKey(purchase.getSku()))
             {
@@ -881,7 +922,8 @@ public class StatusActivity
 
                 // We're not going to check the validity time here -- assume no time-pass is so
                 // short that it's already expired right after it's purchased.
-                proceedWithValidSubscription(purchase, RateLimitMode.UNLIMITED_SUBSCRIPTION);
+                currentRateLimitModeRelay.accept(RateLimitMode.UNLIMITED_SUBSCRIPTION);
+                proceedWithValidSubscription(purchase);
             }
         }
     };
@@ -1010,12 +1052,11 @@ public class StatusActivity
         }
     }
 
-    private void proceedWithValidSubscription(Purchase purchase, RateLimitMode rateLimitMode)
+    private void proceedWithValidSubscription(Purchase purchase)
     {
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
         psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
         Utils.setHasValidSubscription(this, true);
-        setRateLimitUI(rateLimitMode);
         this.m_retainedDataFragment.setCurrentPurchase(purchase);
         hidePsiCashTab();
 
@@ -1038,7 +1079,7 @@ public class StatusActivity
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
         psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
         Utils.setHasValidSubscription(this, false);
-        setRateLimitUI(RateLimitMode.AD_MODE_LIMITED);
+        currentRateLimitModeRelay.accept(RateLimitMode.AD_MODE_LIMITED);
         this.m_retainedDataFragment.setCurrentPurchase(null);
         showPsiCashTabIfHasValidToken();
     }

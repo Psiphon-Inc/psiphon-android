@@ -87,7 +87,6 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     private Relay<TunnelState> tunnelConnectionStateBehaviorRelay;
     private Relay<PsiphonAdManager.SubscriptionStatus> subscriptionStatusBehaviorRelay;
 
-
     private TextView balanceLabel;
     private Button buySpeedBoostBtn;
     private CountDownTimer countDownTimer;
@@ -101,6 +100,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     private AtomicBoolean keepLoadingVideos = new AtomicBoolean(false);
     private Disposable loadVideoAdsDisposable;
     private boolean shouldAutoPlayVideo;
+    private ActiveSpeedBoostListener activeSpeedBoostListener;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -157,6 +157,25 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         balanceLabel = getActivity().findViewById(R.id.psicash_balance_label);
         balanceLabel.setText("0");
         loadWatchRewardedVideoBtn = getActivity().findViewById(R.id.load_watch_rewarded_video_btn);
+
+        // Load video observable
+        Observable<Object> btnClicks = RxView.clicks(loadWatchRewardedVideoBtn)
+                .debounce(200, TimeUnit.MILLISECONDS)
+                .takeWhile(__ -> hasValidTokens());
+
+        loadVideoAdsDisposable = Observable.combineLatest(btnClicks, subscriptionStatusBehaviorRelay,
+                (click, status) -> status)
+                .filter(status -> status != PsiphonAdManager.SubscriptionStatus.SUBSCRIBER)
+                .switchMap(status -> {
+                    keepLoadingVideos.set(true);
+                    return connectionStateObservable()
+                            .distinctUntilChanged()
+                            // React to connection state changes until the load video process
+                            // terminates with either success or error
+                            .takeWhile(ignore -> keepLoadingVideos.get())
+                            .map(PsiCashIntent.LoadVideoAd::create);
+                })
+                .subscribe(intentsPublishRelay);
     }
 
     @Override
@@ -189,11 +208,6 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
         // Get PsiCash tokens when tunnel connects if there are none
         compositeDisposable.add(getPsiCashTokensDisposable());
-
-        // Load rewarded videos intent
-        if (loadVideoAdsDisposable == null || loadVideoAdsDisposable.isDisposed()) {
-            loadVideoAdsDisposable = loadVideoAdsSubscription();
-        }
 
         // Check if there are possibly expired purchases to remove in case activity
         // was in the background when MSG_AUTHORIZATIONS_REMOVED was sent by the service
@@ -244,29 +258,6 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                     return false;
                 })
                 .map(PsiCashIntent.GetPsiCashRemote::create)
-                .subscribe(intentsPublishRelay);
-    }
-    
-    private Disposable loadVideoAdsSubscription() {
-        // Do not load ads if user is subscribed
-        final Observable<PsiphonAdManager.SubscriptionStatus> isSubscriberObservable =
-                subscriptionStatusBehaviorRelay
-                        .hide()
-                        .filter(s -> s == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
-
-        return RxView.clicks(loadWatchRewardedVideoBtn)
-                .debounce(200, TimeUnit.MILLISECONDS)
-                .takeWhile(__ -> hasValidTokens())
-                .takeUntil(isSubscriberObservable)
-                .switchMap(__ -> {
-                    keepLoadingVideos.set(true);
-                    return connectionStateObservable()
-                            .distinctUntilChanged()
-                            // React to connection state changes until the load video process
-                            // terminates with either success or error
-                            .takeWhile(ignore -> keepLoadingVideos.get())
-                            .map(PsiCashIntent.LoadVideoAd::create);
-                })
                 .subscribe(intentsPublishRelay);
     }
 
@@ -402,12 +393,18 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         buySpeedBoostBtn.setEnabled(!state.purchaseInFlight());
         Date nextPurchaseExpiryDate = state.nextPurchaseExpiryDate();
         if (nextPurchaseExpiryDate != null && new Date().before(nextPurchaseExpiryDate)) {
+            if(activeSpeedBoostListener != null ) {
+                activeSpeedBoostListener.onActiveSpeedBoost(Boolean.TRUE);
+            }
             long millisDiff = nextPurchaseExpiryDate.getTime() - new Date().getTime();
             startActiveSpeedBoostCountDown(millisDiff);
             psiCashChargeProgressTextView.setVisibility(View.INVISIBLE);
             buySpeedBoostBtn.setVisibility(View.VISIBLE);
             buySpeedBoostBtn.setTag(R.id.hasActiveSpeedBoostTag, true);
         } else {
+            if(activeSpeedBoostListener != null ) {
+                activeSpeedBoostListener.onActiveSpeedBoost(Boolean.FALSE);
+            }
             buySpeedBoostBtn.setTag(R.id.hasActiveSpeedBoostTag, false);
             if(purchasePrice != null && purchasePrice.price != 0) {
                 if (purchasePrice.price / 1e9 > state.uiBalance()) {
@@ -540,8 +537,14 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     public void onDestroy() {
         super.onDestroy();
         compositeDisposable.dispose();
-        if (loadVideoAdsDisposable != null) {
-            loadVideoAdsDisposable.dispose();
-        }
+        loadVideoAdsDisposable.dispose();
+    }
+
+    public void setActiveSpeedBoostListener(ActiveSpeedBoostListener listener) {
+        this.activeSpeedBoostListener = listener;
+    }
+
+    public interface ActiveSpeedBoostListener {
+        void onActiveSpeedBoost(Boolean value);
     }
 }
