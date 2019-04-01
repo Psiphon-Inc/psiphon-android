@@ -60,7 +60,6 @@
                 android:background="@drawable/psicash_progress_bar_states"
                 android:gravity="center"
                 android:max="100"
-                android:text="charging"
                 android:visibility="invisible" />
 
             <Button
@@ -75,6 +74,6 @@
         android:id="@+id/load_watch_rewarded_video_btn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Watch video &#038; earn PsiCash" />
+        android:text="@string/watch_video_and_earn_psicash" />
 
 </LinearLayout>

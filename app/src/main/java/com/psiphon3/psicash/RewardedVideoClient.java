@@ -50,8 +50,6 @@ public class RewardedVideoClient {
     }
     private RewardedVideoPlayable rewardedVideoPlayable;
 
-    private static final String TAG = "PsiCashRewardedVideo";
-
     private static final String MOPUB_VIDEO_AD_UNIT_ID = "7ef66892f0a6417091119b94ce07d6e5";
     private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-1072041961750291/5751207671";
 
@@ -198,7 +196,7 @@ public class RewardedVideoClient {
                 public void onRewardedVideoCompleted() {
                 }
             };
-            rewardedVideoAd.setCustomData(customData);
+            rewardedVideoAd.setCustomData(customData)
             rewardedVideoAd.setRewardedVideoAdListener(listener);
             rewardedVideoAd.loadAd(ADMOB_VIDEO_AD_ID, new AdRequest.Builder().build());
         });

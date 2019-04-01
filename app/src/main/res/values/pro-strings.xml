@@ -116,5 +116,7 @@
     <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">Upgrade now!</string>
-
+    <!-- Text on button that loads and plays a rewarded ad video. User receives some amount of PsiCash
+         as a result. -->
+    <string name="watch_video_and_earn_psicash">"Watch video &amp; earn PsiCash"</string>
 </resources>

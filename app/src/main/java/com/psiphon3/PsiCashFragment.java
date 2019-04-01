@@ -334,23 +334,18 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
     private void updateUiRewardedVideoButton(PsiCashViewState state) {
         if(state.videoIsLoading()) {
-            // reset this flag if application enters background between
-            // the LOADING and LOADED state.
+            // Reset this flag if application enters background between the LOADING and LOADED state.
             shouldAutoPlayVideo = true;
             loadWatchRewardedVideoBtn.setEnabled(false);
             return;
         }
         if(state.videoIsLoaded()) {
-            // success or error should stop the load video subscription
+            // Success or error should stop the load video subscription.
             keepLoadingVideos.set(false);
             loadWatchRewardedVideoBtn.setEnabled(true);
 
             if (shouldAutoPlayVideo) {
-                if(!RewardedVideoClient.getInstance().playRewardedVideo()) {
-                    loadWatchRewardedVideoBtn.setText("Watch video & earn PsiCash");
-                }
-            } else {
-                loadWatchRewardedVideoBtn.setText("Watch video & earn PsiCash");
+                RewardedVideoClient.getInstance().playRewardedVideo();
             }
             return;
         }
@@ -360,13 +355,11 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         }
         if(state.videoIsFinished()) {
             loadWatchRewardedVideoBtn.setEnabled(true);
-            loadWatchRewardedVideoBtn.setText("Watch moar!");
             return;
         }
         if(state.videoError() != null) {
-            // success or error should stop the load video subscription
+            // Success or error should stop the load video subscription.
             keepLoadingVideos.set(false);
-            loadWatchRewardedVideoBtn.setText("No videos available, try again");
             loadWatchRewardedVideoBtn.setEnabled(true);
             return;
         }
@@ -385,7 +378,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 errorMessage = error.toString();
             }
 
-            // Clear view state error immediately
+            // Clear view state error immediately.
             intentsPublishRelay.accept(PsiCashIntent.ClearErrorState.create());
             View view = getActivity().findViewById(R.id.psicashTab);
             if (view == null) {
