@@ -21,7 +21,6 @@
 package com.psiphon3.psicash;
 
 import android.content.Context;
-import android.util.Log;
 
 import java.util.Arrays;
 
@@ -41,7 +40,7 @@ class PsiCashActionProcessorHolder {
 
     final ObservableTransformer<PsiCashAction, PsiCashResult> actionProcessor;
 
-    public PsiCashActionProcessorHolder(Context context, PsiCashListener listener) {
+    PsiCashActionProcessorHolder(Context context, PsiCashListener listener) {
         this.psiCashListener = listener;
 
         this.clearErrorStateProcessor = actions -> actions.map(a -> PsiCashResult.ClearErrorState.success());
@@ -82,9 +81,7 @@ class PsiCashActionProcessorHolder {
                         .startWith(PsiCashResult.GetPsiCash.inFlight()));
 
         this.loadVideoAdProcessor = actions ->
-                actions
-                        .doOnEach( s -> Log.d(TAG, "PsiCashActionProcessorHolder: action each" + s))
-                        .switchMap(action ->
+                actions.switchMap(action ->
                         RewardedVideoClient.getInstance().loadRewardedVideo(context, action.connectionState(), PsiCashClient.getInstance(context).rewardedVideoCustomData())
                                 .map(r -> {
                                     if (r instanceof PsiCashModel.RewardedVideoState) {
@@ -105,10 +102,7 @@ class PsiCashActionProcessorHolder {
                                 })
                                 .startWith(PsiCashResult.Video.loading())
                                 .concatWith(Observable.just(PsiCashResult.Video.finished()))
-                                .onErrorReturn(PsiCashResult.Video::failure))
-                        .doOnEach( s -> Log.d(TAG, "PsiCashActionProcessorHolder: loadRewardedVideo each" + s))
-                        .doOnDispose(() -> Log.d(TAG, "PsiCashActionProcessorHolder: loadRewardedVideo disposed"));
-
+                                .onErrorReturn(PsiCashResult.Video::failure));
 
         this.actionProcessor = actions ->
                 actions.publish(shared -> Observable.merge(

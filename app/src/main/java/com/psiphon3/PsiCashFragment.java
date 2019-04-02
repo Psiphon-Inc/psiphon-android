@@ -34,7 +34,6 @@ import android.os.CountDownTimer;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -333,7 +332,6 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
     @Override
     public void render(PsiCashViewState state) {
-        Log.d(TAG, "render: " + state);
         updateUiBalanceLabel(state);
         updateUiChargeBar(state);
         updateUiProgressView(state);
