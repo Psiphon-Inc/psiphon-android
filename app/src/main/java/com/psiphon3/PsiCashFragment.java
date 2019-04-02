@@ -166,6 +166,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 .takeWhile(click -> hasValidTokens())
                 .switchMap(click -> {
                     keepLoadingVideos.set(true);
+                    // React to both - a connection state changes until the load video process
+                    // terminates with either success or error AND to the subscription status changes.
                     return Observable.combineLatest(tunnelConnectionStateObservable(),
                             subscriptionStatusObservable(),
                             ((BiFunction<TunnelState, PsiphonAdManager.SubscriptionStatus, Pair>) Pair::new))
@@ -173,11 +175,15 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                                 TunnelState s = (TunnelState) pair.first;
                                 PsiphonAdManager.SubscriptionStatus subscriptionStatus = (PsiphonAdManager.SubscriptionStatus) pair.second;
                                 if (subscriptionStatus == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER) {
+                                    // set a flag to stop the outer subscription if user is subscribed
+                                    // and complete this inner subscription right away.
                                     keepLoadingVideos.set(false);
                                     return Observable.empty();
                                 }
                                 return Observable.just(s);
                             })
+                            // complete the subscription if we were signaled that the video has
+                            // loaded or failed OR if the user is subscribed.
                             .takeWhile(__ -> keepLoadingVideos.get());
                 })
                 .map(PsiCashIntent.LoadVideoAd::create)
