@@ -365,8 +365,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 PsiCashException e = (PsiCashException) error;
                 errorMessage = e.getUIMessage();
             } else {
-                // TODO: log and show 'unknown error' to the user
-                errorMessage = error.toString();
+                Utils.MyLog.g("Unexpected PsiCash error: " + error.toString());
+                errorMessage = "An unexpected error has occurred, please send feedback.";
             }
 
             // Clear view state error immediately.

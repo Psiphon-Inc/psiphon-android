@@ -32,6 +32,7 @@ import com.psiphon3.psicash.mvibase.MviResult;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.mvibase.MviViewModel;
 import com.psiphon3.psicash.mvibase.MviViewState;
+import com.psiphon3.psiphonlibrary.Utils;
 
 import java.util.Date;
 import java.util.List;
@@ -111,6 +112,10 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                                     .animateOnNextBalanceChange(true)
                                     .build();
                         case FAILURE:
+                            Utils.MyLog.g("PsiCash error has occurred: " + getPsiCashResult.error());
+                            if (model != null) {
+                                Utils.MyLog.g("PsiCash diagnostic info: " + model.diagnosticInfo());
+                            }
                             return stateBuilder
                                     .psiCashError(getPsiCashResult.error())
                                     .build();
