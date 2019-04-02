@@ -74,6 +74,6 @@
         android:id="@+id/load_watch_rewarded_video_btn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/watch_video_and_earn_psicash" />
+        android:text="@string/watch_video_and_earn_psicash_button" />
 
 </LinearLayout>

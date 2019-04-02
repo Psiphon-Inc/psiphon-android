@@ -20,6 +20,11 @@
 
 package com.psiphon3.psicash;
 
+import android.content.Context;
+
+import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.subscription.R;
+
 import ca.psiphon.psicashlib.PsiCashLib;
 
 public abstract class PsiCashException extends Exception {
@@ -31,7 +36,7 @@ public abstract class PsiCashException extends Exception {
         super();
     }
 
-    public abstract String getUIMessage();
+    public abstract String getUIMessage(Context ctx);
 
     static class Transaction extends PsiCashException {
         private final PsiCashLib.Status status;
@@ -45,32 +50,36 @@ public abstract class PsiCashException extends Exception {
         }
 
         @Override
-        public String getUIMessage() {
-            String uiMessage = "An unknown error has occurred";
+        public String getUIMessage(Context ctx) {
+            String uiMessage;
             switch (status) {
                 case INVALID:
-                    uiMessage = "Invalid response.";
+                    uiMessage = ctx.getString(R.string.psicash_transaction_invalid_message);
                     break;
                 case SUCCESS:
-                    uiMessage = "Success.";
+                    uiMessage = ctx.getString(R.string.psicash_transaction_success_message);
                     break;
                 case EXISTING_TRANSACTION:
-                    uiMessage = "You have an active Speed Boost purchase.";
+                    uiMessage = ctx.getString(R.string.psicash_transaction_existing_message);
                     break;
                 case INSUFFICIENT_BALANCE:
-                    uiMessage = "Insufficient balance for Speed Boost purchase.";
+                    uiMessage = ctx.getString(R.string.psicash_transaction_insufficient_balance_message);
                     break;
                 case TRANSACTION_AMOUNT_MISMATCH:
-                    uiMessage = "Price of Speed Boost is out of date. Updating local products.";
+                    uiMessage = ctx.getString(R.string.psicash_transaction_amount_mismatch_message);
                     break;
                 case TRANSACTION_TYPE_NOT_FOUND:
-                    uiMessage = "Speed Boost product not found. Your app may be out of date. Please check for updates.";
+                    uiMessage = ctx.getString(R.string.psicash_transaction_type_not_found_message);
                     break;
                 case INVALID_TOKENS:
-                    uiMessage = "The app has entered an invalid state. Please reinstall the app to continue using PsiCash.";
+                    uiMessage = ctx.getString(R.string.psicash_transaction_invalid_tokens_message);
                     break;
                 case SERVER_ERROR:
-                    uiMessage = "Server error";
+                    uiMessage = ctx.getString(R.string.transaction_server_error_message);
+                    break;
+                default:
+                    Utils.MyLog.g("Unexpected PsiCash transaction status: " + status);
+                    uiMessage = ctx.getString(R.string.unexpected_error_occured_send_feedback_message);
                     break;
             }
             return uiMessage;
@@ -80,19 +89,19 @@ public abstract class PsiCashException extends Exception {
     static class Critical extends PsiCashException {
         String uiMesssage = null;
 
-        public Critical(String message) {
+        Critical(String message) {
             super(message);
         }
 
-        public Critical(String errorMessage, String uiMessage) {
+        Critical(String errorMessage, String uiMessage) {
             super(errorMessage);
             this.uiMesssage = uiMessage;
         }
 
         @Override
-        public String getUIMessage() {
+        public String getUIMessage(Context ctx) {
             if (uiMesssage == null) {
-                return "A critical error has occurred. Please send feedback.";
+                return ctx.getString(R.string.psicash_critical_error_message);
             } else {
                 return uiMesssage;
             }
@@ -102,19 +111,19 @@ public abstract class PsiCashException extends Exception {
     static class Recoverable extends PsiCashException {
         String uiMesssage = null;
 
-        public Recoverable(String errorMessage, String uiMessage) {
+        Recoverable(String errorMessage, String uiMessage) {
             super(errorMessage);
             this.uiMesssage = uiMessage;
         }
 
-        public Recoverable(String message) {
+        Recoverable(String message) {
             super(message);
         }
 
         @Override
-        public String getUIMessage() {
+        public String getUIMessage(Context ctx) {
             if (uiMesssage == null) {
-                return "A recoverable error has occurred. Please try again later.";
+                return ctx.getString(R.string.psicash_recoverable_error_message);
             } else {
                 return uiMesssage;
             }
@@ -134,9 +143,9 @@ public abstract class PsiCashException extends Exception {
         }
 
         @Override
-        public String getUIMessage() {
+        public String getUIMessage(Context ctx) {
             if (uiMesssage == null) {
-                return "Video is not available, try again later.";
+                return ctx.getString(R.string.psicash_video_not_available_message);
             } else {
                 return uiMesssage;
             }

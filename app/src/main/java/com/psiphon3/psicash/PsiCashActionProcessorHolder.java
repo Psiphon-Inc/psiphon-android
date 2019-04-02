@@ -40,30 +40,30 @@ class PsiCashActionProcessorHolder {
 
     final ObservableTransformer<PsiCashAction, PsiCashResult> actionProcessor;
 
-    PsiCashActionProcessorHolder(Context context, PsiCashListener listener) {
+    PsiCashActionProcessorHolder(Context appContext, PsiCashListener listener) {
         this.psiCashListener = listener;
 
         this.clearErrorStateProcessor = actions -> actions.map(a -> PsiCashResult.ClearErrorState.success());
 
         this.getPsiCashRemoteProcessor = actions ->
-                actions.flatMap(action -> PsiCashClient.getInstance(context).getPsiCashRemote(action.connectionState())
+                actions.flatMap(action -> PsiCashClient.getInstance(appContext).getPsiCashRemote(action.connectionState())
                                 .map(PsiCashResult.GetPsiCash::success)
                                 .onErrorReturn(PsiCashResult.GetPsiCash::failure)
                                 .startWith(PsiCashResult.GetPsiCash.inFlight()));
 
         this.getPsiCashLocalProcessor = actions ->
-                actions.flatMap(action -> PsiCashClient.getInstance(context).getPsiCashLocal()
+                actions.flatMap(action -> PsiCashClient.getInstance(appContext).getPsiCashLocal()
                         .map(PsiCashResult.GetPsiCash::success)
                         .onErrorReturn(PsiCashResult.GetPsiCash::failure)
                         .startWith(PsiCashResult.GetPsiCash.inFlight()));
 
         this.makeExpiringPurchaseProcessor = actions ->
                 actions.flatMap(action ->
-                        PsiCashClient.getInstance(context).makeExpiringPurchase(action.connectionState(), action.purchasePrice(), action.hasActiveBoost())
+                        PsiCashClient.getInstance(appContext).makeExpiringPurchase(action.connectionState(), action.purchasePrice(), action.hasActiveBoost())
                                 .map(r -> {
                                     if (r instanceof PsiCashModel.ExpiringPurchase) {
                                         if (psiCashListener != null) {
-                                            psiCashListener.onNewExpiringPurchase(context, ((PsiCashModel.ExpiringPurchase) r).expiringPurchase());
+                                            psiCashListener.onNewExpiringPurchase(appContext, ((PsiCashModel.ExpiringPurchase) r).expiringPurchase());
                                         }
                                         return PsiCashResult.ExpiringPurchase.success((PsiCashModel.ExpiringPurchase) r);
                                     } else if (r instanceof PsiCashModel.PsiCash) {
@@ -75,14 +75,14 @@ class PsiCashActionProcessorHolder {
                                 .startWith(PsiCashResult.ExpiringPurchase.inFlight()));
 
         this.removePurchasesProcessor = actions ->
-                actions.flatMap(action -> PsiCashClient.getInstance(context).removePurchases(action.purchases())
+                actions.flatMap(action -> PsiCashClient.getInstance(appContext).removePurchases(action.purchases())
                         .map(PsiCashResult.GetPsiCash::success)
                         .onErrorReturn(PsiCashResult.GetPsiCash::failure)
                         .startWith(PsiCashResult.GetPsiCash.inFlight()));
 
         this.loadVideoAdProcessor = actions ->
                 actions.switchMap(action ->
-                        RewardedVideoClient.getInstance().loadRewardedVideo(context, action.connectionState(), PsiCashClient.getInstance(context).rewardedVideoCustomData())
+                        RewardedVideoClient.getInstance().loadRewardedVideo(appContext, action.connectionState(), PsiCashClient.getInstance(appContext).rewardedVideoCustomData())
                                 .map(r -> {
                                     if (r instanceof PsiCashModel.RewardedVideoState) {
                                         PsiCashModel.RewardedVideoState result = (PsiCashModel.RewardedVideoState) r;
@@ -95,7 +95,7 @@ class PsiCashActionProcessorHolder {
                                         }
                                         throw new IllegalArgumentException("Unknown result: " + r);
                                     } else if (r instanceof PsiCashModel.Reward) {
-                                        psiCashListener.onNewReward(context, ((PsiCashModel.Reward) r).amount());
+                                        psiCashListener.onNewReward(appContext, ((PsiCashModel.Reward) r).amount());
                                         return PsiCashResult.Reward.success((PsiCashModel.Reward) r);
                                     }
                                     throw new IllegalArgumentException("Unknown result: " + r);

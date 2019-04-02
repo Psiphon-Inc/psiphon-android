@@ -25,6 +25,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.psiphon3.TunnelState;
+import com.psiphon3.subscription.R;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -60,14 +61,16 @@ public class PsiCashClient {
     private static final String PSICASH_PREFERENCES_KEY = "app_prefs";
 
     private static PsiCashClient INSTANCE = null;
+    private Context appContext;
 
     private final PsiCashLib psiCashLib;
     private int httpProxyPort;
     private final OkHttpClient okHttpClient;
     private final SharedPreferences sharedPreferences;
 
-    private PsiCashClient(final Context context) throws PsiCashException {
-        sharedPreferences = context.getSharedPreferences(PSICASH_PREFERENCES_KEY, Context.MODE_PRIVATE);
+    private PsiCashClient(final Context ctx) throws PsiCashException {
+        this.appContext = ctx;
+        sharedPreferences = ctx.getSharedPreferences(PSICASH_PREFERENCES_KEY, Context.MODE_PRIVATE);
         httpProxyPort = 0;
         psiCashLib = new PsiCashLib();
         okHttpClient = new OkHttpClient.Builder()
@@ -92,7 +95,7 @@ public class PsiCashClient {
                     }
                 }).build();
         PsiCashLib.Error err = psiCashLib.init(
-                context.getFilesDir().toString(),
+                ctx.getFilesDir().toString(),
                 reqParams -> {
                     PsiCashLib.HTTPRequester.Result result = new PsiCashLib.HTTPRequester.Result();
                     Request.Builder reqBuilder = new Request.Builder();
@@ -313,16 +316,20 @@ public class PsiCashClient {
 
                     if (!state.isRunning()) {
                         if (hasActiveBoost) {
-                            throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not running.", "Please connect to verify your Speed Boost status.");
+                            throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not running.",
+                                    appContext.getString(R.string.speed_boost_connect_to_verify_message));
                         } else {
-                            throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not running.", "Please connect to make a Speed Boost purchase.");
+                            throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not running.", 
+                                    appContext.getString(R.string.speed_boost_connect_to_purchase_message));
                         }
                     } else {
                         if (!connectionData.isConnected()) {
                             if (hasActiveBoost) {
-                                throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.", "Please wait for tunnel to connect to verify your Speed Boost status.");
+                                throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.", 
+                                        appContext.getString(R.string.speed_boost_wait_tunnel_to_connect_to_verify_message));
                             } else {
-                                throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.", "Please wait for tunnel to connect to make a Speed Boost purchase.");
+                                throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.", 
+                                        appContext.getString(R.string.speed_boost_wait_tunnel_to_connect_to_purchase_message));
                             }
                         }
                     }
@@ -414,9 +421,9 @@ public class PsiCashClient {
                         PsiCashLib.RefreshStateResult result = psiCashLib.refreshState(getPurchaseClasses());
                         if (result.error != null) {
                             if (result.error.critical) {
-                                throw new PsiCashException.Critical(result.error.message, "Cannot retrieve PsiCash balance from the server. Please send feedback.");
+                                throw new PsiCashException.Critical(result.error.message, appContext.getString(R.string.psicash_cant_get_balance_critical_message));
                             } else {
-                                throw new PsiCashException.Recoverable(result.error.message, "Cannot retrieve PsiCash balance from the server at the moment. Please try again later.");
+                                throw new PsiCashException.Recoverable(result.error.message, appContext.getString(R.string.psicash_cant_get_balance_recoverable_message));
                             }
                         }
                         if (result.status != PsiCashLib.Status.SUCCESS) {

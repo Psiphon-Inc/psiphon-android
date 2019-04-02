@@ -385,10 +385,10 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         String errorMessage;
         if (error instanceof PsiCashException) {
             PsiCashException e = (PsiCashException) error;
-            errorMessage = e.getUIMessage();
+            errorMessage = e.getUIMessage(getActivity());
         } else {
             Utils.MyLog.g("Unexpected PsiCash error: " + error.toString());
-            errorMessage = "An unexpected error has occurred, please send feedback.";
+            errorMessage = getString(R.string.unexpected_error_occured_send_feedback_message);
         }
         View view = getActivity().findViewById(R.id.psicashTab);
         if (view == null) {
@@ -449,7 +449,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                         psiCashChargeProgressTextView.setBackgroundDrawable(d);
                     }
 
-                    psiCashChargeProgressTextView.setText(String.format(Locale.US, "Charging Speed Boost %d%s", chargePercentage, "%"));
+                    psiCashChargeProgressTextView.setText(String.format(Locale.US, getString(R.string.charging_speed_boost_percents_label), chargePercentage));
                     psiCashLayout.setOnTouchListener((view, motionEvent) -> {
                         ObjectAnimator
                                 .ofFloat(view, "translationX", 0, 25, -25, 25, -25,15, -15, 6, -6, 0)
@@ -460,7 +460,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 } else {
                     buySpeedBoostBtn.setVisibility(View.VISIBLE);
                     psiCashChargeProgressTextView.setVisibility(View.INVISIBLE);
-                    buySpeedBoostBtn.setText("1h of speed boost available");
+                    buySpeedBoostBtn.setText(R.string.one_h_of_speed_boost_available_button);
                     psiCashLayout.setOnTouchListener((view, motionEvent) -> false);
                 }
             }
