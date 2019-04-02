@@ -120,4 +120,27 @@ public abstract class PsiCashException extends Exception {
             }
         }
     }
+
+    public static class Video extends PsiCashException {
+        String uiMesssage = null;
+
+        public Video(String message) {
+            super(message);
+        }
+
+        public Video(String errorMessage, String uiMessage) {
+            super(errorMessage);
+            this.uiMesssage = uiMessage;
+        }
+
+        @Override
+        public String getUIMessage() {
+            if (uiMesssage == null) {
+                return "Video is not available, try again later.";
+            } else {
+                return uiMesssage;
+            }
+        }
+    }
+
 }

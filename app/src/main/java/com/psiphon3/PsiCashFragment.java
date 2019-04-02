@@ -35,6 +35,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -77,6 +78,7 @@ import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.BiFunction;
 
 public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, PsiCashViewState> {
     private static final String TAG = "PsiCashFragment";
@@ -159,22 +161,26 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         loadWatchRewardedVideoBtn = getActivity().findViewById(R.id.load_watch_rewarded_video_btn);
 
         // Load video observable
-        Observable<Object> btnClicks = RxView.clicks(loadWatchRewardedVideoBtn)
+        loadVideoAdsDisposable = RxView.clicks(loadWatchRewardedVideoBtn)
                 .debounce(200, TimeUnit.MILLISECONDS)
-                .takeWhile(__ -> hasValidTokens());
-
-        loadVideoAdsDisposable = Observable.combineLatest(btnClicks, subscriptionStatusBehaviorRelay,
-                (click, status) -> status)
-                .filter(status -> status != PsiphonAdManager.SubscriptionStatus.SUBSCRIBER)
-                .switchMap(status -> {
+                .takeWhile(click -> hasValidTokens())
+                .switchMap(click -> {
                     keepLoadingVideos.set(true);
-                    return connectionStateObservable()
-                            .distinctUntilChanged()
-                            // React to connection state changes until the load video process
-                            // terminates with either success or error
-                            .takeWhile(ignore -> keepLoadingVideos.get())
-                            .map(PsiCashIntent.LoadVideoAd::create);
+                    return Observable.combineLatest(tunnelConnectionStateObservable(),
+                            subscriptionStatusObservable(),
+                            ((BiFunction<TunnelState, PsiphonAdManager.SubscriptionStatus, Pair>) Pair::new))
+                            .switchMap(pair -> {
+                                TunnelState s = (TunnelState) pair.first;
+                                PsiphonAdManager.SubscriptionStatus subscriptionStatus = (PsiphonAdManager.SubscriptionStatus) pair.second;
+                                if (subscriptionStatus == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER) {
+                                    keepLoadingVideos.set(false);
+                                    return Observable.empty();
+                                }
+                                return Observable.just(s);
+                            })
+                            .takeWhile(__ -> keepLoadingVideos.get());
                 })
+                .map(PsiCashIntent.LoadVideoAd::create)
                 .subscribe(intentsPublishRelay);
     }
 
@@ -229,7 +235,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     private Disposable buySpeedBoostClicksDisposable() {
         return RxView.clicks(buySpeedBoostBtn)
                 .debounce(200, TimeUnit.MILLISECONDS)
-                .withLatestFrom(connectionStateObservable(), (__, state) ->
+                .withLatestFrom(tunnelConnectionStateObservable(), (__, state) ->
                         PsiCashIntent.PurchaseSpeedBoost.create(state,
                                 (PsiCashLib.PurchasePrice) buySpeedBoostBtn.getTag(R.id.speedBoostPrice),
                                 (boolean) buySpeedBoostBtn.getTag(R.id.hasActiveSpeedBoostTag)))
@@ -243,7 +249,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
     private Disposable getPsiCashTokensDisposable() {
         // If PsiCash doesn't have valid tokens get them from the server once the tunnel is connected
-        return connectionStateObservable()
+        return tunnelConnectionStateObservable()
                 .filter(state -> state.isRunning() && state.connectionData().isConnected())
                 .takeWhile(__ -> {
                     try {
@@ -302,8 +308,14 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         compositeDisposable.clear();
     }
 
-    private Observable<TunnelState> connectionStateObservable() {
+    private Observable<TunnelState> tunnelConnectionStateObservable() {
         return tunnelConnectionStateBehaviorRelay
+                .hide()
+                .distinctUntilChanged();
+    }
+
+    private Observable<PsiphonAdManager.SubscriptionStatus> subscriptionStatusObservable() {
+        return subscriptionStatusBehaviorRelay
                 .hide()
                 .distinctUntilChanged();
     }
@@ -348,7 +360,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             loadWatchRewardedVideoBtn.setEnabled(true);
             return;
         }
-        if(state.videoError() != null) {
+        if (state.error() != null && state.error() instanceof PsiCashException.Video) {
             // Success or error should stop the load video subscription.
             keepLoadingVideos.set(false);
             loadWatchRewardedVideoBtn.setEnabled(true);
@@ -357,26 +369,38 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     }
 
     private void updateUiPsiCashErrorMessage(PsiCashViewState state) {
-        Throwable error = state.psiCashError();
-        if (error != null) {
-            String errorMessage;
-
-            if (error instanceof PsiCashException) {
-                PsiCashException e = (PsiCashException) error;
-                errorMessage = e.getUIMessage();
-            } else {
-                Utils.MyLog.g("Unexpected PsiCash error: " + error.toString());
-                errorMessage = "An unexpected error has occurred, please send feedback.";
-            }
-
-            // Clear view state error immediately.
-            intentsPublishRelay.accept(PsiCashIntent.ClearErrorState.create());
-            View view = getActivity().findViewById(R.id.psicashTab);
-            if (view == null) {
-                return;
-            }
-            Snackbar.make(view, errorMessage, Snackbar.LENGTH_LONG).show();
+        Throwable error = state.error();
+        if (error == null) {
+            // noop
+            return;
         }
+
+        // Clear view state error immediately.
+        intentsPublishRelay.accept(PsiCashIntent.ClearErrorState.create());
+
+        String errorMessage;
+        if (error instanceof PsiCashException) {
+            PsiCashException e = (PsiCashException) error;
+            errorMessage = e.getUIMessage();
+        } else {
+            Utils.MyLog.g("Unexpected PsiCash error: " + error.toString());
+            errorMessage = "An unexpected error has occurred, please send feedback.";
+        }
+        View view = getActivity().findViewById(R.id.psicashTab);
+        if (view == null) {
+            return;
+        }
+
+        Snackbar snackbar = Snackbar.make(view, errorMessage, Snackbar.LENGTH_LONG);
+
+        // center the message in the text view
+        TextView tv = (TextView) snackbar.getView().findViewById(android.support.design.R.id.snackbar_text);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        } else {
+            tv.setGravity(Gravity.CENTER_HORIZONTAL);
+        }
+        snackbar.show();
     }
 
     private void updateUiProgressView(PsiCashViewState state) {

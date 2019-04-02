@@ -117,7 +117,7 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                                 Utils.MyLog.g("PsiCash diagnostic info: " + model.diagnosticInfo());
                             }
                             return stateBuilder
-                                    .psiCashError(getPsiCashResult.error())
+                                    .error(getPsiCashResult.error())
                                     .build();
                         case IN_FLIGHT:
                             return stateBuilder
@@ -125,7 +125,7 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                     }
                 } else if (result instanceof PsiCashResult.ClearErrorState) {
                     return stateBuilder
-                            .psiCashError(null)
+                            .error(null)
                             .build();
                 } else if (result instanceof PsiCashResult.ExpiringPurchase) {
                     PsiCashResult.ExpiringPurchase purchaseResult = (PsiCashResult.ExpiringPurchase) result;
@@ -145,7 +145,7 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                         case FAILURE:
                             PsiCashViewState.Builder builder = stateBuilder
                                     .purchaseInFlight(false)
-                                    .psiCashError(purchaseResult.error());
+                                    .error(purchaseResult.error());
                             return builder.build();
                         case IN_FLIGHT:
                             return stateBuilder
@@ -162,7 +162,6 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                                     .videoIsPlaying(false)
                                     .videoIsLoading(true)
                                     .videoIsFinished(false)
-                                    .videoError(null)
                                     .build();
                         case LOADED:
                             return stateBuilder
@@ -170,7 +169,6 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                                     .videoIsPlaying(false)
                                     .videoIsLoading(false)
                                     .videoIsFinished(false)
-                                    .videoError(null)
                                     .build();
                         case FAILURE:
                             return stateBuilder
@@ -178,7 +176,7 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                                     .videoIsPlaying(false)
                                     .videoIsLoading(false)
                                     .videoIsFinished(false)
-                                    .videoError(videoResult.error())
+                                    .error(videoResult.error())
                                     .build();
                         case PLAYING:
                             return stateBuilder
@@ -186,7 +184,6 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                                     .videoIsPlaying(true)
                                     .videoIsLoading(false)
                                     .videoIsFinished(false)
-                                    .videoError(null)
                                     .build();
                         case FINISHED:
                             return stateBuilder
@@ -194,7 +191,6 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                                     .videoIsPlaying(false)
                                     .videoIsLoading(false)
                                     .videoIsFinished(true)
-                                    .videoError(null)
                                     .build();
                     }
 

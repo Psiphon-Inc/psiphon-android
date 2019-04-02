@@ -89,7 +89,7 @@ public class RewardedVideoClient {
                             };
 
                         } else {
-                            emitter.onError(new RuntimeException("MoPub video failed, wrong ad unit id, expect: " + MOPUB_VIDEO_AD_UNIT_ID + ", got: " + adUnitId));
+                            emitter.onError(new PsiCashException.Video("MoPub video failed, wrong ad unit id, expect: " + MOPUB_VIDEO_AD_UNIT_ID + ", got: " + adUnitId));
                         }
                     }
                 }
@@ -97,19 +97,19 @@ public class RewardedVideoClient {
                 @Override
                 public void onRewardedVideoLoadFailure(@NonNull String adUnitId, @NonNull MoPubErrorCode errorCode) {
                     if (!emitter.isDisposed()) {
-                        emitter.onError(new RuntimeException("MoPub video failed with error: " + errorCode.toString()));
+                        emitter.onError(new PsiCashException.Video("MoPub video failed with error: " + errorCode.toString()));
                     }
                 }
 
                 @Override
-                public void onRewardedVideoStarted(String adUnitId) {
+                public void onRewardedVideoStarted(@NonNull String adUnitId) {
                     if (!emitter.isDisposed()) {
                         emitter.onNext(PsiCashModel.RewardedVideoState.playing());
                     }
                 }
 
                 @Override
-                public void onRewardedVideoPlaybackError(String adUnitId, MoPubErrorCode errorCode) {
+                public void onRewardedVideoPlaybackError(@NonNull String adUnitId, @NonNull MoPubErrorCode errorCode) {
                 }
 
                 @Override
@@ -124,7 +124,7 @@ public class RewardedVideoClient {
                 }
 
                 @Override
-                public void onRewardedVideoCompleted(Set<String> adUnitIds, @NonNull MoPubReward reward) {
+                public void onRewardedVideoCompleted(@NonNull Set<String> adUnitIds, @NonNull MoPubReward reward) {
                     // TODO We may reward in the onRewardedVideoClosed instead?
                     // since MoPub videos are not closeable
                     // check https://developers.mopub.com/docs/ui/apps/rewarded-server-side-setup/ for the web hook docs
@@ -163,7 +163,7 @@ public class RewardedVideoClient {
                 @Override
                 public void onRewardedVideoAdFailedToLoad(int errorCode) {
                     if (!emitter.isDisposed()) {
-                        emitter.onError(new RuntimeException("AdMob video ad failed with code: " + errorCode));
+                        emitter.onError(new PsiCashException.Video("AdMob video ad failed with code: " + errorCode));
                     }
                 }
 

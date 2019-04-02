@@ -44,10 +44,7 @@ public abstract class PsiCashViewState implements MviViewState {
     public abstract Date nextPurchaseExpiryDate();
 
     @Nullable
-    public abstract Throwable psiCashError();
-
-    @Nullable
-    public abstract Throwable videoError();
+    public abstract Throwable error();
 
     public abstract boolean videoIsLoading();
 
@@ -64,10 +61,9 @@ public abstract class PsiCashViewState implements MviViewState {
                 .uiBalance(0)
                 .purchasePrice(null)
                 .nextPurchaseExpiryDate(null)
-                .psiCashError(null)
+                .error(null)
                 .purchaseInFlight(false)
                 .animateOnNextBalanceChange(false)
-                .videoError(null)
                 .videoIsLoading(false)
                 .videoIsLoaded(false)
                 .videoIsPlaying(false)
@@ -79,7 +75,7 @@ public abstract class PsiCashViewState implements MviViewState {
     static abstract class Builder {
         abstract Builder uiBalance(int balance);
 
-        abstract Builder psiCashError(@Nullable Throwable error);
+        abstract Builder error(@Nullable Throwable error);
 
         abstract Builder purchasePrice(@Nullable PsiCashLib.PurchasePrice price);
 
@@ -96,8 +92,6 @@ public abstract class PsiCashViewState implements MviViewState {
         abstract Builder videoIsPlaying(boolean b);
 
         abstract Builder videoIsFinished(boolean b);
-
-        abstract Builder videoError(@Nullable Throwable error);
 
         abstract PsiCashViewState build();
     }
