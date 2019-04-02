@@ -30,7 +30,8 @@ ext {
     androidLifecycleExtensionsVersion = '1.1.1'
     autoValueVersion = '1.5.2'
     okhttpVersion = '3.12.1'
-    playServicesAdsVersion = '17.2.0'
+    // Do not update the playSevicesAdsVersion until there's a BOM fix!
+    playServicesAdsVersion = '17.1.3'
     mopubSdkVersion = '5.5.0'
     mopubMediationAdmobVersion = '15.0.0.8'
     adsConsentLibraryVersion = '1.0.7'

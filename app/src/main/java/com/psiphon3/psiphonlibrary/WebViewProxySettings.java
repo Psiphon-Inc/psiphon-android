@@ -28,6 +28,7 @@ import android.os.Build;
 import android.os.Parcelable;
 import android.util.ArrayMap;
 
+import com.psiphon3.PsiphonApplication;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import org.apache.http.HttpHost;
@@ -44,9 +45,8 @@ public class WebViewProxySettings
     private static boolean mIsLocalProxySet = false;
     private static boolean mIsInitialized = false;
     private static List<Object> mReceiversList;
-    private static List<Object> mExcludedReceiversList;
 
-    public static boolean isLocalProxySet() {return mIsLocalProxySet;}
+    static boolean isLocalProxySet() {return mIsLocalProxySet;}
 
 
     private static List<Object> getCurrentReceiversSet(Context ctx) {
@@ -100,12 +100,11 @@ public class WebViewProxySettings
         mReceiversList.addAll(getCurrentReceiversSet(ctx));
     }
 
-    public static void excludeReceivers(Context ctx) {
-        mExcludedReceiversList = new ArrayList<>();
-        mExcludedReceiversList.addAll(getCurrentReceiversSet(ctx));
+    public static List<Object> getReceivers(Context ctx) {
+        return getCurrentReceiversSet(ctx);
     }
 
-    public static void resetLocalProxy(Context ctx)
+    static void resetLocalProxy(Context ctx)
     {
         UpstreamProxySettings.ProxySettings systemProxySettings = UpstreamProxySettings.getOriginalSystemProxySettings(ctx);
         if (systemProxySettings == null) {
@@ -139,7 +138,7 @@ public class WebViewProxySettings
     Orweb has always been doing an explicit version check, and it seems to work,
     so we're so going to switch to that approach.
     */
-    public static boolean setProxy (Context ctx, String host, int port)
+    private static boolean setProxy(Context ctx, String host, int port)
     {
         if (!mIsInitialized) {
             throw new IllegalStateException("Attempting to set WebView proxy before WebViewProxySettings is initialized.");
@@ -335,10 +334,9 @@ public class WebViewProxySettings
         try {
             for (Object receiver : getCurrentReceiversSet(appContext))
             {
-                // Check if receiver object is in the list of
-                // receivers names we stored during initialization
-                // and also not in the exclusion list.
-                if (!mReceiversList.contains(receiver) || mExcludedReceiversList.contains(receiver)) {
+                // Check if receiver object is in the list of receivers names we stored during
+                // initialization and also not in the exclusion list we got at the app creation.
+                if (!mReceiversList.contains(receiver) || PsiphonApplication.getExcludedReceivers().contains(receiver)) {
                     continue;
                 }
 

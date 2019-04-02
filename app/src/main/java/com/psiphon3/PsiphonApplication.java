@@ -24,11 +24,20 @@ import android.app.Application;
 
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PsiphonApplication extends Application {
+    private static List<Object> excludedReceivers = new ArrayList<>();
+
     @Override
     public void onCreate() {
-	// Build a list of receivers to be excluded from sending a proxy change intent
-        WebViewProxySettings.excludeReceivers(this);
+        // Build a list of receivers to be excluded from sending a proxy change intent
+        excludedReceivers = WebViewProxySettings.getReceivers(this);
         super.onCreate();
+    }
+
+    public static List<Object> getExcludedReceivers() {
+        return excludedReceivers;
     }
 }
