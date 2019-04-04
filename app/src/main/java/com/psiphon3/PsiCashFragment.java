@@ -449,7 +449,10 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                         psiCashChargeProgressTextView.setBackgroundDrawable(d);
                     }
 
-                    psiCashChargeProgressTextView.setText(String.format(Locale.US, getString(R.string.charging_speed_boost_percents_label), chargePercentage));
+                    psiCashChargeProgressTextView.setText(String.format(Locale.US , "%s %d%%",
+                            getString(R.string.charging_speed_boost_percents_label),
+                            chargePercentage));
+
                     psiCashLayout.setOnTouchListener((view, motionEvent) -> {
                         ObjectAnimator
                                 .ofFloat(view, "translationX", 0, 25, -25, 25, -25,15, -15, 6, -6, 0)

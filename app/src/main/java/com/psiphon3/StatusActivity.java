@@ -353,11 +353,6 @@ public class StatusActivity
                 PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    protected void doToggle()
-    {
-        super.doToggle();
-    }
-
     @Override
     public void onTabChanged(String tabId) {
         if(mayTriggerInterstitial(tabId)) {
