@@ -98,6 +98,7 @@ public class StatusActivity
 
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
+    private boolean m_preloadUntunneledInterstitial = true;
     private AdView m_adMobUntunneledBannerAdView = null;
     private InterstitialAd m_adMobUntunneledInterstitial = null;
     private boolean m_adMobUntunneledInterstitialFailed = false;
@@ -180,6 +181,9 @@ public class StatusActivity
     @Override
     protected void onResume()
     {
+        // Preload untunneled interstitials if the user leaves and returns to the activity
+        m_preloadUntunneledInterstitial = true;
+
         // Don't miss a chance to get personalized ads consent if user hasn't set it yet.
         mAdsConsentInitialized = false;
 
@@ -332,6 +336,9 @@ public class StatusActivity
 
     @Override
     protected void onTunnelDisconnected() {
+        // The user pressed stop. Don't preload another interstitial because it's likely the user is done.
+        m_preloadUntunneledInterstitial = false;
+
         deInitTunneledAds();
     }
 
@@ -1227,7 +1234,7 @@ public class StatusActivity
                 MobileAds.initialize(context, ADMOB_APP_ID);
                 initUntunneledBanner();
 
-                if (m_adMobUntunneledInterstitial == null)
+                if (m_adMobUntunneledInterstitial == null && m_preloadUntunneledInterstitial)
                 {
                     loadUntunneledFullScreenAd();
                 }
@@ -1344,6 +1351,11 @@ public class StatusActivity
                 }
                 m_adMobUntunneledInterstitialShowWhenLoaded = true;
             }
+        }
+        else
+        {
+            loadUntunneledFullScreenAd();
+            m_adMobUntunneledInterstitialShowWhenLoaded = true;
         }
     }
 
