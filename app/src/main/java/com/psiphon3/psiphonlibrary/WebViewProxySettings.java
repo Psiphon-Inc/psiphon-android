@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, Psiphon Inc.
+ *
+ * Copyright (c) 2019, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,6 +28,7 @@ import android.os.Build;
 import android.os.Parcelable;
 import android.util.ArrayMap;
 
+import com.psiphon3.PsiphonApplication;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import org.apache.http.HttpHost;
@@ -42,9 +44,9 @@ public class WebViewProxySettings
 {
     private static boolean mIsLocalProxySet = false;
     private static boolean mIsInitialized = false;
-    private static List<String> mReceiversList;
+    private static List<Object> mReceiversList;
 
-    public static boolean isLocalProxySet() {return mIsLocalProxySet;}
+    static boolean isLocalProxySet() {return mIsLocalProxySet;}
 
 
     private static List<Object> getCurrentReceiversSet(Context ctx) {
@@ -95,14 +97,14 @@ public class WebViewProxySettings
 
         mIsInitialized = true;
         mReceiversList = new ArrayList<>();
-
-        for (Object receiver : getCurrentReceiversSet(ctx)) {
-            mReceiversList.add(receiver.getClass().getName());
-        }
-
+        mReceiversList.addAll(getCurrentReceiversSet(ctx));
     }
 
-    public static void resetLocalProxy(Context ctx)
+    public static List<Object> getReceivers(Context ctx) {
+        return getCurrentReceiversSet(ctx);
+    }
+
+    static void resetLocalProxy(Context ctx)
     {
         UpstreamProxySettings.ProxySettings systemProxySettings = UpstreamProxySettings.getOriginalSystemProxySettings(ctx);
         if (systemProxySettings == null) {
@@ -136,10 +138,10 @@ public class WebViewProxySettings
     Orweb has always been doing an explicit version check, and it seems to work,
     so we're so going to switch to that approach.
     */
-    public static boolean setProxy (Context ctx, String host, int port)
+    private static boolean setProxy(Context ctx, String host, int port)
     {
         if (!mIsInitialized) {
-            throw new AssertionError("Assertion error: WebViewProxySettings is not initialized!");
+            throw new IllegalStateException("Attempting to set WebView proxy before WebViewProxySettings is initialized.");
         }
 
         UpstreamProxySettings.saveSystemProxySettings(ctx);
@@ -332,18 +334,16 @@ public class WebViewProxySettings
         try {
             for (Object receiver : getCurrentReceiversSet(appContext))
             {
-                Class clazz = receiver.getClass();
-
-                // Check if receiver class name is in the list of
-                // receivers names we stored during initialization
-                if (!mReceiversList.contains(clazz.getName())) {
+                // Check if receiver object is in the list of receivers names we stored during
+                // initialization and also not in the exclusion list we got at the app creation.
+                if (!mReceiversList.contains(receiver) || PsiphonApplication.getExcludedReceivers().contains(receiver)) {
                     continue;
                 }
 
                 // NOTE: as of Chrome 67 the ProxyChangeListener now has an obfuscated name,
                 // so we are unable to identify the receiver by name. Instead we'll send the
                 // PROXY_CHANGE intent to all receivers.
-                Method onReceiveMethod = clazz.getDeclaredMethod("onReceive", Context.class, Intent.class);
+                Method onReceiveMethod = receiver.getClass().getDeclaredMethod("onReceive", Context.class, Intent.class);
                 Intent intent = new Intent(Proxy.PROXY_CHANGE_ACTION);
 
                 final String CLASS_NAME = "android.net.ProxyInfo";

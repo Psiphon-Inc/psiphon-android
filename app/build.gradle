@@ -22,6 +22,8 @@ android {
         if (props != null && props.containsKey('VERSION_CODE')) {
             def verName = props['VERSION_CODE']
             def verCode = verName.toInteger()
+            def admobAppId = getBuildProperty('ADMOB_APP_ID').replaceAll('^\"|\"$', "")
+
             defaultConfig {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
                 applicationId "com.psiphon3.subscription"
@@ -31,6 +33,8 @@ android {
                 versionCode verCode
                 versionName verName
                 testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+                multiDexEnabled true
+                manifestPlaceholders = [ admobAppId:admobAppId ]
             }
         } else {
             throw new GradleException('version.properties found but entries are missing')
@@ -87,6 +91,7 @@ android {
     buildTypes.each {
         it.buildConfigField 'String', 'SUBSCRIPTION_SPONSOR_ID', getBuildProperty('SUBSCRIPTION_SPONSOR_ID')
         it.buildConfigField 'String', 'IAB_PUBLIC_KEY', getBuildProperty('IAB_PUBLIC_KEY')
+        it.buildConfigField 'String', 'ADMOB_APP_ID', getBuildProperty('ADMOB_APP_ID')
     }
 }
 
@@ -111,25 +116,46 @@ repositories {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation files('libs/jackson-core-2.2.0.jar')
     implementation files('libs/achartengine-1.0.0.jar')
     implementation files('libs/snakeyaml-1.10-android.jar')
     implementation(name: 'ca.psiphon', ext: 'aar')
+
     implementation project(':tray')
-    implementation('com.mopub:mopub-sdk-banner:5.2.0@aar') {
+
+    implementation(name: 'psicashlib-release', ext: 'aar')
+
+    implementation "com.android.support:multidex:$rootProject.ext.multidexVersion"
+    implementation "com.android.support:appcompat-v7:$rootProject.ext.androidSupportLibraryVersion"
+    implementation "com.android.support:cardview-v7:$rootProject.ext.androidSupportLibraryVersion"
+    implementation "com.android.support:design:$rootProject.ext.androidSupportLibraryVersion"
+    implementation "com.android.support.constraint:constraint-layout:$rootProject.ext.constraintLayoutVersion"
+
+    implementation("com.mopub:mopub-sdk-banner:$rootProject.ext.mopubSdkVersion@aar") {
         transitive = true
     }
-    implementation('com.mopub:mopub-sdk-interstitial:5.2.0@aar') {
+    implementation("com.mopub:mopub-sdk-interstitial:$rootProject.ext.mopubSdkVersion@aar") {
         transitive = true
     }
-    implementation 'com.google.android.gms:play-services-ads:15.0.1'
-    implementation 'com.android.support:cardview-v7:26.1.0'
-    implementation 'com.google.android.ads.consent:consent-library:1.0.7'
-    implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
-    implementation 'io.reactivex.rxjava2:rxjava:2.2.0'
-    implementation 'com.squareup.okhttp3:okhttp:3.11.0'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:0.5'
+    // MoPub rewarded videos. This will automatically also include interstitials
+    implementation("com.mopub:mopub-sdk-rewardedvideo:$rootProject.ext.mopubSdkVersion@aar") {
+        transitive = true
+    }
+
+    implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
+    implementation "com.google.android.ads.consent:consent-library:$rootProject.ext.adsConsentLibraryVersion"
+
+    implementation "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxandroidVersion"
+    implementation "io.reactivex.rxjava2:rxjava:$rootProject.ext.rxjavaVersion"
+    implementation "com.jakewharton.rxrelay2:rxrelay:$rootProject.ext.rxrelayVersion"
+    implementation "com.jakewharton.rxbinding2:rxbinding-support-v4:$rootProject.ext.rxbindingSupportVersion"
+    implementation "com.squareup.okhttp3:okhttp:$rootProject.ext.okhttpVersion"
+
+    api "android.arch.lifecycle:extensions:$rootProject.ext.androidLifecycleExtensionsVersion"
+
+    compileOnly "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
+    annotationProcessor "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
+
+    testImplementation "junit:junit:$rootProject.ext.junitVersion"
+    androidTestImplementation "com.android.support.test:runner:$rootProject.ext.testRunnerVersion"
 }

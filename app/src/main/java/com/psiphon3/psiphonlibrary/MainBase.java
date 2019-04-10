@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Psiphon Inc.
+ *
+ * Copyright (c) 2019, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -38,8 +39,9 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.OvalShape;
 import android.net.Uri;
 import android.net.VpnService;
 import android.os.Build;
@@ -50,10 +52,12 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.text.TextUtilsCompat;
+import android.support.v4.view.ViewCompat;
 import android.text.TextUtils;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -61,6 +65,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
@@ -74,10 +79,13 @@ import android.webkit.WebViewClient;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
@@ -86,6 +94,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
+import com.jakewharton.rxrelay2.BehaviorRelay;
+import com.psiphon3.psicash.PsiCashClient;
+import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.R;
@@ -111,6 +122,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 public abstract class MainBase {
     public static abstract class Activity extends LocalizedActivities.AppCompatActivity implements MyLog.ILogger {
@@ -154,6 +169,13 @@ public abstract class MainBase {
         protected static final int REQUEST_CODE_PREFERENCE = 101;
         protected static final int REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 102;
 
+        public static final String HOME_TAB_TAG = "home_tab_tag";
+        public static final String PSICASH_TAB_TAG = "psicash_tab_tag";
+        public static final String STATISTICS_TAB_TAG = "statistics_tab_tag";
+        public static final String SETTINGS_TAB_TAG = "settings_tab_tag";
+        public static final String LOGS_TAB_TAG = "logs_tab_tag";
+
+
         protected static boolean m_firstRun = true;
         private boolean m_canWholeDevice = false;
 
@@ -167,8 +189,6 @@ public abstract class MainBase {
         private SponsorHomePage m_sponsorHomePage;
         private LocalBroadcastManager m_localBroadcastManager;
         private Timer m_updateStatisticsUITimer;
-        private Timer m_updateServiceStateUITimer;
-        private boolean m_restartTunnel = false;
         private TextView m_elapsedConnectionTimeView;
         private TextView m_totalSentView;
         private TextView m_totalReceivedView;
@@ -184,11 +204,15 @@ public abstract class MainBase {
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
         private LoggingObserver m_loggingObserver;
-        private boolean m_serviceStateUIPaused = false;
+
+        protected boolean isAppInForeground;
 
         // This fragment helps retain data across configuration changes
         protected RetainedDataFragment m_retainedDataFragment;
         private static final String TAG_RETAINED_DATA_FRAGMENT = "com.psiphon3.RetainedDataFragment";
+
+        private BehaviorRelay<ServiceConnectionStatus> serviceConnectionStatusBehaviorRelay = BehaviorRelay.create();
+        private Disposable restartServiceDisposable = null;
 
         public static class RetainedDataFragment extends Fragment {
             private final Map<String, Map<Class<?>, Object>> internalMap = new HashMap<>();
@@ -301,6 +325,7 @@ public abstract class MainBase {
         // http://danielkvist.net/code/animated-tabhost-with-slide-gesture-in-android
         private static final int ANIMATION_TIME = 240;
         protected TabHost m_tabHost;
+        protected List<TabSpec> m_tabSpecsList;
         private int m_currentTab;
         private View m_previousView;
         private View m_currentView;
@@ -503,26 +528,19 @@ public abstract class MainBase {
             // Set up tabs
             m_tabHost.setup();
 
-            TabSpec homeTab = m_tabHost.newTabSpec("home");
-            homeTab.setContent(R.id.sponsorViewFlipper);
-            homeTab.setIndicator(getText(R.string.home_tab_name));
+            m_tabSpecsList.clear();
+            m_tabSpecsList.add(0, m_tabHost.newTabSpec(HOME_TAB_TAG).setContent(R.id.homeTab).setIndicator(getText(R.string.home_tab_name)));
+            m_tabSpecsList.add(1, m_tabHost.newTabSpec(PSICASH_TAB_TAG).setContent(R.id.psicashTab).setIndicator(getText(R.string.psicash_tab_name)));
+            m_tabSpecsList.add(2, m_tabHost.newTabSpec(STATISTICS_TAB_TAG).setContent(R.id.statisticsView).setIndicator(getText(R.string.statistics_tab_name)));
+            m_tabSpecsList.add(3, m_tabHost.newTabSpec(SETTINGS_TAB_TAG).setContent(R.id.settingsView).setIndicator(getText(R.string.settings_tab_name)));
+            m_tabSpecsList.add(4, m_tabHost.newTabSpec(LOGS_TAB_TAG).setContent(R.id.logsTab).setIndicator(getText(R.string.logs_tab_name)));
 
-            TabSpec statisticsTab = m_tabHost.newTabSpec("statistics");
-            statisticsTab.setContent(R.id.statisticsView);
-            statisticsTab.setIndicator(getText(R.string.statistics_tab_name));
+            for (TabSpec tabSpec : m_tabSpecsList) {
+                m_tabHost.addTab(tabSpec);
+            }
 
-            TabSpec settingsTab = m_tabHost.newTabSpec("settings");
-            settingsTab.setContent(R.id.settingsView);
-            settingsTab.setIndicator(getText(R.string.settings_tab_name));
-
-            TabSpec logsTab = m_tabHost.newTabSpec("logs");
-            logsTab.setContent(R.id.logsTab);
-            logsTab.setIndicator(getText(R.string.logs_tab_name));
-
-            m_tabHost.addTab(homeTab);
-            m_tabHost.addTab(statisticsTab);
-            m_tabHost.addTab(settingsTab);
-            m_tabHost.addTab(logsTab);
+            LinearLayout psiCashTabLayout = (LinearLayout) m_tabHost.getTabWidget().getChildTabViewAt(1);
+            decorateWithRedDot(psiCashTabLayout);
 
             m_gestureDetector = new GestureDetector(this, new LateralGestureDetector());
             OnTouchListener onTouchListener = new OnTouchListener() {
@@ -548,13 +566,16 @@ public abstract class MainBase {
             findViewById(R.id.tunnelWholeDeviceToggle).setOnTouchListener(onTouchListener);
             findViewById(R.id.feedbackButton).setOnTouchListener(onTouchListener);
             findViewById(R.id.aboutButton).setOnTouchListener(onTouchListener);
+            findViewById(R.id.psicashTab).setOnTouchListener(onTouchListener);
             ListView statusListView = (ListView) findViewById(R.id.statusList);
             statusListView.setOnTouchListener(onTouchListener);
 
-            m_tabHost.setOnTabChangedListener(this);
-
             int currentTab = m_multiProcessPreferences.getInt(CURRENT_TAB, 0);
             m_tabHost.setCurrentTab(currentTab);
+
+            // Set TabChangedListener after restoring last tab to avoid triggering an interstitial,
+            // we only want interstitial to be triggered by user actions
+            m_tabHost.setOnTabChangedListener(this);
 
             m_sponsorViewFlipper = (ViewFlipper) findViewById(R.id.sponsorViewFlipper);
             m_sponsorViewFlipper.setInAnimation(AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left));
@@ -581,8 +602,6 @@ public abstract class MainBase {
 
             m_localBroadcastManager = LocalBroadcastManager.getInstance(this);
             m_localBroadcastManager.registerReceiver(new StatusEntryAdded(), new IntentFilter(STATUS_ENTRY_AVAILABLE));
-
-            updateServiceStateUI();
 
             m_regionAdapter = new RegionAdapter(this);
             m_regionSelector.setAdapter(m_regionAdapter);
@@ -638,13 +657,76 @@ public abstract class MainBase {
             LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
         }
 
+        private void decorateWithRedDot(LinearLayout psiCashTabLayout) {
+            // Get parent and index of the current tab layout. We will need the index later when we
+            // wrap and replace the original layout with a wrapper layout.
+            ViewGroup parent = (ViewGroup) psiCashTabLayout.getParent();
+            final int index = parent.indexOfChild(psiCashTabLayout);
+
+            LinearLayout linearLayout = new LinearLayout(this);
+            linearLayout.setLayoutParams(psiCashTabLayout.getLayoutParams());
+
+            // Remove the tab layout from parent tab widget.
+            parent.removeView(psiCashTabLayout);
+            // Add a new linear layout in place of original one.
+            parent.addView(linearLayout, index);
+
+            // Create a new relative layout to wrap old layout.
+            RelativeLayout wrapperRelativeLayout = new RelativeLayout(this);
+            RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+            wrapperRelativeLayout.addView(psiCashTabLayout, lp);
+
+            // Add wrapper relative layout to the top tab linear layout.
+            linearLayout.addView(wrapperRelativeLayout);
+
+            // Create a frame layout which will hold a red dot image view.
+            FrameLayout redDotLayout= new FrameLayout(this);
+            FrameLayout.LayoutParams flp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+            redDotLayout.setLayoutParams(flp);
+
+            // Get original tab layout side padding, since it is centered
+            // we assume left padding == right padding.
+            int paddingSide = psiCashTabLayout.getPaddingLeft();
+
+            // Create the red dot image and add it to the holder frame layout
+            int redDotSize = paddingSide / 3;
+            ImageView redDotImage = new ImageView(getContext());
+            ShapeDrawable badge = new ShapeDrawable(new OvalShape());
+            badge.setIntrinsicWidth(redDotSize);
+            badge.setIntrinsicHeight(redDotSize);
+            badge.getPaint().setColor(Color.RED);
+            redDotImage.setImageDrawable(badge);
+            redDotImage.setLayoutParams(new LinearLayout.LayoutParams(redDotSize, redDotSize));
+            redDotLayout.addView(redDotImage);
+
+            // Position and add the red dot layout to the wrapper layout
+            lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+            lp.addRule(RelativeLayout.CENTER_VERTICAL);
+
+            psiCashTabLayout.setId(R.id.psicash_tab_layout_id);
+
+            // Calculate side margin of the red dot holder layout.
+            int redDotMargin = - (paddingSide + redDotSize) / 2;
+
+            boolean isRtl = ViewCompat.LAYOUT_DIRECTION_RTL == TextUtilsCompat.getLayoutDirectionFromLocale(getResources().getConfiguration().locale);
+            if (isRtl) {
+                lp.addRule(RelativeLayout.LEFT_OF, psiCashTabLayout.getId());
+                lp.rightMargin = redDotMargin;
+            } else {
+                lp.addRule(RelativeLayout.RIGHT_OF, psiCashTabLayout.getId());
+                lp.leftMargin = redDotMargin;
+            }
+            redDotLayout.setLayoutParams(lp);
+            wrapperRelativeLayout.addView(redDotLayout, lp);
+        }
+
         /**
          * Show the sponsor home page, either in the embedded view web view or
          * in the external browser.
          *
          * @param freshConnect If false, the home page will not be opened in an external
-         *                     browser. This is to prevent the page from opening every
-         *                     time the activity is created.
+         * browser. This is to prevent the page from opening every
+         * time the activity is created.
          */
         protected void resetSponsorHomePage(boolean freshConnect) {
             if (getSkipHomePage()) {
@@ -674,6 +756,8 @@ public abstract class MainBase {
         @Override
         protected void onResume() {
             super.onResume();
+
+            isAppInForeground = true;
             
             // Load new logs from the logging provider now
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -699,33 +783,15 @@ public abstract class MainBase {
                 }
             }, 0, 1000);
 
-            m_updateServiceStateUITimer = new Timer();
-            m_updateServiceStateUITimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            updateServiceStateUI();
-                            checkRestartTunnel();
-                        }
-                    });
-                }
-            }, 0, 250);
-
             // Don't show the keyboard until edit selected
             getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
-            // Set to foreground before binding to the service. Otherwise there would be a short
-            // period of time where we could miss a handshake intent after getting the
-            // tunnel state from registering with the service.
-            m_multiProcessPreferences.put(getString(R.string.status_activity_foreground), true);
-
             if (isServiceRunning()) {
+                updateServiceStateUI(null);
                 startAndBindTunnelService();
             } else {
                 // reset the tunnel state
-                m_tunnelState = new TunnelManager.State();
+                onTunnelConnectionState(new TunnelManager.State());
             }
         }
 
@@ -733,16 +799,16 @@ public abstract class MainBase {
         protected void onPause() {
             super.onPause();
 
+            isAppInForeground = false;
+
             getContentResolver().unregisterContentObserver(m_loggingObserver);
 
             cancelInvalidProxySettingsToast();
 
             m_updateStatisticsUITimer.cancel();
-            m_updateServiceStateUITimer.cancel();
 
             unbindTunnelService();
-
-            m_multiProcessPreferences.put(getString(R.string.status_activity_foreground), false);
+            updateServiceStateUI(null);
         }
 
         protected void doToggle() {
@@ -959,49 +1025,26 @@ public abstract class MainBase {
             }
         }
 
-        private void updateServiceStateUI() {
-            if (m_serviceStateUIPaused) {
-                return;
-            }
-
-            if (!m_boundToTunnelService) {
+        protected void updateServiceStateUI(TunnelManager.State state) {
+            if(state == null) {
                 setStatusState(R.drawable.status_icon_disconnected);
-                if (!isServiceRunning()) {
-                    m_toggleButton.setText(getText(R.string.start));
-                    enableToggleServiceUI();
-                    updateSubscriptionAndAdOptions(true);
-                
-                    if (WebViewProxySettings.isLocalProxySet()) {
-                        WebViewProxySettings.resetLocalProxy(this);
-                    }
-                } else {
-                    m_toggleButton.setText(getText(R.string.waiting));
-                    disableToggleServiceUI();
-                    updateSubscriptionAndAdOptions(false);
-                
-                    if (WebViewProxySettings.isLocalProxySet()) {
-                        WebViewProxySettings.resetLocalProxy(this);
-                    }
-                }
+                disableToggleServiceUI();
+            } else if(!state.isRunning) {
+                setStatusState(R.drawable.status_icon_disconnected);
+                enableToggleServiceUI(R.string.start);
             } else {
-                if (isTunnelConnected()) {
+                if(state.isConnected) {
                     setStatusState(R.drawable.status_icon_connected);
+                    enableToggleServiceUI(R.string.stop);
                 } else {
                     setStatusState(R.drawable.status_icon_connecting);
+                    enableToggleServiceUI(R.string.stop);
                 }
-                m_toggleButton.setText(getText(R.string.stop));
-                enableToggleServiceUI();
-                updateSubscriptionAndAdOptions(false);
             }
-
-            updateAdsForServiceState();
         }
 
-        protected abstract void updateAdsForServiceState();
-
-        protected abstract void updateSubscriptionAndAdOptions(boolean show);
-
-        protected void enableToggleServiceUI() {
+        protected void enableToggleServiceUI(int resId) {
+            m_toggleButton.setText(getText(resId));
             m_toggleButton.setEnabled(true);
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
             m_disableTimeoutsToggle.setEnabled(true);
@@ -1010,38 +1053,33 @@ public abstract class MainBase {
         }
 
         protected void disableToggleServiceUI() {
+            m_toggleButton.setText(getText(R.string.waiting));
             m_toggleButton.setEnabled(false);
             m_tunnelWholeDeviceToggle.setEnabled(false);
             m_disableTimeoutsToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
             m_moreOptionsButton.setEnabled(false);
         }
-        
-        protected void pauseServiceStateUI() {
-            m_serviceStateUIPaused = true;
-            disableToggleServiceUI();
-        }
-
-        protected void resumeServiceStateUI() {
-            m_serviceStateUIPaused = false;
-            updateServiceStateUI();
-        }
-
-        private void checkRestartTunnel() {
-            if (m_restartTunnel &&
-                    !m_boundToTunnelService &&
-                    !isServiceRunning()) {
-                m_restartTunnel = false;
-                startTunnel();
-            }
-        }
 
         protected void scheduleRunningTunnelServiceRestart() {
-            if (isServiceRunning()) {
-                m_restartTunnel = true;
-                stopTunnelService();
-                // The tunnel will get restarted in m_updateServiceStateTimer
+            if(restartServiceDisposable != null && !restartServiceDisposable.isDisposed()) {
+                // call in progress, do nothing
+                return;
             }
+            if (isServiceRunning()) {
+                stopTunnelService();
+                // start observing service connection for disconnected message
+                restartServiceDisposable = serviceConnectionObservable()
+                        .observeOn(Schedulers.computation())
+                        .filter(s -> s.equals(ServiceConnectionStatus.SERVICE_DISCONNECTED))
+                        .take(1)
+                        .doOnComplete(() -> runOnUiThread(this::startTunnel))
+                        .subscribe();
+            }
+        }
+
+        private Observable <ServiceConnectionStatus> serviceConnectionObservable() {
+            return serviceConnectionStatusBehaviorRelay.hide();
         }
 
         protected void startTunnel() {
@@ -1430,7 +1468,6 @@ public abstract class MainBase {
         }
 
         protected void startAndBindTunnelService() {
-
             // Disable service-toggling controls while service is starting up
             // (i.e., while isServiceRunning can't be relied upon)
             disableToggleServiceUI();
@@ -1458,7 +1495,15 @@ public abstract class MainBase {
                     }
                 }
              */
-            ContextCompat.startForegroundService(this, intent);
+            // On API >= 26 a service will get started even when the app is in the background
+            // as long as the service calls its startForeground() within a reasonable amount of time.
+            // On API < 26 the call may throw IllegalStateException in case the app is in the state
+            // when services are not allowed, such as not in foreground
+            try {
+                ContextCompat.startForegroundService(this, intent);
+            } catch(IllegalStateException e) {
+                // do nothing
+            }
 
             if (bindService(intent, m_tunnelServiceConnection, 0)) {
                 m_boundToTunnelService = true;
@@ -1471,15 +1516,28 @@ public abstract class MainBase {
 
         // Shared tunnel state, received from service in the HANDSHAKE
         // intent and in various state-related Messages.
-        private TunnelManager.State m_tunnelState = new TunnelManager.State();
+        protected TunnelManager.State m_tunnelState;
 
         protected boolean isTunnelConnected() {
-            return m_tunnelState.isConnected;
+            return m_tunnelState != null && m_tunnelState.isConnected;
         }
 
         protected ArrayList<String> getHomePages() {
             ArrayList<String> homePages = new ArrayList<>();
-            homePages.addAll(m_tunnelState.homePages);
+            try {
+                PsiCashClient psiCashClient = PsiCashClient.getInstance(getContext());
+                if (psiCashClient.hasValidTokens()) {
+                    for (String homePageUrl : m_tunnelState.homePages) {
+                        homePages.add(PsiCashClient.getInstance(getContext()).modifiedHomePageURL(homePageUrl));
+                    }
+                } else {
+                    homePages.addAll(m_tunnelState.homePages);
+                }
+            } catch (PsiCashException e) {
+                MyLog.g("Error modifying home pages: " + e);
+                homePages.clear();
+                homePages.addAll(m_tunnelState.homePages);
+            }
             return homePages;
         }
 
@@ -1491,35 +1549,24 @@ public abstract class MainBase {
             return m_tunnelState.clientRegion;
         }
 
-        protected void getTunnelStateFromHandshakeIntent(Intent intent) {
-            if (!intent.getAction().equals(TunnelManager.INTENT_ACTION_HANDSHAKE)) {
-                return;
-            }
-            getTunnelStateFromBundle(intent.getExtras());
-        }
-
-        private void getTunnelStateFromBundle(Bundle data) {
+        @NonNull
+        protected TunnelManager.State getTunnelStateFromBundle(Bundle data) {
+            TunnelManager.State tunnelState = new TunnelManager.State();
             if (data == null) {
-                return;
+                return tunnelState;
             }
-            m_tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
-            if (m_tunnelState.isConnected) {
-                setStatusState(R.drawable.status_icon_connected);
-            } else {
-                setStatusState(R.drawable.status_icon_connecting);
-            }
-            m_tunnelState.listeningLocalSocksProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT);
-            m_tunnelState.listeningLocalHttpProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT);
-            m_tunnelState.clientRegion = data.getString(TunnelManager.DATA_TUNNEL_STATE_CLIENT_REGION);
+            tunnelState.isRunning = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_RUNNING);
+            tunnelState.isVPN = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_VPN);
+            tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
+            tunnelState.listeningLocalSocksProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT);
+            tunnelState.listeningLocalHttpProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT);
+            tunnelState.clientRegion = data.getString(TunnelManager.DATA_TUNNEL_STATE_CLIENT_REGION);
+            tunnelState.sponsorId = data.getString(TunnelManager.DATA_TUNNEL_STATE_SPONSOR_ID);
             ArrayList<String> homePages = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_HOME_PAGES);
-            if (homePages != null) {
-                m_tunnelState.homePages = homePages;
+            if (homePages != null && tunnelState.isConnected) {
+                tunnelState.homePages = homePages;
             }
-            onTunnelStateReceived();
-        }
-
-        protected void onTunnelStateReceived() {
-            // do nothing
+            return tunnelState;
         }
 
         private void getDataTransferStatsFromBundle(Bundle data) {
@@ -1547,51 +1594,41 @@ public abstract class MainBase {
             @Override
             public void handleMessage(Message msg) {
                 Bundle data = msg.getData();
+                // Only MSG_TUNNEL_CONNECTION_STATE has a tunnel state data bundle
                 switch (msg.what) {
-                    case TunnelManager.MSG_REGISTER_RESPONSE:
-                        getTunnelStateFromBundle(data);
-                        // An activity created while the service is already running will learn
-                        // the sponsor home page at this point, so now load it.
-                        restoreSponsorTab();
-                        updateServiceStateUI();
-                        break;
-
                     case TunnelManager.MSG_KNOWN_SERVER_REGIONS:
                         m_regionAdapter.updateRegionsFromPreferences();
                         // Make sure we preserve the selection in case the dataset has changed
                         m_regionSelector.setSelectionByValue(m_tunnelConfig.egressRegion);
                         break;
 
-                    case TunnelManager.MSG_TUNNEL_STARTING:
-                        m_tunnelState.isConnected = false;
-                        updateServiceStateUI();
-                        break;
-
-                    case TunnelManager.MSG_TUNNEL_STOPPING:
-                        m_tunnelState.isConnected = false;
-                        onTunnelDisconnected();
-
-                        // When the tunnel self-stops, we also need to unbind to ensure
-                        // the service is destroyed
-                        unbindTunnelService();
-                        break;
-
                     case TunnelManager.MSG_TUNNEL_CONNECTION_STATE:
-                        m_tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
-                        if (!m_tunnelState.isConnected) {
-                            onTunnelDisconnected();
-                        }
-                        updateServiceStateUI();
+                        TunnelManager.State state = getTunnelStateFromBundle(data);
+                        onTunnelConnectionState(state);
+
+                        // An activity created needs to load a sponsor the tab when tunnel connects
+                        // once per its lifecycle. Both conditions are taken care of inside
+                        // of restoreSponsorTab function
+                        restoreSponsorTab();
                         break;
 
                     case TunnelManager.MSG_DATA_TRANSFER_STATS:
                         getDataTransferStatsFromBundle(data);
                         break;
 
+                    case TunnelManager.MSG_AUTHORIZATIONS_REMOVED:
+                        onAuthorizationsRemoved();
+                        break;
+
                     default:
                         super.handleMessage(msg);
                 }
             }
+        }
+
+        protected void onAuthorizationsRemoved() {
+            final AppPreferences mp = new AppPreferences(getContext());
+            mp.put(this.getString(R.string.persistentAuthorizationsRemovedFlag), false);
         }
 
         private void sendServiceMessage(int what) {
@@ -1625,13 +1662,14 @@ public abstract class MainBase {
                     }
                     m_queue.clear();
                 }
-                updateServiceStateUI();
+                serviceConnectionStatusBehaviorRelay.accept(ServiceConnectionStatus.SERVICE_CONNECTED);
             }
 
             @Override
             public void onServiceDisconnected(ComponentName arg0) {
                 m_outgoingMessenger = null;
-                unbindTunnelService();
+                serviceConnectionStatusBehaviorRelay.accept(ServiceConnectionStatus.SERVICE_DISCONNECTED);
+                onTunnelConnectionState(new TunnelManager.State());
             }
         };
 
@@ -1656,11 +1694,25 @@ public abstract class MainBase {
                     // "java.lang.IllegalArgumentException: Service not registered"
                 }
             }
-            updateServiceStateUI();
         }
 
-        protected void onTunnelDisconnected() {
-            // do nothing
+        protected void onTunnelConnectionState(@NonNull TunnelManager.State state) {
+            // make sure WebView proxy settings are up to date
+            // Set WebView proxy only if we are connected and not in WD mode.
+            if (state.isConnected && !state.isVPN) {
+                WebViewProxySettings.setLocalProxy(this, state.listeningLocalHttpProxyPort);
+            }
+
+            // We are not running
+            // reset WebView proxy if it has been previously set.
+            if(!state.isRunning)
+            {
+                if (WebViewProxySettings.isLocalProxySet()){
+                    WebViewProxySettings.resetLocalProxy(this);
+                }
+            }
+            m_tunnelState = state;
+            updateServiceStateUI(state);
         }
 
         /**
@@ -1676,15 +1728,11 @@ public abstract class MainBase {
             for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
                 if (service.uid == android.os.Process.myUid() &&
                         (TunnelService.class.getName().equals(service.service.getClassName())
-                        || (Utils.hasVpnService() && isVpnService(service.service.getClassName())))) {
+                        || (Utils.hasVpnService() && TunnelVpnService.class.getName().equals(service.service.getClassName())))) {
                     return true;
                 }
             }
             return false;
-        }
-
-        private boolean isVpnService(String className) {
-            return TunnelVpnService.class.getName().equals(className);
         }
 
         private class SponsorHomePage {
@@ -1796,16 +1844,6 @@ public abstract class MainBase {
             }
 
             public void load(String url) {
-                // Set WebView proxy only if we are not running in WD mode.
-                if(!getTunnelConfigWholeDevice() || !Utils.hasVpnService()) {
-                    WebViewProxySettings.setLocalProxy(mWebView.getContext(), getListeningLocalHttpProxyPort());
-                } else {
-                    // We are running in WDM, reset WebView proxy if it has been previously set.
-                    if(WebViewProxySettings.isLocalProxySet()){
-                        WebViewProxySettings.resetLocalProxy(mWebView.getContext());
-                    }
-                }
-
                 mProgressBar.setVisibility(View.VISIBLE);
                 mWebView.loadUrl(url);
             }
@@ -1817,6 +1855,11 @@ public abstract class MainBase {
 
         protected void restoreSponsorTab() {
 
+        }
+
+        private enum ServiceConnectionStatus {
+            SERVICE_CONNECTED,
+            SERVICE_DISCONNECTED
         }
     }
 }

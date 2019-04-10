@@ -20,3 +20,39 @@ allprojects {
     }
 }
 
+// define all dependencies versions here
+ext {
+    androidSupportLibraryVersion = '26.1.0'
+    rxjavaVersion = '2.2.5'
+    rxandroidVersion = '2.1.0'
+    rxrelayVersion = '2.1.0'
+    rxbindingSupportVersion = '2.0.0'
+    androidLifecycleExtensionsVersion = '1.1.1'
+    autoValueVersion = '1.5.2'
+    okhttpVersion = '3.12.1'
+    // Do not update the playSevicesAdsVersion until there's a BOM fix!
+    playServicesAdsVersion = '17.1.3'
+    mopubSdkVersion = '5.5.0'
+    mopubMediationAdmobVersion = '15.0.0.8'
+    adsConsentLibraryVersion = '1.0.7'
+    multidexVersion = '1.0.3'
+    constraintLayoutVersion = '1.1.3'
+    junitVersion = '4.12'
+    testRunnerVersion = '0.5'
+}
+
+subprojects {
+    project.configurations.all {
+        resolutionStrategy.eachDependency { details ->
+            // resolve all android support library conflicts to the same version
+            // except for multidex modules
+            if (details.requested.group == 'com.android.support' && !details.requested.name.startsWith('multidex')) {
+                details.useVersion rootProject.ext.androidSupportLibraryVersion
+            } else if (details.requested == 'android.arch.lifecycle') {
+                details.useVersion rootProject.ext.androidLifecycleExtensionsVersion
+            }
+        }
+    }
+}
+
+

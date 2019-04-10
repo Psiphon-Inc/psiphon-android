@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, Psiphon Inc.
+ *
+ * Copyright (c) 2019, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,48 +24,41 @@ import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.content.LocalBroadcastManager;
+import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.ads.consent.ConsentInformation;
-import com.google.ads.mediation.admob.AdMobAdapter;
-import com.google.android.gms.ads.AdListener;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdSize;
-import com.google.android.gms.ads.AdView;
-import com.google.android.gms.ads.InterstitialAd;
-import com.google.android.gms.ads.MobileAds;
-import com.mopub.common.MoPub;
-import com.mopub.common.SdkConfiguration;
-import com.mopub.common.SdkInitializationListener;
-import com.mopub.common.privacy.ConsentDialogListener;
-import com.mopub.common.privacy.ConsentStatus;
-import com.mopub.common.privacy.ConsentStatusChangeListener;
-import com.mopub.common.privacy.PersonalInfoManager;
-import com.mopub.mobileads.MoPubErrorCode;
-import com.mopub.mobileads.MoPubInterstitial;
-import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
-import com.mopub.mobileads.MoPubView;
-import com.mopub.mobileads.MoPubView.BannerAdListener;
+import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.psicash.PsiCashClient;
+import com.psiphon3.psicash.PsiCashException;
+import com.psiphon3.psicash.util.BroadcastIntent;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity;
+import com.psiphon3.psiphonlibrary.PsiphonConstants;
+import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 import com.psiphon3.util.IabHelper;
@@ -72,7 +66,6 @@ import com.psiphon3.util.IabResult;
 import com.psiphon3.util.Inventory;
 import com.psiphon3.util.Purchase;
 import com.psiphon3.util.SkuDetails;
-import com.psiphon3.psiphonlibrary.*;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
@@ -82,11 +75,18 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.BiFunction;
 
 
 public class StatusActivity
-    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
+    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase implements PsiCashFragment.ActiveSpeedBoostListener
 {
     private View mRateLimitedTextSection;
     private TextView mRateLimitedText;
@@ -95,31 +95,28 @@ public class StatusActivity
 
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
-    private boolean m_preloadUntunneledInterstitial = true;
-    private AdView m_adMobUntunneledBannerAdView = null;
-    private InterstitialAd m_adMobUntunneledInterstitial = null;
-    private boolean m_adMobUntunneledInterstitialFailed = false;
-    private boolean m_adMobUntunneledInterstitialShowWhenLoaded = false;
     private static boolean m_startupPending = false;
-    private MoPubView m_moPubTunneledBannerLargeAdView = null;
-    private MoPubInterstitial m_moPubTunneledInterstitial = null;
-    private boolean m_moPubTunneledInterstitialShowWhenLoaded = false;
-    private int m_tunneledFullScreenAdCounter = 0;
-    private boolean m_temporarilyDisableTunneledInterstitial = false;
     private IabHelper mIabHelper = null;
     private boolean mStartIabInProgress = false;
     private boolean mIabHelperIsInitialized = false;
 
-    private boolean mAdsConsentInitializing;
-    private boolean mAdsConsentInitialized;
-    private AdMobGDPRHelper mAdMobGDPRHelper;
+    private PsiCashFragment psiCashFragment;
+
+    private PsiphonAdManager psiphonAdManager;
+    private Disposable startUpInterstitialDisposable;
+    private boolean disableInterstitialOnNextTabChange;
+    private PublishRelay<RateLimitMode> currentRateLimitModeRelay;
+    private Disposable currentRateModeDisposable;
+    private PublishRelay<Boolean> activeSpeedBoostRelay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main);
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
+        m_tabSpecsList = new ArrayList<>();
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
 
         mRateLimitedTextSection = findViewById(R.id.rateLimitedTextSection);
@@ -127,20 +124,46 @@ public class StatusActivity
         mRateUnlimitedText = (TextView)findViewById(R.id.rateUnlimitedText);
         mRateLimitSubscribeButton = (Button)findViewById(R.id.rateLimitUpgradeButton);
 
-        // Don't let this tab change trigger an interstitial ad
-        // OnResume() will reset this flag
-        m_temporarilyDisableTunneledInterstitial = true;
+        // PsiCash and rewarded video fragment
+        FragmentManager fm = getSupportFragmentManager();
+        psiCashFragment = (PsiCashFragment) fm.findFragmentById(R.id.psicash_fragment_container);
+        psiCashFragment.setActiveSpeedBoostListener(this);
 
-        mAdMobGDPRHelper = null;
+        // rate limit badge observable
+        currentRateLimitModeRelay = PublishRelay.create();
+        activeSpeedBoostRelay = PublishRelay.create();
+        currentRateModeDisposable = Observable.combineLatest(currentRateLimitModeRelay, activeSpeedBoostRelay,
+                ((BiFunction<RateLimitMode, Boolean, Pair>) Pair::new))
+                .map(pair -> {
+                    RateLimitMode rateLimitMode = (RateLimitMode) pair.first;
+                    Boolean hasActiveSubscription = (Boolean) pair.second;
+                    if (rateLimitMode == RateLimitMode.AD_MODE_LIMITED) {
+                        if (hasActiveSubscription) {
+                            return RateLimitMode.SPEED_BOOST;
+                        } else {
+                            return RateLimitMode.AD_MODE_LIMITED;
+                        }
+                    }
+                    return rateLimitMode;
+                })
+                .doOnNext(this::setRateLimitUI)
+                .subscribe();
+
+        // bootstrap the activeSpeedBoost observable
+        activeSpeedBoostRelay.accept(Boolean.FALSE);
+
+        // ads
+        psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.largeAdSlot),
+                () -> onSubscribeButtonClick(null), true);
+        psiphonAdManager.startLoadingAds();
 
         setupActivityLayout();
+        hidePsiCashTab();
 
-        if (shouldShowUntunneledAds()) {
-            // Start at the Home tab if the service isn't running and we want to show ads
-            m_tabHost.setCurrentTabByTag("home");
-        }
-
-        // EmbeddedValues.initialize(this); is called in MainBase.OnCreate
+        // Listen to GOT_NEW_EXPIRING_PURCHASE intent from psicash module
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
+        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter);
 
         if (isServiceRunning()) {
             // m_firstRun indicates if we should automatically start the tunnel. If the service is
@@ -156,8 +179,6 @@ public class StatusActivity
 
         m_loadedSponsorTab = false;
         HandleCurrentIntent();
-
-        restoreSponsorTab();
     }
 
     @Override
@@ -178,46 +199,58 @@ public class StatusActivity
     @Override
     protected void onResume()
     {
-        // Preload untunneled interstitials if the user leaves and returns to the activity
-        m_preloadUntunneledInterstitial = true;
-
-        // Don't miss a chance to get personalized ads consent if user hasn't set it yet.
-        mAdsConsentInitialized = false;
-
         startIab();
         super.onResume();
         if (m_startupPending) {
             m_startupPending = false;
-            resumeServiceStateUI();
             doStartUp();
         }
     }
 
     @Override
-    protected void onTunnelStateReceived() {
-        m_temporarilyDisableTunneledInterstitial = false;
-        Runnable adsRunnable = new Runnable() {
-            @Override
-            public void run() {
-                initTunneledAds(false);
-            }
-        };
-
-        initAdsConsentAndRunAds(adsRunnable);
-    }
-    
-    @Override
     public void onDestroy()
     {
-        deInitAllAds();
-        delayHandler.removeCallbacks(enableAdMode);
-        if(mAdMobGDPRHelper != null) {
-            mAdMobGDPRHelper.destroy();
-            mAdMobGDPRHelper = null;
+        if(startUpInterstitialDisposable != null) {
+            startUpInterstitialDisposable.dispose();
         }
+        currentRateModeDisposable.dispose();
+        psiphonAdManager.onDestroy();
         super.onDestroy();
     }
-    
+
+    private void hidePsiCashTab() {
+        for (int i = 0; i < m_tabSpecsList.size(); i++) {
+            TabHost.TabSpec tabSpec = m_tabSpecsList.get(i);
+            if (tabSpec != null && tabSpec.getTag().equals(PSICASH_TAB_TAG)) {
+                m_tabHost.getTabWidget().getChildTabViewAt(i).setVisibility(View.GONE);
+                break;
+            }
+        }
+        // also reset current tab to HOME if PsiCash is currently selected
+        String currentTabTag = m_tabHost.getCurrentTabTag();
+        if (currentTabTag != null && currentTabTag.equals(PSICASH_TAB_TAG)) {
+            disableInterstitialOnNextTabChange = true;
+            m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
+        }
+    }
+
+    private void showPsiCashTabIfHasValidToken() {
+        // Hide or show the PsiCash tab depending on presence of valid PsiCash tokens
+        try {
+            if (PsiCashClient.getInstance(this).hasValidTokens()) {
+                for (int i = 0; i < m_tabSpecsList.size(); i++) {
+                    TabHost.TabSpec tabSpec = m_tabSpecsList.get(i);
+                    if (tabSpec != null && tabSpec.getTag().equals(PSICASH_TAB_TAG))
+                        m_tabHost.getTabWidget().getChildTabViewAt(i).setVisibility(View.VISIBLE);
+                }
+            } else {
+                hidePsiCashTab();
+            }
+        } catch (PsiCashException e) {
+            MyLog.g("Error showing or hiding PsiCash tab: " + e);
+        }
+    }
+
     private void loadSponsorTab(boolean freshConnect)
     {
         if (!getSkipHomePage())
@@ -319,24 +352,52 @@ public class StatusActivity
                 PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    protected void doToggle()
-    {
-        super.doToggle();
-    }
-    
     @Override
-    public void onTabChanged(String tabId)
-    {
-        showTunneledFullScreenAd();
+    public void onTabChanged(String tabId) {
+        if(mayTriggerInterstitial(tabId)) {
+            psiphonAdManager.onTabChanged();
+        }
         super.onTabChanged(tabId);
     }
 
-    @Override
-    protected void onTunnelDisconnected() {
-        // The user pressed stop. Don't preload another interstitial because it's likely the user is done.
-        m_preloadUntunneledInterstitial = false;
+    private boolean mayTriggerInterstitial(String tabId) {
+        if(disableInterstitialOnNextTabChange) {
+            disableInterstitialOnNextTabChange = false;
+            return false;
+        }
+        if(tabId.equals(PSICASH_TAB_TAG)) {
+            return false;
+        }
+        return true;
+    }
 
-        deInitTunneledAds();
+    @Override
+    protected void onTunnelConnectionState(@NonNull TunnelManager.State state) {
+        super.onTunnelConnectionState(state);
+        TunnelState tunnelState;
+        if (state.isRunning) {
+            TunnelState.ConnectionData connectionData = TunnelState.ConnectionData.builder()
+                    .setIsConnected(state.isConnected)
+                    .setClientRegion(state.clientRegion)
+                    .setClientVersion(EmbeddedValues.CLIENT_VERSION)
+                    .setPropagationChannelId(EmbeddedValues.PROPAGATION_CHANNEL_ID)
+                    .setSponsorId(state.sponsorId)
+                    .setHttpPort(state.listeningLocalHttpProxyPort)
+                    .setVpnMode(state.isVPN)
+                    .build();
+            tunnelState = TunnelState.running(connectionData);
+        } else {
+            tunnelState = TunnelState.stopped();
+        }
+
+        psiphonAdManager.onTunnelConnectionState(tunnelState);
+        psiCashFragment.onTunnelConnectionState(tunnelState);
+    }
+
+    @Override
+    protected void onAuthorizationsRemoved() {
+        super.onAuthorizationsRemoved();
+        psiCashFragment.removePurchases();
     }
 
     protected void HandleCurrentIntent()
@@ -350,7 +411,7 @@ public class StatusActivity
 
         if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_HANDSHAKE))
         {
-            getTunnelStateFromHandshakeIntent(intent);
+            onTunnelConnectionState(getTunnelStateFromBundle(intent.getExtras()));
 
             // OLD COMMENT:
             // Show the home page. Always do this in browser-only mode, even
@@ -363,17 +424,19 @@ public class StatusActivity
             // unexpected disconnect in browser-only mode any more.
             // Show the home page, unless this was an automatic reconnect,
             // since the homepage should already be showing.
-            if (!intent.getBooleanExtra(TunnelManager.DATA_HANDSHAKE_IS_RECONNECT, false))
-            {
-                // Don't let this tab change trigger an interstitial ad
-                // OnResume() will reset this flag
-                m_temporarilyDisableTunneledInterstitial = true;
-                m_tunneledFullScreenAdCounter = 0;
+            // UPDATED #2:
+            // This intent is only sent when there was a commanded service start or a restart
+            // such as when there's a new subscription, or a speed-boost. It is not sent
+            // on automated reconnects or when the app binds to a an already running service.
+            // In later case the embedded web view gets updated via MSG_TUNNEL_CONNECTION_STATE
+            // messages from a bound service.
 
-                m_tabHost.setCurrentTabByTag("home");
-                loadSponsorTab(true);
-                m_loadedSponsorTab = true;
-            }
+            // TODO: only switch to home tab when there's an in app home page to show?
+            disableInterstitialOnNextTabChange = true;
+            m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
+            loadSponsorTab(true);
+            psiCashFragment.onOpenHomePage();
+            m_loadedSponsorTab = true;
 
             // We only want to respond to the HANDSHAKE_SUCCESS action once,
             // so we need to clear it (by setting it to a non-special intent).
@@ -384,7 +447,8 @@ public class StatusActivity
                             this.getClass()));
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE)) {
             // Switch to settings tab
-            m_tabHost.setCurrentTabByTag("settings");
+            disableInterstitialOnNextTabChange = true;
+            m_tabHost.setCurrentTabByTag(SETTINGS_TAB_TAG);
 
             // Set egress region preference to 'Best Performance'
             updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
@@ -427,23 +491,61 @@ public class StatusActivity
     }
 
     @Override
-    protected void startUp()
-    {
-        if (Utils.getHasValidSubscription(this))
-        {
-            doStartUp();
+    protected void startUp() {
+        if (startUpInterstitialDisposable != null && !startUpInterstitialDisposable.isDisposed()) {
+            // already in progress, do nothing
+            return;
         }
-        else
-        {
-            pauseServiceStateUI();
-            adModeCountdown = 10;
-            delayHandler.postDelayed(enableAdMode, 1000);
-            showUntunneledFullScreenAd();
-        }
+        int countdownSeconds = 10;
+        startUpInterstitialDisposable = psiphonAdManager.getCurrentAdTypeObservable()
+                .take(1)
+                .switchMap(adResult -> {
+                    if (adResult.type() == PsiphonAdManager.AdResult.Type.NONE) {
+                        doStartUp();
+                        return Observable.empty();
+                    }
+                    else if (adResult.type() == PsiphonAdManager.AdResult.Type.TUNNELED) {
+                        MyLog.g("startUp interstitial bad ad type: " + adResult.type());
+                        return Observable.empty();
+                    }
+
+                    Observable<PsiphonAdManager.InterstitialResult> interstitial =
+                            Observable.just(adResult)
+                                    .compose(psiphonAdManager.getInterstitialWithTimeoutForAdType(countdownSeconds, TimeUnit.SECONDS))
+                                    .doOnNext(interstitialResult -> {
+                                        if (interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.READY) {
+                                            m_startupPending = true;
+                                            interstitialResult.show();
+                                        }
+                                    })
+                                    .doOnComplete(() -> {
+                                        if(m_startupPending) {
+                                            m_startupPending = false;
+                                            doStartUp();
+                                        }
+                                    });
+
+                    Observable<Long> countdown =
+                            Observable.intervalRange(0, countdownSeconds, 0, 1, TimeUnit.SECONDS)
+                                    .map(t -> countdownSeconds - t)
+                                    .concatWith(Observable.error(new TimeoutException("Ad countdown timeout.")))
+                                    .doOnNext(t -> m_toggleButton.setText(String.format(Locale.US, "%d", t)));
+
+                    return countdown
+                            .takeUntil(interstitial)
+                            .doOnError(__->doStartUp());
+                })
+                .doOnSubscribe(__ -> disableToggleServiceUI())
+                .onErrorResumeNext(Observable.empty())
+                .subscribe();
     }
     
     private void doStartUp()
     {
+        // cancel any ongoing startUp subscription
+        if(startUpInterstitialDisposable != null) {
+            startUpInterstitialDisposable.dispose();
+        }
         // If the user hasn't set a whole-device-tunnel preference, show a prompt
         // (and delay starting the tunnel service until the prompt is completed)
 
@@ -623,9 +725,12 @@ public class StatusActivity
         IAB_TIMEPASS_SKUS_TO_TIME = Collections.unmodifiableMap(m);
     }
 
-    static int AD_MODE_RATE_LIMIT_MBPS = 2;
-    static int LIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS = 5;
-    static int UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS = 0;
+    @Override
+    public void onActiveSpeedBoost(Boolean hasActiveSpeedBoost) {
+        activeSpeedBoostRelay.accept(hasActiveSpeedBoost);
+    }
+
+    enum RateLimitMode {AD_MODE_LIMITED, LIMITED_SUBSCRIPTION, UNLIMITED_SUBSCRIPTION, SPEED_BOOST}
 
     Inventory mInventory;
 
@@ -696,14 +801,15 @@ public class StatusActivity
             // Check if the user has a subscription.
             //
 
-            int rateLimit = AD_MODE_RATE_LIMIT_MBPS;
+            RateLimitMode rateLimit = RateLimitMode.AD_MODE_LIMITED;
             Purchase purchase = null;
 
             for (String limitedMonthlySubscriptionSku : IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKUS) {
                 if (inventory.hasPurchase(limitedMonthlySubscriptionSku)) {
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid limited subscription: %s", limitedMonthlySubscriptionSku));
                     purchase = inventory.getPurchase(limitedMonthlySubscriptionSku);
-                    rateLimit = LIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS;
+                    rateLimit = RateLimitMode.LIMITED_SUBSCRIPTION;
+                    currentRateLimitModeRelay.accept(rateLimit);
                     hasValidSubscription = true;
                     break;
                 }
@@ -713,7 +819,8 @@ public class StatusActivity
                 if (inventory.hasPurchase(unlimitedMonthlySubscriptionSku)) {
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid unlimited subscription: %s", unlimitedMonthlySubscriptionSku));
                     purchase = inventory.getPurchase(unlimitedMonthlySubscriptionSku);
-                    rateLimit = UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS;
+                    rateLimit = RateLimitMode.UNLIMITED_SUBSCRIPTION;
+                    currentRateLimitModeRelay.accept(rateLimit);
                     hasValidSubscription = true;
                     break;
                 }
@@ -721,7 +828,7 @@ public class StatusActivity
 
             if (hasValidSubscription)
             {
-                proceedWithValidSubscription(purchase, rateLimit);
+                proceedWithValidSubscription(purchase);
                 return;
             }
 
@@ -750,7 +857,8 @@ public class StatusActivity
                 {
                     // This time pass is still valid.
                     Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid time pass: %s", sku));
-                    rateLimit = UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS;
+                    rateLimit = RateLimitMode.UNLIMITED_SUBSCRIPTION;
+                    currentRateLimitModeRelay.accept(rateLimit);
                     hasValidSubscription = true;
                     purchase = tempPurchase;
                 }
@@ -764,7 +872,7 @@ public class StatusActivity
 
             if (hasValidSubscription)
             {
-                proceedWithValidSubscription(purchase, rateLimit);
+                proceedWithValidSubscription(purchase);
             }
             else
             {
@@ -794,12 +902,14 @@ public class StatusActivity
             else if (purchase.getSku().equals(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU))
             {
                 Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
-                proceedWithValidSubscription(purchase, LIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS);
+                currentRateLimitModeRelay.accept(RateLimitMode.LIMITED_SUBSCRIPTION);
+                proceedWithValidSubscription(purchase);
             }
             else if (purchase.getSku().equals(IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU))
             {
                 Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
-                proceedWithValidSubscription(purchase, UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS);
+                currentRateLimitModeRelay.accept(RateLimitMode.UNLIMITED_SUBSCRIPTION);
+                proceedWithValidSubscription(purchase);
             }
             else if (IAB_TIMEPASS_SKUS_TO_TIME.containsKey(purchase.getSku()))
             {
@@ -807,7 +917,8 @@ public class StatusActivity
 
                 // We're not going to check the validity time here -- assume no time-pass is so
                 // short that it's already expired right after it's purchased.
-                proceedWithValidSubscription(purchase, UNLIMITED_SUBSCRIPTION_RATE_LIMIT_MBPS);
+                currentRateLimitModeRelay.accept(RateLimitMode.UNLIMITED_SUBSCRIPTION);
+                proceedWithValidSubscription(purchase);
             }
         }
     };
@@ -936,19 +1047,18 @@ public class StatusActivity
         }
     }
 
-    private void proceedWithValidSubscription(Purchase purchase, int rateLimitMbps)
+    private void proceedWithValidSubscription(Purchase purchase)
     {
+        psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
+        psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
         Utils.setHasValidSubscription(this, true);
-        setRateLimitUI(rateLimitMbps);
         this.m_retainedDataFragment.setCurrentPurchase(purchase);
-        deInitAllAds();
+        hidePsiCashTab();
 
         // Pass the most current purchase data to the service if it is running so the tunnel has a
         // chance to update authorization and restart if the purchase is new.
         // NOTE: we assume there can be only one valid purchase and authorization at a time
-        if (isTunnelConnected() &&
-                // If the activity isn't foreground, the service won't get restarted
-                m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false)) {
+        if (isTunnelConnected()) {
                 startAndBindTunnelService();
         }
 
@@ -961,23 +1071,32 @@ public class StatusActivity
 
     private void proceedWithoutValidSubscription()
     {
+        psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
+        psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
         Utils.setHasValidSubscription(this, false);
-        setRateLimitUI(AD_MODE_RATE_LIMIT_MBPS);
+        currentRateLimitModeRelay.accept(RateLimitMode.AD_MODE_LIMITED);
         this.m_retainedDataFragment.setCurrentPurchase(null);
+        showPsiCashTabIfHasValidToken();
     }
 
-    private void setRateLimitUI(int rateLimitMbps) {
-        // Update UI elements showing the current speed.^M
-        if (rateLimitMbps > 0) {
-            mRateLimitedText.setText(getString(R.string.rate_limit_text_limited, rateLimitMbps));
-            mRateLimitedText.setVisibility(View.VISIBLE);
-            mRateUnlimitedText.setVisibility(View.GONE);
-            mRateLimitSubscribeButton.setVisibility(View.VISIBLE);
-            mRateLimitedTextSection.setVisibility(View.VISIBLE);
-        } else {
+    private void setRateLimitUI(RateLimitMode rateLimitMode) {
+        // Update UI elements showing the current speed.
+        if (rateLimitMode == RateLimitMode.UNLIMITED_SUBSCRIPTION) {
             mRateLimitedText.setVisibility(View.GONE);
             mRateUnlimitedText.setVisibility(View.VISIBLE);
             mRateLimitSubscribeButton.setVisibility(View.GONE);
+            mRateLimitedTextSection.setVisibility(View.VISIBLE);
+        } else{
+            if(rateLimitMode == RateLimitMode.AD_MODE_LIMITED) {
+                mRateLimitedText.setText(getString(R.string.rate_limit_text_limited, 2));
+            } else if (rateLimitMode == RateLimitMode.LIMITED_SUBSCRIPTION) {
+                mRateLimitedText.setText(getString(R.string.rate_limit_text_limited, 5));
+            } else if (rateLimitMode == RateLimitMode.SPEED_BOOST) {
+                mRateLimitedText.setText(getString(R.string.rate_limit_text_speed_boost));
+            }
+            mRateLimitedText.setVisibility(View.VISIBLE);
+            mRateUnlimitedText.setVisibility(View.GONE);
+            mRateLimitSubscribeButton.setVisibility(View.VISIBLE);
             mRateLimitedTextSection.setVisibility(View.VISIBLE);
         }
     }
@@ -985,6 +1104,8 @@ public class StatusActivity
     // NOTE: result param may be null
     private void handleIabFailure(IabResult result)
     {
+        psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
+        psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
         // try again next time
         deInitIab();
 
@@ -1002,61 +1123,6 @@ public class StatusActivity
                 doStartUp();
             }
         }
-    }
-
-    private Handler delayHandler = new Handler();
-    private Runnable enableAdMode = new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            if (adModeCountdown > 0 && !m_adMobUntunneledInterstitialFailed)
-            {
-                m_toggleButton.setText(String.valueOf(adModeCountdown));
-                adModeCountdown--;
-                delayHandler.postDelayed(this, 1000);
-            }
-            else
-            {
-                resumeServiceStateUI();
-                doStartUp();
-            }
-        }
-    };
-    private int adModeCountdown;
-
-    // updateSubscriptionAndAdOptions() gets called once in onCreate().
-    // Don't show these options during the first few calls, to allow time for IAB to check
-    // for a valid subscription.
-    private int updateSubscriptionAndAdOptionsFlickerHackCountdown = 4;
-
-    @Override
-    protected void updateSubscriptionAndAdOptions(boolean show)
-    {
-        if (updateSubscriptionAndAdOptionsFlickerHackCountdown > 0)
-        {
-            show = false;
-            updateSubscriptionAndAdOptionsFlickerHackCountdown--;
-        }
-
-        if (Utils.getHasValidSubscription(this))
-        {
-            show = false;
-        }
-
-        if (show)
-        {
-            initUntunneledAds();
-        }
-        else
-        {
-            // Abort any outstanding ad requests
-            deInitUntunneledAds();
-        }
-
-        boolean showSubscribe = show && (mInventory != null);
-
-        findViewById(R.id.subscribeButton).setVisibility(showSubscribe ? View.VISIBLE : View.GONE);
     }
 
     public void onRateLimitUpgradeButtonClick(View v) {
@@ -1197,466 +1263,6 @@ public class StatusActivity
         }
     }
 
-    static final String ADMOB_APP_ID = "ca-app-pub-1072041961750291~1127965968";
-    static final String ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID = "ca-app-pub-1072041961750291/1062483935";
-    static final String ADMOB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID = "ca-app-pub-1072041961750291/6443217092";
-    static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "6efb5aa4e0d74a679a6219f9b3aa6221";
-    static final String MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID = "1f9cb36809f04c8d9feaff5deb9f17ed";
-
-    @Override
-    protected void updateAdsForServiceState() {
-        if (isServiceRunning()) {
-            deInitUntunneledAds();
-        } else {
-            deInitTunneledAds();
-        }
-    }
-
-    private boolean getShowAds() {
-        return !Utils.getHasValidSubscription(this) &&
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN;
-    }
-
-    private boolean shouldShowUntunneledAds()
-    {
-        return getShowAds() && !isServiceRunning();
-    }
-
-    private void initUntunneledAds() {
-        final Context context = this;
-
-        Runnable adsRunnable = new Runnable() {
-            @Override
-            public void run() {
-                MobileAds.initialize(context, ADMOB_APP_ID);
-                initUntunneledBanner();
-
-                if (m_adMobUntunneledInterstitial == null && m_preloadUntunneledInterstitial)
-                {
-                    loadUntunneledFullScreenAd();
-                }
-            }
-        };
-
-        initAdsConsentAndRunAds(adsRunnable);
-    }
-
-    private void initUntunneledBanner()
-    {
-        if (m_adMobUntunneledBannerAdView == null)
-        {
-            m_adMobUntunneledBannerAdView = new AdView(this);
-            m_adMobUntunneledBannerAdView.setAdSize(AdSize.MEDIUM_RECTANGLE);
-            m_adMobUntunneledBannerAdView.setAdUnitId(ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
-
-            m_adMobUntunneledBannerAdView.setAdListener(new AdListener() {
-                @Override
-                public void onAdLoaded()
-                {
-                    if (m_adMobUntunneledBannerAdView.getParent() == null)
-                    {
-                        LinearLayout layout = (LinearLayout)findViewById(R.id.largeAdSlot);
-                        layout.removeAllViewsInLayout();
-                        layout.addView(m_adMobUntunneledBannerAdView);
-                    }
-                }
-                @Override
-                public void onAdFailedToLoad(int errorCode) {
-                }
-                @Override
-                public void onAdOpened() {
-                }
-                @Override
-                public void onAdLeftApplication() {
-                }
-                @Override
-                public void onAdClosed() {
-                }
-            });
-
-            Bundle extras = new Bundle();
-            if (ConsentInformation.getInstance(this).getConsentStatus() == com.google.ads.consent.ConsentStatus.NON_PERSONALIZED) {
-                extras.putString("npa", "1");
-            }
-            AdRequest adRequest = new AdRequest.Builder()
-                    .addNetworkExtrasBundle(AdMobAdapter.class, extras)
-                    .build();
-            m_adMobUntunneledBannerAdView.loadAd(adRequest);
-        }
-    }
-
-    synchronized
-    private void loadUntunneledFullScreenAd()
-    {
-        m_adMobUntunneledInterstitial = new InterstitialAd(this);
-        m_adMobUntunneledInterstitial.setAdUnitId(ADMOB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
-
-        m_adMobUntunneledInterstitial.setAdListener(new AdListener() {
-
-            @Override
-            public void onAdLoaded() {
-                if (m_adMobUntunneledInterstitial != null && m_adMobUntunneledInterstitial.isLoaded() &&
-                        m_adMobUntunneledInterstitialShowWhenLoaded)
-                {
-                    m_adMobUntunneledInterstitial.show();
-                }
-            }
-            @Override
-            public void onAdFailedToLoad(int errorCode) {
-                m_adMobUntunneledInterstitialFailed = true;
-            }
-            @Override
-            public void onAdOpened() {
-                // Enable the free trial right away
-                m_startupPending = true;
-                delayHandler.removeCallbacks(enableAdMode);
-                resumeServiceStateUI();
-            }
-            @Override
-            public void onAdLeftApplication() {
-            }
-            @Override
-            public void onAdClosed() {
-            }
-        });
-        m_adMobUntunneledInterstitialFailed = false;
-        m_adMobUntunneledInterstitialShowWhenLoaded = false;
-
-        Bundle extras = new Bundle();
-        if (ConsentInformation.getInstance(this).getConsentStatus() == com.google.ads.consent.ConsentStatus.NON_PERSONALIZED) {
-            extras.putString("npa", "1");
-        }
-        AdRequest adRequest = new AdRequest.Builder()
-                .addNetworkExtrasBundle(AdMobAdapter.class, extras)
-                .build();
-        m_adMobUntunneledInterstitial.loadAd(adRequest);
-    }
-
-    private void showUntunneledFullScreenAd()
-    {
-        if (m_adMobUntunneledInterstitial != null)
-        {
-            if (m_adMobUntunneledInterstitial.isLoaded())
-            {
-                m_adMobUntunneledInterstitial.show();
-            }
-            else
-            {
-                if (m_adMobUntunneledInterstitialFailed)
-                {
-                    loadUntunneledFullScreenAd();
-                }
-                m_adMobUntunneledInterstitialShowWhenLoaded = true;
-            }
-        }
-        else
-        {
-            loadUntunneledFullScreenAd();
-            m_adMobUntunneledInterstitialShowWhenLoaded = true;
-        }
-    }
-
-    synchronized
-    private void deInitUntunneledAds()
-    {
-        if (m_adMobUntunneledBannerAdView != null)
-        {
-            m_adMobUntunneledBannerAdView.destroy();
-        }
-        m_adMobUntunneledBannerAdView = null;
-
-        m_adMobUntunneledInterstitial = null;
-    }
-
-
-    private boolean shouldShowTunneledAds()
-    {
-        return getShowAds() && isTunnelConnected();
-    }
-
-    private void initTunneledAds(boolean initFullScreenAd)
-    {
-        if (shouldShowTunneledAds() && m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false))
-        {
-            // make sure WebView proxy settings are up to date
-            // Set WebView proxy only if we are not running in WD mode.
-            if (!getTunnelConfigWholeDevice() || !Utils.hasVpnService()) {
-                WebViewProxySettings.setLocalProxy(this, getListeningLocalHttpProxyPort());
-            } else {
-                // We are running in WDM, reset WebView proxy if it has been previously set.
-                if (WebViewProxySettings.isLocalProxySet()){
-                    WebViewProxySettings.resetLocalProxy(this);
-                }
-            }
-
-            initTunneledBanner();
-            if (initFullScreenAd) {
-                loadTunneledFullScreenAd();
-            }
-        }
-    }
-
-    private void initTunneledBanner()
-    {
-        if (shouldShowTunneledAds())
-        {
-            if (!showFirstHomePageInApp() && m_moPubTunneledBannerLargeAdView == null && MoPub.isSdkInitialized())
-            {
-                m_moPubTunneledBannerLargeAdView = new MoPubView(this);
-                m_moPubTunneledBannerLargeAdView.setAdUnitId(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
-                if (isTunnelConnected()) {
-                    m_moPubTunneledBannerLargeAdView.setKeywords("client_region:" + getClientRegion());
-                    Map<String,Object> localExtras = new HashMap<>();
-                    localExtras.put("client_region", getClientRegion());
-                    m_moPubTunneledBannerLargeAdView.setLocalExtras(localExtras);
-                }
-
-                m_moPubTunneledBannerLargeAdView.setBannerAdListener(new BannerAdListener() {
-                    @Override
-                    public void onBannerLoaded(MoPubView banner)
-                    {
-                        if (m_moPubTunneledBannerLargeAdView.getParent() == null)
-                        {
-                            LinearLayout layout = (LinearLayout)findViewById(R.id.largeAdSlot);
-                            layout.removeAllViewsInLayout();
-                            layout.addView(m_moPubTunneledBannerLargeAdView);
-                        }
-                    }
-                    @Override
-                    public void onBannerClicked(MoPubView arg0) {
-                    }
-                    @Override
-                    public void onBannerCollapsed(MoPubView arg0) {
-                    }
-                    @Override
-                    public void onBannerExpanded(MoPubView arg0) {
-                    }
-                    @Override
-                    public void onBannerFailed(MoPubView arg0,
-                                               MoPubErrorCode arg1) {
-                    }
-                });
-
-                m_moPubTunneledBannerLargeAdView.loadAd();
-                m_moPubTunneledBannerLargeAdView.setAutorefreshEnabled(true);
-            }
-        }
-    }
-
-    synchronized
-    private void loadTunneledFullScreenAd()
-    {
-        if (shouldShowTunneledAds() && m_moPubTunneledInterstitial == null && MoPub.isSdkInitialized())
-        {
-            m_moPubTunneledInterstitial = new MoPubInterstitial(this, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
-            if (isTunnelConnected()) {
-                m_moPubTunneledInterstitial.setKeywords("client_region:" + getClientRegion());
-                Map<String,Object> localExtras = new HashMap<>();
-                localExtras.put("client_region", getClientRegion());
-                m_moPubTunneledInterstitial.setLocalExtras(localExtras);
-            }
-
-            m_moPubTunneledInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
-                @Override
-                public void onInterstitialClicked(MoPubInterstitial arg0) {
-                }
-                @Override
-                public void onInterstitialDismissed(MoPubInterstitial arg0) {
-                    m_moPubTunneledInterstitialShowWhenLoaded = false;
-                    m_moPubTunneledInterstitial.load();
-                }
-                @Override
-                public void onInterstitialFailed(MoPubInterstitial arg0,
-                                                 MoPubErrorCode arg1) {
-                    m_moPubTunneledInterstitial.destroy();
-                    m_moPubTunneledInterstitial = null;
-                }
-                @Override
-                public void onInterstitialLoaded(MoPubInterstitial interstitial) {
-                    if (interstitial != null && interstitial.isReady() &&
-                            m_moPubTunneledInterstitialShowWhenLoaded &&
-                            m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false))
-                    {
-                        m_tunneledFullScreenAdCounter++;
-                        interstitial.show();
-                    }
-                }
-                @Override
-                public void onInterstitialShown(MoPubInterstitial arg0) {
-                }
-            });
-            m_moPubTunneledInterstitialShowWhenLoaded = false;
-            m_moPubTunneledInterstitial.load();
-        }
-    }
-
-    private void showTunneledFullScreenAd()
-    {
-        Runnable adsRunnable = new Runnable() {
-            @Override
-            public void run() {
-                initTunneledAds(true);
-            }
-        };
-
-        initAdsConsentAndRunAds(adsRunnable);
-
-        if (shouldShowTunneledAds() && !m_temporarilyDisableTunneledInterstitial)
-        {
-            if (m_tunneledFullScreenAdCounter % 3 == 0)
-            {
-                if (m_moPubTunneledInterstitial != null)
-                {
-                    if (m_moPubTunneledInterstitial.isReady())
-                    {
-                        m_tunneledFullScreenAdCounter++;
-                        m_moPubTunneledInterstitial.show();
-                    }
-                    else
-                    {
-                        m_moPubTunneledInterstitialShowWhenLoaded = true;
-                    }
-                }
-            }
-            else
-            {
-                m_tunneledFullScreenAdCounter++;
-            }
-        }
-    }
-
-    synchronized
-    private void deInitTunneledAds()
-    {
-        if (m_moPubTunneledBannerLargeAdView != null)
-        {
-            m_moPubTunneledBannerLargeAdView.destroy();
-        }
-        m_moPubTunneledBannerLargeAdView = null;
-
-        if (m_moPubTunneledInterstitial != null)
-        {
-            m_moPubTunneledInterstitial.destroy();
-        }
-        m_moPubTunneledInterstitial = null;
-    }
-
-    synchronized
-    private void deInitAllAds()
-    {
-        deInitUntunneledAds();
-        deInitTunneledAds();
-    }
-
-    // New MoPub initializer with GDPR consent dialog
-    static class MoPubConsentDialogHelper {
-        public static ConsentDialogListener initDialogLoadListener() {
-            return new ConsentDialogListener() {
-
-                @Override
-                public void onConsentDialogLoaded() {
-                    PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-                    if (personalInfoManager != null) {
-                        personalInfoManager.showConsentDialog();
-                    }
-                }
-
-                @Override
-                public void onConsentDialogLoadFailed(@NonNull MoPubErrorCode moPubErrorCode) {
-                    MyLog.d( "MoPub consent dialog failed to load.");
-                }
-            };
-        }
-    }
-
-    synchronized
-    private void initAdsConsentAndRunAds(final Runnable runnable) {
-        if (mAdsConsentInitialized) {
-            runnable.run();
-            return;
-        }
-
-        if (mAdsConsentInitializing) {
-            return;
-        }
-        mAdsConsentInitializing = true;
-
-        MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
-        final Context context = this;
-
-        // If tunnel is not running run AdMob GDPR check and pass
-        // MoPub GDPR consent check as a completion callback.
-        // Otherwise just run MoPub GDPR consent check
-
-        AdMobGDPRHelper.AdMobGDPRHelperCallback moPubGDPRCheckCallback = new AdMobGDPRHelper.AdMobGDPRHelperCallback() {
-            @Override
-            public void onComplete() {
-                PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-                // initialized MoPub SDK if needed
-                if (personalInfoManager == null) {
-                    SdkConfiguration.Builder builder = new SdkConfiguration.Builder(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
-                    SdkConfiguration sdkConfiguration = builder.build();
-
-                    MoPub.initializeSdk(context, sdkConfiguration, new SdkInitializationListener() {
-                        @Override
-                        public void onInitializationFinished() {
-                            PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-                            if (personalInfoManager != null) {
-                                // subscribe to consent change state event
-                                personalInfoManager.subscribeConsentStatusChangeListener(new ConsentStatusChangeListener() {
-
-                                    @Override
-                                    public void onConsentStateChange(@NonNull ConsentStatus oldConsentStatus,
-                                                                     @NonNull ConsentStatus newConsentStatus,
-                                                                     boolean canCollectPersonalInformation) {
-                                        PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-                                        if (personalInfoManager != null && personalInfoManager.shouldShowConsentDialog()) {
-                                            personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
-                                        }
-                                    }
-                                });
-
-                                // If consent is required load the consent dialog
-                                if (personalInfoManager.shouldShowConsentDialog()) {
-                                    personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
-                                }
-                            } else {
-                                MyLog.d( "MoPub SDK has failed to initialize.");
-                            }
-                            // Don't retry if MoPub SDK fails to initialize.
-                            // We don't want this failure case to prevent loading AdMob ads.
-                            runnable.run();
-                            mAdsConsentInitializing = false;
-                            mAdsConsentInitialized = true;
-                        }
-                    });
-
-                } else {
-                    runnable.run();
-                    mAdsConsentInitializing = false;
-                    mAdsConsentInitialized = true;
-                }
-            }
-        };
-
-        if (!this.isFinishing()){
-            if (!isServiceRunning()) {
-                if (mAdMobGDPRHelper != null) {
-                    mAdMobGDPRHelper.destroy();
-                    mAdMobGDPRHelper = null;
-                }
-                String[] publisherIds = {"pub-1072041961750291"};
-                mAdMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, moPubGDPRCheckCallback);
-
-                // Optional 'Pay for ad-free' button, launches purchase flow when clicked.
-                mAdMobGDPRHelper.setShowBuyAdFree(true);
-                mAdMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
-            } else {
-                moPubGDPRCheckCallback.onComplete();
-            }
-        }
-    }
-
     @Override
     protected void onVpnPromptCancelled() {
         showVpnAlertDialog(R.string.StatusActivity_VpnPromptCancelledTitle, R.string.StatusActivity_VpnPromptCancelledMessage);
@@ -1671,4 +1277,16 @@ public class StatusActivity
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
     }
+
+    private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, android.content.Intent intent) {
+            String action = intent.getAction();
+            if (action != null) {
+                if (action.equals(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE)) {
+                    scheduleRunningTunnelServiceRestart();
+                }
+            }
+        }
+    };
 }
