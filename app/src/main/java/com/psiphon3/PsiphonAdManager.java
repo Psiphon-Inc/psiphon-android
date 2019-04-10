@@ -25,7 +25,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import android.util.Pair;
 import android.view.ViewGroup;
 
@@ -475,7 +474,7 @@ public class PsiphonAdManager {
         }
         return completable
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .doOnError(e -> Log.e(TAG, "loadAndShowBanner: error: " + e))
+                .doOnError(e -> Utils.MyLog.g("loadAndShowBanner: error: " + e))
                 .onErrorComplete();
     }
 

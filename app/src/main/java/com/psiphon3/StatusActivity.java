@@ -38,7 +38,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -506,7 +505,7 @@ public class StatusActivity
                         return Observable.empty();
                     }
                     else if (adResult.type() == PsiphonAdManager.AdResult.Type.TUNNELED) {
-                        Log.w(PsiphonAdManager.TAG, "startUp interstitial bad ad type: " + adResult.type());
+                        MyLog.g("startUp interstitial bad ad type: " + adResult.type());
                         return Observable.empty();
                     }
 
