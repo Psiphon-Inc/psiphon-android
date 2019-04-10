@@ -82,11 +82,14 @@ import io.reactivex.functions.BiFunction;
 public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, PsiCashViewState> {
     private static final String TAG = "PsiCashFragment";
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private Disposable viewStatesDisposable;
     private PsiCashViewModel psiCashViewModel;
 
     private Relay<PsiCashIntent> intentsPublishRelay;
     private Relay<TunnelState> tunnelConnectionStateBehaviorRelay;
     private Relay<PsiphonAdManager.SubscriptionStatus> subscriptionStatusBehaviorRelay;
+    private Relay<LifeCycleEvent> lifecyclePublishRelay;
+
 
     private TextView balanceLabel;
     private Button buySpeedBoostBtn;
@@ -99,9 +102,11 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     private TextView psiCashChargeProgressTextView;
     private View psiCashLayout;
     private AtomicBoolean keepLoadingVideos = new AtomicBoolean(false);
-    private Disposable loadVideoAdsDisposable;
+    private final AtomicBoolean shouldGetPsiCashRemote = new AtomicBoolean(false);
     private boolean shouldAutoPlayVideo;
     private ActiveSpeedBoostListener activeSpeedBoostListener;
+
+    private enum LifeCycleEvent {ON_RESUME, ON_PAUSE, ON_STOP, ON_START}
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -138,11 +143,17 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             }
         };
 
-        psiCashViewModel = ViewModelProviders.of(this, new PsiCashViewModelFactory(getActivity().getApplication(), psiCashListener))
-                .get(PsiCashViewModel.class);
         intentsPublishRelay = PublishRelay.<PsiCashIntent>create().toSerialized();
+        lifecyclePublishRelay = PublishRelay.<LifeCycleEvent>create().toSerialized();
         tunnelConnectionStateBehaviorRelay = BehaviorRelay.<TunnelState>create().toSerialized();
         subscriptionStatusBehaviorRelay = BehaviorRelay.<PsiphonAdManager.SubscriptionStatus>create().toSerialized();
+
+        psiCashViewModel = ViewModelProviders.of(this, new PsiCashViewModelFactory(getActivity().getApplication(), psiCashListener))
+                .get(PsiCashViewModel.class);
+
+        // Pass the UI's intents to the view model
+        psiCashViewModel.processIntents(intents());
+
     }
 
     @Override
@@ -158,76 +169,74 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         balanceLabel = getActivity().findViewById(R.id.psicash_balance_label);
         balanceLabel.setText("0");
         loadWatchRewardedVideoBtn = getActivity().findViewById(R.id.load_watch_rewarded_video_btn);
+        // Load video button clicks
+        compositeDisposable.add(loadVideoAdsDisposable());
+        // Buy speed boost button events.
+        compositeDisposable.add(buySpeedBoostClicksDisposable());
+        // Unconditionally get latest local PsiCash state when app is foregrounded
+        compositeDisposable.add(getPsiCashLocalDisposable());
+        // Get PsiCash tokens when tunnel connects if there are none
+        compositeDisposable.add(getPsiCashTokensDisposable());
+        // check if there are purchases to be removed when app is foregrounded
+        compositeDisposable.add(removePurchasesDisposable());
+        // try and get PsiCash state from remote on next foreground
+        // if a home page had been opened and tunnel is up
+        compositeDisposable.add(getOpenedHomePageRewardDisposable());
+    }
 
-        // Load video observable
-        loadVideoAdsDisposable = RxView.clicks(loadWatchRewardedVideoBtn)
-                .debounce(200, TimeUnit.MILLISECONDS)
-                .takeWhile(click -> hasValidTokens())
-                .switchMap(click -> {
-                    keepLoadingVideos.set(true);
-                    // React to both - a connection state changes until the load video process
-                    // terminates with either success or error AND to the subscription status changes.
-                    return Observable.combineLatest(tunnelConnectionStateObservable(),
-                            subscriptionStatusObservable(),
-                            ((BiFunction<TunnelState, PsiphonAdManager.SubscriptionStatus, Pair>) Pair::new))
-                            .switchMap(pair -> {
-                                TunnelState s = (TunnelState) pair.first;
-                                PsiphonAdManager.SubscriptionStatus subscriptionStatus = (PsiphonAdManager.SubscriptionStatus) pair.second;
-                                if (subscriptionStatus == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER) {
-                                    // set a flag to stop the outer subscription if user is subscribed
-                                    // and complete this inner subscription right away.
-                                    keepLoadingVideos.set(false);
-                                    return Observable.empty();
-                                }
-                                return Observable.just(s);
-                            })
-                            // complete the subscription if we were signaled that the video has
-                            // loaded or failed OR if the user is subscribed.
-                            .takeWhile(__ -> keepLoadingVideos.get());
+    private Disposable removePurchasesDisposable() {
+        return lifeCycleEventsObservable()
+                .filter(s -> s == LifeCycleEvent.ON_RESUME)
+                .doOnNext(__ -> {
+                    // Check if there are possibly expired purchases to remove in case activity
+                    // was in the background when MSG_AUTHORIZATIONS_REMOVED was sent by the service
+                    final AppPreferences mp = new AppPreferences(getContext());
+                    if (mp.getBoolean(this.getString(R.string.persistentAuthorizationsRemovedFlag), false)) {
+                        mp.put(this.getString(R.string.persistentAuthorizationsRemovedFlag), false);
+                        removePurchases();
+                    }
                 })
-                .map(PsiCashIntent.LoadVideoAd::create)
-                .subscribe(intentsPublishRelay);
+                .subscribe();
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        unbind();
+
         shouldAutoPlayVideo = false;
+
+        unbindViewState();
+        lifecyclePublishRelay.accept(LifeCycleEvent.ON_PAUSE);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        bind();
+        bindViewState();
+        lifecyclePublishRelay.accept(LifeCycleEvent.ON_RESUME);
     }
 
-    private void bind() {
-        compositeDisposable.clear();
+    @Override
+    public void onStop() {
+        super.onStop();
+        lifecyclePublishRelay.accept(LifeCycleEvent.ON_STOP);
+    }
 
-        // Pass the UI's intents to the RewardedVideoViewModel
-        psiCashViewModel.processIntents(intents());
+    @Override
+    public void onStart() {
+        super.onStart();
+        lifecyclePublishRelay.accept(LifeCycleEvent.ON_START);
+    }
 
+    private void bindViewState() {
         // Subscribe to the RewardedVideoViewModel and render every emitted state
-        compositeDisposable.add(viewStatesDisposable());
+        viewStatesDisposable = viewStatesDisposable();
+    }
 
-        // Buy speed boost button events.
-        compositeDisposable.add(buySpeedBoostClicksDisposable());
-
-        // Unconditionally get latest local PsiCash state when app is foregrounded
-        compositeDisposable.add(getPsiCashLocalDisposable());
-
-        // Get PsiCash tokens when tunnel connects if there are none
-        compositeDisposable.add(getPsiCashTokensDisposable());
-
-        // Check if there are possibly expired purchases to remove in case activity
-        // was in the background when MSG_AUTHORIZATIONS_REMOVED was sent by the service
-        final AppPreferences mp = new AppPreferences(getContext());
-        if(mp.getBoolean(this.getString(R.string.persistentAuthorizationsRemovedFlag), false)) {
-            mp.put(this.getString(R.string.persistentAuthorizationsRemovedFlag), false);
-            removePurchases();
+    private void unbindViewState() {
+        if (viewStatesDisposable != null) {
+            viewStatesDisposable.dispose();
         }
-
     }
 
     private Disposable viewStatesDisposable() {
@@ -248,7 +257,9 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     }
 
     private Disposable getPsiCashLocalDisposable() {
-        return Observable.just(PsiCashIntent.GetPsiCashLocal.create())
+        return lifeCycleEventsObservable()
+                .filter(s -> s == LifeCycleEvent.ON_RESUME)
+                .map(__ -> PsiCashIntent.GetPsiCashLocal.create())
                 .subscribe(intentsPublishRelay);
     }
 
@@ -269,6 +280,18 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                     return false;
                 })
                 .map(PsiCashIntent.GetPsiCashRemote::create)
+                .subscribe(intentsPublishRelay);
+    }
+
+    private Disposable getOpenedHomePageRewardDisposable() {
+        // If we detect that a home page has been opened we will try to get latest PsiCash state
+        // from the PsiCash server but only if tunnel is up an running.
+        return lifeCycleEventsObservable()
+                .filter(s -> s == LifeCycleEvent.ON_START && shouldGetPsiCashRemote.getAndSet(false))
+                .switchMap(__ -> tunnelConnectionStateObservable()
+                        .take(1)
+                        .filter(state -> state.isRunning() && state.connectionData().isConnected())
+                        .map(PsiCashIntent.GetPsiCashRemote::create))
                 .subscribe(intentsPublishRelay);
     }
 
@@ -309,14 +332,46 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         }
     }
 
-    private void unbind() {
-        compositeDisposable.clear();
-    }
-
     private Observable<TunnelState> tunnelConnectionStateObservable() {
         return tunnelConnectionStateBehaviorRelay
                 .hide()
                 .distinctUntilChanged();
+    }
+
+    private Observable<LifeCycleEvent> lifeCycleEventsObservable() {
+        return lifecyclePublishRelay
+                .hide()
+                .distinctUntilChanged();
+    }
+
+    private Disposable loadVideoAdsDisposable() {
+       return RxView.clicks(loadWatchRewardedVideoBtn)
+                .debounce(200, TimeUnit.MILLISECONDS)
+                .takeWhile(click -> hasValidTokens())
+                .switchMap(click -> {
+                    keepLoadingVideos.set(true);
+                    // React to both - a connection state changes until the load video process
+                    // terminates with either success or error AND to the subscription status changes.
+                    return Observable.combineLatest(tunnelConnectionStateObservable(),
+                            subscriptionStatusObservable(),
+                            ((BiFunction<TunnelState, PsiphonAdManager.SubscriptionStatus, Pair>) Pair::new))
+                            .switchMap(pair -> {
+                                TunnelState s = (TunnelState) pair.first;
+                                PsiphonAdManager.SubscriptionStatus subscriptionStatus = (PsiphonAdManager.SubscriptionStatus) pair.second;
+                                if (subscriptionStatus == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER) {
+                                    // set a flag to stop the outer subscription if user is subscribed
+                                    // and complete this inner subscription right away.
+                                    keepLoadingVideos.set(false);
+                                    return Observable.empty();
+                                }
+                                return Observable.just(s);
+                            })
+                            // complete the subscription if we were signaled that the video has
+                            // loaded or failed OR if the user is subscribed.
+                            .takeWhile(__ -> keepLoadingVideos.get());
+                })
+                .map(PsiCashIntent.LoadVideoAd::create)
+                .subscribe(intentsPublishRelay);
     }
 
     private Observable<PsiphonAdManager.SubscriptionStatus> subscriptionStatusObservable() {
@@ -564,11 +619,15 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         subscriptionStatusBehaviorRelay.accept(status);
     }
 
+    void onOpenHomePage() {
+        shouldGetPsiCashRemote.set(true);
+    }
+
     @Override
     public void onDestroy() {
-        super.onDestroy();
         compositeDisposable.dispose();
-        loadVideoAdsDisposable.dispose();
+        unbindViewState();
+        super.onDestroy();
     }
 
     public void setActiveSpeedBoostListener(ActiveSpeedBoostListener listener) {

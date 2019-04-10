@@ -436,6 +436,7 @@ public class StatusActivity
             disableInterstitialOnNextTabChange = true;
             m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
             loadSponsorTab(true);
+            psiCashFragment.onOpenHomePage();
             m_loadedSponsorTab = true;
 
             // We only want to respond to the HANDSHAKE_SUCCESS action once,
