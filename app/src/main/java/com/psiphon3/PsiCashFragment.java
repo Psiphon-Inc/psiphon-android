@@ -122,7 +122,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             @Override
             public void onNewExpiringPurchase(Context context, PsiCashLib.Purchase purchase) {
                 // Store authorization from the purchase
-                Authorization authorization = Authorization.fromBase64Encoded(purchase.authorization);
+                Authorization authorization = Authorization.fromBase64Encoded(purchase.authorization.encoded);
                 Authorization.storeAuthorization(context, authorization);
 
                 // Send broadcast to restart the tunnel
