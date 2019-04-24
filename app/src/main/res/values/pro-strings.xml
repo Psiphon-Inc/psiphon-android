@@ -125,7 +125,7 @@
 
     <!-- Button title indicating to the user that they will earn PsiCash if they watch a video advertisement.
     The word 'PsiCash' should not be translated or transliterated. Keep as short as possible.-->
-    <string name="watch_video_and_earn_psicash_button">"Watch video &amp; earn PsiCash"</string>
+    <string name="watch_video_and_earn_psicash_button">"Watch video to earn PsiCash"</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because of
     an unknown error. Note: 'PsiCash' should not be translated or transliterated. -->
