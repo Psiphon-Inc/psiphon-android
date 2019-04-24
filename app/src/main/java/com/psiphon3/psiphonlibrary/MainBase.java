@@ -812,6 +812,7 @@ public abstract class MainBase {
         }
 
         protected void doToggle() {
+            disableToggleServiceUI();
             if (!isServiceRunning()) {
                 startUp();
             } else {

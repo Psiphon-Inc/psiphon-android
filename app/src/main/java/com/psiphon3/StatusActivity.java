@@ -535,7 +535,6 @@ public class StatusActivity
                             .takeUntil(interstitial)
                             .doOnError(__->doStartUp());
                 })
-                .doOnSubscribe(__ -> disableToggleServiceUI())
                 .onErrorResumeNext(Observable.empty())
                 .subscribe();
     }
