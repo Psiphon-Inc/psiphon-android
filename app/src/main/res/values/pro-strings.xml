@@ -179,7 +179,7 @@
     that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
     Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed',
     'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="one_h_of_speed_boost_available_button">1h of speed boost available</string>
+    <string name="one_h_of_speed_boost_available_button">1H of Speed Boost available</string>
 
     <!-- Text which appears in the Speed Boost meter when the user has not yet earned enough PsiCash to
     Speed Boost. This text will be accompanied with a percentage indicating to the user how close they are
@@ -223,4 +223,11 @@
     <!-- Alert error message informing user that a recoverable error has occurred while trying to retrieve PsiCash balance and last action will most
     likely succeed next time.  Note: 'PsiCash' should not be translated or transliterated. -->
     <string name="psicash_cant_get_balance_recoverable_message">Cannot retrieve PsiCash balance from the server at the moment. Please try again later.</string>
+
+    <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
+    of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
+    is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed. -->
+    <string name="speed_boost_active_label">Speed Boost Active</string>
 </resources>
