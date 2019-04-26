@@ -596,11 +596,12 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         countDownTimer = new CountDownTimer(millisDiff, 1000) {
             @Override
             public void onTick(long l) {
-                // TODO: use default locale?
                 String hms = String.format(Locale.US, "%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(l),
                         TimeUnit.MILLISECONDS.toMinutes(l) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(l)),
                         TimeUnit.MILLISECONDS.toSeconds(l) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(l)));
-                buySpeedBoostBtn.setText(hms);
+
+                buySpeedBoostBtn.setText(String.format(Locale.US, "%s - %s",
+                        getString(R.string.speed_boost_active_label), hms));
             }
 
             @Override
