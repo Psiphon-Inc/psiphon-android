@@ -442,7 +442,10 @@ public class PsiCashClient {
                             } // else
                             return Observable.error(err);
                         })
-                        .flatMap(x -> x));
+                        .flatMap(x -> x))
+                .onErrorResumeNext(err -> {
+                    return getPsiCashLocal().concatWith(Single.error(err));
+                });
     }
 
     public synchronized void putVideoReward(long reward) {

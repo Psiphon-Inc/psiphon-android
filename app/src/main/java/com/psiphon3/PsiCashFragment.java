@@ -240,7 +240,11 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     }
 
     private Disposable viewStatesDisposable() {
-        return psiCashViewModel.states()
+        // Do not render PsiCash view states if user is subscribed
+        return subscriptionStatusObservable()
+                .flatMap(s -> s == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER ?
+                        Observable.empty() :
+                        psiCashViewModel.states())
                 // make sure onError doesn't cut ahead of onNext with the observeOn overload
                 .observeOn(AndroidSchedulers.mainThread(), true)
                 .subscribe(this::render);
