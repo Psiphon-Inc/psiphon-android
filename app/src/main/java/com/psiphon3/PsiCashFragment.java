@@ -596,10 +596,13 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         countDownTimer = new CountDownTimer(millisDiff, 1000) {
             @Override
             public void onTick(long l) {
+                if(!isAdded()) {
+                    // Do nothing if not attached to the Activity
+                    return;
+                }
                 String hms = String.format(Locale.US, "%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(l),
                         TimeUnit.MILLISECONDS.toMinutes(l) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(l)),
                         TimeUnit.MILLISECONDS.toSeconds(l) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(l)));
-
                 buySpeedBoostBtn.setText(String.format(Locale.US, "%s - %s",
                         getString(R.string.speed_boost_active_label), hms));
             }
@@ -627,6 +630,9 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     @Override
     public void onDestroy() {
         compositeDisposable.dispose();
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+        }
         unbindViewState();
         super.onDestroy();
     }
