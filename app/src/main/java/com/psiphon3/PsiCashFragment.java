@@ -21,17 +21,17 @@
 package com.psiphon3;
 
 import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
-import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
+import android.support.design.widget.SwipeDismissBehavior;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Pair;
@@ -40,6 +40,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
@@ -449,12 +450,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             Utils.MyLog.g("Unexpected PsiCash error: " + error.toString());
             errorMessage = getString(R.string.unexpected_error_occured_send_feedback_message);
         }
-        View view = getActivity().findViewById(R.id.psicashTab);
-        if (view == null) {
-            return;
-        }
 
-        Snackbar snackbar = Snackbar.make(view, errorMessage, Snackbar.LENGTH_LONG);
+        Snackbar snackbar = Snackbar.make(getActivity().findViewById(R.id.psicash_coordinator_layout), errorMessage, Snackbar.LENGTH_LONG);
 
         // center the message in the text view
         TextView tv = (TextView) snackbar.getView().findViewById(android.support.design.R.id.snackbar_text);
@@ -463,7 +460,25 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         } else {
             tv.setGravity(Gravity.CENTER_HORIZONTAL);
         }
+
         snackbar.show();
+
+        snackbar.addCallback(new Snackbar.Callback(){
+            @Override
+            public void onShown(Snackbar sb) {
+                super.onShown(sb);
+                View snackBarView = sb.getView();
+                final ViewGroup.LayoutParams lp = snackBarView.getLayoutParams();
+                if (lp instanceof CoordinatorLayout.LayoutParams) {
+                    final CoordinatorLayout.LayoutParams layoutParams = (CoordinatorLayout.LayoutParams) lp;
+                    CoordinatorLayout.Behavior behavior = layoutParams.getBehavior();
+                    if(behavior instanceof SwipeDismissBehavior){
+                        ((SwipeDismissBehavior) behavior).setSwipeDirection(SwipeDismissBehavior.SWIPE_DIRECTION_ANY);
+                    }
+                    layoutParams.setBehavior(behavior);
+                }
+            }
+        });
     }
 
     private void updateUiProgressView(PsiCashViewState state) {
@@ -550,7 +565,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 balanceLabel.setText(valueAnimator1.getAnimatedValue().toString()));
         valueAnimator.start();
 
-
+        // floating balance delta animation
         TextView floatingDeltaTextView = new TextView(getContext());
         floatingDeltaTextView.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -559,21 +574,19 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         floatingDeltaTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f);
         floatingDeltaTextView.setText(String.format(Locale.US, "%s%d", balanceDelta > 0 ? "+" : "", balanceDelta));
 
-        ViewGroup rootView = getActivity().findViewById(android.R.id.content);
-
-        Rect offsetViewBounds = new Rect();
-        balanceLabel.getDrawingRect(offsetViewBounds);
-        rootView.offsetDescendantRectToMyCoords(balanceLabel, offsetViewBounds);
-
-        int relativeTop = offsetViewBounds.top;
-
         final FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT);
-        lp.setMargins(0, relativeTop, 0, 0);
+        lp.setMargins(0, 0, 0, 0);
         lp.gravity = Gravity.CENTER_HORIZONTAL;
 
-        rootView.addView(floatingDeltaTextView, lp);
+        ViewGroup viewGroup = (ViewGroup)psiCashLayout;
+
+        viewGroup.addView(floatingDeltaTextView, 0, lp);
+        setAllParentsClip(floatingDeltaTextView, false);
+
+        viewGroup.bringChildToFront(floatingDeltaTextView);
+        viewGroup.invalidate();
 
         floatingDeltaTextView.animate()
                 .scaleX(3f).scaleY(3f)
@@ -581,16 +594,42 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 .setDuration(2000)
                 .translationY(-100f)
                 .translationX(50f)
-                .setListener(new AnimatorListenerAdapter() {
+                .setListener(new Animator.AnimatorListener() {
                     @Override
-                    public void onAnimationEnd(Animator animation, boolean isReverse) {
-                        rootView.removeView(floatingDeltaTextView);
+                    public void onAnimationStart(Animator animator) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animator) {
+                        setAllParentsClip(floatingDeltaTextView, true);
+                        viewGroup.removeView(floatingDeltaTextView);
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animator) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animator) {
+
                     }
                 })
                 .start();
 
         // update view's current balance value
         currentUiBalance = state.uiBalance();
+    }
+
+    private void setAllParentsClip(View view, boolean enabled) {
+        ViewParent viewParent = view.getParent();
+        while (viewParent instanceof ViewGroup) {
+            ViewGroup viewGroup = (ViewGroup)viewParent;
+            viewGroup.setClipToPadding(enabled);
+            viewGroup.setClipChildren(enabled);
+            viewParent = viewGroup.getParent();
+        }
     }
 
     private void startActiveSpeedBoostCountDown(long millisDiff) {

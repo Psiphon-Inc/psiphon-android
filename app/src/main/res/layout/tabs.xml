@@ -250,14 +250,20 @@
                 layout="@layout/statistics" />
         </ScrollView>
 
-        <ScrollView
-            android:id="@+id/psicashTab"
-            android:padding="10dp"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:orientation="vertical"
-            android:scrollbarAlwaysDrawVerticalTrack="false"
-            android:weightSum="1.0">
+        <android.support.design.widget.CoordinatorLayout
+            android:id="@+id/psicash_coordinator_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <ScrollView
+                android:id="@+id/psicashTab"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:orientation="vertical"
+                android:padding="10dp"
+                android:scrollbarAlwaysDrawVerticalTrack="false"
+                android:weightSum="1.0">
 
                 <fragment
                     android:id="@+id/psicash_fragment_container"
@@ -267,7 +273,8 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
-        </ScrollView>
+            </ScrollView>
+        </android.support.design.widget.CoordinatorLayout>
 
         <LinearLayout
             android:id="@+id/logsTab"

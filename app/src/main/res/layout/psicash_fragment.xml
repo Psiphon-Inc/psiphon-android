@@ -1,79 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="0dp">
+    android:layout_height="match_parent">
 
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:gravity="center_vertical|center_horizontal"
-        android:orientation="horizontal">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="0dp">
 
-        <ImageView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/psicash_coin" />
+            android:layout_gravity="center_horizontal"
+            android:gravity="center_vertical|center_horizontal"
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/psicash_balance_label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:padding="5dp"
-            android:text=""
-            android:textStyle="bold" />
-    </LinearLayout>
-
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal">
-
-        <ProgressBar
-            android:id="@+id/progress_view"
-            style="?android:attr/progressBarStyleSmall"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/psicash_frame"
-            android:layout_alignLeft="@+id/psicash_frame"
-            android:layout_alignRight="@+id/psicash_frame"
-            android:padding="2dp" />
-
-        <FrameLayout
-            android:id="@+id/psicash_frame"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/psicash_coin" />
 
             <TextView
-                android:id="@+id/psicash_balance_progress"
+                android:id="@+id/psicash_balance_label"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginLeft="6dp"
-                android:layout_marginRight="6dp"
-                android:background="@drawable/psicash_progress_bar_states"
                 android:gravity="center"
-                android:max="100"
-                android:visibility="invisible" />
+                android:padding="5dp"
+                android:text=""
+                android:textStyle="bold" />
+        </LinearLayout>
 
-            <Button
-                android:id="@+id/purchase_speedboost_btn"
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal">
+
+            <ProgressBar
+                android:id="@+id/progress_view"
+                style="?android:attr/progressBarStyleSmall"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:visibility="invisible" />
-        </FrameLayout>
-    </RelativeLayout>
+                android:layout_below="@+id/psicash_frame"
+                android:layout_alignLeft="@+id/psicash_frame"
+                android:layout_alignRight="@+id/psicash_frame"
+                android:padding="2dp" />
 
-    <Button
-        android:id="@+id/load_watch_rewarded_video_btn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/watch_video_and_earn_psicash_button" />
+            <FrameLayout
+                android:id="@+id/psicash_frame"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
 
-</LinearLayout>
+                <TextView
+                    android:id="@+id/psicash_balance_progress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:background="@drawable/psicash_progress_bar_states"
+                    android:gravity="center"
+                    android:max="100"
+                    android:visibility="invisible" />
+
+                <Button
+                    android:id="@+id/purchase_speedboost_btn"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="invisible" />
+            </FrameLayout>
+        </RelativeLayout>
+
+        <Button
+            android:id="@+id/load_watch_rewarded_video_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/watch_video_and_earn_psicash_button" />
+
+    </LinearLayout>
+</FrameLayout>
