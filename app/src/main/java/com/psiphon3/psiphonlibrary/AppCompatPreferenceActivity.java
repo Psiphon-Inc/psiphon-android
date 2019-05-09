@@ -17,7 +17,7 @@ import android.view.ViewGroup;
  * This technique can be used with an {@link android.app.Activity} class, not just
  * {@link android.preference.PreferenceActivity}.
  */
-public abstract class AppCompatPreferenceActivity extends PreferenceActivity {
+public abstract class AppCompatPreferenceActivity extends LocalizedActivities.PreferenceActivity {
     private AppCompatDelegate mDelegate;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
