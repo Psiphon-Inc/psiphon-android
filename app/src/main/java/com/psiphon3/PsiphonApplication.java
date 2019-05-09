@@ -21,7 +21,9 @@
 package com.psiphon3;
 
 import android.app.Application;
+import android.content.Context;
 
+import com.psiphon3.psiphonlibrary.LocaleManager;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 
 import java.util.ArrayList;
@@ -35,6 +37,11 @@ public class PsiphonApplication extends Application {
         // Build a list of receivers to be excluded from sending a proxy change intent
         excludedReceivers = WebViewProxySettings.getReceivers(this);
         super.onCreate();
+    }
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(LocaleManager.setLocale(base));
     }
 
     public static List<Object> getExcludedReceivers() {
