@@ -63,11 +63,8 @@ import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 import com.mopub.mobileads.MoPubView;
 import com.mopub.mobileads.MoPubView.BannerAdListener;
-import com.psiphon3.psiphonlibrary.PsiphonConstants;
-import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 import com.psiphon3.util.IabHelper;
@@ -78,7 +75,6 @@ import com.psiphon3.util.SkuDetails;
 import com.psiphon3.psiphonlibrary.*;
 
 import net.grandcentrix.tray.AppPreferences;
-import net.grandcentrix.tray.BuildConfig;
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
 import java.util.ArrayList;
@@ -99,6 +95,7 @@ public class StatusActivity
 
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
+    private boolean m_preloadUntunneledInterstitial = true;
     private AdView m_adMobUntunneledBannerAdView = null;
     private InterstitialAd m_adMobUntunneledInterstitial = null;
     private boolean m_adMobUntunneledInterstitialFailed = false;
@@ -181,6 +178,9 @@ public class StatusActivity
     @Override
     protected void onResume()
     {
+        // Preload untunneled interstitials if the user leaves and returns to the activity
+        m_preloadUntunneledInterstitial = true;
+
         // Don't miss a chance to get personalized ads consent if user hasn't set it yet.
         mAdsConsentInitialized = false;
 
@@ -333,6 +333,9 @@ public class StatusActivity
 
     @Override
     protected void onTunnelDisconnected() {
+        // The user pressed stop. Don't preload another interstitial because it's likely the user is done.
+        m_preloadUntunneledInterstitial = false;
+
         deInitTunneledAds();
     }
 
@@ -1228,7 +1231,7 @@ public class StatusActivity
                 MobileAds.initialize(context, ADMOB_APP_ID);
                 initUntunneledBanner();
 
-                if (m_adMobUntunneledInterstitial == null)
+                if (m_adMobUntunneledInterstitial == null && m_preloadUntunneledInterstitial)
                 {
                     loadUntunneledFullScreenAd();
                 }
@@ -1345,6 +1348,11 @@ public class StatusActivity
                 }
                 m_adMobUntunneledInterstitialShowWhenLoaded = true;
             }
+        }
+        else
+        {
+            loadUntunneledFullScreenAd();
+            m_adMobUntunneledInterstitialShowWhenLoaded = true;
         }
     }
 
