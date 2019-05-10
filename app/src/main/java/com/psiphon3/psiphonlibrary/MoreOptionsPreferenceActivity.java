@@ -24,7 +24,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.*;
 import android.preference.Preference.OnPreferenceClickListener;
@@ -47,12 +46,12 @@ import org.zirco.ui.activities.MainActivity;
 
 import java.util.*;
 
-public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompatPreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceClickListener {
+public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceClickListener {
 
     /**
      * This is a work around for SDK 9, 10 as they lack Intent.FLAG_ACTIVITY_CLEAR_TASK.
      */
-    public static final String FORCE_ACTIVITY_RESTART = MoreOptionsPreferenceActivity.class.getName() + ":FORCE_ACTIVITY_RESTART";
+    public static final String FORCE_APPLICATION_RESTART = MoreOptionsPreferenceActivity.class.getName() + ":FORCE_APPLICATION_RESTART";
 
     private interface PreferenceGetter {
         boolean getBoolean(@NonNull final String key, final boolean defaultValue);
@@ -564,14 +563,9 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
                     MainActivity.INSTANCE.finish();
                 }
 
-                // Create an intent to restart the main activity with the new language
+                // Create an intent to restart the application with the new language
                 Intent intent = new Intent(MoreOptionsPreferenceActivity.this, StatusActivity.class);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                } else {
-                    // This is a work around for SDK 9, 10 as they lack Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    intent.putExtra(FORCE_ACTIVITY_RESTART, true);
-                }
+                intent.putExtra(FORCE_APPLICATION_RESTART, true);
                 startActivity(intent);
 
                 return true;

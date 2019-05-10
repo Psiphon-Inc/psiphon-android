@@ -1,7 +1,7 @@
 package com.psiphon3.psiphonlibrary;
+
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.preference.PreferenceActivity;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.Nullable;
 import android.support.v7.app.ActionBar;
@@ -17,7 +17,7 @@ import android.view.ViewGroup;
  * This technique can be used with an {@link android.app.Activity} class, not just
  * {@link android.preference.PreferenceActivity}.
  */
-public abstract class AppCompatPreferenceActivity extends PreferenceActivity {
+public abstract class AppCompatPreferenceActivity extends LocalizedActivities.PreferenceActivity {
     private AppCompatDelegate mDelegate;
     @Override
     protected void onCreate(Bundle savedInstanceState) {

@@ -39,13 +39,6 @@ public abstract class LocalizedActivities {
         }
     }
 
-    public static abstract class AppCompatPreferenceActivity extends com.psiphon3.psiphonlibrary.AppCompatPreferenceActivity {
-        @Override
-        protected void attachBaseContext(Context newBase) {
-            super.attachBaseContext(LocaleManager.setLocale(newBase));
-        }
-    }
-
     public static abstract class TabActivity extends android.app.TabActivity {
         @Override
         protected void attachBaseContext(Context newBase) {
