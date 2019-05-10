@@ -72,7 +72,6 @@ public class PsiCashClient {
         httpProxyPort = 0;
         psiCashLib = new PsiCashLib();
         okHttpClient = new OkHttpClient.Builder()
-                .protocols(Collections.singletonList(Protocol.HTTP_1_1))
                 .retryOnConnectionFailure(false)
                 .proxySelector(new ProxySelector() {
                     @Override
@@ -109,8 +108,6 @@ public class PsiCashClient {
                         if (reqParams.headers != null) {
                             reqBuilder.headers(Headers.of(reqParams.headers));
                         }
-
-                        reqBuilder.addHeader("Connection", "close");
 
                         Request request = reqBuilder.build();
                         Response response = okHttpClient.newCall(request).execute();

@@ -392,51 +392,41 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
     @Override
     public void render(PsiCashViewState state) {
-        updateUiBalanceLabel(state);
-        updateUiChargeBar(state);
-        updateUiProgressView(state);
-        updateUiPsiCashErrorMessage(state);
-        updateUiRewardedVideoButton(state);
+        Throwable psiCashStateError = state.error();
+        if(psiCashStateError == null) {
+            updateUiBalanceLabel(state);
+            updateUiChargeBar(state);
+            updateUiProgressView(state);
+            updateUiRewardedVideoButton(state);
+        } else {
+            updateUiPsiCashError(psiCashStateError);
+        }
     }
 
     private void updateUiRewardedVideoButton(PsiCashViewState state) {
         if(state.videoIsLoading()) {
-            // Reset this flag if application enters background between the LOADING and LOADED state.
+            // Reset auto play flag if application enters background between the LOADING and LOADED state.
             shouldAutoPlayVideo = true;
             loadWatchRewardedVideoBtn.setEnabled(false);
-            return;
-        }
-        if(state.videoIsLoaded()) {
+        } else if(state.videoIsLoaded()) {
             // Success or error should stop the load video subscription.
             keepLoadingVideos.set(false);
             loadWatchRewardedVideoBtn.setEnabled(true);
-
             if (shouldAutoPlayVideo) {
                 RewardedVideoClient.getInstance().playRewardedVideo();
             }
-            return;
-        }
-        if(state.videoIsPlaying()) {
+        } else if(state.videoIsPlaying()) {
             loadWatchRewardedVideoBtn.setEnabled(false);
-            return;
-        }
-        if(state.videoIsFinished()) {
+        } else if(state.videoIsFinished()) {
             loadWatchRewardedVideoBtn.setEnabled(true);
-            return;
-        }
-        if (state.error() != null && state.error() instanceof PsiCashException.Video) {
-            // Success or error should stop the load video subscription.
-            keepLoadingVideos.set(false);
-            loadWatchRewardedVideoBtn.setEnabled(true);
-            return;
         }
     }
 
-    private void updateUiPsiCashErrorMessage(PsiCashViewState state) {
-        Throwable error = state.error();
-        if (error == null) {
-            // noop
-            return;
+    private void updateUiPsiCashError(Throwable error) {
+        if (error instanceof PsiCashException.Video) {
+            // Success or error should stop the load video subscription.
+            keepLoadingVideos.set(false);
+            loadWatchRewardedVideoBtn.setEnabled(true);
         }
 
         // Clear view state error immediately.
@@ -454,16 +444,14 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         Snackbar snackbar = Snackbar.make(getActivity().findViewById(R.id.psicash_coordinator_layout), errorMessage, Snackbar.LENGTH_LONG);
 
         // center the message in the text view
-        TextView tv = (TextView) snackbar.getView().findViewById(android.support.design.R.id.snackbar_text);
+        TextView tv = snackbar.getView().findViewById(android.support.design.R.id.snackbar_text);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
         } else {
             tv.setGravity(Gravity.CENTER_HORIZONTAL);
         }
 
-        snackbar.show();
-
-        snackbar.addCallback(new Snackbar.Callback(){
+        snackbar.addCallback(new Snackbar.Callback() {
             @Override
             public void onShown(Snackbar sb) {
                 super.onShown(sb);
@@ -479,6 +467,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 }
             }
         });
+
+        snackbar.show();
     }
 
     private void updateUiProgressView(PsiCashViewState state) {
