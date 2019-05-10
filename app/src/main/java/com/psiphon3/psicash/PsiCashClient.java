@@ -33,8 +33,6 @@ import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -74,20 +72,18 @@ public class PsiCashClient {
         httpProxyPort = 0;
         psiCashLib = new PsiCashLib();
         okHttpClient = new OkHttpClient.Builder()
-                .protocols(Arrays.asList(Protocol.HTTP_1_1))
+                .protocols(Collections.singletonList(Protocol.HTTP_1_1))
                 .retryOnConnectionFailure(false)
                 .proxySelector(new ProxySelector() {
                     @Override
                     public List<Proxy> select(URI uri) {
-                        List<Proxy> list = new ArrayList<>();
                         Proxy proxy;
                         if (httpProxyPort > 0) {
                             proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", httpProxyPort));
                         } else {
                             proxy = Proxy.NO_PROXY;
                         }
-                        list.add(proxy);
-                        return list;
+                        return Collections.singletonList(proxy);
                     }
 
                     @Override
@@ -193,7 +189,7 @@ public class PsiCashClient {
         }
     }
 
-    public String rewardedVideoCustomData() throws PsiCashException {
+    String rewardedVideoCustomData() throws PsiCashException {
         PsiCashLib.GetRewardedActivityDataResult rewardedActivityData = psiCashLib.getRewardedActivityData();
         if (rewardedActivityData.error == null) {
             return rewardedActivityData.data;
@@ -235,7 +231,7 @@ public class PsiCashClient {
         }
     }
 
-    public boolean hasEarnerToken() throws PsiCashException {
+    boolean hasEarnerToken() throws PsiCashException {
         return hasToken(PsiCashLib.TokenType.EARNER);
     }
 
@@ -455,7 +451,7 @@ public class PsiCashClient {
         editor.apply();
     }
 
-    public synchronized void resetVideoReward() {
+    private synchronized void resetVideoReward() {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putLong(PSICASH_PERSISTED_VIDEO_REWARD_KEY, 0);
         editor.apply();
@@ -465,7 +461,7 @@ public class PsiCashClient {
         return sharedPreferences.getLong(PSICASH_PERSISTED_VIDEO_REWARD_KEY, 0);
     }
 
-    public Observable<PsiCashModel.PsiCash> removePurchases(List<String> purchasesToRemove) {
+    Observable<PsiCashModel.PsiCash> removePurchases(List<String> purchasesToRemove) {
         return Observable.just(purchasesToRemove)
                 .observeOn(Schedulers.io())
                 .flatMap(p -> Completable.fromAction(() -> psiCashLib.removePurchases(p))
