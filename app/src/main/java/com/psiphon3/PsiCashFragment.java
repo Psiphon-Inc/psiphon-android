@@ -93,7 +93,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
 
     private TextView balanceLabel;
-    private Button buySpeedBoostBtn;
+    private Button speedBoostBtn;
     private CountDownTimer countDownTimer;
     private ProgressBar progressBar;
     private int currentUiBalance;
@@ -163,8 +163,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         RewardedVideoClient.getInstance().initWithActivity(getActivity());
         progressBar = getActivity().findViewById(R.id.progress_view);
         progressBar.setIndeterminate(true);
-        buySpeedBoostBtn = getActivity().findViewById(R.id.purchase_speedboost_btn);
-        buySpeedBoostBtn.setVisibility(View.INVISIBLE);
+        speedBoostBtn = getActivity().findViewById(R.id.purchase_speedboost_btn);
+        speedBoostBtn.setVisibility(View.INVISIBLE);
         psiCashChargeProgressTextView = getActivity().findViewById(R.id.psicash_balance_progress);
         psiCashChargeProgressTextView.setVisibility(View.INVISIBLE);
         balanceLabel = getActivity().findViewById(R.id.psicash_balance_label);
@@ -173,7 +173,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         // Load video button clicks
         compositeDisposable.add(loadVideoAdsDisposable());
         // Buy speed boost button events.
-        compositeDisposable.add(buySpeedBoostClicksDisposable());
+        compositeDisposable.add(speedBoostClicksDisposable());
         // Unconditionally get latest local PsiCash state when app is foregrounded
         compositeDisposable.add(getPsiCashLocalDisposable());
         // Get PsiCash tokens when tunnel connects if there are none
@@ -251,13 +251,22 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 .subscribe(this::render);
     }
 
-    private Disposable buySpeedBoostClicksDisposable() {
-        return RxView.clicks(buySpeedBoostBtn)
+    private Disposable speedBoostClicksDisposable() {
+        return RxView.clicks(speedBoostBtn)
                 .debounce(200, TimeUnit.MILLISECONDS)
-                .withLatestFrom(tunnelConnectionStateObservable(), (__, state) ->
-                        PsiCashIntent.PurchaseSpeedBoost.create(state,
-                                (PsiCashLib.PurchasePrice) buySpeedBoostBtn.getTag(R.id.speedBoostPrice),
-                                (boolean) buySpeedBoostBtn.getTag(R.id.hasActiveSpeedBoostTag)))
+                .withLatestFrom(tunnelConnectionStateObservable(), (__, state) -> {
+                    boolean hasActiveSpeedBoost = (boolean) speedBoostBtn.getTag(R.id.hasActiveSpeedBoostTag);
+                    if (hasActiveSpeedBoost) {
+                        if(state.isRunning() && state.connectionData().isConnected()) {
+                            return PsiCashIntent.GetPsiCashRemote.create(state);
+                        } else {
+                            return PsiCashIntent.GetPsiCashLocal.create();
+                        }
+                    } else {
+                        return PsiCashIntent.PurchaseSpeedBoost.create(state,
+                                (PsiCashLib.PurchasePrice) speedBoostBtn.getTag(R.id.speedBoostPrice));
+                    }
+                })
                 .subscribe(intentsPublishRelay);
     }
 
@@ -472,7 +481,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     }
 
     private void updateUiProgressView(PsiCashViewState state) {
-        if (state.purchaseInFlight() || state.videoIsLoading()) {
+        if (state.psiCashTransactionInFlight() || state.videoIsLoading()) {
             progressBar.setVisibility(View.VISIBLE);
         } else {
             progressBar.setVisibility(View.INVISIBLE);
@@ -481,8 +490,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
     private void updateUiChargeBar(PsiCashViewState state) {
         PsiCashLib.PurchasePrice purchasePrice = state.purchasePrice();
-        buySpeedBoostBtn.setTag(R.id.speedBoostPrice, purchasePrice);
-        buySpeedBoostBtn.setEnabled(!state.purchaseInFlight());
+        speedBoostBtn.setTag(R.id.speedBoostPrice, purchasePrice);
+        speedBoostBtn.setEnabled(!state.psiCashTransactionInFlight());
         Date nextPurchaseExpiryDate = state.nextPurchaseExpiryDate();
         if (nextPurchaseExpiryDate != null && new Date().before(nextPurchaseExpiryDate)) {
             if(activeSpeedBoostListener != null ) {
@@ -491,16 +500,16 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             long millisDiff = nextPurchaseExpiryDate.getTime() - new Date().getTime();
             startActiveSpeedBoostCountDown(millisDiff);
             psiCashChargeProgressTextView.setVisibility(View.INVISIBLE);
-            buySpeedBoostBtn.setVisibility(View.VISIBLE);
-            buySpeedBoostBtn.setTag(R.id.hasActiveSpeedBoostTag, true);
+            speedBoostBtn.setVisibility(View.VISIBLE);
+            speedBoostBtn.setTag(R.id.hasActiveSpeedBoostTag, true);
         } else {
             if(activeSpeedBoostListener != null ) {
                 activeSpeedBoostListener.onActiveSpeedBoost(Boolean.FALSE);
             }
-            buySpeedBoostBtn.setTag(R.id.hasActiveSpeedBoostTag, false);
+            speedBoostBtn.setTag(R.id.hasActiveSpeedBoostTag, false);
             if(purchasePrice != null && purchasePrice.price != 0) {
                 if (purchasePrice.price / 1e9 > state.uiBalance()) {
-                    buySpeedBoostBtn.setVisibility(View.INVISIBLE);
+                    speedBoostBtn.setVisibility(View.INVISIBLE);
                     psiCashChargeProgressTextView.setVisibility(View.VISIBLE);
 
                     int chargePercentage = (int) Math.floor(state.uiBalance() / (purchasePrice.price / 1e9) * 100);
@@ -525,9 +534,9 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                         return true;
                     });
                 } else {
-                    buySpeedBoostBtn.setVisibility(View.VISIBLE);
+                    speedBoostBtn.setVisibility(View.VISIBLE);
                     psiCashChargeProgressTextView.setVisibility(View.INVISIBLE);
-                    buySpeedBoostBtn.setText(R.string.one_h_of_speed_boost_available_button);
+                    speedBoostBtn.setText(R.string.one_hour_of_speed_boost_available_button);
                     psiCashLayout.setOnTouchListener((view, motionEvent) -> false);
                 }
             }
@@ -636,7 +645,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 String hms = String.format(Locale.US, "%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(l),
                         TimeUnit.MILLISECONDS.toMinutes(l) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(l)),
                         TimeUnit.MILLISECONDS.toSeconds(l) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(l)));
-                buySpeedBoostBtn.setText(String.format(Locale.US, "%s - %s",
+                speedBoostBtn.setText(String.format(Locale.US, "%s - %s",
                         getString(R.string.speed_boost_active_label), hms));
             }
 

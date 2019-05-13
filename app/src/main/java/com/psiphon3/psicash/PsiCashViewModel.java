@@ -108,6 +108,7 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                                     .uiBalance(uiBalance)
                                     .purchasePrice(price)
                                     .nextPurchaseExpiryDate(nextPurchaseExpiryDate)
+                                    .psiCashTransactionInFlight(false)
                                     // after first success animate on consecutive balance changes
                                     .animateOnNextBalanceChange(true)
                                     .build();
@@ -117,10 +118,12 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                                 Utils.MyLog.g("PsiCash diagnostic info: " + model.diagnosticInfo());
                             }
                             return stateBuilder
+                                    .psiCashTransactionInFlight(false)
                                     .error(getPsiCashResult.error())
                                     .build();
                         case IN_FLIGHT:
                             return stateBuilder
+                                    .psiCashTransactionInFlight(true)
                                     .build();
                     }
                 } else if (result instanceof PsiCashResult.ClearErrorState) {
@@ -139,17 +142,17 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
                     switch (purchaseResult.status()) {
                         case SUCCESS:
                             return stateBuilder
-                                    .purchaseInFlight(false)
+                                    .psiCashTransactionInFlight(false)
                                     .nextPurchaseExpiryDate(nextPurchaseExpiryDate)
                                     .build();
                         case FAILURE:
                             PsiCashViewState.Builder builder = stateBuilder
-                                    .purchaseInFlight(false)
+                                    .psiCashTransactionInFlight(false)
                                     .error(purchaseResult.error());
                             return builder.build();
                         case IN_FLIGHT:
                             return stateBuilder
-                                    .purchaseInFlight(true)
+                                    .psiCashTransactionInFlight(true)
                                     .build();
                     }
                 } else if (result instanceof PsiCashResult.Video) {
@@ -245,8 +248,7 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel {
             PsiCashIntent.PurchaseSpeedBoost purchaseSpeedBoostIntent = (PsiCashIntent.PurchaseSpeedBoost) intent;
             final PsiCashLib.PurchasePrice price = purchaseSpeedBoostIntent.purchasePrice();
             final TunnelState tunnelState = purchaseSpeedBoostIntent.connectionState();
-            final boolean hasActiveBoost = purchaseSpeedBoostIntent.hasActiveBoost();
-            return Observable.just(PsiCashAction.MakeExpiringPurchase.create(tunnelState, price, hasActiveBoost));
+            return Observable.just(PsiCashAction.MakeExpiringPurchase.create(tunnelState, price));
         }
         if (intent instanceof PsiCashIntent.RemovePurchases) {
             PsiCashIntent.RemovePurchases removePurchases = (PsiCashIntent.RemovePurchases) intent;

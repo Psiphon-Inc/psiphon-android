@@ -179,7 +179,7 @@
     that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
     Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed',
     'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="one_h_of_speed_boost_available_button">1 h de Survitesse</string>
+    <string name="one_hour_of_speed_boost_available_button">1 heure de Survitesse</string>
 
     <!-- Text which appears in the Speed Boost meter when the user has not yet earned enough PsiCash to
     Speed Boost. This text will be accompanied with a percentage indicating to the user how close they are
@@ -192,23 +192,11 @@
     <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
     <string name="unexpected_error_occured_send_feedback_message">Une erreur inattendue est survenue. Veuillez envoyer une rétroaction.</string>
 
-    <!-- Alert error message informing user that the Psiphon tunnel needs to be running in order to verify their existing active Speed Boost purchase.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
-    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_connect_to_verify_message">Veuillez vous connecter pour vérifier l’état de votre Survitesse.</string>
-
     <!-- Alert error message informing user that the Psiphon tunnel needs to be running in order to make a Speed Boost purchase.
      'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
     <string name="speed_boost_connect_to_purchase_message">Veuillez vous connecter pour effectuer un achat de Survitesse.</string>
-
-    <!-- Alert error message informing user that the Psiphon tunnel needs to complete its connection sequence in order to verify an existing active
-    Speed Boost purchase. 'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
-    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_wait_tunnel_to_connect_to_verify_message">Veuillez attendre la connexion du tunnel pour vérifier l’état de votre Survitesse.</string>
 
     <!-- Alert error message informing user that the Psiphon tunnel needs to complete its connection sequence in order to make a Speed Boost purchase.
      'Speed Boost' is a reward that can be purchased with PsiCash credit.

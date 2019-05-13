@@ -47,7 +47,6 @@ import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
@@ -301,29 +300,19 @@ public class PsiCashClient {
     }
 
     // Emits both PsiCashModel.PsiCash and PsiCashModel.ExpiringPurchase
-    Observable<? extends PsiCashModel> makeExpiringPurchase(TunnelState connectionState, PsiCashLib.PurchasePrice price, boolean hasActiveBoost) {
+    Observable<? extends PsiCashModel> makeExpiringPurchase(TunnelState connectionState, PsiCashLib.PurchasePrice price) {
         return Observable.just(connectionState)
                 .observeOn(Schedulers.io())
                 .flatMap(state -> Single.fromCallable(() -> {
                     TunnelState.ConnectionData connectionData = state.connectionData();
 
                     if (!state.isRunning()) {
-                        if (hasActiveBoost) {
-                            throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not running.",
-                                    appContext.getString(R.string.speed_boost_connect_to_verify_message));
-                        } else {
-                            throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not running.", 
-                                    appContext.getString(R.string.speed_boost_connect_to_purchase_message));
-                        }
+                        throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not running.",
+                                appContext.getString(R.string.speed_boost_connect_to_purchase_message));
                     } else {
                         if (!connectionData.isConnected()) {
-                            if (hasActiveBoost) {
-                                throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.", 
-                                        appContext.getString(R.string.speed_boost_wait_tunnel_to_connect_to_verify_message));
-                            } else {
-                                throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.", 
-                                        appContext.getString(R.string.speed_boost_wait_tunnel_to_connect_to_purchase_message));
-                            }
+                            throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.",
+                                    appContext.getString(R.string.speed_boost_wait_tunnel_to_connect_to_purchase_message));
                         }
                     }
                     if (price == null) {

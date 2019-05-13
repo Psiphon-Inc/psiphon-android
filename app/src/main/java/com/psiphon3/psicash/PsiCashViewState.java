@@ -33,7 +33,7 @@ import ca.psiphon.psicashlib.PsiCashLib;
 public abstract class PsiCashViewState implements MviViewState {
     public abstract int uiBalance();
 
-    public abstract boolean purchaseInFlight();
+    public abstract boolean psiCashTransactionInFlight();
 
     public abstract boolean animateOnNextBalanceChange();
 
@@ -62,7 +62,7 @@ public abstract class PsiCashViewState implements MviViewState {
                 .purchasePrice(null)
                 .nextPurchaseExpiryDate(null)
                 .error(null)
-                .purchaseInFlight(false)
+                .psiCashTransactionInFlight(false)
                 .animateOnNextBalanceChange(false)
                 .videoIsLoading(false)
                 .videoIsLoaded(false)
@@ -81,7 +81,7 @@ public abstract class PsiCashViewState implements MviViewState {
 
         abstract Builder nextPurchaseExpiryDate(@Nullable Date date);
 
-        public abstract Builder purchaseInFlight(boolean b);
+        public abstract Builder psiCashTransactionInFlight(boolean b);
 
         public abstract Builder animateOnNextBalanceChange(boolean b);
 

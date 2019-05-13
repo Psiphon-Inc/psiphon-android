@@ -59,7 +59,7 @@ class PsiCashActionProcessorHolder {
 
         this.makeExpiringPurchaseProcessor = actions ->
                 actions.flatMap(action ->
-                        PsiCashClient.getInstance(appContext).makeExpiringPurchase(action.connectionState(), action.purchasePrice(), action.hasActiveBoost())
+                        PsiCashClient.getInstance(appContext).makeExpiringPurchase(action.connectionState(), action.purchasePrice())
                                 .map(r -> {
                                     if (r instanceof PsiCashModel.ExpiringPurchase) {
                                         if (psiCashListener != null) {
