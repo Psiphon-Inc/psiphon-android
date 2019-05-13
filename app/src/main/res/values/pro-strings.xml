@@ -218,4 +218,7 @@
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed. -->
     <string name="speed_boost_active_label">Speed Boost Active</string>
+
+    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
+    <string name="psicash_snackbar_action_ok">Ok</string>
 </resources>

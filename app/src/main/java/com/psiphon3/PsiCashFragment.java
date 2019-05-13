@@ -21,6 +21,7 @@
 package com.psiphon3;
 
 import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.arch.lifecycle.ViewModelProviders;
@@ -34,6 +35,8 @@ import android.support.design.widget.Snackbar;
 import android.support.design.widget.SwipeDismissBehavior;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v4.text.TextUtilsCompat;
+import android.support.v4.view.ViewCompat;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -43,6 +46,7 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -450,9 +454,11 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             errorMessage = getString(R.string.unexpected_error_occured_send_feedback_message);
         }
 
-        Snackbar snackbar = Snackbar.make(getActivity().findViewById(R.id.psicash_coordinator_layout), errorMessage, Snackbar.LENGTH_LONG);
+        // Custom snackbar dismiss timeout in milliseconds.
+        int snackBarTimeousMs = 4000;
+        Snackbar snackbar = Snackbar.make(getActivity().findViewById(R.id.psicash_coordinator_layout), errorMessage, snackBarTimeousMs);
 
-        // center the message in the text view
+        // Center the message in the text view.
         TextView tv = snackbar.getView().findViewById(android.support.design.R.id.snackbar_text);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
@@ -460,6 +466,10 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             tv.setGravity(Gravity.CENTER_HORIZONTAL);
         }
 
+        // Add 'Ok' dismiss action button.
+        snackbar.setAction(R.string.psicash_snackbar_action_ok, (View.OnClickListener) view -> {});
+
+        // Add swipe dismiss behaviour.
         snackbar.addCallback(new Snackbar.Callback() {
             @Override
             public void onShown(Snackbar sb) {
@@ -547,77 +557,95 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         if(!animateOnBalanceChange) {
             animateOnBalanceChange = state.animateOnNextBalanceChange();
             balanceLabel.setText(String.format(Locale.US, "%d", state.uiBalance()));
-            // update view's current balance
             currentUiBalance = state.uiBalance();
             return;
         }
 
         int balanceDelta = state.uiBalance() - currentUiBalance;
-        // Nothing changed, bail
+        // Nothing changed, bail.
         if (balanceDelta == 0) {
             return;
         }
-        // Animate value increase
+        // Animate value increase.
         ValueAnimator valueAnimator = ValueAnimator.ofInt(currentUiBalance, state.uiBalance());
         valueAnimator.setDuration(1000);
         valueAnimator.addUpdateListener(valueAnimator1 ->
                 balanceLabel.setText(valueAnimator1.getAnimatedValue().toString()));
         valueAnimator.start();
 
-        // floating balance delta animation
-        TextView floatingDeltaTextView = new TextView(getContext());
-        floatingDeltaTextView.setLayoutParams(new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT));
+        // Floating balance delta animation
+        //
+        // Create a frame layout which will hold the animated balance delta text view.
+        FrameLayout animatedBalanceDeltaFrameLayout = new FrameLayout(getContext());
 
-        floatingDeltaTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f);
+        // Get tab layout dimensions and left/right padding, we are assuming right padding == left padding.
+        LinearLayout psicashTabLayout = getActivity().findViewById(R.id.psicash_tab_layout_id);
+        int paddingLeft = psicashTabLayout.getPaddingLeft();
+        int paddingTop = psicashTabLayout.getPaddingTop();
+
+        // Calculate X and Y translation of the animated view.
+        float translationX = psicashTabLayout.getWidth() - paddingLeft * 2;
+        float translationY = psicashTabLayout.getHeight() - paddingTop * 2;
+
+        TextView floatingDeltaTextView = new TextView(getContext());
+        floatingDeltaTextView.setPadding(paddingLeft / 2 ,0, paddingLeft / 2, 0);
+
+        // Attach text view at the bottom left(right for RTL) of the frame layout.
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT);
+            params.gravity = Gravity.BOTTOM | Gravity.START;
+        animatedBalanceDeltaFrameLayout.addView(floatingDeltaTextView, 0, params);
+
+        // Set text size and calculate approximate translation offset based on the text size.
+        float textSizeSp = 16f;
+        floatingDeltaTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSizeSp);
+
+        float textViewOffset = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+                textSizeSp, getContext().getResources().getDisplayMetrics());
+
+        translationX -= textViewOffset;
+        translationY -= textViewOffset;
+
+        // Add '+' sign if positive balance.
         floatingDeltaTextView.setText(String.format(Locale.US, "%s%d", balanceDelta > 0 ? "+" : "", balanceDelta));
 
+        // Add the frame containing the balance delta text.
         final FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT);
-        lp.setMargins(0, 0, 0, 0);
-        lp.gravity = Gravity.CENTER_HORIZONTAL;
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT);
 
-        ViewGroup viewGroup = (ViewGroup)psiCashLayout;
+        ViewGroup viewGroup = getActivity().findViewById(R.id.psicash_tab_wrapper_layout_id);
+        viewGroup.addView(animatedBalanceDeltaFrameLayout, 0, lp);
 
-        viewGroup.addView(floatingDeltaTextView, 0, lp);
+        // Make sure the animated view won't get clipped as it moves across other views' boundaries.
         setAllParentsClip(floatingDeltaTextView, false);
 
-        viewGroup.bringChildToFront(floatingDeltaTextView);
+        // Bring the view to front.
+        viewGroup.bringChildToFront(animatedBalanceDeltaFrameLayout);
         viewGroup.invalidate();
 
+        // Revert X axis translation if RTL language
+        boolean isRtl = ViewCompat.LAYOUT_DIRECTION_RTL == TextUtilsCompat.getLayoutDirectionFromLocale(getResources().getConfiguration().locale);
+        translationX = isRtl ? -translationX : translationX;
+
+        // Animate.
         floatingDeltaTextView.animate()
                 .scaleX(3f).scaleY(3f)
                 .alpha(0f)
                 .setDuration(2000)
-                .translationY(-100f)
-                .translationX(50f)
-                .setListener(new Animator.AnimatorListener() {
-                    @Override
-                    public void onAnimationStart(Animator animator) {
-
-                    }
-
+                .translationY(-translationY)
+                .translationX(translationX)
+                .setListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animator) {
+                        // Undo clipping settings in the parent views and remove the view when animation is done.
                         setAllParentsClip(floatingDeltaTextView, true);
-                        viewGroup.removeView(floatingDeltaTextView);
-                    }
-
-                    @Override
-                    public void onAnimationCancel(Animator animator) {
-
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animator animator) {
-
+                        viewGroup.removeView(animatedBalanceDeltaFrameLayout);
                     }
                 })
                 .start();
 
-        // update view's current balance value
+        // Update view's current balance value.
         currentUiBalance = state.uiBalance();
     }
 

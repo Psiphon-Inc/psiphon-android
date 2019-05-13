@@ -330,6 +330,7 @@ public abstract class MainBase {
         private View m_previousView;
         private View m_currentView;
         private GestureDetector m_gestureDetector;
+        protected enum TabIndex {HOME, PSICASH, STATISTICS, OPTIONS, LOGS}
 
         /**
          * A gesture listener that listens for a left or right swipe and uses
@@ -529,17 +530,17 @@ public abstract class MainBase {
             m_tabHost.setup();
 
             m_tabSpecsList.clear();
-            m_tabSpecsList.add(0, m_tabHost.newTabSpec(HOME_TAB_TAG).setContent(R.id.homeTab).setIndicator(getText(R.string.home_tab_name)));
-            m_tabSpecsList.add(1, m_tabHost.newTabSpec(PSICASH_TAB_TAG).setContent(R.id.psicashTab).setIndicator(getText(R.string.psicash_tab_name)));
-            m_tabSpecsList.add(2, m_tabHost.newTabSpec(STATISTICS_TAB_TAG).setContent(R.id.statisticsView).setIndicator(getText(R.string.statistics_tab_name)));
-            m_tabSpecsList.add(3, m_tabHost.newTabSpec(SETTINGS_TAB_TAG).setContent(R.id.settingsView).setIndicator(getText(R.string.settings_tab_name)));
-            m_tabSpecsList.add(4, m_tabHost.newTabSpec(LOGS_TAB_TAG).setContent(R.id.logsTab).setIndicator(getText(R.string.logs_tab_name)));
+            m_tabSpecsList.add(TabIndex.HOME.ordinal(), m_tabHost.newTabSpec(HOME_TAB_TAG).setContent(R.id.homeTab).setIndicator(getText(R.string.home_tab_name)));
+            m_tabSpecsList.add(TabIndex.PSICASH.ordinal(), m_tabHost.newTabSpec(PSICASH_TAB_TAG).setContent(R.id.psicashTab).setIndicator(getText(R.string.psicash_tab_name)));
+            m_tabSpecsList.add(TabIndex.STATISTICS.ordinal(), m_tabHost.newTabSpec(STATISTICS_TAB_TAG).setContent(R.id.statisticsView).setIndicator(getText(R.string.statistics_tab_name)));
+            m_tabSpecsList.add(TabIndex.OPTIONS.ordinal(), m_tabHost.newTabSpec(SETTINGS_TAB_TAG).setContent(R.id.settingsView).setIndicator(getText(R.string.settings_tab_name)));
+            m_tabSpecsList.add(TabIndex.LOGS.ordinal(), m_tabHost.newTabSpec(LOGS_TAB_TAG).setContent(R.id.logsTab).setIndicator(getText(R.string.logs_tab_name)));
 
             for (TabSpec tabSpec : m_tabSpecsList) {
                 m_tabHost.addTab(tabSpec);
             }
 
-            LinearLayout psiCashTabLayout = (LinearLayout) m_tabHost.getTabWidget().getChildTabViewAt(1);
+            LinearLayout psiCashTabLayout = (LinearLayout) m_tabHost.getTabWidget().getChildTabViewAt(TabIndex.PSICASH.ordinal());
             decorateWithRedDot(psiCashTabLayout);
 
             m_gestureDetector = new GestureDetector(this, new LateralGestureDetector());
@@ -718,6 +719,7 @@ public abstract class MainBase {
             }
             redDotLayout.setLayoutParams(lp);
             wrapperRelativeLayout.addView(redDotLayout, lp);
+            wrapperRelativeLayout.setId(R.id.psicash_tab_wrapper_layout_id);
         }
 
         /**

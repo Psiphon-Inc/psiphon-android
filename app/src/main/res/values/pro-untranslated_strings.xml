@@ -4,4 +4,5 @@
     <item name="speedBoostPrice" type="id" />
     <item name="hasActiveSpeedBoostTag" type="id" />
     <item name="psicash_tab_layout_id" type="id" />
+    <item name="psicash_tab_wrapper_layout_id" type="id" />
 </resources>

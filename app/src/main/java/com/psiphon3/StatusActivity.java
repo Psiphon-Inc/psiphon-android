@@ -53,6 +53,7 @@ import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.MainBase;
 import com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
@@ -219,13 +220,10 @@ public class StatusActivity
     }
 
     private void hidePsiCashTab() {
-        for (int i = 0; i < m_tabSpecsList.size(); i++) {
-            TabHost.TabSpec tabSpec = m_tabSpecsList.get(i);
-            if (tabSpec != null && tabSpec.getTag().equals(PSICASH_TAB_TAG)) {
-                m_tabHost.getTabWidget().getChildTabViewAt(i).setVisibility(View.GONE);
-                break;
-            }
-        }
+        m_tabHost
+                .getTabWidget()
+                .getChildTabViewAt(MainBase.TabbedActivityBase.TabIndex.PSICASH.ordinal())
+                .setVisibility(View.GONE);
         // also reset current tab to HOME if PsiCash is currently selected
         String currentTabTag = m_tabHost.getCurrentTabTag();
         if (currentTabTag != null && currentTabTag.equals(PSICASH_TAB_TAG)) {
@@ -238,11 +236,10 @@ public class StatusActivity
         // Hide or show the PsiCash tab depending on presence of valid PsiCash tokens
         try {
             if (PsiCashClient.getInstance(this).hasValidTokens()) {
-                for (int i = 0; i < m_tabSpecsList.size(); i++) {
-                    TabHost.TabSpec tabSpec = m_tabSpecsList.get(i);
-                    if (tabSpec != null && tabSpec.getTag().equals(PSICASH_TAB_TAG))
-                        m_tabHost.getTabWidget().getChildTabViewAt(i).setVisibility(View.VISIBLE);
-                }
+                m_tabHost
+                        .getTabWidget()
+                        .getChildTabViewAt(MainBase.TabbedActivityBase.TabIndex.PSICASH.ordinal())
+                        .setVisibility(View.VISIBLE);
             } else {
                 hidePsiCashTab();
             }
