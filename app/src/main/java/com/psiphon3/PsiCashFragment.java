@@ -611,7 +611,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
         // Add the frame containing the balance delta text.
         final FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.MATCH_PARENT);
 
         ViewGroup viewGroup = getActivity().findViewById(R.id.psicash_tab_wrapper_layout_id);
