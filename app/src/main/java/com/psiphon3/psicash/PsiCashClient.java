@@ -47,6 +47,7 @@ import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
@@ -71,6 +72,10 @@ public class PsiCashClient {
         httpProxyPort = 0;
         psiCashLib = new PsiCashLib();
         okHttpClient = new OkHttpClient.Builder()
+
+                // TODO: remove this workaround after applying proxy relay EOF fix in the tunnel-core
+                .protocols(Collections.singletonList(Protocol.HTTP_1_1))
+
                 .retryOnConnectionFailure(false)
                 .proxySelector(new ProxySelector() {
                     @Override
@@ -107,6 +112,9 @@ public class PsiCashClient {
                         if (reqParams.headers != null) {
                             reqBuilder.headers(Headers.of(reqParams.headers));
                         }
+
+                        // TODO: remove this workaround after applying proxy relay EOF fix in the tunnel-core
+                        reqBuilder.addHeader("Connection", "close");
 
                         Request request = reqBuilder.build();
                         Response response = okHttpClient.newCall(request).execute();
