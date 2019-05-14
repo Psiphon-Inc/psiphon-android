@@ -48,6 +48,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.jakewharton.rxbinding2.view.RxView;
@@ -458,6 +459,14 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         int snackBarTimeousMs = 4000;
         Snackbar snackbar = Snackbar.make(getActivity().findViewById(R.id.psicash_coordinator_layout), errorMessage, snackBarTimeousMs);
 
+        // Center the message in the text view.
+        TextView tv = snackbar.getView().findViewById(android.support.design.R.id.snackbar_text);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        } else {
+            tv.setGravity(Gravity.CENTER_HORIZONTAL);
+        }
+
         // Add 'Ok' dismiss action button.
         snackbar.setAction(R.string.psicash_snackbar_action_ok, (View.OnClickListener) view -> {});
 
@@ -573,65 +582,58 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         // Get tab layout dimensions and left/right padding, we are assuming right padding == left padding.
         LinearLayout psicashTabLayout = getActivity().findViewById(R.id.psicash_tab_layout_id);
         int paddingLeft = psicashTabLayout.getPaddingLeft();
-        int paddingTop = psicashTabLayout.getPaddingTop();
 
-        // Calculate X and Y translation of the animated view.
-        float translationX = psicashTabLayout.getWidth() - paddingLeft * 2;
-        float translationY = psicashTabLayout.getHeight() - paddingTop * 2;
+        // Calculate vertical translation of the animated view.
+        float translationY = (float)psicashTabLayout.getHeight() / 2;
 
         TextView floatingDeltaTextView = new TextView(getContext());
-        floatingDeltaTextView.setPadding(paddingLeft / 2 ,0, paddingLeft / 2, 0);
+        floatingDeltaTextView.setPadding(paddingLeft, 0, paddingLeft, 0);
 
         // Attach text view at the bottom left(right for RTL) of the frame layout.
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,
+        FrameLayout.LayoutParams flp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT);
-            params.gravity = Gravity.BOTTOM | Gravity.START;
-        animatedBalanceDeltaFrameLayout.addView(floatingDeltaTextView, 0, params);
+        animatedBalanceDeltaFrameLayout.addView(floatingDeltaTextView, 0, flp);
 
         // Set text size and calculate approximate translation offset based on the text size.
-        float textSizeSp = 16f;
-        floatingDeltaTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSizeSp);
-
-        float textViewOffset = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
-                textSizeSp, getContext().getResources().getDisplayMetrics());
-
-        translationX -= textViewOffset;
-        translationY -= textViewOffset;
+        floatingDeltaTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f);
 
         // Add '+' sign if positive balance.
         floatingDeltaTextView.setText(String.format(Locale.US, "%s%d", balanceDelta > 0 ? "+" : "", balanceDelta));
 
         // Add the frame containing the balance delta text.
-        final FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.MATCH_PARENT);
+        final RelativeLayout.LayoutParams rlp = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT);
+        rlp.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
+        rlp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
 
         ViewGroup viewGroup = getActivity().findViewById(R.id.psicash_tab_wrapper_layout_id);
-        viewGroup.addView(animatedBalanceDeltaFrameLayout, 0, lp);
+
+        // HACK: RTL bug workaround, see
+        // https://stackoverflow.com/questions/29888439/android-rtl-layout-direction-align-center-issue
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            viewGroup.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        }
+        viewGroup.addView(animatedBalanceDeltaFrameLayout, 0, rlp);
 
         // Make sure the animated view won't get clipped as it moves across other views' boundaries.
-        setAllParentsClip(floatingDeltaTextView, false);
+        setAllParentsClip(animatedBalanceDeltaFrameLayout, false);
 
         // Bring the view to front.
         viewGroup.bringChildToFront(animatedBalanceDeltaFrameLayout);
         viewGroup.invalidate();
 
-        // Revert X axis translation if RTL language
-        boolean isRtl = ViewCompat.LAYOUT_DIRECTION_RTL == TextUtilsCompat.getLayoutDirectionFromLocale(getResources().getConfiguration().locale);
-        translationX = isRtl ? -translationX : translationX;
-
         // Animate.
-        floatingDeltaTextView.animate()
+        animatedBalanceDeltaFrameLayout.animate()
                 .scaleX(3f).scaleY(3f)
                 .alpha(0f)
-                .setDuration(2000)
+                .setDuration(2500)
                 .translationY(-translationY)
-                .translationX(translationX)
                 .setListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animator) {
                         // Undo clipping settings in the parent views and remove the view when animation is done.
-                        setAllParentsClip(floatingDeltaTextView, true);
+                        setAllParentsClip(animatedBalanceDeltaFrameLayout, true);
                         viewGroup.removeView(animatedBalanceDeltaFrameLayout);
                     }
                 })
