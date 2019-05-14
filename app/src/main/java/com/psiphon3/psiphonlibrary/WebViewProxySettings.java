@@ -28,7 +28,6 @@ import android.os.Build;
 import android.os.Parcelable;
 import android.util.ArrayMap;
 
-import com.psiphon3.PsiphonApplication;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import org.apache.http.HttpHost;
@@ -44,7 +43,7 @@ public class WebViewProxySettings
 {
     private static boolean mIsLocalProxySet = false;
     private static boolean mIsInitialized = false;
-    private static List<Object> mReceiversList;
+    private static List<Object> mExcludeReceiversList;
 
     static boolean isLocalProxySet() {return mIsLocalProxySet;}
 
@@ -81,23 +80,23 @@ public class WebViewProxySettings
         } catch (IllegalAccessException e) {
             MyLog.d("Exception initializing WebViewProxySettings: " + e.toString());
         }
-        finally {
-            return receiversList;
-        }
+
+        return receiversList;
     }
 
-    // Must call once early in the application lifecycle, e.g. in Activity.onResume() or in
-    // Activity.onStart(), before dynamic module loader has a chance to load intent receivers that
-    // may cause the app to close if an unexpected intent is received when setWebkitProxyLollipop
-    // is called.
+    // Must call once early in the activity lifecycle, e.g. at the top of Activity.onCreate()
+    // to exclude intent receivers that may cause the app to close if an unexpected intent is
+    // received when setWebkitProxyLollipop is called.
+    //
+    // Note: this is opposite of previous behaviour and related to changes in newer AdMob version
     public static void initialize(Context ctx) {
         if(mIsInitialized) {
             return;
         }
 
         mIsInitialized = true;
-        mReceiversList = new ArrayList<>();
-        mReceiversList.addAll(getCurrentReceiversSet(ctx));
+        mExcludeReceiversList = new ArrayList<>();
+        mExcludeReceiversList.addAll(getCurrentReceiversSet(ctx));
     }
 
     public static List<Object> getReceivers(Context ctx) {
@@ -334,9 +333,8 @@ public class WebViewProxySettings
         try {
             for (Object receiver : getCurrentReceiversSet(appContext))
             {
-                // Check if receiver object is in the list of receivers names we stored during
-                // initialization and also not in the exclusion list we got at the app creation.
-                if (!mReceiversList.contains(receiver) || PsiphonApplication.getExcludedReceivers().contains(receiver)) {
+                // Don't send proxy change intent to the excluded receivers we stored during initialization.
+                if (mExcludeReceiversList.contains(receiver)) {
                     continue;
                 }
 

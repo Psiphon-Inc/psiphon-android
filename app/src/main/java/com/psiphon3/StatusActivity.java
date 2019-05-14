@@ -113,6 +113,11 @@ public class StatusActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Build a list of receivers to be excluded from sending a proxy change intent
+        // before we create any views.
+        WebViewProxySettings.initialize(this);
+
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main);
 
@@ -174,9 +179,6 @@ public class StatusActivity
             // to immediately restart the tunnel.
             m_firstRun = false;
         }
-
-        // Initialize WebView proxy settings before attempting to load any URLs
-        WebViewProxySettings.initialize(this);
 
         m_loadedSponsorTab = false;
         HandleCurrentIntent();

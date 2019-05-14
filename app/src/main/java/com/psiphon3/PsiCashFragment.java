@@ -458,14 +458,6 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         int snackBarTimeousMs = 4000;
         Snackbar snackbar = Snackbar.make(getActivity().findViewById(R.id.psicash_coordinator_layout), errorMessage, snackBarTimeousMs);
 
-        // Center the message in the text view.
-        TextView tv = snackbar.getView().findViewById(android.support.design.R.id.snackbar_text);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-        } else {
-            tv.setGravity(Gravity.CENTER_HORIZONTAL);
-        }
-
         // Add 'Ok' dismiss action button.
         snackbar.setAction(R.string.psicash_snackbar_action_ok, (View.OnClickListener) view -> {});
 
