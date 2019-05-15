@@ -44,6 +44,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -584,7 +585,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         int paddingLeft = psicashTabLayout.getPaddingLeft();
 
         // Calculate vertical translation of the animated view.
-        float translationY = (float)psicashTabLayout.getHeight() / 2;
+        float translationY = (float)psicashTabLayout.getHeight();
 
         TextView floatingDeltaTextView = new TextView(getContext());
         floatingDeltaTextView.setPadding(paddingLeft, 0, paddingLeft, 0);
@@ -592,6 +593,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         // Attach text view at the bottom left(right for RTL) of the frame layout.
         FrameLayout.LayoutParams flp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT);
+        flp.gravity = Gravity.BOTTOM;
         animatedBalanceDeltaFrameLayout.addView(floatingDeltaTextView, 0, flp);
 
         // Set text size and calculate approximate translation offset based on the text size.
@@ -603,7 +605,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         // Add the frame containing the balance delta text.
         final RelativeLayout.LayoutParams rlp = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.WRAP_CONTENT,
-                RelativeLayout.LayoutParams.WRAP_CONTENT);
+                RelativeLayout.LayoutParams.MATCH_PARENT);
         rlp.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
         rlp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
 
