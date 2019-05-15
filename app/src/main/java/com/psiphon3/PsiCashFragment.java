@@ -35,8 +35,6 @@ import android.support.design.widget.Snackbar;
 import android.support.design.widget.SwipeDismissBehavior;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.text.TextUtilsCompat;
-import android.support.v4.view.ViewCompat;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -44,7 +42,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
-import android.view.animation.DecelerateInterpolator;
+import android.view.ViewPropertyAnimator;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -96,6 +94,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     private Relay<TunnelState> tunnelConnectionStateBehaviorRelay;
     private Relay<PsiphonAdManager.SubscriptionStatus> subscriptionStatusBehaviorRelay;
     private Relay<LifeCycleEvent> lifecyclePublishRelay;
+    private PublishRelay<Observable<ViewPropertyAnimator>> balanceDeltaAnimationRelay;
+    private PublishRelay<Observable<ValueAnimator>> balanceLabelAnimationRelay;
 
 
     private TextView balanceLabel;
@@ -161,6 +161,17 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         // Pass the UI's intents to the view model
         psiCashViewModel.processIntents(intents());
 
+        // Floating balance delta animations, executed sequentially
+        balanceDeltaAnimationRelay = PublishRelay.create();
+        balanceDeltaAnimationRelay.concatMap(s -> s)
+                .doOnNext(ViewPropertyAnimator::start)
+                .subscribe();
+
+        // Balance label animations, executed sequentially
+        balanceLabelAnimationRelay = PublishRelay.create();
+        balanceLabelAnimationRelay.concatMap(s -> s)
+                .doOnNext(ValueAnimator::start)
+                .subscribe();
     }
 
     @Override
@@ -540,7 +551,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
                     psiCashLayout.setOnTouchListener((view, motionEvent) -> {
                         ObjectAnimator
-                                .ofFloat(view, "translationX", 0, 25, -25, 25, -25,15, -15, 6, -6, 0)
+                                .ofFloat(view, "translationX", 0, 25, -25, 25, -25, 15, -15, 6, -6, 0)
                                 .setDuration(500)
                                 .start();
                         return true;
@@ -568,81 +579,131 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         if (balanceDelta == 0) {
             return;
         }
-        // Animate value increase.
-        ValueAnimator valueAnimator = ValueAnimator.ofInt(currentUiBalance, state.uiBalance());
-        valueAnimator.setDuration(1000);
-        valueAnimator.addUpdateListener(valueAnimator1 ->
-                balanceLabel.setText(valueAnimator1.getAnimatedValue().toString()));
-        valueAnimator.start();
 
-        // Floating balance delta animation
-        //
-        // Create a frame layout which will hold the animated balance delta text view.
-        FrameLayout animatedBalanceDeltaFrameLayout = new FrameLayout(getContext());
-
-        // Get tab layout dimensions and left/right padding, we are assuming right padding == left padding.
-        LinearLayout psicashTabLayout = getActivity().findViewById(R.id.psicash_tab_layout_id);
-        int paddingLeft = psicashTabLayout.getPaddingLeft();
-
-        // Calculate vertical translation of the animated view.
-        float translationY = (float)psicashTabLayout.getHeight();
-
-        TextView floatingDeltaTextView = new TextView(getContext());
-        floatingDeltaTextView.setPadding(paddingLeft, 0, paddingLeft, 0);
-
-        // Attach text view at the bottom left(right for RTL) of the frame layout.
-        FrameLayout.LayoutParams flp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT);
-        flp.gravity = Gravity.BOTTOM;
-        animatedBalanceDeltaFrameLayout.addView(floatingDeltaTextView, 0, flp);
-
-        // Set text size and calculate approximate translation offset based on the text size.
-        floatingDeltaTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f);
-
-        // Add '+' sign if positive balance.
-        floatingDeltaTextView.setText(String.format(Locale.US, "%s%d", balanceDelta > 0 ? "+" : "", balanceDelta));
-
-        // Add the frame containing the balance delta text.
-        final RelativeLayout.LayoutParams rlp = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.WRAP_CONTENT,
-                RelativeLayout.LayoutParams.MATCH_PARENT);
-        rlp.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
-        rlp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-
-        ViewGroup viewGroup = getActivity().findViewById(R.id.psicash_tab_wrapper_layout_id);
-
-        // HACK: RTL bug workaround, see
-        // https://stackoverflow.com/questions/29888439/android-rtl-layout-direction-align-center-issue
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            viewGroup.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-        }
-        viewGroup.addView(animatedBalanceDeltaFrameLayout, 0, rlp);
-
-        // Make sure the animated view won't get clipped as it moves across other views' boundaries.
-        setAllParentsClip(animatedBalanceDeltaFrameLayout, false);
-
-        // Bring the view to front.
-        viewGroup.bringChildToFront(animatedBalanceDeltaFrameLayout);
-        viewGroup.invalidate();
-
-        // Animate.
-        animatedBalanceDeltaFrameLayout.animate()
-                .scaleX(3f).scaleY(3f)
-                .alpha(0f)
-                .setDuration(2500)
-                .translationY(-translationY)
-                .setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animator) {
-                        // Undo clipping settings in the parent views and remove the view when animation is done.
-                        setAllParentsClip(animatedBalanceDeltaFrameLayout, true);
-                        viewGroup.removeView(animatedBalanceDeltaFrameLayout);
-                    }
-                })
-                .start();
+        Observable<ValueAnimator> balanceLabelAnimationObservable =
+                balanceLabelAnimationObservable(currentUiBalance, state.uiBalance());
+        balanceLabelAnimationRelay.accept(balanceLabelAnimationObservable);
 
         // Update view's current balance value.
         currentUiBalance = state.uiBalance();
+
+        Observable<ViewPropertyAnimator> balanceDeltaAnimationObservable = balanceDeltaAnimationObservable(balanceDelta);
+        balanceDeltaAnimationRelay.accept(balanceDeltaAnimationObservable);
+    }
+
+    private Observable<ValueAnimator> balanceLabelAnimationObservable(int fromVal, int toVal) {
+        return Observable.create(emitter -> {
+            ValueAnimator valueAnimator = ValueAnimator.ofInt(fromVal, toVal);
+            valueAnimator.setDuration(1000);
+            valueAnimator.addUpdateListener(valueAnimator1 ->
+                    balanceLabel.setText(valueAnimator1.getAnimatedValue().toString()));
+            valueAnimator.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationCancel(Animator animation) {
+                    super.onAnimationCancel(animation);
+                    if (!emitter.isDisposed()) {
+                        emitter.onComplete();
+                    }
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    super.onAnimationEnd(animation);
+                    if (!emitter.isDisposed()) {
+                        emitter.onComplete();
+                    }
+                }
+            });
+
+            if (!emitter.isDisposed()) {
+                emitter.onNext(valueAnimator);
+            }
+        });
+    }
+
+    private Observable<ViewPropertyAnimator> balanceDeltaAnimationObservable(int balanceDelta) {
+        return Observable.create(emitter -> {
+            // Floating balance delta animation
+            //
+            // Create a frame layout which will hold the animated balance delta text view.
+            FrameLayout animatedBalanceDeltaFrameLayout = new FrameLayout(getContext());
+
+            // Get tab layout dimensions and left/right padding, we are assuming right padding == left padding.
+            LinearLayout psicashTabLayout = getActivity().findViewById(R.id.psicash_tab_layout_id);
+            int paddingLeft = psicashTabLayout.getPaddingLeft();
+
+            // Calculate vertical translation of the animated view.
+            float translationY = (float)psicashTabLayout.getHeight();
+
+            TextView floatingDeltaTextView = new TextView(getContext());
+            floatingDeltaTextView.setPadding(paddingLeft, 0, paddingLeft, 0);
+
+            // Attach text view at the bottom left(right for RTL) of the frame layout.
+            FrameLayout.LayoutParams flp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT);
+            flp.gravity = Gravity.BOTTOM;
+            animatedBalanceDeltaFrameLayout.addView(floatingDeltaTextView, 0, flp);
+
+            // Set text size and calculate approximate translation offset based on the text size.
+            floatingDeltaTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f);
+
+            // Add '+' sign if positive balance.
+            floatingDeltaTextView.setText(String.format(Locale.US, "%s%d", balanceDelta > 0 ? "+" : "", balanceDelta));
+
+            // Add the frame containing the balance delta text.
+            final RelativeLayout.LayoutParams rlp = new RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.WRAP_CONTENT,
+                    RelativeLayout.LayoutParams.MATCH_PARENT);
+            rlp.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
+            rlp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+
+            ViewGroup viewGroup = getActivity().findViewById(R.id.psicash_tab_wrapper_layout_id);
+
+            // HACK: RTL bug workaround, see
+            // https://stackoverflow.com/questions/29888439/android-rtl-layout-direction-align-center-issue
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                viewGroup.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            }
+            viewGroup.addView(animatedBalanceDeltaFrameLayout, 0, rlp);
+
+            // Make sure the animated view won't get clipped as it moves across other views' boundaries.
+            setAllParentsClip(animatedBalanceDeltaFrameLayout, false);
+
+            // Bring the view to front.
+            viewGroup.bringChildToFront(animatedBalanceDeltaFrameLayout);
+            viewGroup.invalidate();
+
+            ViewPropertyAnimator animator = animatedBalanceDeltaFrameLayout.animate()
+                    .scaleX(3f).scaleY(3f)
+                    .alpha(0f)
+                    .setDuration(2500)
+                    .translationY(-translationY)
+                    .setListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animator) {
+                            // Undo clipping settings in the parent views and remove the view when animation is done.
+                            setAllParentsClip(animatedBalanceDeltaFrameLayout, true);
+                            viewGroup.removeView(animatedBalanceDeltaFrameLayout);
+                            if (!emitter.isDisposed()) {
+                                emitter.onComplete();
+                            }
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animator) {
+                            // Undo clipping settings in the parent views and remove the view when animation is done.
+                            setAllParentsClip(animatedBalanceDeltaFrameLayout, true);
+                            viewGroup.removeView(animatedBalanceDeltaFrameLayout);
+                            if (!emitter.isDisposed()) {
+                                emitter.onComplete();
+                            }
+                        }
+                    });
+
+            if (!emitter.isDisposed()) {
+                emitter.onNext(animator);
+            }
+        });
     }
 
     private void setAllParentsClip(View view, boolean enabled) {
