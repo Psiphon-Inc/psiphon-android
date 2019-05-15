@@ -179,7 +179,7 @@
     that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
     Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed',
     'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="one_hour_of_speed_boost_available_button">1 heure de Survitesse</string>
+    <string name="one_hour_of_speed_boost_available_button">1 heure de Survitesse est disponible</string>
 
     <!-- Text which appears in the Speed Boost meter when the user has not yet earned enough PsiCash to
     Speed Boost. This text will be accompanied with a percentage indicating to the user how close they are
@@ -196,7 +196,7 @@
      'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_connect_to_purchase_message">Veuillez vous connecter pour effectuer un achat de Survitesse.</string>
+    <string name="speed_boost_connect_to_purchase_message">Veuillez lancer Psiphon pour effectuer un achat de Survitesse.</string>
 
     <!-- Alert error message informing user that the Psiphon tunnel needs to complete its connection sequence in order to make a Speed Boost purchase.
      'Speed Boost' is a reward that can be purchased with PsiCash credit.
@@ -218,4 +218,7 @@
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed. -->
     <string name="speed_boost_active_label">La Survitesse est active</string>
+
+    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
+    <string name="psicash_snackbar_action_ok">Valider</string>
 </resources>
