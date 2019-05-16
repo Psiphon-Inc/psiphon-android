@@ -1050,6 +1050,7 @@ public abstract class MainBase {
                 }
             }
         }
+
         protected void enableToggleServiceUI(int resId) {
             m_toggleButton.setText(getText(resId));
             m_toggleButton.setEnabled(true);
