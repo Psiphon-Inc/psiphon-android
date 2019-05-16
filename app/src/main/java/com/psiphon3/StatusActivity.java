@@ -114,10 +114,6 @@ public class StatusActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Build a list of receivers to be excluded from sending a proxy change intent
-        // before we create any views.
-        WebViewProxySettings.initialize(this);
-
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main);
 
