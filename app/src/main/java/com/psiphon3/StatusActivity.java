@@ -429,7 +429,6 @@ public class StatusActivity
             disableInterstitialOnNextTabChange = true;
             m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
             loadSponsorTab(true);
-            psiCashFragment.onOpenHomePage();
             m_loadedSponsorTab = true;
 
             // We only want to respond to the HANDSHAKE_SUCCESS action once,
@@ -643,6 +642,9 @@ public class StatusActivity
         if (uri == null) {
             return;
         }
+
+        // Notify PsiCash fragment so it will know to refresh state on next app foreground.
+        psiCashFragment.onOpenHomePage();
 
         try {
             if (getTunnelConfigWholeDevice()) {

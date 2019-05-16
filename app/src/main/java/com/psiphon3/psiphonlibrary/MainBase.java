@@ -203,6 +203,7 @@ public abstract class MainBase {
         protected CheckBox m_disableTimeoutsToggle;
         private Toast m_invalidProxySettingsToast;
         private Button m_moreOptionsButton;
+        private Button m_openBrowserButton;
         private LoggingObserver m_loggingObserver;
 
         protected boolean isAppInForeground;
@@ -592,6 +593,7 @@ public abstract class MainBase {
             m_disableTimeoutsToggle = (CheckBox) findViewById(R.id.disableTimeoutsToggle);
             m_downloadOnWifiOnlyToggle = (CheckBox) findViewById(R.id.downloadOnWifiOnlyToggle);
             m_moreOptionsButton = (Button) findViewById(R.id.moreOptionsButton);
+            m_openBrowserButton = (Button) findViewById(R.id.openBrowserButton);
 
             m_slowSentGraph = new DataTransferGraph(this, R.id.slowSentGraph);
             m_slowReceivedGraph = new DataTransferGraph(this, R.id.slowReceivedGraph);
@@ -1032,20 +1034,22 @@ public abstract class MainBase {
             if(state == null) {
                 setStatusState(R.drawable.status_icon_disconnected);
                 disableToggleServiceUI();
+                m_openBrowserButton.setEnabled(false);
             } else if(!state.isRunning) {
                 setStatusState(R.drawable.status_icon_disconnected);
                 enableToggleServiceUI(R.string.start);
+                m_openBrowserButton.setEnabled(false);
             } else {
+                enableToggleServiceUI(R.string.stop);
                 if(state.isConnected) {
                     setStatusState(R.drawable.status_icon_connected);
-                    enableToggleServiceUI(R.string.stop);
+                    m_openBrowserButton.setEnabled(true);
                 } else {
                     setStatusState(R.drawable.status_icon_connecting);
-                    enableToggleServiceUI(R.string.stop);
+                    m_openBrowserButton.setEnabled(false);
                 }
             }
         }
-
         protected void enableToggleServiceUI(int resId) {
             m_toggleButton.setText(getText(resId));
             m_toggleButton.setEnabled(true);
