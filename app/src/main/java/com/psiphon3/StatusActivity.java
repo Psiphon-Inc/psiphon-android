@@ -20,7 +20,6 @@
 
 package com.psiphon3;
 
-import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
@@ -258,13 +257,6 @@ public class StatusActivity
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
 
-        // This is a work around for SDK 9, 10 as they don't have the Intent.FLAG_ACTIVITY_CLEAR_TASK
-        // If we have this extra, restart the application
-        if (intent.hasExtra(MoreOptionsPreferenceActivity.FORCE_APPLICATION_RESTART)) {
-            restartApplication();
-            return;
-        }
-
         // If the app is already foreground (so onNewIntent is being called),
         // the incoming intent is not automatically set as the activity's intent
         // (i.e., the intent returned by getIntent()). We want this behaviour,
@@ -273,17 +265,6 @@ public class StatusActivity
 
         // Handle explicit intent that is received when activity is already running
         HandleCurrentIntent();
-    }
-
-    private void restartApplication() {
-        AlarmManager alarmManager = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
-        if (alarmManager != null) {
-            Intent intent = new Intent(this, StatusActivity.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 1, intent, PendingIntent.FLAG_CANCEL_CURRENT);
-            alarmManager.set(AlarmManager.RTC, System.currentTimeMillis() + 100, pendingIntent);
-        }
-
-        System.exit(0);
     }
 
     @Override
