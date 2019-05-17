@@ -1255,6 +1255,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     @Override
     public void onActiveAuthorizationIDs(List<String> acceptedAuthorizationIds) {
+        MyLog.g("onActiveAuthorizationIDs: " + acceptedAuthorizationIds.toString());
         m_Handler.post(() -> {
             // Build a list of accepted authorizations from the authorizations snapshot.
             List<Authorization> acceptedAuthorizations = new ArrayList<>();
@@ -1272,6 +1273,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             notAcceptedAuthorizations.removeAll(acceptedAuthorizations);
 
             // Remove all not accepted authorizations from the database
+            MyLog.g("TunnelManager: removing not accepted persisted authorizations: " + notAcceptedAuthorizations.toString());
             Authorization.removeAuthorizations(getContext(), notAcceptedAuthorizations);
 
             if(notAcceptedAuthorizations.size() > 0 ) {

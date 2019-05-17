@@ -356,6 +356,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 }
             }
             if (purchasesToRemove.size() > 0) {
+                Utils.MyLog.g("PsiCash: removing purchases: " + purchasesToRemove.toString());
                 intentsPublishRelay.accept(PsiCashIntent.RemovePurchases.create(purchasesToRemove));
             }
         } catch (PsiCashException e) {
@@ -419,6 +420,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     @Override
     public void render(PsiCashViewState state) {
         Throwable psiCashStateError = state.error();
+        Utils.MyLog.g("PsiCash view state error: " + psiCashStateError);
         if(psiCashStateError == null) {
             updateUiBalanceLabel(state);
             updateUiChargeBar(state);
