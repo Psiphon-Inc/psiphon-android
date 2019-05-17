@@ -1082,6 +1082,8 @@ public class StatusActivity
     {
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
         psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
+        showPsiCashTabIfHasValidToken();
+
         // try again next time
         deInitIab();
 
