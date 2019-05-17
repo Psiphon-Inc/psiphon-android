@@ -129,10 +129,12 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             @Override
             public void onNewExpiringPurchase(Context context, PsiCashLib.Purchase purchase) {
                 // Store authorization from the purchase
+                Utils.MyLog.g("PsiCash: onNewExpiringPurchase: storing authorization with ID: " + purchase.authorization.id + " from purchase: " + purchase.id);
                 Authorization authorization = Authorization.fromBase64Encoded(purchase.authorization.encoded);
                 Authorization.storeAuthorization(context, authorization);
 
                 // Send broadcast to restart the tunnel
+                Utils.MyLog.g("PsiCash: onNewExpiringPurchase: send tunnel restart broadcast");
                 android.content.Intent intent = new android.content.Intent(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
                 LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
             }
@@ -340,9 +342,9 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         // remove purchases that are not in the authorizations database.
         try {
             // get all persisted authorizations as base64 encoded strings
-            List<String> authorizationsAsString = new ArrayList<>();
+            List<String> encodedAuthorizations = new ArrayList<>();
             for (Authorization a : Authorization.geAllPersistedAuthorizations(getContext())) {
-                authorizationsAsString.add(a.base64EncodedAuthorization());
+                encodedAuthorizations.add(a.base64EncodedAuthorization());
             }
             List<PsiCashLib.Purchase> purchases = PsiCashClient.getInstance(getContext()).getPurchases();
             if (purchases.size() == 0) {
@@ -351,7 +353,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             // build a list of purchases to remove by cross referencing
             // each purchase authorization against the authorization strings list
             for (PsiCashLib.Purchase purchase : purchases) {
-                if (!authorizationsAsString.contains(purchase.authorization)) {
+                if (!encodedAuthorizations.contains(purchase.authorization.encoded)) {
                     purchasesToRemove.add(purchase.id);
                 }
             }

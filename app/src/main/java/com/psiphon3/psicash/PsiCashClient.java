@@ -352,18 +352,7 @@ public class PsiCashClient {
                         throw new PsiCashException.Transaction(result.status);
                     }
 
-                    PsiCashLib.GetDiagnosticInfoResult diagnosticInfoResult = psiCashLib.getDiagnosticInfo();
-                    if (diagnosticInfoResult.error != null) {
-                        String errorMessage = "PsiCashLib.GetDiagnosticInfoResult error: " + diagnosticInfoResult.error.message;
-                        Utils.MyLog.g("PsiCash: error getting diagnostic info: " + errorMessage);
-                        if (diagnosticInfoResult.error.critical) {
-                            throw new PsiCashException.Recoverable(errorMessage);
-                        } else {
-                            throw new PsiCashException.Critical(errorMessage);
-                        }
-                    }
-
-                    Utils.MyLog.g("PsiCash: got new purchase: " + diagnosticInfoResult.jsonString);
+                    Utils.MyLog.g("PsiCash: got new purchase: "+ result.purchase.id + " with AuthorizationID: " + result.purchase.authorization.id);
 
                     return PsiCashModel.ExpiringPurchase.create(result.purchase);
                 })
