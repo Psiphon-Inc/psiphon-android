@@ -25,6 +25,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.psiphon3.TunnelState;
+import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
 import java.io.IOException;
@@ -257,7 +258,7 @@ public class PsiCashClient {
 
         PsiCashLib.GetDiagnosticInfoResult diagnosticInfoResult = psiCashLib.getDiagnosticInfo();
         if (diagnosticInfoResult.error != null) {
-            String errorMessage = "PsiCashLib.GetPurchasePricesResult error: " + diagnosticInfoResult.error.message;
+            String errorMessage = "PsiCashLib.GetDiagnosticInfoResult error: " + diagnosticInfoResult.error.message;
             if (diagnosticInfoResult.error.critical) {
                 throw new PsiCashException.Recoverable(errorMessage);
             } else {
@@ -335,6 +336,7 @@ public class PsiCashClient {
                                     price.distinguisher, price.price);
 
                     if (result.error != null) {
+                        Utils.MyLog.g("PsiCash: Error making expiring purchase: " + result.error.message);
                         if (result.error.critical) {
                             throw new PsiCashException.Critical(result.error.message);
                         } else {
@@ -346,8 +348,12 @@ public class PsiCashClient {
                     resetVideoReward();
 
                     if (result.status != PsiCashLib.Status.SUCCESS) {
+                        Utils.MyLog.g("PsiCash: Transaction error making expiring purchase: " + result.status);
                         throw new PsiCashException.Transaction(result.status);
                     }
+
+                    Utils.MyLog.g("PsiCash: got new purchase: "+ result.purchase.id + " with AuthorizationID: " + result.purchase.authorization.id);
+
                     return PsiCashModel.ExpiringPurchase.create(result.purchase);
                 })
                         .cast(PsiCashModel.class)
