@@ -64,6 +64,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -1255,7 +1256,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     @Override
     public void onActiveAuthorizationIDs(List<String> acceptedAuthorizationIds) {
-        MyLog.g("TunnelManager::onActiveAuthorizationIDs: " + acceptedAuthorizationIds.toString());
         m_Handler.post(() -> {
             // Build a list of accepted authorizations from the authorizations snapshot.
             List<Authorization> acceptedAuthorizations = new ArrayList<>();
@@ -1264,6 +1264,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 for (Authorization a : m_tunnelConfigAuthorizations) {
                     if (a.Id().equals(Id)) {
                         acceptedAuthorizations.add(a);
+                        String s = String.format(Locale.US, "[accessType: %s, expires: %s]", a.accessType(), a.expires().toString());
+                        MyLog.g("TunnelManager::onActiveAuthorizationIDs: accepted active authorization: " + s);
                     }
                 }
             }
@@ -1279,7 +1281,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 final AppPreferences mp = new AppPreferences(getContext());
                 mp.put(m_parentService.getString(R.string.persistentAuthorizationsRemovedFlag), true);
                 sendClientMessage(MSG_AUTHORIZATIONS_REMOVED, null);
-                MyLog.g("TunnelManager::onActiveAuthorizationIDs: removed not accepted persisted authorizations: " + notAcceptedAuthorizations.toString());
+                for (Authorization removedAuth : notAcceptedAuthorizations) {
+                    String s = String.format(Locale.US, "[accessType: %s, expires: %s]", removedAuth.accessType(), removedAuth.expires().toString());
+                    MyLog.g("TunnelManager::onActiveAuthorizationIDs: removed not accepted persisted authorization: " + s);
+                }
             }
 
             // Subscription check below

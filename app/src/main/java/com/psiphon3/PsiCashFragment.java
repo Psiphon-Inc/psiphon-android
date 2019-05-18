@@ -129,7 +129,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             @Override
             public void onNewExpiringPurchase(Context context, PsiCashLib.Purchase purchase) {
                 // Store authorization from the purchase
-                Utils.MyLog.g("PsiCash::onNewExpiringPurchase: storing authorization with ID: " + purchase.authorization.id + " from purchase: " + purchase.id);
+                Utils.MyLog.g("PsiCash::onNewExpiringPurchase: storing new authorization of accessType " + purchase.authorization.accessType);
                 Authorization authorization = Authorization.fromBase64Encoded(purchase.authorization.encoded);
                 Authorization.storeAuthorization(context, authorization);
 
@@ -355,10 +355,10 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             for (PsiCashLib.Purchase purchase : purchases) {
                 if (!encodedAuthorizations.contains(purchase.authorization.encoded)) {
                     purchasesToRemove.add(purchase.id);
+                    Utils.MyLog.g("PsiCash: will remove purchase of transactionClass: " + purchase.transactionClass);
                 }
             }
             if (purchasesToRemove.size() > 0) {
-                Utils.MyLog.g("PsiCash: removing purchases: " + purchasesToRemove.toString());
                 intentsPublishRelay.accept(PsiCashIntent.RemovePurchases.create(purchasesToRemove));
             }
         } catch (PsiCashException e) {

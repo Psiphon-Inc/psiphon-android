@@ -371,7 +371,7 @@ public class StatusActivity
 
     @Override
     protected void onAuthorizationsRemoved() {
-        MyLog.g("PsiCash: received onAuthorizationsRemoved().");
+        MyLog.g("PsiCash: received onAuthorizationsRemoved() notification");
         super.onAuthorizationsRemoved();
         psiCashFragment.removePurchases();
     }

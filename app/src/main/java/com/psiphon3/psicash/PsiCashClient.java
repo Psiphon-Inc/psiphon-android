@@ -357,7 +357,7 @@ public class PsiCashClient {
                         throw new PsiCashException.Transaction(result.status);
                     }
 
-                    Utils.MyLog.g("PsiCash: got new purchase: "+ result.purchase.id + " with AuthorizationID: " + result.purchase.authorization.id);
+                    Utils.MyLog.g("PsiCash: got new purchase of transactionClass " + result.purchase.transactionClass);
 
                     return PsiCashModel.ExpiringPurchase.create(result.purchase);
                 })
