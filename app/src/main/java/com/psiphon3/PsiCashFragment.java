@@ -30,6 +30,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Handler;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.SwipeDismissBehavior;
@@ -70,6 +71,7 @@ import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -166,14 +168,16 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         // Floating balance delta animations, executed sequentially
         balanceDeltaAnimationRelay = PublishRelay.create();
         balanceDeltaAnimationRelay.concatMap(s -> s)
-                .doOnNext(ViewPropertyAnimator::start)
-                .subscribe();
+                .subscribe(ViewPropertyAnimator::start, err -> {
+                    Utils.MyLog.g("Floating balance delta animation error: " + err);
+                });
 
-        // Balance label animations, executed sequentially
+        // Balance label increse animations, executed sequentially
         balanceLabelAnimationRelay = PublishRelay.create();
         balanceLabelAnimationRelay.concatMap(s -> s)
-                .doOnNext(ValueAnimator::start)
-                .subscribe();
+                .subscribe(ValueAnimator::start, err -> {
+                    Utils.MyLog.g("Balance label increase animation error: " + err);
+                });
     }
 
     @Override
@@ -676,6 +680,9 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             viewGroup.bringChildToFront(animatedBalanceDeltaFrameLayout);
             viewGroup.invalidate();
 
+            // View weak reference to be used in order to remove self when animation ends.
+            WeakReference<View> weakView = new WeakReference<>(animatedBalanceDeltaFrameLayout);
+
             ViewPropertyAnimator animator = animatedBalanceDeltaFrameLayout.animate()
                     .scaleX(3f).scaleY(3f)
                     .alpha(0f)
@@ -684,9 +691,15 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                     .setListener(new AnimatorListenerAdapter() {
                         @Override
                         public void onAnimationEnd(Animator animator) {
-                            // Undo clipping settings in the parent views and remove the view when animation is done.
-                            setAllParentsClip(animatedBalanceDeltaFrameLayout, true);
-                            viewGroup.removeView(animatedBalanceDeltaFrameLayout);
+                            // Remove the view when animation has ended.
+                            // From https://stackoverflow.com/a/7445557
+                            // "Android will make an exception when you change the view hierarchy in animationEnd."
+                            new Handler().post(() -> {
+                                View view = weakView.get();
+                                if(view != null) {
+                                    ((ViewGroup)view.getParent()).removeView(view);
+                                }
+                            });
                             if (!emitter.isDisposed()) {
                                 emitter.onComplete();
                             }
@@ -694,9 +707,13 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
                         @Override
                         public void onAnimationCancel(Animator animator) {
-                            // Undo clipping settings in the parent views and remove the view when animation is done.
-                            setAllParentsClip(animatedBalanceDeltaFrameLayout, true);
-                            viewGroup.removeView(animatedBalanceDeltaFrameLayout);
+                            // Same as onAnimationEnd
+                            new Handler().post(() -> {
+                                View view = weakView.get();
+                                if (view != null) {
+                                    ((ViewGroup) view.getParent()).removeView(view);
+                                }
+                            });
                             if (!emitter.isDisposed()) {
                                 emitter.onComplete();
                             }

@@ -504,7 +504,7 @@ public class StatusActivity
                             Observable.intervalRange(0, countdownSeconds, 0, 1, TimeUnit.SECONDS)
                                     .map(t -> countdownSeconds - t)
                                     .concatWith(Observable.error(new TimeoutException("Ad countdown timeout.")))
-                                    .doOnNext(t -> m_toggleButton.setText(String.format(Locale.US, "%d", t)));
+                                    .doOnNext(t -> runOnUiThread(() ->m_toggleButton.setText(String.format(Locale.US, "%d", t))));
 
                     return countdown
                             .takeUntil(interstitial)

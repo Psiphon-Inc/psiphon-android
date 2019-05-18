@@ -27,6 +27,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Pair;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 
 import com.google.ads.consent.ConsentForm;
 import com.google.ads.consent.ConsentFormListener;
@@ -55,7 +56,9 @@ import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.BuildConfig;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.SocketException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -67,7 +70,9 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.exceptions.UndeliverableException;
 import io.reactivex.functions.BiFunction;
+import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
 
 public class PsiphonAdManager {
@@ -273,8 +278,16 @@ public class PsiphonAdManager {
                                     @Override
                                     public void onConsentFormLoaded() {
                                         // Consent form loaded successfully.
-                                        if (adMobConsentForm != null && !adMobConsentForm.isShowing()) {
-                                            adMobConsentForm.show();
+                                        //
+                                        // See https://github.com/googleads/googleads-consent-sdk-android/issues/74
+                                        // Calling adMobConsentForm.show() may throw android.view.WindowManager$BadTokenException
+                                        // if activity is finishing, we will also surround the call with try/catch block just in case.
+                                        if (adMobConsentForm != null && !adMobConsentForm.isShowing() && !activity.isFinishing()) {
+                                            try {
+                                                adMobConsentForm.show();
+                                            } catch (WindowManager.BadTokenException e) {
+                                                Utils.MyLog.g("AdMob: consent form show error: " + e);
+                                            }
                                         }
                                     }
 
