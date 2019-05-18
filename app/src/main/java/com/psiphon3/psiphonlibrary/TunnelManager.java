@@ -1255,7 +1255,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     @Override
     public void onActiveAuthorizationIDs(List<String> acceptedAuthorizationIds) {
-        MyLog.g("onActiveAuthorizationIDs: " + acceptedAuthorizationIds.toString());
+        MyLog.g("TunnelManager::onActiveAuthorizationIDs: " + acceptedAuthorizationIds.toString());
         m_Handler.post(() -> {
             // Build a list of accepted authorizations from the authorizations snapshot.
             List<Authorization> acceptedAuthorizations = new ArrayList<>();
@@ -1273,13 +1273,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             notAcceptedAuthorizations.removeAll(acceptedAuthorizations);
 
             // Remove all not accepted authorizations from the database
-            MyLog.g("TunnelManager: removing not accepted persisted authorizations: " + notAcceptedAuthorizations.toString());
             Authorization.removeAuthorizations(getContext(), notAcceptedAuthorizations);
 
             if(notAcceptedAuthorizations.size() > 0 ) {
                 final AppPreferences mp = new AppPreferences(getContext());
                 mp.put(m_parentService.getString(R.string.persistentAuthorizationsRemovedFlag), true);
                 sendClientMessage(MSG_AUTHORIZATIONS_REMOVED, null);
+                MyLog.g("TunnelManager::onActiveAuthorizationIDs: removed not accepted persisted authorizations: " + notAcceptedAuthorizations.toString());
             }
 
             // Subscription check below
@@ -1293,7 +1293,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             // If server hasn't accepted any authorizations or previously stored authorization id hasn't been accepted
             // then send a PurchaseAuthorizationStatus.REJECTED to authorizationStatusObservable() subscriber(s)
             if (acceptedAuthorizationIds.isEmpty() || !acceptedAuthorizationIds.contains(purchaseAuthorizationID)) {
-                MyLog.g("TunnelManager::onActiveAuthorizationIDs: stored authorization has been rejected");
                 // clear persisted values too
                 persistPurchaseTokenAndAuthorizationId("", "");
                 m_activeAuthorizationSubject.onNext(PurchaseAuthorizationStatus.REJECTED);

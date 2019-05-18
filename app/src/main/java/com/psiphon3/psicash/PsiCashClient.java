@@ -135,6 +135,7 @@ public class PsiCashClient {
 
         if (err != null) {
             String errorMessage = "Could not initialize PsiCash lib: error: " + err.message;
+            Utils.MyLog.g("PsiCash: " + errorMessage);
             if (err.critical) {
                 throw new PsiCashException.Critical(errorMessage);
             } else {
@@ -259,6 +260,7 @@ public class PsiCashClient {
         PsiCashLib.GetDiagnosticInfoResult diagnosticInfoResult = psiCashLib.getDiagnosticInfo();
         if (diagnosticInfoResult.error != null) {
             String errorMessage = "PsiCashLib.GetDiagnosticInfoResult error: " + diagnosticInfoResult.error.message;
+            Utils.MyLog.g("PsiCash: " + errorMessage);
             if (diagnosticInfoResult.error.critical) {
                 throw new PsiCashException.Recoverable(errorMessage);
             } else {
@@ -270,6 +272,7 @@ public class PsiCashClient {
         PsiCashLib.BalanceResult balanceResult = psiCashLib.balance();
         if (balanceResult.error != null) {
             String errorMessage = "PsiCashLib.BalanceResult error: " + balanceResult.error.message;
+            Utils.MyLog.g("PsiCash: " + errorMessage);
             if (balanceResult.error.critical) {
                 throw new PsiCashException.Critical(errorMessage);
             } else {
@@ -281,6 +284,7 @@ public class PsiCashClient {
         PsiCashLib.GetPurchasePricesResult getPurchasePricesResult = psiCashLib.getPurchasePrices();
         if (getPurchasePricesResult.error != null) {
             String errorMessage = "PsiCashLib.GetPurchasePricesResult error: " + balanceResult.error.message;
+            Utils.MyLog.g("PsiCash: " + errorMessage);
             if (getPurchasePricesResult.error.critical) {
                 throw new PsiCashException.Critical(errorMessage);
             } else {
@@ -292,6 +296,7 @@ public class PsiCashClient {
         PsiCashLib.GetPurchasesResult getPurchasesResult = psiCashLib.getPurchases();
         if (getPurchasesResult.error != null) {
             String errorMessage = "PsiCashLib.GetPurchasesResult error: " + getPurchasesResult.error.message;
+            Utils.MyLog.g("PsiCash: " + errorMessage);
             if (getPurchasesResult.error.critical) {
                 throw new PsiCashException.Critical(errorMessage);
             } else {
@@ -336,7 +341,7 @@ public class PsiCashClient {
                                     price.distinguisher, price.price);
 
                     if (result.error != null) {
-                        Utils.MyLog.g("PsiCash: Error making expiring purchase: " + result.error.message);
+                        Utils.MyLog.g("PsiCash: error making expiring purchase: " + result.error.message);
                         if (result.error.critical) {
                             throw new PsiCashException.Critical(result.error.message);
                         } else {
@@ -348,7 +353,7 @@ public class PsiCashClient {
                     resetVideoReward();
 
                     if (result.status != PsiCashLib.Status.SUCCESS) {
-                        Utils.MyLog.g("PsiCash: Transaction error making expiring purchase: " + result.status);
+                        Utils.MyLog.g("PsiCash: transaction error making expiring purchase: " + result.status);
                         throw new PsiCashException.Transaction(result.status);
                     }
 

@@ -129,12 +129,12 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             @Override
             public void onNewExpiringPurchase(Context context, PsiCashLib.Purchase purchase) {
                 // Store authorization from the purchase
-                Utils.MyLog.g("PsiCash: onNewExpiringPurchase: storing authorization with ID: " + purchase.authorization.id + " from purchase: " + purchase.id);
+                Utils.MyLog.g("PsiCash::onNewExpiringPurchase: storing authorization with ID: " + purchase.authorization.id + " from purchase: " + purchase.id);
                 Authorization authorization = Authorization.fromBase64Encoded(purchase.authorization.encoded);
                 Authorization.storeAuthorization(context, authorization);
 
                 // Send broadcast to restart the tunnel
-                Utils.MyLog.g("PsiCash: onNewExpiringPurchase: send tunnel restart broadcast");
+                Utils.MyLog.g("PsiCash::onNewExpiringPurchase: send tunnel restart broadcast");
                 android.content.Intent intent = new android.content.Intent(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
                 LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
             }
@@ -147,7 +147,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                     // reload local PsiCash to update the view with the new reward amount
                     intentsPublishRelay.accept(PsiCashIntent.GetPsiCashLocal.create());
                 } catch (PsiCashException e) {
-                    Utils.MyLog.g("Failed to store video reward: " + e);
+                    Utils.MyLog.g("PsiCash::onNewReward: failed to store video reward: " + e);
                 }
             }
         };
@@ -332,7 +332,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         try {
             return PsiCashClient.getInstance(getContext()).hasValidTokens();
         } catch (PsiCashException e) {
-            Utils.MyLog.g("PsiCash hasValidTokens() error: " + e);
+            Utils.MyLog.g("PsiCash::hasValidTokens() error: " + e);
             return false;
         }
     }
@@ -362,7 +362,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 intentsPublishRelay.accept(PsiCashIntent.RemovePurchases.create(purchasesToRemove));
             }
         } catch (PsiCashException e) {
-            Utils.MyLog.g("Error removing expired purchases: " + e);
+            Utils.MyLog.g("PsiCash: error removing expired purchases: " + e);
         }
     }
 
@@ -428,7 +428,6 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             updateUiProgressView(state);
             updateUiRewardedVideoButton(state);
         } else {
-            Utils.MyLog.g("PsiCash view state error: " + psiCashStateError);
             updateUiPsiCashError(psiCashStateError);
         }
     }
