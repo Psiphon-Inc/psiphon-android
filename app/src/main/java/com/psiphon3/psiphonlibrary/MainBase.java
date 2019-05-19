@@ -1169,6 +1169,12 @@ public abstract class MainBase {
                 cancelInvalidProxySettingsToast();
                 m_invalidProxySettingsToast = Toast.makeText(this, R.string.network_proxy_connect_invalid_values, Toast.LENGTH_SHORT);
                 m_invalidProxySettingsToast.show();
+
+                // start cancelled, notify all components
+                if(!isServiceRunning()) {
+                    onTunnelConnectionState(new TunnelManager.State());
+                }
+
                 return;
             }
 
