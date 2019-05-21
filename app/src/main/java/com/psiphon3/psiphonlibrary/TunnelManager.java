@@ -307,7 +307,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     // Implementation of android.app.Service.onDestroy
     public void onDestroy() {
-        mNotificationManager.cancelAll();
+        if (mNotificationManager != null) {
+            // Only cancel our own service notification, do not cancel _all_ notifications.
+            mNotificationManager.cancel(R.string.psiphon_service_notification_id);
+        }
         stopAndWaitForTunnel();
         MyLog.unsetLogger();
         m_compositeDisposable.dispose();
