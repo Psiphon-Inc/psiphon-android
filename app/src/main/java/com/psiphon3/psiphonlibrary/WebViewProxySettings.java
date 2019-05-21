@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, Psiphon Inc.
+ *
+ * Copyright (c) 2019, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -41,15 +42,14 @@ import java.util.List;
 public class WebViewProxySettings
 {
     private static boolean mIsLocalProxySet = false;
-
-    public static boolean isLocalProxySet() {return mIsLocalProxySet;}
+    static boolean isLocalProxySet() {return mIsLocalProxySet;}
 
 
     private static List<Object> getCurrentReceiversSet(Context ctx) {
         Context appContext = ctx.getApplicationContext();
         List<Object> receiversList = new ArrayList();
 
-        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
             return receiversList;
         }
 
@@ -77,12 +77,11 @@ public class WebViewProxySettings
         } catch (IllegalAccessException e) {
             MyLog.d("Exception initializing WebViewProxySettings: " + e.toString());
         }
-        finally {
-            return receiversList;
-        }
+        
+        return receiversList;
     }
 
-    public static void resetLocalProxy(Context ctx)
+    static void resetLocalProxy(Context ctx)
     {
         UpstreamProxySettings.ProxySettings systemProxySettings = UpstreamProxySettings.getOriginalSystemProxySettings(ctx);
         if (systemProxySettings == null) {
@@ -116,7 +115,7 @@ public class WebViewProxySettings
     Orweb has always been doing an explicit version check, and it seems to work,
     so we're so going to switch to that approach.
     */
-    public static boolean setProxy (Context ctx, String host, int port)
+    private static boolean setProxy(Context ctx, String host, int port)
     {
         UpstreamProxySettings.saveSystemProxySettings(ctx);
 

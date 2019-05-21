@@ -31,7 +31,7 @@ import android.net.Uri;
 
 public class WeaveContentProvider extends ContentProvider {
 	
-	public static final String AUTHORITY = "org.zirco.providers.psiphonweavecontentprovider";
+	public static final String AUTHORITY = "org.zirco.providers.psiphonsubscriptionweavecontentprovider";
 	
 	private static final int DATABASE_VERSION = 1;
 	private static final String DATABASE_NAME = "weave.db";
