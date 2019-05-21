@@ -58,7 +58,6 @@ import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-import com.psiphon3.psiphonlibrary.WebViewProxySettings;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 import com.psiphon3.util.IabHelper;

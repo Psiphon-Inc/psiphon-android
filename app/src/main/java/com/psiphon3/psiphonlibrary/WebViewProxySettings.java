@@ -49,7 +49,7 @@ public class WebViewProxySettings
         Context appContext = ctx.getApplicationContext();
         List<Object> receiversList = new ArrayList();
 
-        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
             return receiversList;
         }
 
@@ -77,7 +77,7 @@ public class WebViewProxySettings
         } catch (IllegalAccessException e) {
             MyLog.d("Exception initializing WebViewProxySettings: " + e.toString());
         }
-
+        
         return receiversList;
     }
 
