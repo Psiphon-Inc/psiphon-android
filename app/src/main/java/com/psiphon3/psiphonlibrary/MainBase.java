@@ -365,22 +365,31 @@ public abstract class MainBase {
             @Override
             public boolean onFling(MotionEvent event1, MotionEvent event2, float velocityX, float velocityY) {
                 if (event1 != null && event2 != null) {
-                    int newTab;
+                    // Determine tab swipe direction
+                    int direction;
                     if (Math.abs(event1.getY() - event2.getY()) > SWIPE_MAX_OFF_PATH) {
                         return false;
                     }
                     if (event1.getX() - event2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
                         // Swipe right to left
-                        newTab = m_currentTab + 1;
+                        direction = 1;
                     } else if (event2.getX() - event1.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
                         // Swipe left to right
-                        newTab = m_currentTab - 1;
+                        direction = -1;
                     } else {
                         return false;
                     }
+
+                    // Move in direction until we hit a visible tab, or go out of bounds
+                    int newTab = m_currentTab + direction;
+                    while (newTab >= 0 && newTab < maxTabs && m_tabHost.getTabWidget().getChildTabViewAt(newTab).getVisibility() != View.VISIBLE) {
+                        newTab += direction;
+                    }
+
                     if (newTab < 0 || newTab > (maxTabs - 1)) {
                         return false;
                     }
+
                     m_tabHost.setCurrentTab(newTab);
                 }
                 return super.onFling(event1, event2, velocityX, velocityY);
@@ -573,6 +582,7 @@ public abstract class MainBase {
             statusListView.setOnTouchListener(onTouchListener);
 
             int currentTab = m_multiProcessPreferences.getInt(CURRENT_TAB, 0);
+            m_currentTab = currentTab;
             m_tabHost.setCurrentTab(currentTab);
 
             // Set TabChangedListener after restoring last tab to avoid triggering an interstitial,
