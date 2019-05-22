@@ -20,6 +20,7 @@
 
 package com.psiphon3;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
@@ -80,8 +81,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.reactivex.Observable;
+import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
+import io.reactivex.schedulers.Schedulers;
 
 
 public class StatusActivity
@@ -228,20 +232,26 @@ public class StatusActivity
         }
     }
 
+    @SuppressLint("CheckResult")
     private void showPsiCashTabIfHasValidToken() {
-        // Hide or show the PsiCash tab depending on presence of valid PsiCash tokens
-        try {
-            if (PsiCashClient.getInstance(this).hasValidTokens()) {
-                m_tabHost
-                        .getTabWidget()
-                        .getChildTabViewAt(MainBase.TabbedActivityBase.TabIndex.PSICASH.ordinal())
-                        .setVisibility(View.VISIBLE);
-            } else {
-                hidePsiCashTab();
-            }
-        } catch (PsiCashException e) {
-            MyLog.g("Error showing or hiding PsiCash tab: " + e);
-        }
+        // Hide or show the PsiCash tab depending on presence of valid PsiCash tokens.
+        // Wrap in Rx Single to run the valid tokens check on a non-UI thread and then
+        // update the UI on main thread when we get result.
+        Single.fromCallable(() -> PsiCashClient.getInstance(this).hasValidTokens())
+                .doOnError(err -> MyLog.g("Error showing or hiding PsiCash tab:"))
+                .onErrorResumeNext(Single.just(Boolean.FALSE))
+                .subscribeOn(Schedulers.computation())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(showTab -> {
+                    if (showTab) {
+                        m_tabHost
+                                .getTabWidget()
+                                .getChildTabViewAt(MainBase.TabbedActivityBase.TabIndex.PSICASH.ordinal())
+                                .setVisibility(View.VISIBLE);
+                    } else {
+                        hidePsiCashTab();
+                    }
+                });
     }
 
     private void loadSponsorTab(boolean freshConnect)
