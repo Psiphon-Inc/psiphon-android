@@ -611,28 +611,22 @@ public class StatusActivity
     }
 
     @Override
-    public void displayBrowser(Context context, Uri uri) {
-        if (uri == null) {
+    public void displayBrowser(Context context, String urlString) {
+        if (urlString == null) {
             ArrayList<String> homePages = getHomePages();
             if (homePages.size() == 0) {
                 // No home pages, return
                 return;
             } else {
-                String homePage = homePages.get(0);
-                if (TextUtils.isEmpty(homePage)) {
+                urlString = homePages.get(0);
+                if (TextUtils.isEmpty(urlString)) {
                     // home page URL is empty, return
                     return;
                 }
-                // Add PsiCash parameters
-                try {
-                    homePage = PsiCashClient.getInstance(getContext()).modifiedHomePageURL(homePage);
-                } catch (PsiCashException e) {
-                    MyLog.g("Error modifying home pages: " + e);
-                }
-
-                uri = Uri.parse(homePage);
             }
         }
+        // Add PsiCash parameters
+        Uri uri = Uri.parse(PsiCashModifyUrl(urlString));
 
         // No URI to display - do nothing
         if (uri == null) {
@@ -687,23 +681,31 @@ public class StatusActivity
 
                 // Add PsiCash parameters to home pages
                 ArrayList<String> homePages = new ArrayList<>();
-                for (String urlString : getHomePages()) {
-                    try {
-                        urlString = PsiCashClient.getInstance(getContext()).modifiedHomePageURL(urlString);
-                    } catch (PsiCashException e) {
-                        MyLog.g("Error modifying home pages: " + e);
+                for (String url : getHomePages()) {
+                    if(!TextUtils.isEmpty(url)) {
+                        homePages.add(PsiCashModifyUrl(url));
                     }
-                    homePages.add(urlString);
                 }
 
                 intent.putExtra("localProxyPort", getListeningLocalHttpProxyPort());
-                intent.putExtra("homePages", homePages);
+                if (homePages.size() > 0) {
+                    intent.putExtra("homePages", homePages);
+                }
 
                 context.startActivity(intent);
             }
         } catch (ActivityNotFoundException e) {
             // Thrown by startActivity; in this case, we ignore and the URI isn't opened
         }
+    }
+
+    private String PsiCashModifyUrl(String originalUrlString) {
+        try {
+            return PsiCashClient.getInstance(getContext()).modifiedHomePageURL(originalUrlString);
+        } catch (PsiCashException e) {
+            MyLog.g("PsiCash: error modifying home page: " + e);
+        }
+        return originalUrlString;
     }
 
     static final String IAB_PUBLIC_KEY = BuildConfig.IAB_PUBLIC_KEY;

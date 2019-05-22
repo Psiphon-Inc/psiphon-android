@@ -752,25 +752,20 @@ public abstract class MainBase {
             List<String> homepages = getHomePages();
             if (homepages.size() > 0) {
                 url = homepages.get(0);
-                // Add PsiCash parameters
-                try {
-                    url = PsiCashClient.getInstance(getContext()).modifiedHomePageURL(url);
-                } catch (PsiCashException e) {
-                    MyLog.g("Error modifying home pages: " + e);
-                }
             } else {
                 return;
             }
 
             if (!showFirstHomePageInApp()) {
                 if (freshConnect) {
-                    displayBrowser(getContext(), Uri.parse(url));
+                    displayBrowser(getContext(), url);
                 }
                 return;
             }
 
             // At this point we're showing the URL in the embedded webview.
             m_sponsorHomePage = new SponsorHomePage((WebView) findViewById(R.id.sponsorWebView), (ProgressBar) findViewById(R.id.sponsorWebViewProgressBar));
+            // TODO: should this url also be PsiCash modified?
             m_sponsorHomePage.load(url);
         }
 
@@ -1806,7 +1801,7 @@ public abstract class MainBase {
                     }
 
                     if (mWebViewLoaded) {
-                        displayBrowser(getContext(), Uri.parse(url));
+                        displayBrowser(getContext(), url);
                     }
                     return mWebViewLoaded;
                 }
@@ -1865,7 +1860,7 @@ public abstract class MainBase {
             }
         }
 
-        protected void displayBrowser(Context context, Uri uri) {
+        protected void displayBrowser(Context context, String urlString) {
 
         }
 
