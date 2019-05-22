@@ -765,6 +765,8 @@ public abstract class MainBase {
 
             // At this point we're showing the URL in the embedded webview.
             m_sponsorHomePage = new SponsorHomePage((WebView) findViewById(R.id.sponsorWebView), (ProgressBar) findViewById(R.id.sponsorWebViewProgressBar));
+
+            // TODO: should this url be PsiCash modified too?
             m_sponsorHomePage.load(url);
         }
 
@@ -1548,22 +1550,7 @@ public abstract class MainBase {
         }
 
         protected ArrayList<String> getHomePages() {
-            ArrayList<String> homePages = new ArrayList<>();
-            try {
-                PsiCashClient psiCashClient = PsiCashClient.getInstance(getContext());
-                if (psiCashClient.hasValidTokens()) {
-                    for (String homePageUrl : m_tunnelState.homePages) {
-                        homePages.add(PsiCashClient.getInstance(getContext()).modifiedHomePageURL(homePageUrl));
-                    }
-                } else {
-                    homePages.addAll(m_tunnelState.homePages);
-                }
-            } catch (PsiCashException e) {
-                MyLog.g("Error modifying home pages: " + e);
-                homePages.clear();
-                homePages.addAll(m_tunnelState.homePages);
-            }
-            return homePages;
+            return new ArrayList<>(m_tunnelState.homePages);
         }
 
         protected int getListeningLocalHttpProxyPort() {

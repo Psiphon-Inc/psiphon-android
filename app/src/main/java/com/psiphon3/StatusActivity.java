@@ -37,6 +37,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.LocalBroadcastManager;
+import android.text.TextUtils;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -53,7 +54,6 @@ import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.MainBase;
-import com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -613,9 +613,24 @@ public class StatusActivity
     @Override
     public void displayBrowser(Context context, Uri uri) {
         if (uri == null) {
-            for (String homePage : getHomePages()) {
+            ArrayList<String> homePages = getHomePages();
+            if (homePages.size() == 0) {
+                // No home pages, return
+                return;
+            } else {
+                String homePage = homePages.get(0);
+                if (TextUtils.isEmpty(homePage)) {
+                    // home page URL is empty, return
+                    return;
+                }
+                // Add PsiCash parameters
+                try {
+                    homePage = PsiCashClient.getInstance(getContext()).modifiedHomePageURL(homePage);
+                } catch (PsiCashException e) {
+                    MyLog.g("Error modifying home pages: " + e);
+                }
+
                 uri = Uri.parse(homePage);
-                break;
             }
         }
 
@@ -670,8 +685,19 @@ public class StatusActivity
                 // Note: Zirco now directly accesses PsiphonData to get the current
                 // local HTTP proxy port for WebView tunneling.
 
+                // Add PsiCash parameters to home pages
+                ArrayList<String> homePages = new ArrayList<>();
+                for (String urlString : getHomePages()) {
+                    try {
+                        urlString = PsiCashClient.getInstance(getContext()).modifiedHomePageURL(urlString);
+                    } catch (PsiCashException e) {
+                        MyLog.g("Error modifying home pages: " + e);
+                    }
+                    homePages.add(urlString);
+                }
+
                 intent.putExtra("localProxyPort", getListeningLocalHttpProxyPort());
-                intent.putExtra("homePages", getHomePages());
+                intent.putExtra("homePages", homePages);
 
                 context.startActivity(intent);
             }
