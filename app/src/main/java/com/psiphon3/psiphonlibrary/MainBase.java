@@ -1876,6 +1876,7 @@ public abstract class MainBase {
         }
 
         final protected void displayBrowser(Context context, String urlString) {
+            // PsiCash modify URLs by default
             displayBrowser(context, urlString, true);
         }
 
