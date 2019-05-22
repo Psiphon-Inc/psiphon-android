@@ -765,8 +765,9 @@ public abstract class MainBase {
 
             // At this point we're showing the URL in the embedded webview.
             m_sponsorHomePage = new SponsorHomePage((WebView) findViewById(R.id.sponsorWebView), (ProgressBar) findViewById(R.id.sponsorWebViewProgressBar));
-            // TODO: should this url also be PsiCash modified?
-            m_sponsorHomePage.load(url);
+
+            // Add PsiCash parameters
+            m_sponsorHomePage.load(PsiCashModifyUrl(url));
         }
 
         @Override
@@ -853,6 +854,15 @@ public abstract class MainBase {
                     }
                 });
             }
+        }
+
+        final protected String PsiCashModifyUrl(String originalUrlString) {
+            try {
+                return PsiCashClient.getInstance(getContext()).modifiedHomePageURL(originalUrlString);
+            } catch (PsiCashException e) {
+                MyLog.g("PsiCash: error modifying home page: " + e);
+            }
+            return originalUrlString;
         }
 
         public abstract void onSubscribeButtonClick(View v);
@@ -1801,7 +1811,8 @@ public abstract class MainBase {
                     }
 
                     if (mWebViewLoaded) {
-                        displayBrowser(getContext(), url);
+                        // Do not PsiCash modify the URL, it is already modified.
+                        displayBrowser(getContext(), url, false);
                     }
                     return mWebViewLoaded;
                 }
@@ -1860,8 +1871,12 @@ public abstract class MainBase {
             }
         }
 
-        protected void displayBrowser(Context context, String urlString) {
+        protected void displayBrowser(Context context, String url, boolean b) {
 
+        }
+
+        final protected void displayBrowser(Context context, String urlString) {
+            displayBrowser(context, urlString, true);
         }
 
         protected void restoreSponsorTab() {
