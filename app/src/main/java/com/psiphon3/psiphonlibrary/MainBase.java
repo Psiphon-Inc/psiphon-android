@@ -752,6 +752,12 @@ public abstract class MainBase {
             List<String> homepages = getHomePages();
             if (homepages.size() > 0) {
                 url = homepages.get(0);
+                // Add PsiCash parameters
+                try {
+                    url = PsiCashClient.getInstance(getContext()).modifiedHomePageURL(url);
+                } catch (PsiCashException e) {
+                    MyLog.g("Error modifying home pages: " + e);
+                }
             } else {
                 return;
             }
@@ -765,8 +771,6 @@ public abstract class MainBase {
 
             // At this point we're showing the URL in the embedded webview.
             m_sponsorHomePage = new SponsorHomePage((WebView) findViewById(R.id.sponsorWebView), (ProgressBar) findViewById(R.id.sponsorWebViewProgressBar));
-
-            // TODO: should this url be PsiCash modified too?
             m_sponsorHomePage.load(url);
         }
 
