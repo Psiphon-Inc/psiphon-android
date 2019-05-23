@@ -51,7 +51,6 @@ import android.widget.Toast;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.psicash.PsiCashClient;
-import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.MainBase;
@@ -1184,58 +1183,57 @@ public class StatusActivity
     private final int PAYMENT_CHOOSER_ACTIVITY = 20001;
 
     @Override
-    public void onSubscribeButtonClick(View v)
-    {
+    public void onSubscribeButtonClick(View v) {
         Utils.MyLog.g("StatusActivity::onSubscribeButtonClick");
+        try {
+            // User has clicked the Subscribe button, now let them choose the payment method.
 
-        // Do nothing in this case (instead of crashing).
-        if (mInventory == null)
-        {
-            return;
+            Intent feedbackIntent = new Intent(this, PaymentChooserActivity.class);
+
+            // Pass price and SKU info to payment chooser activity.
+            PaymentChooserActivity.SkuInfo skuInfo = new PaymentChooserActivity.SkuInfo();
+
+            SkuDetails limitedSubscriptionSkuDetails = mInventory.getSkuDetails(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU);
+            skuInfo.mLimitedSubscriptionInfo.sku = limitedSubscriptionSkuDetails.getSku();
+            skuInfo.mLimitedSubscriptionInfo.price = limitedSubscriptionSkuDetails.getPrice();
+            skuInfo.mLimitedSubscriptionInfo.priceMicros = limitedSubscriptionSkuDetails.getPriceAmountMicros();
+            skuInfo.mLimitedSubscriptionInfo.priceCurrency = limitedSubscriptionSkuDetails.getPriceCurrencyCode();
+            // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
+            // we'll set it to 30 days.
+            skuInfo.mLimitedSubscriptionInfo.lifetime = 30L * 24 * 60 * 60 * 1000;
+
+            SkuDetails unlimitedSubscriptionSkuDetails = mInventory.getSkuDetails(IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
+            skuInfo.mUnlimitedSubscriptionInfo.sku = unlimitedSubscriptionSkuDetails.getSku();
+            skuInfo.mUnlimitedSubscriptionInfo.price = unlimitedSubscriptionSkuDetails.getPrice();
+            skuInfo.mUnlimitedSubscriptionInfo.priceMicros = unlimitedSubscriptionSkuDetails.getPriceAmountMicros();
+            skuInfo.mUnlimitedSubscriptionInfo.priceCurrency = unlimitedSubscriptionSkuDetails.getPriceCurrencyCode();
+            // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
+            // we'll set it to 30 days.
+            skuInfo.mUnlimitedSubscriptionInfo.lifetime = 30L * 24 * 60 * 60 * 1000;
+
+            for (Map.Entry<String, Long> timepassSku : IAB_TIMEPASS_SKUS_TO_TIME.entrySet()) {
+                SkuDetails timepassSkuDetails = mInventory.getSkuDetails(timepassSku.getKey());
+                PaymentChooserActivity.SkuInfo.Info info = new PaymentChooserActivity.SkuInfo.Info();
+
+                info.sku = timepassSkuDetails.getSku();
+                info.price = timepassSkuDetails.getPrice();
+                info.priceMicros = timepassSkuDetails.getPriceAmountMicros();
+                info.priceCurrency = timepassSkuDetails.getPriceCurrencyCode();
+                info.lifetime = timepassSku.getValue();
+
+                skuInfo.mTimePassSkuToInfo.put(info.sku, info);
+            }
+
+            feedbackIntent.putExtra(PaymentChooserActivity.SKU_INFO_EXTRA, skuInfo.toString());
+
+            startActivityForResult(feedbackIntent, PAYMENT_CHOOSER_ACTIVITY);
+        } catch (NullPointerException e) {
+            Utils.MyLog.g("StatusActivity::onSubscribeButtonClick error: " + e);
+            // Show "Subscription options not available" toast.
+            Toast toast = Toast.makeText(this, R.string.subscription_options_currently_not_available, Toast.LENGTH_LONG);
+            toast.setGravity(Gravity.CENTER, 0, 0);
+            toast.show();
         }
-
-        // User has clicked the Subscribe button, now let them choose the payment method.
-
-        Intent feedbackIntent = new Intent(this, PaymentChooserActivity.class);
-
-        // Pass price and SKU info to payment chooser activity.
-        PaymentChooserActivity.SkuInfo skuInfo = new PaymentChooserActivity.SkuInfo();
-
-        SkuDetails limitedSubscriptionSkuDetails = mInventory.getSkuDetails(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU);
-        skuInfo.mLimitedSubscriptionInfo.sku = limitedSubscriptionSkuDetails.getSku();
-        skuInfo.mLimitedSubscriptionInfo.price = limitedSubscriptionSkuDetails.getPrice();
-        skuInfo.mLimitedSubscriptionInfo.priceMicros = limitedSubscriptionSkuDetails.getPriceAmountMicros();
-        skuInfo.mLimitedSubscriptionInfo.priceCurrency = limitedSubscriptionSkuDetails.getPriceCurrencyCode();
-        // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
-        // we'll set it to 30 days.
-        skuInfo.mLimitedSubscriptionInfo.lifetime = 30L * 24 * 60 * 60 * 1000;
-
-        SkuDetails unlimitedSubscriptionSkuDetails = mInventory.getSkuDetails(IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
-        skuInfo.mUnlimitedSubscriptionInfo.sku = unlimitedSubscriptionSkuDetails.getSku();
-        skuInfo.mUnlimitedSubscriptionInfo.price = unlimitedSubscriptionSkuDetails.getPrice();
-        skuInfo.mUnlimitedSubscriptionInfo.priceMicros = unlimitedSubscriptionSkuDetails.getPriceAmountMicros();
-        skuInfo.mUnlimitedSubscriptionInfo.priceCurrency = unlimitedSubscriptionSkuDetails.getPriceCurrencyCode();
-        // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
-        // we'll set it to 30 days.
-        skuInfo.mUnlimitedSubscriptionInfo.lifetime = 30L * 24 * 60 * 60 * 1000;
-
-        for (Map.Entry<String, Long> timepassSku : IAB_TIMEPASS_SKUS_TO_TIME.entrySet())
-        {
-            SkuDetails timepassSkuDetails = mInventory.getSkuDetails(timepassSku.getKey());
-            PaymentChooserActivity.SkuInfo.Info info = new PaymentChooserActivity.SkuInfo.Info();
-
-            info.sku = timepassSkuDetails.getSku();
-            info.price = timepassSkuDetails.getPrice();
-            info.priceMicros = timepassSkuDetails.getPriceAmountMicros();
-            info.priceCurrency = timepassSkuDetails.getPriceCurrencyCode();
-            info.lifetime = timepassSku.getValue();
-
-            skuInfo.mTimePassSkuToInfo.put(info.sku, info);
-        }
-
-        feedbackIntent.putExtra(PaymentChooserActivity.SKU_INFO_EXTRA, skuInfo.toString());
-
-        startActivityForResult(feedbackIntent, PAYMENT_CHOOSER_ACTIVITY);
     }
 
     synchronized
