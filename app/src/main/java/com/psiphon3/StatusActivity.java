@@ -621,7 +621,7 @@ public class StatusActivity
     }
 
     @Override
-    public void displayBrowser(Context context, String urlString) {
+    public void displayBrowser(Context context, String urlString, boolean shouldPsiCashModifyUrls) {
         if (urlString == null) {
             ArrayList<String> homePages = getHomePages();
             if (homePages.size() == 0) {
@@ -635,8 +635,13 @@ public class StatusActivity
                 }
             }
         }
-        // Add PsiCash parameters
-        Uri uri = Uri.parse(PsiCashModifyUrl(urlString));
+
+        if (shouldPsiCashModifyUrls) {
+            // Add PsiCash parameters
+            urlString = PsiCashModifyUrl(urlString);
+        }
+
+        Uri uri = Uri.parse(urlString);
 
         // No URI to display - do nothing
         if (uri == null) {
@@ -693,7 +698,11 @@ public class StatusActivity
                 ArrayList<String> homePages = new ArrayList<>();
                 for (String url : getHomePages()) {
                     if(!TextUtils.isEmpty(url)) {
-                        homePages.add(PsiCashModifyUrl(url));
+                        if(shouldPsiCashModifyUrls) {
+                            // Add PsiCash parameters
+                            url = PsiCashModifyUrl(url);
+                        }
+                        homePages.add(url);
                     }
                 }
 
@@ -705,15 +714,6 @@ public class StatusActivity
         } catch (ActivityNotFoundException e) {
             // Thrown by startActivity; in this case, we ignore and the URI isn't opened
         }
-    }
-
-    private String PsiCashModifyUrl(String originalUrlString) {
-        try {
-            return PsiCashClient.getInstance(getContext()).modifiedHomePageURL(originalUrlString);
-        } catch (PsiCashException e) {
-            MyLog.g("PsiCash: error modifying home page: " + e);
-        }
-        return originalUrlString;
     }
 
     static final String IAB_PUBLIC_KEY = BuildConfig.IAB_PUBLIC_KEY;
