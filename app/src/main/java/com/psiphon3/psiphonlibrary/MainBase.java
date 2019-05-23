@@ -1811,7 +1811,8 @@ public abstract class MainBase {
                     }
 
                     if (mWebViewLoaded) {
-                        // Do not PsiCash modify the URL, it is already modified.
+                        // Do not PsiCash modify the URL, this is a link on the landing page
+                        // that has been clicked
                         displayBrowser(getContext(), url, false);
                     }
                     return mWebViewLoaded;
