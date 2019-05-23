@@ -857,6 +857,10 @@ public abstract class MainBase {
         }
 
         final protected String PsiCashModifyUrl(String originalUrlString) {
+            if (TextUtils.isEmpty(originalUrlString)) {
+                return originalUrlString;
+            }
+
             try {
                 return PsiCashClient.getInstance(getContext()).modifiedHomePageURL(originalUrlString);
             } catch (PsiCashException e) {
