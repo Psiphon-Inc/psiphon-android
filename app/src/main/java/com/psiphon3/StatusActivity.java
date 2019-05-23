@@ -698,9 +698,7 @@ public class StatusActivity
                 }
 
                 intent.putExtra("localProxyPort", getListeningLocalHttpProxyPort());
-                if (homePages.size() > 0) {
-                    intent.putExtra("homePages", homePages);
-                }
+                intent.putExtra("homePages", new ArrayList<>());
 
                 context.startActivity(intent);
             }
