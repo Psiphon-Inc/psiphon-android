@@ -480,6 +480,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
         // Center the message in the text view.
         TextView tv = snackbar.getView().findViewById(android.support.design.R.id.snackbar_text);
+        tv.setMaxLines(5);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
         } else {
