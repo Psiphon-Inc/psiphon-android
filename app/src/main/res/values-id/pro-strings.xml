@@ -34,11 +34,26 @@
     <string name="custom_proxy_header_group_1">Header 1</string>
     <string name="custom_proxy_header_group_2">Header 2</string>
     <string name="custom_proxy_header_group_3">Header 3</string>
+    <string name="custom_proxy_header_group_4">Header 4</string>
+    <string name="custom_proxy_header_group_5">Header 5</string>
+    <string name="custom_proxy_header_group_6">Header 6</string>
     <string name="custom_proxy_header_name">Masukkan nama header</string>
     <string name="custom_proxy_header_value">Masukkan nilai header</string>
     <string name="custom_proxy_header_ignored_values">Peringatan: header dengan tanpa nama akan diabaikan!</string>
     <string name="custom_proxy_header_invalid_name">Kesalahan: nama header berisi karakter ilegal!</string>
     
+    <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day.
+         Insert one or more newline characters as needed to keep the lines approximately as short
+         as the English. -->
+    <string name="PaymentChooserFragment.UnlimitedSubscription">Kecepatan Maksimum - %1$s / bulan\n(%2$s / hari)</string>
+
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day.
+         Insert one or more newline characters as needed to keep the lines approximately as short
+         as the English. -->
+    <string name="PaymentChooserFragment.LimitedSubscription">Kecepatan Tinggi - %1$s / bulan\n(%2$s / hari)</string>
+
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day. -->
     <string name="PaymentChooserFragment.TimePass7Day">7 hari - %1$s\n(%2$s/hari)</string>
@@ -75,4 +90,138 @@
          The parenthetical remark about credit card requirements should be separated by a newline. -->
     <string name="PaymentChooserFragment.SubscriptionDescription">Langganan layanan tanpa gangguan dengan harga terbaik.\n(Memerlukan kartu kredit yang valid.)</string>
 
-    </resources>
+    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
+         amount of time. This string announces that subscriptions include a free trial. -->
+    <string name="PaymentChooserFragment.FreeTrialDescription">BARU! Uji coba gratis selama 30 hari dengan setiap langganan.</string>
+
+    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
+         amount of time. This string is a description specifically about buying a time pass.
+         The parenthetical remark about credit card requirements should be separated by a newline. -->
+    <string name="PaymentChooserFragment.TimePassDescription">Langganan Kecepatan Maksimum berbatas waktu.\n(Tidak memerlukan kartu kredit. Kartu hadiah atau kredit Google Play dapat digunakan.)</string>
+
+    <!-- Title for other text showing what the user's current speed limit is. Users have limited
+         speed if they have not paid for premium service. -->
+    <string name="rate_limit_text_title">Batas kecepatan Psiphon:</string>
+
+    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
+         and is in megabits-per-second. Users have limited speed if they have not paid for premium
+         service. -->
+    <string name="rate_limit_text_limited">%d Mb/dtk</string>
+
+    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
+         have access to a full-speed connection. Users have limited speed if they have not paid for
+         premium service. -->
+    <string name="rate_limit_text_unlimited">Tanpa Batas</string>
+
+    <!-- Indicates that the user has an active speed boost.'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
+    anything that indicates a fast or unrestricted speed. -->
+    <string name="rate_limit_text_speed_boost">Pendorong Kecepatan</string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">Tingkatkan sekarang!</string>
+
+    <!-- Button title indicating to the user that they will earn PsiCash if they watch a video advertisement.
+    The word 'PsiCash' should not be translated or transliterated. Keep as short as possible.-->
+    <string name="watch_video_and_earn_psicash_button">Tonton video untuk mendapatkan PsiCash</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because of
+    an unknown error. Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_transaction_invalid_message">Respons tidak sah dari server PsiCash.</string>
+
+    <!-- Internal message not seen by the users, indicates successful Speed Boost purchase. -->
+    <string name="psicash_transaction_success_message">Berhasil.</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because they have an insufficient balance.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
+    anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_insufficient_balance_message">Saldo tidak memadai untuk pembelian Pendorong Kecepatan.</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because they tried to make the purchase with
+    an out of date product price. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
+    connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate',
+    'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_amount_mismatch_message">Harga Pendorong Kecepatan kedaluwarsa. Memperbarui produk lokal.</string>
+
+    <!-- Alert error message informing user that they have an active Speed Boost purchase.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed',
+    'blast off', or anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_existing_message">Anda memiliki pembelian Pendorong Kecepatan yang aktif.</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because they attempted to buy a product that is no longer available
+    and that they should try updating or reinstalling the app. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
+    connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
+    anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_type_not_found_message">Produk Pendorong Kecepatan tidak ditemukan. Aplikasi Anda mungkin kedaluwarsa. Silakan periksa pembaruan.</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because their app has entered an invalid state and that they
+    should try updating or reinstalling the app. Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_transaction_invalid_tokens_message">Aplikasi memasuki keadaan tidak sah. Silakan pasang ulang aplikasi untuk dapat terus menggunakan PsiCash.</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed due to a server error and that they should try again in a few minutes -->
+    <string name="transaction_server_error_message">Kesalahan server. Silakan coba lagi dalam beberapa menit</string>
+
+    <!-- Alert error message informing user that a critical PsiCash related error has occurred and encouraging users to send feedback diagnostics -->
+    <string name="psicash_critical_error_message">Kesalahan kritis telah terjadi. Silakan kirim umpan balik.</string>
+
+    <!-- Alert error message informing user that a recoverable PsiCash related error has occurred and last action will most likely succeed next time. -->
+    <string name="psicash_recoverable_error_message">Kesalahan yang dapat dipulihkan telah terjadi. Silakan coba lagi.</string>
+
+    <!-- Alert message informing user that a PsiCash rewarded video is currently not available. -->
+    <string name="psicash_video_not_available_message">Video tidak tersedia, coba lagi nanti.</string>
+
+    <!-- Text which appears in the Speed Boost meter when the user has earned enough PsiCash to buy 1 hour of Speed Boost.
+    Please keep this text concise as the width of the text box is restricted in size. 'Speed Boost' is a reward
+    that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed',
+    'blast off', or anything that indicates a fast or unrestricted speed. -->
+    <string name="one_hour_of_speed_boost_available_button">Tersedia 1 jam Pendorong Kecepatan</string>
+
+    <!-- Text which appears in the Speed Boost meter when the user has not yet earned enough PsiCash to
+    Speed Boost. This text will be accompanied with a percentage indicating to the user how close they are
+    to earning enough PsiCash to buy an hour of Speed Boost. Please keep this text concise as the width
+    of the text box is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
+    <string name="charging_speed_boost_percents_label">Mengisi Pendorong Kecepatan</string>
+
+    <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
+    <string name="unexpected_error_occured_send_feedback_message">Telah terjadi kesalahan yang tak terduga, silakan kirim umpan balik.</string>
+
+    <!-- Alert error message informing user that the Psiphon tunnel needs to be running in order to make a Speed Boost purchase.
+     'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
+    <string name="speed_boost_connect_to_purchase_message">Silakan mulai Psiphon untuk melakukan pembelian Pendorong Kecepatan.</string>
+
+    <!-- Alert error message informing user that the Psiphon tunnel needs to complete its connection sequence in order to make a Speed Boost purchase.
+     'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_wait_tunnel_to_connect_to_purchase_message">Silakan tunggu terowongan terhubung untuk melakukan pembelian Pendorong Kecepatan.</string>
+
+    <!-- Alert error message informing user that a critical error has occurred while trying to retrieve PsiCash balance and encouraging the user to
+    send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_cant_get_balance_critical_message">Tidak dapat mengambil saldo PsiCash dari server. Silakan kirim umpan balik.</string>
+
+    <!-- Alert error message informing user that a recoverable error has occurred while trying to retrieve PsiCash balance and last action will most
+    likely succeed next time.  Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_cant_get_balance_recoverable_message">Saat ini tidak dapat mengambil saldo PsiCash dari server. Silakan coba lagi nanti.</string>
+
+    <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
+    of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
+    is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed. -->
+    <string name="speed_boost_active_label">Pendorong Kecepatan Aktif</string>
+
+    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
+    <string name="psicash_snackbar_action_ok">Oke</string>
+
+    <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
+    <string name="subscription_options_currently_not_available">Opsi berlangganan saat ini tidak tersedia, silakan coba lagi nanti.</string>
+</resources>
