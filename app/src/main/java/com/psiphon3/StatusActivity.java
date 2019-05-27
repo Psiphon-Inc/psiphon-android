@@ -36,6 +36,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -284,66 +285,6 @@ public class StatusActivity
         HandleCurrentIntent();
     }
 
-    @Override
-    protected PendingIntent getHandshakePendingIntent() {
-        Intent intent = new Intent(
-                TunnelManager.INTENT_ACTION_HANDSHAKE,
-                null,
-                this,
-                com.psiphon3.StatusActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        return PendingIntent.getActivity(
-                this,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-    }
-
-    @Override
-    protected PendingIntent getServiceNotificationPendingIntent() {
-        Intent intent = new Intent(
-                "ACTION_VIEW",
-                null,
-                this,
-                com.psiphon3.StatusActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        return PendingIntent.getActivity(
-                this,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-    }
-
-    @Override
-    protected PendingIntent getRegionNotAvailablePendingIntent() {
-        Intent intent = new Intent(
-                TunnelManager.INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE,
-                null,
-                this,
-                com.psiphon3.StatusActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        return PendingIntent.getActivity(
-                this,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-    }
-
-    @Override
-    protected PendingIntent getVpnRevokedPendingIntent() {
-        Intent intent = new Intent(
-                TunnelManager.INTENT_ACTION_VPN_REVOKED,
-                null,
-                this,
-                com.psiphon3.StatusActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        return PendingIntent.getActivity(
-                this,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-    }
-
     protected void doToggle()
     {
         super.doToggle();
@@ -555,17 +496,12 @@ public class StatusActivity
     }
 
     @Override
-    public void displayBrowser(Context context, Uri uri) {
-        if (uri == null) {
-            for (String homePage : getHomePages()) {
-                uri = Uri.parse(homePage);
-                break;
+    public void displayBrowser(Context context, String urlString) {
+        if (urlString == null) {
+            ArrayList<String> homePages = getHomePages();
+            if (homePages.size() > 0) {
+                urlString = homePages.get(0);
             }
-        }
-
-        // No URI to display - do nothing
-        if (uri == null) {
-            return;
         }
 
         try {
@@ -574,12 +510,38 @@ public class StatusActivity
                 // disabled due to the case where users haven't set a default browser
                 // and will get the prompt once per home page.
 
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
+                // If URL is not empty we will try to load in an external browser, otherwise we will
+                // try our best to open an external browser instance without specifying URL to load
+                // or will load "about:blank" URL if that fails.
+
+                // Prepare browser starting intent.
+                Intent browserIntent;
+                if (TextUtils.isEmpty(urlString)) {
+                    // If URL is empty, just start the app.
+                    browserIntent = new Intent(Intent.ACTION_MAIN);
+                } else {
+                    // If URL is not empty, start the app with URL load intent.
+                    browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(urlString));
+                }
                 browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                ResolveInfo resolveInfo = getPackageManager().resolveActivity(browserIntent, PackageManager.MATCH_DEFAULT_ONLY);
-                if (resolveInfo == null || resolveInfo.activityInfo == null ||
-                        resolveInfo.activityInfo.name == null || resolveInfo.activityInfo.name.toLowerCase().contains("resolver")) {
-                    // No default web browser is set, so try opening in Chrome
+
+                // query default 'URL open' intent handler.
+                Intent queryIntent;
+                if (TextUtils.isEmpty(urlString)) {
+                    queryIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.example.org"));
+                } else {
+                    queryIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(urlString));
+                }
+                ResolveInfo resolveInfo = getPackageManager().resolveActivity(queryIntent, PackageManager.MATCH_DEFAULT_ONLY);
+
+                // Try and start default intent handler application if there is one
+                if (resolveInfo != null &&
+                        resolveInfo.activityInfo != null &&
+                        resolveInfo.activityInfo.name != null &&
+                        !resolveInfo.activityInfo.name.toLowerCase().contains("resolver")) {
+                    browserIntent.setClassName(resolveInfo.activityInfo.packageName, resolveInfo.activityInfo.name);
+                    context.startActivity(browserIntent);
+                } else { // There is no default handler, try chrome
                     browserIntent.setPackage("com.android.chrome");
                     try {
                         context.startActivity(browserIntent);
@@ -587,12 +549,19 @@ public class StatusActivity
                         // We tried to open Chrome and it is not installed,
                         // so reinvoke with the default behaviour
                         browserIntent.setPackage(null);
+                        // If URL is empty try loading a special URL 'about:blank'
+                        if (TextUtils.isEmpty(urlString)) {
+                            browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("about:blank"));
+                        }
                         context.startActivity(browserIntent);
                     }
-                } else {
-                    context.startActivity(browserIntent);
                 }
             } else {
+                Uri uri = null;
+                if (!TextUtils.isEmpty(urlString)) {
+                    uri = Uri.parse(urlString);
+                }
+
                 Intent intent = new Intent(
                         "ACTION_VIEW",
                         uri,
@@ -611,7 +580,6 @@ public class StatusActivity
                 // Note: Zirco now directly accesses PsiphonData to get the current
                 // local HTTP proxy port for WebView tunneling.
 
-                intent.putExtra("localProxyPort", getListeningLocalHttpProxyPort());
                 intent.putExtra("homePages", getHomePages());
 
                 context.startActivity(intent);
