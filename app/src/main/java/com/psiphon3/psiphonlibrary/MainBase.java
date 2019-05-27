@@ -595,7 +595,7 @@ public abstract class MainBase {
 
             if (!showFirstHomePageInApp()) {
                 if (freshConnect) {
-                        displayBrowser(getContext(), url);
+                    displayBrowser(getContext(), url);
                 }
                 return;
             }
