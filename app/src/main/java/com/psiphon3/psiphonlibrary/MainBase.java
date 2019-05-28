@@ -59,6 +59,8 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.text.TextUtilsCompat;
 import android.support.v4.view.ViewCompat;
 import android.text.TextUtils;
+import android.util.Log;
+import android.util.TimingLogger;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.KeyEvent;
@@ -1601,13 +1603,20 @@ public abstract class MainBase {
                         break;
 
                     case TunnelManager.MSG_TUNNEL_CONNECTION_STATE:
-                        TunnelManager.State state = getTunnelStateFromBundle(data);
-                        onTunnelConnectionState(state);
+                        // Service tunnel state messages may arrive after
+                        // m_tunnelServiceConnection.onServiceDisconnected() had been called, which
+                        // is a solid indication that the service is not running anymore. We do not
+                        // want these delayed messages to mess up the state of other components and/or
+                        // result in incorrect UI state.
+                        if(isServiceRunning()) {
+                            TunnelManager.State state = getTunnelStateFromBundle(data);
+                            onTunnelConnectionState(state);
 
-                        // An activity created needs to load a sponsor the tab when tunnel connects
-                        // once per its lifecycle. Both conditions are taken care of inside
-                        // of restoreSponsorTab function
-                        restoreSponsorTab();
+                            // An activity created needs to load a sponsor the tab when tunnel connects
+                            // once per its lifecycle. Both conditions are taken care of inside
+                            // of restoreSponsorTab function
+                            restoreSponsorTab();
+                        }
                         break;
 
                     case TunnelManager.MSG_DATA_TRANSFER_STATS:
