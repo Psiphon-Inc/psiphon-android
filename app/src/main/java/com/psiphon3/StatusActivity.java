@@ -20,7 +20,6 @@
 package com.psiphon3;
 
 import android.app.AlertDialog;
-import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -93,6 +92,8 @@ public class StatusActivity
     public static final String BANNER_FILE_NAME = "bannerImage";
 
     private ImageView m_banner;
+    private LinearLayout m_bannerHolderLayout;
+
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
     private AdView m_adMobUntunneledBannerAdView = null;
@@ -117,6 +118,7 @@ public class StatusActivity
         setContentView(R.layout.main);
 
         m_banner = (ImageView) findViewById(R.id.banner);
+        m_bannerHolderLayout = findViewById(R.id.bannerHolderLayout);
         m_tabHost = (TabHost) findViewById(R.id.tabHost);
         m_toggleButton = (Button) findViewById(R.id.toggleButton);
 
@@ -783,7 +785,7 @@ public class StatusActivity
             if (m_adMobUntunneledBannerAdView.getParent() != null) {
                 LinearLayout layout = (LinearLayout) findViewById(R.id.bannerLayout);
                 layout.removeAllViewsInLayout();
-                layout.addView(m_banner);
+                layout.addView(m_bannerHolderLayout);
             }
 
             m_adMobUntunneledBannerAdView.destroy();
@@ -961,7 +963,7 @@ public class StatusActivity
             if (m_moPubTunneledBannerAdView.getParent() != null) {
                 LinearLayout layout = (LinearLayout) findViewById(R.id.bannerLayout);
                 layout.removeAllViewsInLayout();
-                layout.addView(m_banner);
+                layout.addView(m_bannerHolderLayout);
             }
 
             m_moPubTunneledBannerAdView.destroy();
