@@ -59,8 +59,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.text.TextUtilsCompat;
 import android.support.v4.view.ViewCompat;
 import android.text.TextUtils;
-import android.util.Log;
-import android.util.TimingLogger;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.KeyEvent;
