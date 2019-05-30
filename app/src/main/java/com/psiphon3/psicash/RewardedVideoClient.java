@@ -217,15 +217,14 @@ public class RewardedVideoClient {
                     }
                     if (state.isRunning()) {
                         TunnelState.ConnectionData connectionData = state.connectionData();
+                        // OLD COMMENT:
                         // When running VPN mode should load MoPub ads and BOM should load AdMob.
-                        if (connectionData.vpnMode()) {
-                            if (connectionData.isConnected()) {
-                                return loadMoPubVideos(customData);
-                            } else {
-                                return Observable.never();
-                            }
+                        // NEW COMMENT:
+                        // Load MoPub when tunnel is connected for either BOM or VPN mode.
+                        if (connectionData.isConnected()) {
+                            return loadMoPubVideos(customData);
                         } else {
-                            return loadAdMobVideos(customData);
+                            return Observable.never();
                         }
                     } else {
                         // Not running should load AdMob ads
