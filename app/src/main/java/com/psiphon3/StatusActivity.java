@@ -321,7 +321,7 @@ public class StatusActivity
     protected void onAuthorizationsRemoved() {
         MyLog.g("PsiCash: received onAuthorizationsRemoved() notification");
         super.onAuthorizationsRemoved();
-        psiCashFragment.removePurchases();
+        psiCashFragment.removePurchases(getApplicationContext());
     }
 
     protected void HandleCurrentIntent()

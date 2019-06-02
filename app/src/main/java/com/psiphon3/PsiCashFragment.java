@@ -92,12 +92,14 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     private Disposable viewStatesDisposable;
     private PsiCashViewModel psiCashViewModel;
 
-    private Relay<PsiCashIntent> intentsPublishRelay;
-    private Relay<TunnelState> tunnelConnectionStateBehaviorRelay;
-    private Relay<PsiphonAdManager.SubscriptionStatus> subscriptionStatusBehaviorRelay;
-    private Relay<LifeCycleEvent> lifecyclePublishRelay;
-    private PublishRelay<Observable<ViewPropertyAnimator>> balanceDeltaAnimationRelay;
-    private PublishRelay<Observable<ValueAnimator>> balanceLabelAnimationRelay;
+    private Relay<PsiCashIntent> intentsPublishRelay = PublishRelay.<PsiCashIntent>create().toSerialized();
+    private Relay<TunnelState> tunnelConnectionStateBehaviorRelay = BehaviorRelay.<TunnelState>create().toSerialized();
+    private Relay<PsiphonAdManager.SubscriptionStatus> subscriptionStatusBehaviorRelay = BehaviorRelay.<PsiphonAdManager.SubscriptionStatus>create().toSerialized();
+    private Relay<LifeCycleEvent> lifecyclePublishRelay = PublishRelay.<LifeCycleEvent>create().toSerialized();
+
+    private PublishRelay<Observable<ViewPropertyAnimator>> balanceDeltaAnimationRelay = PublishRelay.create();
+
+    private PublishRelay<Observable<ValueAnimator>> balanceLabelAnimationRelay = PublishRelay.create();
 
 
     private TextView balanceLabel;
@@ -154,30 +156,11 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             }
         };
 
-        intentsPublishRelay = PublishRelay.<PsiCashIntent>create().toSerialized();
-        lifecyclePublishRelay = PublishRelay.<LifeCycleEvent>create().toSerialized();
-        tunnelConnectionStateBehaviorRelay = BehaviorRelay.<TunnelState>create().toSerialized();
-        subscriptionStatusBehaviorRelay = BehaviorRelay.<PsiphonAdManager.SubscriptionStatus>create().toSerialized();
-
         psiCashViewModel = ViewModelProviders.of(this, new PsiCashViewModelFactory(getActivity().getApplication(), psiCashListener))
                 .get(PsiCashViewModel.class);
 
         // Pass the UI's intents to the view model
         psiCashViewModel.processIntents(intents());
-
-        // Floating balance delta animations, executed sequentially
-        balanceDeltaAnimationRelay = PublishRelay.create();
-        balanceDeltaAnimationRelay.concatMap(s -> s)
-                .subscribe(ViewPropertyAnimator::start, err -> {
-                    Utils.MyLog.g("Floating balance delta animation error: " + err);
-                });
-
-        // Balance label increse animations, executed sequentially
-        balanceLabelAnimationRelay = PublishRelay.create();
-        balanceLabelAnimationRelay.concatMap(s -> s)
-                .subscribe(ValueAnimator::start, err -> {
-                    Utils.MyLog.g("Balance label increase animation error: " + err);
-                });
     }
 
     @Override
@@ -206,6 +189,18 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         // try and get PsiCash state from remote on next foreground
         // if a home page had been opened and tunnel is up
         compositeDisposable.add(getOpenedHomePageRewardDisposable());
+
+        // Floating balance delta animations, executed sequentially
+        compositeDisposable.add(balanceDeltaAnimationRelay.concatMap(s -> s)
+                .subscribe(ViewPropertyAnimator::start, err -> {
+                    Utils.MyLog.g("Floating balance delta animation error: " + err);
+                }));
+
+        // Balance label increase animations, executed sequentially
+        compositeDisposable.add(balanceLabelAnimationRelay.concatMap(s -> s)
+                .subscribe(ValueAnimator::start, err -> {
+                    Utils.MyLog.g("Balance label increase animation error: " + err);
+                }));
     }
 
     private Disposable removePurchasesDisposable() {
@@ -217,7 +212,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                     final AppPreferences mp = new AppPreferences(getContext());
                     if (mp.getBoolean(this.getString(R.string.persistentAuthorizationsRemovedFlag), false)) {
                         mp.put(this.getString(R.string.persistentAuthorizationsRemovedFlag), false);
-                        removePurchases();
+                        removePurchases(getContext());
                     }
                 })
                 .subscribe();
@@ -341,16 +336,16 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         }
     }
 
-    public void removePurchases() {
+    public void removePurchases(Context ctx) {
         List<String> purchasesToRemove = new ArrayList<>();
         // remove purchases that are not in the authorizations database.
         try {
             // get all persisted authorizations as base64 encoded strings
             List<String> encodedAuthorizations = new ArrayList<>();
-            for (Authorization a : Authorization.geAllPersistedAuthorizations(getContext())) {
+            for (Authorization a : Authorization.geAllPersistedAuthorizations(ctx)) {
                 encodedAuthorizations.add(a.base64EncodedAuthorization());
             }
-            List<PsiCashLib.Purchase> purchases = PsiCashClient.getInstance(getContext()).getPurchases();
+            List<PsiCashLib.Purchase> purchases = PsiCashClient.getInstance(ctx).getPurchases();
             if (purchases.size() == 0) {
                 return;
             }
