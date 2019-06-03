@@ -49,12 +49,14 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent">
 
+            <!-- Using 0dp, which is the equivalent of "MATCH_CONSTRAINT" -->
             <ViewFlipper
                 android:id="@+id/sponsorViewFlipper"
                 android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
+                android:layout_height="0dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/rateLimitLinearLayout"
                 app:layout_constraintTop_toTopOf="parent">
 
                 <ScrollView
