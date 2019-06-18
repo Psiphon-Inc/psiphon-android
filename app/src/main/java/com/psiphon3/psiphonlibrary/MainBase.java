@@ -926,6 +926,15 @@ public abstract class MainBase {
             // required to).
             m_multiProcessPreferences.put(TUNNEL_WHOLE_DEVICE_PREFERENCE, tunnelWholeDevicePreference);
 
+            // When enabling BOM, we don't use the TunnelVpnService, so we can disable it
+            // which prevents the user having Always On turned on.
+
+            PackageManager packageManager = getPackageManager();
+            ComponentName componentName = new ComponentName(getPackageName(), TunnelVpnService.class.getName());
+            packageManager.setComponentEnabledSetting(componentName,
+                    tunnelWholeDevicePreference ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP);
+
             setTunnelConfigWholeDevice(tunnelWholeDevicePreference);
         }
 
