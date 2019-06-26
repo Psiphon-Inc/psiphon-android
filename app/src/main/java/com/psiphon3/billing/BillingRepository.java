@@ -148,12 +148,21 @@ public class BillingRepository {
     }
 
     Single<List<Purchase>> getSubscriptions() {
-        return getBoughtItems(BillingClient.SkuType.INAPP);
+        return getBoughtItems(BillingClient.SkuType.SUBS);
     }
 
     private Single<List<Purchase>> getBoughtItems(String type) {
         return connectionFlowable
                 .flatMap(client -> {
+                    // If subscriptions are not supported return an empty purchase list, do not send error.
+                    if(type.equals(BillingClient.SkuType.SUBS)) {
+                        BillingResult billingResult = client.isFeatureSupported(type);
+                        if (billingResult.getResponseCode() != BillingResponseCode.OK) {
+                            List<Purchase> purchaseList = Collections.emptyList();
+                            return Flowable.just(purchaseList);
+                        }
+                    }
+
                     Purchase.PurchasesResult purchasesResult = client.queryPurchases(type);
                     if (purchasesResult.getResponseCode() == BillingResponseCode.OK) {
                         List<Purchase> purchaseList = purchasesResult.getPurchasesList();
@@ -162,7 +171,7 @@ public class BillingRepository {
                         }
                         return Flowable.just(purchaseList);
                     } else {
-                        return Flowable.error(new RuntimeException("getBoughtItems error: " + purchasesResult.getResponseCode()));
+                        return Flowable.error(new RuntimeException("getBoughtItems error response code: " + purchasesResult.getResponseCode()));
                     }
                 })
                 .firstOrError();
