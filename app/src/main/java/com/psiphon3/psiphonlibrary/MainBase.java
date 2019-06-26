@@ -100,8 +100,6 @@ import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.R;
-import com.psiphon3.util.IabHelper;
-import com.psiphon3.util.Purchase;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.SharedPreferencesImport;
@@ -208,60 +206,8 @@ public abstract class MainBase {
 
         protected boolean isAppInForeground;
 
-        // This fragment helps retain data across configuration changes
-        protected RetainedDataFragment m_retainedDataFragment;
-        private static final String TAG_RETAINED_DATA_FRAGMENT = "com.psiphon3.RetainedDataFragment";
-
         private BehaviorRelay<ServiceConnectionStatus> serviceConnectionStatusBehaviorRelay = BehaviorRelay.create();
         private Disposable restartServiceDisposable = null;
-
-        public static class RetainedDataFragment extends Fragment {
-            private final Map<String, Map<Class<?>, Object>> internalMap = new HashMap<>();
-
-            @Override
-            public void onCreate(Bundle savedInstanceState) {
-                super.onCreate(savedInstanceState);
-                // retain this fragment
-                setRetainInstance(true);
-            }
-
-            private <T> void put(String key, Class<T> type, T value) {
-                if (!internalMap.containsKey(key)) {
-                    final Map<Class<?>, Object> typeValueMap = new HashMap<>();
-                    typeValueMap.put(type, value);
-                    internalMap.put(key, typeValueMap);
-                } else {
-                    internalMap.get(key).put(type, value);
-                }
-            }
-
-            private <T> T get(String key, Class<T> type) {
-                if (internalMap.containsKey(key))
-                    return type.cast(internalMap.get(key).get(type));
-                else
-                    return null;
-            }
-
-            public Purchase getCurrentPurchase() {
-                return get(CURRENT_PURCHASE, Purchase.class);
-            }
-
-            public void setCurrentPurchase(Purchase value) {
-                put(CURRENT_PURCHASE, Purchase.class, value);
-            }
-
-            public Boolean getBoolean(String key, Boolean devaultValue) {
-                Boolean b = get(key, Boolean.class);
-                if(b == null) {
-                    return devaultValue;
-                } //else
-                return b;
-            }
-
-            public void putBoolean(String key, Boolean value) {
-                put(key, Boolean.class, value);
-            }
-        }
 
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
@@ -515,13 +461,6 @@ public abstract class MainBase {
 
             if (m_firstRun) {
                 EmbeddedValues.initialize(this);
-            }
-
-            FragmentManager fm = getFragmentManager();
-            m_retainedDataFragment = (RetainedDataFragment) fm.findFragmentByTag(TAG_RETAINED_DATA_FRAGMENT);
-            if (m_retainedDataFragment == null) {
-                m_retainedDataFragment = new RetainedDataFragment();
-                fm.beginTransaction().add(m_retainedDataFragment, TAG_RETAINED_DATA_FRAGMENT).commit();
             }
         }
 
@@ -1469,6 +1408,9 @@ public abstract class MainBase {
 
             intent.putExtra(TunnelManager.CLIENT_MESSENGER, m_incomingMessenger);
 
+            // TODO: implement below
+
+            /*
             Purchase currentPurchase = m_retainedDataFragment.getCurrentPurchase();
             if(currentPurchase != null) {
                 intent.putExtra(TunnelManager.DATA_PURCHASE_ID,
@@ -1478,6 +1420,7 @@ public abstract class MainBase {
                 intent.putExtra(TunnelManager.DATA_PURCHASE_IS_SUBSCRIPTION,
                         currentPurchase.getItemType().equals(IabHelper.ITEM_TYPE_SUBS));
             }
+            */
         }
 
         protected void startAndBindTunnelService() {

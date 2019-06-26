@@ -23,19 +23,25 @@ package com.psiphon3.billing;
 import android.app.Activity;
 import android.content.Context;
 
+import com.android.billingclient.api.AcknowledgePurchaseParams;
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingClient.BillingResponseCode;
 import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.BillingResult;
+import com.android.billingclient.api.ConsumeParams;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.SkuDetails;
 import com.android.billingclient.api.SkuDetailsParams;
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.subscription.BuildConfig;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
@@ -43,7 +49,31 @@ import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 
-class BillingRepository {
+public class BillingRepository {
+    static public final String IAB_PUBLIC_KEY = BuildConfig.IAB_PUBLIC_KEY;
+    static public final String IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU = "speed_limited_ad_free_subscription";
+    static public final String IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU = "basic_ad_free_subscription_5";
+
+    static final String[] IAB_ALL_UNLIMITED_MONTHLY_SUBSCRIPTION_SKUS = {
+            IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU,
+            "basic_ad_free_subscription",
+            "basic_ad_free_subscription_2",
+            "basic_ad_free_subscription_3",
+            "basic_ad_free_subscription_4"
+    };
+
+    static final String IAB_BASIC_7DAY_TIMEPASS_SKU = "basic_ad_free_7_day_timepass";
+    static final String IAB_BASIC_30DAY_TIMEPASS_SKU = "basic_ad_free_30_day_timepass";
+    static final String IAB_BASIC_360DAY_TIMEPASS_SKU = "basic_ad_free_360_day_timepass";
+    static public final Map<String, Long> IAB_TIMEPASS_SKUS_TO_DAYS;
+    static {
+        Map<String, Long> m = new HashMap<>();
+        m.put(IAB_BASIC_7DAY_TIMEPASS_SKU, 7L);
+        m.put(IAB_BASIC_30DAY_TIMEPASS_SKU, 30L);
+        m.put(IAB_BASIC_360DAY_TIMEPASS_SKU, 360L);
+        IAB_TIMEPASS_SKUS_TO_DAYS = Collections.unmodifiableMap(m);
+    }
+
     private static BillingRepository INSTANCE = null;
     private final Flowable<BillingClient> connectionFlowable;
     private PublishRelay<PurchasesUpdate> purchasesUpdatedRelay;
@@ -132,7 +162,7 @@ class BillingRepository {
                         }
                         return Flowable.just(purchaseList);
                     } else {
-                        return Flowable.error(new RuntimeException("Error: " + purchasesResult.getResponseCode()));
+                        return Flowable.error(new RuntimeException("getBoughtItems error: " + purchasesResult.getResponseCode()));
                     }
                 })
                 .firstOrError();
@@ -155,7 +185,7 @@ class BillingRepository {
                                         }
                                         emitter.onNext(skuDetailsList);
                                     } else {
-                                        emitter.onError(new RuntimeException("query error: " + billingResult.getDebugMessage()));
+                                        emitter.onError(new RuntimeException("getSkuDetails error: " + billingResult.getDebugMessage()));
                                     }
                                 }
                             });
@@ -183,22 +213,54 @@ class BillingRepository {
                 });
     }
 
+    Completable acknowledgePurchase(Purchase purchase) {
+        if (purchase.isAcknowledged()) {
+            return Completable.complete();
+        }
+        AcknowledgePurchaseParams params = AcknowledgePurchaseParams
+                .newBuilder()
+                .setPurchaseToken(purchase.getPurchaseToken())
+                .build();
 
-    /*
-    override fun launchFlow(activity: Activity, params: BillingFlowParams): Completable {
         return connectionFlowable
-                .flatMap {
-                    val responseCode = it.launchBillingFlow(activity, params)
-                    return@flatMap Flowable.just(responseCode)
-                }
                 .firstOrError()
-                .flatMapCompletable {
-                    return@flatMapCompletable if (isSuccess(it)) {
-                        Completable.complete()
-                    } else {
-                        Completable.error(BillingException.fromCode(it))
-                    }
-                }
+                .flatMapCompletable(client ->
+                        Completable.create(emitter -> {
+                            client.acknowledgePurchase(params, billingResult -> {
+                                if (!emitter.isDisposed()) {
+                                    if (billingResult.getResponseCode() == BillingResponseCode.OK) {
+                                        emitter.onComplete();
+                                    } else {
+                                        emitter.onError(new RuntimeException("acknowledgePurchase error: " + billingResult.getDebugMessage()));
+                                    }
+                                }
+                            });
+                        }))
+                .doOnError(err -> Utils.MyLog.g("BillingRepository::acknowledgePurchase error: " + err))
+                .onErrorComplete();
     }
-     */
+
+    Single consumePurchase(Purchase purchase) {
+        ConsumeParams params = ConsumeParams
+                .newBuilder()
+                .setPurchaseToken(purchase.getPurchaseToken())
+                .build();
+
+        return connectionFlowable
+                .flatMap(client ->
+                        Flowable.<String>create(emitter -> {
+                            client.consumeAsync(params, (billingResult, purchaseToken) -> {
+                                if (!emitter.isCancelled()) {
+                                    if (billingResult.getResponseCode() == BillingResponseCode.OK) {
+                                        emitter.onNext(purchaseToken);
+                                    } else {
+                                        emitter.onError(new RuntimeException("consumePurchase error: " + billingResult.getDebugMessage()));
+                                    }
+                                }
+                            });
+                        }, BackpressureStrategy.LATEST))
+                .firstOrError()
+                .doOnError(err -> Utils.MyLog.g("BillingRepository::consumePurchase error: " + err))
+                .onErrorReturnItem("");
+    }
 }

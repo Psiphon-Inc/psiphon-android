@@ -22,7 +22,7 @@ package com.psiphon3;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.app.PendingIntent;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -49,7 +49,9 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.billingclient.api.SkuDetails;
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.billing.StatusActivityBillingViewModel;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
@@ -58,24 +60,15 @@ import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
-import com.psiphon3.util.IabHelper;
-import com.psiphon3.util.IabResult;
-import com.psiphon3.util.Inventory;
-import com.psiphon3.util.Purchase;
-import com.psiphon3.util.SkuDetails;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
+import org.json.JSONException;
+
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -98,9 +91,6 @@ public class StatusActivity
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
     private static boolean m_startupPending = false;
-    private IabHelper mIabHelper = null;
-    private boolean mStartIabInProgress = false;
-    private boolean mIabHelperIsInitialized = false;
 
     private PsiCashFragment psiCashFragment;
 
@@ -111,9 +101,17 @@ public class StatusActivity
     private Disposable currentRateModeDisposable;
     private PublishRelay<Boolean> activeSpeedBoostRelay;
 
+    private StatusActivityBillingViewModel billingViewModel;
+    private Disposable subscriptionStatusDisposable;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        billingViewModel = ViewModelProviders.of(this).get(StatusActivityBillingViewModel.class);
+        subscriptionStatusDisposable = (billingViewModel.subscriptionStatusFlowable().subscribe());
+
+        billingViewModel.startIab();
 
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main);
@@ -139,9 +137,9 @@ public class StatusActivity
                 ((BiFunction<RateLimitMode, Boolean, Pair>) Pair::new))
                 .map(pair -> {
                     RateLimitMode rateLimitMode = (RateLimitMode) pair.first;
-                    Boolean hasActiveSubscription = (Boolean) pair.second;
+                    Boolean hasActiveSpeedBoost = (Boolean) pair.second;
                     if (rateLimitMode == RateLimitMode.AD_MODE_LIMITED) {
-                        if (hasActiveSubscription) {
+                        if (hasActiveSpeedBoost) {
                             return RateLimitMode.SPEED_BOOST;
                         } else {
                             return RateLimitMode.AD_MODE_LIMITED;
@@ -179,6 +177,13 @@ public class StatusActivity
 
         m_loadedSponsorTab = false;
         HandleCurrentIntent();
+
+        // TODO: HACK - remove after testing
+        Utils.setHasValidSubscription(this, false);
+        currentRateLimitModeRelay.accept(RateLimitMode.AD_MODE_LIMITED);
+        showPsiCashTabIfHasValidToken();
+        // HACK END
+
     }
 
     @Override
@@ -199,7 +204,7 @@ public class StatusActivity
     @Override
     protected void onResume()
     {
-        startIab();
+        billingViewModel.queryCurrentSubscriptionStatus();
         super.onResume();
         if (m_startupPending) {
             m_startupPending = false;
@@ -210,6 +215,9 @@ public class StatusActivity
     @Override
     public void onDestroy()
     {
+        billingViewModel.stopIab();
+        subscriptionStatusDisposable.dispose();
+
         if(startUpInterstitialDisposable != null) {
             startUpInterstitialDisposable.dispose();
         }
@@ -351,7 +359,7 @@ public class StatusActivity
             // UPDATED #2:
             // This intent is only sent when there was a commanded service start or a restart
             // such as when there's a new subscription, or a speed-boost. It is not sent
-            // on automated reconnects or when the app binds to a an already running service.
+            // on automated reconnects or when the app binds to an already running service.
             // In later case the embedded web view gets updated via MSG_TUNNEL_CONNECTION_STATE
             // messages from a bound service.
 
@@ -674,27 +682,6 @@ public class StatusActivity
         }
     }
 
-    static final String IAB_PUBLIC_KEY = BuildConfig.IAB_PUBLIC_KEY;
-    static final int IAB_REQUEST_CODE = 10001;
-
-    static final String IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU = "speed_limited_ad_free_subscription";
-    static final String[] IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKUS = {IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU};
-    static final String IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU = "basic_ad_free_subscription_5";
-    static final String[] IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKUS = {IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU,
-            "basic_ad_free_subscription", "basic_ad_free_subscription_2", "basic_ad_free_subscription_3", "basic_ad_free_subscription_4"};
-
-    static final String IAB_BASIC_7DAY_TIMEPASS_SKU = "basic_ad_free_7_day_timepass";
-    static final String IAB_BASIC_30DAY_TIMEPASS_SKU = "basic_ad_free_30_day_timepass";
-    static final String IAB_BASIC_360DAY_TIMEPASS_SKU = "basic_ad_free_360_day_timepass";
-    static final Map<String, Long> IAB_TIMEPASS_SKUS_TO_TIME;
-    static {
-        Map<String, Long> m = new HashMap<>();
-        m.put(IAB_BASIC_7DAY_TIMEPASS_SKU, 7L * 24 * 60 * 60 * 1000);
-        m.put(IAB_BASIC_30DAY_TIMEPASS_SKU, 30L * 24 * 60 * 60 * 1000);
-        m.put(IAB_BASIC_360DAY_TIMEPASS_SKU, 360L * 24 * 60 * 60 * 1000);
-        IAB_TIMEPASS_SKUS_TO_TIME = Collections.unmodifiableMap(m);
-    }
-
     @Override
     public void onActiveSpeedBoost(Boolean hasActiveSpeedBoost) {
         activeSpeedBoostRelay.accept(hasActiveSpeedBoost);
@@ -702,53 +689,8 @@ public class StatusActivity
 
     enum RateLimitMode {AD_MODE_LIMITED, LIMITED_SUBSCRIPTION, UNLIMITED_SUBSCRIPTION, SPEED_BOOST}
 
+    /*
     Inventory mInventory;
-
-    synchronized
-    private void startIab()
-    {
-        if (mStartIabInProgress)
-        {
-            return;
-        }
-
-        if (mIabHelper == null)
-        {
-            mStartIabInProgress = true;
-            mIabHelper = new IabHelper(this, IAB_PUBLIC_KEY);
-            mIabHelper.startSetup(m_iabSetupFinishedListener);
-        }
-        else
-        {
-            queryInventory();
-        }
-    }
-
-    private boolean isIabInitialized() {
-        return mIabHelper != null && mIabHelperIsInitialized;
-    }
-    
-    private IabHelper.OnIabSetupFinishedListener m_iabSetupFinishedListener =
-            new IabHelper.OnIabSetupFinishedListener()
-    {
-        @Override
-        public void onIabSetupFinished(IabResult result)
-        {
-            mStartIabInProgress = false;
-
-            if (result.isFailure())
-            {
-                Utils.MyLog.g(String.format("StatusActivity::onIabSetupFinished: failure: %s", result));
-                handleIabFailure(result);
-            }
-            else
-            {
-                mIabHelperIsInitialized = true;
-                Utils.MyLog.g(String.format("StatusActivity::onIabSetupFinished: success: %s", result));
-                queryInventory();
-            }
-        }
-    };
 
     private IabHelper.QueryInventoryFinishedListener m_iabQueryInventoryFinishedListener =
             new IabHelper.QueryInventoryFinishedListener()
@@ -881,7 +823,7 @@ public class StatusActivity
                 currentRateLimitModeRelay.accept(RateLimitMode.UNLIMITED_SUBSCRIPTION);
                 proceedWithValidSubscription(purchase);
             }
-            else if (IAB_TIMEPASS_SKUS_TO_TIME.containsKey(purchase.getSku()))
+            else if (IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(purchase.getSku()))
             {
                 Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
 
@@ -927,7 +869,7 @@ public class StatusActivity
             if (isIabInitialized())
             {
                 List<String> timepassSkus = new ArrayList<>();
-                timepassSkus.addAll(IAB_TIMEPASS_SKUS_TO_TIME.keySet());
+                timepassSkus.addAll(IAB_TIMEPASS_SKUS_TO_DAYS.keySet());
 
                 List<String> subscriptionSkus = new ArrayList<>();
                 subscriptionSkus.add(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU);
@@ -969,9 +911,6 @@ public class StatusActivity
         }
     }
 
-    /**
-     * Begin the flow for subscribing to premium access.
-     */
     private void launchSubscriptionPurchaseFlow(String sku)
     {
         try
@@ -994,9 +933,6 @@ public class StatusActivity
         }
     }
 
-    /**
-     * Begin the flow for making a one-time purchase of time-limited premium access.
-     */
     private void launchTimePassPurchaseFlow(String sku)
     {
         try
@@ -1019,8 +955,8 @@ public class StatusActivity
 
     private void proceedWithValidSubscription(Purchase purchase)
     {
-        psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
-        psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
+        psiphonAdManager.onSubscriptionStatus(SubscriptionState.SUBSCRIBER);
+        psiCashFragment.onSubscriptionStatus(SubscriptionState.SUBSCRIBER);
         Utils.setHasValidSubscription(this, true);
         this.m_retainedDataFragment.setCurrentPurchase(purchase);
         hidePsiCashTab();
@@ -1041,13 +977,14 @@ public class StatusActivity
 
     private void proceedWithoutValidSubscription()
     {
-        psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
-        psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
+        psiphonAdManager.onSubscriptionStatus(SubscriptionState.NOT_SUBSCRIBER);
+        psiCashFragment.onSubscriptionStatus(SubscriptionState.NOT_SUBSCRIBER);
         Utils.setHasValidSubscription(this, false);
         currentRateLimitModeRelay.accept(RateLimitMode.AD_MODE_LIMITED);
         this.m_retainedDataFragment.setCurrentPurchase(null);
         showPsiCashTabIfHasValidToken();
     }
+*/
 
     private void setRateLimitUI(RateLimitMode rateLimitMode) {
         // Update UI elements showing the current speed.
@@ -1071,38 +1008,14 @@ public class StatusActivity
         }
     }
 
-    // NOTE: result param may be null
-    private void handleIabFailure(IabResult result)
-    {
-        psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
-        psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
-        showPsiCashTabIfHasValidToken();
-
-        // try again next time
-        deInitIab();
-
-        if (result != null &&
-            result.getResponse() == IabHelper.IABHELPER_USER_CANCELLED)
-        {
-            // do nothing, onResume() calls startIAB()
-        }
-        else
-        {
-            // Start the tunnel anyway, IAB will get checked again once the tunnel is connected
-            if (m_firstRun)
-            {
-                m_firstRun = false;
-                doStartUp();
-            }
-        }
-    }
-
     public void onRateLimitUpgradeButtonClick(View v) {
         if (!Utils.getHasValidSubscription(this)) {
             onSubscribeButtonClick(v);
             return;
         }
 
+        // TODO: implement reactive purchase flow
+        /*
         try {
             if (isIabInitialized()) {
                 // Replace any subscribed limited monthly subscription SKUs with the unlimited SKU
@@ -1118,6 +1031,7 @@ public class StatusActivity
         } catch (IabHelper.IabAsyncInProgressException ex) {
             // Allow outstanding IAB request to finish.
         }
+        */
     }
 
     private final int PAYMENT_CHOOSER_ACTIVITY = 20001;
@@ -1125,111 +1039,34 @@ public class StatusActivity
     @Override
     public void onSubscribeButtonClick(View v) {
         Utils.MyLog.g("StatusActivity::onSubscribeButtonClick");
-        try {
             // User has clicked the Subscribe button, now let them choose the payment method.
-
-            Intent feedbackIntent = new Intent(this, PaymentChooserActivity.class);
-
-            // Pass price and SKU info to payment chooser activity.
-            PaymentChooserActivity.SkuInfo skuInfo = new PaymentChooserActivity.SkuInfo();
-
-            SkuDetails limitedSubscriptionSkuDetails = mInventory.getSkuDetails(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU);
-            skuInfo.mLimitedSubscriptionInfo.sku = limitedSubscriptionSkuDetails.getSku();
-            skuInfo.mLimitedSubscriptionInfo.price = limitedSubscriptionSkuDetails.getPrice();
-            skuInfo.mLimitedSubscriptionInfo.priceMicros = limitedSubscriptionSkuDetails.getPriceAmountMicros();
-            skuInfo.mLimitedSubscriptionInfo.priceCurrency = limitedSubscriptionSkuDetails.getPriceCurrencyCode();
-            // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
-            // we'll set it to 30 days.
-            skuInfo.mLimitedSubscriptionInfo.lifetime = 30L * 24 * 60 * 60 * 1000;
-
-            SkuDetails unlimitedSubscriptionSkuDetails = mInventory.getSkuDetails(IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
-            skuInfo.mUnlimitedSubscriptionInfo.sku = unlimitedSubscriptionSkuDetails.getSku();
-            skuInfo.mUnlimitedSubscriptionInfo.price = unlimitedSubscriptionSkuDetails.getPrice();
-            skuInfo.mUnlimitedSubscriptionInfo.priceMicros = unlimitedSubscriptionSkuDetails.getPriceAmountMicros();
-            skuInfo.mUnlimitedSubscriptionInfo.priceCurrency = unlimitedSubscriptionSkuDetails.getPriceCurrencyCode();
-            // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
-            // we'll set it to 30 days.
-            skuInfo.mUnlimitedSubscriptionInfo.lifetime = 30L * 24 * 60 * 60 * 1000;
-
-            for (Map.Entry<String, Long> timepassSku : IAB_TIMEPASS_SKUS_TO_TIME.entrySet()) {
-                SkuDetails timepassSkuDetails = mInventory.getSkuDetails(timepassSku.getKey());
-                PaymentChooserActivity.SkuInfo.Info info = new PaymentChooserActivity.SkuInfo.Info();
-
-                info.sku = timepassSkuDetails.getSku();
-                info.price = timepassSkuDetails.getPrice();
-                info.priceMicros = timepassSkuDetails.getPriceAmountMicros();
-                info.priceCurrency = timepassSkuDetails.getPriceCurrencyCode();
-                info.lifetime = timepassSku.getValue();
-
-                skuInfo.mTimePassSkuToInfo.put(info.sku, info);
-            }
-
-            feedbackIntent.putExtra(PaymentChooserActivity.SKU_INFO_EXTRA, skuInfo.toString());
-
-            startActivityForResult(feedbackIntent, PAYMENT_CHOOSER_ACTIVITY);
-        } catch (NullPointerException e) {
-            Utils.MyLog.g("StatusActivity::onSubscribeButtonClick error: " + e);
-            // Show "Subscription options not available" toast.
-            Toast toast = Toast.makeText(this, R.string.subscription_options_currently_not_available, Toast.LENGTH_LONG);
-            toast.setGravity(Gravity.CENTER, 0, 0);
-            toast.show();
-        }
+            Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
+            startActivityForResult(paymentChooserActivityIntent, PAYMENT_CHOOSER_ACTIVITY);
     }
 
-    synchronized
-    private void deInitIab()
-    {
-        mInventory = null;
-        mIabHelperIsInitialized = false;
-        if (mIabHelper != null)
-        {
-            try {
-                mIabHelper.dispose();
-            }
-            catch (IabHelper.IabAsyncInProgressException ex)
-            {
-                // Nothing can help at this point. Continue to de-init.
-            }
-
-            mIabHelper = null;
-        }
-    }
-    
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
-        if (requestCode == IAB_REQUEST_CODE)
-        {
-            if (isIabInitialized())
-            {
-                mIabHelper.handleActivityResult(requestCode, resultCode, data);
-            }
-        }
-        else if (requestCode == PAYMENT_CHOOSER_ACTIVITY)
-        {
-            if (resultCode == RESULT_OK)
-            {
-                int buyType = data.getIntExtra(PaymentChooserActivity.BUY_TYPE_EXTRA, -1);
-                if (buyType == PaymentChooserActivity.BUY_SUBSCRIPTION)
-                {
-                    Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: subscription");
-                    String sku = data.getStringExtra(PaymentChooserActivity.SKU_INFO_EXTRA);
-                    launchSubscriptionPurchaseFlow(sku);
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // TODO: implement IAB activities handling
+        if (requestCode == PAYMENT_CHOOSER_ACTIVITY) {
+            if (resultCode == RESULT_OK) {
+                String skuString = data.getStringExtra(PaymentChooserActivity.SKU_DETAILS_EXTRA);
+                try {
+                    if (TextUtils.isEmpty(skuString)) {
+                        throw new IllegalArgumentException("SKU is empty.");
+                    }
+                    SkuDetails skuDetails = new SkuDetails(skuString);
+                    billingViewModel.launchFlow(this, skuDetails).subscribe();
+                } catch (JSONException | IllegalArgumentException e) {
+                    Utils.MyLog.g("StatusActivity::onActivityResult purchase SKU error: " + e);
+                    // Show "Subscription options not available" toast.
+                    Toast toast = Toast.makeText(this, R.string.subscription_options_currently_not_available, Toast.LENGTH_LONG);
+                    toast.setGravity(Gravity.CENTER, 0, 0);
+                    toast.show();
                 }
-                else if (buyType == PaymentChooserActivity.BUY_TIMEPASS)
-                {
-                    Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: time pass");
-                    String sku = data.getStringExtra(PaymentChooserActivity.SKU_INFO_EXTRA);
-                    launchTimePassPurchaseFlow(sku);
-                }
-            }
-            else
-            {
+            } else {
                 Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: canceled");
             }
-        }
-        else
-        {
+        } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
     }

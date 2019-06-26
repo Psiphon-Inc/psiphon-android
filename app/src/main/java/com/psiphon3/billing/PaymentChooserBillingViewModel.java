@@ -20,7 +20,6 @@
 
 package com.psiphon3.billing;
 
-import android.app.Activity;
 import android.app.Application;
 import android.arch.lifecycle.AndroidViewModel;
 import android.support.annotation.NonNull;
@@ -28,44 +27,39 @@ import android.support.annotation.NonNull;
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.SkuDetails;
 
+import java.util.Arrays;
 import java.util.List;
 
-import io.reactivex.Completable;
-import io.reactivex.Flowable;
 import io.reactivex.Single;
-import io.reactivex.disposables.CompositeDisposable;
 
-public class BillingViewModel extends AndroidViewModel {
+public class PaymentChooserBillingViewModel extends AndroidViewModel {
     private BillingRepository repository;
-    private CompositeDisposable compositeDisposable;
 
-    public BillingViewModel(@NonNull Application application) {
+    public PaymentChooserBillingViewModel(@NonNull Application application) {
         super(application);
         repository = BillingRepository.getInstance(application);
-        compositeDisposable = new CompositeDisposable();
     }
 
-    public void startIab() {
-        compositeDisposable.add(repository.observeUpdates().subscribe());
-    }
-
-    public void stopIab() {
-        compositeDisposable.dispose();
-    }
-
-    public Single<List<SkuDetails>> getPurchaseSkuDetails(List<String> ids) {
+    private Single<List<SkuDetails>> getTimePassesSkuDetails() {
+        List<String> ids = Arrays.asList(
+                BillingRepository.IAB_BASIC_7DAY_TIMEPASS_SKU,
+                BillingRepository.IAB_BASIC_30DAY_TIMEPASS_SKU,
+                BillingRepository.IAB_BASIC_360DAY_TIMEPASS_SKU
+        );
         return repository.getSkuDetails(ids, BillingClient.SkuType.INAPP);
     }
 
-    public Single<List<SkuDetails>> getSubscriptionSkuDetails(List<String> ids) {
+    private Single<List<SkuDetails>> getSubscriptionsSkuDetails() {
+        List<String> ids = Arrays.asList(
+                BillingRepository.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU,
+                BillingRepository.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU
+        );
         return repository.getSkuDetails(ids, BillingClient.SkuType.SUBS);
     }
 
-    public Flowable<PurchasesUpdate> observeUpdates() {
-        return repository.observeUpdates();
-    }
-
-    public Completable launchFlow(Activity activity, SkuDetails skuDetails) {
-        return repository.launchFlow(activity, skuDetails);
+    public Single<List<SkuDetails>> getAllSkuDetails() {
+        return Single.mergeDelayError(getSubscriptionsSkuDetails(), getTimePassesSkuDetails())
+                .flatMapIterable(purchases -> purchases)
+                .toList();
     }
 }

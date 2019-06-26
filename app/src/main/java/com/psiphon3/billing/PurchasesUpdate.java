@@ -39,8 +39,4 @@ public abstract class PurchasesUpdate {
     public static PurchasesUpdate create(@BillingClient.BillingResponseCode int responseCode, List<Purchase> purchases) {
         return new AutoValue_PurchasesUpdate(responseCode, purchases);
     }
-
-    boolean isSuccess() {
-        return responseCode() == BillingClient.BillingResponseCode.OK;
-    }
 }
