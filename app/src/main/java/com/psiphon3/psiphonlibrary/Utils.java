@@ -32,6 +32,8 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import android.util.Log;
 
+import com.psiphon3.subscription.R;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -59,9 +61,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
 import de.schildbach.wallet.util.LinuxSecureRandom;
-import com.psiphon3.subscription.R;
-
-import net.grandcentrix.tray.AppPreferences;
 
 
 public class Utils
@@ -762,18 +761,6 @@ public class Utils
         wrappedMacKey = rsaCipher.wrap(macKey);
         
         return new RSAEncryptOutput(contentCiphertext, iv, wrappedEncryptionKey, contentMac, wrappedMacKey);
-    }
-
-    public static synchronized void setHasValidSubscription(Context context, boolean valid)
-    {
-        final AppPreferences multiProcessPreferences = new AppPreferences(context);
-        multiProcessPreferences.put(context.getString(R.string.has_valid_subscription), valid);
-    }
-
-    public static synchronized boolean getHasValidSubscription(Context context)
-    {
-        final AppPreferences multiProcessPreferences = new AppPreferences(context);
-        return multiProcessPreferences.getBoolean(context.getString(R.string.has_valid_subscription), false);
     }
 
     public synchronized static Date parseRFC3339Date(String dateString) throws java.text.ParseException, IndexOutOfBoundsException {

@@ -52,13 +52,12 @@ import com.mopub.common.privacy.PersonalInfoManager;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubView;
+import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.BuildConfig;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.SocketException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -70,13 +69,10 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.exceptions.UndeliverableException;
 import io.reactivex.functions.BiFunction;
-import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
 
 public class PsiphonAdManager {
-    public enum SubscriptionStatus {SUBSCRIBER, NOT_SUBSCRIBER, SUBSCRIPTION_CHECK_FAILED, NOT_APPLICABLE}
 
     @AutoValue
     static abstract class AdResult {
@@ -170,7 +166,7 @@ public class PsiphonAdManager {
     private final Observable<AdResult> currentAdTypeObservable;
     private Disposable loadAdsDisposable;
     private Disposable tunneledInterstitialDisposable;
-    private PublishRelay<SubscriptionStatus> subscriptionStatusPublishRelay = PublishRelay.create();
+    private PublishRelay<SubscriptionState> subscriptionStatusPublishRelay = PublishRelay.create();
     private PublishRelay<TunnelState> tunnelConnectionStatePublishRelay = PublishRelay.create();
 
     PsiphonAdManager(Activity activity, ViewGroup bannerLayout, Runnable adMobPayOptionRunnable, boolean hasSubsriptionFeature) {
@@ -221,11 +217,11 @@ public class PsiphonAdManager {
 
         this.currentAdTypeObservable = Observable.combineLatest(tunnelConnectionStateObservable(),
                 subscriptionStatusObservable(),
-                ((BiFunction<TunnelState, SubscriptionStatus, Pair>) Pair::new))
+                ((BiFunction<TunnelState, SubscriptionState, Pair>) Pair::new))
                 .flatMap(pair -> {
                     TunnelState s = (TunnelState) pair.first;
-                    SubscriptionStatus subscriptionStatus = (SubscriptionStatus) pair.second;
-                    if (subscriptionStatus == SubscriptionStatus.SUBSCRIBER ||
+                    SubscriptionState subscriptionState = (SubscriptionState) pair.second;
+                    if (subscriptionState.hasValidPurchase() ||
                             Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
                         destroyAllAds();
                         return Observable.just(AdResult.none());
@@ -327,8 +323,8 @@ public class PsiphonAdManager {
         tunnelConnectionStatePublishRelay.accept(state);
     }
 
-    void onSubscriptionStatus(SubscriptionStatus status) {
-        subscriptionStatusPublishRelay.accept(status);
+    void onSubscriptionState(SubscriptionState subscriptionState) {
+        subscriptionStatusPublishRelay.accept(subscriptionState);
     }
 
     void onTabChanged() {
@@ -388,11 +384,11 @@ public class PsiphonAdManager {
         return tunnelConnectionStatePublishRelay.hide().distinctUntilChanged();
     }
 
-    private Observable<SubscriptionStatus> subscriptionStatusObservable() {
+    private Observable<SubscriptionState> subscriptionStatusObservable() {
         if (hasSubscriptionFeature) {
             return subscriptionStatusPublishRelay.hide().distinctUntilChanged();
         } else {
-            return Observable.just(SubscriptionStatus.NOT_APPLICABLE);
+            return Observable.just(SubscriptionState.notApplicable());
         }
     }
 
