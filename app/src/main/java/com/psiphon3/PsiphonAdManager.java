@@ -221,7 +221,7 @@ public class PsiphonAdManager {
                 .flatMap(pair -> {
                     TunnelState s = (TunnelState) pair.first;
                     SubscriptionState subscriptionState = (SubscriptionState) pair.second;
-                    if (subscriptionState.hasSubsription() ||
+                    if (subscriptionState.hasValidPurchase() ||
                             Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
                         destroyAllAds();
                         return Observable.just(AdResult.none());
@@ -323,8 +323,8 @@ public class PsiphonAdManager {
         tunnelConnectionStatePublishRelay.accept(state);
     }
 
-    void onSubscriptionStatus(SubscriptionState status) {
-        subscriptionStatusPublishRelay.accept(status);
+    void onSubscriptionState(SubscriptionState subscriptionState) {
+        subscriptionStatusPublishRelay.accept(subscriptionState);
     }
 
     void onTabChanged() {

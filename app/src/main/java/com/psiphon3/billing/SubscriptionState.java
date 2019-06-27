@@ -20,7 +20,10 @@
 
 package com.psiphon3.billing;
 
+import com.android.billingclient.api.Purchase;
 import com.google.auto.value.AutoValue;
+
+import io.reactivex.annotations.Nullable;
 
 @AutoValue
 public abstract class SubscriptionState {
@@ -29,38 +32,43 @@ public abstract class SubscriptionState {
         HAS_LIMITED_SUBSCRIPTION,
         HAS_TIME_PASS,
         HAS_NO_SUBSCRIPTION,
+        IAB_FAILURE,
         NOT_APPLICABLE,
     }
 
     public abstract Status status();
 
+    @Nullable
+    public abstract Purchase purchase();
+
+    @Nullable
     public abstract Throwable error();
 
-    public static SubscriptionState unlimitedSubscription() {
-        return new AutoValue_SubscriptionState(Status.HAS_UNLIMITED_SUBSCRIPTION, null);
+    static SubscriptionState unlimitedSubscription(Purchase purchase) {
+        return new AutoValue_SubscriptionState(Status.HAS_UNLIMITED_SUBSCRIPTION, purchase, null);
     }
 
-    public static SubscriptionState limitedSubscription() {
-        return new AutoValue_SubscriptionState(Status.HAS_LIMITED_SUBSCRIPTION, null);
+    static SubscriptionState limitedSubscription(Purchase purchase) {
+        return new AutoValue_SubscriptionState(Status.HAS_LIMITED_SUBSCRIPTION, purchase, null);
     }
 
-    public static SubscriptionState timePass() {
-        return new AutoValue_SubscriptionState(Status.HAS_TIME_PASS, null);
+    static SubscriptionState timePass(Purchase purchase) {
+        return new AutoValue_SubscriptionState(Status.HAS_TIME_PASS, purchase, null);
     }
 
-    public static SubscriptionState noSubscription() {
-        return new AutoValue_SubscriptionState(Status.HAS_NO_SUBSCRIPTION, null);
+    static SubscriptionState noSubscription() {
+        return new AutoValue_SubscriptionState(Status.HAS_NO_SUBSCRIPTION, null, null);
     }
 
     public static SubscriptionState notApplicable() {
-        return new AutoValue_SubscriptionState(Status.NOT_APPLICABLE, null);
+        return new AutoValue_SubscriptionState(Status.NOT_APPLICABLE, null, null);
     }
 
     public static SubscriptionState billingError(Throwable error) {
-        return new AutoValue_SubscriptionState(null, error);
+        return new AutoValue_SubscriptionState(Status.IAB_FAILURE, null, error);
     }
 
-    public boolean hasSubsription() {
+    public boolean hasValidPurchase() {
         return status() == Status.HAS_LIMITED_SUBSCRIPTION ||
                 status() == Status.HAS_UNLIMITED_SUBSCRIPTION ||
                 status() == Status.HAS_TIME_PASS;

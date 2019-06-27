@@ -49,9 +49,11 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.SkuDetails;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.billing.StatusActivityBillingViewModel;
+import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
@@ -72,9 +74,11 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
@@ -97,20 +101,16 @@ public class StatusActivity
     private PsiphonAdManager psiphonAdManager;
     private Disposable startUpInterstitialDisposable;
     private boolean disableInterstitialOnNextTabChange;
-    private PublishRelay<RateLimitMode> currentRateLimitModeRelay;
-    private Disposable currentRateModeDisposable;
     private PublishRelay<Boolean> activeSpeedBoostRelay;
 
     private StatusActivityBillingViewModel billingViewModel;
-    private Disposable subscriptionStatusDisposable;
+    private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         billingViewModel = ViewModelProviders.of(this).get(StatusActivityBillingViewModel.class);
-        subscriptionStatusDisposable = (billingViewModel.subscriptionStatusFlowable().subscribe());
-
         billingViewModel.startIab();
 
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -130,10 +130,26 @@ public class StatusActivity
         psiCashFragment = (PsiCashFragment) fm.findFragmentById(R.id.psicash_fragment_container);
         psiCashFragment.setActiveSpeedBoostListener(this);
 
-        // rate limit badge observable
-        currentRateLimitModeRelay = PublishRelay.create();
+        // Rate limit observable
+        Observable<RateLimitMode> currentRateLimitModeObservable =
+                billingViewModel.subscriptionStatusFlowable()
+                        .toObservable()
+                        .map(subscriptionState -> {
+                            switch (subscriptionState.status()) {
+                                case HAS_UNLIMITED_SUBSCRIPTION:
+                                case HAS_TIME_PASS:
+                                    return RateLimitMode.UNLIMITED_SUBSCRIPTION;
+                                case HAS_LIMITED_SUBSCRIPTION:
+                                    return RateLimitMode.LIMITED_SUBSCRIPTION;
+                                default:
+                                    return RateLimitMode.AD_MODE_LIMITED;
+                            }
+                        });
+
         activeSpeedBoostRelay = PublishRelay.create();
-        currentRateModeDisposable = Observable.combineLatest(currentRateLimitModeRelay, activeSpeedBoostRelay,
+
+        // Update rate limit badge and 'Subscribe' button UI
+        compositeDisposable.add(Observable.combineLatest(currentRateLimitModeObservable, activeSpeedBoostRelay,
                 ((BiFunction<RateLimitMode, Boolean, Pair>) Pair::new))
                 .map(pair -> {
                     RateLimitMode rateLimitMode = (RateLimitMode) pair.first;
@@ -148,7 +164,8 @@ public class StatusActivity
                     return rateLimitMode;
                 })
                 .doOnNext(this::setRateLimitUI)
-                .subscribe();
+                .subscribe()
+        );
 
         // bootstrap the activeSpeedBoost observable
         activeSpeedBoostRelay.accept(Boolean.FALSE);
@@ -157,6 +174,32 @@ public class StatusActivity
         psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.largeAdSlot),
                 () -> onSubscribeButtonClick(null), true);
         psiphonAdManager.startLoadingAds();
+
+        // Components IAB state notifications and PsiCash tab view state Rx subscription.
+        compositeDisposable.add(
+                billingViewModel.subscriptionStatusFlowable()
+                        .subscribe(subscriptionState -> {
+                            psiCashFragment.onSubscriptionState(subscriptionState);
+                            psiphonAdManager.onSubscriptionState(subscriptionState);
+                            if(subscriptionState.hasValidPurchase()) {
+                                hidePsiCashTab();
+                                // Pass the most current purchase data to the service if it is running so the tunnel has a
+                                // chance to update authorization and restart if the purchase is new.
+                                // NOTE: we assume there can be only one valid purchase and authorization at a time
+                                if (isServiceRunning()) {
+                                    startAndBindTunnelService();
+                                } else {
+                                    // Auto-start on app first run
+                                    if (m_firstRun) {
+                                        m_firstRun = false;
+                                        doStartUp();
+                                    }
+                                }
+                            } else {
+                                showPsiCashTabIfHasValidToken();
+                            }
+                        })
+        );
 
         setupActivityLayout();
         hidePsiCashTab();
@@ -177,13 +220,6 @@ public class StatusActivity
 
         m_loadedSponsorTab = false;
         HandleCurrentIntent();
-
-        // TODO: HACK - remove after testing
-        Utils.setHasValidSubscription(this, false);
-        currentRateLimitModeRelay.accept(RateLimitMode.AD_MODE_LIMITED);
-        showPsiCashTabIfHasValidToken();
-        // HACK END
-
     }
 
     @Override
@@ -202,8 +238,7 @@ public class StatusActivity
     }
 
     @Override
-    protected void onResume()
-    {
+    protected void onResume() {
         billingViewModel.queryCurrentSubscriptionStatus();
         super.onResume();
         if (m_startupPending) {
@@ -216,12 +251,11 @@ public class StatusActivity
     public void onDestroy()
     {
         billingViewModel.stopIab();
-        subscriptionStatusDisposable.dispose();
+        compositeDisposable.dispose();
 
         if(startUpInterstitialDisposable != null) {
             startUpInterstitialDisposable.dispose();
         }
-        currentRateModeDisposable.dispose();
         psiphonAdManager.onDestroy();
         super.onDestroy();
     }
@@ -689,303 +723,6 @@ public class StatusActivity
 
     enum RateLimitMode {AD_MODE_LIMITED, LIMITED_SUBSCRIPTION, UNLIMITED_SUBSCRIPTION, SPEED_BOOST}
 
-    /*
-    Inventory mInventory;
-
-    private IabHelper.QueryInventoryFinishedListener m_iabQueryInventoryFinishedListener =
-            new IabHelper.QueryInventoryFinishedListener()
-    {
-        @Override
-        public void onQueryInventoryFinished(IabResult result, Inventory inventory)
-        {
-            if (result.isFailure())
-            {
-                Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: failure: %s", result));
-                handleIabFailure(result);
-                return;
-            }
-
-            mInventory = inventory;
-
-            boolean hasValidSubscription = false;
-
-            //
-            // Check if the user has a subscription.
-            //
-
-            RateLimitMode rateLimit = RateLimitMode.AD_MODE_LIMITED;
-            Purchase purchase = null;
-
-            for (String limitedMonthlySubscriptionSku : IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKUS) {
-                if (inventory.hasPurchase(limitedMonthlySubscriptionSku)) {
-                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid limited subscription: %s", limitedMonthlySubscriptionSku));
-                    purchase = inventory.getPurchase(limitedMonthlySubscriptionSku);
-                    rateLimit = RateLimitMode.LIMITED_SUBSCRIPTION;
-                    currentRateLimitModeRelay.accept(rateLimit);
-                    hasValidSubscription = true;
-                    break;
-                }
-            }
-
-            for (String unlimitedMonthlySubscriptionSku : IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKUS) {
-                if (inventory.hasPurchase(unlimitedMonthlySubscriptionSku)) {
-                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid unlimited subscription: %s", unlimitedMonthlySubscriptionSku));
-                    purchase = inventory.getPurchase(unlimitedMonthlySubscriptionSku);
-                    rateLimit = RateLimitMode.UNLIMITED_SUBSCRIPTION;
-                    currentRateLimitModeRelay.accept(rateLimit);
-                    hasValidSubscription = true;
-                    break;
-                }
-            }
-
-            if (hasValidSubscription)
-            {
-                proceedWithValidSubscription(purchase);
-                return;
-            }
-
-            //
-            // Check if the user has purchased a (30-day) time pass.
-            //
-
-            long now = System.currentTimeMillis();
-            List<Purchase> timepassesToConsume = new ArrayList<>();
-            for (Map.Entry<String, Long> timepass : IAB_TIMEPASS_SKUS_TO_TIME.entrySet())
-            {
-                String sku = timepass.getKey();
-                long lifetime = timepass.getValue();
-
-                // DEBUG: This line will convert days to minutes. Useful for testing.
-                //lifetime = lifetime / 24 / 60;
-
-                Purchase tempPurchase = inventory.getPurchase(sku);
-                if (tempPurchase == null)
-                {
-                    continue;
-                }
-
-                long timepassExpiry = tempPurchase.getPurchaseTime() + lifetime;
-                if (now < timepassExpiry)
-                {
-                    // This time pass is still valid.
-                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: has valid time pass: %s", sku));
-                    rateLimit = RateLimitMode.UNLIMITED_SUBSCRIPTION;
-                    currentRateLimitModeRelay.accept(rateLimit);
-                    hasValidSubscription = true;
-                    purchase = tempPurchase;
-                }
-                else
-                {
-                    // This time pass is no longer valid. Consider it invalid and consume it below.
-                    Utils.MyLog.g(String.format("StatusActivity::onQueryInventoryFinished: consuming old time pass: %s", sku));
-                    timepassesToConsume.add(tempPurchase);
-                }
-            }
-
-            if (hasValidSubscription)
-            {
-                proceedWithValidSubscription(purchase);
-            }
-            else
-            {
-                // There is no valid subscription or time pass for this user.
-                Utils.MyLog.g("StatusActivity::onQueryInventoryFinished: no valid subscription or time pass");
-                proceedWithoutValidSubscription();
-            }
-
-            if (timepassesToConsume.size() > 0)
-            {
-                consumePurchases(timepassesToConsume);
-            }
-        }
-    };
-    
-    private IabHelper.OnIabPurchaseFinishedListener m_iabPurchaseFinishedListener = 
-            new IabHelper.OnIabPurchaseFinishedListener()
-    {
-        @Override
-        public void onIabPurchaseFinished(IabResult result, Purchase purchase) 
-        {
-            if (result.isFailure())
-            {
-                Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: failure: %s", result));
-                handleIabFailure(result);
-            }
-            else if (purchase.getSku().equals(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU))
-            {
-                Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
-                currentRateLimitModeRelay.accept(RateLimitMode.LIMITED_SUBSCRIPTION);
-                proceedWithValidSubscription(purchase);
-            }
-            else if (purchase.getSku().equals(IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU))
-            {
-                Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
-                currentRateLimitModeRelay.accept(RateLimitMode.UNLIMITED_SUBSCRIPTION);
-                proceedWithValidSubscription(purchase);
-            }
-            else if (IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(purchase.getSku()))
-            {
-                Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
-
-                // We're not going to check the validity time here -- assume no time-pass is so
-                // short that it's already expired right after it's purchased.
-                currentRateLimitModeRelay.accept(RateLimitMode.UNLIMITED_SUBSCRIPTION);
-                proceedWithValidSubscription(purchase);
-            }
-        }
-    };
-
-    private IabHelper.OnConsumeMultiFinishedListener m_iabConsumeFinishedListener =
-            new IabHelper.OnConsumeMultiFinishedListener()
-    {
-        @Override
-        public void onConsumeMultiFinished(List<Purchase> purchases, List<IabResult> results)
-        {
-            boolean failed = false;
-            for (IabResult result : results)
-            {
-                if (result.isFailure())
-                {
-                    Utils.MyLog.g(String.format("StatusActivity::onConsumeMultiFinished: failure: %s", result));
-                    failed = true;
-                }
-                else
-                {
-                    Utils.MyLog.g("StatusActivity::onConsumeMultiFinished: success");
-                }
-            }
-
-            if (failed)
-            {
-                handleIabFailure(null);
-            }
-        }
-    };
-    
-    private void queryInventory()
-    {
-        try
-        {
-            if (isIabInitialized())
-            {
-                List<String> timepassSkus = new ArrayList<>();
-                timepassSkus.addAll(IAB_TIMEPASS_SKUS_TO_DAYS.keySet());
-
-                List<String> subscriptionSkus = new ArrayList<>();
-                subscriptionSkus.add(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU);
-                subscriptionSkus.add(IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
-
-                mIabHelper.queryInventoryAsync(
-                        true,
-                        timepassSkus,
-                        subscriptionSkus,
-                        m_iabQueryInventoryFinishedListener);
-            }
-        }
-        catch (IllegalStateException ex)
-        {
-            handleIabFailure(null);
-        }
-        catch (IabHelper.IabAsyncInProgressException ex)
-        {
-            // Allow outstanding IAB request to finish.
-        }
-    }
-
-    private void consumePurchases(List<Purchase> purchases)
-    {
-        try
-        {
-            if (isIabInitialized())
-            {
-                mIabHelper.consumeAsync(purchases, m_iabConsumeFinishedListener);
-            }
-        }
-        catch (IllegalStateException ex)
-        {
-            handleIabFailure(null);
-        }
-        catch (IabHelper.IabAsyncInProgressException ex)
-        {
-            // Allow outstanding IAB request to finish.
-        }
-    }
-
-    private void launchSubscriptionPurchaseFlow(String sku)
-    {
-        try
-        {
-            if (isIabInitialized())
-            {
-                mIabHelper.launchSubscriptionPurchaseFlow(
-                        this,
-                        sku,
-                        IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
-            }
-        }
-        catch (IllegalStateException ex)
-        {
-            handleIabFailure(null);
-        }
-        catch (IabHelper.IabAsyncInProgressException ex)
-        {
-            // Allow outstanding IAB request to finish.
-        }
-    }
-
-    private void launchTimePassPurchaseFlow(String sku)
-    {
-        try
-        {
-            if (isIabInitialized())
-            {
-                mIabHelper.launchPurchaseFlow(this, sku,
-                        IAB_REQUEST_CODE, m_iabPurchaseFinishedListener);
-            }
-        }
-        catch (IllegalStateException ex)
-        {
-            handleIabFailure(null);
-        }
-        catch (IabHelper.IabAsyncInProgressException ex)
-        {
-            // Allow outstanding IAB request to finish.
-        }
-    }
-
-    private void proceedWithValidSubscription(Purchase purchase)
-    {
-        psiphonAdManager.onSubscriptionStatus(SubscriptionState.SUBSCRIBER);
-        psiCashFragment.onSubscriptionStatus(SubscriptionState.SUBSCRIBER);
-        Utils.setHasValidSubscription(this, true);
-        this.m_retainedDataFragment.setCurrentPurchase(purchase);
-        hidePsiCashTab();
-
-        // Pass the most current purchase data to the service if it is running so the tunnel has a
-        // chance to update authorization and restart if the purchase is new.
-        // NOTE: we assume there can be only one valid purchase and authorization at a time
-        if (isTunnelConnected()) {
-                startAndBindTunnelService();
-        }
-
-        // Auto-start on app first run
-        if (m_firstRun) {
-            m_firstRun = false;
-            doStartUp();
-        }
-    }
-
-    private void proceedWithoutValidSubscription()
-    {
-        psiphonAdManager.onSubscriptionStatus(SubscriptionState.NOT_SUBSCRIBER);
-        psiCashFragment.onSubscriptionStatus(SubscriptionState.NOT_SUBSCRIBER);
-        Utils.setHasValidSubscription(this, false);
-        currentRateLimitModeRelay.accept(RateLimitMode.AD_MODE_LIMITED);
-        this.m_retainedDataFragment.setCurrentPurchase(null);
-        showPsiCashTabIfHasValidToken();
-    }
-*/
-
     private void setRateLimitUI(RateLimitMode rateLimitMode) {
         // Update UI elements showing the current speed.
         if (rateLimitMode == RateLimitMode.UNLIMITED_SUBSCRIPTION) {
@@ -1008,45 +745,57 @@ public class StatusActivity
         }
     }
 
-    public void onRateLimitUpgradeButtonClick(View v) {
-        if (!Utils.getHasValidSubscription(this)) {
-            onSubscribeButtonClick(v);
-            return;
-        }
-
-        // TODO: implement reactive purchase flow
-        /*
-        try {
-            if (isIabInitialized()) {
-                // Replace any subscribed limited monthly subscription SKUs with the unlimited SKU
-                mIabHelper.launchPurchaseFlow(
-                        this,
-                        IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU,
-                        IabHelper.ITEM_TYPE_SUBS,
-                        Arrays.asList(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKUS),
-                        IAB_REQUEST_CODE, m_iabPurchaseFinishedListener, "");
-            }
-        } catch (IllegalStateException ex) {
-            handleIabFailure(null);
-        } catch (IabHelper.IabAsyncInProgressException ex) {
-            // Allow outstanding IAB request to finish.
-        }
-        */
-    }
 
     private final int PAYMENT_CHOOSER_ACTIVITY = 20001;
 
-    @Override
     public void onSubscribeButtonClick(View v) {
         Utils.MyLog.g("StatusActivity::onSubscribeButtonClick");
-            // User has clicked the Subscribe button, now let them choose the payment method.
-            Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
-            startActivityForResult(paymentChooserActivityIntent, PAYMENT_CHOOSER_ACTIVITY);
+        compositeDisposable.add(
+                billingViewModel.subscriptionStatusFlowable()
+                        .firstOrError()
+                        .subscribe(subscriptionState -> {
+                            switch (subscriptionState.status()) {
+                                case HAS_UNLIMITED_SUBSCRIPTION:
+                                case HAS_TIME_PASS:
+                                    // User has a subscription, do nothing, the 'Subscribe' button
+                                    // visibility will be updated by rate limit badge UI Rx subscription
+                                    // that we have set up in onCreate().
+                                    return;
+
+                                case HAS_LIMITED_SUBSCRIPTION:
+                                    // If user has limited subscription launch upgrade to unlimited
+                                    // flow and replace current subscription sku.
+                                    String currentSku = subscriptionState.purchase().getSku();
+                                    compositeDisposable.add(
+                                            billingViewModel.getUnlimitedSubscriptionSkuDetails()
+                                                    .flatMapCompletable(skuDetailsList -> {
+                                                        if (skuDetailsList.size() == 1) {
+                                                            return billingViewModel.launchFlow(this, currentSku, skuDetailsList.get(0));
+                                                        }
+                                                        // else
+                                                        return Completable.error(
+                                                                new IllegalArgumentException("Bad unlimited subscription sku details list size: "
+                                                                        + skuDetailsList.size())
+                                                        );
+                                                    })
+                                                    .doOnError(err -> Utils.MyLog.g("Upgrade limited subscription error: " + err))
+                                                    .onErrorComplete()
+                                                    .subscribe()
+                                    );
+                                    return;
+
+                                default:
+                                    // If user has no subscription launch PaymentChooserActivity
+                                    // to show all available subscriptions options.
+                                    Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
+                                    startActivityForResult(paymentChooserActivityIntent, PAYMENT_CHOOSER_ACTIVITY);
+                            }
+                        })
+        );
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // TODO: implement IAB activities handling
         if (requestCode == PAYMENT_CHOOSER_ACTIVITY) {
             if (resultCode == RESULT_OK) {
                 String skuString = data.getStringExtra(PaymentChooserActivity.SKU_DETAILS_EXTRA);
@@ -1074,6 +823,29 @@ public class StatusActivity
     @Override
     protected void onVpnPromptCancelled() {
         showVpnAlertDialog(R.string.StatusActivity_VpnPromptCancelledTitle, R.string.StatusActivity_VpnPromptCancelledMessage);
+    }
+
+    @Override
+    protected Single<Intent> serviceIntentSingle() {
+        // Add purchase data to the service intent if user has a valid subscription or time pass.
+        return super.serviceIntentSingle()
+                .flatMap(intent -> billingViewModel.subscriptionStatusFlowable()
+                        .firstOrError()
+                        .doOnError(err -> MyLog.g("Error adding purchas data to service intent: " + err))
+                        .onErrorReturn(SubscriptionState::billingError)
+                        .map(subscriptionState -> {
+                            if (subscriptionState.hasValidPurchase()) {
+                                Purchase currentPurchase = subscriptionState.purchase();
+                                intent.putExtra(TunnelManager.DATA_PURCHASE_ID,
+                                        currentPurchase.getSku());
+                                intent.putExtra(TunnelManager.DATA_PURCHASE_TOKEN,
+                                        currentPurchase.getPurchaseToken());
+                                intent.putExtra(TunnelManager.DATA_PURCHASE_IS_SUBSCRIPTION,
+                                        subscriptionState.status() != SubscriptionState.Status.HAS_TIME_PASS);
+                            }
+                            return intent;
+                        })
+                );
     }
 
     private void showVpnAlertDialog(int titleId, int messageId) {

@@ -22,6 +22,7 @@ package com.psiphon3.billing;
 
 import android.app.Activity;
 import android.content.Context;
+import android.text.TextUtils;
 
 import com.android.billingclient.api.AcknowledgePurchaseParams;
 import com.android.billingclient.api.BillingClient;
@@ -144,20 +145,21 @@ public class BillingRepository {
     }
 
     Single<List<Purchase>> getPurchases() {
-        return getBoughtItems(BillingClient.SkuType.INAPP);
+        return getOwnedItems(BillingClient.SkuType.INAPP);
     }
 
     Single<List<Purchase>> getSubscriptions() {
-        return getBoughtItems(BillingClient.SkuType.SUBS);
+        return getOwnedItems(BillingClient.SkuType.SUBS);
     }
 
-    private Single<List<Purchase>> getBoughtItems(String type) {
+    private Single<List<Purchase>> getOwnedItems(String type) {
         return connectionFlowable
                 .flatMap(client -> {
                     // If subscriptions are not supported return an empty purchase list, do not send error.
                     if(type.equals(BillingClient.SkuType.SUBS)) {
                         BillingResult billingResult = client.isFeatureSupported(type);
                         if (billingResult.getResponseCode() != BillingResponseCode.OK) {
+                            Utils.MyLog.g("Subscriptions are not supported, billing response code: " + billingResult.getResponseCode());
                             List<Purchase> purchaseList = Collections.emptyList();
                             return Flowable.just(purchaseList);
                         }
@@ -171,10 +173,12 @@ public class BillingRepository {
                         }
                         return Flowable.just(purchaseList);
                     } else {
-                        return Flowable.error(new RuntimeException("getBoughtItems error response code: " + purchasesResult.getResponseCode()));
+                        return Flowable.error(new RuntimeException("Billing response code: " + purchasesResult.getResponseCode()));
                     }
                 })
-                .firstOrError();
+                .firstOrError()
+                .doOnError(err -> Utils.MyLog.g("BillingRepository::getOwnedItems type: " + type + " error: " + err));
+
     }
 
     Single<List<SkuDetails>> getSkuDetails(List<String> ids, String type) {
@@ -194,32 +198,36 @@ public class BillingRepository {
                                         }
                                         emitter.onNext(skuDetailsList);
                                     } else {
-                                        emitter.onError(new RuntimeException("getSkuDetails error: " + billingResult.getDebugMessage()));
+                                        emitter.onError(new RuntimeException("Billing response code: " + billingResult.getResponseCode()));
                                     }
                                 }
                             });
                         }, BackpressureStrategy.LATEST))
-                .firstOrError();
+                .firstOrError()
+                .doOnError(err -> Utils.MyLog.g("BillingRepository::getSkuDetails error: " + err));
     }
 
-    Completable launchFlow(Activity activity, SkuDetails skuDetails) {
-        BillingFlowParams purchaseParams = BillingFlowParams
-                .newBuilder()
-                .setSkuDetails(skuDetails)
-//                .setOldSku() // TODO: add this!
-                .build();
+    Completable launchFlow(Activity activity, String oldSku, SkuDetails skuDetails) {
+        BillingFlowParams.Builder billingParamsBuilder = BillingFlowParams
+                .newBuilder();
+
+        billingParamsBuilder.setSkuDetails(skuDetails);
+        if (!TextUtils.isEmpty(oldSku)) {
+            billingParamsBuilder.setOldSku(oldSku);
+        }
 
         return connectionFlowable
                 .flatMap(client ->
-                        Flowable.just(client.launchBillingFlow(activity, purchaseParams)))
+                        Flowable.just(client.launchBillingFlow(activity, billingParamsBuilder.build())))
                 .firstOrError()
                 .flatMapCompletable(billingResult -> {
                     if(billingResult.getResponseCode() == BillingResponseCode.OK) {
                         return Completable.complete();
                     } else {
-                        return Completable.error(new RuntimeException("launchFlow error: " + billingResult.getDebugMessage()));
+                        return Completable.error(new RuntimeException("Billing response code: " + billingResult.getResponseCode()));
                     }
-                });
+                })
+                .doOnError(err -> Utils.MyLog.g("BillingRepository::launchFlow error: " + err));
     }
 
     Completable acknowledgePurchase(Purchase purchase) {
@@ -240,7 +248,7 @@ public class BillingRepository {
                                     if (billingResult.getResponseCode() == BillingResponseCode.OK) {
                                         emitter.onComplete();
                                     } else {
-                                        emitter.onError(new RuntimeException("acknowledgePurchase error: " + billingResult.getDebugMessage()));
+                                        emitter.onError(new RuntimeException("Billing response code: " + billingResult.getResponseCode()));
                                     }
                                 }
                             });
@@ -263,7 +271,7 @@ public class BillingRepository {
                                     if (billingResult.getResponseCode() == BillingResponseCode.OK) {
                                         emitter.onNext(purchaseToken);
                                     } else {
-                                        emitter.onError(new RuntimeException("consumePurchase error: " + billingResult.getDebugMessage()));
+                                        emitter.onError(new RuntimeException("Billing response code: " + billingResult.getResponseCode()));
                                     }
                                 }
                             });

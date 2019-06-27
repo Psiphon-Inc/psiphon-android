@@ -267,7 +267,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     private Disposable viewStatesDisposable() {
         // Do not render PsiCash view states if user is subscribed
         return subscriptionStatusObservable()
-                .flatMap(s -> s.hasSubsription() ?
+                .flatMap(s -> s.hasValidPurchase() ?
                         Observable.empty() :
                         psiCashViewModel.states())
                 // make sure onError doesn't cut ahead of onNext with the observeOn overload
@@ -397,7 +397,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                             .switchMap(pair -> {
                                 TunnelState s = (TunnelState) pair.first;
                                 SubscriptionState subscriptionState = (SubscriptionState) pair.second;
-                                if (subscriptionState.hasSubsription()) {
+                                if (subscriptionState.hasValidPurchase()) {
                                     // set a flag to stop the outer subscription if user is subscribed
                                     // and complete this inner subscription right away.
                                     keepLoadingVideos.set(false);
@@ -768,8 +768,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         tunnelConnectionStateBehaviorRelay.accept(status);
     }
 
-    void onSubscriptionStatus(SubscriptionState status) {
-        subscriptionStatusBehaviorRelay.accept(status);
+    void onSubscriptionState(SubscriptionState subscriptionState) {
+        subscriptionStatusBehaviorRelay.accept(subscriptionState);
     }
 
     void onOpenHomePage() {

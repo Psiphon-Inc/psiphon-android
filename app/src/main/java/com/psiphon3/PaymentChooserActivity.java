@@ -100,8 +100,9 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
 
                         setUpButton(buttonResId, skuDetails, pricePerDay);
                     }
-                }, throwable -> {
-                    Utils.MyLog.g("PaymentChooserActivity::getSubscriptionsSkuDetails error: " + throwable);
+                }, __ -> {
+                    // The error should be already logged upstream, just send and empty sku back,
+                    // it will be handled in StatusActivity::onActivityResult
                     Intent intent = getIntent();
                     intent.putExtra(SKU_DETAILS_EXTRA, "");
                     setResult(RESULT_OK, intent);

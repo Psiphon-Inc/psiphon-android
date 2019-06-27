@@ -59,7 +59,7 @@ public class PaymentChooserBillingViewModel extends AndroidViewModel {
 
     public Single<List<SkuDetails>> getAllSkuDetails() {
         return Single.mergeDelayError(getSubscriptionsSkuDetails(), getTimePassesSkuDetails())
-                .flatMapIterable(purchases -> purchases)
+                .flatMapIterable(skuDetails -> skuDetails)
                 .toList();
     }
 }

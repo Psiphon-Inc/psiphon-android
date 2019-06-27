@@ -26,9 +26,6 @@ import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
-import android.app.Fragment;
-import android.app.FragmentManager;
-import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -115,13 +112,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import io.reactivex.Observable;
+import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 
@@ -808,8 +804,6 @@ public abstract class MainBase {
             return originalUrlString;
         }
 
-        public abstract void onSubscribeButtonClick(View v);
-
         protected abstract void startUp();
 
         protected void doAbout() {
@@ -1396,7 +1390,17 @@ public abstract class MainBase {
             return m_tunnelConfig.disableTimeouts;
         }
 
-        protected void configureServiceIntent(Intent intent) {
+        protected Single<Intent> serviceIntentSingle() {
+            Intent intent;
+            if (getTunnelConfigWholeDevice() && Utils.hasVpnService()) {
+                // VpnService backwards compatibility: startVpnServiceIntent is a wrapper
+                // function so we don't reference the undefined class when this
+                // function is loaded.
+                intent = startVpnServiceIntent();
+            } else {
+                intent = new Intent(this, TunnelService.class);
+            }
+
             intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_WHOLE_DEVICE,
                     getTunnelConfigWholeDevice());
 
@@ -1408,62 +1412,42 @@ public abstract class MainBase {
 
             intent.putExtra(TunnelManager.CLIENT_MESSENGER, m_incomingMessenger);
 
-            // TODO: implement below
-
-            /*
-            Purchase currentPurchase = m_retainedDataFragment.getCurrentPurchase();
-            if(currentPurchase != null) {
-                intent.putExtra(TunnelManager.DATA_PURCHASE_ID,
-                        currentPurchase.getSku());
-                intent.putExtra(TunnelManager.DATA_PURCHASE_TOKEN,
-                        currentPurchase.getToken());
-                intent.putExtra(TunnelManager.DATA_PURCHASE_IS_SUBSCRIPTION,
-                        currentPurchase.getItemType().equals(IabHelper.ITEM_TYPE_SUBS));
-            }
-            */
+            return Single.just(intent);
         }
 
         protected void startAndBindTunnelService() {
             // Disable service-toggling controls while service is starting up
             // (i.e., while isServiceRunning can't be relied upon)
             disableToggleServiceUI();
-            Intent intent;
+            serviceIntentSingle()
+                    .doOnSuccess(intent -> {
+                        // Use a wrapper to start a service in SDK >= 26
+                        // which is defined like following
+                        /*
+                            public static void startForegroundService(Context context, Intent intent) {
+                                if (Build.VERSION.SDK_INT >= 26) {
+                                    context.startForegroundService(intent);
+                                } else {
+                                    // Pre-O behavior.
+                                    context.startService(intent);
+                                }
+                            }
+                         */
+                        // On API >= 26 a service will get started even when the app is in the background
+                        // as long as the service calls its startForeground() within a reasonable amount of time.
+                        // On API < 26 the call may throw IllegalStateException in case the app is in the state
+                        // when services are not allowed, such as not in foreground
+                        try {
+                            ContextCompat.startForegroundService(this, intent);
+                        } catch (IllegalStateException e) {
+                            // do nothing
+                        }
 
-            if (getTunnelConfigWholeDevice() && Utils.hasVpnService()) {
-                // VpnService backwards compatibility: startVpnServiceIntent is a wrapper
-                // function so we don't reference the undefined class when this
-                // function is loaded.
-                intent = startVpnServiceIntent();
-            } else {
-                intent = new Intent(this, TunnelService.class);
-            }
-            configureServiceIntent(intent);
-
-            // Use a wrapper to start a service in SDK >= 26
-            // which is defined like following
-            /*
-                public static void startForegroundService(Context context, Intent intent) {
-                    if (Build.VERSION.SDK_INT >= 26) {
-                        context.startForegroundService(intent);
-                    } else {
-                        // Pre-O behavior.
-                        context.startService(intent);
-                    }
-                }
-             */
-            // On API >= 26 a service will get started even when the app is in the background
-            // as long as the service calls its startForeground() within a reasonable amount of time.
-            // On API < 26 the call may throw IllegalStateException in case the app is in the state
-            // when services are not allowed, such as not in foreground
-            try {
-                ContextCompat.startForegroundService(this, intent);
-            } catch(IllegalStateException e) {
-                // do nothing
-            }
-
-            if (bindService(intent, m_tunnelServiceConnection, 0)) {
-                m_boundToTunnelService = true;
-            }
+                        if (bindService(intent, m_tunnelServiceConnection, 0)) {
+                            m_boundToTunnelService = true;
+                        }
+                    })
+                    .subscribe();
         }
 
         private Intent startVpnServiceIntent() {

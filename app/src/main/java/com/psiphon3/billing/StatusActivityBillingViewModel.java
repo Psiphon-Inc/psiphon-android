@@ -24,15 +24,16 @@ import android.app.Activity;
 import android.app.Application;
 import android.arch.lifecycle.AndroidViewModel;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.SkuDetails;
-import com.jakewharton.rxrelay2.PublishRelay;
+import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.psiphon3.psiphonlibrary.Utils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import io.reactivex.BackpressureStrategy;
@@ -44,17 +45,17 @@ import io.reactivex.disposables.CompositeDisposable;
 public class StatusActivityBillingViewModel extends AndroidViewModel {
     private BillingRepository repository;
     private CompositeDisposable compositeDisposable;
-    private PublishRelay<SubscriptionState> subscriptionStatusRelay;
+    private BehaviorRelay<SubscriptionState> subscriptionStateBehaviorRelay;
 
     public StatusActivityBillingViewModel(@NonNull Application application) {
         super(application);
         repository = BillingRepository.getInstance(application);
         compositeDisposable = new CompositeDisposable();
-        subscriptionStatusRelay = PublishRelay.create();
+        subscriptionStateBehaviorRelay = BehaviorRelay.create();
     }
 
     public Flowable<SubscriptionState> subscriptionStatusFlowable() {
-        return subscriptionStatusRelay
+        return subscriptionStateBehaviorRelay
                 .distinctUntilChanged()
                 .toFlowable(BackpressureStrategy.LATEST);
     }
@@ -64,7 +65,6 @@ public class StatusActivityBillingViewModel extends AndroidViewModel {
                 repository.observeUpdates()
                         .subscribe(
                                 purchasesUpdate -> {
-                                    Log.d("HACK", "startIab: purchaseUpdate: " + purchasesUpdate);
                                     if (purchasesUpdate.responseCode() == BillingClient.BillingResponseCode.OK) {
                                         processPurchases(purchasesUpdate.purchases());
                                     } else if (purchasesUpdate.responseCode() == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) {
@@ -73,10 +73,8 @@ public class StatusActivityBillingViewModel extends AndroidViewModel {
                                         Utils.MyLog.g("BillingRepository::observeUpdates purchase update error response code: " + purchasesUpdate.responseCode());
                                     }
                                 },
-                                throwable -> {
-                                    subscriptionStatusRelay.accept(SubscriptionState.billingError(throwable));
-                                    Log.d("HACK", "startIab: purchaseUpdate error: " + throwable);
-                                    Utils.MyLog.g("BillingRepository::observeUpdates error: " + throwable);
+                                err -> {
+                                    subscriptionStateBehaviorRelay.accept(SubscriptionState.billingError(err));
                                 }
                         )
         );
@@ -89,29 +87,35 @@ public class StatusActivityBillingViewModel extends AndroidViewModel {
     public void queryCurrentSubscriptionStatus() {
         compositeDisposable.add(
                 Single.mergeDelayError(repository.getSubscriptions(), repository.getPurchases())
-                        .flatMapIterable(purchases -> purchases)
                         .toList()
+                        .map(listOfLists -> {
+                            List<Purchase> purchaseList = new ArrayList<>();
+                            for (List<Purchase> list : listOfLists) {
+                                purchaseList.addAll(list);
+                            }
+                            return purchaseList;
+                        })
                         .subscribe(
-                                purchaseList -> processPurchases(purchaseList),
-                                throwable -> subscriptionStatusRelay.accept(SubscriptionState.billingError(throwable))
+                                this::processPurchases,
+                                err -> subscriptionStateBehaviorRelay.accept(SubscriptionState.billingError(err))
                         )
         );
     }
 
     private void processPurchases(List<Purchase> purchaseList) {
-        if (purchaseList == null) {
-            subscriptionStatusRelay.accept(SubscriptionState.noSubscription());
+        if (purchaseList == null || purchaseList.size() == 0) {
+            subscriptionStateBehaviorRelay.accept(SubscriptionState.noSubscription());
             return;
         }
 
         for (Purchase purchase : purchaseList) {
-            // skip pending purchases.
+            // Skip purchase with pending or unspecified state.
             if (purchase.getPurchaseState() != Purchase.PurchaseState.PURCHASED) {
                 continue;
             }
 
-            // skip invalid purchases
-            if(!Security.verifyPurchase(BillingRepository.IAB_PUBLIC_KEY,
+            // Skip purchases that don't pass signature verification.
+            if (!Security.verifyPurchase(BillingRepository.IAB_PUBLIC_KEY,
                     purchase.getOriginalJson(), purchase.getSignature())) {
                 Utils.MyLog.g("StatusActivityBillingViewModel::processPurchases: failed verification for purchase: " + purchase);
                 continue;
@@ -124,18 +128,18 @@ public class StatusActivityBillingViewModel extends AndroidViewModel {
             compositeDisposable.add(repository.acknowledgePurchase(purchase).subscribe());
 
             if (hasUnlimitedSubscription(purchase)) {
-                subscriptionStatusRelay.accept(SubscriptionState.unlimitedSubscription());
+                subscriptionStateBehaviorRelay.accept(SubscriptionState.unlimitedSubscription(purchase));
                 return;
             } else if (hasLimitedSubscription(purchase)) {
-                subscriptionStatusRelay.accept(SubscriptionState.limitedSubscription());
+                subscriptionStateBehaviorRelay.accept(SubscriptionState.limitedSubscription(purchase));
                 return;
             } else if (hasTimePass(purchase)) {
-                subscriptionStatusRelay.accept(SubscriptionState.timePass());
+                subscriptionStateBehaviorRelay.accept(SubscriptionState.timePass(purchase));
                 return;
             }
         }
 
-        subscriptionStatusRelay.accept(SubscriptionState.noSubscription());
+        subscriptionStateBehaviorRelay.accept(SubscriptionState.noSubscription());
     }
 
     private boolean hasUnlimitedSubscription(@NonNull Purchase purchase) {
@@ -167,6 +171,18 @@ public class StatusActivityBillingViewModel extends AndroidViewModel {
     }
 
     public Completable launchFlow(Activity activity, SkuDetails skuDetails) {
-        return repository.launchFlow(activity, skuDetails);
+        return repository.launchFlow(activity, null, skuDetails);
     }
+
+    public Completable launchFlow(Activity activity, String oldSku, SkuDetails skuDetails) {
+        return repository.launchFlow(activity, oldSku, skuDetails);
+    }
+
+    public Single<List<SkuDetails>> getUnlimitedSubscriptionSkuDetails() {
+        List<String> ids = Collections.singletonList(
+                BillingRepository.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU
+        );
+        return repository.getSkuDetails(ids, BillingClient.SkuType.SUBS);
+    }
+
 }

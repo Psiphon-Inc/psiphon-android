@@ -120,9 +120,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     static final String DATA_TUNNEL_CONFIG_EGRESS_REGION = "tunnelConfigEgressRegion";
     static final String DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS = "tunnelConfigDisableTimeouts";
     static final String CLIENT_MESSENGER = "incomingClientMessenger";
-    static final String DATA_PURCHASE_ID = "purchaseId";
-    static final String DATA_PURCHASE_TOKEN = "purchaseToken";
-    static final String DATA_PURCHASE_IS_SUBSCRIPTION = "purchaseIsSubscription";
+    public static final String DATA_PURCHASE_ID = "purchaseId";
+    public static final String DATA_PURCHASE_TOKEN = "purchaseToken";
+    public static final String DATA_PURCHASE_IS_SUBSCRIPTION = "purchaseIsSubscription";
     private static final String PREFERENCE_PURCHASE_AUTHORIZATION_ID = "preferencePurchaseAuthorization";
     private static final String PREFERENCE_PURCHASE_TOKEN = "preferencePurchaseToken";
 
