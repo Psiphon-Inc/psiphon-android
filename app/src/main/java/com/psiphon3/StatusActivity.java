@@ -179,6 +179,10 @@ public class StatusActivity
         compositeDisposable.add(
                 billingViewModel.subscriptionStatusFlowable()
                         .subscribe(subscriptionState -> {
+                            MyLog.g("Billing: subscription status: " + subscriptionState.status());
+                            if(subscriptionState.error() != null) {
+                                MyLog.g("Subscription state billing error: " + subscriptionState.error());
+                            }
                             psiCashFragment.onSubscriptionState(subscriptionState);
                             psiphonAdManager.onSubscriptionState(subscriptionState);
                             if(subscriptionState.hasValidPurchase()) {
