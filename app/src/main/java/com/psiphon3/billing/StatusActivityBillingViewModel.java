@@ -46,18 +46,25 @@ public class StatusActivityBillingViewModel extends AndroidViewModel {
     private BillingRepository repository;
     private CompositeDisposable compositeDisposable;
     private BehaviorRelay<SubscriptionState> subscriptionStateBehaviorRelay;
+    private BehaviorRelay<List<SkuDetails>> allSkuDetailsBehaviorRelay;
 
     public StatusActivityBillingViewModel(@NonNull Application application) {
         super(application);
         repository = BillingRepository.getInstance(application);
         compositeDisposable = new CompositeDisposable();
         subscriptionStateBehaviorRelay = BehaviorRelay.create();
+        allSkuDetailsBehaviorRelay = BehaviorRelay.create();
     }
 
     public Flowable<SubscriptionState> subscriptionStatusFlowable() {
         return subscriptionStateBehaviorRelay
                 .distinctUntilChanged()
                 .toFlowable(BackpressureStrategy.LATEST);
+    }
+
+    public Single<List<SkuDetails>> allSkuDetailsSingle() {
+        return allSkuDetailsBehaviorRelay
+                .firstOrError();
     }
 
     public void startIab() {
@@ -83,6 +90,32 @@ public class StatusActivityBillingViewModel extends AndroidViewModel {
     public void stopIab() {
         compositeDisposable.dispose();
     }
+
+
+    private Single<List<SkuDetails>> getConsumablesSkuDetails() {
+        List<String> ids = new ArrayList<>(BillingRepository.IAB_TIMEPASS_SKUS_TO_DAYS.keySet());
+        ids.addAll(new ArrayList<>(BillingRepository.IAB_PSICASH_SKUS_TO_VALUE.keySet()));
+        return repository.getSkuDetails(ids, BillingClient.SkuType.INAPP);
+    }
+
+    private Single<List<SkuDetails>> getSubscriptionsSkuDetails() {
+        List<String> ids = Arrays.asList(
+                BillingRepository.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU,
+                BillingRepository.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU
+        );
+        return repository.getSkuDetails(ids, BillingClient.SkuType.SUBS);
+    }
+
+    public void queryAllSkuDetails() {
+        compositeDisposable.add(
+        Single.mergeDelayError(getSubscriptionsSkuDetails(), getConsumablesSkuDetails())
+                .flatMapIterable(skuDetails -> skuDetails)
+                .toList()
+                .onErrorReturnItem(Collections.emptyList())
+                .subscribe(allSkuDetailsBehaviorRelay)
+        );
+    }
+
 
     public void queryCurrentSubscriptionStatus() {
         compositeDisposable.add(

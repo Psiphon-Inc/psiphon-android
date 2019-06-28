@@ -52,6 +52,7 @@ import android.widget.Toast;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.SkuDetails;
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.billing.BillingRepository;
 import com.psiphon3.billing.StatusActivityBillingViewModel;
 import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.psicash.PsiCashClient;
@@ -244,6 +245,7 @@ public class StatusActivity
     @Override
     protected void onResume() {
         billingViewModel.queryCurrentSubscriptionStatus();
+        billingViewModel.queryAllSkuDetails();
         super.onResume();
         if (m_startupPending) {
             m_startupPending = false;
@@ -426,9 +428,7 @@ public class StatusActivity
             m_regionSelector.setSelectionByValue(PsiphonConstants.REGION_CODE_ANY);
 
             // Show "Selected region unavailable" toast
-            Toast toast = Toast.makeText(this, R.string.selected_region_currently_not_available, Toast.LENGTH_LONG);
-            toast.setGravity(Gravity.CENTER, 0, 0);
-            toast.show();
+            showToast(R.string.selected_region_currently_not_available);
 
             // We only want to respond to the INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE action once,
             // so we need to clear it (by setting it to a non-special intent).
@@ -782,7 +782,11 @@ public class StatusActivity
                                                                         + skuDetailsList.size())
                                                         );
                                                     })
-                                                    .doOnError(err -> Utils.MyLog.g("Upgrade limited subscription error: " + err))
+                                                    .doOnError(err -> {
+                                                        Utils.MyLog.g("Upgrade limited subscription error: " + err);
+                                                        // Show "Subscription options not available" toast.
+                                                        showToast(R.string.subscription_options_currently_not_available);
+                                                    })
                                                     .onErrorComplete()
                                                     .subscribe()
                                     );
@@ -791,8 +795,27 @@ public class StatusActivity
                                 default:
                                     // If user has no subscription launch PaymentChooserActivity
                                     // to show all available subscriptions options.
-                                    Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
-                                    startActivityForResult(paymentChooserActivityIntent, PAYMENT_CHOOSER_ACTIVITY);
+                                    compositeDisposable.add(
+                                            billingViewModel.allSkuDetailsSingle()
+                                                    .toObservable()
+                                                    .flatMap(Observable::fromIterable)
+                                                    .filter(skuDetails -> {
+                                                        String sku = skuDetails.getSku();
+                                                        return BillingRepository.IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(sku) ||
+                                                                sku.equals(BillingRepository.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU) ||
+                                                                sku.equals(BillingRepository.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
+                                                    })
+                                                    .map(SkuDetails::getOriginalJson)
+                                                    .toList()
+                                                    .doOnSuccess(jsonSkuDetailsList -> {
+                                                        Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
+                                                        paymentChooserActivityIntent.putStringArrayListExtra(
+                                                                PaymentChooserActivity.SKU_DETAILS_ARRAY_LIST_EXTRA,
+                                                                new ArrayList<>(jsonSkuDetailsList));
+                                                        startActivityForResult(paymentChooserActivityIntent, PAYMENT_CHOOSER_ACTIVITY);
+                                                    })
+                                                    .subscribe()
+                                    );
                             }
                         })
         );
@@ -802,7 +825,7 @@ public class StatusActivity
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == PAYMENT_CHOOSER_ACTIVITY) {
             if (resultCode == RESULT_OK) {
-                String skuString = data.getStringExtra(PaymentChooserActivity.SKU_DETAILS_EXTRA);
+                String skuString = data.getStringExtra(PaymentChooserActivity.USER_PICKED_SKU_DETAILS_EXTRA);
                 try {
                     if (TextUtils.isEmpty(skuString)) {
                         throw new IllegalArgumentException("SKU is empty.");
@@ -812,9 +835,7 @@ public class StatusActivity
                 } catch (JSONException | IllegalArgumentException e) {
                     Utils.MyLog.g("StatusActivity::onActivityResult purchase SKU error: " + e);
                     // Show "Subscription options not available" toast.
-                    Toast toast = Toast.makeText(this, R.string.subscription_options_currently_not_available, Toast.LENGTH_LONG);
-                    toast.setGravity(Gravity.CENTER, 0, 0);
-                    toast.show();
+                    showToast(R.string.subscription_options_currently_not_available);
                 }
             } else {
                 Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: canceled");
@@ -822,6 +843,12 @@ public class StatusActivity
         } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
+    }
+
+    private void showToast(int stringResId) {
+        Toast toast = Toast.makeText(this, stringResId, Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        toast.show();
     }
 
     @Override

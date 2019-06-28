@@ -63,16 +63,20 @@ public class BillingRepository {
             "basic_ad_free_subscription_4"
     };
 
-    static final String IAB_BASIC_7DAY_TIMEPASS_SKU = "basic_ad_free_7_day_timepass";
-    static final String IAB_BASIC_30DAY_TIMEPASS_SKU = "basic_ad_free_30_day_timepass";
-    static final String IAB_BASIC_360DAY_TIMEPASS_SKU = "basic_ad_free_360_day_timepass";
     static public final Map<String, Long> IAB_TIMEPASS_SKUS_TO_DAYS;
     static {
         Map<String, Long> m = new HashMap<>();
-        m.put(IAB_BASIC_7DAY_TIMEPASS_SKU, 7L);
-        m.put(IAB_BASIC_30DAY_TIMEPASS_SKU, 30L);
-        m.put(IAB_BASIC_360DAY_TIMEPASS_SKU, 360L);
+        m.put("basic_ad_free_7_day_timepass", 7L);
+        m.put("basic_ad_free_30_day_timepass", 30L);
+        m.put("basic_ad_free_360_day_timepass", 360L);
         IAB_TIMEPASS_SKUS_TO_DAYS = Collections.unmodifiableMap(m);
+    }
+
+    static public final Map<String, Long> IAB_PSICASH_SKUS_TO_VALUE;
+    static {
+        Map<String, Long> m = new HashMap<>();
+        m.put("psicash_tier_1", 100L);
+        IAB_PSICASH_SKUS_TO_VALUE = Collections.unmodifiableMap(m);
     }
 
     private static BillingRepository INSTANCE = null;
