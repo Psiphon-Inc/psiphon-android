@@ -124,16 +124,15 @@ public class BillingRepository {
                 }
             });
 
-        }, BackpressureStrategy.LATEST);
+        }, BackpressureStrategy.LATEST)
+                .repeat(); // reconnect automatically if client disconnects
 
         this.connectionFlowable =
                 Completable.complete()
                         .observeOn(AndroidSchedulers.mainThread()) // just to be sure billing client is called from main thread
                         .andThen(billingClientFlowable)
-                        .share() //all observers will wait connection
-                        .repeat() //repeat when billing client disconnected
-                        .replay() //return same instance for all observers
-                        .refCount(); //keep connection if at least one observer exists
+                        .replay(1) // return same last instance for all observers
+                        .refCount(); // keep connection if at least one observer exists
     }
 
     public static BillingRepository getInstance(final Context context) {
@@ -182,7 +181,6 @@ public class BillingRepository {
                 })
                 .firstOrError()
                 .doOnError(err -> Utils.MyLog.g("BillingRepository::getOwnedItems type: " + type + " error: " + err));
-
     }
 
     Single<List<SkuDetails>> getSkuDetails(List<String> ids, String type) {
