@@ -58,7 +58,6 @@ public class StatusActivityBillingViewModel extends AndroidViewModel {
 
     public Flowable<SubscriptionState> subscriptionStatusFlowable() {
         return subscriptionStateBehaviorRelay
-                .distinctUntilChanged()
                 .toFlowable(BackpressureStrategy.LATEST);
     }
 
