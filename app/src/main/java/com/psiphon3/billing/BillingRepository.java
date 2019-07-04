@@ -160,7 +160,7 @@ public class BillingRepository {
                 .flatMap(client -> {
                     // If subscriptions are not supported return an empty purchase list, do not send error.
                     if(type.equals(BillingClient.SkuType.SUBS)) {
-                        BillingResult billingResult = client.isFeatureSupported(type);
+                        BillingResult billingResult = client.isFeatureSupported(BillingClient.FeatureType.SUBSCRIPTIONS);
                         if (billingResult.getResponseCode() != BillingResponseCode.OK) {
                             Utils.MyLog.g("Subscriptions are not supported, billing response code: " + billingResult.getResponseCode());
                             List<Purchase> purchaseList = Collections.emptyList();
