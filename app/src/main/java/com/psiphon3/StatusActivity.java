@@ -808,11 +808,15 @@ public class StatusActivity
                                                     .map(SkuDetails::getOriginalJson)
                                                     .toList()
                                                     .doOnSuccess(jsonSkuDetailsList -> {
-                                                        Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
-                                                        paymentChooserActivityIntent.putStringArrayListExtra(
-                                                                PaymentChooserActivity.SKU_DETAILS_ARRAY_LIST_EXTRA,
-                                                                new ArrayList<>(jsonSkuDetailsList));
-                                                        startActivityForResult(paymentChooserActivityIntent, PAYMENT_CHOOSER_ACTIVITY);
+                                                        if(jsonSkuDetailsList.size() > 0) {
+                                                            Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
+                                                            paymentChooserActivityIntent.putStringArrayListExtra(
+                                                                    PaymentChooserActivity.SKU_DETAILS_ARRAY_LIST_EXTRA,
+                                                                    new ArrayList<>(jsonSkuDetailsList));
+                                                            startActivityForResult(paymentChooserActivityIntent, PAYMENT_CHOOSER_ACTIVITY);
+                                                        } else {
+                                                            showToast(R.string.subscription_options_currently_not_available);
+                                                        }
                                                     })
                                                     .subscribe()
                                     );
