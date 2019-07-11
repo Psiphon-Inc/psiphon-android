@@ -20,8 +20,6 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <application
         android:name=".PsiphonApplication"
@@ -66,23 +64,6 @@
             android:authorities="com.psiphon3.LoggingProvider"
             android:exported="false">
         </provider>
-
-        <!-- UpgradeChecker receives intents (direct, alarm, boot) that trigger upgrade checking. -->
-        <receiver
-            android:name=".psiphonlibrary.UpgradeChecker"
-            android:process=":UpgradeChecker"
-            android:enabled="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
-        <!-- The service that UpgradeChecker uses to do work -->
-        <service
-            android:name=".psiphonlibrary.UpgradeChecker$UpgradeCheckerService"
-            android:label="@string/upgrade_checker_service_name"
-            android:exported="false"
-            android:process=":UpgradeChecker" >
-        </service>
 
         <activity
             android:name="org.zirco.ui.activities.MainActivity"
