@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 28
     useLibrary 'org.apache.http.legacy'
 
     repositories{
@@ -27,7 +27,7 @@ android {
                 applicationId "com.psiphon3"
                 resValue "string", "tray__authority", "${applicationId}.tray"
                 minSdkVersion 14
-                targetSdkVersion 26
+                targetSdkVersion 28
                 versionCode verCode
                 versionName verName
                 testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -92,7 +92,7 @@ repositories {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation files('libs/jackson-core-2.2.0.jar')
     implementation files('libs/achartengine-1.0.0.jar')
     implementation files('libs/snakeyaml-1.10-android.jar')
