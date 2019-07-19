@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 28
     useLibrary 'org.apache.http.legacy'
 
     repositories{
@@ -27,7 +27,7 @@ android {
                 applicationId "com.psiphon3"
                 resValue "string", "tray__authority", "${applicationId}.tray"
                 minSdkVersion 14
-                targetSdkVersion 26
+                targetSdkVersion 28
                 versionCode verCode
                 versionName verName
                 testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -91,21 +91,25 @@ repositories {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation files('libs/jackson-core-2.2.0.jar')
     implementation files('libs/achartengine-1.0.0.jar')
     implementation files('libs/snakeyaml-1.10-android.jar')
     implementation(name: 'ca.psiphon', ext: 'aar')
+
     implementation project(':tray')
-    implementation('com.mopub:mopub-sdk-banner:5.2.0@aar') {
+
+    implementation "com.android.support:multidex:$rootProject.ext.multidexVersion"
+    implementation "com.android.support:appcompat-v7:$rootProject.ext.androidSupportLibraryVersion"
+
+    implementation("com.mopub:mopub-sdk-banner:$rootProject.ext.mopubSdkVersion@aar") {
         transitive = true
     }
-    implementation('com.mopub:mopub-sdk-interstitial:5.2.0@aar') {
+    implementation("com.mopub:mopub-sdk-interstitial:$rootProject.ext.mopubSdkVersion@aar") {
         transitive = true
     }
-    implementation 'com.google.android.gms:play-services-ads:15.0.1'
-    implementation 'com.google.android.ads.consent:consent-library:1.0.7'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:0.5'
+
+    implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
+    implementation "com.google.android.ads.consent:consent-library:$rootProject.ext.adsConsentLibraryVersion"
+    testImplementation "junit:junit:$rootProject.ext.junitVersion"
+    androidTestImplementation "com.android.support.test:runner:$rootProject.ext.testRunnerVersion"
 }
