@@ -91,3 +91,4 @@ public abstract class AppCompatPreferenceActivity extends LocalizedActivities.Pr
         return mDelegate;
     }
 }
+
