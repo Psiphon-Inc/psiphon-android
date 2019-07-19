@@ -29,6 +29,7 @@
         android:icon="@drawable/ic_launcher"
         tools:replace="android:label"
         android:label="@string/app_name_psiphon_pro"
+        android:usesCleartextTraffic="true"
         android:supportsRtl="true">
 
         <!-- Required for newer devices -->
