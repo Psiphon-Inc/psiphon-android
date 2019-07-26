@@ -19,8 +19,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="com.android.vending.BILLING"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
         android:name="com.psiphon3.PsiphonApplication"
@@ -29,7 +28,12 @@
         android:icon="@drawable/ic_launcher"
         tools:replace="android:label"
         android:label="@string/app_name_psiphon_pro"
+        android:usesCleartextTraffic="true"
         android:supportsRtl="true">
+
+        <!-- Required for newer devices -->
+        <uses-library android:name="org.apache.http.legacy" android:required="false"/>
+
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="${admobAppId}"/>
@@ -80,33 +84,6 @@
             android:name="com.psiphon3.psiphonlibrary.LoggingProvider"
             android:authorities="com.psiphon3.subscription.LoggingProvider"
             android:exported="false">
-        </provider>
-
-        <!-- UpgradeChecker receives intents (direct, alarm, boot) that trigger upgrade checking. -->
-        <receiver
-            android:name="com.psiphon3.psiphonlibrary.UpgradeChecker"
-            android:process=":UpgradeChecker"
-            android:enabled="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
-        <!-- The service that UpgradeChecker uses to do work -->
-        <service
-            android:name="com.psiphon3.psiphonlibrary.UpgradeChecker$UpgradeCheckerService"
-            android:label="@string/upgrade_checker_service_name"
-            android:exported="false"
-            android:process=":UpgradeChecker" >
-        </service>
-
-        <provider
-            android:name="android.support.v4.content.FileProvider"
-            android:authorities="com.psiphon3.UpgradeFileProvider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/provider_paths"/>
         </provider>
 
         <activity

@@ -629,9 +629,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_isReconnect.set(false);
         m_isStopping.set(false);
 
-        // Notify if an upgrade has already been downloaded and is waiting for install
-        UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentService);
-
         MyLog.v(R.string.current_network_type, MyLog.Sensitivity.NOT_SENSITIVE, Utils.getNetworkTypeName(m_parentService));
 
         MyLog.v(R.string.starting_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
@@ -798,17 +795,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     jsonArray.put(a.base64EncodedAuthorization());
                 }
                 json.put("Authorizations", jsonArray);
-            }
-
-
-            if (UpgradeChecker.upgradeCheckNeeded(context)) {
-
-                json.put("UpgradeDownloadURLs", new JSONArray(EmbeddedValues.UPGRADE_URLS_JSON));
-
-                json.put("UpgradeDownloadClientVersionHeader", "x-amz-meta-psiphon-client-version");
-
-                json.put("UpgradeDownloadFilename",
-                        new UpgradeManager.DownloadedUpgradeFile(context).getFullPath());
             }
 
             json.put("PropagationChannelId", EmbeddedValues.PROPAGATION_CHANNEL_ID);
@@ -1214,12 +1200,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     @Override
     public void onClientUpgradeDownloaded(String filename) {
-        m_Handler.post(new Runnable() {
-            @Override
-            public void run() {
-                UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentService);
-            }
-        });
     }
 
     @Override
