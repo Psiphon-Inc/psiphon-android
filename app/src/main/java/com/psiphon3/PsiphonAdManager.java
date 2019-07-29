@@ -229,20 +229,14 @@ public class PsiphonAdManager {
                     if (s.isRunning()) {
                         TunnelState.ConnectionData connectionData = s.connectionData();
                         if (connectionData.isConnected()) {
-                            // Destroy untunneled ads if tunnel is connected and emit AdResult.TUNNELED
-                            destroyUnTunneledBanners();
                             return Observable.just(AdResult.tunneled(connectionData));
                         } else {
-                            // Do not show any ads while service is up and tunnel is connecting.
-                            // Destroy all ads and emit AdResult.NONE
-                            destroyAllAds();
                             return Observable.just(AdResult.none());
                         }
                     } else {
-                        // Destroy tunneled ads if service is not running and emit AdResult.UNTUNNELED
-                        destroyTunneledBanners();
                         // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
-                        // and we need to run the check every time
+                        // and we need to run the check every time. This call doesn't need to be synced with
+                        // creation and deletion of ad views.
                         runAdMobGdprCheck();
                         return Observable.just(AdResult.unTunneled());
                     }
@@ -399,10 +393,15 @@ public class PsiphonAdManager {
         Completable completable;
         switch (adResult.type()) {
             case NONE:
-                completable = Completable.complete();
+                completable = Completable.fromAction(() -> {
+                    // destroy all banners
+                    destroyTunneledBanners();
+                    destroyUnTunneledBanners();
+                });
                 break;
             case TUNNELED:
                 completable = initializeMoPubSdk.andThen(Completable.fromAction(() -> {
+                    destroyUnTunneledBanners();
                     tunneledMoPubBannerAdView = new MoPubView(activity);
                     tunneledMoPubBannerAdView.setAdUnitId(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
                     TunnelState.ConnectionData connectionData = adResult.connectionData();
@@ -443,6 +442,7 @@ public class PsiphonAdManager {
                 break;
             case UNTUNNELED:
                 completable = initializeAdMobSdk.andThen(Completable.fromAction(() -> {
+                    destroyTunneledBanners();
                     unTunneledAdMobBannerAdView = new AdView(activity);
                     unTunneledAdMobBannerAdView.setAdSize(AdSize.MEDIUM_RECTANGLE);
                     unTunneledAdMobBannerAdView.setAdUnitId(ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
@@ -643,6 +643,8 @@ public class PsiphonAdManager {
 
     private void destroyUnTunneledBanners() {
         if (unTunneledAdMobBannerAdView != null) {
+            // AdMob's AdView may still call its listener even after a call to destroy();
+            unTunneledAdMobBannerAdView.setAdListener(null);
             ViewGroup parent = (ViewGroup) unTunneledAdMobBannerAdView.getParent();
             if (parent != null) {
                 parent.removeView(unTunneledAdMobBannerAdView);
