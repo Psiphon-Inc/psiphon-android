@@ -56,9 +56,7 @@ import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.BuildConfig;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.SocketException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -70,9 +68,7 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.exceptions.UndeliverableException;
 import io.reactivex.functions.BiFunction;
-import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
 
 public class PsiphonAdManager {
@@ -230,17 +226,20 @@ public class PsiphonAdManager {
                         destroyAllAds();
                         return Observable.just(AdResult.none());
                     }
-
                     if (s.isRunning()) {
-                        // Destroy untunneled ads when tunnel starts running immediately
-                        destroyUnTunneledBanners();
                         TunnelState.ConnectionData connectionData = s.connectionData();
-                        // Only emit when tunnel is connected
                         if (connectionData.isConnected()) {
+                            // Destroy untunneled ads if tunnel is connected and emit AdResult.TUNNELED
+                            destroyUnTunneledBanners();
                             return Observable.just(AdResult.tunneled(connectionData));
+                        } else {
+                            // Do not show any ads while service is up and tunnel is connecting.
+                            // Destroy all ads and emit AdResult.NONE
+                            destroyAllAds();
+                            return Observable.just(AdResult.none());
                         }
-                        return Observable.empty();
                     } else {
+                        // Destroy tunneled ads if service is not running and emit AdResult.UNTUNNELED
                         destroyTunneledBanners();
                         // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
                         // and we need to run the check every time
