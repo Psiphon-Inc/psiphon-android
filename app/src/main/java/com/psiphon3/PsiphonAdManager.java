@@ -215,6 +215,8 @@ public class PsiphonAdManager {
         })
                 .cache();
 
+        // Note this observable also destroys ads according to subscription and/or
+        // connection status without further delay.
         this.currentAdTypeObservable = Observable.combineLatest(tunnelConnectionStateObservable(),
                 subscriptionStatusObservable(),
                 ((BiFunction<TunnelState, SubscriptionStatus, Pair>) Pair::new))
@@ -229,11 +231,18 @@ public class PsiphonAdManager {
                     if (s.isRunning()) {
                         TunnelState.ConnectionData connectionData = s.connectionData();
                         if (connectionData.isConnected()) {
+                            // Tunnel is connected, destroy untunneled banners and send AdResult.TUNNELED
+                            destroyUnTunneledBanners();
                             return Observable.just(AdResult.tunneled(connectionData));
                         } else {
+                            // Tunnel is in connecting state, destroy all banners and send AdResult.NONE.
+                            destroyTunneledBanners();
+                            destroyUnTunneledBanners();
                             return Observable.just(AdResult.none());
                         }
                     } else {
+                        // Service is not running, destroy tunneled banners and send AdResult.UNTUNNELED
+                        destroyTunneledBanners();
                         // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
                         // and we need to run the check every time. This call doesn't need to be synced with
                         // creation and deletion of ad views.
@@ -246,7 +255,13 @@ public class PsiphonAdManager {
     }
 
     Observable<AdResult> getCurrentAdTypeObservable() {
-        return currentAdTypeObservable;
+        return currentAdTypeObservable
+                // Debounce ad result of type UNTUNNELED with a delay of 500ms
+                // "Debounce - only emit an item from an Observable if a particular timespan has passed without it emitting another item."
+                // This is done in order to try and not load UNTUNNELED ads when service is restarting due to configuration change.
+                // TODO: remove when we merge seamless service restart.
+                .debounce(adResult -> adResult.type() == AdResult.Type.UNTUNNELED ?
+                        Observable.timer(500, TimeUnit.MILLISECONDS) : Observable.empty());
     }
 
     private void runAdMobGdprCheck() {
@@ -393,15 +408,10 @@ public class PsiphonAdManager {
         Completable completable;
         switch (adResult.type()) {
             case NONE:
-                completable = Completable.fromAction(() -> {
-                    // destroy all banners
-                    destroyTunneledBanners();
-                    destroyUnTunneledBanners();
-                });
+                completable = Completable.complete();
                 break;
             case TUNNELED:
                 completable = initializeMoPubSdk.andThen(Completable.fromAction(() -> {
-                    destroyUnTunneledBanners();
                     tunneledMoPubBannerAdView = new MoPubView(activity);
                     tunneledMoPubBannerAdView.setAdUnitId(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
                     TunnelState.ConnectionData connectionData = adResult.connectionData();
@@ -442,7 +452,6 @@ public class PsiphonAdManager {
                 break;
             case UNTUNNELED:
                 completable = initializeAdMobSdk.andThen(Completable.fromAction(() -> {
-                    destroyTunneledBanners();
                     unTunneledAdMobBannerAdView = new AdView(activity);
                     unTunneledAdMobBannerAdView.setAdSize(AdSize.MEDIUM_RECTANGLE);
                     unTunneledAdMobBannerAdView.setAdUnitId(ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
