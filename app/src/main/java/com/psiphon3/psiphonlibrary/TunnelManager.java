@@ -333,6 +333,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     if(!m_isStopping.get()) {
                         // We expect only distinct connection status from connectionObservable
                         // which means we always add a sound / vibration alert to the notification
+                        postServiceNotification(true, isConnected);
                     }
                 })
                 .subscribe();
