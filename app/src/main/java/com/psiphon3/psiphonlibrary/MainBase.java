@@ -26,8 +26,6 @@ import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
-import android.app.Fragment;
-import android.app.FragmentManager;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -100,8 +98,6 @@ import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.R;
-import com.psiphon3.util.IabHelper;
-import com.psiphon3.util.Purchase;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.SharedPreferencesImport;
@@ -117,13 +113,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import io.reactivex.Observable;
+import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 
@@ -208,60 +203,8 @@ public abstract class MainBase {
 
         protected boolean isAppInForeground;
 
-        // This fragment helps retain data across configuration changes
-        protected RetainedDataFragment m_retainedDataFragment;
-        private static final String TAG_RETAINED_DATA_FRAGMENT = "com.psiphon3.RetainedDataFragment";
-
         private BehaviorRelay<ServiceConnectionStatus> serviceConnectionStatusBehaviorRelay = BehaviorRelay.create();
         private Disposable restartServiceDisposable = null;
-
-        public static class RetainedDataFragment extends Fragment {
-            private final Map<String, Map<Class<?>, Object>> internalMap = new HashMap<>();
-
-            @Override
-            public void onCreate(Bundle savedInstanceState) {
-                super.onCreate(savedInstanceState);
-                // retain this fragment
-                setRetainInstance(true);
-            }
-
-            private <T> void put(String key, Class<T> type, T value) {
-                if (!internalMap.containsKey(key)) {
-                    final Map<Class<?>, Object> typeValueMap = new HashMap<>();
-                    typeValueMap.put(type, value);
-                    internalMap.put(key, typeValueMap);
-                } else {
-                    internalMap.get(key).put(type, value);
-                }
-            }
-
-            private <T> T get(String key, Class<T> type) {
-                if (internalMap.containsKey(key))
-                    return type.cast(internalMap.get(key).get(type));
-                else
-                    return null;
-            }
-
-            public Purchase getCurrentPurchase() {
-                return get(CURRENT_PURCHASE, Purchase.class);
-            }
-
-            public void setCurrentPurchase(Purchase value) {
-                put(CURRENT_PURCHASE, Purchase.class, value);
-            }
-
-            public Boolean getBoolean(String key, Boolean devaultValue) {
-                Boolean b = get(key, Boolean.class);
-                if(b == null) {
-                    return devaultValue;
-                } //else
-                return b;
-            }
-
-            public void putBoolean(String key, Boolean value) {
-                put(key, Boolean.class, value);
-            }
-        }
 
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
@@ -514,13 +457,6 @@ public abstract class MainBase {
             );
 
             EmbeddedValues.initialize(this);
-
-            FragmentManager fm = getFragmentManager();
-            m_retainedDataFragment = (RetainedDataFragment) fm.findFragmentByTag(TAG_RETAINED_DATA_FRAGMENT);
-            if (m_retainedDataFragment == null) {
-                m_retainedDataFragment = new RetainedDataFragment();
-                fm.beginTransaction().add(m_retainedDataFragment, TAG_RETAINED_DATA_FRAGMENT).commit();
-            }
         }
 
         @Override
@@ -867,8 +803,6 @@ public abstract class MainBase {
             return originalUrlString;
         }
 
-        public abstract void onSubscribeButtonClick(View v);
-
         protected abstract void startUp();
 
         protected void doAbout() {
@@ -1118,9 +1052,10 @@ public abstract class MainBase {
             if ((getTunnelConfigWholeDevice() && Utils.hasVpnService() && isVpnService(runningService))
                     || (!getTunnelConfigWholeDevice() && runningService.equals(TunnelService.class.getName()))) {
                 // A dummy intent just used to pass new tunnel config with the service restart command
-                Intent tunnelConfigIntent = new Intent();
-                configureServiceIntent(tunnelConfigIntent);
-                sendServiceMessage(TunnelManager.ClientToServiceMessage.RESTART_SERVICE.ordinal(), tunnelConfigIntent.getExtras());
+                serviceIntentSingle()
+                        .doOnSuccess(intent ->
+                                sendServiceMessage(TunnelManager.ClientToServiceMessage.RESTART_SERVICE.ordinal(), intent.getExtras()))
+                        .subscribe();
             } else {
                 if (restartServiceDisposable != null && !restartServiceDisposable.isDisposed()) {
                     // call in progress, do nothing
@@ -1493,7 +1428,16 @@ public abstract class MainBase {
             return m_tunnelConfig.disableTimeouts;
         }
 
-        protected void configureServiceIntent(Intent intent) {
+        protected Single<Intent> serviceIntentSingle() {
+            Intent intent;
+            if (getTunnelConfigWholeDevice() && Utils.hasVpnService()) {
+                // VpnService backwards compatibility: startVpnServiceIntent is a wrapper
+                // function so we don't reference the undefined class when this
+                // function is loaded.
+                intent = startVpnServiceIntent();
+            } else {
+                intent = new Intent(this, TunnelService.class);
+            }
             // Indicate that the user triggered this start request
             intent.putExtra(TunnelVpnService.USER_STARTED_INTENT_FLAG, true);
 
@@ -1510,58 +1454,42 @@ public abstract class MainBase {
 
             intent.putExtra(TunnelManager.EXTRA_LANGUAGE_CODE, LocaleManager.getLanguage());
 
-            Purchase currentPurchase = m_retainedDataFragment.getCurrentPurchase();
-            if(currentPurchase != null) {
-                intent.putExtra(TunnelManager.DATA_PURCHASE_ID,
-                        currentPurchase.getSku());
-                intent.putExtra(TunnelManager.DATA_PURCHASE_TOKEN,
-                        currentPurchase.getToken());
-                intent.putExtra(TunnelManager.DATA_PURCHASE_IS_SUBSCRIPTION,
-                        currentPurchase.getItemType().equals(IabHelper.ITEM_TYPE_SUBS));
-            }
+            return Single.just(intent);
         }
 
         protected void startAndBindTunnelService() {
             // Disable service-toggling controls while service is starting up
             // (i.e., while isServiceRunning can't be relied upon)
             disableToggleServiceUI();
-            Intent intent;
+            serviceIntentSingle()
+                    .doOnSuccess(intent -> {
+                        // Use a wrapper to start a service in SDK >= 26
+                        // which is defined like following
+                        /*
+                            public static void startForegroundService(Context context, Intent intent) {
+                                if (Build.VERSION.SDK_INT >= 26) {
+                                    context.startForegroundService(intent);
+                                } else {
+                                    // Pre-O behavior.
+                                    context.startService(intent);
+                                }
+                            }
+                         */
+                        // On API >= 26 a service will get started even when the app is in the background
+                        // as long as the service calls its startForeground() within a reasonable amount of time.
+                        // On API < 26 the call may throw IllegalStateException in case the app is in the state
+                        // when services are not allowed, such as not in foreground
+                        try {
+                            ContextCompat.startForegroundService(this, intent);
+                        } catch (IllegalStateException e) {
+                            // do nothing
+                        }
 
-            if (getTunnelConfigWholeDevice() && Utils.hasVpnService()) {
-                // VpnService backwards compatibility: startVpnServiceIntent is a wrapper
-                // function so we don't reference the undefined class when this
-                // function is loaded.
-                intent = startVpnServiceIntent();
-            } else {
-                intent = new Intent(this, TunnelService.class);
-            }
-            configureServiceIntent(intent);
-
-            // Use a wrapper to start a service in SDK >= 26
-            // which is defined like following
-            /*
-                public static void startForegroundService(Context context, Intent intent) {
-                    if (Build.VERSION.SDK_INT >= 26) {
-                        context.startForegroundService(intent);
-                    } else {
-                        // Pre-O behavior.
-                        context.startService(intent);
-                    }
-                }
-             */
-            // On API >= 26 a service will get started even when the app is in the background
-            // as long as the service calls its startForeground() within a reasonable amount of time.
-            // On API < 26 the call may throw IllegalStateException in case the app is in the state
-            // when services are not allowed, such as not in foreground
-            try {
-                ContextCompat.startForegroundService(this, intent);
-            } catch(IllegalStateException e) {
-                // do nothing
-            }
-
-            if (bindService(intent, m_tunnelServiceConnection, 0)) {
-                m_boundToTunnelService = true;
-            }
+                        if (bindService(intent, m_tunnelServiceConnection, 0)) {
+                            m_boundToTunnelService = true;
+                        }
+                    })
+                    .subscribe();
         }
 
         private Intent startVpnServiceIntent() {
