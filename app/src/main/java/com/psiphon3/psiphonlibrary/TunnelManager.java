@@ -20,6 +20,7 @@
 package com.psiphon3.psiphonlibrary;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -163,7 +164,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     // Implementation of android.app.Service.onStartCommand
     public int onStartCommand(Intent intent, int flags, int startId) {
+
         if (m_firstStart && intent != null) {
+            m_outgoingMessenger = (Messenger) intent.getParcelableExtra(CLIENT_MESSENGER);
             getTunnelConfig(intent);
             MyLog.v(R.string.client_version, MyLog.Sensitivity.NOT_SENSITIVE, EmbeddedValues.CLIENT_VERSION);
             m_firstStart = false;
@@ -203,12 +206,20 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 StatusActivity.class,
                 INTENT_ACTION_VPN_REVOKED);
 
+        final String NOTIFICATION_CHANNEL_ID = "psiphon_notification_channel";
         if (mNotificationManager == null) {
             mNotificationManager = (NotificationManager) m_parentService.getSystemService(Context.NOTIFICATION_SERVICE);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationChannel notificationChannel = new NotificationChannel(
+                        NOTIFICATION_CHANNEL_ID, m_parentService.getText(R.string.psiphon_service_notification_channel_name),
+                        NotificationManager.IMPORTANCE_LOW);
+                mNotificationManager.createNotificationChannel(notificationChannel);
+            }
         }
 
         if (mNotificationBuilder == null) {
-            mNotificationBuilder = new NotificationCompat.Builder(m_parentService);
+            mNotificationBuilder = new NotificationCompat.Builder(m_parentService, NOTIFICATION_CHANNEL_ID);
         }
         m_parentService.startForeground(R.string.psiphon_service_notification_id, this.createNotification(false));
 
@@ -553,9 +564,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_isStopping.set(false);
         m_isReconnect.set(false);
 
-        // Notify if an upgrade has already been downloaded and is waiting for install
-        UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentService);
-
         sendClientMessage(ServiceToClientMessage.TUNNEL_STARTING.ordinal(), null);
 
         MyLog.v(R.string.current_network_type, MyLog.Sensitivity.NOT_SENSITIVE, Utils.getNetworkTypeName(m_parentService));
@@ -738,16 +746,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             tunnel.setClientPlatformAffixes(prefix, suffix);
 
             json.put("ClientVersion", EmbeddedValues.CLIENT_VERSION);
-
-            if (UpgradeChecker.upgradeCheckNeeded(context)) {
-
-                json.put("UpgradeDownloadURLs", new JSONArray(EmbeddedValues.UPGRADE_URLS_JSON));
-
-                json.put("UpgradeDownloadClientVersionHeader", "x-amz-meta-psiphon-client-version");
-
-                json.put("UpgradeDownloadFilename",
-                        new UpgradeManager.DownloadedUpgradeFile(context).getFullPath());
-            }
 
             json.put("PropagationChannelId", EmbeddedValues.PROPAGATION_CHANNEL_ID);
 
@@ -987,6 +985,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     }
                 }
                 m_tunnelState.homePages.add(url);
+
+        boolean showAds = false;
+        for (String homePage : m_tunnelState.homePages) {
+            if (homePage.contains("psiphon_show_ads")) {
+                showAds = true;
+            }
+        }
+        final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
+        multiProcessPreferences.put(
+                m_parentService.getString(R.string.persistent_show_ads_setting),
+                showAds);
             }
         });
     }
@@ -1003,12 +1012,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     @Override
     public void onClientUpgradeDownloaded(String filename) {
-        m_Handler.post(new Runnable() {
-            @Override
-            public void run() {
-                UpgradeManager.UpgradeInstaller.notifyUpgrade(m_parentService);
-            }
-        });
     }
 
     @Override

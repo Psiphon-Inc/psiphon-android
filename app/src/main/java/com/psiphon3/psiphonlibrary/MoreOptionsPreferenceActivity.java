@@ -22,17 +22,24 @@ package com.psiphon3.psiphonlibrary;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.preference.*;
 import android.preference.Preference.OnPreferenceClickListener;
+import android.preference.PreferenceCategory;
+import android.preference.PreferenceManager;
+import android.preference.PreferenceScreen;
 import android.support.annotation.NonNull;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.widget.Toast;
 
+import com.google.ads.consent.ConsentInformation;
+import com.google.ads.consent.ConsentStatus;
 import com.psiphon3.R;
 
 import com.psiphon3.StatusActivity;
@@ -41,7 +48,11 @@ import org.zirco.ui.activities.MainActivity;
 
 import java.util.*;
 
-public class MoreOptionsPreferenceActivity extends LocalizedActivities.PreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceClickListener {
+public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceClickListener {
+
+    // This is taken from https://developer.android.com/reference/android/provider/Settings#ACTION_VPN_SETTINGS
+    // As we target to low of an SDK we cannot reference this constant directly
+    private static final String ACTION_VPN_SETTINGS = "android.settings.VPN_SETTINGS";
 
     private interface PreferenceGetter {
         boolean getBoolean(@NonNull final String key, final boolean defaultValue);
@@ -133,6 +144,10 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.Preferenc
         mProxyDomain = (EditTextPreference) preferences
                 .findPreference(getString(R.string.useProxyDomainPreference));
 
+        if (Utils.supportsAlwaysOnVPN()) {
+            setupNavigateToVPNSettings(preferences);
+        }
+
         setupLanguageSelector(preferences);
 
         PreferenceGetter preferenceGetter;
@@ -145,8 +160,13 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.Preferenc
             preferenceGetter = new AppPreferencesWrapper(new AppPreferences(this));
         }
 
-        mNotificationSound.setChecked(preferenceGetter.getBoolean(getString(R.string.preferenceNotificationsWithSound), false));
-        mNotificationVibration.setChecked(preferenceGetter.getBoolean(getString(R.string.preferenceNotificationsWithVibrate), false));
+        if (mNotificationSound != null) {
+            mNotificationSound.setChecked(preferenceGetter.getBoolean(getString(R.string.preferenceNotificationsWithSound), false));
+        }
+        
+        if (mNotificationVibration != null) {
+            mNotificationVibration.setChecked(preferenceGetter.getBoolean(getString(R.string.preferenceNotificationsWithVibrate), false));
+        }
 
         // R.xml.preferences is conditionally loaded at API version 11 and higher from the xml-v11 folder
         // If it isn't null here, we can reasonably assume it can be cast to our MultiSelectListPreference
@@ -218,6 +238,17 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.Preferenc
         mDefaultSummaryBundle = new Bundle();
 
         updatePreferencesScreen();
+    }
+
+    private void setupNavigateToVPNSettings(PreferenceScreen preferences) {
+        Preference preference = preferences.findPreference(getString(R.string.preferenceNavigateToVPNSetting));
+        preference.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                startActivity(new Intent(ACTION_VPN_SETTINGS));
+                return true;
+            }
+        });
     }
 
     private void setupLanguageSelector(PreferenceScreen preferences) {
@@ -318,6 +349,7 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.Preferenc
                 }
             }
         }
+        updateAdsConsentPreference();
     }
 
     protected void updatePrefsSummary(SharedPreferences sharedPreferences, Preference pref) {
@@ -447,5 +479,75 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.Preferenc
     public void onSaveInstanceState(Bundle savedInstanceState) {
         savedInstanceState.putBoolean("onSaveInstanceState", true);
         super.onSaveInstanceState(savedInstanceState);
+    }
+
+    private void updateAdsConsentPreference() {
+        // Conditionally add / remove 'revoke ads consent' preference
+        final ConsentInformation consentInformation = ConsentInformation.getInstance(this);
+        PreferenceScreen screen = this.getPreferenceScreen();
+        Preference adConsentPref = screen.findPreference(getString(R.string.adConsentPref));
+
+        if(consentInformation.getConsentStatus() != ConsentStatus.UNKNOWN) {
+            // Consent status is either PERSONALIZED or NON_PERSONALIZED - create and show
+            // 'reset' preference if doesn't exists
+            if (adConsentPref == null) {
+                PreferenceCategory category = new PreferenceCategory(screen.getContext());
+                category.setTitle(R.string.ads_consent_preference_category_title);
+                category.setKey(getString(R.string.adConsentPref));
+                screen.addPreference(category);
+
+                DialogPreference revokeConsentPref = new RevokeConsentPreference(screen.getContext(),
+                        new RevokeConsentPreference.OnDialogDismissListener() {
+                            @Override
+                            public void onDismiss() {
+                                MoreOptionsPreferenceActivity.this.updateAdsConsentPreference();
+                            }
+                        });
+                revokeConsentPref.setTitle(R.string.ads_consent_preference_title);
+                revokeConsentPref.setSummary(R.string.ads_consent_preference_summary);
+                category.addPreference(revokeConsentPref);
+            }
+        } else {
+            // Consent status UNKNOWN - remove 'reset' preference if exists
+            if(adConsentPref != null) {
+                screen.removePreference(adConsentPref);
+            }
+        }
+    }
+
+    static private class RevokeConsentPreference extends DialogPreference {
+        private OnDialogDismissListener dialogDismissListener;
+        RevokeConsentPreference(Context context, OnDialogDismissListener listener) {
+            // Using API level 1 constructor.
+            super(context, null);
+            this.dialogDismissListener = listener;
+        }
+
+        @Override
+        protected void onPrepareDialogBuilder(AlertDialog.Builder builder) {
+            builder.setTitle(R.string.ads_consent_preference_dialog_title)
+                    .setMessage(getContext().getString(R.string.ads_consent_preference_dialog_preference_message))
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            final ConsentInformation consentInformation = ConsentInformation.getInstance(RevokeConsentPreference.this.getContext());
+                            consentInformation.setConsentStatus(ConsentStatus.UNKNOWN);
+                        }
+                    })
+                    .setNegativeButton(android.R.string.no, null);
+        }
+
+        @Override
+        public void onDismiss(DialogInterface dialog) {
+            super.onDismiss(dialog);
+            if(dialogDismissListener != null) {
+                dialogDismissListener.onDismiss();
+            }
+        }
+
+        public interface OnDialogDismissListener {
+            void onDismiss();
+        }
     }
 }
