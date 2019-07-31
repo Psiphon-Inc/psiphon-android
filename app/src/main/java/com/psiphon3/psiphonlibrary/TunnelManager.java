@@ -42,8 +42,8 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.util.Pair;
 import android.text.TextUtils;
 
-import com.psiphon3.StatusActivity;
 import com.psiphon3.PurchaseVerificationNetworkHelper;
+import com.psiphon3.StatusActivity;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
@@ -322,10 +322,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     // also updates service notification
     private Disposable connectionStatusUpdaterDisposable() {
         return connectionObservable()
-                .doOnNext(s -> {
-                    m_tunnelState.isConnected = s;
-                    // Any subsequent onConnected after this first onConnect will be a reconnect.
-                    if(m_isReconnect.compareAndSet(false,true)) {
+                .doOnNext(isConnected -> {
+                    m_tunnelState.isConnected = isConnected;
+                    // Any subsequent onConnected after this first one will be a reconnect.
+                    if(isConnected && m_isReconnect.compareAndSet(false,true)) {
                         sendHandshakeIntent();
                     }
                     sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
@@ -333,7 +333,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     if(!m_isStopping.get()) {
                         // We expect only distinct connection status from connectionObservable
                         // which means we always add a sound / vibration alert to the notification
-                        postServiceNotification(true, s);
                     }
                 })
                 .subscribe();
