@@ -177,7 +177,7 @@ public abstract class MainBase {
         public static final String LOGS_TAB_TAG = "logs_tab_tag";
 
 
-        protected static boolean m_firstRun = true;
+        private static boolean m_firstRun = true;
         private boolean m_canWholeDevice = false;
 
         protected Button m_toggleButton;
@@ -516,6 +516,7 @@ public abstract class MainBase {
 
             if (m_firstRun) {
                 EmbeddedValues.initialize(this);
+                m_firstRun = false;
             }
 
             FragmentManager fm = getFragmentManager();

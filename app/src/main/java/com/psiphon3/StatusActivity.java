@@ -96,6 +96,7 @@ public class StatusActivity
 
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_loadedSponsorTab = false;
+    private boolean m_firstRun = true;
     private static boolean m_startupPending = false;
     private IabHelper mIabHelper = null;
     private boolean mStartIabInProgress = false;
@@ -178,6 +179,14 @@ public class StatusActivity
 
         m_loadedSponsorTab = false;
         HandleCurrentIntent();
+    }
+
+    private void preventAutoStart() {
+        m_firstRun = false;
+    }
+
+    private boolean shouldAutoStart() {
+        return m_firstRun && !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
     }
 
     @Override
@@ -554,9 +563,7 @@ public class StatusActivity
         else
         {
             // No prompt, just start the tunnel (if not already running)
-            if (!getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false)) {
-                startTunnel();
-            }
+            startTunnel();
         }
     }
 
@@ -1034,8 +1041,8 @@ public class StatusActivity
         }
 
         // Auto-start on app first run
-        if (m_firstRun) {
-            m_firstRun = false;
+        if (shouldAutoStart()) {
+            preventAutoStart();
             doStartUp();
         }
     }
@@ -1090,9 +1097,9 @@ public class StatusActivity
         else
         {
             // Start the tunnel anyway, IAB will get checked again once the tunnel is connected
-            if (m_firstRun)
+            if (shouldAutoStart())
             {
-                m_firstRun = false;
+                preventAutoStart();
                 doStartUp();
             }
         }
