@@ -15,7 +15,7 @@
 
 package org.zirco.model.adapters;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 import org.zirco.model.items.HistoryItem;
 import org.zirco.providers.BookmarksProviderWrapper;
 

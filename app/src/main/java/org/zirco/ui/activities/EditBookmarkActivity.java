@@ -15,11 +15,12 @@
 
 package org.zirco.ui.activities;
 
-import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
+import com.psiphon3.subscription.R;
 import org.zirco.providers.BookmarksProviderWrapper;
 import org.zirco.utils.Constants;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;

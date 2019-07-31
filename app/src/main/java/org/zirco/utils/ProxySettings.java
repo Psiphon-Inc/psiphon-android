@@ -2,8 +2,8 @@ package org.zirco.utils;
 
 import android.content.Context;
 
-import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.WebViewProxySettings;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 

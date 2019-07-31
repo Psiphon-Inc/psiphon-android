@@ -15,7 +15,7 @@
 
 package org.zirco.ui.activities.preferences;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 
 import android.os.Bundle;
 import android.view.View;

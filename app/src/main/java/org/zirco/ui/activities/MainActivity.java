@@ -82,10 +82,10 @@ import android.widget.Toast;
 import android.widget.ViewFlipper;
 
 import com.psiphon3.FeedbackActivity;
-import com.psiphon3.R;
 import com.psiphon3.StatusActivity;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.TunnelService;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
@@ -130,6 +130,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+;
 
 /**
  * The application main activity.
@@ -260,7 +261,7 @@ public class MainActivity extends LocalizedActivities.Activity implements IToolb
 
         setProgressBarVisibility(true);
         
-        setContentView(R.layout.zirco_main);                        
+        setContentView(R.layout.zirco_main);
         
         mCircularProgress = getResources().getDrawable(R.drawable.spinner);
         
@@ -1238,15 +1239,19 @@ public class MainActivity extends LocalizedActivities.Activity implements IToolb
      * @param contentLength The content length.
      */
     private void doDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
-    	    
-        if (ApplicationUtils.checkCardState(this, true)) {
-        	DownloadItem item = new DownloadItem(this, url);
-        	Controller.getInstance().addToDownload(item);
-        	item.startDownload();
+		if (!ApplicationUtils.ensureWriteStoragePermissionGranted(this, getString(R.string.Main_DownloadPermissionRequestReason))) {
+			Toast.makeText(this, R.string.Commons_NeedWritePermissions, Toast.LENGTH_LONG).show();
+			return;
+		}
 
-        	Toast.makeText(this, getString(R.string.Main_DownloadStartedMsg), Toast.LENGTH_SHORT).show();
-        }
-    }
+		if (ApplicationUtils.checkCardState(this, true)) {
+			DownloadItem item = new DownloadItem(this, url);
+			Controller.getInstance().addToDownload(item);
+			item.startDownload();
+
+			Toast.makeText(this, getString(R.string.Main_DownloadStartedMsg), Toast.LENGTH_SHORT).show();
+		}
+	}
     
     /**
      * Add a new tab.
