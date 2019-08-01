@@ -3,7 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.psiphon3"
     android:installLocation="auto">
-    <uses-sdk tools:overrideLibrary="ca.psiphon"></uses-sdk>
+    <uses-sdk tools:overrideLibrary="ca.psiphon,com.mopub.mobileads.banner,com.mopub.mobileads.base,
+    com.mopub.mobileads.interstitial,com.moat.analytics.mobile.mpub" />
 
     <supports-screens
                   android:smallScreens="true"
@@ -14,20 +15,24 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.GET_TASKS"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
         android:name=".PsiphonApplication"
+        android:theme="@style/Theme.AppCompat"
         android:hardwareAccelerated="true"
         android:icon="@drawable/ic_launcher"
         android:supportsRtl="true"
-        android:label="@string/app_name"
-        tools:ignore="GoogleAppIndexingWarning">
+        android:usesCleartextTraffic="true"
+        android:label="@string/app_name">
+
+        <!-- Required for newer devices -->
+        <uses-library android:name="org.apache.http.legacy" android:required="false"/>
+
         <activity
             android:name=".StatusActivity"
             android:label="@string/app_name"
@@ -57,6 +62,12 @@
             android:permission="android.permission.BIND_VPN_SERVICE"
             android:exported="false"
             android:process=":TunnelService" >
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.net.VpnService.SUPPORTS_ALWAYS_ON"
+                android:value="true" />
         </service>
 
         <provider
@@ -65,23 +76,16 @@
             android:exported="false">
         </provider>
 
-        <!-- UpgradeChecker receives intents (direct, alarm, boot) that trigger upgrade checking. -->
-        <receiver
-            android:name=".psiphonlibrary.UpgradeChecker"
-            android:process=":UpgradeChecker"
-            android:enabled="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
-        <!-- The service that UpgradeChecker uses to do work -->
-        <service
-            android:name=".psiphonlibrary.UpgradeChecker$UpgradeCheckerService"
-            android:label="@string/upgrade_checker_service_name"
-            android:exported="false"
-            android:process=":UpgradeChecker" >
-        </service>
 
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="com.psiphon3.UpgradeFileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths"/>
+        </provider>
         <activity
             android:name="org.zirco.ui.activities.MainActivity"
             android:label="@string/browser_task_label"
@@ -111,6 +115,16 @@
 
         <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonzircobookmarkscontentprovider"/>
         <provider android:name="org.zirco.providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonweavecontentprovider"/>
+
+        <meta-data android:name="com.google.android.gms.version"
+			   android:value="@integer/google_play_services_version" />
+
+        <activity android:name="com.mopub.mobileads.MoPubActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
+        <activity android:name="com.mopub.mobileads.MraidActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
+        <activity android:name="com.mopub.common.MoPubBrowser" android:configChanges="keyboardHidden|orientation|screenSize"/>
+        <activity android:name="com.mopub.mobileads.MraidVideoPlayerActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
+        <activity android:name="com.google.android.gms.ads.AdActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
+        <activity android:name="com.mopub.common.privacy.ConsentDialogActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
 
     </application>
 
