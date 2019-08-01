@@ -819,6 +819,7 @@ public class StatusActivity
                                                     .doOnSuccess(jsonSkuDetailsList -> {
                                                         if(jsonSkuDetailsList.size() > 0) {
                                                             Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
+                                                            paymentChooserActivityIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                                                             paymentChooserActivityIntent.putStringArrayListExtra(
                                                                     PaymentChooserActivity.SKU_DETAILS_ARRAY_LIST_EXTRA,
                                                                     new ArrayList<>(jsonSkuDetailsList));
