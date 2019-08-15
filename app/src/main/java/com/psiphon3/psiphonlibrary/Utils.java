@@ -32,8 +32,6 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import android.util.Log;
 
-import com.psiphon3.R;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -61,6 +59,9 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
 import de.schildbach.wallet.util.LinuxSecureRandom;
+import com.psiphon3.subscription.R;
+
+import net.grandcentrix.tray.AppPreferences;
 
 
 public class Utils
@@ -143,7 +144,7 @@ public class Utils
      * 
      * @author Nate Sammons
      * @author Daniel Matuschek
-     * @version $Id: Base64.java,v 1.4 2001/04/17 10:09:27 matuschd Exp $
+     * @version $id: Base64.java,v 1.4 2001/04/17 10:09:27 matuschd Exp $
      */
     public static class Base64 {
 
@@ -766,5 +767,60 @@ public class Utils
         wrappedMacKey = rsaCipher.wrap(macKey);
         
         return new RSAEncryptOutput(contentCiphertext, iv, wrappedEncryptionKey, contentMac, wrappedMacKey);
+    }
+
+    public static synchronized void setHasValidSubscription(Context context, boolean valid)
+    {
+        final AppPreferences multiProcessPreferences = new AppPreferences(context);
+        multiProcessPreferences.put(context.getString(R.string.has_valid_subscription), valid);
+    }
+
+    public static synchronized boolean getHasValidSubscription(Context context)
+    {
+        final AppPreferences multiProcessPreferences = new AppPreferences(context);
+        return multiProcessPreferences.getBoolean(context.getString(R.string.has_valid_subscription), false);
+    }
+
+    public synchronized static Date parseRFC3339Date(String dateString) throws java.text.ParseException, IndexOutOfBoundsException {
+        Date d;
+
+        //if there is no time zone, we don't need to do any special parsing.
+        if (dateString.endsWith("Z")) {
+            try {
+                SimpleDateFormat s = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault());//spec for RFC3339 with a 'Z'
+                s.setTimeZone(TimeZone.getTimeZone("UTC"));
+                d = s.parse(dateString);
+            } catch (java.text.ParseException pe) {//try again with optional decimals
+                SimpleDateFormat s = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault());//spec for RFC3339 with a 'Z' and fractional seconds
+                s.setTimeZone(TimeZone.getTimeZone("UTC"));
+                s.setLenient(true);
+                d = s.parse(dateString);
+            }
+            return d;
+        }
+
+        //step one, split off the timezone.
+        String firstPart;
+        String secondPart;
+        if (dateString.lastIndexOf('+') == -1) {
+            firstPart = dateString.substring(0, dateString.lastIndexOf('-'));
+            secondPart = dateString.substring(dateString.lastIndexOf('-'));
+        } else {
+            firstPart = dateString.substring(0, dateString.lastIndexOf('+'));
+            secondPart = dateString.substring(dateString.lastIndexOf('+'));
+        }
+
+        //step two, remove the colon from the timezone offset
+        secondPart = secondPart.substring(0, secondPart.indexOf(':')) + secondPart.substring(secondPart.indexOf(':') + 1);
+        dateString = firstPart + secondPart;
+        SimpleDateFormat s = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());//spec for RFC3339
+        try {
+            d = s.parse(dateString);
+        } catch (java.text.ParseException pe) {//try again with optional decimals
+            s = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ", Locale.getDefault());//spec for RFC3339 (with fractional seconds)
+            s.setLenient(true);
+            d = s.parse(dateString);
+        }
+        return d;
     }
 }
