@@ -1386,7 +1386,7 @@ public abstract class MainBase {
                     scheduleRunningTunnelServiceRestart();
                 }
 
-                if (data.getBooleanExtra(MoreOptionsPreferenceActivity.INTENT_EXTRA_LANGUAGE_CHANGED, false)) {
+                if (data != null && data.getBooleanExtra(MoreOptionsPreferenceActivity.INTENT_EXTRA_LANGUAGE_CHANGED, false)) {
                     // This is a bit of a weird hack to cause a restart, but it works
                     // Previous attempts to use the alarm manager or others caused a variable amount of wait (up to about a second)
                     // before the activity would relaunch. This *seems* to provide the best functionality across phones.
@@ -1452,7 +1452,8 @@ public abstract class MainBase {
 
             intent.putExtra(TunnelManager.CLIENT_MESSENGER, m_incomingMessenger);
 
-            intent.putExtra(TunnelManager.EXTRA_LANGUAGE_CODE, LocaleManager.getLanguage());
+            LocaleManager localeManager = LocaleManager.getInstance(this);
+            intent.putExtra(TunnelManager.EXTRA_LANGUAGE_CODE, localeManager.getLanguage());
 
             return Single.just(intent);
         }
