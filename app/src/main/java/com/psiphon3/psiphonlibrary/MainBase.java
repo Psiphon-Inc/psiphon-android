@@ -1508,7 +1508,8 @@ public abstract class MainBase {
 
             intent.putExtra(TunnelManager.CLIENT_MESSENGER, m_incomingMessenger);
 
-            intent.putExtra(TunnelManager.EXTRA_LANGUAGE_CODE, LocaleManager.getLanguage());
+            LocaleManager localeManager = LocaleManager.getInstance(this);
+            intent.putExtra(TunnelManager.EXTRA_LANGUAGE_CODE, localeManager.getLanguage());
 
             Purchase currentPurchase = m_retainedDataFragment.getCurrentPurchase();
             if(currentPurchase != null) {
