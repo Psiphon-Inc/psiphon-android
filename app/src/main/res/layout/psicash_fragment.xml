@@ -81,5 +81,17 @@
             android:layout_height="wrap_content"
             android:text="@string/watch_video_and_earn_psicash_button" />
 
+        <Button
+            android:id="@+id/get_kin_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Button" />
+
+        <TextView
+            android:id="@+id/kin_value_txt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TextView" />
+
     </LinearLayout>
 </FrameLayout>
