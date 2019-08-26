@@ -16,7 +16,7 @@ class Environment {
 
     static final Environment TEST = new Environment(
             "friendbot.developers.kinecosystem.com",
-            "",
+            "GCG5E6EELYTX2IA7FJTTRHC3DQHZTSYBUEN7H5YE5E7MJWR3GV6Q6KUP",
             kin.sdk.Environment.TEST
     );
 

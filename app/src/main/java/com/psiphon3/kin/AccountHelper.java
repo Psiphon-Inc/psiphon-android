@@ -10,7 +10,7 @@ import kin.sdk.exception.CryptoException;
 
 class AccountHelper {
     private final static String EXPORT_KIN_ACCOUNT_PASSPHRASE = "correct-horse-battery-staple";
-    private final static Double CREATE_ACCOUNT_FUND_AMOUNT = 1000d;
+    final static Double CREATE_ACCOUNT_FUND_AMOUNT = 1000d;
 
     /**
      * Gets a Kin account for this device. Will try to use a saved account first, but if none are
