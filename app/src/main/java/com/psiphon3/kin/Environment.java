@@ -4,6 +4,8 @@ package com.psiphon3.kin;
  * Provides network details
  */
 class Environment {
+    // TODO: Get real app id
+    static final String PSIPHON_APP_ID = "FAKE";
 
     // TODO: Get these values
     static final Environment PRODUCTION = new Environment(

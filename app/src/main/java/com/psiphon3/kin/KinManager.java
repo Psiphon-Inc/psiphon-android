@@ -8,9 +8,6 @@ import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
 
 public class KinManager {
-    // TODO: Get real app id
-    private static final String PSIPHON_APP_ID = "FAKE";
-
     private static KinManager mInstance;
 
     private final KinAccount mAccount;
@@ -28,7 +25,7 @@ public class KinManager {
 
         // Set up base communication & helper classes
         Environment environment = test ? Environment.TEST : Environment.PRODUCTION;
-        KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), PSIPHON_APP_ID);
+        KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
         ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getServerUrl());
 
         // Set up the data

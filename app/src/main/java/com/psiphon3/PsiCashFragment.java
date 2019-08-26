@@ -135,7 +135,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mKinManager = KinManager.getInstance(getContext(), true);
+        mKinManager = KinManager.getTestInstance(getContext());
         mKinManager.addBalanceListener(new EventListener<Balance>() {
             @Override
             public void onEvent(Balance data) {
