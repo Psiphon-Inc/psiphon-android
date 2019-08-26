@@ -1,11 +1,16 @@
 package com.psiphon3.kin;
 
 import android.content.Context;
+import android.util.Log;
+
+import java.math.BigDecimal;
 
 import kin.sdk.Balance;
 import kin.sdk.EventListener;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
+import kin.sdk.ListenerRegistration;
+import kin.sdk.exception.OperationFailedException;
 
 public class KinManager {
     private static KinManager mInstance;
@@ -62,9 +67,10 @@ public class KinManager {
      * is changed.
      *
      * @param listener the listener to register to account balance changes
+     * @return the registration to allow it's removal
      */
-    public void addBalanceListener(EventListener<Balance> listener) {
-        mAccount.addBalanceListener(listener);
+    public ListenerRegistration addBalanceListener(EventListener<Balance> listener) {
+        return mAccount.addBalanceListener(listener);
     }
 
     /**
@@ -72,6 +78,20 @@ public class KinManager {
      */
     public String getWalletAddress() {
         return mAccount.getPublicAddress();
+    }
+
+    /**
+     * @return the current balance of the active account
+     */
+    public BigDecimal getCurrentBalance() {
+        try {
+            return mAccount.getBalanceSync().value();
+        } catch (OperationFailedException e) {
+            // TODO: What should we do?
+            Log.e("kin", "getCurrentBalance", e);
+        }
+
+        return null;
     }
 
     /**

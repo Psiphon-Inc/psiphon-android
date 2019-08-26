@@ -52,26 +52,12 @@ public class AccountTransactionHelperTest {
         accountTransactionHelper = new AccountTransactionHelper(account, serverCommunicator, env.getPsiphonWalletAddress());
 
         // Setup isn't finished until the account is created
-        ensureAccountCreated();
+        Utils.ensureAccountCreated(account);
     }
 
     @After
     public void tearDown() {
         kinClient.clearAllAccounts();
-    }
-
-    private void ensureAccountCreated() throws InterruptedException, OperationFailedException {
-        CountDownLatch accountCreationLatch = new CountDownLatch(1);
-        account.addAccountCreationListener(new EventListener<Void>() {
-            @Override
-            public void onEvent(Void data) {
-                accountCreationLatch.countDown();
-            }
-        });
-
-        // Wait for the listener to fire
-        accountCreationLatch.await(10, TimeUnit.SECONDS);
-        assertEquals(AccountStatus.CREATED, account.getStatusSync());
     }
 
     @Test
@@ -115,7 +101,7 @@ public class AccountTransactionHelperTest {
         accountTransactionHelper.transferOut(100d);
 
         // Wait for the listener to fire
-        latch.await(20, TimeUnit.SECONDS);
+        latch.await(10, TimeUnit.SECONDS);
         assertEquals(initialBalance - 101, account.getBalanceSync().value().intValue());
 
         // TODO: Determine some way to check if the Psiphon wallet has been charged as well
