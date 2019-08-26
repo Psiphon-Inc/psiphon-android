@@ -11,8 +11,14 @@ import org.junit.Test;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import kin.sdk.AccountStatus;
+import kin.sdk.EventListener;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
+import kin.utils.ResultCallback;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -49,12 +55,59 @@ public class AccountHelperTest {
     }
 
     @Test
-    public void getAccount() {
-        KinAccount account = AccountHelper.getAccount(kinClient, serverCommunicator);
-        assertEquals(account, AccountHelper.getAccount(kinClient, serverCommunicator));
+    public void getAccount() throws InterruptedException {
+        KinAccount account1 = AccountHelper.getAccount(kinClient, serverCommunicator);
+        KinAccount account2 = AccountHelper.getAccount(kinClient, serverCommunicator);
+        assertNotNull(account1);
+        assertNotNull(account2);
+        assertEquals(account1, account2);
 
         kinClient.clearAllAccounts();
 
-        assertNotEquals(account, AccountHelper.getAccount(kinClient, serverCommunicator));
+        account2 = AccountHelper.getAccount(kinClient, serverCommunicator);
+        assertNotNull(account2);
+        assertNotEquals(account1, account2);
+
+        CountDownLatch account2CreationLatch = new CountDownLatch(1);
+        account2.addAccountCreationListener(new EventListener<Void>() {
+            @Override
+            public void onEvent(Void data) {
+                account2CreationLatch.countDown();
+            }
+        });
+
+        CountDownLatch latch1 = new CountDownLatch(1);
+        account1.getStatus().run(new ResultCallback<Integer>() {
+            @Override
+            public void onResult(Integer result) {
+                fail("should be deleted");
+            }
+
+            @Override
+            public void onError(Exception e) {
+                latch1.countDown();
+            }
+        });
+
+        latch1.await(10, TimeUnit.SECONDS);
+
+        // Wait for the listener to fire
+        account2CreationLatch.await(10, TimeUnit.SECONDS);
+
+        CountDownLatch latch2 = new CountDownLatch(1);
+        account2.getStatus().run(new ResultCallback<Integer>() {
+            @Override
+            public void onResult(Integer result) {
+                assertEquals(AccountStatus.CREATED, result.intValue());
+                latch2.countDown();
+            }
+
+            @Override
+            public void onError(Exception e) {
+                fail("unable to get account status - " + e.getMessage());
+            }
+        });
+
+        latch2.await(10, TimeUnit.SECONDS);
     }
 }

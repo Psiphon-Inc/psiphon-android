@@ -80,7 +80,7 @@ public class ServerCommunicatorTest {
 
             @Override
             public void onFailure(Exception e) {
-                fail("unable to create account. " + e.getMessage());
+                fail("unable to create account - " + e.getMessage());
             }
         });
 
@@ -120,7 +120,7 @@ public class ServerCommunicatorTest {
 
             @Override
             public void onFailure(Exception e) {
-                fail("unable to create account. " + e.getMessage());
+                fail("unable to create account - " + e.getMessage());
             }
         });
 
@@ -138,7 +138,7 @@ public class ServerCommunicatorTest {
 
             @Override
             public void onFailure(Exception e) {
-                fail("unable to fund account. " + e.getMessage());
+                fail("unable to fund account - " + e.getMessage());
             }
         });
 
