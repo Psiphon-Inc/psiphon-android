@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.test.InstrumentationRegistry;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -13,8 +11,6 @@ import org.junit.Test;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -24,11 +20,11 @@ import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
 import kin.sdk.exception.CreateAccountException;
 import kin.sdk.exception.OperationFailedException;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.Response;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -46,10 +42,10 @@ public class ServerCommunicatorTest {
     @Before
     public void setUp() {
         Environment env = Environment.TEST;
-        SharedPreferences sharedPreferences = InstrumentationRegistry.getContext().getSharedPreferences("tst", Context.MODE_PRIVATE);
+        SharedPreferences sharedPreferences = InstrumentationRegistry.getTargetContext().getSharedPreferences("test", Context.MODE_PRIVATE);
         Context context = mock(Context.class);
         when(context.getApplicationContext()).thenReturn(context);
-        when(context.getSharedPreferences("KinKeyStore_", Context.MODE_PRIVATE)).thenReturn(sharedPreferences);
+        when(context.getSharedPreferences(anyString(), anyInt())).thenReturn(sharedPreferences);
 
         serverCommunicator = new ServerCommunicator(env.getFriendBotServerUrl());
         kinClient = new KinClient(context, env.getKinEnvironment(), Environment.PSIPHON_APP_ID);
@@ -79,7 +75,8 @@ public class ServerCommunicatorTest {
 
         serverCommunicator.createAccount(kinAccount.getPublicAddress(), 100d, new Callbacks() {
             @Override
-            public void onSuccess() {}
+            public void onSuccess() {
+            }
 
             @Override
             public void onFailure(Exception e) {
