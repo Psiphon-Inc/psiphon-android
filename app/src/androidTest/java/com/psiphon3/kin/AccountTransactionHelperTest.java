@@ -14,11 +14,11 @@ import org.mockito.junit.MockitoRule;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import kin.sdk.AccountStatus;
 import kin.sdk.Balance;
 import kin.sdk.EventListener;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
+import kin.sdk.ListenerRegistration;
 import kin.sdk.exception.OperationFailedException;
 
 import static org.junit.Assert.assertEquals;
@@ -67,7 +67,7 @@ public class AccountTransactionHelperTest {
         accountTransactionHelper.transferIn(100d);
 
         CountDownLatch latch = new CountDownLatch(1);
-        account.addBalanceListener(new EventListener<Balance>() {
+        ListenerRegistration listenerRegistration = account.addBalanceListener(new EventListener<Balance>() {
             @Override
             public void onEvent(Balance balance) {
                 assertEquals(initialBalance + 100, balance.value().intValue());
@@ -80,6 +80,8 @@ public class AccountTransactionHelperTest {
         assertEquals(initialBalance + 100, account.getBalanceSync().value().intValue());
 
         // TODO: Determine some way to check if the Psiphon wallet has been charged as well
+
+        listenerRegistration.remove();
     }
 
     @Test
@@ -89,7 +91,7 @@ public class AccountTransactionHelperTest {
         assertEquals(AccountHelper.CREATE_ACCOUNT_FUND_AMOUNT.intValue(), initialBalance);
 
         CountDownLatch latch = new CountDownLatch(1);
-        account.addBalanceListener(new EventListener<Balance>() {
+        ListenerRegistration listenerRegistration = account.addBalanceListener(new EventListener<Balance>() {
             @Override
             public void onEvent(Balance balance) {
                 // Use 101 because of the transfer fee
@@ -105,5 +107,7 @@ public class AccountTransactionHelperTest {
         assertEquals(initialBalance - 101, account.getBalanceSync().value().intValue());
 
         // TODO: Determine some way to check if the Psiphon wallet has been charged as well
+
+        listenerRegistration.remove();
     }
 }

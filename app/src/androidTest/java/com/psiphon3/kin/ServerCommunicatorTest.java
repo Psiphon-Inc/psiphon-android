@@ -18,6 +18,7 @@ import kin.sdk.AccountStatus;
 import kin.sdk.EventListener;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
+import kin.sdk.ListenerRegistration;
 import kin.sdk.exception.CreateAccountException;
 import kin.sdk.exception.OperationFailedException;
 
@@ -32,9 +33,6 @@ public class ServerCommunicatorTest {
 
     private final String existingWalletPublicKey = "GCG5E6EELYTX2IA7FJTTRHC3DQHZTSYBUEN7H5YE5E7MJWR3GV6Q6KUP";
     private final String existingWalletPrivateKey = "SD4CQMGDNHI5MNITVNWLNOJ3KCLGFI4VF6W2ELWO4FTC4MIVRBI67IMF";
-
-    @Rule
-    public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     private ServerCommunicator serverCommunicator;
     private KinClient kinClient;
@@ -60,7 +58,7 @@ public class ServerCommunicatorTest {
     public void createAccount() throws CreateAccountException, OperationFailedException, InterruptedException {
         KinAccount kinAccount = kinClient.addAccount();
         CountDownLatch latch1 = new CountDownLatch(1);
-        kinAccount.addAccountCreationListener(new EventListener<Void>() {
+        ListenerRegistration listenerRegistration = kinAccount.addAccountCreationListener(new EventListener<Void>() {
             @Override
             public void onEvent(Void data) {
                 try {
@@ -105,6 +103,8 @@ public class ServerCommunicatorTest {
         // Ensure these didn't change
         assertEquals(AccountStatus.CREATED, kinAccount.getStatusSync());
         assertEquals(100, kinAccount.getBalanceSync().value().intValue());
+
+        listenerRegistration.remove();
     }
 
     @Test

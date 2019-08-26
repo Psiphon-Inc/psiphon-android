@@ -6,10 +6,7 @@ import android.support.test.InstrumentationRegistry;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -18,21 +15,19 @@ import kin.sdk.AccountStatus;
 import kin.sdk.EventListener;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
+import kin.sdk.ListenerRegistration;
 import kin.utils.ResultCallback;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class AccountHelperTest {
-
-    private final String existingWalletPublicKey = "GCG5E6EELYTX2IA7FJTTRHC3DQHZTSYBUEN7H5YE5E7MJWR3GV6Q6KUP";
-    private final String existingWalletPrivateKey = "SD4CQMGDNHI5MNITVNWLNOJ3KCLGFI4VF6W2ELWO4FTC4MIVRBI67IMF";
-
-    @Rule
-    public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     private ServerCommunicator serverCommunicator;
     private KinClient kinClient;
@@ -69,7 +64,7 @@ public class AccountHelperTest {
         assertNotEquals(account1, account2);
 
         CountDownLatch account2CreationLatch = new CountDownLatch(1);
-        account2.addAccountCreationListener(new EventListener<Void>() {
+        ListenerRegistration listenerRegistration = account2.addAccountCreationListener(new EventListener<Void>() {
             @Override
             public void onEvent(Void data) {
                 account2CreationLatch.countDown();
@@ -109,5 +104,7 @@ public class AccountHelperTest {
         });
 
         latch2.await(10, TimeUnit.SECONDS);
+
+        listenerRegistration.remove();
     }
 }
