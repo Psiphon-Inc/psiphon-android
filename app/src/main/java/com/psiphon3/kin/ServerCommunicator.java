@@ -16,15 +16,15 @@ import okhttp3.Response;
 
 class ServerCommunicator {
 
-    private final String mBaseUrl;
+    private final String mFriendBotUrl;
     private final Handler mHandler;
     private final OkHttpClient mOkHttpClient;
 
     /**
-     * @param baseUrl the base URL for the server
+     * @param friendBotUrl the URL to the friend bot server
      */
-    ServerCommunicator(String baseUrl) {
-        mBaseUrl = baseUrl;
+    ServerCommunicator(String friendBotUrl) {
+        mFriendBotUrl = friendBotUrl;
 
         mHandler = new Handler(Looper.getMainLooper());
         mOkHttpClient = new OkHttpClient.Builder()
@@ -62,6 +62,8 @@ class ServerCommunicator {
                         // Only care about failure
                         if (code != 200) {
                             fireOnFailure(callbacks, new Exception("Create account - response code is " + response.code()));
+                        } else {
+                            fireOnSuccess(callbacks);
                         }
                     }
                 });
@@ -96,26 +98,28 @@ class ServerCommunicator {
                         // Only care about failure
                         if (code != 200) {
                             fireOnFailure(callbacks, new Exception("Fund account - response code is " + response.code()));
+                        } else {
+                            fireOnSuccess(callbacks);
                         }
                     }
                 });
     }
 
-    private HttpUrl.Builder getUrlBuilder(String address, Double amount) {
+    private HttpUrl.Builder getFriendBotUrlBuilder(String address, Double amount) {
         return new HttpUrl.Builder()
-                .host(mBaseUrl)
+                .scheme("https")
+                .host(mFriendBotUrl)
                 .addQueryParameter("addr", address)
                 .addQueryParameter("amount", amount.toString());
     }
 
     private HttpUrl getCreateAccountUrl(String address, Double amount) {
-        return getUrlBuilder(address, amount).build();
+        return getFriendBotUrlBuilder(address, amount).build();
     }
 
     private HttpUrl getFundAccountUrl(String address, Double amount) {
-        return getUrlBuilder(address, amount).addPathSegment("fund").build();
+        return getFriendBotUrlBuilder(address, amount).addPathSegment("fund").build();
     }
-
 
     private void fireOnFailure(@NonNull Callbacks callbacks, Exception ex) {
         mHandler.post(() -> callbacks.onFailure(ex));

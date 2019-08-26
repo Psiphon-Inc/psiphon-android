@@ -18,15 +18,14 @@ public class KinManager {
         mTransactionHelper = transactionHelper;
     }
 
-    private static KinManager getInstance(Context context, boolean test) {
+    private static KinManager getInstance(Context context, Environment environment) {
         if (mInstance != null) {
             return mInstance;
         }
 
         // Set up base communication & helper classes
-        Environment environment = test ? Environment.TEST : Environment.PRODUCTION;
         KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
-        ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getServerUrl());
+        ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getFriendBotServerUrl());
 
         // Set up the data
         KinAccount account = AccountHelper.getAccount(kinClient, serverCommunicator);
@@ -45,7 +44,7 @@ public class KinManager {
      * @return an instance of KinManager for the passed context
      */
     public static KinManager getInstance(Context context) {
-        return getInstance(context, false);
+        return getInstance(context, Environment.PRODUCTION);
     }
 
     /**
@@ -55,7 +54,7 @@ public class KinManager {
      * @return a test instance of KinManager for the passed context
      */
     public static KinManager getTestInstance(Context context) {
-        return getInstance(context, true);
+        return getInstance(context, Environment.TEST);
     }
 
     /**
