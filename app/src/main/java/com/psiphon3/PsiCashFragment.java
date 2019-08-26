@@ -37,7 +37,6 @@ import android.support.design.widget.SwipeDismissBehavior;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -57,6 +56,7 @@ import com.jakewharton.rxbinding2.view.RxView;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
+import com.psiphon3.kin.KinManager;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.PsiCashIntent;
@@ -74,6 +74,7 @@ import com.psiphon3.subscription.R;
 import net.grandcentrix.tray.AppPreferences;
 
 import java.lang.ref.WeakReference;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -89,7 +90,6 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
 import kin.sdk.Balance;
 import kin.sdk.EventListener;
-import kin.sdk.exception.CreateAccountException;
 
 public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, PsiCashViewState> {
     private static final String TAG = "PsiCashFragment";
@@ -121,7 +121,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     private final AtomicBoolean shouldGetPsiCashRemote = new AtomicBoolean(false);
     private boolean shouldAutoPlayVideo;
     private ActiveSpeedBoostListener activeSpeedBoostListener;
-    private Kin mKin;
+    private KinManager mKinManager;
 
     private enum LifeCycleEvent {ON_RESUME, ON_PAUSE, ON_STOP, ON_START}
 
@@ -135,27 +135,23 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        try {
-            mKin = new Kin(getContext());
-            mKin.addBalanceListener(new EventListener<Balance>() {
-                @Override
-                public void onEvent(Balance data) {
-                    FragmentActivity activity = getActivity();
-                    if (activity == null) {
-                        return;
-                    }
-
-                    TextView textView = (TextView) activity.findViewById(R.id.kin_value_txt);
-                    if (textView == null) {
-                        return;
-                    }
-
-                    textView.setText(data.value(5));
+        mKinManager = KinManager.getInstance(getContext(), true);
+        mKinManager.addBalanceListener(new EventListener<Balance>() {
+            @Override
+            public void onEvent(Balance data) {
+                FragmentActivity activity = getActivity();
+                if (activity == null) {
+                    return;
                 }
-            });
-        } catch (CreateAccountException e) {
-            Log.e("kin", "createAccount ", e);
-        }
+
+                TextView textView = (TextView) activity.findViewById(R.id.kin_value_txt);
+                if (textView == null) {
+                    return;
+                }
+
+                textView.setText(data.value(5));
+            }
+        });
 
         PsiCashListener psiCashListener = new PsiCashListener() {
             @Override
@@ -233,13 +229,9 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         getActivity().findViewById(R.id.get_kin_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getMoney(v);
+                mKinManager.transferIn(100d);
             }
         });
-    }
-
-    public void getMoney(View v) {
-        mKin.transferIn();
     }
 
     private Disposable removePurchasesDisposable() {
