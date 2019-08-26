@@ -12,6 +12,14 @@ class AccountHelper {
     private final static String EXPORT_KIN_ACCOUNT_PASSPHRASE = "correct-horse-battery-staple";
     private final static Double CREATE_ACCOUNT_FUND_AMOUNT = 1000d;
 
+    /**
+     * Gets a Kin account for this device. Will try to use a saved account first, but if none are
+     * found it will create a new account and register it with the server.
+     *
+     * @param kinClient the KinClient to be used for the account
+     * @param serverCommunicator the communicator for creating the account if needed
+     * @return The account for this device.
+     */
     static KinAccount getAccount(KinClient kinClient, ServerCommunicator serverCommunicator) {
         try {
             if (kinClient.hasAccount()) {
