@@ -18,7 +18,7 @@ public class KinManager {
     private final KinAccount mAccount;
     private final AccountTransactionHelper mTransactionHelper;
 
-    private KinManager(KinAccount account, AccountTransactionHelper transactionHelper) {
+    KinManager(KinAccount account, AccountTransactionHelper transactionHelper) {
         mAccount = account;
         mTransactionHelper = transactionHelper;
     }

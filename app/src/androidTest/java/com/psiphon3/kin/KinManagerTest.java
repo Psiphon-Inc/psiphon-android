@@ -19,6 +19,7 @@ import kin.sdk.ListenerRegistration;
 import kin.sdk.exception.OperationFailedException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -44,17 +45,13 @@ public class KinManagerTest {
         // Clear all accounts first to force the account to be freshly created
         kinClient.clearAllAccounts();
         account = AccountHelper.getAccount(kinClient, serverCommunicator);
+        assertNotNull(account);
+        AccountTransactionHelper transactionHelper = new AccountTransactionHelper(account, serverCommunicator, env.getPsiphonWalletAddress());
 
-        kinManager = KinManager.getTestInstance(context);
+        kinManager = new KinManager(account, transactionHelper);
 
         // Setup isn't finished until the account is created
         Utils.ensureAccountCreated(account);
-    }
-
-    @Test
-    public void getInstance() {
-        // TODO: Determine why these are the same
-        // assertNotEquals(kinManager, KinManager.getInstance(context));
     }
 
     @Test
