@@ -876,7 +876,7 @@ public class StatusActivity
         return super.serviceIntentSingle()
                 .flatMap(intent -> billingViewModel.subscriptionStatusFlowable()
                         .firstOrError()
-                        .doOnError(err -> MyLog.g("Error adding purchas data to service intent: " + err))
+                        .doOnError(err -> MyLog.g("Error adding purchase data to service intent: " + err))
                         .onErrorReturn(SubscriptionState::billingError)
                         .map(subscriptionState -> {
                             if (subscriptionState.hasValidPurchase()) {
