@@ -44,7 +44,7 @@ public class KinManagerTest {
 
         // Clear all accounts first to force the account to be freshly created
         kinClient.clearAllAccounts();
-        account = AccountHelper.getAccount(kinClient, serverCommunicator);
+        account = AccountHelper.getAccount(kinClient, serverCommunicator).blockingGet();
         assertNotNull(account);
         AccountTransactionHelper transactionHelper = new AccountTransactionHelper(account, serverCommunicator, env.getPsiphonWalletAddress());
 
@@ -60,20 +60,14 @@ public class KinManagerTest {
         CountDownLatch latch = new CountDownLatch(2);
 
         // Test with multiple listeners
-        ListenerRegistration listenerRegistration1 = kinManager.addBalanceListener(new EventListener<Balance>() {
-            @Override
-            public void onEvent(Balance data) {
-                balanceChanged[0] = true;
-                latch.countDown();
-            }
+        ListenerRegistration listenerRegistration1 = kinManager.addBalanceListener(data -> {
+            balanceChanged[0] = true;
+            latch.countDown();
         });
 
-        ListenerRegistration listenerRegistration2 = kinManager.addBalanceListener(new EventListener<Balance>() {
-            @Override
-            public void onEvent(Balance data) {
-                balanceChanged[1] = true;
-                latch.countDown();
-            }
+        ListenerRegistration listenerRegistration2 = kinManager.addBalanceListener(data -> {
+            balanceChanged[1] = true;
+            latch.countDown();
         });
 
         kinManager.transferIn(100d);
@@ -104,13 +98,10 @@ public class KinManagerTest {
         int initialBalance = kinManager.getCurrentBalance().intValue();
         final boolean[] balanceChanged = {false};
         CountDownLatch latch = new CountDownLatch(1);
-        ListenerRegistration listenerRegistration = kinManager.addBalanceListener(new EventListener<Balance>() {
-            @Override
-            public void onEvent(Balance data) {
-                assertEquals(initialBalance + 100, data.value().intValue());
-                balanceChanged[0] = true;
-                latch.countDown();
-            }
+        ListenerRegistration listenerRegistration = kinManager.addBalanceListener(data -> {
+            assertEquals(initialBalance + 100, data.value().intValue());
+            balanceChanged[0] = true;
+            latch.countDown();
         });
 
         kinManager.transferIn(100d);
@@ -126,14 +117,11 @@ public class KinManagerTest {
         int initialBalance = kinManager.getCurrentBalance().intValue();
         final boolean[] balanceChanged = {false};
         CountDownLatch latch = new CountDownLatch(1);
-        ListenerRegistration listenerRegistration = kinManager.addBalanceListener(new EventListener<Balance>() {
-            @Override
-            public void onEvent(Balance data) {
-                // 101 because of transfer fee
-                assertEquals(initialBalance - 101, data.value().intValue());
-                balanceChanged[0] = true;
-                latch.countDown();
-            }
+        ListenerRegistration listenerRegistration = kinManager.addBalanceListener(data -> {
+            // 101 because of transfer fee
+            assertEquals(initialBalance - 101, data.value().intValue());
+            balanceChanged[0] = true;
+            latch.countDown();
         });
 
         kinManager.transferOut(100d);

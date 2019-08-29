@@ -88,6 +88,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Consumer;
 import kin.sdk.Balance;
 import kin.sdk.EventListener;
 
@@ -135,23 +136,9 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mKinManager = KinManager.getTestInstance(getContext());
-        mKinManager.addBalanceListener(new EventListener<Balance>() {
-            @Override
-            public void onEvent(Balance data) {
-                FragmentActivity activity = getActivity();
-                if (activity == null) {
-                    return;
-                }
-
-                TextView textView = (TextView) activity.findViewById(R.id.kin_value_txt);
-                if (textView == null) {
-                    return;
-                }
-
-                textView.setText(data.value(5));
-            }
-        });
+        KinManager.getTestInstance(getContext()).subscribe(this::setUpKinManager, throwable -> {
+            // TODO: Should we log on failure to get the KinManager?
+        }).dispose();
 
         PsiCashListener psiCashListener = new PsiCashListener() {
             @Override
@@ -185,6 +172,26 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
         // Pass the UI's intents to the view model
         psiCashViewModel.processIntents(intents());
+    }
+
+    private void setUpKinManager(KinManager kinManager) {
+        mKinManager = kinManager;
+
+        mKinManager.addBalanceListener(data -> {
+            FragmentActivity activity = getActivity();
+            if (activity == null) {
+                return;
+            }
+
+            TextView textView = activity.findViewById(R.id.kin_value_txt);
+            if (textView == null) {
+                return;
+            }
+
+            textView.setText(data.value(5));
+        });
+
+        getActivity().findViewById(R.id.get_kin_btn).setOnClickListener(v -> mKinManager.transferIn(100d));
     }
 
     @Override
@@ -225,13 +232,6 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 .subscribe(ValueAnimator::start, err -> {
                     Utils.MyLog.g("Balance label increase animation error: " + err);
                 }));
-
-        getActivity().findViewById(R.id.get_kin_btn).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mKinManager.transferIn(100d);
-            }
-        });
     }
 
     private Disposable removePurchasesDisposable() {

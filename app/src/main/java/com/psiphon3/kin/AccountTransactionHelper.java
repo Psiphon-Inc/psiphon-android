@@ -33,9 +33,9 @@ class AccountTransactionHelper {
      * @param amount the amount to be given to the active account
      */
     void transferIn(Double amount) {
-        mServerCommunicator.fundAccount(mAccount.getPublicAddress(), amount, new Callbacks() {
+        mServerCommunicator.fundAccount(mAccount.getPublicAddress(), amount, new Callbacks<String>() {
             @Override
-            public void onSuccess() {
+            public void onSuccess(String result) {
                 // TODO: Should do something
             }
 

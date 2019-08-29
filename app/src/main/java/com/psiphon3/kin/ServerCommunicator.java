@@ -4,6 +4,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -13,6 +16,7 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 class ServerCommunicator {
 
@@ -23,7 +27,7 @@ class ServerCommunicator {
     /**
      * @param friendBotUrl the URL to the friend bot server
      */
-    ServerCommunicator(String friendBotUrl) {
+    ServerCommunicator(@NonNull String friendBotUrl) {
         mFriendBotUrl = friendBotUrl;
 
         mHandler = new Handler(Looper.getMainLooper());
@@ -36,12 +40,13 @@ class ServerCommunicator {
     /**
      * Creates an account on the server for the wallet address, funding it with amount of Kin.
      * Callbacks are fired depending on the success of the operation.
+     * OnSuccess contains the id of the transaction.
      *
-     * @param address the wallet address
-     * @param amount the amount of Kin to be funded on creation
+     * @param address   the wallet address
+     * @param amount    the amount of Kin to be funded on creation
      * @param callbacks callbacks for the result of the operation
      */
-    void createAccount(String address, Double amount, @NonNull Callbacks callbacks) {
+    void createAccount(@NonNull String address, @NonNull Double amount, @NonNull Callbacks<String> callbacks) {
         Request request = new Request.Builder()
                 .url(getCreateAccountUrl(address, amount))
                 .get()
@@ -51,20 +56,12 @@ class ServerCommunicator {
                 .enqueue(new Callback() {
                     @Override
                     public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                        fireOnFailure(callbacks, e);
+                        mHandler.post(() -> callbacks.onFailure(e));
                     }
 
                     @Override
                     public void onResponse(@NonNull Call call, @NonNull Response response) {
-                        int code = response.code();
-                        response.close();
-
-                        // Only care about failure
-                        if (code != 200) {
-                            fireOnFailure(callbacks, new Exception("Create account - response code is " + response.code()));
-                        } else {
-                            fireOnSuccess(callbacks);
-                        }
+                        handleFriendBotResponse("createAccount", response, callbacks);
                     }
                 });
     }
@@ -72,12 +69,13 @@ class ServerCommunicator {
     /**
      * Gives amount Kin to the wallet at address.
      * Callbacks are fired depending on the success of the operation.
+     * OnSuccess contains the id of the transaction.
      *
-     * @param address the wallet address
-     * @param amount the amount of Kin to be given
+     * @param address   the wallet address
+     * @param amount    the amount of Kin to be given
      * @param callbacks callbacks for the result of the operation
      */
-    void fundAccount(String address, Double amount, @NonNull Callbacks callbacks) {
+    void fundAccount(@NonNull String address, @NonNull Double amount, @NonNull Callbacks<String> callbacks) {
         Request request = new Request.Builder()
                 .url(getFundAccountUrl(address, amount))
                 .get()
@@ -87,25 +85,43 @@ class ServerCommunicator {
                 .enqueue(new Callback() {
                     @Override
                     public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                        fireOnFailure(callbacks, e);
+                        mHandler.post(() -> callbacks.onFailure(e));
                     }
 
                     @Override
                     public void onResponse(@NonNull Call call, @NonNull Response response) {
-                        int code = response.code();
-                        response.close();
-
-                        // Only care about failure
-                        if (code != 200) {
-                            fireOnFailure(callbacks, new Exception("Fund account - response code is " + response.code()));
-                        } else {
-                            fireOnSuccess(callbacks);
-                        }
+                        handleFriendBotResponse("fundAccount", response, callbacks);
                     }
                 });
     }
 
-    private HttpUrl.Builder getFriendBotUrlBuilder(String address, Double amount) {
+    private void handleFriendBotResponse(@NonNull String function, @NonNull Response response, @NonNull Callbacks<String> callbacks) {
+        try {
+            int code = response.code();
+            ResponseBody body = response.body();
+
+            if (code != 200) {
+                mHandler.post(() -> callbacks.onFailure(new Exception(function + " - response code is " + response.code())));
+                response.close();
+                return;
+            }
+
+            if (body == null) {
+                mHandler.post(() -> callbacks.onFailure(new Exception(function + " - no body")));
+                response.close();
+                return;
+            }
+
+            JsonObject jsonObject = new JsonParser().parse(body.string()).getAsJsonObject();
+            mHandler.post(() -> callbacks.onSuccess(jsonObject.get("hash").getAsString()));
+            response.close();
+        } catch (IOException e) {
+            mHandler.post(() -> callbacks.onFailure(e));
+        }
+    }
+
+    @NonNull
+    private HttpUrl.Builder getFriendBotUrlBuilder(@NonNull String address, @NonNull Double amount) {
         return new HttpUrl.Builder()
                 .scheme("https")
                 .host(mFriendBotUrl)
@@ -113,19 +129,13 @@ class ServerCommunicator {
                 .addQueryParameter("amount", amount.toString());
     }
 
-    private HttpUrl getCreateAccountUrl(String address, Double amount) {
+    @NonNull
+    private HttpUrl getCreateAccountUrl(@NonNull String address, @NonNull Double amount) {
         return getFriendBotUrlBuilder(address, amount).build();
     }
 
-    private HttpUrl getFundAccountUrl(String address, Double amount) {
+    @NonNull
+    private HttpUrl getFundAccountUrl(@NonNull String address, @NonNull Double amount) {
         return getFriendBotUrlBuilder(address, amount).addPathSegment("fund").build();
-    }
-
-    private void fireOnFailure(@NonNull Callbacks callbacks, Exception ex) {
-        mHandler.post(() -> callbacks.onFailure(ex));
-    }
-
-    private void fireOnSuccess(@NonNull Callbacks callbacks) {
-        mHandler.post(callbacks::onSuccess);
     }
 }

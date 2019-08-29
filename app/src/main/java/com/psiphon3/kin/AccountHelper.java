@@ -1,7 +1,6 @@
 package com.psiphon3.kin;
 
-import android.util.Log;
-
+import io.reactivex.Single;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
 import kin.sdk.exception.CorruptedDataException;
@@ -9,54 +8,61 @@ import kin.sdk.exception.CreateAccountException;
 import kin.sdk.exception.CryptoException;
 
 class AccountHelper {
-    private final static String EXPORT_KIN_ACCOUNT_PASSPHRASE = "correct-horse-battery-staple";
     final static Double CREATE_ACCOUNT_FUND_AMOUNT = 1000d;
+    private final static String EXPORT_KIN_ACCOUNT_PASSPHRASE = "correct-horse-battery-staple";
 
     /**
      * Gets a Kin account for this device. Will try to use a saved account first, but if none are
      * found it will create a new account and register it with the server.
      *
-     * @param kinClient the KinClient to be used for the account
+     * @param kinClient          the KinClient to be used for the account
      * @param serverCommunicator the communicator for creating the account if needed
      * @return The account for this device.
      */
-    static KinAccount getAccount(KinClient kinClient, ServerCommunicator serverCommunicator) {
+    static Single<KinAccount> getAccount(KinClient kinClient, ServerCommunicator serverCommunicator) {
         try {
             if (kinClient.hasAccount()) {
-                return kinClient.getAccount(0);
+                return Single.just(kinClient.getAccount(0));
             }
 
             if (doesExportedAccountExist()) {
-                return importAccount(kinClient, retrieveAccountFromDisk());
+                return Single.just(importAccount(kinClient, retrieveAccountFromDisk()));
             }
 
             return createKinAccount(kinClient, serverCommunicator);
-        } catch (CreateAccountException e) {
-            Log.e("kin", "getAccount", e);
-        } catch (CorruptedDataException e) {
-            Log.e("kin", "getAccount", e);
-        } catch (CryptoException e) {
-            Log.e("kin", "getAccount", e);
+        } catch (Exception e) {
+            return Single.error(e);
         }
-
-        return null;
     }
 
-    private static KinAccount createKinAccount(KinClient kinClient, ServerCommunicator serverCommunicator) throws CreateAccountException {
-        KinAccount account = kinClient.addAccount();
-        serverCommunicator.createAccount(account.getPublicAddress(), CREATE_ACCOUNT_FUND_AMOUNT, new Callbacks() {
-            @Override
-            public void onSuccess() {
-                // TODO: Should do something
-            }
+    private static Single<KinAccount> createKinAccount(KinClient kinClient, ServerCommunicator serverCommunicator) {
+        return Single.create(emitter -> {
+            Thread thread = new Thread(() -> {
+                try {
+                    KinAccount account = kinClient.addAccount();
+                    String address = account.getPublicAddress();
+                    if (address == null) {
+                        emitter.onError(new Exception("failed to add a new KinAccount"));
+                        return;
+                    }
 
-            @Override
-            public void onFailure(Exception e) {
-                // TODO: Should do something
+                    serverCommunicator.createAccount(address, CREATE_ACCOUNT_FUND_AMOUNT, new Callbacks<String>() {
+                        @Override
+                        public void onSuccess(String result) {
+                            emitter.onSuccess(account);
+                        }
 
-            }
+                        @Override
+                        public void onFailure(Exception e) {
+                            emitter.onError(e);
+                        }
+                    });
+                } catch (CreateAccountException e) {
+                    emitter.onError(e);
+                }
+            });
+            thread.start();
         });
-        return account;
     }
 
     //

@@ -6,10 +6,7 @@ import android.support.test.InstrumentationRegistry;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +20,8 @@ import kin.sdk.exception.CreateAccountException;
 import kin.sdk.exception.OperationFailedException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -58,22 +57,22 @@ public class ServerCommunicatorTest {
     public void createAccount() throws CreateAccountException, OperationFailedException, InterruptedException {
         KinAccount kinAccount = kinClient.addAccount();
         CountDownLatch latch1 = new CountDownLatch(1);
-        ListenerRegistration listenerRegistration = kinAccount.addAccountCreationListener(new EventListener<Void>() {
-            @Override
-            public void onEvent(Void data) {
-                try {
-                    assertEquals(AccountStatus.CREATED, kinAccount.getStatusSync());
-                    assertEquals(100, kinAccount.getBalanceSync().value().intValue());
-                    latch1.countDown();
-                } catch (OperationFailedException e) {
-                    fail(e.getMessage());
-                }
+        ListenerRegistration listenerRegistration = kinAccount.addAccountCreationListener(data -> {
+            try {
+                assertEquals(AccountStatus.CREATED, kinAccount.getStatusSync());
+                assertEquals(100, kinAccount.getBalanceSync().value().intValue());
+                latch1.countDown();
+            } catch (OperationFailedException e) {
+                fail(e.getMessage());
             }
         });
 
-        serverCommunicator.createAccount(kinAccount.getPublicAddress(), 100d, new Callbacks() {
+        serverCommunicator.createAccount(kinAccount.getPublicAddress(), 100d, new Callbacks<String>() {
             @Override
-            public void onSuccess() {
+            public void onSuccess(String result) {
+                // Make sure the result isn't empty or null
+                assertNotNull(result);
+                assertNotEquals("", result);
             }
 
             @Override
@@ -86,9 +85,9 @@ public class ServerCommunicatorTest {
 
         // Try to create the account again, this should not work
         CountDownLatch latch2 = new CountDownLatch(1);
-        serverCommunicator.createAccount(kinAccount.getPublicAddress(), 100d, new Callbacks() {
+        serverCommunicator.createAccount(kinAccount.getPublicAddress(), 100d, new Callbacks<String>() {
             @Override
-            public void onSuccess() {
+            public void onSuccess(String result) {
                 fail("successfully re-created an account");
             }
 
@@ -112,9 +111,12 @@ public class ServerCommunicatorTest {
         // We have to have an account to verify the accounts balance
         KinAccount kinAccount = kinClient.addAccount();
         CountDownLatch latch1 = new CountDownLatch(1);
-        serverCommunicator.createAccount(kinAccount.getPublicAddress(), 100d, new Callbacks() {
+        serverCommunicator.createAccount(kinAccount.getPublicAddress(), 100d, new Callbacks<String>() {
             @Override
-            public void onSuccess() {
+            public void onSuccess(String result) {
+                // Make sure the result isn't empty or null
+                assertNotNull(result);
+                assertNotEquals("", result);
                 latch1.countDown();
             }
 
@@ -130,9 +132,12 @@ public class ServerCommunicatorTest {
 
         // Now we can test
         CountDownLatch latch2 = new CountDownLatch(1);
-        serverCommunicator.fundAccount(kinAccount.getPublicAddress(), 100d, new Callbacks() {
+        serverCommunicator.fundAccount(kinAccount.getPublicAddress(), 100d, new Callbacks<String>() {
             @Override
-            public void onSuccess() {
+            public void onSuccess(String result) {
+                // Make sure the result isn't empty or null
+                assertNotNull(result);
+                assertNotEquals("", result);
                 latch2.countDown();
             }
 

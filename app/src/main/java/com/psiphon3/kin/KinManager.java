@@ -1,10 +1,12 @@
 package com.psiphon3.kin;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.Log;
 
 import java.math.BigDecimal;
 
+import io.reactivex.Single;
 import kin.sdk.Balance;
 import kin.sdk.EventListener;
 import kin.sdk.KinAccount;
@@ -23,23 +25,30 @@ public class KinManager {
         mTransactionHelper = transactionHelper;
     }
 
-    private static KinManager getInstance(Context context, Environment environment) {
+    @SuppressLint("CheckResult")
+    private static Single<KinManager> getInstance(Context context, Environment environment) {
         if (mInstance != null) {
-            return mInstance;
+            return Single.just(mInstance);
         }
 
-        // Set up base communication & helper classes
-        KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
-        ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getFriendBotServerUrl());
+        return Single.create(emitter -> {
+            try {
+                // Set up base communication & helper classes
+                KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
+                ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getFriendBotServerUrl());
 
-        // Set up the data
-        KinAccount account = AccountHelper.getAccount(kinClient, serverCommunicator);
-        AccountTransactionHelper transactionHelper = new AccountTransactionHelper(account, serverCommunicator, environment.getPsiphonWalletAddress());
+                // Set up the data
+                KinAccount account = AccountHelper.getAccount(kinClient, serverCommunicator).blockingGet();
+                AccountTransactionHelper transactionHelper = new AccountTransactionHelper(account, serverCommunicator, environment.getPsiphonWalletAddress());
 
-        // Create the instance
-        mInstance = new KinManager(account, transactionHelper);
-
-        return mInstance;
+                // Create the instance
+                mInstance = new KinManager(account, transactionHelper);
+                emitter.onSuccess(mInstance);
+            } catch (Exception e) {
+                // TODO: Should we retry or anything or just consider this a failure?
+                emitter.onError(e);
+            }
+        });
     }
 
     /**
@@ -48,7 +57,7 @@ public class KinManager {
      * @param context the context of the calling activity
      * @return an instance of KinManager for the passed context
      */
-    public static KinManager getInstance(Context context) {
+    public static Single<KinManager> getInstance(Context context) {
         return getInstance(context, Environment.PRODUCTION);
     }
 
@@ -58,7 +67,7 @@ public class KinManager {
      * @param context the context of the calling activity
      * @return a test instance of KinManager for the passed context
      */
-    public static KinManager getTestInstance(Context context) {
+    public static Single<KinManager> getTestInstance(Context context) {
         return getInstance(context, Environment.TEST);
     }
 

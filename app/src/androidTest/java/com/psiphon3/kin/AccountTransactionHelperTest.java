@@ -29,9 +29,6 @@ import static org.mockito.Mockito.when;
 
 public class AccountTransactionHelperTest {
 
-    @Rule
-    public MockitoRule mockitoRule = MockitoJUnit.rule();
-
     private KinClient kinClient;
     private KinAccount account;
     private AccountTransactionHelper accountTransactionHelper;
@@ -48,7 +45,7 @@ public class AccountTransactionHelperTest {
         kinClient = new KinClient(context, env.getKinEnvironment(), Environment.PSIPHON_APP_ID);
         kinClient.clearAllAccounts();
 
-        account = AccountHelper.getAccount(kinClient, serverCommunicator);
+        account = AccountHelper.getAccount(kinClient, serverCommunicator).blockingGet();
         accountTransactionHelper = new AccountTransactionHelper(account, serverCommunicator, env.getPsiphonWalletAddress());
 
         // Setup isn't finished until the account is created
@@ -67,12 +64,9 @@ public class AccountTransactionHelperTest {
         accountTransactionHelper.transferIn(100d);
 
         CountDownLatch latch = new CountDownLatch(1);
-        ListenerRegistration listenerRegistration = account.addBalanceListener(new EventListener<Balance>() {
-            @Override
-            public void onEvent(Balance balance) {
-                assertEquals(initialBalance + 100, balance.value().intValue());
-                latch.countDown();
-            }
+        ListenerRegistration listenerRegistration = account.addBalanceListener(balance -> {
+            assertEquals(initialBalance + 100, balance.value().intValue());
+            latch.countDown();
         });
 
         // Wait for the listener to fire
@@ -91,13 +85,10 @@ public class AccountTransactionHelperTest {
         assertEquals(AccountHelper.CREATE_ACCOUNT_FUND_AMOUNT.intValue(), initialBalance);
 
         CountDownLatch latch = new CountDownLatch(1);
-        ListenerRegistration listenerRegistration = account.addBalanceListener(new EventListener<Balance>() {
-            @Override
-            public void onEvent(Balance balance) {
-                // Use 101 because of the transfer fee
-                assertEquals(initialBalance - 101, balance.value().intValue());
-                latch.countDown();
-            }
+        ListenerRegistration listenerRegistration = account.addBalanceListener(balance -> {
+            // Use 101 because of the transfer fee
+            assertEquals(initialBalance - 101, balance.value().intValue());
+            latch.countDown();
         });
 
         accountTransactionHelper.transferOut(100d);

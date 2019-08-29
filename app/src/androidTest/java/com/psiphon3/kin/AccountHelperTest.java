@@ -51,25 +51,20 @@ public class AccountHelperTest {
 
     @Test
     public void getAccount() throws InterruptedException {
-        KinAccount account1 = AccountHelper.getAccount(kinClient, serverCommunicator);
-        KinAccount account2 = AccountHelper.getAccount(kinClient, serverCommunicator);
+        KinAccount account1 = AccountHelper.getAccount(kinClient, serverCommunicator).blockingGet();
+        KinAccount account2 = AccountHelper.getAccount(kinClient, serverCommunicator).blockingGet();
         assertNotNull(account1);
         assertNotNull(account2);
         assertEquals(account1, account2);
 
         kinClient.clearAllAccounts();
 
-        account2 = AccountHelper.getAccount(kinClient, serverCommunicator);
+        account2 = AccountHelper.getAccount(kinClient, serverCommunicator).blockingGet();
         assertNotNull(account2);
         assertNotEquals(account1, account2);
 
         CountDownLatch account2CreationLatch = new CountDownLatch(1);
-        ListenerRegistration listenerRegistration = account2.addAccountCreationListener(new EventListener<Void>() {
-            @Override
-            public void onEvent(Void data) {
-                account2CreationLatch.countDown();
-            }
-        });
+        ListenerRegistration listenerRegistration = account2.addAccountCreationListener(data -> account2CreationLatch.countDown());
 
         CountDownLatch latch1 = new CountDownLatch(1);
         account1.getStatus().run(new ResultCallback<Integer>() {
