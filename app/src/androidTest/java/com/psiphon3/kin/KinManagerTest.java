@@ -19,7 +19,6 @@ import kin.sdk.ListenerRegistration;
 import kin.sdk.exception.OperationFailedException;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -71,13 +70,13 @@ public class KinManagerTest {
             latch.countDown();
         });
 
-        kinManager.transferIn(100d);
+        kinManager.transferIn(100d).subscribe();
 
         // Make sure the latch didn't time out and that the balances returned are the same
-        assertFalse(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
         assertNotNull(balances[0]);
         assertNotNull(balances[1]);
-        assertEquals(balances[0], balances[1]);
+        assertEquals(balances[0].value(5), balances[1].value(5));
 
         listenerRegistration1.remove();
         listenerRegistration2.remove();

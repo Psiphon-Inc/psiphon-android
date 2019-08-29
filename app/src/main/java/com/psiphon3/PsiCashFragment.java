@@ -74,7 +74,6 @@ import com.psiphon3.subscription.R;
 import net.grandcentrix.tray.AppPreferences;
 
 import java.lang.ref.WeakReference;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -88,9 +87,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
-import io.reactivex.functions.Consumer;
-import kin.sdk.Balance;
-import kin.sdk.EventListener;
+import io.reactivex.schedulers.Schedulers;
 
 public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, PsiCashViewState> {
     private static final String TAG = "PsiCashFragment";
@@ -136,9 +133,14 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        KinManager.getTestInstance(getContext()).subscribe(this::setUpKinManager, throwable -> {
-            // TODO: Should we log on failure to get the KinManager?
-        }).dispose();
+        KinManager.getTestInstance(getContext())
+                .doOnSuccess(this::setUpKinManager)
+                .doOnError(throwable -> {
+                    // TODO: Should we log the failure to get the KinManager?
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe();
 
         PsiCashListener psiCashListener = new PsiCashListener() {
             @Override

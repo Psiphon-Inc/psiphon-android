@@ -1,6 +1,5 @@
 package com.psiphon3.kin;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.Log;
 
@@ -26,34 +25,27 @@ public class KinManager {
         mTransactionHelper = transactionHelper;
     }
 
-    @SuppressLint("CheckResult")
     private static Single<KinManager> getInstance(Context context, Environment environment) {
         if (mInstance != null) {
             return Single.just(mInstance);
         }
 
-        return Single.create(emitter -> {
-            try {
-                // Set up base communication & helper classes
-                KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
-                ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getFriendBotServerUrl());
+        // Set up base communication & helper classes
+        KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
+        ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getFriendBotServerUrl());
 
-                // Set up the data
-                KinAccount account = AccountHelper.getAccount(kinClient, serverCommunicator).blockingGet();
-                AccountTransactionHelper transactionHelper = new AccountTransactionHelper(account, serverCommunicator, environment.getPsiphonWalletAddress());
-
-                // Create the instance
-                mInstance = new KinManager(account, transactionHelper);
-                emitter.onSuccess(mInstance);
-            } catch (Exception e) {
-                // TODO: Should we retry or anything or just consider this a failure?
-                emitter.onError(e);
-            }
-        });
+        // Get the account, may have to go to the server to create one, then transform into the manager and helper
+        return AccountHelper.getAccount(kinClient, serverCommunicator)
+                .map(account -> {
+                    // Create the transaction helper and the instance
+                    AccountTransactionHelper transactionHelper = new AccountTransactionHelper(account, serverCommunicator, environment.getPsiphonWalletAddress());
+                    return mInstance = new KinManager(account, transactionHelper);
+                });
     }
 
     /**
      * Returns an instance of KinManager for production use.
+     * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
      *
      * @param context the context of the calling activity
      * @return an instance of KinManager for the passed context
@@ -64,6 +56,7 @@ public class KinManager {
 
     /**
      * Returns an instance of KinManager for use in tests.
+     * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
      *
      * @param context the context of the calling activity
      * @return a test instance of KinManager for the passed context
@@ -106,23 +99,23 @@ public class KinManager {
 
     /**
      * Requests that amount of Kin gets transferred into the active accounts wallet.
-     * Runs asynchronously.
+     * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
      *
      * @param amount the amount to be given to the active account
      * @return a completable which fires on complete after the transaction has successfully completed
      */
     public Completable transferIn(Double amount) {
-        return mTransactionHelper.transferInAsync(amount);
+        return mTransactionHelper.transferIn(amount);
     }
 
     /**
      * Requests that amount of Kin gets transferred out of the active accounts wallet to Psiphon's wallet.
-     * Runs asynchronously.
+     * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
      *
      * @param amount the amount to be taken from the active account
      * @return a completable which fires on complete after the transaction has successfully completed
      */
     public Completable transferOut(Double amount) {
-        return mTransactionHelper.transferOutAsync(amount);
+        return mTransactionHelper.transferOut(amount);
     }
 }

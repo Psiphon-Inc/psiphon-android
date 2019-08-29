@@ -53,10 +53,10 @@ public class AccountTransactionHelperTest {
     }
 
     @Test
-    public void transferInAsync() throws OperationFailedException {
+    public void transferIn() throws OperationFailedException {
         // Get the initial balance. OK to use an int because we won't use higher precision stuff for the transfers
         int initialBalance = account.getBalanceSync().value().intValue();
-        TestObserver<Void> tester = accountTransactionHelper.transferInAsync(100d).test();
+        TestObserver<Void> tester = accountTransactionHelper.transferIn(100d).test();
 
         // Check that it finished not because of timeout but because of onComplete
         assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
@@ -69,10 +69,10 @@ public class AccountTransactionHelperTest {
     }
 
     @Test
-    public void transferOutAsync() throws OperationFailedException {
+    public void transferOut() throws OperationFailedException {
         // Get the initial balance. OK to use an int because we won't use higher precision stuff for the transfers
         int initialBalance = account.getBalanceSync().value().intValue();
-        TestObserver<Void> tester = accountTransactionHelper.transferOutAsync(100d).test();
+        TestObserver<Void> tester = accountTransactionHelper.transferOut(100d).test();
 
         // Check that it finished not because of timeout but because of onComplete
         assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));

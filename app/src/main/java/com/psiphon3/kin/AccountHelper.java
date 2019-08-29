@@ -14,6 +14,7 @@ class AccountHelper {
     /**
      * Gets a Kin account for this device. Will try to use a saved account first, but if none are
      * found it will create a new account and register it with the server.
+     * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
      *
      * @param kinClient          the KinClient to be used for the account
      * @param serverCommunicator the communicator for creating the account if needed
@@ -35,34 +36,14 @@ class AccountHelper {
         }
     }
 
-    private static Single<KinAccount> createKinAccount(KinClient kinClient, ServerCommunicator serverCommunicator) {
-        return Single.create(emitter -> {
-            Thread thread = new Thread(() -> {
-                try {
-                    KinAccount account = kinClient.addAccount();
-                    String address = account.getPublicAddress();
-                    if (address == null) {
-                        emitter.onError(new Exception("failed to add a new KinAccount"));
-                        return;
-                    }
+    private static Single<KinAccount> createKinAccount(KinClient kinClient, ServerCommunicator serverCommunicator) throws Exception {
+        KinAccount account = kinClient.addAccount();
+        String address = account.getPublicAddress();
+        if (address == null) {
+            throw new Exception("failed to add a new KinAccount");
+        }
 
-                    serverCommunicator.createAccount(address, CREATE_ACCOUNT_FUND_AMOUNT, new Callbacks<String>() {
-                        @Override
-                        public void onSuccess(String result) {
-                            emitter.onSuccess(account);
-                        }
-
-                        @Override
-                        public void onFailure(Exception e) {
-                            emitter.onError(e);
-                        }
-                    });
-                } catch (CreateAccountException e) {
-                    emitter.onError(e);
-                }
-            });
-            thread.start();
-        });
+        return serverCommunicator.createAccount(address, CREATE_ACCOUNT_FUND_AMOUNT).toSingle(() -> account);
     }
 
     //

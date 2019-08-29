@@ -12,10 +12,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import kin.sdk.AccountStatus;
-import kin.sdk.EventListener;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
 import kin.sdk.ListenerRegistration;
+import kin.sdk.exception.OperationFailedException;
 import kin.utils.ResultCallback;
 
 import static org.junit.Assert.assertEquals;
@@ -50,7 +50,7 @@ public class AccountHelperTest {
     }
 
     @Test
-    public void getAccount() throws InterruptedException {
+    public void getAccount() throws InterruptedException, OperationFailedException {
         KinAccount account1 = AccountHelper.getAccount(kinClient, serverCommunicator).blockingGet();
         KinAccount account2 = AccountHelper.getAccount(kinClient, serverCommunicator).blockingGet();
         assertNotNull(account1);
@@ -84,21 +84,7 @@ public class AccountHelperTest {
         // Wait for the listener to fire
         account2CreationLatch.await(10, TimeUnit.SECONDS);
 
-        CountDownLatch latch2 = new CountDownLatch(1);
-        account2.getStatus().run(new ResultCallback<Integer>() {
-            @Override
-            public void onResult(Integer result) {
-                assertEquals(AccountStatus.CREATED, result.intValue());
-                latch2.countDown();
-            }
-
-            @Override
-            public void onError(Exception e) {
-                fail("unable to get account status - " + e.getMessage());
-            }
-        });
-
-        latch2.await(10, TimeUnit.SECONDS);
+        assertEquals(AccountStatus.CREATED, account2.getStatusSync());
 
         listenerRegistration.remove();
     }

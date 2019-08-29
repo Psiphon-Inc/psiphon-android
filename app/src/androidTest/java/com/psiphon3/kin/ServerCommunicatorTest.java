@@ -56,7 +56,7 @@ public class ServerCommunicatorTest {
         assertNotNull(kinAccount.getPublicAddress());
 
         // Try and create the account
-        TestObserver<Void> tester = serverCommunicator.createAccountSync(kinAccount.getPublicAddress(), 100d).test();
+        TestObserver<Void> tester = serverCommunicator.createAccount(kinAccount.getPublicAddress(), 100d).test();
 
         // Check that it finished not because of timeout but because of onComplete
         assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
@@ -67,7 +67,7 @@ public class ServerCommunicatorTest {
         assertEquals(100, kinAccount.getBalanceSync().value().intValue());
 
         // Try to create the account again, this should not work
-        tester = serverCommunicator.createAccountSync(kinAccount.getPublicAddress(), 100d).test();
+        tester = serverCommunicator.createAccount(kinAccount.getPublicAddress(), 100d).test();
 
         // Check that it finished not because of timeout but because of onError
         assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
@@ -85,7 +85,7 @@ public class ServerCommunicatorTest {
         assertNotNull(kinAccount.getPublicAddress());
 
         // Try and create the account
-        TestObserver<Void> tester = serverCommunicator.createAccountSync(kinAccount.getPublicAddress(), 100d).test();
+        TestObserver<Void> tester = serverCommunicator.createAccount(kinAccount.getPublicAddress(), 100d).test();
 
         // Check that it finished not because of timeout but because of onComplete
         assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
@@ -96,7 +96,7 @@ public class ServerCommunicatorTest {
         assertEquals(100, kinAccount.getBalanceSync().value().intValue());
 
         // Now we can test
-        tester = serverCommunicator.fundAccountSync(kinAccount.getPublicAddress(), 100d).test();
+        tester = serverCommunicator.fundAccount(kinAccount.getPublicAddress(), 100d).test();
 
         // Check that it finished not because of timeout but because of onComplete
         assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
