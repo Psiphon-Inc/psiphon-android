@@ -6,6 +6,7 @@ import android.util.Log;
 
 import java.math.BigDecimal;
 
+import io.reactivex.Completable;
 import io.reactivex.Single;
 import kin.sdk.Balance;
 import kin.sdk.EventListener;
@@ -105,19 +106,23 @@ public class KinManager {
 
     /**
      * Requests that amount of Kin gets transferred into the active accounts wallet.
+     * Runs asynchronously.
      *
      * @param amount the amount to be given to the active account
+     * @return a completable which fires on complete after the transaction has successfully completed
      */
-    public void transferIn(Double amount) {
-        mTransactionHelper.transferInAsync(amount);
+    public Completable transferIn(Double amount) {
+        return mTransactionHelper.transferInAsync(amount);
     }
 
     /**
      * Requests that amount of Kin gets transferred out of the active accounts wallet to Psiphon's wallet.
+     * Runs asynchronously.
      *
      * @param amount the amount to be taken from the active account
+     * @return a completable which fires on complete after the transaction has successfully completed
      */
-    public void transferOut(Double amount) {
-        mTransactionHelper.transferOutAsync(amount);
+    public Completable transferOut(Double amount) {
+        return mTransactionHelper.transferOutAsync(amount);
     }
 }

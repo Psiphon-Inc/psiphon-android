@@ -11,14 +11,15 @@ import java.math.BigDecimal;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.observers.TestObserver;
 import kin.sdk.Balance;
-import kin.sdk.EventListener;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
 import kin.sdk.ListenerRegistration;
 import kin.sdk.exception.OperationFailedException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -56,25 +57,27 @@ public class KinManagerTest {
 
     @Test
     public void addBalanceListener() throws InterruptedException {
-        final boolean[] balanceChanged = {false, false};
+        final Balance[] balances = {null, null};
         CountDownLatch latch = new CountDownLatch(2);
 
         // Test with multiple listeners
         ListenerRegistration listenerRegistration1 = kinManager.addBalanceListener(data -> {
-            balanceChanged[0] = true;
+            balances[0] = data;
             latch.countDown();
         });
 
         ListenerRegistration listenerRegistration2 = kinManager.addBalanceListener(data -> {
-            balanceChanged[1] = true;
+            balances[1] = data;
             latch.countDown();
         });
 
         kinManager.transferIn(100d);
 
-        latch.await(10, TimeUnit.SECONDS);
-        assertTrue(balanceChanged[0]);
-        assertTrue(balanceChanged[1]);
+        // Make sure the latch didn't time out and that the balances returned are the same
+        assertFalse(latch.await(10, TimeUnit.SECONDS));
+        assertNotNull(balances[0]);
+        assertNotNull(balances[1]);
+        assertEquals(balances[0], balances[1]);
 
         listenerRegistration1.remove();
         listenerRegistration2.remove();
@@ -94,41 +97,34 @@ public class KinManagerTest {
     }
 
     @Test
-    public void transferIn() throws InterruptedException {
-        int initialBalance = kinManager.getCurrentBalance().intValue();
-        final boolean[] balanceChanged = {false};
-        CountDownLatch latch = new CountDownLatch(1);
-        ListenerRegistration listenerRegistration = kinManager.addBalanceListener(data -> {
-            assertEquals(initialBalance + 100, data.value().intValue());
-            balanceChanged[0] = true;
-            latch.countDown();
-        });
+    public void transferIn() throws OperationFailedException {
+        // Get the initial balance. OK to use an int because we won't use higher precision stuff for the transfers
+        int initialBalance = account.getBalanceSync().value().intValue();
+        TestObserver<Void> tester = kinManager.transferIn(100d).test();
 
-        kinManager.transferIn(100d);
+        // Check that it finished not because of timeout but because of onComplete
+        assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
+        tester.assertComplete();
 
-        latch.await(10, TimeUnit.SECONDS);
-        assertTrue(balanceChanged[0]);
+        // Check the balance has updated
+        assertEquals(initialBalance + 100, account.getBalanceSync().value().intValue());
 
-        listenerRegistration.remove();
+        // TODO: Determine some way to check if the Psiphon wallet has been changed as well
     }
 
     @Test
-    public void transferOut() throws InterruptedException {
-        int initialBalance = kinManager.getCurrentBalance().intValue();
-        final boolean[] balanceChanged = {false};
-        CountDownLatch latch = new CountDownLatch(1);
-        ListenerRegistration listenerRegistration = kinManager.addBalanceListener(data -> {
-            // 101 because of transfer fee
-            assertEquals(initialBalance - 101, data.value().intValue());
-            balanceChanged[0] = true;
-            latch.countDown();
-        });
+    public void transferOut() throws OperationFailedException {
+        // Get the initial balance. OK to use an int because we won't use higher precision stuff for the transfers
+        int initialBalance = account.getBalanceSync().value().intValue();
+        TestObserver<Void> tester = kinManager.transferOut(100d).test();
 
-        kinManager.transferOut(100d);
+        // Check that it finished not because of timeout but because of onComplete
+        assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
+        tester.assertComplete();
 
-        latch.await(10, TimeUnit.SECONDS);
-        assertTrue(balanceChanged[0]);
+        // Check the balance has updated. Use 101 because rounded transfer fee is 1 kin
+        assertEquals(initialBalance - 101, account.getBalanceSync().value().intValue());
 
-        listenerRegistration.remove();
+        // TODO: Determine some way to check if the Psiphon wallet has been changed as well
     }
 }
