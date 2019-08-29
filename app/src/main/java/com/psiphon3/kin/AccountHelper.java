@@ -36,14 +36,18 @@ class AccountHelper {
         }
     }
 
-    private static Single<KinAccount> createKinAccount(KinClient kinClient, ServerCommunicator serverCommunicator) throws Exception {
-        KinAccount account = kinClient.addAccount();
-        String address = account.getPublicAddress();
-        if (address == null) {
-            throw new Exception("failed to add a new KinAccount");
-        }
+    private static Single<KinAccount> createKinAccount(KinClient kinClient, ServerCommunicator serverCommunicator) {
+        try {
+            KinAccount account = kinClient.addAccount();
+            String address = account.getPublicAddress();
+            if (address == null) {
+                return Single.error(new Exception("failed to add a new KinAccount"));
+            }
 
-        return serverCommunicator.createAccount(address, CREATE_ACCOUNT_FUND_AMOUNT).toSingle(() -> account);
+            return serverCommunicator.createAccount(address, CREATE_ACCOUNT_FUND_AMOUNT).toSingle(() -> account);
+        } catch (CreateAccountException e) {
+            return Single.error(e);
+        }
     }
 
     //
