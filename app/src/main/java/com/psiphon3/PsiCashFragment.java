@@ -57,6 +57,7 @@ import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.kin.KinManager;
+import com.psiphon3.kin.KinPermissionManager;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.PsiCashIntent;
@@ -83,6 +84,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import ca.psiphon.psicashlib.PsiCashLib;
 import io.reactivex.Observable;
+import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
@@ -133,15 +135,6 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        KinManager.getTestInstance(getContext())
-                .doOnSuccess(this::setUpKinManager)
-                .doOnError(throwable -> {
-                    // TODO: Should we log the failure to get the KinManager?
-                })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe();
-
         PsiCashListener psiCashListener = new PsiCashListener() {
             @Override
             public void onNewExpiringPurchase(Context context, PsiCashLib.Purchase purchase) {
@@ -176,7 +169,25 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         psiCashViewModel.processIntents(intents());
     }
 
-    private void setUpKinManager(KinManager kinManager) {
+    private void initializeKin() {
+        KinPermissionManager.getUsersAgreementToKin(getContext())
+                .flatMap(agreed -> {
+                    if (agreed) {
+                        return KinManager.getTestInstance(getContext())
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread());
+                    }
+
+                    return Single.never();
+                })
+                .doOnSuccess(this::setKinManager)
+                .doOnError(throwable -> {
+                    // TODO: Should we log the failure to get the KinManager?
+                })
+                .subscribe();
+    }
+
+    private void setKinManager(KinManager kinManager) {
         mKinManager = kinManager;
 
         mKinManager.addBalanceListener(data -> {
@@ -193,7 +204,11 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             textView.setText(data.value(5));
         });
 
-        getActivity().findViewById(R.id.get_kin_btn).setOnClickListener(v -> mKinManager.transferIn(100d));
+        getActivity().findViewById(R.id.get_kin_btn)
+                .setOnClickListener(v -> mKinManager.transferIn(100d)
+                        .subscribeOn(Schedulers.io())
+                        .subscribe()
+                );
     }
 
     @Override
@@ -234,6 +249,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 .subscribe(ValueAnimator::start, err -> {
                     Utils.MyLog.g("Balance label increase animation error: " + err);
                 }));
+
+        initializeKin();
     }
 
     private Disposable removePurchasesDisposable() {
