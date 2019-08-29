@@ -11,8 +11,10 @@ import org.junit.Test;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Predicate;
+import io.reactivex.observers.TestObserver;
 import kin.sdk.AccountStatus;
-import kin.sdk.EventListener;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
 import kin.sdk.ListenerRegistration;
@@ -54,100 +56,48 @@ public class ServerCommunicatorTest {
     }
 
     @Test
-    public void createAccount() throws CreateAccountException, OperationFailedException, InterruptedException {
+    public void createAccount() throws CreateAccountException, OperationFailedException {
         KinAccount kinAccount = kinClient.addAccount();
-        CountDownLatch latch1 = new CountDownLatch(1);
-        ListenerRegistration listenerRegistration = kinAccount.addAccountCreationListener(data -> {
-            try {
-                assertEquals(AccountStatus.CREATED, kinAccount.getStatusSync());
-                assertEquals(100, kinAccount.getBalanceSync().value().intValue());
-                latch1.countDown();
-            } catch (OperationFailedException e) {
-                fail(e.getMessage());
-            }
-        });
+        assertNotNull(kinAccount.getPublicAddress());
 
-        serverCommunicator.createAccount(kinAccount.getPublicAddress(), 100d, new Callbacks<String>() {
-            @Override
-            public void onSuccess(String result) {
-                // Make sure the result isn't empty or null
-                assertNotNull(result);
-                assertNotEquals("", result);
-            }
+        // Try and create the account
+        TestObserver<Void> tester = serverCommunicator.createAccountSync(kinAccount.getPublicAddress(), 100d).test();
+        tester.awaitTerminalEvent(10, TimeUnit.SECONDS);
+        tester.assertComplete();
 
-            @Override
-            public void onFailure(Exception e) {
-                fail("unable to create account - " + e.getMessage());
-            }
-        });
-
-        latch1.await(10, TimeUnit.SECONDS);
+        // Ensure that the account is now created
+        assertEquals(AccountStatus.CREATED, kinAccount.getStatusSync());
+        assertEquals(100, kinAccount.getBalanceSync().value().intValue());
 
         // Try to create the account again, this should not work
-        CountDownLatch latch2 = new CountDownLatch(1);
-        serverCommunicator.createAccount(kinAccount.getPublicAddress(), 100d, new Callbacks<String>() {
-            @Override
-            public void onSuccess(String result) {
-                fail("successfully re-created an account");
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                latch2.countDown();
-            }
-        });
-
-        latch2.await(10, TimeUnit.SECONDS);
+        tester = serverCommunicator.createAccountSync(kinAccount.getPublicAddress(), 100d).test();
+        tester.awaitTerminalEvent(10, TimeUnit.SECONDS);
+        tester.assertError(throwable -> true);
 
         // Ensure these didn't change
         assertEquals(AccountStatus.CREATED, kinAccount.getStatusSync());
         assertEquals(100, kinAccount.getBalanceSync().value().intValue());
-
-        listenerRegistration.remove();
     }
 
     @Test
-    public void fundAccount() throws CreateAccountException, OperationFailedException, InterruptedException {
+    public void fundAccount() throws CreateAccountException, OperationFailedException {
         // We have to have an account to verify the accounts balance
         KinAccount kinAccount = kinClient.addAccount();
-        CountDownLatch latch1 = new CountDownLatch(1);
-        serverCommunicator.createAccount(kinAccount.getPublicAddress(), 100d, new Callbacks<String>() {
-            @Override
-            public void onSuccess(String result) {
-                // Make sure the result isn't empty or null
-                assertNotNull(result);
-                assertNotEquals("", result);
-                latch1.countDown();
-            }
+        assertNotNull(kinAccount.getPublicAddress());
 
-            @Override
-            public void onFailure(Exception e) {
-                fail("unable to create account - " + e.getMessage());
-            }
-        });
+        // Try and create the account
+        TestObserver<Void> tester = serverCommunicator.createAccountSync(kinAccount.getPublicAddress(), 100d).test();
+        tester.awaitTerminalEvent(10, TimeUnit.SECONDS);
+        tester.assertComplete();
 
-        latch1.await(10, TimeUnit.SECONDS);
-
+        // Ensure that the account is now created
         assertEquals(AccountStatus.CREATED, kinAccount.getStatusSync());
+        assertEquals(100, kinAccount.getBalanceSync().value().intValue());
 
         // Now we can test
-        CountDownLatch latch2 = new CountDownLatch(1);
-        serverCommunicator.fundAccount(kinAccount.getPublicAddress(), 100d, new Callbacks<String>() {
-            @Override
-            public void onSuccess(String result) {
-                // Make sure the result isn't empty or null
-                assertNotNull(result);
-                assertNotEquals("", result);
-                latch2.countDown();
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                fail("unable to fund account - " + e.getMessage());
-            }
-        });
-
-        latch2.await(10, TimeUnit.SECONDS);
+        tester = serverCommunicator.fundAccountSync(kinAccount.getPublicAddress(), 100d).test();
+        tester.awaitTerminalEvent(10, TimeUnit.SECONDS);
+        tester.assertComplete();
 
         assertEquals(200, kinAccount.getBalanceSync().value().intValue());
     }

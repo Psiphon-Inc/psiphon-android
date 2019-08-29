@@ -10,6 +10,7 @@ import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.Completable;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.HttpUrl;
@@ -118,6 +119,62 @@ class ServerCommunicator {
         } catch (IOException e) {
             mHandler.post(() -> callbacks.onFailure(e));
         }
+    }
+
+    /**
+     * Creates an account on the server for the wallet address, funding it with amount of Kin.
+     * Runs synchronously, returning a completable for subscription.
+     *
+     * @param address   the wallet address
+     * @param amount    the amount of Kin to be funded on creation
+     * @return a completable which fires on complete after receiving a successful response
+     */
+    Completable createAccountSync(@NonNull String address, @NonNull Double amount) {
+        return Completable.create(emitter -> {
+            Request request = new Request.Builder()
+                    .url(getCreateAccountUrl(address, amount))
+                    .get()
+                    .build();
+
+            try {
+                Response response = mOkHttpClient.newCall(request).execute();
+                if (response.isSuccessful()) {
+                    emitter.onComplete();
+                } else {
+                    emitter.onError(new Exception("fund account failed with code " + response.code()));
+                }
+            } catch (IOException e) {
+                emitter.onError(e);
+            }
+        });
+    }
+
+    /**
+     * Gives amount Kin to the wallet at address.
+     * Runs synchronously, returning a completable for subscription.
+     *
+     * @param address   the wallet address
+     * @param amount    the amount of Kin to be given
+     * @return a completable which fires on complete after receiving a successful response
+     */
+    Completable fundAccountSync(@NonNull String address, @NonNull Double amount) {
+        return Completable.create(emitter -> {
+            Request request = new Request.Builder()
+                    .url(getFundAccountUrl(address, amount))
+                    .get()
+                    .build();
+
+            try {
+                Response response = mOkHttpClient.newCall(request).execute();
+                if (response.isSuccessful()) {
+                    emitter.onComplete();
+                } else {
+                    emitter.onError(new Exception("fund account failed with code " + response.code()));
+                }
+            } catch (IOException e) {
+                emitter.onError(e);
+            }
+        });
     }
 
     @NonNull
