@@ -6,22 +6,17 @@ import android.support.test.InstrumentationRegistry;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import kin.sdk.Balance;
-import kin.sdk.EventListener;
+import io.reactivex.observers.TestObserver;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
-import kin.sdk.ListenerRegistration;
 import kin.sdk.exception.OperationFailedException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -58,47 +53,34 @@ public class AccountTransactionHelperTest {
     }
 
     @Test
-    public void transferIn() throws OperationFailedException, InterruptedException {
+    public void transferInAsync() throws OperationFailedException {
         // Get the initial balance. OK to use an int because we won't use higher precision stuff for the transfers
         int initialBalance = account.getBalanceSync().value().intValue();
-        accountTransactionHelper.transferIn(100d);
+        TestObserver<Void> tester = accountTransactionHelper.transferInAsync(100d).test();
 
-        CountDownLatch latch = new CountDownLatch(1);
-        ListenerRegistration listenerRegistration = account.addBalanceListener(balance -> {
-            assertEquals(initialBalance + 100, balance.value().intValue());
-            latch.countDown();
-        });
+        // Check that it finished not because of timeout but because of onComplete
+        assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
+        tester.assertComplete();
 
-        // Wait for the listener to fire
-        latch.await(10, TimeUnit.SECONDS);
+        // Check the balance has updated
         assertEquals(initialBalance + 100, account.getBalanceSync().value().intValue());
 
-        // TODO: Determine some way to check if the Psiphon wallet has been charged as well
-
-        listenerRegistration.remove();
+        // TODO: Determine some way to check if the Psiphon wallet has been changed as well
     }
 
     @Test
-    public void transferOut() throws OperationFailedException, InterruptedException {
+    public void transferOutAsync() throws OperationFailedException {
         // Get the initial balance. OK to use an int because we won't use higher precision stuff for the transfers
         int initialBalance = account.getBalanceSync().value().intValue();
-        assertEquals(AccountHelper.CREATE_ACCOUNT_FUND_AMOUNT.intValue(), initialBalance);
+        TestObserver<Void> tester = accountTransactionHelper.transferOutAsync(100d).test();
 
-        CountDownLatch latch = new CountDownLatch(1);
-        ListenerRegistration listenerRegistration = account.addBalanceListener(balance -> {
-            // Use 101 because of the transfer fee
-            assertEquals(initialBalance - 101, balance.value().intValue());
-            latch.countDown();
-        });
+        // Check that it finished not because of timeout but because of onComplete
+        assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
+        tester.assertComplete();
 
-        accountTransactionHelper.transferOut(100d);
-
-        // Wait for the listener to fire
-        latch.await(10, TimeUnit.SECONDS);
+        // Check the balance has updated. Use 101 because rounded transfer fee is 1 kin
         assertEquals(initialBalance - 101, account.getBalanceSync().value().intValue());
 
-        // TODO: Determine some way to check if the Psiphon wallet has been charged as well
-
-        listenerRegistration.remove();
+        // TODO: Determine some way to check if the Psiphon wallet has been changed as well
     }
 }

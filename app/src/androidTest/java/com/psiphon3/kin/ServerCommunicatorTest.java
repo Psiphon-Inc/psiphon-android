@@ -8,23 +8,18 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Predicate;
 import io.reactivex.observers.TestObserver;
 import kin.sdk.AccountStatus;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
-import kin.sdk.ListenerRegistration;
 import kin.sdk.exception.CreateAccountException;
 import kin.sdk.exception.OperationFailedException;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -62,7 +57,9 @@ public class ServerCommunicatorTest {
 
         // Try and create the account
         TestObserver<Void> tester = serverCommunicator.createAccountSync(kinAccount.getPublicAddress(), 100d).test();
-        tester.awaitTerminalEvent(10, TimeUnit.SECONDS);
+
+        // Check that it finished not because of timeout but because of onComplete
+        assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
         tester.assertComplete();
 
         // Ensure that the account is now created
@@ -71,7 +68,9 @@ public class ServerCommunicatorTest {
 
         // Try to create the account again, this should not work
         tester = serverCommunicator.createAccountSync(kinAccount.getPublicAddress(), 100d).test();
-        tester.awaitTerminalEvent(10, TimeUnit.SECONDS);
+
+        // Check that it finished not because of timeout but because of onError
+        assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
         tester.assertError(throwable -> true);
 
         // Ensure these didn't change
@@ -87,7 +86,9 @@ public class ServerCommunicatorTest {
 
         // Try and create the account
         TestObserver<Void> tester = serverCommunicator.createAccountSync(kinAccount.getPublicAddress(), 100d).test();
-        tester.awaitTerminalEvent(10, TimeUnit.SECONDS);
+
+        // Check that it finished not because of timeout but because of onComplete
+        assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
         tester.assertComplete();
 
         // Ensure that the account is now created
@@ -96,7 +97,9 @@ public class ServerCommunicatorTest {
 
         // Now we can test
         tester = serverCommunicator.fundAccountSync(kinAccount.getPublicAddress(), 100d).test();
-        tester.awaitTerminalEvent(10, TimeUnit.SECONDS);
+
+        // Check that it finished not because of timeout but because of onComplete
+        assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
         tester.assertComplete();
 
         assertEquals(200, kinAccount.getBalanceSync().value().intValue());

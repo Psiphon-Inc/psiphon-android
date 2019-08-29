@@ -109,7 +109,7 @@ public class KinManager {
      * @param amount the amount to be given to the active account
      */
     public void transferIn(Double amount) {
-        mTransactionHelper.transferIn(amount);
+        mTransactionHelper.transferInAsync(amount);
     }
 
     /**
@@ -118,6 +118,6 @@ public class KinManager {
      * @param amount the amount to be taken from the active account
      */
     public void transferOut(Double amount) {
-        mTransactionHelper.transferOut(amount);
+        mTransactionHelper.transferOutAsync(amount);
     }
 }
