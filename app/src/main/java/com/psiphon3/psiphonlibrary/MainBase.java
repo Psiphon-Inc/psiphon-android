@@ -83,7 +83,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
-import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.psiphon3.StatusActivity;
 import com.psiphon3.TunnelState;
 import com.psiphon3.psicash.PsiCashClient;
@@ -111,7 +110,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
 
 public abstract class MainBase {
     public static abstract class Activity extends LocalizedActivities.AppCompatActivity implements MyLog.ILogger {
@@ -195,9 +193,6 @@ public abstract class MainBase {
         protected TunnelServiceInteractor tunnelServiceInteractor;
 
         protected boolean isAppInForeground;
-
-        private BehaviorRelay<ServiceConnectionStatus> serviceConnectionStatusBehaviorRelay = BehaviorRelay.create();
-        private Disposable restartServiceDisposable = null;
 
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
