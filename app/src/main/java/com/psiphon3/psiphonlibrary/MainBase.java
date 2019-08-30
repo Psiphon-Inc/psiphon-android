@@ -1479,10 +1479,5 @@ public abstract class MainBase {
             }
             return true;
         }
-
-        private enum ServiceConnectionStatus {
-            SERVICE_CONNECTED,
-            SERVICE_DISCONNECTED
-        }
     }
 }
