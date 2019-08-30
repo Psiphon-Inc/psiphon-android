@@ -203,8 +203,6 @@ public abstract class MainBase {
             Utils.initializeSecureRandom();
         }
 
-        // Avoid calling m_statusTabToggleButton.setImageResource() every 250 ms
-        // when it is set to the connected image
         private ImageButton m_statusViewImage;
 
         private void setStatusState(int resId) {
