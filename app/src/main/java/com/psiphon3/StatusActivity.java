@@ -792,32 +792,6 @@ public class StatusActivity
         showVpnAlertDialog(R.string.StatusActivity_VpnPromptCancelledTitle, R.string.StatusActivity_VpnPromptCancelledMessage);
     }
 
-    // TODO: fix this
-    /*
-    @Override
-    protected Single<Intent> serviceIntentSingle() {
-        // Add purchase data to the service intent if user has a valid subscription or time pass.
-        return super.serviceIntentSingle()
-                .flatMap(intent -> billingViewModel.subscriptionStatusFlowable()
-                        .firstOrError()
-                        .doOnError(err -> MyLog.g("Error adding purchase data to service intent: " + err))
-                        .onErrorReturn(SubscriptionState::billingError)
-                        .map(subscriptionState -> {
-                            if (subscriptionState.hasValidPurchase()) {
-                                Purchase currentPurchase = subscriptionState.purchase();
-                                intent.putExtra(TunnelManager.DATA_PURCHASE_ID,
-                                        currentPurchase.getSku());
-                                intent.putExtra(TunnelManager.DATA_PURCHASE_TOKEN,
-                                        currentPurchase.getPurchaseToken());
-                                intent.putExtra(TunnelManager.DATA_PURCHASE_IS_SUBSCRIPTION,
-                                        subscriptionState.status() != SubscriptionState.Status.HAS_TIME_PASS);
-                            }
-                            return intent;
-                        })
-                );
-    }
-*/
-
     private void showVpnAlertDialog(int titleId, int messageId) {
         new AlertDialog.Builder(getContext())
                 .setCancelable(true)
