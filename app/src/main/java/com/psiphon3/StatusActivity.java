@@ -318,16 +318,12 @@ public class StatusActivity
         return true;
     }
 
-    // TODO: fix this
-    /*
     @Override
     protected void onAuthorizationsRemoved() {
         MyLog.g("PsiCash: received onAuthorizationsRemoved() notification");
         super.onAuthorizationsRemoved();
         psiCashFragment.removePurchases(getApplicationContext());
     }
-
-     */
 
     protected void HandleCurrentIntent() {
         Intent intent = getIntent();

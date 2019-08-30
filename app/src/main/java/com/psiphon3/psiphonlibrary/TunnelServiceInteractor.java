@@ -37,6 +37,8 @@ public class TunnelServiceInteractor {
     private Relay<TunnelState> tunnelStateRelay = BehaviorRelay.<TunnelState>create().toSerialized();
     private Relay<Boolean> dataStatsRelay = PublishRelay.<Boolean>create().toSerialized();
     private Relay<Boolean> knownRegionsRelay = PublishRelay.<Boolean>create().toSerialized();
+    private Relay<Boolean> authorizationsRemovedRelay = PublishRelay.<Boolean>create().toSerialized();
+
     private Relay<SubscriptionState> subscriptionStatusPublishRelay = PublishRelay.<SubscriptionState>create().toSerialized();
 
     private final Messenger m_incomingMessenger = new Messenger(new IncomingMessageHandler(this));
@@ -142,6 +144,11 @@ public class TunnelServiceInteractor {
 
     public Flowable<Boolean> knownRegionsFlowable() {
         return knownRegionsRelay
+                .toFlowable(BackpressureStrategy.LATEST);
+    }
+
+    public Flowable<Boolean> authorizationsRemovedFlowable() {
+        return authorizationsRemovedRelay
                 .toFlowable(BackpressureStrategy.LATEST);
     }
 
@@ -318,6 +325,9 @@ public class TunnelServiceInteractor {
                 case DATA_TRANSFER_STATS:
                     getDataTransferStatsFromBundle(data);
                     tunnelServiceInteractor.dataStatsRelay.accept(state.isConnected);
+                    break;
+                case AUTHORIZATIONS_REMOVED:
+                    tunnelServiceInteractor.authorizationsRemovedRelay.accept(Boolean.TRUE);
                     break;
                 default:
                     super.handleMessage(msg);
