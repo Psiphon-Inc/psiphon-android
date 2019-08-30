@@ -16,6 +16,7 @@ import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.TunnelState;
+import com.psiphon3.billing.SubscriptionState;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ public class TunnelServiceInteractor {
     private Relay<TunnelState> tunnelStateRelay = BehaviorRelay.<TunnelState>create().toSerialized();
     private Relay<Boolean> dataStatsRelay = PublishRelay.<Boolean>create().toSerialized();
     private Relay<Boolean> knownRegionsRelay = PublishRelay.<Boolean>create().toSerialized();
+    private Relay<SubscriptionState> subscriptionStatusPublishRelay = PublishRelay.<SubscriptionState>create().toSerialized();
 
     private final Messenger m_incomingMessenger = new Messenger(new IncomingMessageHandler(this));
     private Disposable restartServiceDisposable = null;
@@ -227,6 +229,14 @@ public class TunnelServiceInteractor {
         DataTransferStats.getDataTransferStatsForUI().m_slowBucketsLastStartTime = data.getLong(TunnelManager.DATA_TRANSFER_STATS_SLOW_BUCKETS_LAST_START_TIME);
         DataTransferStats.getDataTransferStatsForUI().m_fastBuckets = data.getParcelableArrayList(TunnelManager.DATA_TRANSFER_STATS_FAST_BUCKETS);
         DataTransferStats.getDataTransferStatsForUI().m_fastBucketsLastStartTime = data.getLong(TunnelManager.DATA_TRANSFER_STATS_FAST_BUCKETS_LAST_START_TIME);
+    }
+
+    // TODO: fix this - implement comment below
+    // Pass the most current purchase data to the service if it is running so the tunnel has a
+    // chance to update authorization and restart if the purchase is new.
+    // NOTE: we assume there can be only one valid purchase and authorization at a time
+    public void onSubscriptionState(SubscriptionState subscriptionState) {
+        subscriptionStatusPublishRelay.accept(subscriptionState);
     }
 
     private static class IncomingMessageHandler extends Handler {

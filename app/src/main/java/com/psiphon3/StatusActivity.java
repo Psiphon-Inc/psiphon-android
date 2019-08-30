@@ -49,6 +49,7 @@ import com.android.billingclient.api.SkuDetails;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.billing.BillingRepository;
 import com.psiphon3.billing.StatusActivityBillingViewModel;
+import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psiphonlibrary.MainBase;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
@@ -172,36 +173,29 @@ public class StatusActivity
         // Components IAB state notifications and PsiCash tab view state Rx subscription.
         compositeDisposable.add(
                 billingViewModel.subscriptionStatusFlowable()
-                        .subscribe(subscriptionState -> {
+                        .doOnNext(subscriptionState -> {
                             MyLog.g("Billing: subscription status: " + subscriptionState.status());
-                            if(subscriptionState.error() != null) {
+                            if (subscriptionState.error() != null) {
                                 MyLog.g("Subscription state billing error: " + subscriptionState.error());
                             }
+                            tunnelServiceInteractor.onSubscriptionState(subscriptionState);
                             psiCashFragment.onSubscriptionState(subscriptionState);
                             psiphonAdManager.onSubscriptionState(subscriptionState);
-                            if(subscriptionState.hasValidPurchase()) {
+                            if (subscriptionState.hasValidPurchase()) {
                                 hidePsiCashTab();
-                                // Pass the most current purchase data to the service if it is running so the tunnel has a
-                                // chance to update authorization and restart if the purchase is new.
-                                // NOTE: we assume there can be only one valid purchase and authorization at a time
-                                // TODO: fix this
-                                /*
-                                if (isServiceRunning()) {
-                                    startAndBindTunnelService();
-                                } else {
-                                    // Auto-start on app first run
-                                    if (m_firstRun) {
-                                        m_firstRun = false;
-                                        doStartUp();
-                                    }
-
-                                }
-
-                                 */
                             } else {
                                 showPsiCashTabIfHasValidToken();
                             }
+                            // Automatically start if user has a valid purchase or if IAB check failed
+                            // the IAB status check will be triggered again in onResume
+                            if(subscriptionState.hasValidPurchase() || subscriptionState.status() == SubscriptionState.Status.IAB_FAILURE) {
+                                if (shouldAutoStart()) {
+                                    preventAutoStart();
+                                    doStartUp();
+                                }
+                            }
                         })
+                        .subscribe()
         );
 
         compositeDisposable.add(
