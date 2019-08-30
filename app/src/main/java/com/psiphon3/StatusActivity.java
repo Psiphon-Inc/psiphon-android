@@ -209,14 +209,6 @@ public class StatusActivity
         setupActivityLayout();
         hidePsiCashTab();
 
-        // Listen to GOT_NEW_EXPIRING_PURCHASE intent from psicash module
-        // TODO: fix this
-        /*
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
-        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter);
-         */
-
         HandleCurrentIntent();
     }
 
@@ -801,19 +793,4 @@ public class StatusActivity
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
     }
-
-    // TODO: fix this
-    /*
-    private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, android.content.Intent intent) {
-            String action = intent.getAction();
-            if (action != null) {
-                if (action.equals(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE)) {
-                    tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), m_tunnelConfig);
-                }
-            }
-        }
-    };
-    */
 }

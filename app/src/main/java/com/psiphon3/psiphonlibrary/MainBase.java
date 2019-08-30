@@ -87,6 +87,7 @@ import com.psiphon3.StatusActivity;
 import com.psiphon3.TunnelState;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.PsiCashException;
+import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.R;
@@ -402,6 +403,11 @@ public abstract class MainBase {
             if (!tunnelServiceInteractor.isServiceRunning(getApplicationContext())) {
                 LoggingProvider.LogDatabaseHelper.truncateLogs(this, true);
             }
+
+            // Listen to GOT_NEW_EXPIRING_PURCHASE intent from psicash module
+            IntentFilter intentFilter = new IntentFilter();
+            intentFilter.addAction(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
+            LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter);
         }
 
         @Override
@@ -1479,5 +1485,17 @@ public abstract class MainBase {
             }
             return true;
         }
+
+        private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, android.content.Intent intent) {
+                String action = intent.getAction();
+                if (action != null) {
+                    if (action.equals(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE)) {
+                        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), m_tunnelConfig);
+                    }
+                }
+            }
+        };
     }
 }
