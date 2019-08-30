@@ -11,7 +11,9 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.util.Pair;
 
+import com.android.billingclient.api.Purchase;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
@@ -27,6 +29,7 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.BiFunction;
 
 import static android.content.Context.ACTIVITY_SERVICE;
 
@@ -40,6 +43,38 @@ public class TunnelServiceInteractor {
     private Disposable restartServiceDisposable = null;
 
     private Rx2ServiceBindingFactory serviceBindingFactory;
+
+    public TunnelServiceInteractor() {
+        // Start an infinite subscription that will send most recent purchase data to the service
+        // when every time tunnel state changes to "connected" so the tunnel has a
+        // chance to update authorization and restart if the purchase is new.
+        // NOTE: we assume there can be only one valid purchase and authorization at a time
+        Observable.combineLatest(tunnelStateRelay, subscriptionStatusPublishRelay,
+                ((BiFunction<TunnelState, SubscriptionState, Pair>) Pair::new))
+                .switchMap(pair -> {
+                    TunnelState s = (TunnelState) pair.first;
+                    SubscriptionState subscriptionState = (SubscriptionState) pair.second;
+                    if (subscriptionState.hasValidPurchase() && s.isRunning() && s.connectionData().isConnected()) {
+                        return Observable.just(subscriptionState);
+                    } else {
+                        return Observable.empty();
+                    }
+                })
+                .map(subscriptionState -> {
+                    Purchase purchase = subscriptionState.purchase();
+                    Bundle data = new Bundle();
+
+                    data.putString(TunnelManager.DATA_PURCHASE_ID,
+                            purchase.getSku());
+                    data.putString(TunnelManager.DATA_PURCHASE_TOKEN,
+                            purchase.getPurchaseToken());
+                    data.putBoolean(TunnelManager.DATA_PURCHASE_IS_SUBSCRIPTION,
+                            subscriptionState.status() != SubscriptionState.Status.HAS_TIME_PASS);
+                    return data;
+                })
+                .doOnNext(data -> sendServiceMessage(TunnelManager.ClientToServiceMessage.PURCHASE.ordinal(), data))
+                .subscribe();
+    }
 
     public void resume(Context context) {
         tunnelStateRelay.accept(TunnelState.unknown());
@@ -231,10 +266,6 @@ public class TunnelServiceInteractor {
         DataTransferStats.getDataTransferStatsForUI().m_fastBucketsLastStartTime = data.getLong(TunnelManager.DATA_TRANSFER_STATS_FAST_BUCKETS_LAST_START_TIME);
     }
 
-    // TODO: fix this - implement comment below
-    // Pass the most current purchase data to the service if it is running so the tunnel has a
-    // chance to update authorization and restart if the purchase is new.
-    // NOTE: we assume there can be only one valid purchase and authorization at a time
     public void onSubscriptionState(SubscriptionState subscriptionState) {
         subscriptionStatusPublishRelay.accept(subscriptionState);
     }
