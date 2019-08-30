@@ -203,18 +203,6 @@ public abstract class MainBase {
             Utils.initializeSecureRandom();
         }
 
-        // TODO: fix this
-        /*
-        protected boolean getSkipHomePage() {
-            for (String homepage : getHomePages()) {
-                if (homepage.contains("psiphon_skip_homepage")) {
-                    return true;
-                }
-            }
-            return false;
-        }
-         */
-
         // Avoid calling m_statusTabToggleButton.setImageResource() every 250 ms
         // when it is set to the connected image
         private ImageButton m_statusViewImage;
