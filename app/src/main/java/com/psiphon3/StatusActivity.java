@@ -341,8 +341,9 @@ public class StatusActivity
                     // At this point we're showing the URL in either the embedded webview or in a browser.
                     // Some URLs are excluded from being embedded as home pages.
                     if(shouldLoadInEmbeddedWebView(url)) {
-                        // Just switch to the home tab.
-                        // The embedded web view will get loaded by the updateServiceStateUI
+                        // Reset m_loadedSponsorTab and switch to the home tab.
+                        // The embedded web view will get loaded by the updateServiceStateUI.
+                        m_loadedSponsorTab = false;
                         disableInterstitialOnNextTabChange = true;
                         m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
                     } else {
