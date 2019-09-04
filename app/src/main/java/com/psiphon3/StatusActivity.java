@@ -245,7 +245,7 @@ public class StatusActivity
         // Wrap in Rx Single to run the valid tokens check on a non-UI thread and then
         // update the UI on main thread when we get result.
         Single.fromCallable(() -> PsiCashClient.getInstance(this).hasValidTokens())
-                .doOnError(err -> MyLog.g("Error showing or hiding PsiCash tab:"))
+                .doOnError(err -> MyLog.g("Error showing PsiCash tab:" + err))
                 .onErrorResumeNext(Single.just(Boolean.FALSE))
                 .subscribeOn(Schedulers.computation())
                 .observeOn(AndroidSchedulers.mainThread())
