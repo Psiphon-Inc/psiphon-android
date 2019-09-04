@@ -71,6 +71,9 @@
 -keepnames class * implements android.os.Parcelable {
     public static final ** CREATOR;
 }
+# Support for Google Play Billing Library
+# https://developer.android.com/google/play/billing/billing_library_overview
+-keep class com.android.vending.billing.**
 
 -dontwarn okhttp3.**
 -dontwarn okio.**
