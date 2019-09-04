@@ -47,8 +47,6 @@ class PsiCashActionProcessorHolder {
 
         this.psiCashClientSingle = Single.fromCallable(() -> PsiCashClient.getInstance(appContext));
 
-
-
         this.clearErrorStateProcessor = actions -> actions.map(a -> PsiCashResult.ClearErrorState.success());
 
         this.getPsiCashRemoteProcessor = actions ->
