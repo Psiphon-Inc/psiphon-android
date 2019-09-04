@@ -26,16 +26,18 @@ import java.util.Arrays;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
+import io.reactivex.Single;
 
 // Based on https://github.com/oldergod/android-architecture/tree/todo-mvi-rxjava
 class PsiCashActionProcessorHolder {
     private static final String TAG = "PsiCashActionProcessor";
     private final PsiCashListener psiCashListener;
+    private Single <PsiCashClient> psiCashClientSingle;
     private final ObservableTransformer<PsiCashAction.ClearErrorState, PsiCashResult.ClearErrorState> clearErrorStateProcessor;
-    private final ObservableTransformer<PsiCashAction.GetPsiCashRemote, PsiCashResult.GetPsiCash> getPsiCashRemoteProcessor;
-    private final ObservableTransformer<PsiCashAction.GetPsiCashLocal, PsiCashResult.GetPsiCash> getPsiCashLocalProcessor;
+    private final ObservableTransformer<PsiCashAction.GetPsiCashRemote, PsiCashResult> getPsiCashRemoteProcessor;
+    private final ObservableTransformer<PsiCashAction.GetPsiCashLocal, PsiCashResult> getPsiCashLocalProcessor;
     private final ObservableTransformer<PsiCashAction.MakeExpiringPurchase, PsiCashResult> makeExpiringPurchaseProcessor;
-    private final ObservableTransformer<PsiCashAction.RemovePurchases, PsiCashResult.GetPsiCash> removePurchasesProcessor;
+    private final ObservableTransformer<PsiCashAction.RemovePurchases, PsiCashResult> removePurchasesProcessor;
     private final ObservableTransformer<PsiCashAction.LoadVideoAd, PsiCashResult> loadVideoAdProcessor;
 
     final ObservableTransformer<PsiCashAction, PsiCashResult> actionProcessor;
@@ -43,27 +45,29 @@ class PsiCashActionProcessorHolder {
     PsiCashActionProcessorHolder(Context appContext, PsiCashListener listener) {
         this.psiCashListener = listener;
 
-        this.clearErrorStateProcessor = actions ->
-                actions.map(action ->
-                        PsiCashResult.ClearErrorState.success());
+        this.psiCashClientSingle = Single.fromCallable(() -> PsiCashClient.getInstance(appContext));
+
+
+
+        this.clearErrorStateProcessor = actions -> actions.map(a -> PsiCashResult.ClearErrorState.success());
 
         this.getPsiCashRemoteProcessor = actions ->
                 actions.flatMap(action ->
-                        PsiCashClient.getInstance(appContext).getPsiCashRemote(action.connectionState())
+                        psiCashClientSingle.flatMapObservable(psiCashClient -> psiCashClient.getPsiCashRemote(action.connectionState()))
                                 .map(PsiCashResult.GetPsiCash::success)
-                                .startWith(PsiCashResult.GetPsiCash.inFlight()))
-                        .onErrorReturn(PsiCashResult.GetPsiCash::failure);
+                                .onErrorReturn(PsiCashResult.GetPsiCash::failure)
+                                .startWith(PsiCashResult.GetPsiCash.inFlight()));
 
         this.getPsiCashLocalProcessor = actions ->
                 actions.flatMap(action ->
-                        PsiCashClient.getInstance(appContext).getPsiCashLocal()
+                        psiCashClientSingle.flatMapObservable(PsiCashClient::getPsiCashLocal)
                                 .map(PsiCashResult.GetPsiCash::success)
-                                .startWith(PsiCashResult.GetPsiCash.inFlight()))
-                        .onErrorReturn(PsiCashResult.GetPsiCash::failure);
+                                .onErrorReturn(PsiCashResult.GetPsiCash::failure)
+                                .startWith(PsiCashResult.GetPsiCash.inFlight()));
 
         this.makeExpiringPurchaseProcessor = actions ->
                 actions.flatMap(action ->
-                        PsiCashClient.getInstance(appContext).makeExpiringPurchase(action.connectionState(), action.purchasePrice())
+                        psiCashClientSingle.flatMapObservable(psiCashClient -> psiCashClient.makeExpiringPurchase(action.connectionState(), action.purchasePrice()))
                                 .map(r -> {
                                     if (r instanceof PsiCashModel.ExpiringPurchase) {
                                         if (psiCashListener != null) {
@@ -75,20 +79,21 @@ class PsiCashActionProcessorHolder {
                                     }
                                     throw new IllegalArgumentException("Unknown result: " + r);
                                 })
-                                .startWith(PsiCashResult.ExpiringPurchase.inFlight()))
-                        .onErrorReturn(PsiCashResult.ExpiringPurchase::failure);
+                                .onErrorReturn(PsiCashResult.ExpiringPurchase::failure)
+                                .startWith(PsiCashResult.ExpiringPurchase.inFlight()));
 
         this.removePurchasesProcessor = actions ->
                 actions.flatMap(action ->
-                        PsiCashClient.getInstance(appContext).removePurchases(action.purchases())
+                        psiCashClientSingle.flatMapObservable(psiCashClient -> psiCashClient.removePurchases(action.purchases()))
                                 .map(PsiCashResult.GetPsiCash::success)
-                                .startWith(PsiCashResult.GetPsiCash.inFlight()))
-                        .onErrorReturn(PsiCashResult.GetPsiCash::failure);
-
+                                .onErrorReturn(PsiCashResult.GetPsiCash::failure)
+                                .startWith(PsiCashResult.GetPsiCash.inFlight()));
 
         this.loadVideoAdProcessor = actions ->
                 actions.switchMap(action ->
-                        RewardedVideoClient.getInstance().loadRewardedVideo(appContext, action.connectionState(), PsiCashClient.getInstance(appContext).rewardedVideoCustomData())
+                        psiCashClientSingle
+                                .flatMapObservable(psiCashClient ->
+                                        RewardedVideoClient.getInstance().loadRewardedVideo(appContext, action.connectionState(), psiCashClient.rewardedVideoCustomData()))
                                 .map(r -> {
                                     if (r instanceof PsiCashModel.RewardedVideoState) {
                                         PsiCashModel.RewardedVideoState result = (PsiCashModel.RewardedVideoState) r;
@@ -106,8 +111,8 @@ class PsiCashActionProcessorHolder {
                                     throw new IllegalArgumentException("Unknown result: " + r);
                                 })
                                 .startWith(PsiCashResult.Video.loading())
-                                .concatWith(Observable.just(PsiCashResult.Video.finished())))
-                        .onErrorReturn(PsiCashResult.Video::failure);
+                                .concatWith(Observable.just(PsiCashResult.Video.finished()))
+                                .onErrorReturn(PsiCashResult.Video::failure));
 
         this.actionProcessor = actions ->
                 actions.publish(shared -> Observable.merge(
