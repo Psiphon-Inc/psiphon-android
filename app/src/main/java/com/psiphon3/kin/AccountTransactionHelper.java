@@ -3,16 +3,12 @@ package com.psiphon3.kin;
 import java.math.BigDecimal;
 
 import io.reactivex.Completable;
+import io.reactivex.Single;
 import kin.sdk.KinAccount;
 import kin.sdk.Transaction;
 import kin.sdk.TransactionId;
-import kin.utils.Request;
-import kin.utils.ResultCallback;
 
 class AccountTransactionHelper {
-    // TODO: decide on transfer fee
-    private final static int TRANSACTION_FEE = 100;
-
     private final KinAccount mAccount;
     private final ServerCommunicator mServerCommunicator;
     private final String mPsiphonWalletAddress;
@@ -52,38 +48,17 @@ class AccountTransactionHelper {
      * @return a completable which fires on complete after the transaction has successfully completed
      */
     Completable transferOut(Double amount) {
-        return Completable.create(emitter -> {
-            // Build the transaction and get a Request<Transaction> object.
-            Request<Transaction> transactionRequest = mAccount.buildTransaction(mPsiphonWalletAddress, new BigDecimal(amount), TRANSACTION_FEE);
-            // Actually run the build transaction code in a background thread
-            transactionRequest.run(new ResultCallback<Transaction>() {
-                @Override
-                public void onResult(Transaction transaction) {
-                    // Here we got a Transaction object before actually sending the
-                    // transaction this way we can save information for later if anything goes wrong
-                    // Log.d("example", "The transaction id before sending: " + transaction.getId().id());
+        return buildTransaction(mAccount, mPsiphonWalletAddress, new BigDecimal(amount))
+                .flatMap(transaction -> mServerCommunicator.whitelistTransaction(transaction.getWhitelistableTransaction()))
+                .flatMap(whitelist -> sendWhitelistTransaction(mAccount, whitelist))
+                .ignoreElement();
+    }
 
-                    // Create the send transaction request
-                    Request<TransactionId> sendTransaction = mAccount.sendTransaction(transaction);
-                    // Actually send the transaction in a background thread.
-                    sendTransaction.run(new ResultCallback<TransactionId>() {
-                        @Override
-                        public void onResult(TransactionId id) {
-                            emitter.onComplete();
-                        }
+    private Single<Transaction> buildTransaction(KinAccount account, String walletAddress, BigDecimal amount) {
+        return Single.fromCallable(() -> account.buildTransactionSync(walletAddress, amount, 0));
+    }
 
-                        @Override
-                        public void onError(Exception e) {
-                            emitter.onError(e);
-                        }
-                    });
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    emitter.onError(e);
-                }
-            });
-        });
+    private Single<TransactionId> sendWhitelistTransaction(KinAccount account, String whitelist) {
+        return Single.fromCallable(() -> account.sendWhitelistTransactionSync(whitelist));
     }
 }

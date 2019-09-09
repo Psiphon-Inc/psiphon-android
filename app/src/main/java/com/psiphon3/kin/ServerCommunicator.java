@@ -2,13 +2,21 @@ package com.psiphon3.kin;
 
 import android.support.annotation.NonNull;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import java.io.IOException;
+import java.io.Reader;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Completable;
+import io.reactivex.Single;
+import kin.sdk.WhitelistableTransaction;
 import okhttp3.HttpUrl;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 class ServerCommunicator {
@@ -45,13 +53,15 @@ class ServerCommunicator {
 
             try {
                 Response response = mOkHttpClient.newCall(request).execute();
-                if (response.isSuccessful()) {
+                if (response.isSuccessful() && !emitter.isDisposed()) {
                     emitter.onComplete();
-                } else {
+                } else if (!emitter.isDisposed()) {
                     emitter.onError(new Exception("create account failed with code " + response.code()));
                 }
             } catch (IOException e) {
-                emitter.onError(e);
+                if (!emitter.isDisposed()) {
+                    emitter.onError(e);
+                }
             }
         });
     }
@@ -73,33 +83,100 @@ class ServerCommunicator {
 
             try {
                 Response response = mOkHttpClient.newCall(request).execute();
-                if (response.isSuccessful()) {
+                if (response.isSuccessful() && !emitter.isDisposed()) {
                     emitter.onComplete();
-                } else {
+                } else if (!emitter.isDisposed()) {
                     emitter.onError(new Exception("fund account failed with code " + response.code()));
                 }
+
             } catch (IOException e) {
-                emitter.onError(e);
+                if (!emitter.isDisposed()) {
+                    emitter.onError(e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Attempts to whitelist the transaction.
+     * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
+     *
+     * @param whitelistableTransaction a transaction to be whitelisted by the server
+     * @return the whitelist transaction data from the server
+     */
+    public Single<String> whitelistTransaction(@NonNull WhitelistableTransaction whitelistableTransaction) {
+        return Single.create(emitter -> {
+            Request request = new Request.Builder()
+                    .url(getWhiteListTransactionUrl())
+                    .post(createWhitelistableTransactionBody(whitelistableTransaction))
+                    .build();
+
+            try {
+                Response response = mOkHttpClient.newCall(request).execute();
+                if (response.isSuccessful()) {
+                    if (response.body() != null) {
+                        String hash = parseFriendBotResponse(response.body().charStream());
+                        if (!emitter.isDisposed()) {
+                            emitter.onSuccess(hash);
+                        }
+                    } else if (!emitter.isDisposed()) {
+                        emitter.onError(new Exception("whitelist transaction didn't return a body"));
+                    }
+                } else if (!emitter.isDisposed()) {
+                    emitter.onError(new Exception("whitelist transaction failed with code " + response.code()));
+                }
+            } catch (IOException e) {
+                if (!emitter.isDisposed()) {
+                    emitter.onError(e);
+                }
             }
         });
     }
 
     @NonNull
-    private HttpUrl.Builder getFriendBotUrlBuilder(@NonNull String address, @NonNull Double amount) {
+    private RequestBody createWhitelistableTransactionBody(@NonNull WhitelistableTransaction whitelistableTransaction) {
+        MediaType mediaType = MediaType.get("application/json");
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("envelope", whitelistableTransaction.getTransactionPayload());
+        jsonObject.addProperty("network_id", whitelistableTransaction.getNetworkPassphrase());
+        return RequestBody.create(mediaType, jsonObject.toString());
+    }
+
+    @NonNull
+    private String parseFriendBotResponse(@NonNull Reader reader) {
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(reader).getAsJsonObject();
+        return jsonObject.get("hash").getAsString();
+    }
+
+    @NonNull
+    private HttpUrl.Builder getFriendBotUrlBuilder() {
         return new HttpUrl.Builder()
                 .scheme("https")
-                .host(mFriendBotUrl)
-                .addQueryParameter("addr", address)
-                .addQueryParameter("amount", amount.toString());
+                .host(mFriendBotUrl);
     }
 
     @NonNull
     private HttpUrl getCreateAccountUrl(@NonNull String address, @NonNull Double amount) {
-        return getFriendBotUrlBuilder(address, amount).build();
+        return getFriendBotUrlBuilder()
+                .addQueryParameter("addr", address)
+                .addQueryParameter("amount", amount.toString())
+                .build();
     }
 
     @NonNull
     private HttpUrl getFundAccountUrl(@NonNull String address, @NonNull Double amount) {
-        return getFriendBotUrlBuilder(address, amount).addPathSegment("fund").build();
+        return getFriendBotUrlBuilder()
+                .addQueryParameter("addr", address)
+                .addQueryParameter("amount", amount.toString())
+                .addPathSegment("fund")
+                .build();
+    }
+
+    @NonNull
+    private HttpUrl getWhiteListTransactionUrl() {
+        return getFriendBotUrlBuilder()
+                .addPathSegment("whitelist")
+                .build();
     }
 }

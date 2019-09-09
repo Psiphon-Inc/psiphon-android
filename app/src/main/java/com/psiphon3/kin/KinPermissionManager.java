@@ -50,7 +50,7 @@ public class KinPermissionManager {
      */
     public static Single<Boolean> getUsersAgreementToKin(Context context) {
         return Single.create(emitter -> {
-            if (!KinPermissionManager.needsToAgreeToKin(context)) {
+            if (!KinPermissionManager.needsToAgreeToKin(context) && !emitter.isDisposed()) {
                 emitter.onSuccess(hasAgreedToKin(context));
                 return;
             }
@@ -68,7 +68,9 @@ public class KinPermissionManager {
         return (dialog, which) -> {
             boolean hasAgreedToKin = which == BUTTON_POSITIVE;
             KinPermissionManager.setHasAgreedToKin(context, hasAgreedToKin);
-            emitter.onSuccess(hasAgreedToKin);
+            if (!emitter.isDisposed()) {
+                emitter.onSuccess(hasAgreedToKin);
+            }
         };
     }
 
