@@ -10,13 +10,13 @@ class Environment {
     // TODO: Get these values
     static final Environment PRODUCTION = new Environment(
             "",
-            "",
+            "GAH3A3LKC4XOX6ZUKQWMW3KIMVB2J45NV3OPYBVWADS2RRCYXK7BU3XK",
             kin.sdk.Environment.PRODUCTION
     );
 
     static final Environment TEST = new Environment(
             "friendbot.developers.kinecosystem.com",
-            "GCG5E6EELYTX2IA7FJTTRHC3DQHZTSYBUEN7H5YE5E7MJWR3GV6Q6KUP",
+            "GCWUL5BFYTRVMM4WYHABI5C2Y5VZ7VB5N2BKPDMGG3OG7DYN3FBCTVDS",
             kin.sdk.Environment.TEST
     );
 
