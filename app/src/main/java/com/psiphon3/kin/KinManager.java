@@ -15,19 +15,19 @@ import kin.sdk.ListenerRegistration;
 import kin.sdk.exception.OperationFailedException;
 
 public class KinManager {
-    private static KinManager mInstance;
+    private static KinManager instance;
 
-    private final KinAccount mAccount;
-    private final AccountTransactionHelper mTransactionHelper;
+    private final KinAccount account;
+    private final AccountTransactionHelper transactionHelper;
 
     KinManager(KinAccount account, AccountTransactionHelper transactionHelper) {
-        mAccount = account;
-        mTransactionHelper = transactionHelper;
+        this.account = account;
+        this.transactionHelper = transactionHelper;
     }
 
     private static Single<KinManager> getInstance(Context context, Environment environment) {
-        if (mInstance != null) {
-            return Single.just(mInstance);
+        if (instance != null) {
+            return Single.just(instance);
         }
 
         // Set up base communication & helper classes
@@ -39,7 +39,7 @@ public class KinManager {
                 .map(account -> {
                     // Create the transaction helper and the instance
                     AccountTransactionHelper transactionHelper = new AccountTransactionHelper(account, serverCommunicator, environment.getPsiphonWalletAddress());
-                    return mInstance = new KinManager(account, transactionHelper);
+                    return instance = new KinManager(account, transactionHelper);
                 });
     }
 
@@ -73,14 +73,14 @@ public class KinManager {
      * @return the registration to allow it's removal
      */
     public ListenerRegistration addBalanceListener(EventListener<Balance> listener) {
-        return mAccount.addBalanceListener(listener);
+        return account.addBalanceListener(listener);
     }
 
     /**
      * @return the public wallet address of the active account
      */
     public String getWalletAddress() {
-        return mAccount.getPublicAddress();
+        return account.getPublicAddress();
     }
 
     /**
@@ -88,7 +88,7 @@ public class KinManager {
      */
     public BigDecimal getCurrentBalance() {
         try {
-            return mAccount.getBalanceSync().value();
+            return account.getBalanceSync().value();
         } catch (OperationFailedException e) {
             // TODO: What should we do?
             Log.e("kin", "getCurrentBalance", e);
@@ -105,7 +105,7 @@ public class KinManager {
      * @return a completable which fires on complete after the transaction has successfully completed
      */
     public Completable transferIn(Double amount) {
-        return mTransactionHelper.transferIn(amount);
+        return transactionHelper.transferIn(amount);
     }
 
     /**
@@ -116,6 +116,6 @@ public class KinManager {
      * @return a completable which fires on complete after the transaction has successfully completed
      */
     public Completable transferOut(Double amount) {
-        return mTransactionHelper.transferOut(amount);
+        return transactionHelper.transferOut(amount);
     }
 }

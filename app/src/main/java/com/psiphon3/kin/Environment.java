@@ -20,25 +20,25 @@ class Environment {
             kin.sdk.Environment.TEST
     );
 
-    private final String mFriendBotServerUrl;
-    private final String mPsiphonWalletAddress;
-    private final kin.sdk.Environment mKinEnvironment;
+    private final String friendBotServerUrl;
+    private final String psiphonWalletAddress;
+    private final kin.sdk.Environment kinEnvironment;
 
     private Environment(String friendBotServerUrl, String psiphonWalletAddress, kin.sdk.Environment kinEnvironment) {
-        mFriendBotServerUrl = friendBotServerUrl;
-        mPsiphonWalletAddress = psiphonWalletAddress;
-        mKinEnvironment = kinEnvironment;
+        this.friendBotServerUrl = friendBotServerUrl;
+        this.psiphonWalletAddress = psiphonWalletAddress;
+        this.kinEnvironment = kinEnvironment;
     }
 
     final String getFriendBotServerUrl() {
-        return mFriendBotServerUrl;
+        return friendBotServerUrl;
     }
 
     final String getPsiphonWalletAddress() {
-        return mPsiphonWalletAddress;
+        return psiphonWalletAddress;
     }
 
     final kin.sdk.Environment getKinEnvironment() {
-        return mKinEnvironment;
+        return kinEnvironment;
     }
 }

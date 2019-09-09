@@ -9,9 +9,9 @@ import kin.sdk.Transaction;
 import kin.sdk.TransactionId;
 
 class AccountTransactionHelper {
-    private final KinAccount mAccount;
-    private final ServerCommunicator mServerCommunicator;
-    private final String mPsiphonWalletAddress;
+    private final KinAccount account;
+    private final ServerCommunicator serverCommunicator;
+    private final String psiphonWalletAddress;
 
     /**
      * @param account              the account to work with. Should already be created
@@ -19,9 +19,9 @@ class AccountTransactionHelper {
      * @param psiphonWalletAddress the address of the Psiphon wallet
      */
     AccountTransactionHelper(KinAccount account, ServerCommunicator serverCommunicator, String psiphonWalletAddress) {
-        mAccount = account;
-        mServerCommunicator = serverCommunicator;
-        mPsiphonWalletAddress = psiphonWalletAddress;
+        this.account = account;
+        this.serverCommunicator = serverCommunicator;
+        this.psiphonWalletAddress = psiphonWalletAddress;
     }
 
     /**
@@ -32,12 +32,12 @@ class AccountTransactionHelper {
      * @return a completable which fires on complete after the transfer has been completed
      */
     Completable transferIn(Double amount) {
-        if (mAccount.getPublicAddress() == null) {
+        if (account.getPublicAddress() == null) {
             return Completable.error(new Exception("Account has been deleted"));
         }
 
         // TODO: Should we be specifying the observeOn or subscribeOn scheduler here?
-        return mServerCommunicator.fundAccount(mAccount.getPublicAddress(), amount);
+        return serverCommunicator.fundAccount(account.getPublicAddress(), amount);
     }
 
     /**
@@ -48,9 +48,9 @@ class AccountTransactionHelper {
      * @return a completable which fires on complete after the transaction has successfully completed
      */
     Completable transferOut(Double amount) {
-        return buildTransaction(mAccount, mPsiphonWalletAddress, new BigDecimal(amount))
-                .flatMap(transaction -> mServerCommunicator.whitelistTransaction(transaction.getWhitelistableTransaction()))
-                .flatMap(whitelist -> sendWhitelistTransaction(mAccount, whitelist))
+        return buildTransaction(account, psiphonWalletAddress, new BigDecimal(amount))
+                .flatMap(transaction -> serverCommunicator.whitelistTransaction(transaction.getWhitelistableTransaction()))
+                .flatMap(whitelist -> sendWhitelistTransaction(account, whitelist))
                 .ignoreElement();
     }
 

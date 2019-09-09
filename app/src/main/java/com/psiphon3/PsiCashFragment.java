@@ -121,7 +121,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     private final AtomicBoolean shouldGetPsiCashRemote = new AtomicBoolean(false);
     private boolean shouldAutoPlayVideo;
     private ActiveSpeedBoostListener activeSpeedBoostListener;
-    private KinManager mKinManager;
+    private KinManager kinManager;
 
     private enum LifeCycleEvent {ON_RESUME, ON_PAUSE, ON_STOP, ON_START}
 
@@ -188,9 +188,9 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     }
 
     private void setKinManager(KinManager kinManager) {
-        mKinManager = kinManager;
+        this.kinManager = kinManager;
 
-        mKinManager.addBalanceListener(data -> {
+        this.kinManager.addBalanceListener(data -> {
             FragmentActivity activity = getActivity();
             if (activity == null) {
                 return;
@@ -205,7 +205,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         });
 
         getActivity().findViewById(R.id.get_kin_btn)
-                .setOnClickListener(v -> mKinManager.transferIn(100d)
+                .setOnClickListener(v -> this.kinManager.transferIn(100d)
                         .subscribeOn(Schedulers.io())
                         .subscribe()
                 );

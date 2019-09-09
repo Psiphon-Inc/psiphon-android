@@ -20,17 +20,16 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 class ServerCommunicator {
-
-    private final String mFriendBotUrl;
-    private final OkHttpClient mOkHttpClient;
+    private final String friendBotUrl;
+    private final OkHttpClient okHttpClient;
 
     /**
      * @param friendBotUrl the URL to the friend bot server
      */
     ServerCommunicator(@NonNull String friendBotUrl) {
-        mFriendBotUrl = friendBotUrl;
+        this.friendBotUrl = friendBotUrl;
 
-        mOkHttpClient = new OkHttpClient.Builder()
+        okHttpClient = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .build();
@@ -52,7 +51,7 @@ class ServerCommunicator {
                     .build();
 
             try {
-                Response response = mOkHttpClient.newCall(request).execute();
+                Response response = okHttpClient.newCall(request).execute();
                 if (response.isSuccessful() && !emitter.isDisposed()) {
                     emitter.onComplete();
                 } else if (!emitter.isDisposed()) {
@@ -82,7 +81,7 @@ class ServerCommunicator {
                     .build();
 
             try {
-                Response response = mOkHttpClient.newCall(request).execute();
+                Response response = okHttpClient.newCall(request).execute();
                 if (response.isSuccessful() && !emitter.isDisposed()) {
                     emitter.onComplete();
                 } else if (!emitter.isDisposed()) {
@@ -112,7 +111,7 @@ class ServerCommunicator {
                     .build();
 
             try {
-                Response response = mOkHttpClient.newCall(request).execute();
+                Response response = okHttpClient.newCall(request).execute();
                 if (response.isSuccessful()) {
                     if (response.body() != null) {
                         String hash = parseFriendBotResponse(response.body().charStream());
@@ -153,7 +152,7 @@ class ServerCommunicator {
     private HttpUrl.Builder getFriendBotUrlBuilder() {
         return new HttpUrl.Builder()
                 .scheme("https")
-                .host(mFriendBotUrl);
+                .host(friendBotUrl);
     }
 
     @NonNull
