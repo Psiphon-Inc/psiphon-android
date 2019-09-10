@@ -56,14 +56,14 @@ public class AccountTransactionHelperTest {
     public void transferIn() throws OperationFailedException {
         // Get the initial balance. OK to use an int because we won't use higher precision stuff for the transfers
         int initialBalance = account.getBalanceSync().value().intValue();
-        TestObserver<Void> tester = accountTransactionHelper.transferIn(100d).test();
+        TestObserver<Void> tester = accountTransactionHelper.transferIn(Utils.TRANSFER_AMOUNT).test();
 
         // Check that it finished not because of timeout but because of onComplete
-        assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
+        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
         tester.assertComplete();
 
         // Check the balance has updated
-        assertEquals(initialBalance + 100, account.getBalanceSync().value().intValue());
+        assertEquals(initialBalance + Utils.TRANSFER_AMOUNT, account.getBalanceSync().value().doubleValue(), Utils.DELTA);
 
         // TODO: Determine some way to check if the Psiphon wallet has been changed as well
     }
@@ -72,14 +72,14 @@ public class AccountTransactionHelperTest {
     public void transferOut() throws OperationFailedException {
         // Get the initial balance. OK to use an int because we won't use higher precision stuff for the transfers
         int initialBalance = account.getBalanceSync().value().intValue();
-        TestObserver<Void> tester = accountTransactionHelper.transferOut(100d).test();
+        TestObserver<Void> tester = accountTransactionHelper.transferOut(Utils.TRANSFER_AMOUNT).test();
 
         // Check that it finished not because of timeout but because of onComplete
-        assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
+        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
         tester.assertComplete();
 
-        // Check the balance has updated. Use 101 because rounded transfer fee is 1 kin
-        assertEquals(initialBalance - 101, account.getBalanceSync().value().intValue());
+        // Check the balance has updated
+        assertEquals(initialBalance - Utils.TRANSFER_AMOUNT, account.getBalanceSync().value().doubleValue(), Utils.DELTA);
 
         // TODO: Determine some way to check if the Psiphon wallet has been changed as well
     }

@@ -79,10 +79,10 @@ public class AccountHelperTest {
             }
         });
 
-        latch1.await(10, TimeUnit.SECONDS);
+        latch1.await(Utils.WAIT_TIME_S, TimeUnit.SECONDS);
 
         // Wait for the listener to fire
-        account2CreationLatch.await(10, TimeUnit.SECONDS);
+        account2CreationLatch.await(Utils.WAIT_TIME_S, TimeUnit.SECONDS);
 
         assertEquals(AccountStatus.CREATED, account2.getStatusSync());
 

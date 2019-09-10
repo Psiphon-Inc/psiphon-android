@@ -70,10 +70,10 @@ public class KinManagerTest {
             latch.countDown();
         });
 
-        kinManager.transferIn(100d).subscribe();
+        kinManager.transferIn(Utils.TRANSFER_AMOUNT).subscribe();
 
         // Make sure the latch didn't time out and that the balances returned are the same
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
         assertNotNull(balances[0]);
         assertNotNull(balances[1]);
         assertEquals(balances[0].value(5), balances[1].value(5));
@@ -91,7 +91,7 @@ public class KinManagerTest {
     @Test
     public void getCurrentBalance() throws OperationFailedException {
         BigDecimal currentBalance = kinManager.getCurrentBalance();
-        assertEquals(account.getBalanceSync().value().doubleValue(), currentBalance.doubleValue(), 5d);
+        assertEquals(account.getBalanceSync().value().doubleValue(), currentBalance.doubleValue(), Utils.DELTA);
         // TODO: Is this the best way to do this?
     }
 
@@ -99,14 +99,14 @@ public class KinManagerTest {
     public void transferIn() throws OperationFailedException {
         // Get the initial balance. OK to use an int because we won't use higher precision stuff for the transfers
         int initialBalance = account.getBalanceSync().value().intValue();
-        TestObserver<Void> tester = kinManager.transferIn(100d).test();
+        TestObserver<Void> tester = kinManager.transferIn(Utils.TRANSFER_AMOUNT).test();
 
         // Check that it finished not because of timeout but because of onComplete
-        assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
+        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
         tester.assertComplete();
 
         // Check the balance has updated
-        assertEquals(initialBalance + 100, account.getBalanceSync().value().intValue());
+        assertEquals(initialBalance + Utils.TRANSFER_AMOUNT, account.getBalanceSync().value().doubleValue(), Utils.DELTA);
 
         // TODO: Determine some way to check if the Psiphon wallet has been changed as well
     }
@@ -115,14 +115,14 @@ public class KinManagerTest {
     public void transferOut() throws OperationFailedException {
         // Get the initial balance. OK to use an int because we won't use higher precision stuff for the transfers
         int initialBalance = account.getBalanceSync().value().intValue();
-        TestObserver<Void> tester = kinManager.transferOut(100d).test();
+        TestObserver<Void> tester = kinManager.transferOut(Utils.TRANSFER_AMOUNT).test();
 
         // Check that it finished not because of timeout but because of onComplete
-        assertTrue(tester.awaitTerminalEvent(10, TimeUnit.SECONDS));
+        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
         tester.assertComplete();
 
-        // Check the balance has updated. Use 101 because rounded transfer fee is 1 kin
-        assertEquals(initialBalance - 101, account.getBalanceSync().value().intValue());
+        // Check the balance has updated
+        assertEquals(initialBalance - Utils.TRANSFER_AMOUNT, account.getBalanceSync().value().doubleValue(), Utils.DELTA);
 
         // TODO: Determine some way to check if the Psiphon wallet has been changed as well
     }
