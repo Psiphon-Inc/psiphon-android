@@ -1,14 +1,9 @@
 package com.psiphon3.kin;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
-import android.support.v7.app.AlertDialog;
 
 import io.reactivex.Single;
-import io.reactivex.SingleEmitter;
-
-import static android.content.DialogInterface.BUTTON_POSITIVE;
 
 public class KinPermissionManager {
     private static final String KIN_PREFERENCES_NAME = "kin_app_prefs";
@@ -55,23 +50,8 @@ public class KinPermissionManager {
                 return;
             }
 
-            new AlertDialog.Builder(context)
-                    .setMessage("Kin yes or no?")
-                    .setPositiveButton("Yes", getOnClickListener(context, emitter))
-                    .setNegativeButton("No", getOnClickListener(context, emitter))
-                    .create()
-                    .show();
+            new PermissionDialog(context, emitter).show();
         });
-    }
-
-    private static DialogInterface.OnClickListener getOnClickListener(Context context, SingleEmitter<Boolean> emitter) {
-        return (dialog, which) -> {
-            boolean hasAgreedToKin = which == BUTTON_POSITIVE;
-            KinPermissionManager.setHasAgreedToKin(context, hasAgreedToKin);
-            if (!emitter.isDisposed()) {
-                emitter.onSuccess(hasAgreedToKin);
-            }
-        };
     }
 
     private static SharedPreferences getSharedPreferences(Context context) {

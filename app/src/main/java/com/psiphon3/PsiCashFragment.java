@@ -196,7 +196,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 return;
             }
 
-            TextView textView = activity.findViewById(R.id.kin_value_txt);
+            TextView textView = activity.findViewById(R.id.txt_kin_balance);
             if (textView == null) {
                 return;
             }
@@ -204,7 +204,10 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             textView.setText(data.value(5));
         });
 
-        getActivity().findViewById(R.id.get_kin_btn)
+        getActivity().findViewById(R.id.txt_kin_balance).setVisibility(View.VISIBLE);
+        getActivity().findViewById(R.id.btn_get_kin).setVisibility(View.VISIBLE);
+
+        getActivity().findViewById(R.id.btn_get_kin)
                 .setOnClickListener(v -> this.kinManager.transferIn(100d)
                         .subscribeOn(Schedulers.io())
                         .subscribe()

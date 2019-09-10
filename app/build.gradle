@@ -4,6 +4,8 @@ android {
     compileSdkVersion 28
     useLibrary 'org.apache.http.legacy'
 
+    android.defaultConfig.vectorDrawables.useSupportLibrary = true
+
     repositories{
         flatDir{
             dirs 'libs'
