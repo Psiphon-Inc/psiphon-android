@@ -2,24 +2,32 @@ package com.psiphon3.kin;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.method.LinkMovementMethod;
+import android.text.util.Linkify;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.psiphon3.subscription.R;
 
-import io.reactivex.SingleEmitter;
-
-public class PermissionDialog extends Dialog implements View.OnClickListener {
-
+public class PermissionDialog extends Dialog implements View.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener {
     private final Context context;
-    private final SingleEmitter<Boolean> emitter;
+    private final OnCloseListener closeListener;
 
-    PermissionDialog(Context context, SingleEmitter<Boolean> emitter) {
+    private PermissionDialog(Context context, OnCloseListener closeListener) {
         super(context);
         this.context = context;
-        this.emitter = emitter;
+        this.closeListener = closeListener;
+    }
+
+    public static void show(Context context, OnCloseListener closeListener) {
+        PermissionDialog permissionDialog = new PermissionDialog(context, closeListener);
+        permissionDialog.setCanceledOnTouchOutside(true);
+        permissionDialog.show();
     }
 
     @Override
@@ -28,6 +36,7 @@ public class PermissionDialog extends Dialog implements View.OnClickListener {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.dialog_kin_onboarding);
 
+        // Set up the on click listener for the buttons
         Button button = findViewById(R.id.btn_kin_agree);
         if (button != null) {
             button.setOnClickListener(this);
@@ -37,13 +46,34 @@ public class PermissionDialog extends Dialog implements View.OnClickListener {
         if (button != null) {
             button.setOnClickListener(this);
         }
+
+        // Make the links in the text view clickable
+        TextView textView = findViewById(R.id.txt_kin_onboarding);
+        SpannableString spannableString = new SpannableString(context.getText(R.string.onboard_kin_explanation));
+        Linkify.addLinks(spannableString, Linkify.WEB_URLS);
+        textView.setText(spannableString);
+        textView.setMovementMethod(LinkMovementMethod.getInstance());
     }
 
     @Override
-    public void onClick(View v) {
-        boolean hasAgreedToKin = R.id.btn_kin_agree == v.getId();
-        KinPermissionManager.setHasAgreedToKin(context, true);
-        emitter.onSuccess(hasAgreedToKin);
+    public void onClick(View view) {
+        closeListener.closedBy(view.getId() == R.id.btn_kin_agree ? BUTTON_POSITIVE : BUTTON_NEGATIVE);
         dismiss();
+    }
+
+    @Override
+    public void onCancel(DialogInterface dialog) {
+        // Count this as no decision
+        closeListener.closedBy(BUTTON_NEUTRAL);
+    }
+
+    @Override
+    public void onDismiss(DialogInterface dialog) {
+        // Count this as no decision
+        closeListener.closedBy(BUTTON_NEUTRAL);
+    }
+
+    public interface OnCloseListener {
+        void closedBy(int button);
     }
 }

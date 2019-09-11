@@ -5,6 +5,10 @@ import android.content.SharedPreferences;
 
 import io.reactivex.Single;
 
+import static android.content.DialogInterface.BUTTON_NEGATIVE;
+import static android.content.DialogInterface.BUTTON_NEUTRAL;
+import static android.content.DialogInterface.BUTTON_POSITIVE;
+
 public class KinPermissionManager {
     private static final String KIN_PREFERENCES_NAME = "kin_app_prefs";
     private static final String AGREED_TO_KIN_KEY = "agreed_to_kin";
@@ -50,7 +54,30 @@ public class KinPermissionManager {
                 return;
             }
 
-            new PermissionDialog(context, emitter).show();
+            PermissionDialog.show(context, (button -> {
+                if (emitter.isDisposed()) {
+                    return;
+                }
+
+                // Return if the user agreed or not
+                // If it was dismissed, ask next time they open the app
+                switch (button) {
+                    case BUTTON_POSITIVE:
+                        setHasAgreedToKin(context, true);
+                        emitter.onSuccess(true);
+                        break;
+
+                    case BUTTON_NEGATIVE:
+                        setHasAgreedToKin(context, false);
+                        emitter.onSuccess(false);
+                        break;
+
+                    case BUTTON_NEUTRAL:
+                    default:
+                        emitter.onSuccess(false);
+                        break;
+                }
+            }));
         });
     }
 

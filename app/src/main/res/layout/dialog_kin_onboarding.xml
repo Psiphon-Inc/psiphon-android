@@ -8,7 +8,7 @@
     android:minHeight="256dp">
 
     <TextView
-        android:id="@+id/text_kin_onboarding_header"
+        android:id="@+id/txt_kin_onboarding_header"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Kin and Psiphon"
@@ -26,20 +26,21 @@
         android:layout_marginTop="24dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_kin_onboarding_header"
+        app:layout_constraintTop_toBottomOf="@+id/txt_kin_onboarding_header"
         app:srcCompat="@drawable/ic_kin_logo" />
 
     <TextView
-        android:id="@+id/text_kin_onboarding"
+        android:id="@+id/txt_kin_onboarding"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
+        android:linksClickable="true"
         android:paddingLeft="32dp"
         android:paddingTop="16dp"
         android:paddingRight="32dp"
         android:paddingBottom="16dp"
-        android:text="Kin is a way to help support Psiphon. \n\nIf you agree, we'll create a Kin wallet for you and each time you connect to Psiphon, we will charge you 1 Kin, and if you ever run out of Kin, Psiphon will continue to work as normal.\n\nWhy participate? When people spend Kin through Psiphon it helps to fund our servers."
+        android:text="@string/onboard_kin_explanation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/img_kin_onboarding_logo" />
@@ -50,7 +51,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_kin_onboarding">
+        app:layout_constraintTop_toBottomOf="@+id/txt_kin_onboarding">
 
         <Button
             android:id="@+id/btn_kin_cancel"
