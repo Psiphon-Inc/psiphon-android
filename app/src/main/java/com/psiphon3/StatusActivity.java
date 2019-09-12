@@ -49,6 +49,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.kin.KinActivity;
+import com.psiphon3.kin.KinManager;
+import com.psiphon3.kin.KinPermissionManager;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
@@ -110,6 +113,7 @@ public class StatusActivity
     private PublishRelay<RateLimitMode> currentRateLimitModeRelay;
     private Disposable currentRateModeDisposable;
     private PublishRelay<Boolean> activeSpeedBoostRelay;
+    private KinManager kinManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -179,6 +183,8 @@ public class StatusActivity
 
         m_loadedSponsorTab = false;
         HandleCurrentIntent();
+
+        initializeKin();
     }
 
     private void preventAutoStart() {
@@ -403,9 +409,28 @@ public class StatusActivity
             showVpnAlertDialog(R.string.StatusActivity_VpnRevokedTitle, R.string.StatusActivity_VpnRevokedMessage);
         }
     }
-    
+
+    public void onKinActivityClick(View v) {
+        Intent intent = new Intent(this, KinActivity.class);
+        startActivity(intent);
+    }
+
     public void onToggleClick(View v)
     {
+        if (!isServiceRunning() && kinManager != null) {
+            if (!KinPermissionManager.hasAgreedToAutoPay(this)) {
+                KinPermissionManager.confirmPay(this)
+                        .doOnSuccess(ok -> {
+                            if (ok) {
+                                kinManager.chargeForConnection();
+                            }
+                        })
+                        .subscribe();
+            } else {
+                kinManager.chargeForConnection();
+            }
+        }
+
         doToggle();
     }
 
@@ -469,7 +494,7 @@ public class StatusActivity
                 .onErrorResumeNext(Observable.empty())
                 .subscribe();
     }
-    
+
     private void doStartUp()
     {
         // cancel any ongoing startUp subscription
@@ -735,7 +760,7 @@ public class StatusActivity
     private boolean isIabInitialized() {
         return mIabHelper != null && mIabHelperIsInitialized;
     }
-    
+
     private IabHelper.OnIabSetupFinishedListener m_iabSetupFinishedListener =
             new IabHelper.OnIabSetupFinishedListener()
     {
@@ -865,12 +890,12 @@ public class StatusActivity
             }
         }
     };
-    
-    private IabHelper.OnIabPurchaseFinishedListener m_iabPurchaseFinishedListener = 
+
+    private IabHelper.OnIabPurchaseFinishedListener m_iabPurchaseFinishedListener =
             new IabHelper.OnIabPurchaseFinishedListener()
     {
         @Override
-        public void onIabPurchaseFinished(IabResult result, Purchase purchase) 
+        public void onIabPurchaseFinished(IabResult result, Purchase purchase)
         {
             if (result.isFailure())
             {
@@ -927,7 +952,7 @@ public class StatusActivity
             }
         }
     };
-    
+
     private void queryInventory()
     {
         try
@@ -1202,7 +1227,7 @@ public class StatusActivity
             mIabHelper = null;
         }
     }
-    
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
@@ -1268,4 +1293,26 @@ public class StatusActivity
             }
         }
     };
+
+    private void initializeKin() {
+        KinPermissionManager.getUsersAgreementToKin(getContext())
+                .flatMap(agreed -> {
+                    if (agreed) {
+                        return KinManager.getTestInstance(getContext())
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread());
+                    }
+
+                    return Single.never();
+                })
+                .doOnSuccess(this::setKinManager)
+                .doOnError(throwable -> {
+                    // TODO: Should we log the failure to get the KinManager?
+                })
+                .subscribe();
+    }
+
+    private void setKinManager(KinManager kinManager) {
+        this.kinManager = kinManager;
+    }
 }

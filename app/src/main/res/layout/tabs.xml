@@ -146,23 +146,34 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:orientation="horizontal" >
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
 
-                    <TextView
-                        android:id="@+id/regionPrompt"
+                    <Button
+                        android:id="@+id/moreOptionsButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:layout_marginRight="5dp"
-                        android:text="@string/region_selector"
+                        android:onClick="onMoreOptionsClick"
+                        android:text="@string/moreOptions"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
 
-                    <Spinner
-                        android:id="@+id/regionSelector"
+                    <Button
+                        android:id="@+id/feedbackButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:drawSelectorOnTop="true"
+                        android:onClick="onFeedbackClick"
+                        android:text="@string/feedback"
+                        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+                    <Button
+                        android:id="@+id/aboutButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:onClick="onAboutClick"
+                        android:text="@string/about"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
                 </LinearLayout>
 
@@ -170,7 +181,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:orientation="vertical" >
+                    android:orientation="vertical">
 
                     <CheckBox
                         android:id="@+id/tunnelWholeDeviceToggle"
@@ -204,36 +215,32 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal" >
+                    android:orientation="horizontal">
 
-                    <Button
-                        android:id="@+id/moreOptionsButton"
+                    <Spinner
+                        android:id="@+id/regionSelector"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:onClick="onMoreOptionsClick"
-                        android:text="@string/moreOptions"
+                        android:drawSelectorOnTop="true"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
 
-                    <Button
-                        android:id="@+id/feedbackButton"
+                    <TextView
+                        android:id="@+id/regionPrompt"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:onClick="onFeedbackClick"
-                        android:text="@string/feedback"
-                        android:textAppearance="?android:attr/textAppearanceSmall" />
-
-                    <Button
-                        android:id="@+id/aboutButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:onClick="onAboutClick"
-                        android:text="@string/about"
+                        android:layout_marginRight="5dp"
+                        android:text="@string/region_selector"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
                 </LinearLayout>
+
+                <Button
+                    android:id="@+id/btn_kin_activity"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:onClick="onKinActivityClick"
+                    android:text="KIN" />
 
             </LinearLayout>
         </ScrollView>

@@ -6,9 +6,10 @@ import kin.sdk.KinClient;
 import kin.sdk.exception.CorruptedDataException;
 import kin.sdk.exception.CreateAccountException;
 import kin.sdk.exception.CryptoException;
+import kin.sdk.exception.DeleteAccountException;
 
 class AccountHelper {
-    final static Double CREATE_ACCOUNT_FUND_AMOUNT = 1000d;
+    final static Double CREATE_ACCOUNT_FUND_AMOUNT = 500d;
     private final static String EXPORT_KIN_ACCOUNT_PASSPHRASE = "correct-horse-battery-staple";
 
     /**
@@ -72,5 +73,13 @@ class AccountHelper {
 
     private static String retrieveAccountFromDisk() {
         return "";
+    }
+
+    public static void deleteAccount(KinClient kinClient) {
+        try {
+            kinClient.deleteAccount(0);
+        } catch (DeleteAccountException e) {
+            // TODO: Care?
+        }
     }
 }

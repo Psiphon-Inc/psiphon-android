@@ -48,7 +48,7 @@ public class KinManagerTest {
         assertNotNull(account);
         AccountTransactionHelper transactionHelper = new AccountTransactionHelper(account, serverCommunicator, env.getPsiphonWalletAddress());
 
-        kinManager = new KinManager(account, transactionHelper);
+        kinManager = new KinManager(account, kinClient, transactionHelper);
 
         // Setup isn't finished until the account is created
         Utils.ensureAccountCreated(account);
@@ -90,7 +90,7 @@ public class KinManagerTest {
 
     @Test
     public void getCurrentBalance() throws OperationFailedException {
-        BigDecimal currentBalance = kinManager.getCurrentBalance();
+        BigDecimal currentBalance = kinManager.getCurrentBalanceSync();
         assertEquals(account.getBalanceSync().value().doubleValue(), currentBalance.doubleValue(), Utils.DELTA);
         // TODO: Is this the best way to do this?
     }

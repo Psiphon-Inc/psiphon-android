@@ -35,7 +35,6 @@ import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.SwipeDismissBehavior;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Pair;
 import android.util.TypedValue;
@@ -56,8 +55,6 @@ import com.jakewharton.rxbinding2.view.RxView;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
-import com.psiphon3.kin.KinManager;
-import com.psiphon3.kin.KinPermissionManager;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.PsiCashIntent;
@@ -84,12 +81,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import ca.psiphon.psicashlib.PsiCashLib;
 import io.reactivex.Observable;
-import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
-import io.reactivex.schedulers.Schedulers;
 
 public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, PsiCashViewState> {
     private static final String TAG = "PsiCashFragment";
@@ -121,7 +116,6 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     private final AtomicBoolean shouldGetPsiCashRemote = new AtomicBoolean(false);
     private boolean shouldAutoPlayVideo;
     private ActiveSpeedBoostListener activeSpeedBoostListener;
-    private KinManager kinManager;
 
     private enum LifeCycleEvent {ON_RESUME, ON_PAUSE, ON_STOP, ON_START}
 
@@ -169,51 +163,6 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         psiCashViewModel.processIntents(intents());
     }
 
-    private void initializeKin() {
-        KinPermissionManager.getUsersAgreementToKin(getContext())
-                .flatMap(agreed -> {
-                    if (agreed) {
-                        return KinManager.getTestInstance(getContext())
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread());
-                    }
-
-                    return Single.never();
-                })
-                .doOnSuccess(this::setKinManager)
-                .doOnError(throwable -> {
-                    // TODO: Should we log the failure to get the KinManager?
-                })
-                .subscribe();
-    }
-
-    private void setKinManager(KinManager kinManager) {
-        this.kinManager = kinManager;
-
-        this.kinManager.addBalanceListener(data -> {
-            FragmentActivity activity = getActivity();
-            if (activity == null) {
-                return;
-            }
-
-            TextView textView = activity.findViewById(R.id.txt_kin_balance);
-            if (textView == null) {
-                return;
-            }
-
-            textView.setText(data.value(5));
-        });
-
-        getActivity().findViewById(R.id.txt_kin_balance).setVisibility(View.VISIBLE);
-        getActivity().findViewById(R.id.btn_get_kin).setVisibility(View.VISIBLE);
-
-        getActivity().findViewById(R.id.btn_get_kin)
-                .setOnClickListener(v -> this.kinManager.transferIn(100d)
-                        .subscribeOn(Schedulers.io())
-                        .subscribe()
-                );
-    }
-
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -252,8 +201,6 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 .subscribe(ValueAnimator::start, err -> {
                     Utils.MyLog.g("Balance label increase animation error: " + err);
                 }));
-
-        initializeKin();
     }
 
     private Disposable removePurchasesDisposable() {

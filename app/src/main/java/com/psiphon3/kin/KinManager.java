@@ -6,23 +6,43 @@ import android.util.Log;
 import java.math.BigDecimal;
 
 import io.reactivex.Completable;
+import io.reactivex.Observable;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Observer;
 import io.reactivex.Single;
+import io.reactivex.schedulers.Schedulers;
 import kin.sdk.Balance;
 import kin.sdk.EventListener;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
 import kin.sdk.ListenerRegistration;
 import kin.sdk.exception.OperationFailedException;
+import kin.utils.ResultCallback;
 
 public class KinManager {
     private static KinManager instance;
 
     private final KinAccount account;
+    private final KinClient kinClient;
     private final AccountTransactionHelper transactionHelper;
+    private final Observable<BigDecimal> balanceObservable;
 
-    KinManager(KinAccount account, AccountTransactionHelper transactionHelper) {
+    KinManager(KinAccount account, KinClient kinClient, AccountTransactionHelper transactionHelper) {
         this.account = account;
+        this.kinClient = kinClient;
         this.transactionHelper = transactionHelper;
+
+        // TODO: Do we have to manually remove this? Is it worth it?
+        final ListenerRegistration[] listenerRegistration = new ListenerRegistration[1];
+        ObservableOnSubscribe<BigDecimal> handler = emitter ->
+                listenerRegistration[0] = addBalanceListener(balance -> {
+                    if (!emitter.isDisposed()) {
+                        emitter.onNext(balance.value());
+                    }
+                });
+        balanceObservable = Observable.create(handler)
+                .doFinally(() -> listenerRegistration[0].remove())
+                .startWith(getCurrentBalance().toObservable());
     }
 
     private static Single<KinManager> getInstance(Context context, Environment environment) {
@@ -39,7 +59,7 @@ public class KinManager {
                 .map(account -> {
                     // Create the transaction helper and the instance
                     AccountTransactionHelper transactionHelper = new AccountTransactionHelper(account, serverCommunicator, environment.getPsiphonWalletAddress());
-                    return instance = new KinManager(account, transactionHelper);
+                    return instance = new KinManager(account, kinClient, transactionHelper);
                 });
     }
 
@@ -77,6 +97,16 @@ public class KinManager {
     }
 
     /**
+     * Adds observer to the balance of the active account, which will be called whenever the balance
+     * is changed.
+     *
+     * @param observer the listener to register to account balance changes
+     */
+    public void getBalance(Observer<BigDecimal> observer) {
+        balanceObservable.safeSubscribe(observer);
+    }
+
+    /**
      * @return the public wallet address of the active account
      */
     public String getWalletAddress() {
@@ -86,15 +116,39 @@ public class KinManager {
     /**
      * @return the current balance of the active account
      */
-    public BigDecimal getCurrentBalance() {
+    public BigDecimal getCurrentBalanceSync() {
         try {
             return account.getBalanceSync().value();
         } catch (OperationFailedException e) {
             // TODO: What should we do?
-            Log.e("kin", "getCurrentBalance", e);
+            Log.e("kin", "getCurrentBalanceSync", e);
         }
 
         return null;
+    }
+
+    /**
+     * @return the current balance of the active account
+     */
+    public Single<BigDecimal> getCurrentBalance() {
+        return Single.create(emitter ->
+                account.getBalance().run(new ResultCallback<Balance>() {
+                    @Override
+                    public void onResult(Balance result) {
+                        if (!emitter.isDisposed()) {
+                            emitter.onSuccess(result.value());
+                        }
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        // TODO: Should we care?
+                        if (!emitter.isDisposed()) {
+                            emitter.onError(e);
+                        }
+                    }
+                })
+        );
     }
 
     /**
@@ -117,5 +171,13 @@ public class KinManager {
      */
     public Completable transferOut(Double amount) {
         return transactionHelper.transferOut(amount);
+    }
+
+    public void deleteAccount() {
+        AccountHelper.deleteAccount(kinClient);
+    }
+
+    public void chargeForConnection() {
+        transferOut(1d).subscribeOn(Schedulers.io()).subscribe();
     }
 }

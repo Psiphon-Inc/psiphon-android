@@ -66,6 +66,23 @@ class ServerCommunicator {
     }
 
     /**
+     * Creates an account on the server for the wallet address, funding it with amount of Kin.
+     * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
+     *
+     * @param address the wallet address
+     * @param amount  the amount of Kin to be funded on creation
+     * @return a completable which fires on complete after receiving a successful response
+     */
+    void optOut() {
+        Request request = new Request.Builder()
+                .url(getOptOutUrl())
+                .head()
+                .build();
+
+        okHttpClient.newCall(request).enqueue(null);
+    }
+
+    /**
      * Gives amount Kin to the wallet at address.
      * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
      *
@@ -176,6 +193,12 @@ class ServerCommunicator {
     private HttpUrl getWhiteListTransactionUrl() {
         return getFriendBotUrlBuilder()
                 .addPathSegment("whitelist")
+                .build();
+    }
+
+    private HttpUrl getOptOutUrl() {
+        return getFriendBotUrlBuilder()
+                .addPathSegment("opt-out")
                 .build();
     }
 }

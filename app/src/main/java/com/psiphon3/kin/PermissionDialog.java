@@ -42,14 +42,14 @@ public class PermissionDialog extends Dialog implements View.OnClickListener, Di
             button.setOnClickListener(this);
         }
 
-        button = findViewById(R.id.btn_kin_cancel);
+        button = findViewById(R.id.btn_kin_disagree);
         if (button != null) {
             button.setOnClickListener(this);
         }
 
         // Make the links in the text view clickable
         TextView textView = findViewById(R.id.txt_kin_onboarding);
-        SpannableString spannableString = new SpannableString(context.getText(R.string.onboard_kin_explanation));
+        SpannableString spannableString = new SpannableString(context.getText(R.string.lbl_kin_onboard_explanation));
         Linkify.addLinks(spannableString, Linkify.WEB_URLS);
         textView.setText(spannableString);
         textView.setMovementMethod(LinkMovementMethod.getInstance());
