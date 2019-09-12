@@ -44,11 +44,11 @@ public class KinManagerTest {
 
         // Clear all accounts first to force the account to be freshly created
         kinClient.clearAllAccounts();
-        account = AccountHelper.getAccount(kinClient, serverCommunicator).blockingGet();
+        account = ClientHelper.getAccount(kinClient, serverCommunicator).blockingGet();
         assertNotNull(account);
-        AccountTransactionHelper transactionHelper = new AccountTransactionHelper(account, serverCommunicator, env.getPsiphonWalletAddress());
+        AccountHelper transactionHelper = new AccountHelper(account, serverCommunicator, env.getPsiphonWalletAddress());
 
-        kinManager = new KinManager(account, kinClient, transactionHelper);
+        kinManager = new KinManager(context, account, kinClient, transactionHelper, kinPermissionManager);
 
         // Setup isn't finished until the account is created
         Utils.ensureAccountCreated(account);

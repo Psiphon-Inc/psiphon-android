@@ -49,9 +49,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.kin.Environment;
 import com.psiphon3.kin.KinActivity;
 import com.psiphon3.kin.KinManager;
-import com.psiphon3.kin.KinPermissionManager;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
@@ -417,21 +417,17 @@ public class StatusActivity
 
     public void onToggleClick(View v)
     {
-        if (!isServiceRunning() && kinManager != null) {
-            if (!KinPermissionManager.hasAgreedToAutoPay(this)) {
-                KinPermissionManager.confirmPay(this)
-                        .doOnSuccess(ok -> {
-                            if (ok) {
-                                kinManager.chargeForConnection();
-                            }
-                        })
-                        .subscribe();
-            } else {
-                kinManager.chargeForConnection();
-            }
+        if (!isServiceRunning()) {
+            kinManager.chargeForConnection(this)
+                    .doOnSuccess(agreed -> {
+                        if (agreed) {
+                            doToggle();
+                        }
+                    })
+                    .subscribe();
+        } else {
+            doToggle();
         }
-
-        doToggle();
     }
 
     public void onOpenBrowserClick(View v)
@@ -1295,24 +1291,13 @@ public class StatusActivity
     };
 
     private void initializeKin() {
-        KinPermissionManager.getUsersAgreementToKin(getContext())
-                .flatMap(agreed -> {
-                    if (agreed) {
-                        return KinManager.getTestInstance(getContext())
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread());
-                    }
-
-                    return Single.never();
-                })
-                .doOnSuccess(this::setKinManager)
-                .doOnError(throwable -> {
-                    // TODO: Should we log the failure to get the KinManager?
-                })
+        kinManager = KinManager.getInstance(this, Environment.TEST);
+        kinManager.isReady()
+                .doOnComplete(this::showKinUI)
                 .subscribe();
     }
 
-    private void setKinManager(KinManager kinManager) {
-        this.kinManager = kinManager;
+    private void showKinUI() {
+        findViewById(R.id.btn_kin_activity).setVisibility(View.VISIBLE);
     }
 }

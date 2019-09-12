@@ -1,85 +1,90 @@
 package com.psiphon3.kin;
 
+import java.math.BigDecimal;
+
+import io.reactivex.Completable;
 import io.reactivex.Single;
+import kin.sdk.Balance;
 import kin.sdk.KinAccount;
-import kin.sdk.KinClient;
-import kin.sdk.exception.CorruptedDataException;
-import kin.sdk.exception.CreateAccountException;
-import kin.sdk.exception.CryptoException;
-import kin.sdk.exception.DeleteAccountException;
+import kin.sdk.Transaction;
+import kin.sdk.TransactionId;
+import kin.utils.ResultCallback;
 
 class AccountHelper {
-    final static Double CREATE_ACCOUNT_FUND_AMOUNT = 500d;
-    private final static String EXPORT_KIN_ACCOUNT_PASSPHRASE = "correct-horse-battery-staple";
+    private final KinAccount account;
+    private final ServerCommunicator serverCommunicator;
+    private final String psiphonWalletAddress;
 
     /**
-     * Gets a Kin account for this device. Will try to use a saved account first, but if none are
-     * found it will create a new account and register it with the server.
+     * @param account              the account to work with. Should already be created
+     * @param serverCommunicator   the communicator for the server
+     * @param psiphonWalletAddress the address of the Psiphon wallet
+     */
+    AccountHelper(KinAccount account, ServerCommunicator serverCommunicator, String psiphonWalletAddress) {
+        this.account = account;
+        this.serverCommunicator = serverCommunicator;
+        this.psiphonWalletAddress = psiphonWalletAddress;
+    }
+
+    /**
+     * Requests that amount of Kin gets transferred into the active accounts wallet.
      * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
      *
-     * @param kinClient          the KinClient to be used for the account
-     * @param serverCommunicator the communicator for creating the account if needed
-     * @return The account for this device.
+     * @param amount the amount to be given to the active account
+     * @return a completable which fires on complete after the transfer has been completed
      */
-    static Single<KinAccount> getAccount(KinClient kinClient, ServerCommunicator serverCommunicator) {
-        try {
-            if (kinClient.hasAccount()) {
-                return Single.just(kinClient.getAccount(0));
-            }
-
-            if (doesExportedAccountExist()) {
-                return Single.just(importAccount(kinClient, retrieveAccountFromDisk()));
-            }
-
-            return createKinAccount(kinClient, serverCommunicator);
-        } catch (Exception e) {
-            return Single.error(e);
+    Completable transferIn(Double amount) {
+        if (account.getPublicAddress() == null) {
+            return Completable.error(new Exception("Account has been deleted"));
         }
+
+        // TODO: Should we be specifying the observeOn or subscribeOn scheduler here?
+        return serverCommunicator.fundAccount(account.getPublicAddress(), amount);
     }
 
-    private static Single<KinAccount> createKinAccount(KinClient kinClient, ServerCommunicator serverCommunicator) {
-        try {
-            KinAccount account = kinClient.addAccount();
-            String address = account.getPublicAddress();
-            if (address == null) {
-                return Single.error(new Exception("failed to add a new KinAccount"));
-            }
-
-            return serverCommunicator.createAccount(address, CREATE_ACCOUNT_FUND_AMOUNT).toSingle(() -> account);
-        } catch (CreateAccountException e) {
-            return Single.error(e);
-        }
+    /**
+     * Requests that amount of Kin gets transferred out of the active accounts wallet to Psiphon's wallet.
+     * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
+     *
+     * @param amount the amount to be taken from the active account
+     * @return a completable which fires on complete after the transaction has successfully completed
+     */
+    Completable transferOut(Double amount) {
+        return buildTransaction(account, psiphonWalletAddress, new BigDecimal(amount))
+                .flatMap(transaction -> serverCommunicator.whitelistTransaction(transaction.getWhitelistableTransaction()))
+                .flatMap(whitelist -> sendWhitelistTransaction(account, whitelist))
+                .ignoreElement();
     }
 
-    //
-    // TODO: Actually add the code to save to disk
-    //
-
-    private static String exportAccount(KinAccount account) throws CryptoException {
-        return account.export(EXPORT_KIN_ACCOUNT_PASSPHRASE);
+    private Single<Transaction> buildTransaction(KinAccount account, String walletAddress, BigDecimal amount) {
+        return Single.fromCallable(() -> account.buildTransactionSync(walletAddress, amount, 0));
     }
 
-    private static KinAccount importAccount(KinClient kinClient, String exportedJson) throws CorruptedDataException, CreateAccountException, CryptoException {
-        return kinClient.importAccount(exportedJson, EXPORT_KIN_ACCOUNT_PASSPHRASE);
+    private Single<TransactionId> sendWhitelistTransaction(KinAccount account, String whitelist) {
+        return Single.fromCallable(() -> account.sendWhitelistTransactionSync(whitelist));
     }
 
-    private static boolean doesExportedAccountExist() {
-        return false;
-    }
+    /**
+     * @return the current balance of the active account
+     */
+    public Single<BigDecimal> getCurrentBalance() {
+        return Single.create(emitter ->
+                account.getBalance().run(new ResultCallback<Balance>() {
+                    @Override
+                    public void onResult(Balance result) {
+                        if (!emitter.isDisposed()) {
+                            emitter.onSuccess(result.value());
+                        }
+                    }
 
-    private static void saveAccountToDisk(String exportedJson) {
-
-    }
-
-    private static String retrieveAccountFromDisk() {
-        return "";
-    }
-
-    public static void deleteAccount(KinClient kinClient) {
-        try {
-            kinClient.deleteAccount(0);
-        } catch (DeleteAccountException e) {
-            // TODO: Care?
-        }
+                    @Override
+                    public void onError(Exception e) {
+                        // TODO: Should we care?
+                        if (!emitter.isDisposed()) {
+                            emitter.onError(e);
+                        }
+                    }
+                })
+        );
     }
 }

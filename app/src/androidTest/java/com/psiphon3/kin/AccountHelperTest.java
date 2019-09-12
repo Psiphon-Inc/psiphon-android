@@ -8,20 +8,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import kin.sdk.AccountStatus;
+import io.reactivex.observers.TestObserver;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
-import kin.sdk.ListenerRegistration;
 import kin.sdk.exception.OperationFailedException;
-import kin.utils.ResultCallback;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -29,19 +24,27 @@ import static org.mockito.Mockito.when;
 
 public class AccountHelperTest {
 
-    private ServerCommunicator serverCommunicator;
     private KinClient kinClient;
+    private KinAccount account;
+    private AccountHelper accountHelper;
 
     @Before
-    public void setUp() {
+    public void setUp() throws InterruptedException, OperationFailedException {
         Environment env = Environment.TEST;
         SharedPreferences sharedPreferences = InstrumentationRegistry.getTargetContext().getSharedPreferences("test", Context.MODE_PRIVATE);
         Context context = mock(Context.class);
         when(context.getApplicationContext()).thenReturn(context);
         when(context.getSharedPreferences(anyString(), anyInt())).thenReturn(sharedPreferences);
 
-        serverCommunicator = new ServerCommunicator(env.getFriendBotServerUrl());
+        ServerCommunicator serverCommunicator = new ServerCommunicator(env.getFriendBotServerUrl());
         kinClient = new KinClient(context, env.getKinEnvironment(), Environment.PSIPHON_APP_ID);
+        kinClient.clearAllAccounts();
+
+        account = ClientHelper.getAccount(kinClient, serverCommunicator).blockingGet();
+        accountHelper = new AccountHelper(account, serverCommunicator, env.getPsiphonWalletAddress());
+
+        // Setup isn't finished until the account is created
+        Utils.ensureAccountCreated(account);
     }
 
     @After
@@ -50,42 +53,34 @@ public class AccountHelperTest {
     }
 
     @Test
-    public void getAccount() throws InterruptedException, OperationFailedException {
-        KinAccount account1 = AccountHelper.getAccount(kinClient, serverCommunicator).blockingGet();
-        KinAccount account2 = AccountHelper.getAccount(kinClient, serverCommunicator).blockingGet();
-        assertNotNull(account1);
-        assertNotNull(account2);
-        assertEquals(account1, account2);
+    public void transferIn() throws OperationFailedException {
+        // Get the initial balance. OK to use an int because we won't use higher precision stuff for the transfers
+        int initialBalance = account.getBalanceSync().value().intValue();
+        TestObserver<Void> tester = accountHelper.transferIn(Utils.TRANSFER_AMOUNT).test();
 
-        kinClient.clearAllAccounts();
+        // Check that it finished not because of timeout but because of onComplete
+        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
+        tester.assertComplete();
 
-        account2 = AccountHelper.getAccount(kinClient, serverCommunicator).blockingGet();
-        assertNotNull(account2);
-        assertNotEquals(account1, account2);
+        // Check the balance has updated
+        assertEquals(initialBalance + Utils.TRANSFER_AMOUNT, account.getBalanceSync().value().doubleValue(), Utils.DELTA);
 
-        CountDownLatch account2CreationLatch = new CountDownLatch(1);
-        ListenerRegistration listenerRegistration = account2.addAccountCreationListener(data -> account2CreationLatch.countDown());
+        // TODO: Determine some way to check if the Psiphon wallet has been changed as well
+    }
 
-        CountDownLatch latch1 = new CountDownLatch(1);
-        account1.getStatus().run(new ResultCallback<Integer>() {
-            @Override
-            public void onResult(Integer result) {
-                fail("should be deleted");
-            }
+    @Test
+    public void transferOut() throws OperationFailedException {
+        // Get the initial balance. OK to use an int because we won't use higher precision stuff for the transfers
+        int initialBalance = account.getBalanceSync().value().intValue();
+        TestObserver<Void> tester = accountHelper.transferOut(Utils.TRANSFER_AMOUNT).test();
 
-            @Override
-            public void onError(Exception e) {
-                latch1.countDown();
-            }
-        });
+        // Check that it finished not because of timeout but because of onComplete
+        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
+        tester.assertComplete();
 
-        latch1.await(Utils.WAIT_TIME_S, TimeUnit.SECONDS);
+        // Check the balance has updated
+        assertEquals(initialBalance - Utils.TRANSFER_AMOUNT, account.getBalanceSync().value().doubleValue(), Utils.DELTA);
 
-        // Wait for the listener to fire
-        account2CreationLatch.await(Utils.WAIT_TIME_S, TimeUnit.SECONDS);
-
-        assertEquals(AccountStatus.CREATED, account2.getStatusSync());
-
-        listenerRegistration.remove();
+        // TODO: Determine some way to check if the Psiphon wallet has been changed as well
     }
 }
