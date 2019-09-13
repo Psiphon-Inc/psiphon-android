@@ -1,5 +1,7 @@
 package com.psiphon3.kin;
 
+import com.psiphon3.psiphonlibrary.Utils;
+
 import io.reactivex.Single;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
@@ -42,6 +44,22 @@ class ClientHelper {
         }
     }
 
+    /**
+     * Deletes the Kin account. Silently handles failures.
+     */
+    void deleteAccount() {
+        if (!kinClient.hasAccount()) {
+            Utils.MyLog.d("Tried to delete an account when no account existed");
+            return;
+        }
+
+        try {
+            kinClient.deleteAccount(0);
+        } catch (DeleteAccountException e) {
+            // TODO: Care?
+        }
+    }
+
     private Single<KinAccount> createKinAccount() {
         try {
             KinAccount account = kinClient.addAccount();
@@ -78,13 +96,5 @@ class ClientHelper {
 
     private String retrieveAccountFromDisk() {
         return "";
-    }
-
-    public void deleteAccount() {
-        try {
-            kinClient.deleteAccount(0);
-        } catch (DeleteAccountException e) {
-            // TODO: Care?
-        }
     }
 }
