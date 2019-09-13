@@ -176,7 +176,7 @@ class KinPermissionManager {
                             emitter.onSuccess(false);
                         }
                     })
-                    .setNeutralButton(R.string.lbl_yes, (dialog, which) -> {
+                    .setNegativeButton(R.string.lbl_yes, (dialog, which) -> {
                         if (!emitter.isDisposed()) {
                             emitter.onSuccess(true);
                         }
