@@ -13,7 +13,7 @@ import static android.content.DialogInterface.BUTTON_NEGATIVE;
 import static android.content.DialogInterface.BUTTON_NEUTRAL;
 import static android.content.DialogInterface.BUTTON_POSITIVE;
 
-public class KinPermissionManager {
+class KinPermissionManager {
     private final String KIN_PREFERENCES_NAME = "kin_app_prefs";
     private final String AGREED_TO_KIN_KEY = "agreed_to_kin";
     private final String AUTO_PAY_KEY = "auto_pay";
@@ -23,7 +23,7 @@ public class KinPermissionManager {
      * @param context context for shared preferences
      * @return true if the user has not yet agreed or disagreed to Kin
      */
-    public boolean needsToAgreeToKin(Context context) {
+    private boolean needsToAgreeToKin(Context context) {
         return !getSharedPreferences(context).contains(AGREED_TO_KIN_KEY);
     }
 
@@ -31,7 +31,7 @@ public class KinPermissionManager {
      * @param context context for shared preferences
      * @return true if the user has agreed to use Kin, false if they haven't agreed or haven't been asked yet
      */
-    public boolean hasAgreedToKin(Context context) {
+    private boolean hasAgreedToKin(Context context) {
         return getSharedPreferences(context).getBoolean(AGREED_TO_KIN_KEY, false);
     }
 
@@ -41,7 +41,7 @@ public class KinPermissionManager {
      * @param context        context for shared preferences
      * @param hasAgreedToKin if the user has agreed to using Kin or not
      */
-    public void setHasAgreedToKin(Context context, boolean hasAgreedToKin) {
+    private void setHasAgreedToKin(Context context, boolean hasAgreedToKin) {
         getSharedPreferences(context)
                 .edit()
                 .putBoolean(AGREED_TO_KIN_KEY, hasAgreedToKin)
@@ -54,7 +54,7 @@ public class KinPermissionManager {
      * @param context context for shared preferences
      * @return single which returns whether the user has agreed to Kin or not
      */
-    public Single<Boolean> getUsersAgreementToKin(Context context) {
+    Single<Boolean> getUsersAgreementToKin(Context context) {
         if (!needsToAgreeToKin(context)) {
             return Single.just(hasAgreedToKin(context));
         }
@@ -62,7 +62,7 @@ public class KinPermissionManager {
         return optIn(context);
     }
 
-    public Single<Boolean> optIn(Context context) {
+    Single<Boolean> optIn(Context context) {
         return Single.create(emitter ->
                 PermissionDialog.show(context, button -> {
                     if (emitter.isDisposed()) {
@@ -94,7 +94,7 @@ public class KinPermissionManager {
         );
     }
 
-    public Single<Boolean> optOut(Context context) {
+    Single<Boolean> optOut(Context context) {
         return Single.create(emitter -> {
             new AlertDialog.Builder(context)
                     .setMessage(R.string.lbl_kin_opt_out)
@@ -119,7 +119,7 @@ public class KinPermissionManager {
      * @param context context for shared preferences
      * @return true if the user has agreed to use Kin, false if they haven't agreed or haven't been asked yet
      */
-    public boolean hasAgreedToAutoPay(Context context) {
+    boolean hasAgreedToAutoPay(Context context) {
         long nextAgreeTime = getSharedPreferences(context).getLong(AUTO_PAY_KEY, 0);
         return nextAgreeTime > System.currentTimeMillis();
     }
@@ -130,7 +130,7 @@ public class KinPermissionManager {
      * @param context            context for shared preferences
      * @param hasAgreedToAutoPay if the user has agreed to auto pay on connect or not
      */
-    public void setHasAgreedToAutoPay(Context context, boolean hasAgreedToAutoPay) {
+    void setHasAgreedToAutoPay(Context context, boolean hasAgreedToAutoPay) {
         // If they've agreed, we don't need to ask for another month
         // Otherwise we need to ask every time, so set the next ask to agree time to be 0
         long nextAgreeTime = hasAgreedToAutoPay ? System.currentTimeMillis() + TIME_1_MONTH : 0;
@@ -140,7 +140,7 @@ public class KinPermissionManager {
                 .apply();
     }
 
-    public Single<Boolean> confirmAutoPaySwitch(Context context) {
+    Single<Boolean> confirmAutoPaySwitch(Context context) {
         return Single.create(emitter -> {
             new AlertDialog.Builder(context)
                     .setMessage(R.string.lbl_kin_auto_pay)
@@ -161,21 +161,29 @@ public class KinPermissionManager {
         });
     }
 
-    public Single<Boolean> confirmPay(Context context) {
+    Single<Boolean> confirmPay(Context context) {
         if (hasAgreedToAutoPay(context)) {
             return Single.just(true);
         }
 
+        // This is a bit weird, but the layout of AlertDialogs is
+        // (Neutral) | (Negative) | (Positive) so this will give us No | Yes | Always
         return Single.create(emitter -> {
             new AlertDialog.Builder(context)
                     .setMessage(R.string.lbl_kin_pay)
-                    .setNegativeButton(R.string.lbl_no, (dialog, which) -> {
+                    .setNeutralButton(R.string.lbl_no, (dialog, which) -> {
                         if (!emitter.isDisposed()) {
                             emitter.onSuccess(false);
                         }
                     })
-                    .setPositiveButton(R.string.lbl_yes, (dialog, which) -> {
+                    .setNeutralButton(R.string.lbl_yes, (dialog, which) -> {
                         if (!emitter.isDisposed()) {
+                            emitter.onSuccess(true);
+                        }
+                    })
+                    .setPositiveButton(R.string.lbl_auto_pay, (dialog, which) -> {
+                        if (!emitter.isDisposed()) {
+                            setHasAgreedToAutoPay(context, true);
                             emitter.onSuccess(true);
                         }
                     })
