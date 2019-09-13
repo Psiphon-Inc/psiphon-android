@@ -1,13 +1,19 @@
 package com.psiphon3.kin;
 
 import android.content.Context;
+import android.util.Log;
 
 import java.math.BigDecimal;
 
 import io.reactivex.Completable;
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.Observer;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.ReplaySubject;
 import kin.sdk.KinClient;
 
 public class KinManager {
@@ -18,7 +24,8 @@ public class KinManager {
     private final Environment environment;
     private final KinPermissionManager kinPermissionManager;
 
-    private final Completable isReadyCompletable;
+    private final Observable<Boolean> isReadyObservable;
+    private final ReplaySubject<Boolean> isReadyObservableSource;
 
     private AccountHelper accountHelper;
 
@@ -28,9 +35,12 @@ public class KinManager {
         this.environment = environment;
         this.kinPermissionManager = kinPermissionManager;
 
-        isReadyCompletable = kinPermissionManager
+        // Use a ReplaySubject with size 1, this means that it will only ever emit the latest on next
+        isReadyObservableSource = ReplaySubject.createWithSize(1);
+        isReadyObservable = kinPermissionManager
                 .getUsersAgreementToKin(context)
                 .flatMap(agreed -> {
+                    Log.e("tst", "KinManager: " + agreed);
                     if (!agreed) {
                         return Single.never();
                     }
@@ -40,16 +50,14 @@ public class KinManager {
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread());
                 })
-                .doOnSuccess(account -> {
-                    accountHelper = new AccountHelper(account, serverCommunicator, environment.getPsiphonWalletAddress());
-                })
-                .doOnError(e -> {
-                    // TODO: Do something?
-                })
-                .ignoreElement()
-                .cache();
+                .doOnSuccess(account -> accountHelper = new AccountHelper(account, serverCommunicator, environment.getPsiphonWalletAddress()))
+                .map(account -> true)
+                .onErrorReturnItem(false)
+                .cache()
+                .toObservable()
+                .mergeWith(isReadyObservableSource);
 
-        isReadyCompletable.subscribe();
+        isReadyObservable.subscribe();
     }
 
     public static KinManager getInstance(Context context, Environment environment) {
@@ -66,8 +74,8 @@ public class KinManager {
         return instance = new KinManager(context, clientHelper, serverCommunicator, environment, kinPermissionManager);
     }
 
-    public Completable isReady() {
-        return isReadyCompletable;
+    public Observable<Boolean> isReady() {
+        return isReadyObservable;
     }
 
     /**
@@ -129,6 +137,23 @@ public class KinManager {
                 .doOnSuccess(agreed -> {
                     if (agreed) {
                         transferOut(1d).subscribeOn(Schedulers.io()).subscribe();
+                    }
+                });
+    }
+
+    public Single<Boolean> optIn(Context context) {
+        return kinPermissionManager.optIn(context)
+                .doOnSuccess(optedIn -> isReadyObservableSource.onNext(true));
+    }
+
+    public Single<Boolean> optOut(Context context) {
+        return kinPermissionManager.optOut(context)
+                .doOnSuccess(optedOut -> {
+                    if (optedOut) {
+                        // TODO: Transfer excess funds back into our account?
+                        deleteAccount();
+                        serverCommunicator.optOut();
+                        isReadyObservableSource.onNext(false);
                     }
                 });
     }

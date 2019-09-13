@@ -1293,11 +1293,23 @@ public class StatusActivity
     private void initializeKin() {
         kinManager = KinManager.getInstance(this, Environment.TEST);
         kinManager.isReady()
-                .doOnComplete(this::showKinUI)
+                .doOnNext(ready -> {
+                    showKinUI();
+                    // TODO: Determine how we want to show the opted-out iu. Should we give the option to opt back in?
+                    // if (ready) {
+                    //     showKinUI();
+                    // } else {
+                    //     hideKinUI();
+                    // }
+                })
                 .subscribe();
     }
 
     private void showKinUI() {
         findViewById(R.id.btn_kin_activity).setVisibility(View.VISIBLE);
+    }
+
+    private void hideKinUI() {
+        findViewById(R.id.btn_kin_activity).setVisibility(View.GONE);
     }
 }

@@ -3,6 +3,7 @@ package com.psiphon3.kin;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 
 import com.psiphon3.subscription.R;
 
@@ -61,14 +62,43 @@ public class KinPermissionManager {
         return optIn(context);
     }
 
-    public Single<Boolean> optOut(Context context, KinManager kinManager) {
-        // TODO: This should probably be called by kinmanager rather than vice versa
+    public Single<Boolean> optIn(Context context) {
+        return Single.create(emitter ->
+                PermissionDialog.show(context, button -> {
+                    if (emitter.isDisposed()) {
+                        return;
+                    }
+
+                    // Return if the user agreed or not
+                    // If it was dismissed, ask next time they open the app
+                    switch (button) {
+                        case BUTTON_POSITIVE:
+                            Log.e("tst", "optIn: 1");
+                            setHasAgreedToKin(context, true);
+                            emitter.onSuccess(true);
+                            break;
+
+                        case BUTTON_NEGATIVE:
+                            Log.e("tst", "optIn: 2");
+                            setHasAgreedToKin(context, false);
+                            emitter.onSuccess(false);
+                            break;
+
+                        case BUTTON_NEUTRAL:
+                        default:
+                            Log.e("tst", "optIn: 3");
+                            emitter.onSuccess(false);
+                            break;
+                    }
+                })
+        );
+    }
+
+    public Single<Boolean> optOut(Context context) {
         return Single.create(emitter -> {
             new AlertDialog.Builder(context)
                     .setMessage(R.string.lbl_kin_opt_out)
                     .setPositiveButton(R.string.lbl_yes, (dialog, which) -> {
-                        // TODO: Transfer excess funds back into our account?
-                        kinManager.deleteAccount();
                         setHasAgreedToKin(context, false);
                         setHasAgreedToAutoPay(context, false);
                         if (!emitter.isDisposed()) {
@@ -83,35 +113,6 @@ public class KinPermissionManager {
                     .create()
                     .show();
         });
-    }
-
-    public Single<Boolean> optIn(Context context) {
-        return Single.create(emitter ->
-                PermissionDialog.show(context, button -> {
-                    if (emitter.isDisposed()) {
-                        return;
-                    }
-
-                    // Return if the user agreed or not
-                    // If it was dismissed, ask next time they open the app
-                    switch (button) {
-                        case BUTTON_POSITIVE:
-                            setHasAgreedToKin(context, true);
-                            emitter.onSuccess(true);
-                            break;
-
-                        case BUTTON_NEGATIVE:
-                            setHasAgreedToKin(context, false);
-                            emitter.onSuccess(false);
-                            break;
-
-                        case BUTTON_NEUTRAL:
-                        default:
-                            emitter.onSuccess(false);
-                            break;
-                    }
-                })
-        );
     }
 
     /**

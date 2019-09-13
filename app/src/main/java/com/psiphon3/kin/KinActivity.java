@@ -25,7 +25,11 @@ public class KinActivity extends LocalizedActivities.AppCompatActivity {
 
         kinManager = KinManager.getInstance(this, Environment.TEST);
         kinManager.isReady()
-                .doOnComplete(this::showOptedInUI)
+                .doOnNext(ready -> {
+                    if (ready) {
+                        showOptedInUI();
+                    }
+                })
                 .subscribe();
     }
 
@@ -40,7 +44,7 @@ public class KinActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     public void onOptOutClick(View v) {
-        kinPermissionManager.optOut(this, kinManager)
+        kinManager.optOut(this)
                 .doOnSuccess(optedOut -> {
                     if (optedOut) {
                         showOptedOutUI();
@@ -50,7 +54,7 @@ public class KinActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     public void onOptInClick(View v) {
-        kinPermissionManager.optIn(this)
+        kinManager.optIn(this)
                 .doOnSuccess(optedIn -> {
                     if (optedIn) {
                         showOptedInUI();
