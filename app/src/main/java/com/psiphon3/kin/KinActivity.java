@@ -39,7 +39,7 @@ public class KinActivity extends LocalizedActivities.AppCompatActivity {
         if (isChecked) {
             kinPermissionManager.confirmAutoPaySwitch(this).doOnSuccess(autoPaySwitch::setChecked).subscribe();
         } else {
-            kinPermissionManager.setHasAgreedToAutoPay(this,false);
+            kinPermissionManager.setHasAgreedToAutoPay(this, false);
         }
     }
 
