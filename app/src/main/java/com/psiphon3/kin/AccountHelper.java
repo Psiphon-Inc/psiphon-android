@@ -27,22 +27,6 @@ class AccountHelper {
     }
 
     /**
-     * Requests that amount of Kin gets transferred into the active accounts wallet.
-     * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
-     *
-     * @param amount the amount to be given to the active account
-     * @return a completable which fires on complete after the transfer has been completed
-     */
-    Completable transferIn(Double amount) {
-        if (account.getPublicAddress() == null) {
-            return Completable.error(new Exception("Account has been deleted"));
-        }
-
-        // TODO: Should we be specifying the observeOn or subscribeOn scheduler here?
-        return serverCommunicator.fundAccount(account.getPublicAddress(), amount);
-    }
-
-    /**
      * Requests that amount of Kin gets transferred out of the active accounts wallet to Psiphon's wallet.
      * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
      *

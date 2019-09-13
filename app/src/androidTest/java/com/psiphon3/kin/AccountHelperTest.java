@@ -53,22 +53,6 @@ public class AccountHelperTest {
     }
 
     @Test
-    public void transferIn() throws OperationFailedException {
-        // Get the initial balance. OK to use an int because we won't use higher precision stuff for the transfers
-        int initialBalance = account.getBalanceSync().value().intValue();
-        TestObserver<Void> tester = accountHelper.transferIn(Utils.TRANSFER_AMOUNT).test();
-
-        // Check that it finished not because of timeout but because of onComplete
-        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        tester.assertComplete();
-
-        // Check the balance has updated
-        assertEquals(initialBalance + Utils.TRANSFER_AMOUNT, account.getBalanceSync().value().doubleValue(), Utils.DELTA);
-
-        // TODO: Determine some way to check if the Psiphon wallet has been changed as well
-    }
-
-    @Test
     public void transferOut() throws OperationFailedException {
         // Get the initial balance. OK to use an int because we won't use higher precision stuff for the transfers
         int initialBalance = account.getBalanceSync().value().intValue();

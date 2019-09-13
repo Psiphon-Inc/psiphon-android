@@ -40,13 +40,12 @@ class ServerCommunicator {
      * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
      *
      * @param address the wallet address
-     * @param amount  the amount of Kin to be funded on creation
      * @return a completable which fires on complete after receiving a successful response
      */
-    Completable createAccount(@NonNull String address, @NonNull Double amount) {
+    Completable createAccount(@NonNull String address) {
         return Completable.create(emitter -> {
             Request request = new Request.Builder()
-                    .url(getCreateAccountUrl(address, amount))
+                    .url(getCreateAccountUrl(address))
                     .get()
                     .build();
 
@@ -66,12 +65,8 @@ class ServerCommunicator {
     }
 
     /**
-     * Creates an account on the server for the wallet address, funding it with amount of Kin.
-     * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
-     *
-     * @param address the wallet address
-     * @param amount  the amount of Kin to be funded on creation
-     * @return a completable which fires on complete after receiving a successful response
+     * Let's the server know this user has opted out for coarse-stats.
+     * Runs async.
      */
     void optOut() {
         Request request = new Request.Builder()
@@ -83,44 +78,13 @@ class ServerCommunicator {
     }
 
     /**
-     * Gives amount Kin to the wallet at address.
-     * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
-     *
-     * @param address the wallet address
-     * @param amount  the amount of Kin to be given
-     * @return a completable which fires on complete after receiving a successful response
-     */
-    Completable fundAccount(@NonNull String address, @NonNull Double amount) {
-        return Completable.create(emitter -> {
-            Request request = new Request.Builder()
-                    .url(getFundAccountUrl(address, amount))
-                    .get()
-                    .build();
-
-            try {
-                Response response = okHttpClient.newCall(request).execute();
-                if (response.isSuccessful() && !emitter.isDisposed()) {
-                    emitter.onComplete();
-                } else if (!emitter.isDisposed()) {
-                    emitter.onError(new Exception("fund account failed with code " + response.code()));
-                }
-
-            } catch (IOException e) {
-                if (!emitter.isDisposed()) {
-                    emitter.onError(e);
-                }
-            }
-        });
-    }
-
-    /**
      * Attempts to whitelist the transaction.
      * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
      *
      * @param whitelistableTransaction a transaction to be whitelisted by the server
      * @return the whitelist transaction data from the server
      */
-    public Single<String> whitelistTransaction(@NonNull WhitelistableTransaction whitelistableTransaction) {
+    Single<String> whitelistTransaction(@NonNull WhitelistableTransaction whitelistableTransaction) {
         return Single.create(emitter -> {
             Request request = new Request.Builder()
                     .url(getWhiteListTransactionUrl())
@@ -173,19 +137,9 @@ class ServerCommunicator {
     }
 
     @NonNull
-    private HttpUrl getCreateAccountUrl(@NonNull String address, @NonNull Double amount) {
+    private HttpUrl getCreateAccountUrl(@NonNull String address) {
         return getFriendBotUrlBuilder()
                 .addQueryParameter("addr", address)
-                .addQueryParameter("amount", amount.toString())
-                .build();
-    }
-
-    @NonNull
-    private HttpUrl getFundAccountUrl(@NonNull String address, @NonNull Double amount) {
-        return getFriendBotUrlBuilder()
-                .addQueryParameter("addr", address)
-                .addQueryParameter("amount", amount.toString())
-                .addPathSegment("fund")
                 .build();
     }
 

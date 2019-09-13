@@ -9,7 +9,6 @@ import kin.sdk.exception.CryptoException;
 import kin.sdk.exception.DeleteAccountException;
 
 class ClientHelper {
-    final static Double CREATE_ACCOUNT_FUND_AMOUNT = 500d;
     private final static String EXPORT_KIN_ACCOUNT_PASSPHRASE = "correct-horse-battery-staple";
 
     private final KinClient kinClient;
@@ -51,7 +50,7 @@ class ClientHelper {
                 return Single.error(new Exception("failed to add a new KinAccount"));
             }
 
-            return serverCommunicator.createAccount(address, CREATE_ACCOUNT_FUND_AMOUNT).toSingle(() -> account);
+            return serverCommunicator.createAccount(address).toSingle(() -> account);
         } catch (CreateAccountException e) {
             return Single.error(e);
         }

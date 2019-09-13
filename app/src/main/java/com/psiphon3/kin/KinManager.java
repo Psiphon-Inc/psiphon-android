@@ -7,12 +7,9 @@ import java.math.BigDecimal;
 
 import io.reactivex.Completable;
 import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
-import io.reactivex.Observer;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
-import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.ReplaySubject;
 import kin.sdk.KinClient;
 
@@ -88,22 +85,6 @@ public class KinManager {
         }
 
         return accountHelper.getCurrentBalance();
-    }
-
-    /**
-     * Requests that amount of Kin gets transferred into the active accounts wallet.
-     * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
-     *
-     * @param amount the amount to be given to the active account
-     * @return a completable which fires on complete after the transaction has successfully completed
-     */
-    public Completable transferIn(Double amount) {
-        if (accountHelper == null) {
-            // TODO: Would an error be better here?
-            return Completable.complete();
-        }
-
-        return accountHelper.transferIn(amount);
     }
 
     /**

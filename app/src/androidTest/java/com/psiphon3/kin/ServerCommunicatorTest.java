@@ -56,7 +56,7 @@ public class ServerCommunicatorTest {
         assertNotNull(kinAccount.getPublicAddress());
 
         // Try and create the account
-        TestObserver<Void> tester = serverCommunicator.createAccount(kinAccount.getPublicAddress(), Utils.FUND_AMOUNT).test();
+        TestObserver<Void> tester = serverCommunicator.createAccount(kinAccount.getPublicAddress()).test();
 
         // Check that it finished not because of timeout but because of onComplete
         assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
@@ -67,7 +67,7 @@ public class ServerCommunicatorTest {
         assertEquals(Utils.FUND_AMOUNT, kinAccount.getBalanceSync().value().doubleValue(), Utils.DELTA);
 
         // Try to create the account again, this should not work
-        tester = serverCommunicator.createAccount(kinAccount.getPublicAddress(), Utils.FUND_AMOUNT).test();
+        tester = serverCommunicator.createAccount(kinAccount.getPublicAddress()).test();
 
         // Check that it finished not because of timeout but because of onError
         assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
@@ -79,29 +79,13 @@ public class ServerCommunicatorTest {
     }
 
     @Test
-    public void fundAccount() throws CreateAccountException, OperationFailedException {
-        // We have to have an account to verify the accounts balance
-        KinAccount kinAccount = kinClient.addAccount();
-        assertNotNull(kinAccount.getPublicAddress());
+    public void optOut() {
+        // Literally just checking that the call doesn't throw an exception
+        serverCommunicator.optOut();
+    }
 
-        // Try and create the account
-        TestObserver<Void> tester = serverCommunicator.createAccount(kinAccount.getPublicAddress(), Utils.FUND_AMOUNT).test();
-
-        // Check that it finished not because of timeout but because of onComplete
-        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        tester.assertComplete();
-
-        // Ensure that the account is now created
-        assertEquals(AccountStatus.CREATED, kinAccount.getStatusSync());
-        assertEquals(Utils.FUND_AMOUNT, kinAccount.getBalanceSync().value().doubleValue(), Utils.DELTA);
-
-        // Now we can test
-        tester = serverCommunicator.fundAccount(kinAccount.getPublicAddress(), Utils.TRANSFER_AMOUNT).test();
-
-        // Check that it finished not because of timeout but because of onComplete
-        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        tester.assertComplete();
-
-        assertEquals(Utils.FUND_AMOUNT + Utils.TRANSFER_AMOUNT, kinAccount.getBalanceSync().value().doubleValue(), Utils.DELTA);
+    @Test
+    public void whitelistTransaction() {
+        // TODO: How to test
     }
 }
