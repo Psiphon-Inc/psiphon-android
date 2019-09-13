@@ -8,6 +8,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.observers.TestObserver;
@@ -38,9 +39,10 @@ public class AccountHelperTest {
 
         ServerCommunicator serverCommunicator = new ServerCommunicator(env.getFriendBotServerUrl());
         kinClient = new KinClient(context, env.getKinEnvironment(), Environment.PSIPHON_APP_ID);
+        ClientHelper clientHelper = new ClientHelper(kinClient, serverCommunicator);
         kinClient.clearAllAccounts();
 
-        account = ClientHelper.getAccount(kinClient, serverCommunicator).blockingGet();
+        account = clientHelper.getAccount().blockingGet();
         accountHelper = new AccountHelper(account, serverCommunicator, env.getPsiphonWalletAddress());
 
         // Setup isn't finished until the account is created
@@ -66,5 +68,33 @@ public class AccountHelperTest {
         assertEquals(initialBalance - Utils.TRANSFER_AMOUNT, account.getBalanceSync().value().doubleValue(), Utils.DELTA);
 
         // TODO: Determine some way to check if the Psiphon wallet has been changed as well
+    }
+
+    @Test
+    public void getCurrentBalance() {
+        TestObserver<BigDecimal> tester = accountHelper.getCurrentBalance().test();
+
+        // Check that it finished not because of timeout but because of onComplete
+        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
+        tester.assertComplete();
+
+        // Check the balance is what we expect after funding
+        assertEquals(Utils.FUND_AMOUNT, tester.values().get(0).doubleValue(), Utils.DELTA);
+
+        // Try transferring to make sure it updates
+        TestObserver<Void> transferTester = accountHelper.transferOut(Utils.TRANSFER_AMOUNT).test();
+
+        // Check that it finished not because of timeout but because of onComplete
+        assertTrue(transferTester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
+        transferTester.assertComplete();
+
+        tester = accountHelper.getCurrentBalance().test();
+
+        // Check that it finished not because of timeout but because of onComplete
+        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
+        tester.assertComplete();
+
+        // Check the balance is what we expect after funding
+        assertEquals(Utils.FUND_AMOUNT - Utils.TRANSFER_AMOUNT, tester.values().get(0).doubleValue(), Utils.DELTA);
     }
 }

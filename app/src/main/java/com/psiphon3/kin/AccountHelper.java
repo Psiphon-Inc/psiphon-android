@@ -40,18 +40,10 @@ class AccountHelper {
                 .ignoreElement();
     }
 
-    private Single<Transaction> buildTransaction(KinAccount account, String walletAddress, BigDecimal amount) {
-        return Single.fromCallable(() -> account.buildTransactionSync(walletAddress, amount, 0));
-    }
-
-    private Single<TransactionId> sendWhitelistTransaction(KinAccount account, String whitelist) {
-        return Single.fromCallable(() -> account.sendWhitelistTransactionSync(whitelist));
-    }
-
     /**
      * @return the current balance of the active account
      */
-    public Single<BigDecimal> getCurrentBalance() {
+    Single<BigDecimal> getCurrentBalance() {
         return Single.create(emitter ->
                 account.getBalance().run(new ResultCallback<Balance>() {
                     @Override
@@ -70,5 +62,13 @@ class AccountHelper {
                     }
                 })
         );
+    }
+
+    private Single<Transaction> buildTransaction(KinAccount account, String walletAddress, BigDecimal amount) {
+        return Single.fromCallable(() -> account.buildTransactionSync(walletAddress, amount, 0));
+    }
+
+    private Single<TransactionId> sendWhitelistTransaction(KinAccount account, String whitelist) {
+        return Single.fromCallable(() -> account.sendWhitelistTransactionSync(whitelist));
     }
 }

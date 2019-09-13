@@ -12,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import kin.sdk.WhitelistableTransaction;
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -74,7 +76,17 @@ class ServerCommunicator {
                 .head()
                 .build();
 
-        okHttpClient.newCall(request).enqueue(null);
+        okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                // Don't give a hoot
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                // Don't give a hoot
+            }
+        });
     }
 
     /**
@@ -152,7 +164,7 @@ class ServerCommunicator {
 
     private HttpUrl getOptOutUrl() {
         return getFriendBotUrlBuilder()
-                .addPathSegment("opt-out")
+                .addPathSegment("no")
                 .build();
     }
 }

@@ -15,7 +15,7 @@ public class Environment {
     );
 
     public static final Environment TEST = new Environment(
-            "7b1dbd83.ngrok.io",
+            "3d803969.ngrok.io",
             "GCWUL5BFYTRVMM4WYHABI5C2Y5VZ7VB5N2BKPDMGG3OG7DYN3FBCTVDS",
             kin.sdk.Environment.TEST
     );

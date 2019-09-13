@@ -3,6 +3,7 @@ package com.psiphon3.kin;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.test.InstrumentationRegistry;
+import android.util.Log;
 
 import org.junit.After;
 import org.junit.Before;
@@ -54,6 +55,8 @@ public class ServerCommunicatorTest {
     public void createAccount() throws CreateAccountException, OperationFailedException {
         KinAccount kinAccount = kinClient.addAccount();
         assertNotNull(kinAccount.getPublicAddress());
+
+        Log.e("tst", kinAccount.getPublicAddress());
 
         // Try and create the account
         TestObserver<Void> tester = serverCommunicator.createAccount(kinAccount.getPublicAddress()).test();
