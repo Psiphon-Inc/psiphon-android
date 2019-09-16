@@ -26,7 +26,7 @@ public class KinActivity extends LocalizedActivities.AppCompatActivity {
         kinManager = KinManager.getInstance(this, Environment.TEST);
         kinManager.isReady()
                 .doOnNext(ready -> {
-                    if (ready) {
+                    if (ready && kinManager.isOptedIn(this)) {
                         showOptedInUI();
                     }
                 })

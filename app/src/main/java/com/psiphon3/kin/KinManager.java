@@ -21,7 +21,6 @@ public class KinManager {
     private final Environment environment;
     private final KinPermissionManager kinPermissionManager;
 
-    private final Observable<Boolean> isReadyObservable;
     private final ReplaySubject<Boolean> isReadyObservableSource;
 
     private AccountHelper accountHelper;
@@ -34,7 +33,7 @@ public class KinManager {
 
         // Use a ReplaySubject with size 1, this means that it will only ever emit the latest on next
         isReadyObservableSource = ReplaySubject.createWithSize(1);
-        isReadyObservable = kinPermissionManager
+        kinPermissionManager
                 .getUsersAgreementToKin(context)
                 .flatMap(agreed -> {
                     Log.e("tst", "KinManager: " + agreed);
@@ -47,14 +46,14 @@ public class KinManager {
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread());
                 })
-                .doOnSuccess(account -> accountHelper = new AccountHelper(account, serverCommunicator, environment.getPsiphonWalletAddress()))
-                .map(account -> true)
-                .onErrorReturnItem(false)
-                .cache()
-                .toObservable()
-                .mergeWith(isReadyObservableSource);
-
-        isReadyObservable.subscribe();
+                .doOnSuccess(account -> {
+                    accountHelper = new AccountHelper(account, serverCommunicator, environment.getPsiphonWalletAddress());
+                    isReadyObservableSource.onNext(true);
+                })
+                .doOnError(e -> {
+                    isReadyObservableSource.onNext(false);
+                })
+                .subscribe();
     }
 
     public static KinManager getInstance(Context context, Environment environment) {
@@ -72,7 +71,7 @@ public class KinManager {
     }
 
     public Observable<Boolean> isReady() {
-        return isReadyObservable;
+        return isReadyObservableSource;
     }
 
     /**
@@ -120,6 +119,10 @@ public class KinManager {
                         transferOut(1d).subscribeOn(Schedulers.io()).subscribe();
                     }
                 });
+    }
+
+    public boolean isOptedIn(Context context) {
+        return kinPermissionManager.hasAgreedToKin(context);
     }
 
     public Single<Boolean> optIn(Context context) {

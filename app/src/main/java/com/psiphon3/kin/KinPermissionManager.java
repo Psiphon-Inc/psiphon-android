@@ -31,7 +31,7 @@ class KinPermissionManager {
      * @param context context for shared preferences
      * @return true if the user has agreed to use Kin, false if they haven't agreed or haven't been asked yet
      */
-    private boolean hasAgreedToKin(Context context) {
+    boolean hasAgreedToKin(Context context) {
         return getSharedPreferences(context).getBoolean(AGREED_TO_KIN_KEY, false);
     }
 
@@ -193,6 +193,11 @@ class KinPermissionManager {
     }
 
     private SharedPreferences getSharedPreferences(Context context) {
+        Context applicationContext = context.getApplicationContext();
+        if (applicationContext != null) {
+            return applicationContext.getSharedPreferences(KIN_PREFERENCES_NAME, Context.MODE_PRIVATE);
+        }
+
         return context.getSharedPreferences(KIN_PREFERENCES_NAME, Context.MODE_PRIVATE);
     }
 }
