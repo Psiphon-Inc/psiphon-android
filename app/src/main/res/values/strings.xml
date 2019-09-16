@@ -43,19 +43,16 @@
     <string name="preference_language_default_language">Default language</string>
     <string name="preference_navigate_to_vpn_setting_title">Always-on VPN</string>
     <string name="preference_navigate_to_vpn_setting_summary">Go to system settings to enable Always-on VPN</string>
-    <string name="lbl_kin_onboard_explanation"><![CDATA[Kin is a way to help support Psiphon.\n\n
-    If you agree, we\'ll create a Kin wallet for you, automatically funded with 715 Kin, and each time you connect to Psiphon, we will charge you 1 Kin, and if you ever run out of Kin, Psiphon will continue to work as normal.\n\n
-    Why participate? When people spend Kin through Psiphon it helps to fund our servers.\n\n
-    To learn more about Kin go to: kin.org]]></string>
+    <string name="lbl_kin_onboard_explanation"><![CDATA[Kin is a way to help support Psiphon.\n\nIf you agree, we\'ll create a Kin wallet for you, automatically funded with 715 Kin, and each time you connect to Psiphon, we will charge you 1 Kin, and if you ever run out of Kin, Psiphon will continue to work as normal.\n\nWhy participate? When people spend Kin through Psiphon it helps to fund our servers.\n\nTo learn more about Kin go to: kin.org]]></string>
     <string name="lbl_opt_out_of_kin">Opt out of Kin</string>
     <string name="lbl_auto_donate">Auto donate on connect</string>
     <string name="lbl_kin_balance">Support amount:</string>
     <string name="lbl_no">No</string>
     <string name="lbl_yes">Yes</string>
-    <string name="lbl_kin_auto_pay">Are you OK with automatically donating 1 Kin on each connect?</string>
+    <string name="lbl_kin_auto_pay">Would you like to automatically donate 1 Kin when you connect rather than be prompted every time?</string>
     <string name="lbl_kin_opt_out">Are you sure you want to opt out of Kin? Your wallet will be lost and you won\'t be helping Psiphon with each connection.\n\nYou can always re-join the program in the future if you change your mind.</string>
     <string name="lbl_opt_in_to_kin">Opt in to Kin</string>
-    <string name="lbl_kin_pay">To connect you must pay 1 Kin. Is this OK?</string>
+    <string name="lbl_kin_pay">Please confirm your donation of 1 Kin to connect to Psiphon.</string>
     <string name="lbl_auto_pay">Auto Pay</string>
     <string name="title_kin_preference_group">Kin</string>
     <string name="lbl_preference_enable_kin">Enable Kin</string>
