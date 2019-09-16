@@ -41,7 +41,7 @@ class KinPermissionManager {
      * @param context        context for shared preferences
      * @param hasAgreedToKin if the user has agreed to using Kin or not
      */
-    private void setHasAgreedToKin(Context context, boolean hasAgreedToKin) {
+    void setHasAgreedToKin(Context context, boolean hasAgreedToKin) {
         getSharedPreferences(context)
                 .edit()
                 .putBoolean(AGREED_TO_KIN_KEY, hasAgreedToKin)
