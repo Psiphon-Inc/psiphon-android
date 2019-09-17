@@ -1,6 +1,7 @@
 package com.psiphon3.kin;
 
 import android.content.Context;
+import android.util.Log;
 
 import java.math.BigDecimal;
 
@@ -17,23 +18,22 @@ public class KinManager {
 
     private final ClientHelper clientHelper;
     private final ServerCommunicator serverCommunicator;
-    private final Environment environment;
     private final KinPermissionManager kinPermissionManager;
+    private final Environment environment;
 
     private final ReplaySubject<Boolean> isReadyObservableSource;
 
     private AccountHelper accountHelper;
 
-    KinManager(Context context, ClientHelper clientHelper, ServerCommunicator serverCommunicator, Environment environment, KinPermissionManager kinPermissionManager) {
+    KinManager(Context context, ClientHelper clientHelper, ServerCommunicator serverCommunicator, KinPermissionManager kinPermissionManager, Environment environment) {
         this.clientHelper = clientHelper;
         this.serverCommunicator = serverCommunicator;
-        this.environment = environment;
         this.kinPermissionManager = kinPermissionManager;
+        this.environment = environment;
 
         // Use a ReplaySubject with size 1, this means that it will only ever emit the latest on next
         // Start with false
         isReadyObservableSource = ReplaySubject.createWithSize(1);
-        isReadyObservableSource.onNext(false);
         kinPermissionManager
                 .getUsersAgreementToKin(context)
                 .flatMap(agreed -> {
@@ -47,7 +47,7 @@ public class KinManager {
                             .observeOn(AndroidSchedulers.mainThread());
                 })
                 .doOnSuccess(account -> {
-                    accountHelper = new AccountHelper(account, serverCommunicator, environment.getPsiphonWalletAddress());
+                    accountHelper = clientHelper.getAccountHelper(account, environment);
                     isReadyObservableSource.onNext(true);
                 })
                 .doOnError(e -> {
@@ -67,7 +67,7 @@ public class KinManager {
         ClientHelper clientHelper = new ClientHelper(kinClient, serverCommunicator);
         KinPermissionManager kinPermissionManager = new KinPermissionManager();
 
-        return instance = new KinManager(context, clientHelper, serverCommunicator, environment, kinPermissionManager);
+        return instance = new KinManager(context, clientHelper, serverCommunicator, kinPermissionManager, environment);
     }
 
     /**
@@ -106,7 +106,7 @@ public class KinManager {
      * @return the current balance of the active account
      */
     public Single<BigDecimal> getCurrentBalance() {
-        if (isReady()) {
+        if (!isReady()) {
             // TODO: Would an error be better here?
             return Single.just(new BigDecimal(-1));
         }
@@ -122,10 +122,12 @@ public class KinManager {
      * @return a completable which fires on complete after the transaction has successfully completed
      */
     public Completable transferOut(Double amount) {
-        if (isReady()) {
+        if (!isReady()) {
             // TODO: Would an error be better here?
             return Completable.complete();
         }
+
+        Log.e("tst", "transferOut: 1");
 
         return accountHelper.transferOut(amount);
     }
@@ -137,7 +139,7 @@ public class KinManager {
      * @return a single which returns true on agreement to pay; otherwise false.
      */
     public Single<Boolean> chargeForConnection(Context context) {
-        if (isReady()) {
+        if (!isReady()) {
             // If we aren't ready yet just let them connect
             return Single.just(true);
         }
@@ -167,7 +169,19 @@ public class KinManager {
      */
     public Single<Boolean> optIn(Context context) {
         return kinPermissionManager.optIn(context)
-                .doOnSuccess(optedIn -> isReadyObservableSource.onNext(true));
+                .doOnSuccess(optedIn -> {
+                    if (optedIn) {
+                        clientHelper
+                                .getAccount()
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .doOnSuccess(account -> {
+                                    accountHelper = clientHelper.getAccountHelper(account, environment);
+                                    isReadyObservableSource.onNext(true);
+                                })
+                                .subscribe();
+                    }
+                });
     }
 
     /**
@@ -181,6 +195,7 @@ public class KinManager {
                 .doOnSuccess(optedOut -> {
                     if (optedOut) {
                         // TODO: Transfer excess funds back into our account?
+                        accountHelper = null; // Not really needed but might as well
                         clientHelper.deleteAccount();
                         serverCommunicator.optOut();
                         isReadyObservableSource.onNext(false);

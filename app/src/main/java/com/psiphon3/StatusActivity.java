@@ -1291,7 +1291,7 @@ public class StatusActivity
     };
 
     private void initializeKin() {
-        kinManager = KinManager.getInstance(this, Environment.TEST);
+        kinManager = KinManager.getInstance(this);
         kinManager.isReadyObservable()
                 .doOnNext(ready -> {
                     showKinUI();
