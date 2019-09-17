@@ -17,7 +17,7 @@ import kin.sdk.KinClient;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -29,7 +29,6 @@ public class KinManagerTest {
     private Context context;
     private KinClient kinClient;
     private KinAccount account;
-    private AccountHelper accountHelper;
     private KinPermissionManager kinPermissionManager;
     private KinManager kinManager;
 
@@ -47,7 +46,6 @@ public class KinManagerTest {
         kinClient.clearAllAccounts();
 
         account = clientHelper.getAccount().blockingGet();
-        accountHelper = new AccountHelper(account, serverCommunicator, env.getPsiphonWalletAddress());
 
         kinPermissionManager = new KinPermissionManager();
 
@@ -63,8 +61,17 @@ public class KinManagerTest {
 
     @Test
     public void getInstance() {
+        // For the moment we expect this to fail
+        KinManager instance1 = KinManager.getInstance(context, Environment.PRODUCTION);
+        KinManager instance2 = KinManager.getInstance(context);
+        assertEquals(instance1, instance2);
+        assertNotEquals(kinManager, instance2);
+    }
+
+    @Test
+    public void getTestInstance() {
         KinManager instance1 = KinManager.getInstance(context, Environment.TEST);
-        KinManager instance2 = KinManager.getInstance(context, Environment.TEST);
+        KinManager instance2 = KinManager.getInstance(context);
         assertEquals(instance1, instance2);
         assertEquals(kinManager, instance2);
     }

@@ -31,7 +31,9 @@ public class KinManager {
         this.kinPermissionManager = kinPermissionManager;
 
         // Use a ReplaySubject with size 1, this means that it will only ever emit the latest on next
+        // Start with false
         isReadyObservableSource = ReplaySubject.createWithSize(1);
+        isReadyObservableSource.onNext(false);
         kinPermissionManager
                 .getUsersAgreementToKin(context)
                 .flatMap(agreed -> {
