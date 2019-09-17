@@ -3,20 +3,16 @@ package com.psiphon3.kin;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.test.InstrumentationRegistry;
-import android.util.Log;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
-import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.reactivex.observers.TestObserver;
 import kin.sdk.KinAccount;
-import kin.sdk.KinClient;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -84,7 +80,6 @@ public class KinManagerTest {
 
     @Test
     public void isReady() {
-        Log.e("tst", "isReady: 1");
         assertTrue(kinManager.isReady());
 
         // TODO: Should we add tests to make sure opt-in/out toggle isReady?
@@ -95,15 +90,13 @@ public class KinManagerTest {
         when(accountHelper.getCurrentBalance()).thenReturn(Single.just(Utils.FUND_AMOUNT_BD));
 
         TestObserver<BigDecimal> test = kinManager.getCurrentBalance().test();
-        assertTrue(test.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        test.assertComplete();
+        Utils.assertTestCompleted(test);
         test.assertValue(Utils.FUND_AMOUNT_BD);
         verify(accountHelper, times(1)).getCurrentBalance();
 
         // Should still be the same
         test = kinManager.getCurrentBalance().test();
-        assertTrue(test.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        test.assertComplete();
+        Utils.assertTestCompleted(test);
         test.assertValue(Utils.FUND_AMOUNT_BD);
         verify(accountHelper, times(2)).getCurrentBalance();
     }
@@ -113,8 +106,7 @@ public class KinManagerTest {
         when(accountHelper.transferOut(anyDouble())).thenReturn(Completable.complete());
 
         TestObserver<Void> test = kinManager.transferOut(Utils.TRANSFER_AMOUNT).test();
-        assertTrue(test.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        test.assertComplete();
+        Utils.assertTestCompleted(test);
         verify(accountHelper, times(1)).transferOut(Utils.TRANSFER_AMOUNT);
     }
 
@@ -124,8 +116,7 @@ public class KinManagerTest {
         when(kinPermissionManager.confirmPay(context)).thenReturn(Single.just(false));
 
         TestObserver<Boolean> test = kinManager.chargeForConnection(context).test();
-        assertTrue(test.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        test.assertComplete();
+        Utils.assertTestCompleted(test);
         test.assertValue(false);
         verify(accountHelper, times(0)).transferOut(anyDouble());
 
@@ -134,8 +125,7 @@ public class KinManagerTest {
         when(kinPermissionManager.confirmPay(context)).thenReturn(Single.just(true));
 
         test = kinManager.chargeForConnection(context).test();
-        assertTrue(test.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        test.assertComplete();
+        Utils.assertTestCompleted(test);
         test.assertValue(true);
         verify(accountHelper, times(1)).transferOut(Utils.CONNECTION_TRANSFER_AMOUNT);
     }
@@ -154,8 +144,7 @@ public class KinManagerTest {
         when(kinPermissionManager.optIn(context)).thenReturn(Single.just(false));
 
         TestObserver<Boolean> test = kinManager.optIn(context).test();
-        assertTrue(test.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        test.assertComplete();
+        Utils.assertTestCompleted(test);
         test.assertValue(false);
         verify(kinPermissionManager, times(1)).optIn(context);
 
@@ -166,8 +155,7 @@ public class KinManagerTest {
         verify(clientHelper, times(1)).getAccount();
 
         test = kinManager.optIn(context).test();
-        assertTrue(test.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        test.assertComplete();
+        Utils.assertTestCompleted(test);
         test.assertValue(true);
         verify(kinPermissionManager, times(2)).optIn(context);
         verify(clientHelper, times(2)).getAccount();
@@ -183,8 +171,7 @@ public class KinManagerTest {
         when(kinPermissionManager.optOut(context)).thenReturn(Single.just(false));
 
         TestObserver<Boolean> test = kinManager.optOut(context).test();
-        assertTrue(test.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        test.assertComplete();
+        Utils.assertTestCompleted(test);
         test.assertValue(false);
         verify(kinPermissionManager, times(1)).optOut(context);
         assertEquals(1, counter[0]);
@@ -193,8 +180,7 @@ public class KinManagerTest {
         when(kinPermissionManager.optOut(context)).thenReturn(Single.just(true));
 
         test = kinManager.optOut(context).test();
-        assertTrue(test.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        test.assertComplete();
+        Utils.assertTestCompleted(test);
         test.assertValue(true);
         verify(kinPermissionManager, times(2)).optOut(context);
         verify(clientHelper, times(1)).deleteAccount();

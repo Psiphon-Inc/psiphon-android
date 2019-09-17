@@ -1,7 +1,6 @@
 package com.psiphon3.kin;
 
 import android.content.Context;
-import android.util.Log;
 
 import java.math.BigDecimal;
 
@@ -111,7 +110,9 @@ public class KinManager {
             return Single.just(new BigDecimal(-1));
         }
 
-        return accountHelper.getCurrentBalance();
+        return accountHelper.getCurrentBalance()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     /**
@@ -126,8 +127,6 @@ public class KinManager {
             // TODO: Would an error be better here?
             return Completable.complete();
         }
-
-        Log.e("tst", "transferOut: 1");
 
         return accountHelper.transferOut(amount);
     }

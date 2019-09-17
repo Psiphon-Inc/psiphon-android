@@ -3,13 +3,10 @@ package com.psiphon3.kin;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.test.InstrumentationRegistry;
-import android.util.Log;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.concurrent.TimeUnit;
 
 import io.reactivex.observers.TestObserver;
 import kin.sdk.AccountStatus;
@@ -20,7 +17,6 @@ import kin.sdk.exception.OperationFailedException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -56,25 +52,21 @@ public class ServerCommunicatorTest {
         KinAccount kinAccount = kinClient.addAccount();
         assertNotNull(kinAccount.getPublicAddress());
 
-        Log.e("tst", kinAccount.getPublicAddress());
-
         // Try and create the account
-        TestObserver<Void> tester = serverCommunicator.createAccount(kinAccount.getPublicAddress()).test();
+        TestObserver<Void> test = serverCommunicator.createAccount(kinAccount.getPublicAddress()).test();
 
         // Check that it finished not because of timeout but because of onComplete
-        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        tester.assertComplete();
+        Utils.assertTestCompleted(test);
 
         // Ensure that the account is now created
         assertEquals(AccountStatus.CREATED, kinAccount.getStatusSync());
         assertEquals(Utils.FUND_AMOUNT, kinAccount.getBalanceSync().value().doubleValue(), Utils.DELTA);
 
         // Try to create the account again, this should not work
-        tester = serverCommunicator.createAccount(kinAccount.getPublicAddress()).test();
+        test = serverCommunicator.createAccount(kinAccount.getPublicAddress()).test();
 
         // Check that it finished not because of timeout but because of onError
-        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        tester.assertError(throwable -> true);
+        Utils.assertTestError(test);
 
         // Ensure these didn't change
         assertEquals(AccountStatus.CREATED, kinAccount.getStatusSync());

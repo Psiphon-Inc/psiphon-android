@@ -8,7 +8,7 @@ import kin.sdk.Balance;
 import kin.sdk.KinAccount;
 import kin.sdk.Transaction;
 import kin.sdk.TransactionId;
-import kin.utils.ResultCallback;
+import kin.sdk.exception.OperationFailedException;
 
 class AccountHelper {
     private final KinAccount account;
@@ -41,27 +41,23 @@ class AccountHelper {
     }
 
     /**
+     * Runs synchronously so specify the schedulers if this isn't desired.
+     *
      * @return the current balance of the active account
      */
     Single<BigDecimal> getCurrentBalance() {
-        return Single.create(emitter ->
-                account.getBalance().run(new ResultCallback<Balance>() {
-                    @Override
-                    public void onResult(Balance result) {
-                        if (!emitter.isDisposed()) {
-                            emitter.onSuccess(result.value());
-                        }
-                    }
-
-                    @Override
-                    public void onError(Exception e) {
-                        // TODO: Should we care?
-                        if (!emitter.isDisposed()) {
-                            emitter.onError(e);
-                        }
-                    }
-                })
-        );
+        return Single.create(emitter -> {
+            try {
+                Balance balance = account.getBalanceSync();
+                if (!emitter.isDisposed()) {
+                    emitter.onSuccess(balance.value());
+                }
+            } catch (OperationFailedException e) {
+                if (!emitter.isDisposed()) {
+                    emitter.onError(e);
+                }
+            }
+        });
     }
 
     private Single<Transaction> buildTransaction(KinAccount account, String walletAddress, BigDecimal amount) {

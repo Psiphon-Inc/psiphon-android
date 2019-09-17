@@ -3,7 +3,6 @@ package com.psiphon3.kin;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.v7.app.AlertDialog;
-import android.util.Log;
 
 import com.psiphon3.subscription.R;
 
@@ -73,20 +72,17 @@ class KinPermissionManager {
                     // If it was dismissed, ask next time they open the app
                     switch (button) {
                         case BUTTON_POSITIVE:
-                            Log.e("tst", "optIn: 1");
                             setHasAgreedToKin(context, true);
                             emitter.onSuccess(true);
                             break;
 
                         case BUTTON_NEGATIVE:
-                            Log.e("tst", "optIn: 2");
                             setHasAgreedToKin(context, false);
                             emitter.onSuccess(false);
                             break;
 
                         case BUTTON_NEUTRAL:
                         default:
-                            Log.e("tst", "optIn: 3");
                             emitter.onSuccess(false);
                             break;
                     }

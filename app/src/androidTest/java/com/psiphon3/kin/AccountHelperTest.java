@@ -4,97 +4,79 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.test.InstrumentationRegistry;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
-import java.util.concurrent.TimeUnit;
 
+import io.reactivex.Single;
 import io.reactivex.observers.TestObserver;
+import kin.sdk.Balance;
 import kin.sdk.KinAccount;
-import kin.sdk.KinClient;
+import kin.sdk.Transaction;
+import kin.sdk.TransactionId;
+import kin.sdk.WhitelistableTransaction;
 import kin.sdk.exception.OperationFailedException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class AccountHelperTest {
 
-    private KinClient kinClient;
+    private static final Environment env = Environment.TEST;
     private KinAccount account;
+    private ServerCommunicator serverCommunicator;
     private AccountHelper accountHelper;
 
     @Before
-    public void setUp() throws InterruptedException, OperationFailedException {
-        Environment env = Environment.TEST;
+    public void setUp() {
         SharedPreferences sharedPreferences = InstrumentationRegistry.getTargetContext().getSharedPreferences("test", Context.MODE_PRIVATE);
         Context context = mock(Context.class);
         when(context.getApplicationContext()).thenReturn(context);
         when(context.getSharedPreferences(anyString(), anyInt())).thenReturn(sharedPreferences);
 
-        ServerCommunicator serverCommunicator = new ServerCommunicator(env.getFriendBotServerUrl());
-        kinClient = new KinClient(context, env.getKinEnvironment(), Environment.PSIPHON_APP_ID);
-        ClientHelper clientHelper = new ClientHelper(kinClient, serverCommunicator);
-        kinClient.clearAllAccounts();
+        account = mock(KinAccount.class);
+        when(account.getPublicAddress()).thenReturn("public_address");
 
-        account = clientHelper.getAccount().blockingGet();
+        serverCommunicator = mock(ServerCommunicator.class);
+
         accountHelper = new AccountHelper(account, serverCommunicator, env.getPsiphonWalletAddress());
-
-        // Setup isn't finished until the account is created
-        Utils.ensureAccountCreated(account);
-    }
-
-    @After
-    public void tearDown() {
-        kinClient.clearAllAccounts();
     }
 
     @Test
     public void transferOut() throws OperationFailedException {
-        // Get the initial balance. OK to use an int because we won't use higher precision stuff for the transfers
-        int initialBalance = account.getBalanceSync().value().intValue();
-        TestObserver<Void> tester = accountHelper.transferOut(Utils.TRANSFER_AMOUNT).test();
+        Transaction transaction = mock(Transaction.class);
+        WhitelistableTransaction whitelistableTransaction = mock(WhitelistableTransaction.class);
+        TransactionId transactionId = mock(TransactionId.class);
 
-        // Check that it finished not because of timeout but because of onComplete
-        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        tester.assertComplete();
+        when(account.buildTransactionSync(anyString(), any(BigDecimal.class), anyInt())).thenReturn(transaction);
+        when(transaction.getWhitelistableTransaction()).thenReturn(whitelistableTransaction);
+        when(serverCommunicator.whitelistTransaction(any())).thenReturn(Single.just("whitelist"));
+        when(account.sendWhitelistTransactionSync(any())).thenReturn(transactionId);
 
-        // Check the balance has updated
-        assertEquals(initialBalance - Utils.TRANSFER_AMOUNT, account.getBalanceSync().value().doubleValue(), Utils.DELTA);
+        TestObserver<Void> test = accountHelper.transferOut(Utils.TRANSFER_AMOUNT).test();
+        Utils.assertTestCompleted(test);
 
-        // TODO: Determine some way to check if the Psiphon wallet has been changed as well
+        verify(account, times(1)).buildTransactionSync(env.getPsiphonWalletAddress(), Utils.TRANSFER_AMOUNT_BD, 0);
+        verify(account, times(1)).sendWhitelistTransactionSync("whitelist");
+        verify(serverCommunicator, times(1)).whitelistTransaction(whitelistableTransaction);
     }
 
     @Test
-    public void getCurrentBalance() {
-        TestObserver<BigDecimal> tester = accountHelper.getCurrentBalance().test();
+    public void getCurrentBalance() throws OperationFailedException {
+        Balance balance = mock(Balance.class);
+        when(balance.value()).thenReturn(Utils.FUND_AMOUNT_BD);
+        when(account.getBalanceSync()).thenReturn(balance);
 
-        // Check that it finished not because of timeout but because of onComplete
-        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        tester.assertComplete();
+        TestObserver<BigDecimal> test = accountHelper.getCurrentBalance().test();
 
-        // Check the balance is what we expect after funding
-        assertEquals(Utils.FUND_AMOUNT, tester.values().get(0).doubleValue(), Utils.DELTA);
-
-        // Try transferring to make sure it updates
-        TestObserver<Void> transferTester = accountHelper.transferOut(Utils.TRANSFER_AMOUNT).test();
-
-        // Check that it finished not because of timeout but because of onComplete
-        assertTrue(transferTester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        transferTester.assertComplete();
-
-        tester = accountHelper.getCurrentBalance().test();
-
-        // Check that it finished not because of timeout but because of onComplete
-        assertTrue(tester.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
-        tester.assertComplete();
-
-        // Check the balance is what we expect after funding
-        assertEquals(Utils.FUND_AMOUNT - Utils.TRANSFER_AMOUNT, tester.values().get(0).doubleValue(), Utils.DELTA);
+        // Check that it completed
+        Utils.assertTestCompleted(test);
+        test.assertValue(Utils.FUND_AMOUNT_BD);
     }
 }

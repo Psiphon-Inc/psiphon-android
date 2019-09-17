@@ -1,7 +1,6 @@
 package com.psiphon3.kin;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -70,8 +69,6 @@ public class KinActivity extends LocalizedActivities.AppCompatActivity {
                     if (textView == null) {
                         return;
                     }
-
-                    Log.e("tst", balance.toString());
 
                     textView.setText(String.format("%s", FUND_AMOUNT - balance.intValue()));
                 })
