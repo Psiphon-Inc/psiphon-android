@@ -2,6 +2,8 @@ package com.psiphon3.kin;
 
 import android.content.Context;
 
+import com.psiphon3.TunnelState;
+
 import java.math.BigDecimal;
 
 import io.reactivex.Completable;
@@ -200,5 +202,15 @@ public class KinManager {
                         isReadyObservableSource.onNext(false);
                     }
                 });
+    }
+
+    public void onTunnelConnectionState(TunnelState tunnelState) {
+        // For now we just need to update the port so don't need any relay or such to hold it
+        TunnelState.ConnectionData connectionData = tunnelState.connectionData();
+        if (connectionData == null) {
+            serverCommunicator.setProxyPort(0);
+        } else {
+            serverCommunicator.setProxyPort(connectionData.httpPort());
+        }
     }
 }

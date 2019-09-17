@@ -329,6 +329,7 @@ public class StatusActivity
 
         psiphonAdManager.onTunnelConnectionState(tunnelState);
         psiCashFragment.onTunnelConnectionState(tunnelState);
+        kinManager.onTunnelConnectionState(tunnelState);
     }
 
     @Override

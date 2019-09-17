@@ -7,6 +7,13 @@ import com.google.gson.JsonParser;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Completable;
@@ -24,6 +31,7 @@ import okhttp3.Response;
 class ServerCommunicator {
     private final String friendBotUrl;
     private final OkHttpClient okHttpClient;
+    private int port;
 
     /**
      * @param friendBotUrl the URL to the friend bot server
@@ -32,6 +40,22 @@ class ServerCommunicator {
         this.friendBotUrl = friendBotUrl;
 
         okHttpClient = new OkHttpClient.Builder()
+                .proxySelector(new ProxySelector() {
+                    @Override
+                    public List<Proxy> select(URI uri) {
+                        Proxy proxy;
+                        if (port > 0) {
+                            proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", port));
+                        } else {
+                            proxy = Proxy.NO_PROXY;
+                        }
+                        return Collections.singletonList(proxy);
+                    }
+
+                    @Override
+                    public void connectFailed(URI uri, SocketAddress socketAddress, IOException e) {
+                    }
+                })
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .build();
@@ -166,5 +190,9 @@ class ServerCommunicator {
         return getFriendBotUrlBuilder()
                 .addPathSegment("no")
                 .build();
+    }
+
+    public void setProxyPort(int port) {
+        this.port = port;
     }
 }
