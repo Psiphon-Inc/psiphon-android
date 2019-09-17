@@ -1,7 +1,6 @@
 package com.psiphon3.kin;
 
 import android.content.Context;
-import android.util.Log;
 
 import java.math.BigDecimal;
 
@@ -36,7 +35,6 @@ public class KinManager {
         kinPermissionManager
                 .getUsersAgreementToKin(context)
                 .flatMap(agreed -> {
-                    Log.e("tst", "KinManager: " + agreed);
                     if (!agreed) {
                         return Single.never();
                     }
