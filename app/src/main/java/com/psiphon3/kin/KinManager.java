@@ -56,7 +56,7 @@ public class KinManager {
                 .subscribe();
     }
 
-    public static KinManager getInstance(Context context, Environment environment) {
+    static KinManager getInstance(Context context, Environment environment) {
         if (instance != null) {
             return instance;
         }
@@ -70,7 +70,35 @@ public class KinManager {
         return instance = new KinManager(context, clientHelper, serverCommunicator, environment, kinPermissionManager);
     }
 
-    public Observable<Boolean> isReady() {
+    /**
+     * @param context the context
+     * @return the instance of the KinManager
+     */
+    public static KinManager getInstance(Context context) {
+        // TODO: Switch to prod at some point
+        return getInstance(context, Environment.TEST);
+    }
+
+    /**
+     * @param context the context
+     * @return the instance of the KinManager for testing
+     */
+    public static KinManager getTestInstance(Context context) {
+        return getInstance(context, Environment.TEST);
+    }
+
+    /**
+     * @return false when not ready yet or opted-out; true otherwise.
+     */
+    public boolean isReady() {
+        return isReadyObservableSource.getValue();
+    }
+
+    /**
+     * @return an observable to check if the KinManager is ready.
+     * Observable returns false when not ready yet or opted-out; true otherwise.
+     */
+    public Observable<Boolean> isReadyObservable() {
         return isReadyObservableSource;
     }
 
@@ -78,7 +106,7 @@ public class KinManager {
      * @return the current balance of the active account
      */
     public Single<BigDecimal> getCurrentBalance() {
-        if (accountHelper == null) {
+        if (isReady()) {
             // TODO: Would an error be better here?
             return Single.just(new BigDecimal(-1));
         }
@@ -94,7 +122,7 @@ public class KinManager {
      * @return a completable which fires on complete after the transaction has successfully completed
      */
     public Completable transferOut(Double amount) {
-        if (accountHelper == null) {
+        if (isReady()) {
             // TODO: Would an error be better here?
             return Completable.complete();
         }
@@ -102,12 +130,14 @@ public class KinManager {
         return accountHelper.transferOut(amount);
     }
 
-    public void deleteAccount() {
-        clientHelper.deleteAccount();
-    }
-
+    /**
+     * Prompts the user if they're ok with spending 1 Kin to connect and charges if they are.
+     *
+     * @param context the context
+     * @return a single which returns true on agreement to pay; otherwise false.
+     */
     public Single<Boolean> chargeForConnection(Context context) {
-        if (accountHelper == null) {
+        if (isReady()) {
             // If we aren't ready yet just let them connect
             return Single.just(true);
         }
@@ -121,21 +151,37 @@ public class KinManager {
                 });
     }
 
+    /**
+     * @param context the context
+     * @return true if the user is opted in to Kin; false otherwise.
+     */
     public boolean isOptedIn(Context context) {
         return kinPermissionManager.hasAgreedToKin(context);
     }
 
+    /**
+     * Raises the dialog to opt in to Kin.
+     *
+     * @param context the context
+     * @return a single returning true if the user has opted in to Kin; otherwise false.
+     */
     public Single<Boolean> optIn(Context context) {
         return kinPermissionManager.optIn(context)
                 .doOnSuccess(optedIn -> isReadyObservableSource.onNext(true));
     }
 
+    /**
+     * Raises the dialog to opt out of Kin.
+     *
+     * @param context the context
+     * @return a single returning true if the user has opted out of Kin; otherwise false.
+     */
     public Single<Boolean> optOut(Context context) {
         return kinPermissionManager.optOut(context)
                 .doOnSuccess(optedOut -> {
                     if (optedOut) {
                         // TODO: Transfer excess funds back into our account?
-                        deleteAccount();
+                        clientHelper.deleteAccount();
                         serverCommunicator.optOut();
                         isReadyObservableSource.onNext(false);
                     }

@@ -615,7 +615,7 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
     }
 
     private void setupKin(PreferenceScreen preferences) {
-        KinManager kinManager = KinManager.getInstance(this, Environment.TEST);
+        KinManager kinManager = KinManager.getInstance(this);
         CheckBoxPreference enableKinPreference = (CheckBoxPreference) preferences.findPreference(getString(R.string.key_preference_enable_kin));
         enableKinPreference.setChecked(kinManager.isOptedIn(this));
         enableKinPreference.setOnPreferenceClickListener(new OnPreferenceClickListener() {

@@ -1292,7 +1292,7 @@ public class StatusActivity
 
     private void initializeKin() {
         kinManager = KinManager.getInstance(this, Environment.TEST);
-        kinManager.isReady()
+        kinManager.isReadyObservable()
                 .doOnNext(ready -> {
                     showKinUI();
                     // TODO: Determine how we want to show the opted-out iu. Should we give the option to opt back in?

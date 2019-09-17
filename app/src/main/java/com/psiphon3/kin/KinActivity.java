@@ -23,8 +23,8 @@ public class KinActivity extends LocalizedActivities.AppCompatActivity {
 
         kinPermissionManager = new KinPermissionManager();
 
-        kinManager = KinManager.getInstance(this, Environment.TEST);
-        kinManager.isReady()
+        kinManager = KinManager.getInstance(this);
+        kinManager.isReadyObservable()
                 .doOnNext(ready -> {
                     if (ready && kinManager.isOptedIn(this)) {
                         showOptedInUI();

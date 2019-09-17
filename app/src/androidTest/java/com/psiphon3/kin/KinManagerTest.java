@@ -71,7 +71,7 @@ public class KinManagerTest {
 
     @Test
     public void isReady() {
-        Boolean ready = kinManager.isReady().lastOrError().blockingGet();
+        Boolean ready = kinManager.isReadyObservable().lastOrError().blockingGet();
         assertTrue(ready);
 
         // TODO: Should we add tests to make sure opt-in/out toggle is ready?
@@ -101,13 +101,6 @@ public class KinManagerTest {
         assertFalse(balanceTest.awaitTerminalEvent(Utils.WAIT_TIME_S, TimeUnit.SECONDS));
         balanceTest.assertComplete();
         balanceTest.assertValue(new BigDecimal(Utils.FUND_AMOUNT - Utils.TRANSFER_AMOUNT));
-    }
-
-    @Test
-    public void deleteAccount() {
-        kinManager.deleteAccount();
-        // Should be null if deleted
-        assertNull(account.getPublicAddress());
     }
 
     @Test
