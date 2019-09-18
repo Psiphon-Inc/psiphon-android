@@ -54,7 +54,7 @@ public class KinManager {
                 .doOnError(e -> {
                     isReadyObservableSource.onNext(false);
                 })
-                .subscribe();
+                .subscribe();//
     }
 
     static KinManager getInstance(Context context, Environment environment) {
