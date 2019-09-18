@@ -1,17 +1,21 @@
 package com.psiphon3.kin;
 
 import android.content.Context;
+import android.util.Log;
 
+import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
 
 import java.math.BigDecimal;
 
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
-import io.reactivex.subjects.ReplaySubject;
 import kin.sdk.KinClient;
 
 public class KinManager {
@@ -22,9 +26,9 @@ public class KinManager {
     private final KinPermissionManager kinPermissionManager;
     private final Environment environment;
 
-    private final ReplaySubject<Boolean> isReadyObservableSource;
+    private final PublishRelay<Boolean> isReadyPublishRelay;
 
-    private AccountHelper accountHelper;
+    private final Flowable<AccountHelper> accountHelperFlowable;
 
     KinManager(Context context, ClientHelper clientHelper, ServerCommunicator serverCommunicator, KinPermissionManager kinPermissionManager, Environment environment) {
         this.clientHelper = clientHelper;
@@ -32,29 +36,29 @@ public class KinManager {
         this.kinPermissionManager = kinPermissionManager;
         this.environment = environment;
 
-        // Use a ReplaySubject with size 1, this means that it will only ever emit the latest on next
-        // Start with false
-        isReadyObservableSource = ReplaySubject.createWithSize(1);
+        // Create the relay
+        isReadyPublishRelay = PublishRelay.create();
+        isReadyPublishRelay.accept(false); // not strictly needed but doesn't hurt
+
         kinPermissionManager
                 .getUsersAgreementToKin(context)
-                .flatMap(agreed -> {
-                    if (!agreed) {
-                        return Single.never();
-                    }
+                .doOnSuccess(isReadyPublishRelay)
+                .doOnError(e -> isReadyPublishRelay.accept(false))
+                .subscribe();
 
-                    return clientHelper
-                            .getAccount()
-                            .subscribeOn(Schedulers.io())
-                            .observeOn(AndroidSchedulers.mainThread());
+        accountHelperFlowable = isReadyObservable()
+                .flatMapMaybe(ready -> {
+                    if (ready) {
+                        return clientHelper
+                                .getAccount()
+                                .toMaybe();
+                    } else {
+                        return Maybe.empty();
+                    }
                 })
-                .doOnSuccess(account -> {
-                    accountHelper = clientHelper.getAccountHelper(account, environment);
-                    isReadyObservableSource.onNext(true);
-                })
-                .doOnError(e -> {
-                    isReadyObservableSource.onNext(false);
-                })
-                .subscribe();//
+                .map(account -> clientHelper.getAccountHelper(account, environment))
+                .toFlowable(BackpressureStrategy.LATEST)
+                .repeat(1);
     }
 
     static KinManager getInstance(Context context, Environment environment) {
@@ -89,30 +93,30 @@ public class KinManager {
     }
 
     /**
-     * @return false when not ready yet or opted-out; true otherwise.
-     */
-    public boolean isReady() {
-        return isReadyObservableSource.getValue();
-    }
-
-    /**
      * @return an observable to check if the KinManager is ready.
      * Observable returns false when not ready yet or opted-out; true otherwise.
      */
     public Observable<Boolean> isReadyObservable() {
-        return isReadyObservableSource;
+        return isReadyPublishRelay.hide().distinctUntilChanged();
     }
 
     /**
      * @return the current balance of the active account
      */
     public Single<BigDecimal> getCurrentBalance() {
-        if (!isReady()) {
-            // TODO: Would an error be better here?
-            return Single.just(new BigDecimal(-1));
-        }
-
-        return accountHelper.getCurrentBalance()
+        return isReadyObservable()
+                .lastOrError()
+                .onErrorReturnItem(false)
+                .flatMap(ready -> {
+                    if (ready) {
+                        return accountHelperFlowable
+                                .lastElement()
+                                .flatMapSingle(AccountHelper::getCurrentBalance);
+                    } else {
+                        // TODO: Would an error be better?
+                        return Single.just(new BigDecimal(-1));
+                    }
+                })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
     }
@@ -125,12 +129,21 @@ public class KinManager {
      * @return a completable which fires on complete after the transaction has successfully completed
      */
     public Completable transferOut(Double amount) {
-        if (!isReady()) {
-            // TODO: Would an error be better here?
-            return Completable.complete();
-        }
-
-        return accountHelper.transferOut(amount);
+        return isReadyObservable()
+                .lastOrError()
+                .onErrorReturnItem(false)
+                .flatMapCompletable(ready -> {
+                    if (ready) {
+                        return accountHelperFlowable
+                                .lastElement()
+                                .flatMapCompletable(accountHelper -> accountHelper.transferOut(amount));
+                    } else {
+                        // TODO: Would an error be better?
+                        return Completable.complete();
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     /**
@@ -140,18 +153,27 @@ public class KinManager {
      * @return a single which returns true on agreement to pay; otherwise false.
      */
     public Single<Boolean> chargeForConnection(Context context) {
-        if (!isReady()) {
-            // If we aren't ready yet just let them connect
-            return Single.just(true);
-        }
-
-        return kinPermissionManager
-                .confirmPay(context)
-                .doOnSuccess(agreed -> {
-                    if (agreed) {
-                        transferOut(1d).subscribeOn(Schedulers.io()).subscribe();
+        return isReadyObservable()
+                .lastOrError()
+                .flatMapMaybe(ready -> {
+                    if (ready) {
+                        return kinPermissionManager
+                                .confirmPay(context)
+                                .toMaybe();
+                    } else {
+                        return Maybe.empty();
                     }
-                });
+                })
+                .doOnSuccess(ready -> {
+                    if (ready) {
+                        accountHelperFlowable
+                                .lastElement()
+                                .flatMapCompletable(accountHelper -> accountHelper.transferOut(1d))
+                                .subscribeOn(Schedulers.io())
+                                .subscribe();
+                    }
+                })
+                .toSingle(true);
     }
 
     /**
@@ -171,16 +193,9 @@ public class KinManager {
     public Single<Boolean> optIn(Context context) {
         return kinPermissionManager.optIn(context)
                 .doOnSuccess(optedIn -> {
+                    // Only fire if they opted in
                     if (optedIn) {
-                        clientHelper
-                                .getAccount()
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .doOnSuccess(account -> {
-                                    accountHelper = clientHelper.getAccountHelper(account, environment);
-                                    isReadyObservableSource.onNext(true);
-                                })
-                                .subscribe();
+                        isReadyPublishRelay.accept(true);
                     }
                 });
     }
@@ -196,10 +211,9 @@ public class KinManager {
                 .doOnSuccess(optedOut -> {
                     if (optedOut) {
                         // TODO: Transfer excess funds back into our account?
-                        accountHelper = null; // Not really needed but might as well
                         clientHelper.deleteAccount();
                         serverCommunicator.optOut();
-                        isReadyObservableSource.onNext(false);
+                        isReadyPublishRelay.accept(false);
                     }
                 });
     }

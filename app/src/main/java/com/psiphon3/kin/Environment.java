@@ -24,6 +24,7 @@ public class Environment {
 
     // TODO: Get real app id
     static final String PSIPHON_APP_ID = "FAKE";
+
     private final String friendBotServerUrl;
     private final String psiphonWalletAddress;
     private final kin.sdk.Environment kinEnvironment;
