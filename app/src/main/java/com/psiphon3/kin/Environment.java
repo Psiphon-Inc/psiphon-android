@@ -14,7 +14,7 @@ public class Environment {
             )
     );
     public static final Environment TEST = new Environment(
-            "kin-testnet-psiphon.io",
+            "kin-testnet.psiphon.io",
             "GCWUL5BFYTRVMM4WYHABI5C2Y5VZ7VB5N2BKPDMGG3OG7DYN3FBCTVDS",
             new kin.sdk.Environment(
                     "https://horizon-testnet.kininfrastructure.com/",
