@@ -65,24 +65,10 @@ public class KinManager {
                 })
                 // then wrap in a helper
                 .map(account -> clientHelper.getAccountHelper(account, environment))
-                // once the helper is created we need to register the new account
-                .doOnNext(accountHelper ->
-                        isTunneledObservable()
-                                // only look for when we connect
-                                .filter(isTunneled -> isTunneled)
-                                // take the latest emission
-                                .take(1)
-                                // after taking it register
-                                // we should be tunneled now so no need to check value
-                                .flatMapCompletable(isTunneled -> accountHelper.register(context))
-                                // once the server registration is complete mark ourselves as ready
-                                .doOnComplete(() -> isReadyBehaviorRelay.accept(true))
-                                .subscribe()
-                )
                 // we don't want to do this every time someone looks for the account helper, so store it
                 .replay(1)
                 // connect immediately
-                .autoConnect(-1);
+                .autoConnect(0);
 
         isOptedInObservable
                 // let observers know we aren't ready anymore
@@ -93,6 +79,18 @@ public class KinManager {
                 })
                 .subscribe();
 
+        isTunneledObservable()
+                // only take events when we become tunneled
+                .filter(isTunneled -> isTunneled)
+                // then get the account helper
+                .flatMap(isTunneled -> accountHelperObservable)
+                // take one
+                .take(1)
+                // call register
+                .flatMapCompletable(accountHelper -> accountHelper.register(context))
+                // then mark ourselves as ready
+                .doOnComplete(() -> isReadyBehaviorRelay.accept(true))
+                .subscribe();
     }
 
     static KinManager getInstance(Context context, Environment environment) {
@@ -158,17 +156,19 @@ public class KinManager {
      * @return the current balance of the active account
      */
     public Single<BigDecimal> getCurrentBalance() {
-        if (!isReady()) {
-            // TODO: Would an error be better here?
-            return Single.just(new BigDecimal(-1));
-        }
-
-        return accountHelperObservable
+        return isReadyObservable()
+                .flatMap(isReady -> {
+                    if (isReady) {
+                        return isTunneledObservable();
+                    } else {
+                        return Observable.empty();
+                    }
+                })
+                .filter(isTunneled -> isTunneled)
+                .flatMap(isTunneled -> accountHelperObservable)
                 .firstOrError()
                 .flatMap(AccountHelper::getCurrentBalance)
-                .onErrorReturnItem(new BigDecimal(0))
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread());
+                .onErrorReturnItem(new BigDecimal(0));
     }
 
     /**
@@ -179,17 +179,19 @@ public class KinManager {
      * @return a completable which fires on complete after the transaction has successfully completed
      */
     public Completable transferOut(Double amount) {
-        if (!isReady()) {
-            // TODO: Would an error be better here?
-            return Completable.complete();
-        }
-
-        return accountHelperObservable
+        return isReadyObservable()
+                .flatMap(isReady -> {
+                    if (isReady) {
+                        return isTunneledObservable();
+                    } else {
+                        return Observable.empty();
+                    }
+                })
+                .filter(isTunneled -> isTunneled)
+                .flatMap(isTunneled -> accountHelperObservable)
                 .firstOrError()
                 .flatMapCompletable(accountHelper -> accountHelper.transferOut(amount))
-                .onErrorComplete()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread());
+                .onErrorComplete();
     }
 
     /**
@@ -264,7 +266,7 @@ public class KinManager {
         // For now we just need to update the port so don't need any relay or such to hold it
         TunnelState.ConnectionData connectionData = tunnelState.connectionData();
         if (connectionData == null) {
-            serverCommunicator.setProxyPort(0);
+            serverCommunicator.setProxyPort(ServerCommunicator.PREVENT_CONNECTION_PORT);
             isTunneledBehaviorRelay.accept(false);
         } else {
             serverCommunicator.setProxyPort(connectionData.httpPort());

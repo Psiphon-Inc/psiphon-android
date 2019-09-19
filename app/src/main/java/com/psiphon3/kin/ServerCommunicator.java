@@ -29,9 +29,14 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 class ServerCommunicator {
+    // This port is unable to be used for connection
+    // According to https://stackoverflow.com/questions/42112735/android-7-reserved-ip-ports-restriction
+    // ports 32100 to 32600 are reserved by android
+    static final int PREVENT_CONNECTION_PORT = 32123;
+
     private final String friendBotUrl;
     private final OkHttpClient okHttpClient;
-    private int port;
+    private int port = PREVENT_CONNECTION_PORT; // start with a port which prevents connection
 
     /**
      * @param friendBotUrl the URL to the friend bot server
@@ -43,13 +48,7 @@ class ServerCommunicator {
                 .proxySelector(new ProxySelector() {
                     @Override
                     public List<Proxy> select(URI uri) {
-                        Proxy proxy;
-                        if (port > 0) {
-                            proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", port));
-                        } else {
-                            proxy = Proxy.NO_PROXY;
-                        }
-                        return Collections.singletonList(proxy);
+                        return Collections.singletonList(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", port)));
                     }
 
                     @Override

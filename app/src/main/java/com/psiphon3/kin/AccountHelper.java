@@ -66,6 +66,8 @@ class AccountHelper {
         return buildTransaction(account, psiphonWalletAddress, new BigDecimal(amount))
                 .flatMap(transaction -> serverCommunicator.whitelistTransaction(transaction.getWhitelistableTransaction()))
                 .flatMap(whitelist -> sendWhitelistTransaction(account, whitelist))
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
                 .ignoreElement();
     }
 
@@ -75,18 +77,21 @@ class AccountHelper {
      * @return the current balance of the active account
      */
     Single<BigDecimal> getCurrentBalance() {
-        return Single.create(emitter -> {
-            try {
-                Balance balance = account.getBalanceSync();
-                if (!emitter.isDisposed()) {
-                    emitter.onSuccess(balance.value());
-                }
-            } catch (OperationFailedException e) {
-                if (!emitter.isDisposed()) {
-                    emitter.onError(e);
-                }
-            }
-        });
+        return Single.
+                <BigDecimal>create(emitter -> {
+                    try {
+                        Balance balance = account.getBalanceSync();
+                        if (!emitter.isDisposed()) {
+                            emitter.onSuccess(balance.value());
+                        }
+                    } catch (OperationFailedException e) {
+                        if (!emitter.isDisposed()) {
+                            emitter.onError(e);
+                        }
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     private Single<Transaction> buildTransaction(KinAccount account, String walletAddress, BigDecimal amount) {
