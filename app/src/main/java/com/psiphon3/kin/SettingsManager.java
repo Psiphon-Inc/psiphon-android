@@ -3,7 +3,7 @@ package com.psiphon3.kin;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-public class SettingsManager {
+class SettingsManager {
 
     private final String KIN_PREFERENCES_NAME = "kin_app_prefs";
     private final String AGREED_TO_KIN_KEY = "agreed_to_kin";
@@ -14,7 +14,7 @@ public class SettingsManager {
      * @param context context for shared preferences
      * @return true if the user has not yet agreed or disagreed to Kin
      */
-    private boolean needsToAgreeToKin(Context context) {
+    boolean needsToAgreeToKin(Context context) {
         return !getSharedPreferences(context).contains(AGREED_TO_KIN_KEY);
     }
 

@@ -20,6 +20,7 @@ public class KinManager {
 
     private final ClientHelper clientHelper;
     private final ServerCommunicator serverCommunicator;
+    private final SettingsManager settingsManager;
     private final KinPermissionManager kinPermissionManager;
     private final Environment environment;
 
@@ -29,9 +30,10 @@ public class KinManager {
     private final Observable<Boolean> isOptedInObservable;
     private final Observable<AccountHelper> accountHelperObservable;
 
-    KinManager(Context context, ClientHelper clientHelper, ServerCommunicator serverCommunicator, KinPermissionManager kinPermissionManager, Environment environment) {
+    KinManager(Context context, ClientHelper clientHelper, ServerCommunicator serverCommunicator, SettingsManager settingsManager, KinPermissionManager kinPermissionManager, Environment environment) {
         this.clientHelper = clientHelper;
         this.serverCommunicator = serverCommunicator;
+        this.settingsManager = settingsManager;
         this.kinPermissionManager = kinPermissionManager;
         this.environment = environment;
 
@@ -102,9 +104,10 @@ public class KinManager {
         KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
         ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getFriendBotServerUrl());
         ClientHelper clientHelper = new ClientHelper(kinClient, serverCommunicator);
-        KinPermissionManager kinPermissionManager = new KinPermissionManager();
+        SettingsManager settingsManager = new SettingsManager();
+        KinPermissionManager kinPermissionManager = new KinPermissionManager(settingsManager);
 
-        return instance = new KinManager(context, clientHelper, serverCommunicator, kinPermissionManager, environment);
+        return instance = new KinManager(context, clientHelper, serverCommunicator, settingsManager, kinPermissionManager, environment);
     }
 
     /**
@@ -215,7 +218,7 @@ public class KinManager {
      * @return true if the user is opted in to Kin; false otherwise.
      */
     public boolean isOptedIn(Context context) {
-        return kinPermissionManager.hasAgreedToKin(context);
+        return settingsManager.hasAgreedToKin(context);
     }
 
     /**

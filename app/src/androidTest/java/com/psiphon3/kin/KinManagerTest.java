@@ -57,7 +57,7 @@ public class KinManagerTest {
         kinPermissionManager = mock(KinPermissionManager.class);
         when(kinPermissionManager.getUsersAgreementToKin(context)).thenReturn(Single.just(true));
 
-        kinManager = new KinManager(context, clientHelper, serverCommunicator, kinPermissionManager, env);
+        kinManager = new KinManager(context, clientHelper, serverCommunicator, settingsManager, kinPermissionManager, env);
         kinManager.isReadyObservable().filter(v -> v).test().awaitCount(1).assertValue(true);
     }
 

@@ -12,15 +12,17 @@ public class KinActivity extends LocalizedActivities.AppCompatActivity {
 
     private static final int FUND_AMOUNT = 715;
 
-    private KinManager kinManager;
+    private SettingsManager settingsManager;
     private KinPermissionManager kinPermissionManager;
+    private KinManager kinManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_kin);
 
-        kinPermissionManager = new KinPermissionManager();
+        settingsManager = new SettingsManager();
+        kinPermissionManager = new KinPermissionManager(settingsManager);
 
         kinManager = KinManager.getInstance(this);
         kinManager.isReadyObservable()
@@ -38,7 +40,7 @@ public class KinActivity extends LocalizedActivities.AppCompatActivity {
         if (isChecked) {
             kinPermissionManager.confirmAutoPaySwitch(this).doOnSuccess(autoPaySwitch::setChecked).subscribe();
         } else {
-            kinPermissionManager.setHasAgreedToAutoPay(this, false);
+            settingsManager.setHasAgreedToAutoPay(this, false);
         }
     }
 
@@ -76,7 +78,7 @@ public class KinActivity extends LocalizedActivities.AppCompatActivity {
 
         // TODO: Group the two UI's to make toggling easier
         Switch autoPaySwitch = findViewById(R.id.switch_auto_pay);
-        autoPaySwitch.setChecked(kinPermissionManager.hasAgreedToAutoPay(this));
+        autoPaySwitch.setChecked(settingsManager.hasAgreedToAutoPay(this));
         autoPaySwitch.setVisibility(View.VISIBLE);
 
         findViewById(R.id.txt_kin_balance_label).setVisibility(View.VISIBLE);
