@@ -38,7 +38,7 @@ class ClientHelper {
                 return Single.just(importAccount(retrieveAccountFromDisk()));
             }
 
-            return createKinAccount();
+            return Single.just(kinClient.addAccount());
         } catch (Exception e) {
             return Single.error(e);
         }
@@ -52,7 +52,7 @@ class ClientHelper {
      * @return a helper for account and environment.
      */
     AccountHelper getAccountHelper(KinAccount account, Environment environment) {
-        return new AccountHelper(account, serverCommunicator, environment.getPsiphonWalletAddress());
+        return new AccountHelper(account, serverCommunicator, new SettingsManager(), environment.getPsiphonWalletAddress());
     }
 
     /**

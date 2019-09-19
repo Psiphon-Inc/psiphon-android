@@ -45,7 +45,7 @@ public class AccountHelperTest {
 
         serverCommunicator = mock(ServerCommunicator.class);
 
-        accountHelper = new AccountHelper(account, serverCommunicator, env.getPsiphonWalletAddress());
+        accountHelper = new AccountHelper(account, serverCommunicator, new SettingsManager(), env.getPsiphonWalletAddress());
     }
 
     @Test

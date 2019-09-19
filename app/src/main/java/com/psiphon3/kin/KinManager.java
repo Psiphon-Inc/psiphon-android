@@ -2,16 +2,17 @@ package com.psiphon3.kin;
 
 import android.content.Context;
 
+import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.psiphon3.TunnelState;
 
 import java.math.BigDecimal;
 
 import io.reactivex.Completable;
+import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
-import io.reactivex.subjects.ReplaySubject;
 import kin.sdk.KinClient;
 
 public class KinManager {
@@ -22,9 +23,11 @@ public class KinManager {
     private final KinPermissionManager kinPermissionManager;
     private final Environment environment;
 
-    private final ReplaySubject<Boolean> isReadyObservableSource;
-
-    private AccountHelper accountHelper;
+    private final BehaviorRelay<Boolean> isOptedInRelay;
+    private final BehaviorRelay<Boolean> isReadyBehaviorRelay;
+    private final BehaviorRelay<Boolean> isTunneledBehaviorRelay;
+    private final Observable<Boolean> isOptedInObservable;
+    private final Observable<AccountHelper> accountHelperObservable;
 
     KinManager(Context context, ClientHelper clientHelper, ServerCommunicator serverCommunicator, KinPermissionManager kinPermissionManager, Environment environment) {
         this.clientHelper = clientHelper;
@@ -34,27 +37,60 @@ public class KinManager {
 
         // Use a ReplaySubject with size 1, this means that it will only ever emit the latest on next
         // Start with false
-        isReadyObservableSource = ReplaySubject.createWithSize(1);
-        kinPermissionManager
-                .getUsersAgreementToKin(context)
-                .flatMap(agreed -> {
-                    if (!agreed) {
-                        return Single.never();
-                    }
+        isOptedInRelay = BehaviorRelay.create();
+        isReadyBehaviorRelay = BehaviorRelay.createDefault(false);
+        isTunneledBehaviorRelay = BehaviorRelay.createDefault(false);
 
-                    return clientHelper
-                            .getAccount()
-                            .subscribeOn(Schedulers.io())
-                            .observeOn(AndroidSchedulers.mainThread());
+        isOptedInObservable = kinPermissionManager
+                // start with the users opt-in/out
+                .getUsersAgreementToKin(context)
+                .toObservable()
+                // after listen for further emissions from the relay
+                .concatWith(isOptedInRelay)
+                // only re-emit changes
+                .distinctUntilChanged();
+
+        accountHelperObservable = isOptedInObservable
+                // if they opted in get an account
+                .flatMapMaybe(optedIn -> {
+                    if (optedIn) {
+                        return clientHelper
+                                .getAccount()
+                                .toMaybe();
+                    } else {
+                        return Maybe.empty();
+                    }
                 })
-                .doOnSuccess(account -> {
-                    accountHelper = clientHelper.getAccountHelper(account, environment);
-                    isReadyObservableSource.onNext(true);
-                })
-                .doOnError(e -> {
-                    isReadyObservableSource.onNext(false);
+                // then wrap in a helper
+                .map(account -> clientHelper.getAccountHelper(account, environment))
+                // once the helper is created we need to register the new account
+                .doOnNext(accountHelper ->
+                        isTunneledObservable()
+                                // only look for when we connect
+                                .filter(isTunneled -> isTunneled)
+                                // take the latest emission
+                                .take(1)
+                                // after taking it register
+                                // we should be tunneled now so no need to check value
+                                .flatMapCompletable(isTunneled -> accountHelper.register(context))
+                                // once the server registration is complete mark ourselves as ready
+                                .doOnComplete(() -> isReadyBehaviorRelay.accept(true))
+                                .subscribe()
+                )
+                // we don't want to do this every time someone looks for the account helper, so store it
+                .replay(1)
+                // connect immediately
+                .autoConnect(-1);
+
+        isOptedInObservable
+                // let observers know we aren't ready anymore
+                .doOnNext(optedIn -> {
+                    if (!optedIn) {
+                        isReadyBehaviorRelay.accept(false);
+                    }
                 })
                 .subscribe();
+
     }
 
     static KinManager getInstance(Context context, Environment environment) {
@@ -88,11 +124,20 @@ public class KinManager {
         return getInstance(context, Environment.TEST);
     }
 
+    private Observable<Boolean> isTunneledObservable() {
+        return isTunneledBehaviorRelay.distinctUntilChanged().hide();
+    }
+
     /**
      * @return false when not ready yet or opted-out; true otherwise.
      */
     public boolean isReady() {
-        return isReadyObservableSource.getValue();
+        Boolean isReady = isReadyBehaviorRelay.getValue();
+        if (isReady == null) {
+            return false;
+        }
+
+        return isReady;
     }
 
     /**
@@ -100,7 +145,10 @@ public class KinManager {
      * Observable returns false when not ready yet or opted-out; true otherwise.
      */
     public Observable<Boolean> isReadyObservable() {
-        return isReadyObservableSource;
+        return isReadyBehaviorRelay
+                .distinctUntilChanged()
+                .hide()
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     /**
@@ -112,7 +160,10 @@ public class KinManager {
             return Single.just(new BigDecimal(-1));
         }
 
-        return accountHelper.getCurrentBalance()
+        return accountHelperObservable
+                .firstOrError()
+                .flatMap(AccountHelper::getCurrentBalance)
+                .onErrorReturnItem(new BigDecimal(0))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
     }
@@ -130,7 +181,12 @@ public class KinManager {
             return Completable.complete();
         }
 
-        return accountHelper.transferOut(amount);
+        return accountHelperObservable
+                .firstOrError()
+                .flatMapCompletable(accountHelper -> accountHelper.transferOut(amount))
+                .onErrorComplete()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     /**
@@ -172,15 +228,7 @@ public class KinManager {
         return kinPermissionManager.optIn(context)
                 .doOnSuccess(optedIn -> {
                     if (optedIn) {
-                        clientHelper
-                                .getAccount()
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .doOnSuccess(account -> {
-                                    accountHelper = clientHelper.getAccountHelper(account, environment);
-                                    isReadyObservableSource.onNext(true);
-                                })
-                                .subscribe();
+                        isOptedInRelay.accept(true);
                     }
                 });
     }
@@ -196,10 +244,15 @@ public class KinManager {
                 .doOnSuccess(optedOut -> {
                     if (optedOut) {
                         // TODO: Transfer excess funds back into our account?
-                        accountHelper = null; // Not really needed but might as well
-                        clientHelper.deleteAccount();
-                        serverCommunicator.optOut();
-                        isReadyObservableSource.onNext(false);
+                        accountHelperObservable
+                                .firstOrError()
+                                .doOnSuccess(accountHelper -> {
+                                    accountHelper.delete(context);
+                                    clientHelper.deleteAccount();
+                                    serverCommunicator.optOut();
+                                    isOptedInRelay.accept(false);
+                                })
+                                .subscribe();
                     }
                 });
     }
@@ -209,8 +262,10 @@ public class KinManager {
         TunnelState.ConnectionData connectionData = tunnelState.connectionData();
         if (connectionData == null) {
             serverCommunicator.setProxyPort(0);
+            isTunneledBehaviorRelay.accept(false);
         } else {
             serverCommunicator.setProxyPort(connectionData.httpPort());
+            isTunneledBehaviorRelay.accept(true);
         }
     }
 }
