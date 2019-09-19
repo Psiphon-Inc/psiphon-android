@@ -80,7 +80,7 @@ public class KinManagerTest {
 
     @Test
     public void isReady() {
-        // assertTrue(kinManager.isReady());
+        assertTrue(kinManager.isReady());
 
         // TODO: Should we add tests to make sure opt-in/out toggle isReady?
     }
