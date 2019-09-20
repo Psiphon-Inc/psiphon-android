@@ -46,6 +46,9 @@ public class KinManager {
         isOptedInObservable = kinPermissionManager
                 // start with the users opt-in/out
                 .getUsersAgreementToKin(context)
+                // use a cache to not post multiple dialogs
+                // TODO: Is this the right thing to do?
+                .cache()
                 .toObservable()
                 // after listen for further emissions from the relay
                 .concatWith(isOptedInRelay)
@@ -90,6 +93,8 @@ public class KinManager {
                 .flatMapCompletable(accountHelper -> accountHelper.register(context))
                 // then mark ourselves as ready
                 .doOnComplete(() -> isReadyBehaviorRelay.accept(true))
+                // TODO: Limit retires? What is the right way to do this?
+                .retry()
                 .subscribe();
     }
 
@@ -265,12 +270,14 @@ public class KinManager {
     public void onTunnelConnectionState(TunnelState tunnelState) {
         // For now we just need to update the port so don't need any relay or such to hold it
         TunnelState.ConnectionData connectionData = tunnelState.connectionData();
-        if (connectionData == null) {
+        int port = connectionData == null ? 0 : connectionData.httpPort();
+
+        if (port > 0) {
+            serverCommunicator.setProxyPort(port);
+            isTunneledBehaviorRelay.accept(true);
+        } else {
             serverCommunicator.setProxyPort(ServerCommunicator.PREVENT_CONNECTION_PORT);
             isTunneledBehaviorRelay.accept(false);
-        } else {
-            serverCommunicator.setProxyPort(connectionData.httpPort());
-            isTunneledBehaviorRelay.accept(true);
         }
     }
 }

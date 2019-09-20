@@ -45,11 +45,13 @@ class KinPermissionManager {
                     switch (button) {
                         case BUTTON_POSITIVE:
                             settingsManager.setHasAgreedToKin(context, true);
+                            settingsManager.setHasAgreedToAutoPay(context, true);
                             emitter.onSuccess(true);
                             break;
 
                         case BUTTON_NEGATIVE:
                             settingsManager.setHasAgreedToKin(context, false);
+                            settingsManager.setHasAgreedToAutoPay(context, false);
                             emitter.onSuccess(false);
                             break;
 
@@ -83,50 +85,25 @@ class KinPermissionManager {
         });
     }
 
-    Single<Boolean> confirmAutoPaySwitch(Context context) {
-        return Single.create(emitter -> {
-            new AlertDialog.Builder(context)
-                    .setMessage(R.string.lbl_kin_auto_pay)
-                    .setNegativeButton(R.string.lbl_no, (dialog, which) -> {
-                        settingsManager.setHasAgreedToAutoPay(context, false);
-                        if (!emitter.isDisposed()) {
-                            emitter.onSuccess(true);
-                        }
-                    })
-                    .setPositiveButton(R.string.lbl_yes, (dialog, which) -> {
-                        settingsManager.setHasAgreedToAutoPay(context, true);
-                        if (!emitter.isDisposed()) {
-                            emitter.onSuccess(true);
-                        }
-                    })
-                    .create()
-                    .show();
-        });
-    }
-
     Single<Boolean> confirmPay(Context context) {
         if (settingsManager.hasAgreedToAutoPay(context)) {
             return Single.just(true);
         }
 
         // This is a bit weird, but the layout of AlertDialogs is
-        // (Neutral) | (Negative) | (Positive) so this will give us No | Yes | Always
+        // (Neutral) | (Negative) | (Positive) so this will give us No | <spacing> | Always
         return Single.create(emitter -> {
             new AlertDialog.Builder(context)
                     .setMessage(R.string.lbl_kin_pay)
                     .setNeutralButton(R.string.lbl_no, (dialog, which) -> {
+                        settingsManager.setHasAgreedToAutoPay(context, false);
                         if (!emitter.isDisposed()) {
                             emitter.onSuccess(false);
                         }
                     })
-                    .setNegativeButton(R.string.lbl_yes, (dialog, which) -> {
+                    .setPositiveButton(R.string.lbl_yes, (dialog, which) -> {
+                        settingsManager.setHasAgreedToAutoPay(context, true);
                         if (!emitter.isDisposed()) {
-                            emitter.onSuccess(true);
-                        }
-                    })
-                    .setPositiveButton(R.string.lbl_auto_pay, (dialog, which) -> {
-                        if (!emitter.isDisposed()) {
-                            settingsManager.setHasAgreedToAutoPay(context, true);
                             emitter.onSuccess(true);
                         }
                     })
