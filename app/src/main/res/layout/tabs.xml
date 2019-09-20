@@ -235,14 +235,6 @@
                         android:textAppearance="?android:attr/textAppearanceSmall" />
                 </LinearLayout>
 
-                <Button
-                    android:id="@+id/btn_kin_activity"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:onClick="onKinActivityClick"
-                    android:text="KIN"
-                    android:visibility="gone" />
-
             </LinearLayout>
         </ScrollView>
 

@@ -49,8 +49,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.jakewharton.rxrelay2.PublishRelay;
-import com.psiphon3.kin.Environment;
-import com.psiphon3.kin.KinActivity;
 import com.psiphon3.kin.KinManager;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.util.BroadcastIntent;
@@ -409,11 +407,6 @@ public class StatusActivity
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_VPN_REVOKED)) {
             showVpnAlertDialog(R.string.StatusActivity_VpnRevokedTitle, R.string.StatusActivity_VpnRevokedMessage);
         }
-    }
-
-    public void onKinActivityClick(View v) {
-        Intent intent = new Intent(this, KinActivity.class);
-        startActivity(intent);
     }
 
     public void onToggleClick(View v)
@@ -1307,10 +1300,8 @@ public class StatusActivity
     }
 
     private void showKinUI() {
-        findViewById(R.id.btn_kin_activity).setVisibility(View.VISIBLE);
     }
 
     private void hideKinUI() {
-        findViewById(R.id.btn_kin_activity).setVisibility(View.GONE);
     }
 }

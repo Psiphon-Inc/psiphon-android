@@ -99,13 +99,6 @@
             android:exported="false">
         </provider>
 
-
-        <activity android:name="com.psiphon3.kin.KinActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.psiphon3.StatusActivity" />
-        </activity>
-
         <activity
             android:name="org.zirco.ui.activities.MainActivity"
             android:label="@string/browser_task_label"
