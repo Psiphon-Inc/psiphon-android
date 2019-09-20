@@ -152,6 +152,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     private NotificationManager mNotificationManager = null;
     private NotificationCompat.Builder mNotificationBuilder = null;
+    private final static String NOTIFICATION_CHANNEL_ID = "psiphon_notification_channel";
 
     private boolean mGetHelpConnectingRunnablePosted = false;
     private final Handler mGetHelpConnectingHandler = new Handler();
@@ -169,7 +170,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                             PendingIntent.FLAG_UPDATE_CURRENT
                     );
 
-            Notification notification = new NotificationCompat.Builder(context)
+            Notification notification = new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
                     .setSmallIcon(R.drawable.notification_icon_connecting_01)
                     .setContentTitle(context.getString(R.string.get_help_connecting_notification_title))
                     .setContentText(context.getString(R.string.get_help_connecting_notification_message))
@@ -270,7 +271,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 StatusActivity.class,
                 INTENT_ACTION_VPN_REVOKED);
 
-        final String NOTIFICATION_CHANNEL_ID = "psiphon_notification_channel";
         if (mNotificationManager == null) {
             mNotificationManager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
 
