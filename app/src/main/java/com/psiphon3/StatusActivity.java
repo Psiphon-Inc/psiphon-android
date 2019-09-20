@@ -437,7 +437,7 @@ public class StatusActivity
             hasPreference = false;
         }
 
-        if (m_tunnelWholeDeviceToggle.isEnabled() &&
+        if (Utils.hasVpnService() &&
             !hasPreference &&
             !isServiceRunning())
         {
