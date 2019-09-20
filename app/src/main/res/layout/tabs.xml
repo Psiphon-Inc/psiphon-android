@@ -198,6 +198,15 @@
                         android:onClick="onDisableTimeoutsToggle"
                         android:text="@string/disable_timeouts"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
+
+                    <CheckBox
+                        android:id="@+id/check_box_kin_enabled"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="start"
+                        android:onClick="onKinEnabledClick"
+                        android:text="@string/lbl_opt_in_to_kin"
+                        android:textAppearance="?android:attr/textAppearanceSmall" />
                 </LinearLayout>
 
                 <LinearLayout

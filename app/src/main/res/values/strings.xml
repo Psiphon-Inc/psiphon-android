@@ -53,6 +53,4 @@
     <string name="lbl_kin_opt_out">Are you sure you want to opt out of Kin? Your wallet will be lost and you won\'t be helping Psiphon with each connection.\n\nYou can always re-join the program in the future if you change your mind.</string>
     <string name="lbl_opt_in_to_kin">Opt in to Kin</string>
     <string name="lbl_kin_pay">Please confirm you\'d like to donate to Psiphon when you connect.</string>
-    <string name="title_kin_preference_group">Kin</string>
-    <string name="lbl_preference_enable_kin">Enable Kin</string>
 </resources>

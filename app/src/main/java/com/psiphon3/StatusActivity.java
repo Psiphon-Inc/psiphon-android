@@ -44,6 +44,7 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -434,6 +435,20 @@ public class StatusActivity
     {
         Intent feedbackIntent = new Intent(this, FeedbackActivity.class);
         startActivity(feedbackIntent);
+    }
+
+    public void onKinEnabledClick(View v) {
+        if (kinManager.isOptedIn(this)) {
+            kinManager
+                    .optOut(this)
+                    .doOnSuccess(this::setKinState)
+                    .subscribe();
+        } else {
+            kinManager
+                    .optIn(this)
+                    .doOnSuccess(optedIn -> setKinState(!optedIn))
+                    .subscribe();
+        }
     }
 
     @Override
@@ -1286,22 +1301,17 @@ public class StatusActivity
 
     private void initializeKin() {
         kinManager = KinManager.getInstance(this);
-        kinManager.isReadyObservable()
-                .doOnNext(ready -> {
-                    showKinUI();
-                    // TODO: Determine how we want to show the opted-out iu. Should we give the option to opt back in?
-                    // if (ready) {
-                    //     showKinUI();
-                    // } else {
-                    //     hideKinUI();
-                    // }
-                })
-                .subscribe();
+        setKinState(!kinManager.isOptedIn(this));
     }
 
-    private void showKinUI() {
-    }
-
-    private void hideKinUI() {
+    private void setKinState(boolean optedOut) {
+        CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
+        if (optedOut) {
+            checkBoxKinEnabled.setText(R.string.lbl_opt_in_to_kin);
+            checkBoxKinEnabled.setChecked(false);
+        } else {
+            checkBoxKinEnabled.setText(R.string.lbl_opt_out_of_kin);
+            checkBoxKinEnabled.setChecked(true);
+        }
     }
 }

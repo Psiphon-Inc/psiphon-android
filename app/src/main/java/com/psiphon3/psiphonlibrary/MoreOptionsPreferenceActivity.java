@@ -43,8 +43,6 @@ import android.widget.Toast;
 
 import com.google.ads.consent.ConsentInformation;
 import com.google.ads.consent.ConsentStatus;
-import com.psiphon3.kin.Environment;
-import com.psiphon3.kin.KinManager;
 import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
@@ -317,8 +315,6 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
         }
 
         setupLanguageSelector(preferences);
-
-        setupKin(preferences);
 
         PreferenceGetter preferenceGetter;
 
@@ -612,36 +608,6 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
         if (currentLocaleLanguageIndex >= 0) {
             mLanguageSelector.setValueIndex(currentLocaleLanguageIndex);
         }
-    }
-
-    private void setupKin(PreferenceScreen preferences) {
-        KinManager kinManager = KinManager.getInstance(this);
-        CheckBoxPreference enableKinPreference = (CheckBoxPreference) preferences.findPreference(getString(R.string.key_preference_enable_kin));
-        enableKinPreference.setChecked(kinManager.isOptedIn(this));
-        enableKinPreference.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-            @Override
-            public boolean onPreferenceClick(Preference preference) {
-                // If the preference is checked, that means we're currently opting-in
-                if (enableKinPreference.isChecked()) {
-                    kinManager.optIn(MoreOptionsPreferenceActivity.this)
-                            .doOnSuccess(optedIn -> {
-                                if (optedIn) {
-                                    enableKinPreference.setChecked(true);
-                                }
-                            })
-                            .subscribe();
-                } else {
-                    kinManager.optOut(MoreOptionsPreferenceActivity.this)
-                            .doOnSuccess(optedOut -> {
-                                if (optedOut) {
-                                    enableKinPreference.setChecked(false);
-                                }
-                            })
-                            .subscribe();
-                }
-                return false;
-            }
-        });
     }
 
     private void disableCustomProxySettings() {
