@@ -161,9 +161,9 @@ public class KinManager {
      * @return the current balance of the active account
      */
     public Single<BigDecimal> getCurrentBalance() {
-        return isReadyObservable()
-                .flatMap(isReady -> {
-                    if (isReady) {
+        return isOptedInObservable
+                .flatMap(isOptedIn -> {
+                    if (isOptedIn) {
                         return isTunneledObservable();
                     } else {
                         return Observable.empty();
@@ -184,9 +184,9 @@ public class KinManager {
      * @return a completable which fires on complete after the transaction has successfully completed
      */
     public Completable transferOut(Double amount) {
-        return isReadyObservable()
-                .flatMap(isReady -> {
-                    if (isReady) {
+        return isOptedInObservable
+                .flatMap(isOptedIn -> {
+                    if (isOptedIn) {
                         return isTunneledObservable();
                     } else {
                         return Observable.empty();
