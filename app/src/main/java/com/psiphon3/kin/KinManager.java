@@ -1,6 +1,7 @@
 package com.psiphon3.kin;
 
 import android.content.Context;
+import android.util.Pair;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.psiphon3.TunnelState;
@@ -12,7 +13,6 @@ import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.schedulers.Schedulers;
 import kin.sdk.KinClient;
 
 public class KinManager {
@@ -82,19 +82,19 @@ public class KinManager {
                 })
                 .subscribe();
 
-        isTunneledObservable()
-                // only take events when we become tunneled
-                .filter(isTunneled -> isTunneled)
-                // then get the account helper
-                .flatMap(isTunneled -> accountHelperObservable)
-                // take one
-                .take(1)
-                // call register
-                .flatMapCompletable(accountHelper -> accountHelper.register(context))
-                // then mark ourselves as ready
-                .doOnComplete(() -> isReadyBehaviorRelay.accept(true))
-                // TODO: Limit retires? What is the right way to do this?
-                .retry()
+        // combine account and tunnelled observables
+        Observable.combineLatest(
+                accountHelperObservable,
+                isTunneledObservable().filter(isTunneled -> isTunneled),
+                Pair::new)
+                // flat map into the register when one or the other changes
+                // we should be tunneled here because we only filter for tunneled events
+                .flatMapCompletable(pair -> {
+                    AccountHelper accountHelper = pair.first;
+                    return accountHelper
+                            .register(context)
+                            .doOnComplete(() -> isReadyBehaviorRelay.accept(true));
+                })
                 .subscribe();
     }
 
@@ -102,6 +102,12 @@ public class KinManager {
         if (instance != null) {
             return instance;
         }
+
+        // Use the application context to try and avoid memory leaks
+        // TODO: Why doesn't this work?
+        // if (context.getApplicationContext() != null) {
+        //     context = context.getApplicationContext();
+        // }
 
         // Set up base communication & helper classes
         KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
@@ -158,6 +164,14 @@ public class KinManager {
     }
 
     /**
+     * @return an observable to check if the KinManager is ready.
+     * Observable returns false when not ready yet or opted-out; true otherwise.
+     */
+    public Observable<Boolean> isOptedInObservable() {
+        return isOptedInObservable;
+    }
+
+    /**
      * @return the current balance of the active account
      */
     public Single<BigDecimal> getCurrentBalance() {
@@ -205,19 +219,9 @@ public class KinManager {
      * @param context the context
      * @return a single which returns true on agreement to pay; otherwise false.
      */
-    public Single<Boolean> chargeForConnection(Context context) {
-        if (!isReady()) {
-            // If we aren't ready yet just let them connect
-            return Single.just(true);
-        }
-
+    public Single<Boolean> confirmConnectionPay(Context context) {
         return kinPermissionManager
-                .confirmPay(context)
-                .doOnSuccess(agreed -> {
-                    if (agreed) {
-                        transferOut(1d).subscribeOn(Schedulers.io()).subscribe();
-                    }
-                });
+                .confirmPay(context);
     }
 
     /**
@@ -268,16 +272,16 @@ public class KinManager {
     }
 
     public void onTunnelConnectionState(TunnelState tunnelState) {
-        // For now we just need to update the port so don't need any relay or such to hold it
+        // Not running, prevent proxy
         TunnelState.ConnectionData connectionData = tunnelState.connectionData();
-        int port = connectionData == null ? 0 : connectionData.httpPort();
-
-        if (port > 0) {
-            serverCommunicator.setProxyPort(port);
-            isTunneledBehaviorRelay.accept(true);
-        } else {
+        if (!tunnelState.isRunning() || connectionData == null || connectionData.httpPort() <= 0) {
             serverCommunicator.setProxyPort(ServerCommunicator.PREVENT_CONNECTION_PORT);
             isTunneledBehaviorRelay.accept(false);
+            return;
         }
+
+        // Running, set the port
+        serverCommunicator.setProxyPort(connectionData.httpPort());
+        isTunneledBehaviorRelay.accept(true);
     }
 }
