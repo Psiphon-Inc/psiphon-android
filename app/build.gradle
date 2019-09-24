@@ -154,6 +154,7 @@ dependencies {
     implementation "io.reactivex.rxjava2:rxjava:$rootProject.ext.rxjavaVersion"
     implementation "com.jakewharton.rxrelay2:rxrelay:$rootProject.ext.rxrelayVersion"
     implementation "com.jakewharton.rxbinding2:rxbinding-support-v4:$rootProject.ext.rxbindingSupportVersion"
+    implementation "com.jakewharton.threetenabp:threetenabp:$rootProject.ext.threetenabpVersion"
     implementation "com.squareup.okhttp3:okhttp:$rootProject.ext.okhttpVersion"
 
     api "android.arch.lifecycle:extensions:$rootProject.ext.androidLifecycleExtensionsVersion"

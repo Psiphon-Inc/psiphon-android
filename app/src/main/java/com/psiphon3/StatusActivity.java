@@ -68,6 +68,8 @@ import com.psiphon3.util.SkuDetails;
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
+import org.json.JSONException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -84,6 +86,8 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
+
+import static com.psiphon3.util.IabHelper.ITEM_TYPE_SUBS;
 
 
 public class StatusActivity
@@ -691,18 +695,14 @@ public class StatusActivity
     static final String[] IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKUS = {IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU,
             "basic_ad_free_subscription", "basic_ad_free_subscription_2", "basic_ad_free_subscription_3", "basic_ad_free_subscription_4"};
 
-    static final String IAB_BASIC_7DAY_TIMEPASS_SKU = "basic_ad_free_7_day_timepass";
-    static final String IAB_BASIC_30DAY_TIMEPASS_SKU = "basic_ad_free_30_day_timepass";
-    static final String IAB_BASIC_360DAY_TIMEPASS_SKU = "basic_ad_free_360_day_timepass";
-    static final Map<String, Long> IAB_TIMEPASS_SKUS_TO_TIME;
+    static public final Map<String, Long> IAB_TIMEPASS_SKUS_TO_DAYS;
     static {
         Map<String, Long> m = new HashMap<>();
-        m.put(IAB_BASIC_7DAY_TIMEPASS_SKU, 7L * 24 * 60 * 60 * 1000);
-        m.put(IAB_BASIC_30DAY_TIMEPASS_SKU, 30L * 24 * 60 * 60 * 1000);
-        m.put(IAB_BASIC_360DAY_TIMEPASS_SKU, 360L * 24 * 60 * 60 * 1000);
-        IAB_TIMEPASS_SKUS_TO_TIME = Collections.unmodifiableMap(m);
+        m.put("basic_ad_free_7_day_timepass", 7L);
+        m.put("basic_ad_free_30_day_timepass", 30L);
+        m.put("basic_ad_free_360_day_timepass", 360L);
+        IAB_TIMEPASS_SKUS_TO_DAYS = Collections.unmodifiableMap(m);
     }
-
     @Override
     public void onActiveSpeedBoost(Boolean hasActiveSpeedBoost) {
         activeSpeedBoostRelay.accept(hasActiveSpeedBoost);
@@ -816,10 +816,10 @@ public class StatusActivity
 
             long now = System.currentTimeMillis();
             List<Purchase> timepassesToConsume = new ArrayList<>();
-            for (Map.Entry<String, Long> timepass : IAB_TIMEPASS_SKUS_TO_TIME.entrySet())
+            for (String sku : IAB_TIMEPASS_SKUS_TO_DAYS.keySet())
             {
-                String sku = timepass.getKey();
-                long lifetime = timepass.getValue();
+                Long lifetimeInDays = IAB_TIMEPASS_SKUS_TO_DAYS.get(sku);
+                long lifetimeMillis = lifetimeInDays * 24 * 60 * 60 * 1000;
 
                 // DEBUG: This line will convert days to minutes. Useful for testing.
                 //lifetime = lifetime / 24 / 60;
@@ -830,7 +830,7 @@ public class StatusActivity
                     continue;
                 }
 
-                long timepassExpiry = tempPurchase.getPurchaseTime() + lifetime;
+                long timepassExpiry = tempPurchase.getPurchaseTime() + lifetimeMillis;
                 if (now < timepassExpiry)
                 {
                     // This time pass is still valid.
@@ -889,7 +889,7 @@ public class StatusActivity
                 currentRateLimitModeRelay.accept(RateLimitMode.UNLIMITED_SUBSCRIPTION);
                 proceedWithValidSubscription(purchase);
             }
-            else if (IAB_TIMEPASS_SKUS_TO_TIME.containsKey(purchase.getSku()))
+            else if (IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(purchase.getSku()))
             {
                 Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
 
@@ -935,7 +935,7 @@ public class StatusActivity
             if (isIabInitialized())
             {
                 List<String> timepassSkus = new ArrayList<>();
-                timepassSkus.addAll(IAB_TIMEPASS_SKUS_TO_TIME.keySet());
+                timepassSkus.addAll(IAB_TIMEPASS_SKUS_TO_DAYS.keySet());
 
                 List<String> subscriptionSkus = new ArrayList<>();
                 subscriptionSkus.add(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU);
@@ -1132,56 +1132,35 @@ public class StatusActivity
 
     @Override
     public void onSubscribeButtonClick(View v) {
+        // User has clicked the Subscribe button, now let them choose the payment method.
         Utils.MyLog.g("StatusActivity::onSubscribeButtonClick");
-        try {
-            // User has clicked the Subscribe button, now let them choose the payment method.
-
-            Intent feedbackIntent = new Intent(this, PaymentChooserActivity.class);
-
-            // Pass price and SKU info to payment chooser activity.
-            PaymentChooserActivity.SkuInfo skuInfo = new PaymentChooserActivity.SkuInfo();
-
-            SkuDetails limitedSubscriptionSkuDetails = mInventory.getSkuDetails(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU);
-            skuInfo.mLimitedSubscriptionInfo.sku = limitedSubscriptionSkuDetails.getSku();
-            skuInfo.mLimitedSubscriptionInfo.price = limitedSubscriptionSkuDetails.getPrice();
-            skuInfo.mLimitedSubscriptionInfo.priceMicros = limitedSubscriptionSkuDetails.getPriceAmountMicros();
-            skuInfo.mLimitedSubscriptionInfo.priceCurrency = limitedSubscriptionSkuDetails.getPriceCurrencyCode();
-            // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
-            // we'll set it to 30 days.
-            skuInfo.mLimitedSubscriptionInfo.lifetime = 30L * 24 * 60 * 60 * 1000;
-
-            SkuDetails unlimitedSubscriptionSkuDetails = mInventory.getSkuDetails(IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
-            skuInfo.mUnlimitedSubscriptionInfo.sku = unlimitedSubscriptionSkuDetails.getSku();
-            skuInfo.mUnlimitedSubscriptionInfo.price = unlimitedSubscriptionSkuDetails.getPrice();
-            skuInfo.mUnlimitedSubscriptionInfo.priceMicros = unlimitedSubscriptionSkuDetails.getPriceAmountMicros();
-            skuInfo.mUnlimitedSubscriptionInfo.priceCurrency = unlimitedSubscriptionSkuDetails.getPriceCurrencyCode();
-            // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
-            // we'll set it to 30 days.
-            skuInfo.mUnlimitedSubscriptionInfo.lifetime = 30L * 24 * 60 * 60 * 1000;
-
-            for (Map.Entry<String, Long> timepassSku : IAB_TIMEPASS_SKUS_TO_TIME.entrySet()) {
-                SkuDetails timepassSkuDetails = mInventory.getSkuDetails(timepassSku.getKey());
-                PaymentChooserActivity.SkuInfo.Info info = new PaymentChooserActivity.SkuInfo.Info();
-
-                info.sku = timepassSkuDetails.getSku();
-                info.price = timepassSkuDetails.getPrice();
-                info.priceMicros = timepassSkuDetails.getPriceAmountMicros();
-                info.priceCurrency = timepassSkuDetails.getPriceCurrencyCode();
-                info.lifetime = timepassSku.getValue();
-
-                skuInfo.mTimePassSkuToInfo.put(info.sku, info);
+        // Build a list of  all available sku details to be passed to the payment chooser activity.
+        ArrayList<String> jsonSkuDetailsList = new ArrayList<>();
+        if(mInventory != null)  {
+            ArrayList<SkuDetails> allSkuDetails = mInventory.getAllSkuDetails();
+            for(SkuDetails skuDetails : allSkuDetails) {
+                jsonSkuDetailsList.add(skuDetails.getOriginalJson());
             }
-
-            feedbackIntent.putExtra(PaymentChooserActivity.SKU_INFO_EXTRA, skuInfo.toString());
-
-            startActivityForResult(feedbackIntent, PAYMENT_CHOOSER_ACTIVITY);
-        } catch (NullPointerException e) {
-            Utils.MyLog.g("StatusActivity::onSubscribeButtonClick error: " + e);
-            // Show "Subscription options not available" toast.
-            Toast toast = Toast.makeText(this, R.string.subscription_options_currently_not_available, Toast.LENGTH_LONG);
-            toast.setGravity(Gravity.CENTER, 0, 0);
-            toast.show();
         }
+
+        if(jsonSkuDetailsList.size() > 0) {
+            Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
+            paymentChooserActivityIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            paymentChooserActivityIntent.putStringArrayListExtra(
+                    PaymentChooserActivity.SKU_DETAILS_ARRAY_LIST_EXTRA,
+                    new ArrayList<>(jsonSkuDetailsList));
+            startActivityForResult(paymentChooserActivityIntent, PAYMENT_CHOOSER_ACTIVITY);
+        } else {
+            // Sku details list is empty, show "Subscription options not available" toast.
+            Utils.MyLog.g("StatusActivity::onSubscribeButtonClick sku list is empty, mInventory is " + (mInventory == null ? "null": "not null"));
+            showToast(R.string.subscription_options_currently_not_available);
+        }
+    }
+
+    private void showToast(int stringResId) {
+        Toast toast = Toast.makeText(this, stringResId, Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        toast.show();
     }
 
     synchronized
@@ -1204,40 +1183,33 @@ public class StatusActivity
     }
     
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
-        if (requestCode == IAB_REQUEST_CODE)
-        {
-            if (isIabInitialized())
-            {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == IAB_REQUEST_CODE) {
+            if (isIabInitialized()) {
                 mIabHelper.handleActivityResult(requestCode, resultCode, data);
             }
-        }
-        else if (requestCode == PAYMENT_CHOOSER_ACTIVITY)
-        {
-            if (resultCode == RESULT_OK)
-            {
-                int buyType = data.getIntExtra(PaymentChooserActivity.BUY_TYPE_EXTRA, -1);
-                if (buyType == PaymentChooserActivity.BUY_SUBSCRIPTION)
-                {
-                    Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: subscription");
-                    String sku = data.getStringExtra(PaymentChooserActivity.SKU_INFO_EXTRA);
-                    launchSubscriptionPurchaseFlow(sku);
+        } else if (requestCode == PAYMENT_CHOOSER_ACTIVITY) {
+            if (resultCode == RESULT_OK) {
+                String skuString = data.getStringExtra(PaymentChooserActivity.USER_PICKED_SKU_DETAILS_EXTRA);
+                try {
+                    if (TextUtils.isEmpty(skuString)) {
+                        throw new IllegalArgumentException("SKU is empty.");
+                    }
+                    SkuDetails skuDetails = new SkuDetails(skuString);
+                    if (skuDetails.getType().equals(ITEM_TYPE_SUBS)) {
+                        launchSubscriptionPurchaseFlow(skuDetails.getSku());
+                    } else {
+                        launchTimePassPurchaseFlow(skuDetails.getSku());
+                    }
+                } catch (JSONException | IllegalArgumentException e) {
+                    Utils.MyLog.g("StatusActivity::onActivityResult purchase SKU error: " + e);
+                    // We've got bad sku data, show "Subscription options not available" toast.
+                    showToast(R.string.subscription_options_currently_not_available);
                 }
-                else if (buyType == PaymentChooserActivity.BUY_TIMEPASS)
-                {
-                    Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: time pass");
-                    String sku = data.getStringExtra(PaymentChooserActivity.SKU_INFO_EXTRA);
-                    launchTimePassPurchaseFlow(sku);
-                }
-            }
-            else
-            {
+            } else {
                 Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: canceled");
             }
-        }
-        else
-        {
+        } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
     }

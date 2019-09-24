@@ -31,6 +31,8 @@ public class SkuDetails {
     private final String mTitle;
     private final String mDescription;
     private final String mJson;
+    private final String mFreeTrialPeriod;
+    private String mSubscriptionPeriod;
 
     public SkuDetails(String jsonSkuDetails) throws JSONException {
         this(IabHelper.ITEM_TYPE_INAPP, jsonSkuDetails);
@@ -47,6 +49,8 @@ public class SkuDetails {
         mPriceCurrencyCode = o.optString("price_currency_code");
         mTitle = o.optString("title");
         mDescription = o.optString("description");
+        mFreeTrialPeriod = o.optString("freeTrialPeriod");
+        mSubscriptionPeriod = o.optString("subscriptionPeriod");
     }
 
     public String getSku() { return mSku; }
@@ -56,9 +60,15 @@ public class SkuDetails {
     public String getPriceCurrencyCode() { return mPriceCurrencyCode; }
     public String getTitle() { return mTitle; }
     public String getDescription() { return mDescription; }
+    public String getFreeTrialPeriod() { return mFreeTrialPeriod; }
+    public String getOriginalJson() { return mJson; }
 
     @Override
     public String toString() {
         return "SkuDetails:" + mJson;
+    }
+
+    public String getSubscriptionPeriod() {
+        return mSubscriptionPeriod;
     }
 }
