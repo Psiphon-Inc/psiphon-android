@@ -38,7 +38,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -114,7 +113,6 @@ public class StatusActivity
     private Disposable currentRateModeDisposable;
     private PublishRelay<Boolean> activeSpeedBoostRelay;
     private KinManager kinManager;
-    private Disposable chargeForConnectionDisposable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -230,10 +228,6 @@ public class StatusActivity
         }
         currentRateModeDisposable.dispose();
         psiphonAdManager.onDestroy();
-
-        if (chargeForConnectionDisposable != null) {
-            chargeForConnectionDisposable.dispose();
-        }
 
         super.onDestroy();
     }
@@ -420,24 +414,14 @@ public class StatusActivity
     public void onToggleClick(View v)
     {
         if (!isServiceRunning()) {
-            // If this hasn't disposed yet then we should not resubscribe
-            if (chargeForConnectionDisposable != null && !chargeForConnectionDisposable.isDisposed()) {
-                doToggle();
-                return;
-            }
-
-            chargeForConnectionDisposable = kinManager
+            kinManager
                     .confirmConnectionPay(this)
-                    .doOnSuccess(agreed -> {
-                        if (agreed) {
-                            doToggle();
-                        }
-                    })
-                    .flatMapCompletable(agreed -> kinManager.transferOut(1d))
+                    // on success notify the charge for connection relay
+                    .doOnSuccess(agreed -> kinManager.chargeForNextConnection(agreed))
                     .subscribe();
-        } else {
-            doToggle();
         }
+
+        doToggle();
     }
 
     public void onOpenBrowserClick(View v)

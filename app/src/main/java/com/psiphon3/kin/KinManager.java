@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Pair;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
+import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
 
 import java.math.BigDecimal;
@@ -27,6 +28,7 @@ public class KinManager {
     private final BehaviorRelay<Boolean> isOptedInRelay;
     private final BehaviorRelay<Boolean> isReadyBehaviorRelay;
     private final BehaviorRelay<Boolean> isTunneledBehaviorRelay;
+    private final PublishRelay<Boolean> chargeForConnectionPublishRelay;
     private final Observable<Boolean> isOptedInObservable;
     private final Observable<AccountHelper> accountHelperObservable;
 
@@ -37,11 +39,10 @@ public class KinManager {
         this.kinPermissionManager = kinPermissionManager;
         this.environment = environment;
 
-        // Use a ReplaySubject with size 1, this means that it will only ever emit the latest on next
-        // Start with false
         isOptedInRelay = BehaviorRelay.create();
         isReadyBehaviorRelay = BehaviorRelay.createDefault(false);
         isTunneledBehaviorRelay = BehaviorRelay.createDefault(false);
+        chargeForConnectionPublishRelay = PublishRelay.create();
 
         isOptedInObservable = kinPermissionManager
                 // start with the users opt-in/out
@@ -85,7 +86,8 @@ public class KinManager {
         // combine account and tunnelled observables
         Observable.combineLatest(
                 accountHelperObservable,
-                isTunneledObservable().filter(isTunneled -> isTunneled),
+                isTunneledObservable()
+                        .filter(isTunneled -> isTunneled),
                 Pair::new)
                 // flat map into the register when one or the other changes
                 // we should be tunneled here because we only filter for tunneled events
@@ -96,6 +98,23 @@ public class KinManager {
                             .doOnComplete(() -> isReadyBehaviorRelay.accept(true));
                 })
                 .subscribe();
+
+        chargeForConnectionPublishRelay
+                // take only distinct events to prevent spam
+                .distinctUntilChanged()
+                // only take requests to charge them
+                .filter(chargeForConnection -> chargeForConnection)
+                // take one tunneled event
+                .flatMap(__ -> isTunneledObservable()
+                        .filter(isTunneled -> isTunneled)
+                        .take(1))
+                // transfer out 1 kin, which on complete allows for a new charge for connection
+                .flatMapCompletable(__ -> transferOut(1d)
+                        .doOnComplete(() -> chargeForConnectionPublishRelay.accept(false)))
+                .subscribe();
+
+        // start with this so distinct until changed will work
+        chargeForConnectionPublishRelay.accept(false);
     }
 
     static KinManager getInstance(Context context, Environment environment) {
@@ -220,8 +239,22 @@ public class KinManager {
      * @return a single which returns true on agreement to pay; otherwise false.
      */
     public Single<Boolean> confirmConnectionPay(Context context) {
-        return kinPermissionManager
-                .confirmPay(context);
+        return isOptedInObservable
+                // no item, default to opted out
+                .first(false)
+                // map people opted out to false
+                // opted out to check if they want to pay
+                .flatMap(optedIn -> {
+                    if (optedIn) {
+                        return kinPermissionManager.confirmPay(context);
+                    } else {
+                        return Single.just(false);
+                    }
+                });
+    }
+
+    public void chargeForNextConnection(boolean agreed) {
+        chargeForConnectionPublishRelay.accept(agreed);
     }
 
     /**
