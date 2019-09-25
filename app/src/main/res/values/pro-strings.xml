@@ -51,7 +51,7 @@
     <!-- Extra Label that appears on the subscription buying button for Psiphon Pro in case if there
          is a trial period available for that subscription. The formated string is the length of the
          trial period in days. Keep as short as possible -->
-    <string name="PaymentChooserFragment.FreeTialPeriod">Free trial %d days</string>
+    <string name="PaymentChooserFragment.FreeTrialPeriod">Free trial %d days</string>
 
     <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day.

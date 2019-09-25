@@ -90,7 +90,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                 }
                 if (pricePerDay == 0f) {
                     Utils.MyLog.g("PaymentChooserActivity error: bad subscription period for sku: " + skuDetails);
-                    return;
+                    continue;
                 }
 
                 // Get button resource ID
@@ -156,7 +156,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                 Period period = Period.parse(freeTrialPeriodISO8061);
                 long freeTrialPeriodInDays = period.getDays();
                 if (freeTrialPeriodInDays > 0L) {
-                    String freeTrialPeriodText = String.format(getString(R.string.PaymentChooserFragment_FreeTialPeriod), freeTrialPeriodInDays);
+                    String freeTrialPeriodText = String.format(getString(R.string.PaymentChooserFragment_FreeTrialPeriod), freeTrialPeriodInDays);
                     buttonTextHtml = String.format("%s<br><sub><small>%s</small></sub>", buttonTextHtml, freeTrialPeriodText);
                 }
             } catch (DateTimeParseException e) {
