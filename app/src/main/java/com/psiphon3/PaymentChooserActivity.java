@@ -22,6 +22,7 @@ package com.psiphon3;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Html;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
@@ -135,7 +136,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
             // do nothing
         }
         String formatString = button.getText().toString();
-        String buttonText = String.format(formatString, skuDetails.getPrice(), pricePerDayText);
+        String buttonTextHtml = String.format(formatString, skuDetails.getPrice(), pricePerDayText).replace("\n", "<br>");
         String freeTrialPeriodISO8061 = skuDetails.getFreeTrialPeriod();
         if(!TextUtils.isEmpty(freeTrialPeriodISO8061) &&
                 // Make sure we are compatible with the minSdk 15 of com.jakewharton.threetenabp
@@ -145,14 +146,14 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                 long freeTrialPeriodInDays = period.getDays();
                 if (freeTrialPeriodInDays > 0L) {
                     String freeTrialPeriodText = String.format(getString(R.string.PaymentChooserFragment_FreeTialPeriod), freeTrialPeriodInDays);
-                    buttonText = String.format("%s\n%s", buttonText, freeTrialPeriodText);
+                    buttonTextHtml = String.format("%s<br><sub><small>%s</small></sub>", buttonTextHtml, freeTrialPeriodText);
                 }
             } catch (DateTimeParseException e) {
                 Utils.MyLog.g("PaymentChooserActivity failed to parse free trial period: " + freeTrialPeriodISO8061);
             }
         }
 
-        button.setText(buttonText);
+        button.setText(Html.fromHtml(buttonTextHtml));
         button.setVisibility(View.VISIBLE);
         button.setOnClickListener(v -> {
             Utils.MyLog.g("PaymentChooserActivity purchase button clicked.");
