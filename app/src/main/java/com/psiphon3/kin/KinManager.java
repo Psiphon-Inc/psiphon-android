@@ -25,11 +25,10 @@ public class KinManager {
     private final KinPermissionManager kinPermissionManager;
     private final Environment environment;
 
-    private final BehaviorRelay<Boolean> isOptedInRelay;
+    private final BehaviorRelay<Boolean> isOptedInBehaviorRelay;
     private final BehaviorRelay<Boolean> isReadyBehaviorRelay;
     private final BehaviorRelay<Boolean> isTunneledBehaviorRelay;
     private final PublishRelay<Boolean> chargeForConnectionPublishRelay;
-    private final Observable<Boolean> isOptedInObservable;
     private final Observable<AccountHelper> accountHelperObservable;
 
     KinManager(Context context, ClientHelper clientHelper, ServerCommunicator serverCommunicator, SettingsManager settingsManager, KinPermissionManager kinPermissionManager, Environment environment) {
@@ -39,24 +38,19 @@ public class KinManager {
         this.kinPermissionManager = kinPermissionManager;
         this.environment = environment;
 
-        isOptedInRelay = BehaviorRelay.create();
+        isOptedInBehaviorRelay = BehaviorRelay.create();
         isReadyBehaviorRelay = BehaviorRelay.createDefault(false);
         isTunneledBehaviorRelay = BehaviorRelay.createDefault(false);
         chargeForConnectionPublishRelay = PublishRelay.create();
 
-        isOptedInObservable = kinPermissionManager
+        kinPermissionManager
                 // start with the users opt-in/out
                 .getUsersAgreementToKin(context)
-                // use a cache to not post multiple dialogs
-                // TODO: Is this the right thing to do?
-                .cache()
-                .toObservable()
-                // after listen for further emissions from the relay
-                .concatWith(isOptedInRelay)
-                // only re-emit changes
-                .distinctUntilChanged();
+                // emit that into isOptedIn
+                .doOnSuccess(isOptedInBehaviorRelay)
+                .subscribe();
 
-        accountHelperObservable = isOptedInObservable
+        accountHelperObservable = isOptedInObservable()
                 // if they opted in get an account
                 .flatMapMaybe(optedIn -> {
                     if (optedIn) {
@@ -74,7 +68,7 @@ public class KinManager {
                 // connect immediately
                 .autoConnect(0);
 
-        isOptedInObservable
+        isOptedInObservable()
                 // let observers know we aren't ready anymore
                 .doOnNext(optedIn -> {
                     if (!optedIn) {
@@ -187,14 +181,17 @@ public class KinManager {
      * Observable returns false when not ready yet or opted-out; true otherwise.
      */
     public Observable<Boolean> isOptedInObservable() {
-        return isOptedInObservable;
+        return isOptedInBehaviorRelay
+                .distinctUntilChanged()
+                .hide()
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     /**
      * @return the current balance of the active account
      */
     public Single<BigDecimal> getCurrentBalance() {
-        return isOptedInObservable
+        return isOptedInObservable()
                 .flatMap(isOptedIn -> {
                     if (isOptedIn) {
                         return isTunneledObservable();
@@ -217,7 +214,7 @@ public class KinManager {
      * @return a completable which fires on complete after the transaction has successfully completed
      */
     public Completable transferOut(Double amount) {
-        return isOptedInObservable
+        return isOptedInObservable()
                 .flatMap(isOptedIn -> {
                     if (isOptedIn) {
                         return isTunneledObservable();
@@ -239,7 +236,7 @@ public class KinManager {
      * @return a single which returns true on agreement to pay; otherwise false.
      */
     public Single<Boolean> confirmConnectionPay(Context context) {
-        return isOptedInObservable
+        return isOptedInObservable()
                 // no item, default to opted out
                 .first(false)
                 // map people opted out to false
@@ -275,7 +272,7 @@ public class KinManager {
         return kinPermissionManager.optIn(context)
                 .doOnSuccess(optedIn -> {
                     if (optedIn) {
-                        isOptedInRelay.accept(true);
+                        isOptedInBehaviorRelay.accept(true);
                     }
                 });
     }
@@ -297,7 +294,7 @@ public class KinManager {
                                     accountHelper.delete(context);
                                     clientHelper.deleteAccount();
                                     serverCommunicator.optOut();
-                                    isOptedInRelay.accept(false);
+                                    isOptedInBehaviorRelay.accept(false);
                                 })
                                 .subscribe();
                     }

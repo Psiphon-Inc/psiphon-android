@@ -1311,10 +1311,8 @@ public class StatusActivity
     private void setKinState(boolean optedIn) {
         CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
         if (optedIn) {
-            checkBoxKinEnabled.setText(R.string.lbl_opt_out_of_kin);
             checkBoxKinEnabled.setChecked(true);
         } else {
-            checkBoxKinEnabled.setText(R.string.lbl_opt_in_to_kin);
             checkBoxKinEnabled.setChecked(false);
         }
     }
