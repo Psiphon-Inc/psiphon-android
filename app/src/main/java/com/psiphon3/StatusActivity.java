@@ -85,10 +85,11 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
 
-
 public class StatusActivity
     extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase implements PsiCashFragment.ActiveSpeedBoostListener
 {
+    public static final String ACTION_SHOW_GET_HELP_DIALOG = "com.psiphon3.StatusActivity.SHOW_GET_HELP_CONNECTING_DIALOG";
+
     private View mRateLimitedTextSection;
     private TextView mRateLimitedText;
     private TextView mRateUnlimitedText;
@@ -401,6 +402,9 @@ public class StatusActivity
                     this.getClass()));
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_VPN_REVOKED)) {
             showVpnAlertDialog(R.string.StatusActivity_VpnRevokedTitle, R.string.StatusActivity_VpnRevokedMessage);
+        } else if (0 == intent.getAction().compareTo(ACTION_SHOW_GET_HELP_DIALOG)) {
+            // OK to be null because we don't use it
+            onGetHelpConnectingClick(null);
         }
     }
     
@@ -412,6 +416,14 @@ public class StatusActivity
     public void onOpenBrowserClick(View v)
     {
         displayBrowser(this, null);
+    }
+
+    public void onGetHelpConnectingClick(View v) {
+        showConnectionHelpDialog(this, R.layout.dialog_get_help_connecting);
+    }
+
+    public void onHowToHelpClick(View view) {
+        showConnectionHelpDialog(this, R.layout.dialog_how_to_help_connect);
     }
 
     @Override
