@@ -69,16 +69,23 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
 
             // Calculate life time in days for subscriptions
             // Note: we are not using Period.parse() because there are only 5 possible predefined periods
+            String subscriptionPeriod = skuDetails.getSubscriptionPeriod();
+            if(TextUtils.isEmpty(subscriptionPeriod)) {
+                // Our  subscriptions are all 1 month, set as default in case the user has a very old
+                // Google Play Services version which doesn't return subscription period value.
+                subscriptionPeriod = "P1M";
+            }
+
             if (skuDetails.getType().equals(ITEM_TYPE_SUBS)) {
-                if (skuDetails.getSubscriptionPeriod().equals("P1W")) {
+                if (subscriptionPeriod.equals("P1W")) {
                     pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / 7f;
-                } else if (skuDetails.getSubscriptionPeriod().equals("P1M")) {
+                } else if (subscriptionPeriod.equals("P1M")) {
                     pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / (365f / 12);
-                } else if (skuDetails.getSubscriptionPeriod().equals("P3M")) {
+                } else if (subscriptionPeriod.equals("P3M")) {
                     pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / (365f / 4);
-                } else if (skuDetails.getSubscriptionPeriod().equals("P6M")) {
+                } else if (subscriptionPeriod.equals("P6M")) {
                     pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / (365f / 2);
-                } else if (skuDetails.getSubscriptionPeriod().equals("P1Y")) {
+                } else if (subscriptionPeriod.equals("P1Y")) {
                     pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / 365f;
                 }
                 if (pricePerDay == 0f) {
@@ -124,19 +131,23 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
     private void setUpButton(int buttonId, SkuDetails skuDetails, float pricePerDay) {
         Button button = findViewById(buttonId);
 
-        // If the formatting for pricePerDayText fails below, use this as a default.
-        String pricePerDayText = skuDetails.getPriceCurrencyCode() + " " + pricePerDay;
+        // skuDetails.getPrice() returns a differently looking string than the one we get by using priceFormatter
+        // below, so for consistency we'll use priceFormatter on the subscription price amount too.
+        // If the formatting for pricePerDayText or priceText fails, use these as default
+        String pricePerDayText = String.format("%s %.2f", skuDetails.getPriceCurrencyCode(), pricePerDay);
+        String priceText = skuDetails.getPrice();
 
         try {
             Currency currency = Currency.getInstance(skuDetails.getPriceCurrencyCode());
             NumberFormat priceFormatter = NumberFormat.getCurrencyInstance();
             priceFormatter.setCurrency(currency);
             pricePerDayText = priceFormatter.format(pricePerDay);
+            priceText = priceFormatter.format(skuDetails.getPriceAmountMicros() / 1000000.0f);
         } catch (IllegalArgumentException e) {
             // do nothing
         }
         String formatString = button.getText().toString();
-        String buttonTextHtml = String.format(formatString, skuDetails.getPrice(), pricePerDayText).replace("\n", "<br>");
+        String buttonTextHtml = String.format(formatString, priceText, pricePerDayText).replace("\n", "<br>");
         String freeTrialPeriodISO8061 = skuDetails.getFreeTrialPeriod();
         if(!TextUtils.isEmpty(freeTrialPeriodISO8061) &&
                 // Make sure we are compatible with the minSdk 15 of com.jakewharton.threetenabp
