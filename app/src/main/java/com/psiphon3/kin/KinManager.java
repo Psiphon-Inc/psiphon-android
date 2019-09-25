@@ -80,16 +80,21 @@ public class KinManager {
         // combine account and tunnelled observables
         Observable.combineLatest(
                 accountHelperObservable,
-                isTunneledObservable()
-                        .filter(isTunneled -> isTunneled),
+                isTunneledObservable(),
                 Pair::new)
                 // flat map into the register when one or the other changes
                 // we should be tunneled here because we only filter for tunneled events
                 .flatMapCompletable(pair -> {
                     AccountHelper accountHelper = pair.first;
-                    return accountHelper
-                            .register(context)
-                            .doOnComplete(() -> isReadyBehaviorRelay.accept(true));
+                    Boolean isTunneled = pair.second;
+                    if (isTunneled) {
+                        return accountHelper
+                                .register(context)
+                                .doOnComplete(() -> isReadyBehaviorRelay.accept(true))
+                                .onErrorComplete();
+                    } else {
+                        return Completable.complete();
+                    }
                 })
                 .subscribe();
 
@@ -288,14 +293,19 @@ public class KinManager {
                 .doOnSuccess(optedOut -> {
                     if (optedOut) {
                         // TODO: Transfer excess funds back into our account?
+                        // TODO: Do when opted out rather than here
                         accountHelperObservable
                                 .firstOrError()
                                 .doOnSuccess(accountHelper -> {
                                     accountHelper.delete(context);
                                     clientHelper.deleteAccount();
-                                    serverCommunicator.optOut();
                                     isOptedInBehaviorRelay.accept(false);
                                 })
+                                .toObservable()
+                                .flatMap(__ -> isTunneledObservable())
+                                .filter(isTunneled -> isTunneled)
+                                .take(1)
+                                .doOnNext(__ -> serverCommunicator.optOut())
                                 .subscribe();
                     }
                 });
