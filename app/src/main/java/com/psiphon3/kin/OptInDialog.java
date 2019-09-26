@@ -14,20 +14,21 @@ import android.widget.TextView;
 
 import com.psiphon3.subscription.R;
 
-public class PermissionDialog extends Dialog implements View.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener {
+public class OptInDialog extends Dialog implements View.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener {
     private final Context context;
     private final OnCloseListener closeListener;
 
-    private PermissionDialog(Context context, OnCloseListener closeListener) {
+    private OptInDialog(Context context, OnCloseListener closeListener) {
         super(context);
         this.context = context;
         this.closeListener = closeListener;
     }
 
     public static void show(Context context, OnCloseListener closeListener) {
-        PermissionDialog permissionDialog = new PermissionDialog(context, closeListener);
-        permissionDialog.setCanceledOnTouchOutside(true);
-        permissionDialog.show();
+        OptInDialog optInDialog = new OptInDialog(context, closeListener);
+        optInDialog.setCancelable(false);
+        optInDialog.setCanceledOnTouchOutside(false);
+        optInDialog.show();
     }
 
     @Override

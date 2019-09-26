@@ -1,7 +1,6 @@
 package com.psiphon3.kin;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.support.v7.app.AlertDialog;
 
 import com.psiphon3.subscription.R;
@@ -35,7 +34,7 @@ class KinPermissionManager {
 
     Single<Boolean> optIn(Context context) {
         return Single.create(emitter ->
-                PermissionDialog.show(context, button -> {
+                OptInDialog.show(context, button -> {
                     if (emitter.isDisposed()) {
                         return;
                     }
@@ -80,6 +79,7 @@ class KinPermissionManager {
                             emitter.onSuccess(false);
                         }
                     })
+                    .setCancelable(false)
                     .create()
                     .show();
         });
@@ -94,8 +94,10 @@ class KinPermissionManager {
         // (Neutral) | (Negative) | (Positive) so this will give us No | <spacing> | Always
         return Single.create(emitter -> {
             new AlertDialog.Builder(context)
+                    .setIcon(R.drawable.ic_kin_logo_large_purple)
+                    .setTitle(context.getString(R.string.title_donate_kin))
                     .setMessage(R.string.lbl_kin_pay)
-                    .setNeutralButton(R.string.lbl_no, (dialog, which) -> {
+                    .setNeutralButton("Opt-out", (dialog, which) -> {
                         settingsManager.setHasAgreedToAutoPay(context, false);
                         if (!emitter.isDisposed()) {
                             emitter.onSuccess(false);
@@ -107,6 +109,7 @@ class KinPermissionManager {
                             emitter.onSuccess(true);
                         }
                     })
+                    .setCancelable(false)
                     .create()
                     .show();
         });

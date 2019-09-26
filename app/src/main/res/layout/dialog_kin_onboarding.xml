@@ -11,13 +11,12 @@
         android:id="@+id/txt_kin_onboarding_header"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:paddingTop="32dp"
         android:text="Kin and Psiphon"
         android:textAppearance="@style/TextAppearance.AppCompat.Display1"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.125" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/img_kin_onboarding_logo"
@@ -27,7 +26,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/txt_kin_onboarding_header"
-        app:srcCompat="@drawable/ic_kin_logo" />
+        app:srcCompat="@drawable/ic_kin_logo_large_purple" />
 
     <TextView
         android:id="@+id/txt_kin_onboarding"
@@ -48,6 +47,7 @@
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingTop="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -75,7 +75,7 @@
             android:layout_marginEnd="16dp"
             android:layout_marginRight="16dp"
             android:layout_marginBottom="16dp"
-            android:background="@color/kin_blue"
+            android:background="@color/kin_primary"
             android:padding="16dp"
             android:text="Help Psiphon!"
             app:layout_constraintBottom_toBottomOf="parent"
