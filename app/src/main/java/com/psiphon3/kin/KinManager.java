@@ -26,7 +26,6 @@ public class KinManager {
     private final Environment environment;
 
     private final BehaviorRelay<Boolean> isOptedInBehaviorRelay;
-    private final BehaviorRelay<Boolean> isReadyBehaviorRelay;
     private final BehaviorRelay<Boolean> isTunneledBehaviorRelay;
     private final PublishRelay<Boolean> chargeForConnectionPublishRelay;
     private final Observable<AccountHelper> accountHelperObservable;
@@ -39,7 +38,6 @@ public class KinManager {
         this.environment = environment;
 
         isOptedInBehaviorRelay = BehaviorRelay.create();
-        isReadyBehaviorRelay = BehaviorRelay.createDefault(false);
         isTunneledBehaviorRelay = BehaviorRelay.createDefault(false);
         chargeForConnectionPublishRelay = PublishRelay.create();
 
@@ -69,11 +67,13 @@ public class KinManager {
                 .autoConnect(0);
 
         isOptedInObservable()
-                // let observers know we aren't ready anymore
-                .doOnNext(optedIn -> {
-                    if (!optedIn) {
-                        isReadyBehaviorRelay.accept(false);
-                    }
+                // only observe opts out
+                .filter(optedIn -> !optedIn)
+                // take one account helper
+                .flatMapMaybe(__ -> accountHelperObservable.firstElement())
+                .doOnNext(accountHelper -> {
+                    accountHelper.delete(context);
+                    clientHelper.deleteAccount();
                 })
                 .subscribe();
 
@@ -83,14 +83,13 @@ public class KinManager {
                 isTunneledObservable(),
                 Pair::new)
                 // flat map into the register when one or the other changes
-                // we should be tunneled here because we only filter for tunneled events
+                // ensure we're tunnelled
                 .flatMapCompletable(pair -> {
                     AccountHelper accountHelper = pair.first;
                     Boolean isTunneled = pair.second;
                     if (isTunneled) {
                         return accountHelper
                                 .register(context)
-                                .doOnComplete(() -> isReadyBehaviorRelay.accept(true))
                                 .onErrorComplete();
                     } else {
                         return Completable.complete();
@@ -156,29 +155,6 @@ public class KinManager {
 
     private Observable<Boolean> isTunneledObservable() {
         return isTunneledBehaviorRelay.distinctUntilChanged().hide();
-    }
-
-    /**
-     * @return false when not ready yet or opted-out; true otherwise.
-     */
-    public boolean isReady() {
-        Boolean isReady = isReadyBehaviorRelay.getValue();
-        if (isReady == null) {
-            return false;
-        }
-
-        return isReady;
-    }
-
-    /**
-     * @return an observable to check if the KinManager is ready.
-     * Observable returns false when not ready yet or opted-out; true otherwise.
-     */
-    public Observable<Boolean> isReadyObservable() {
-        return isReadyBehaviorRelay
-                .distinctUntilChanged()
-                .hide()
-                .observeOn(AndroidSchedulers.mainThread());
     }
 
     /**
@@ -292,21 +268,7 @@ public class KinManager {
         return kinPermissionManager.optOut(context)
                 .doOnSuccess(optedOut -> {
                     if (optedOut) {
-                        // TODO: Transfer excess funds back into our account?
-                        // TODO: Do when opted out rather than here
-                        accountHelperObservable
-                                .firstOrError()
-                                .doOnSuccess(accountHelper -> {
-                                    accountHelper.delete(context);
-                                    clientHelper.deleteAccount();
-                                    isOptedInBehaviorRelay.accept(false);
-                                })
-                                .toObservable()
-                                .flatMap(__ -> isTunneledObservable())
-                                .filter(isTunneled -> isTunneled)
-                                .take(1)
-                                .doOnNext(__ -> serverCommunicator.optOut())
-                                .subscribe();
+                        isOptedInBehaviorRelay.accept(false);
                     }
                 });
     }
