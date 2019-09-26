@@ -1699,7 +1699,7 @@ public abstract class MainBase {
             if (homePages != null && tunnelState.isConnected) {
                 tunnelState.homePages = homePages;
             }
-            m_tunnelState.needsHelpConnecting = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_NEEDS_HELP_CONNECTING);
+            tunnelState.needsHelpConnecting = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_NEEDS_HELP_CONNECTING);
             return tunnelState;
         }
 
