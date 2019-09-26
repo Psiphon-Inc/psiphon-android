@@ -413,7 +413,8 @@ public class StatusActivity
 
     public void onToggleClick(View v)
     {
-        if (!isServiceRunning()) {
+        // Only check for payment when starting in WDM
+        if (!isServiceRunning() && getTunnelConfigWholeDevice()) {
             kinManager
                     .confirmConnectionPay(this)
                     // on success notify the charge for connection relay
