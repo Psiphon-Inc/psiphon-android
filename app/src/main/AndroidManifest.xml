@@ -53,10 +53,10 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".psiphonlibrary.NfcActivity" />
+        <activity android:name="com.psiphon3.psiphonlibrary.NfcActivity" />
         <activity-alias
-            android:name=".psiphonlibrary.NfcActivity"
-            android:targetActivity=".StatusActivity"
+            android:name="com.psiphon3.psiphonlibrary.NfcActivity"
+            android:targetActivity="com.psiphon3.StatusActivity"
             android:enabled="false">
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED"/>
