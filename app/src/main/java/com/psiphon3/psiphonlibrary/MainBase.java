@@ -1699,15 +1699,7 @@ public abstract class MainBase {
             if (homePages != null && tunnelState.isConnected) {
                 tunnelState.homePages = homePages;
             }
-
             m_tunnelState.needsHelpConnecting = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_NEEDS_HELP_CONNECTING);
-            if (m_tunnelState.needsHelpConnecting) {
-                setConnectionHelpState(ConnectionHelpState.NEEDS_HELP);
-            } else if (m_tunnelState.isConnected) {
-                setConnectionHelpState(ConnectionHelpState.CAN_HELP);
-            } else {
-                setConnectionHelpState(ConnectionHelpState.DISABLED);
-            }
             return tunnelState;
         }
 
@@ -2024,6 +2016,15 @@ public abstract class MainBase {
                 }
             }
             m_tunnelState = state;
+
+            if (m_tunnelState.needsHelpConnecting) {
+                setConnectionHelpState(ConnectionHelpState.NEEDS_HELP);
+            } else if (m_tunnelState.isConnected) {
+                setConnectionHelpState(ConnectionHelpState.CAN_HELP);
+            } else {
+                setConnectionHelpState(ConnectionHelpState.DISABLED);
+            }
+
             updateServiceStateUI(state);
         }
 
