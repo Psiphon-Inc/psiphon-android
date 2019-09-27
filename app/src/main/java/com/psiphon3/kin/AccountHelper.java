@@ -21,7 +21,14 @@ class AccountHelper {
     private final SettingsManager settingsManager;
     private final String psiphonWalletAddress;
 
-    private final BehaviorRelay<KinAccount> accountBehaviorRelay;
+    private final BehaviorRelay<AccountState> accountStateBehaviorRelay;
+    private KinAccount account;
+
+    private enum AccountState {
+        UNREGISTERED,
+        REGISTERED,
+        DELETED
+    }
 
     /**
      * @param serverCommunicator   the communicator for the server
@@ -33,42 +40,77 @@ class AccountHelper {
         this.settingsManager = settingsManager;
         this.psiphonWalletAddress = psiphonWalletAddress;
 
-        accountBehaviorRelay = BehaviorRelay.create();
+        accountStateBehaviorRelay = BehaviorRelay.create();
     }
 
     void onNewAccount(Context context, KinAccount account) {
-        accountBehaviorRelay.accept(account);
+        this.account = account;
+        accountStateBehaviorRelay.accept(AccountState.UNREGISTERED);
         register(context).subscribe();
     }
 
-    Completable register(Context context) {
-        return accountBehaviorRelay
+    Single<KinAccount> getAccountIfRegistered() {
+        return accountStateBehaviorRelay
                 .firstOrError()
+                .flatMap(state -> {
+                    switch (state) {
+                        case DELETED:
+                            return Single.error(new Exception("account deleted"));
+
+                        case REGISTERED:
+                            return Single.just(account);
+
+                        case UNREGISTERED:
+                        default:
+                            return accountStateBehaviorRelay
+                                    // wait for a change in state
+                                    .filter(state2 -> state2 != AccountState.UNREGISTERED)
+                                    .firstOrError()
+                                    // handle the new state
+                                    .flatMap(state2 -> {
+                                        if (state2 == AccountState.REGISTERED) {
+                                            return Single.just(account);
+                                        } else {
+                                            return Single.error(new Exception("account deleted"));
+                                        }
+                                    });
+                    }
+                });
+    }
+
+    Completable register(Context context) {
+        return Single.just(account)
                 .map(KinAccount::getPublicAddress)
                 .flatMapCompletable(address -> {
                     if (address == null) {
+                        accountStateBehaviorRelay.accept(AccountState.DELETED);
                         return Completable.error(new Exception("account deleted, unable to register"));
                     }
 
                     if (settingsManager.isAccountRegistered(context, address)) {
                         // the account is already registered, don't try to do it again
+                        accountStateBehaviorRelay.accept(AccountState.REGISTERED);
                         return Completable.complete();
                     }
 
-
                     return serverCommunicator
                             .createAccount(address)
-                            .doOnComplete(() -> settingsManager.setAccountRegistered(context, address, true))
+                            .doOnComplete(() -> {
+                                accountStateBehaviorRelay.accept(AccountState.REGISTERED);
+                                settingsManager.setAccountRegistered(context, address, true);
+                            })
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread());
                 });
     }
 
     void delete(Context context) {
-        accountBehaviorRelay
-                .firstOrError()
+        getAccountIfRegistered()
                 .map(KinAccount::getPublicAddress)
-                .doOnSuccess(address -> settingsManager.setAccountRegistered(context, address, false))
+                .doOnSuccess(address -> {
+                    accountStateBehaviorRelay.accept(AccountState.DELETED);
+                    settingsManager.setAccountRegistered(context, address, false);
+                })
                 .subscribe();
     }
 
@@ -80,8 +122,7 @@ class AccountHelper {
      * @return a completable which fires on complete after the transaction has successfully completed
      */
     Completable transferOut(Double amount) {
-        return accountBehaviorRelay
-                .firstOrError()
+        return getAccountIfRegistered()
                 // build the transaction
                 .flatMap(account -> buildTransaction(account, psiphonWalletAddress, new BigDecimal(amount))
                         // get the whitelistable transaction
@@ -106,8 +147,7 @@ class AccountHelper {
      * @return the current balance of the active account
      */
     Single<BigDecimal> getCurrentBalance() {
-        return accountBehaviorRelay
-                .firstOrError()
+        return getAccountIfRegistered()
                 .map(KinAccount::getBalanceSync)
                 .map(Balance::value)
                 .subscribeOn(Schedulers.io())
