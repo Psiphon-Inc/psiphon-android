@@ -1,13 +1,10 @@
 package com.psiphon3.kin;
 
 import android.content.Context;
-import android.util.Pair;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
-
-import java.math.BigDecimal;
 
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
@@ -26,7 +23,6 @@ public class KinManager {
     private final Environment environment;
 
     private final BehaviorRelay<Boolean> isOptedInBehaviorRelay;
-    private final BehaviorRelay<Boolean> isTunneledBehaviorRelay;
     private final PublishRelay<Boolean> chargeForConnectionPublishRelay;
     private final Observable<AccountHelper> accountHelperObservable;
 
@@ -38,7 +34,6 @@ public class KinManager {
         this.environment = environment;
 
         isOptedInBehaviorRelay = BehaviorRelay.create();
-        isTunneledBehaviorRelay = BehaviorRelay.createDefault(false);
         chargeForConnectionPublishRelay = PublishRelay.create();
 
         kinPermissionManager
@@ -78,23 +73,12 @@ public class KinManager {
                 .subscribe();
 
         // combine account and tunnelled observables
-        Observable.combineLatest(
-                accountHelperObservable,
-                isTunneledObservable(),
-                Pair::new)
+        accountHelperObservable
                 // flat map into the register when one or the other changes
                 // ensure we're tunnelled
-                .flatMapCompletable(pair -> {
-                    AccountHelper accountHelper = pair.first;
-                    Boolean isTunneled = pair.second;
-                    if (isTunneled) {
-                        return accountHelper
-                                .register(context)
-                                .onErrorComplete();
-                    } else {
-                        return Completable.complete();
-                    }
-                })
+                .flatMapCompletable(accountHelper -> accountHelper
+                        .register(context)
+                        .onErrorComplete())
                 .subscribe();
 
         chargeForConnectionPublishRelay
@@ -102,10 +86,6 @@ public class KinManager {
                 .distinctUntilChanged()
                 // only take requests to charge them
                 .filter(chargeForConnection -> chargeForConnection)
-                // take one tunneled event
-                .flatMap(__ -> isTunneledObservable()
-                        .filter(isTunneled -> isTunneled)
-                        .take(1))
                 // transfer out 1 kin, which on complete allows for a new charge for connection
                 .flatMapCompletable(__ -> transferOut(1d)
                         .doOnComplete(() -> chargeForConnectionPublishRelay.accept(false)))
@@ -153,10 +133,6 @@ public class KinManager {
         return getInstance(context, Environment.TEST);
     }
 
-    private Observable<Boolean> isTunneledObservable() {
-        return isTunneledBehaviorRelay.distinctUntilChanged().hide();
-    }
-
     /**
      * @return an observable to check if the KinManager is ready.
      * Observable returns false when not ready yet or opted-out; true otherwise.
@@ -166,25 +142,6 @@ public class KinManager {
                 .distinctUntilChanged()
                 .hide()
                 .observeOn(AndroidSchedulers.mainThread());
-    }
-
-    /**
-     * @return the current balance of the active account
-     */
-    public Single<BigDecimal> getCurrentBalance() {
-        return isOptedInObservable()
-                .flatMap(isOptedIn -> {
-                    if (isOptedIn) {
-                        return isTunneledObservable();
-                    } else {
-                        return Observable.empty();
-                    }
-                })
-                .filter(isTunneled -> isTunneled)
-                .flatMap(isTunneled -> accountHelperObservable)
-                .firstOrError()
-                .flatMap(AccountHelper::getCurrentBalance)
-                .onErrorReturnItem(new BigDecimal(0));
     }
 
     /**
@@ -198,13 +155,11 @@ public class KinManager {
         return isOptedInObservable()
                 .flatMap(isOptedIn -> {
                     if (isOptedIn) {
-                        return isTunneledObservable();
+                        return accountHelperObservable;
                     } else {
                         return Observable.empty();
                     }
                 })
-                .filter(isTunneled -> isTunneled)
-                .flatMap(isTunneled -> accountHelperObservable)
                 .firstOrError()
                 .flatMapCompletable(accountHelper -> accountHelper.transferOut(amount))
                 .onErrorComplete();
@@ -274,16 +229,6 @@ public class KinManager {
     }
 
     public void onTunnelConnectionState(TunnelState tunnelState) {
-        // Not running, prevent proxy
-        TunnelState.ConnectionData connectionData = tunnelState.connectionData();
-        if (!tunnelState.isRunning() || connectionData == null || connectionData.httpPort() <= 0) {
-            serverCommunicator.setProxyPort(ServerCommunicator.PREVENT_CONNECTION_PORT);
-            isTunneledBehaviorRelay.accept(false);
-            return;
-        }
-
-        // Running, set the port
-        serverCommunicator.setProxyPort(connectionData.httpPort());
-        isTunneledBehaviorRelay.accept(true);
+        serverCommunicator.onTunnelConnectionState(tunnelState);
     }
 }

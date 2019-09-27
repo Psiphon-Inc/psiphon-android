@@ -4,6 +4,8 @@ import android.support.annotation.NonNull;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.jakewharton.rxrelay2.BehaviorRelay;
+import com.psiphon3.TunnelState;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -18,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Completable;
 import io.reactivex.Single;
+import io.reactivex.schedulers.Schedulers;
 import kin.sdk.WhitelistableTransaction;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -36,6 +39,7 @@ class ServerCommunicator {
 
     private final String friendBotUrl;
     private final OkHttpClient okHttpClient;
+    private final BehaviorRelay<Boolean> isTunneledBehaviorRelay;
     private int port = PREVENT_CONNECTION_PORT; // start with a port which prevents connection
 
     /**
@@ -58,6 +62,18 @@ class ServerCommunicator {
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .build();
+
+        isTunneledBehaviorRelay = BehaviorRelay.createDefault(false);
+    }
+
+    private Single<Boolean> waitUntilTunneled() {
+        return isTunneledBehaviorRelay
+                .distinctUntilChanged()
+                .hide()
+                .filter(isTunneled -> isTunneled)
+                .firstOrError()
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io());
     }
 
     /**
@@ -68,6 +84,12 @@ class ServerCommunicator {
      * @return a completable which fires on complete after receiving a successful response
      */
     Completable createAccount(@NonNull String address) {
+        return waitUntilTunneled()
+                .map(__ -> address)
+                .flatMapCompletable(this::createAccountInner);
+    }
+
+    private Completable createAccountInner(@NonNull String address) {
         return Completable.create(emitter -> {
             Request request = new Request.Builder()
                     .url(getCreateAccountUrl(address))
@@ -94,6 +116,12 @@ class ServerCommunicator {
      * Runs async.
      */
     void optOut() {
+        waitUntilTunneled()
+                .doOnSuccess(__ -> optOutInner())
+                .subscribe();
+    }
+
+    private void optOutInner() {
         Request request = new Request.Builder()
                 .url(getOptOutUrl())
                 .head()
@@ -120,6 +148,12 @@ class ServerCommunicator {
      * @return the whitelist transaction data from the server
      */
     Single<String> whitelistTransaction(@NonNull WhitelistableTransaction whitelistableTransaction) {
+        return waitUntilTunneled()
+                .map(__ -> whitelistableTransaction)
+                .flatMap(this::whitelistTransactionInner);
+    }
+
+    private Single<String> whitelistTransactionInner(@NonNull WhitelistableTransaction whitelistableTransaction) {
         return Single.create(emitter -> {
             Request request = new Request.Builder()
                     .url(getWhiteListTransactionUrl())
@@ -193,5 +227,19 @@ class ServerCommunicator {
 
     public void setProxyPort(int port) {
         this.port = port;
+    }
+
+    public void onTunnelConnectionState(TunnelState tunnelState) {
+        // Not running, prevent proxy
+        TunnelState.ConnectionData connectionData = tunnelState.connectionData();
+        if (!tunnelState.isRunning() || connectionData == null || connectionData.httpPort() <= 0) {
+            setProxyPort(ServerCommunicator.PREVENT_CONNECTION_PORT);
+            isTunneledBehaviorRelay.accept(false);
+            return;
+        }
+
+        // Running, set the port
+        setProxyPort(connectionData.httpPort());
+        isTunneledBehaviorRelay.accept(true);
     }
 }
