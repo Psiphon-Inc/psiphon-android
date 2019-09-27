@@ -45,17 +45,6 @@ class ClientHelper {
     }
 
     /**
-     * Get an account helper for the given account and environment
-     *
-     * @param account     KinAccount to create helper for
-     * @param environment environment to run the helper for
-     * @return a helper for account and environment.
-     */
-    AccountHelper getAccountHelper(KinAccount account, Environment environment) {
-        return new AccountHelper(account, serverCommunicator, new SettingsManager(), environment.getPsiphonWalletAddress());
-    }
-
-    /**
      * Deletes the Kin account. Silently handles failures.
      */
     void deleteAccount() {

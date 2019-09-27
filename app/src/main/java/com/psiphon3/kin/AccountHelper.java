@@ -1,6 +1,9 @@
 package com.psiphon3.kin;
 
 import android.content.Context;
+import android.util.Pair;
+
+import com.jakewharton.rxrelay2.BehaviorRelay;
 
 import java.math.BigDecimal;
 
@@ -12,47 +15,61 @@ import kin.sdk.Balance;
 import kin.sdk.KinAccount;
 import kin.sdk.Transaction;
 import kin.sdk.TransactionId;
-import kin.sdk.exception.OperationFailedException;
 
 class AccountHelper {
-    private final KinAccount account;
     private final ServerCommunicator serverCommunicator;
     private final SettingsManager settingsManager;
     private final String psiphonWalletAddress;
 
+    private final BehaviorRelay<KinAccount> accountBehaviorRelay;
+
     /**
-     * @param account              the account to work with. Should already be created
      * @param serverCommunicator   the communicator for the server
      * @param settingsManager
      * @param psiphonWalletAddress the address of the Psiphon wallet
      */
-    AccountHelper(KinAccount account, ServerCommunicator serverCommunicator, SettingsManager settingsManager, String psiphonWalletAddress) {
-        this.account = account;
+    AccountHelper(ServerCommunicator serverCommunicator, SettingsManager settingsManager, String psiphonWalletAddress) {
         this.serverCommunicator = serverCommunicator;
         this.settingsManager = settingsManager;
         this.psiphonWalletAddress = psiphonWalletAddress;
+
+        accountBehaviorRelay = BehaviorRelay.create();
+    }
+
+    void onNewAccount(Context context, KinAccount account) {
+        accountBehaviorRelay.accept(account);
+        register(context).subscribe();
     }
 
     Completable register(Context context) {
-        String publicAddress = account.getPublicAddress();
-        if (publicAddress == null) {
-            return Completable.error(new Exception("account deleted, unable to register"));
-        }
+        return accountBehaviorRelay
+                .firstOrError()
+                .map(KinAccount::getPublicAddress)
+                .flatMapCompletable(address -> {
+                    if (address == null) {
+                        return Completable.error(new Exception("account deleted, unable to register"));
+                    }
 
-        if (settingsManager.isAccountRegistered(context, publicAddress)) {
-            // the account is already registered, don't try to do it again
-            return Completable.complete();
-        }
+                    if (settingsManager.isAccountRegistered(context, address)) {
+                        // the account is already registered, don't try to do it again
+                        return Completable.complete();
+                    }
 
-        return serverCommunicator
-                .createAccount(publicAddress)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnComplete(() -> settingsManager.setAccountRegistered(context, publicAddress, true));
+
+                    return serverCommunicator
+                            .createAccount(address)
+                            .doOnComplete(() -> settingsManager.setAccountRegistered(context, address, true))
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread());
+                });
     }
 
     void delete(Context context) {
-        settingsManager.setAccountRegistered(context, account.getPublicAddress(), false);
+        accountBehaviorRelay
+                .firstOrError()
+                .map(KinAccount::getPublicAddress)
+                .doOnSuccess(address -> settingsManager.setAccountRegistered(context, address, false))
+                .subscribe();
     }
 
     /**
@@ -63,12 +80,24 @@ class AccountHelper {
      * @return a completable which fires on complete after the transaction has successfully completed
      */
     Completable transferOut(Double amount) {
-        return buildTransaction(account, psiphonWalletAddress, new BigDecimal(amount))
-                .flatMap(transaction -> serverCommunicator.whitelistTransaction(transaction.getWhitelistableTransaction()))
-                .flatMap(whitelist -> sendWhitelistTransaction(account, whitelist))
+        return accountBehaviorRelay
+                .firstOrError()
+                // build the transaction
+                .flatMap(account -> buildTransaction(account, psiphonWalletAddress, new BigDecimal(amount))
+                        // get the whitelistable transaction
+                        .map(Transaction::getWhitelistableTransaction)
+                        // pass the account + whitelistable transaction along
+                        .map(whitelistableTransaction -> new Pair<>(account, whitelistableTransaction)))
+                // whitelist it with the server
+                .flatMap(pair -> serverCommunicator.whitelistTransaction(pair.second)
+                        // pass the account + server response along
+                        .map(whitelist -> new Pair<>(pair.first, whitelist)))
+                // actually send the transaction
+                .flatMap(pair -> sendWhitelistTransaction(pair.first, pair.second))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .ignoreElement();
+                .ignoreElement()
+                .onErrorComplete();
     }
 
     /**
@@ -77,19 +106,10 @@ class AccountHelper {
      * @return the current balance of the active account
      */
     Single<BigDecimal> getCurrentBalance() {
-        return Single.
-                <BigDecimal>create(emitter -> {
-                    try {
-                        Balance balance = account.getBalanceSync();
-                        if (!emitter.isDisposed()) {
-                            emitter.onSuccess(balance.value());
-                        }
-                    } catch (OperationFailedException e) {
-                        if (!emitter.isDisposed()) {
-                            emitter.onError(e);
-                        }
-                    }
-                })
+        return accountBehaviorRelay
+                .firstOrError()
+                .map(KinAccount::getBalanceSync)
+                .map(Balance::value)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
     }

@@ -17,6 +17,7 @@ public class KinManager {
     private static KinManager instance;
 
     private final ClientHelper clientHelper;
+    private final AccountHelper accountHelper;
     private final ServerCommunicator serverCommunicator;
     private final SettingsManager settingsManager;
     private final KinPermissionManager kinPermissionManager;
@@ -24,10 +25,10 @@ public class KinManager {
 
     private final BehaviorRelay<Boolean> isOptedInBehaviorRelay;
     private final PublishRelay<Boolean> chargeForConnectionPublishRelay;
-    private final Observable<AccountHelper> accountHelperObservable;
 
-    KinManager(Context context, ClientHelper clientHelper, ServerCommunicator serverCommunicator, SettingsManager settingsManager, KinPermissionManager kinPermissionManager, Environment environment) {
+    KinManager(Context context, ClientHelper clientHelper, AccountHelper accountHelper, ServerCommunicator serverCommunicator, SettingsManager settingsManager, KinPermissionManager kinPermissionManager, Environment environment) {
         this.clientHelper = clientHelper;
+        this.accountHelper = accountHelper;
         this.serverCommunicator = serverCommunicator;
         this.settingsManager = settingsManager;
         this.kinPermissionManager = kinPermissionManager;
@@ -43,7 +44,7 @@ public class KinManager {
                 .doOnSuccess(isOptedInBehaviorRelay)
                 .subscribe();
 
-        accountHelperObservable = isOptedInObservable()
+        isOptedInObservable()
                 // if they opted in get an account
                 .flatMapMaybe(optedIn -> {
                     if (optedIn) {
@@ -54,31 +55,17 @@ public class KinManager {
                         return Maybe.empty();
                     }
                 })
-                // then wrap in a helper
-                .map(account -> clientHelper.getAccountHelper(account, environment))
-                // we don't want to do this every time someone looks for the account helper, so store it
-                .replay(1)
-                // connect immediately
-                .autoConnect(0);
+                .doOnNext(account -> accountHelper.onNewAccount(context, account))
+                .subscribe();
 
         isOptedInObservable()
                 // only observe opts out
                 .filter(optedIn -> !optedIn)
                 // take one account helper
-                .flatMapMaybe(__ -> accountHelperObservable.firstElement())
-                .doOnNext(accountHelper -> {
+                .doOnNext(__ -> {
                     accountHelper.delete(context);
                     clientHelper.deleteAccount();
                 })
-                .subscribe();
-
-        // combine account and tunnelled observables
-        accountHelperObservable
-                // flat map into the register when one or the other changes
-                // ensure we're tunnelled
-                .flatMapCompletable(accountHelper -> accountHelper
-                        .register(context)
-                        .onErrorComplete())
                 .subscribe();
 
         chargeForConnectionPublishRelay
@@ -111,9 +98,10 @@ public class KinManager {
         ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getFriendBotServerUrl());
         ClientHelper clientHelper = new ClientHelper(kinClient, serverCommunicator);
         SettingsManager settingsManager = new SettingsManager();
+        AccountHelper accountHelper = new AccountHelper(serverCommunicator, settingsManager, environment.getPsiphonWalletAddress());
         KinPermissionManager kinPermissionManager = new KinPermissionManager(settingsManager);
 
-        return instance = new KinManager(context, clientHelper, serverCommunicator, settingsManager, kinPermissionManager, environment);
+        return instance = new KinManager(context, clientHelper, accountHelper, serverCommunicator, settingsManager, kinPermissionManager, environment);
     }
 
     /**
@@ -153,15 +141,9 @@ public class KinManager {
      */
     public Completable transferOut(Double amount) {
         return isOptedInObservable()
-                .flatMap(isOptedIn -> {
-                    if (isOptedIn) {
-                        return accountHelperObservable;
-                    } else {
-                        return Observable.empty();
-                    }
-                })
                 .firstOrError()
-                .flatMapCompletable(accountHelper -> accountHelper.transferOut(amount))
+                .filter(optedIn -> optedIn)
+                .flatMapCompletable(__ -> accountHelper.transferOut(amount))
                 .onErrorComplete();
     }
 
