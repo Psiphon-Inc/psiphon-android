@@ -24,12 +24,6 @@ class AccountHelper {
     private final BehaviorRelay<AccountState> accountStateBehaviorRelay;
     private KinAccount account;
 
-    private enum AccountState {
-        UNREGISTERED,
-        REGISTERED,
-        DELETED
-    }
-
     /**
      * @param serverCommunicator   the communicator for the server
      * @param settingsManager
@@ -45,6 +39,7 @@ class AccountHelper {
 
     void onNewAccount(Context context, KinAccount account) {
         this.account = account;
+
         accountStateBehaviorRelay.accept(AccountState.UNREGISTERED);
         register(context).subscribe();
     }
@@ -104,14 +99,20 @@ class AccountHelper {
                 });
     }
 
-    void delete(Context context) {
-        getAccountIfRegistered()
+    Completable delete(Context context) {
+        return getAccountIfRegistered()
+                .flatMap(account -> getCurrentBalanceInner(account)
+                        .map(BigDecimal::doubleValue)
+                        .map(balance -> new Pair<>(account, balance)))
+                .flatMap(pair -> transferOutInner(pair.first, pair.second)
+                        .toSingle(() -> account))
                 .map(KinAccount::getPublicAddress)
                 .doOnSuccess(address -> {
                     accountStateBehaviorRelay.accept(AccountState.DELETED);
                     settingsManager.setAccountRegistered(context, address, false);
                 })
-                .subscribe();
+                .ignoreElement()
+                .onErrorComplete();
     }
 
     /**
@@ -123,18 +124,17 @@ class AccountHelper {
      */
     Completable transferOut(Double amount) {
         return getAccountIfRegistered()
-                // build the transaction
-                .flatMap(account -> buildTransaction(account, psiphonWalletAddress, new BigDecimal(amount))
-                        // get the whitelistable transaction
-                        .map(Transaction::getWhitelistableTransaction)
-                        // pass the account + whitelistable transaction along
-                        .map(whitelistableTransaction -> new Pair<>(account, whitelistableTransaction)))
+                .flatMapCompletable(account -> transferOutInner(account, amount));
+    }
+
+    Completable transferOutInner(KinAccount account, Double amount) {
+        return buildTransaction(account, psiphonWalletAddress, new BigDecimal(amount))
+                // get the whitelistable transaction
+                .map(Transaction::getWhitelistableTransaction)
                 // whitelist it with the server
-                .flatMap(pair -> serverCommunicator.whitelistTransaction(pair.second)
-                        // pass the account + server response along
-                        .map(whitelist -> new Pair<>(pair.first, whitelist)))
+                .flatMap(serverCommunicator::whitelistTransaction)
                 // actually send the transaction
-                .flatMap(pair -> sendWhitelistTransaction(pair.first, pair.second))
+                .flatMap(transaction -> sendWhitelistTransaction(account, transaction))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .ignoreElement()
@@ -148,6 +148,11 @@ class AccountHelper {
      */
     Single<BigDecimal> getCurrentBalance() {
         return getAccountIfRegistered()
+                .flatMap(this::getCurrentBalanceInner);
+    }
+
+    Single<BigDecimal> getCurrentBalanceInner(KinAccount account) {
+        return Single.just(account)
                 .map(KinAccount::getBalanceSync)
                 .map(Balance::value)
                 .subscribeOn(Schedulers.io())
@@ -160,5 +165,11 @@ class AccountHelper {
 
     private Single<TransactionId> sendWhitelistTransaction(KinAccount account, String whitelist) {
         return Single.fromCallable(() -> account.sendWhitelistTransactionSync(whitelist));
+    }
+
+    private enum AccountState {
+        UNREGISTERED,
+        REGISTERED,
+        DELETED
     }
 }

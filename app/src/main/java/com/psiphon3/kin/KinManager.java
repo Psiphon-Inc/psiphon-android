@@ -59,13 +59,14 @@ public class KinManager {
                 .subscribe();
 
         isOptedInObservable()
+                // skip the first emission to avoid starting opted out (so this triggers), opting in,
+                // and having the waiting for registration fire once the new opted in account is created
+                .skip(1)
                 // only observe opts out
                 .filter(optedIn -> !optedIn)
-                // take one account helper
-                .doOnNext(__ -> {
-                    accountHelper.delete(context);
-                    clientHelper.deleteAccount();
-                })
+                // delete the account and transfer it's funds out
+                .flatMapCompletable(__ -> accountHelper.delete(context)
+                        .doOnComplete(clientHelper::deleteAccount))
                 .subscribe();
 
         chargeForConnectionPublishRelay
