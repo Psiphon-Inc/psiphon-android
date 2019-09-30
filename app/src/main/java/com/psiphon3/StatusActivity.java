@@ -51,6 +51,7 @@ import android.widget.Toast;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.kin.KinManager;
+import com.psiphon3.kin.KinPermissionManager;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
@@ -113,6 +114,7 @@ public class StatusActivity
     private Disposable currentRateModeDisposable;
     private PublishRelay<Boolean> activeSpeedBoostRelay;
     private KinManager kinManager;
+    private KinPermissionManager kinPermissionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -416,13 +418,23 @@ public class StatusActivity
         // Only check for payment when starting in WDM
         if (!isServiceRunning() && getTunnelConfigWholeDevice()) {
             kinManager
-                    .confirmConnectionPay(this)
+                    .isOptedInObservable()
+                    // only confirm donation if opted in
+                    .filter(optedIn -> optedIn)
+                    // take one or give up
+                    .firstOrError()
+                    // make sure they're opted in
+                    .flatMap(__ -> kinPermissionManager.confirmDonation(this))
                     // on success notify the charge for connection relay
                     .doOnSuccess(agreed -> kinManager.chargeForNextConnection(agreed))
+                    // either way, when the dialog is dismissed connect
+                    .ignoreElement()
+                    .onErrorComplete()
+                    .doOnComplete(this::doToggle)
                     .subscribe();
+        } else {
+            doToggle();
         }
-
-        doToggle();
     }
 
     public void onOpenBrowserClick(View v)
@@ -443,11 +455,11 @@ public class StatusActivity
         // Prevent the default toggle, that's handled automatically by a subscription to the opted-in state
         checkBox.setChecked(!checkBox.isChecked());
         if (kinManager.isOptedIn(this)) {
-            kinManager
+            kinPermissionManager
                     .optOut(this)
                     .subscribe();
         } else {
-            kinManager
+            kinPermissionManager
                     .optIn(this)
                     .subscribe();
         }
@@ -1303,9 +1315,17 @@ public class StatusActivity
 
     private void initializeKin() {
         kinManager = KinManager.getInstance(this);
+        kinPermissionManager = kinManager.getPermissionManager();
+
         kinManager
                 .isOptedInObservable()
+                // when the opted-in status changes update the UI state
                 .doOnNext(this::setKinState)
+                .subscribe();
+
+        kinPermissionManager
+                // ask if the user agrees to kin if they haven't yet
+                .getUsersAgreementToKin(this)
                 .subscribe();
     }
 

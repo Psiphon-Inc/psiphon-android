@@ -2,15 +2,12 @@ package com.psiphon3.kin;
 
 import android.content.Context;
 
-import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
 
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
-import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import kin.sdk.KinClient;
 
 public class KinManager {
@@ -20,29 +17,16 @@ public class KinManager {
     private final AccountHelper accountHelper;
     private final ServerCommunicator serverCommunicator;
     private final SettingsManager settingsManager;
-    private final KinPermissionManager kinPermissionManager;
-    private final Environment environment;
 
-    private final BehaviorRelay<Boolean> isOptedInBehaviorRelay;
     private final PublishRelay<Boolean> chargeForConnectionPublishRelay;
 
-    KinManager(Context context, ClientHelper clientHelper, AccountHelper accountHelper, ServerCommunicator serverCommunicator, SettingsManager settingsManager, KinPermissionManager kinPermissionManager, Environment environment) {
+    KinManager(Context context, ClientHelper clientHelper, AccountHelper accountHelper, ServerCommunicator serverCommunicator, SettingsManager settingsManager) {
         this.clientHelper = clientHelper;
         this.accountHelper = accountHelper;
         this.serverCommunicator = serverCommunicator;
         this.settingsManager = settingsManager;
-        this.kinPermissionManager = kinPermissionManager;
-        this.environment = environment;
 
-        isOptedInBehaviorRelay = BehaviorRelay.create();
         chargeForConnectionPublishRelay = PublishRelay.create();
-
-        kinPermissionManager
-                // start with the users opt-in/out
-                .getUsersAgreementToKin(context)
-                // emit that into isOptedIn
-                .doOnSuccess(isOptedInBehaviorRelay)
-                .subscribe();
 
         isOptedInObservable()
                 // if they opted in get an account
@@ -90,9 +74,9 @@ public class KinManager {
 
         // Use the application context to try and avoid memory leaks
         // TODO: Why doesn't this work?
-        // if (context.getApplicationContext() != null) {
-        //     context = context.getApplicationContext();
-        // }
+        if (context.getApplicationContext() != null) {
+            context = context.getApplicationContext();
+        }
 
         // Set up base communication & helper classes
         KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
@@ -100,9 +84,8 @@ public class KinManager {
         ClientHelper clientHelper = new ClientHelper(kinClient, serverCommunicator);
         SettingsManager settingsManager = new SettingsManager();
         AccountHelper accountHelper = new AccountHelper(serverCommunicator, settingsManager, environment.getPsiphonWalletAddress());
-        KinPermissionManager kinPermissionManager = new KinPermissionManager(settingsManager);
 
-        return instance = new KinManager(context, clientHelper, accountHelper, serverCommunicator, settingsManager, kinPermissionManager, environment);
+        return instance = new KinManager(context, clientHelper, accountHelper, serverCommunicator, settingsManager);
     }
 
     /**
@@ -127,10 +110,7 @@ public class KinManager {
      * Observable returns false when not ready yet or opted-out; true otherwise.
      */
     public Observable<Boolean> isOptedInObservable() {
-        return isOptedInBehaviorRelay
-                .distinctUntilChanged()
-                .hide()
-                .observeOn(AndroidSchedulers.mainThread());
+        return settingsManager.isOptedInObservable();
     }
 
     /**
@@ -148,70 +128,19 @@ public class KinManager {
                 .onErrorComplete();
     }
 
-    /**
-     * Prompts the user if they're ok with spending 1 Kin to connect and charges if they are.
-     *
-     * @param context the context
-     * @return a single which returns true on agreement to pay; otherwise false.
-     */
-    public Single<Boolean> confirmConnectionPay(Context context) {
-        return isOptedInObservable()
-                // no item, default to opted out
-                .first(false)
-                // map people opted out to false
-                // opted out to check if they want to pay
-                .flatMap(optedIn -> {
-                    if (optedIn) {
-                        return kinPermissionManager.confirmPay(context);
-                    } else {
-                        return Single.just(false);
-                    }
-                });
-    }
-
     public void chargeForNextConnection(boolean agreed) {
         chargeForConnectionPublishRelay.accept(agreed);
     }
 
-    /**
-     * @param context the context
-     * @return true if the user is opted in to Kin; false otherwise.
-     */
-    public boolean isOptedIn(Context context) {
-        return settingsManager.hasAgreedToKin(context);
-    }
-
-    /**
-     * Raises the dialog to opt in to Kin.
-     *
-     * @param context the context
-     * @return a single returning true if the user has opted in to Kin; otherwise false.
-     */
-    public Single<Boolean> optIn(Context context) {
-        return kinPermissionManager.optIn(context)
-                .doOnSuccess(optedIn -> {
-                    if (optedIn) {
-                        isOptedInBehaviorRelay.accept(true);
-                    }
-                });
-    }
-
-    /**
-     * Raises the dialog to opt out of Kin.
-     *
-     * @param context the context
-     * @return a single returning true if the user has opted out of Kin; otherwise false.
-     */
-    public Single<Boolean> optOut(Context context) {
-        return kinPermissionManager.optOut(context)
-                .doOnSuccess(optedOut -> {
-                    if (optedOut) {
-                        isOptedInBehaviorRelay.accept(false);
-                    }
-                });
-    }
-
     public void onTunnelConnectionState(TunnelState tunnelState) {
         serverCommunicator.onTunnelConnectionState(tunnelState);
+    }
+
+    public KinPermissionManager getPermissionManager() {
+        return new KinPermissionManager(settingsManager);
+    }
+
+    public boolean isOptedIn(Context context) {
+        return settingsManager.isOptedIn(context);
     }
 }

@@ -3,27 +3,49 @@ package com.psiphon3.kin;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.jakewharton.rxrelay2.BehaviorRelay;
+
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+
 class SettingsManager {
 
     private final String KIN_PREFERENCES_NAME = "kin_app_prefs";
-    private final String AGREED_TO_KIN_KEY = "agreed_to_kin";
+    private final String OPTED_IN_KEY = "opted_in";
     private final String AUTO_PAY_KEY = "auto_pay";
     private final long TIME_1_MONTH = 30L * 24 * 60 * 60 * 1000;
+
+    private final BehaviorRelay<Boolean> isOptedInBehaviorRelay;
+
+    SettingsManager() {
+        isOptedInBehaviorRelay = BehaviorRelay.create();
+    }
+
+    /**
+     * @return an observable to check if the KinManager is ready.
+     * Observable returns false when not ready yet or opted-out; true otherwise.
+     */
+    Observable<Boolean> isOptedInObservable() {
+        return isOptedInBehaviorRelay
+                .distinctUntilChanged()
+                .hide()
+                .observeOn(AndroidSchedulers.mainThread());
+    }
 
     /**
      * @param context context for shared preferences
      * @return true if the user has not yet agreed or disagreed to Kin
      */
-    boolean needsToAgreeToKin(Context context) {
-        return !getSharedPreferences(context).contains(AGREED_TO_KIN_KEY);
+    boolean needsToOptIn(Context context) {
+        return !getSharedPreferences(context).contains(OPTED_IN_KEY);
     }
 
     /**
      * @param context context for shared preferences
      * @return true if the user has agreed to use Kin, false if they haven't agreed or haven't been asked yet
      */
-    boolean hasAgreedToKin(Context context) {
-        return getSharedPreferences(context).getBoolean(AGREED_TO_KIN_KEY, false);
+    public boolean isOptedIn(Context context) {
+        return getSharedPreferences(context).getBoolean(OPTED_IN_KEY, false);
     }
 
     /**
@@ -32,11 +54,13 @@ class SettingsManager {
      * @param context        context for shared preferences
      * @param hasAgreedToKin if the user has agreed to using Kin or not
      */
-    void setHasAgreedToKin(Context context, boolean hasAgreedToKin) {
+    void setIsOptedIn(Context context, boolean hasAgreedToKin) {
         getSharedPreferences(context)
                 .edit()
-                .putBoolean(AGREED_TO_KIN_KEY, hasAgreedToKin)
+                .putBoolean(OPTED_IN_KEY, hasAgreedToKin)
                 .apply();
+
+        isOptedInBehaviorRelay.accept(hasAgreedToKin);
     }
 
     /**
