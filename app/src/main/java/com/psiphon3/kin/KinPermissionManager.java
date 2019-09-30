@@ -91,13 +91,13 @@ class KinPermissionManager {
         }
 
         // This is a bit weird, but the layout of AlertDialogs is
-        // (Neutral) | (Negative) | (Positive) so this will give us No | <spacing> | Always
+        // (Neutral) | (Negative) | (Positive) so this will give us Opt-out | <spacing> | Yes
         return Single.create(emitter -> {
             new AlertDialog.Builder(context)
                     .setIcon(R.drawable.ic_kin_logo_large_purple)
                     .setTitle(context.getString(R.string.title_donate_kin))
                     .setMessage(R.string.lbl_kin_pay)
-                    .setNeutralButton("Opt-out", (dialog, which) -> {
+                    .setNeutralButton(R.string.lbl_opt_out, (dialog, which) -> {
                         settingsManager.setHasAgreedToAutoPay(context, false);
                         if (!emitter.isDisposed()) {
                             emitter.onSuccess(false);

@@ -77,7 +77,7 @@
             android:layout_marginBottom="16dp"
             android:background="@color/kin_primary"
             android:padding="16dp"
-            android:text="Help Psiphon!"
+            android:text="@string/lbl_help_psiphon"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
     </android.support.constraint.ConstraintLayout>
