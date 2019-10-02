@@ -419,12 +419,10 @@ public class StatusActivity
         if (!isServiceRunning() && getTunnelConfigWholeDevice()) {
             kinManager
                     .isOptedInObservable()
-                    // only confirm donation if opted in
-                    .filter(optedIn -> optedIn)
                     // take one or give up
                     .firstOrError()
                     // make sure they're opted in
-                    .flatMap(__ -> kinPermissionManager.confirmDonation(this))
+                    .flatMap(optedIn -> optedIn ? kinPermissionManager.confirmDonation(this) : Single.just(false))
                     // on success notify the charge for connection relay
                     .doOnSuccess(agreed -> kinManager.chargeForNextConnection(agreed))
                     // either way, when the dialog is dismissed connect
