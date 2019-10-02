@@ -5,11 +5,17 @@ import android.content.Context;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
 
+import java.math.BigDecimal;
+
 import io.reactivex.Completable;
+import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import kin.sdk.KinClient;
+import kin.sdk.exception.InsufficientKinException;
 
 public class KinManager {
+    private static final Double CONNECTION_COST = 1d;
+
     private static KinManager instance;
 
     private final ClientHelper clientHelper;
@@ -53,8 +59,27 @@ public class KinManager {
                 // only take requests to charge them
                 .filter(chargeForConnection -> chargeForConnection)
                 // transfer out 1 kin, which on complete allows for a new charge for connection
-                .flatMapCompletable(__ -> transferOut(1d)
-                        .doOnComplete(() -> chargeForConnectionPublishRelay.accept(false)))
+                .flatMapCompletable(__ -> transferOut(CONNECTION_COST)
+                        // mark the next connection as not requiring a charge
+                        .doOnComplete(() -> chargeForConnectionPublishRelay.accept(false))
+                        // convert to a maybe for handling exceptions
+                        .<BigDecimal>toMaybe()
+                        // if it says we don't have enough kin, get the current balance, otherwise just let the error continue
+                        .onErrorResumeNext(e -> e instanceof InsufficientKinException ? accountHelper.getCurrentBalance().toMaybe() : Maybe.error(e))
+                        // convert the balance to a double
+                        .map(BigDecimal::doubleValue)
+                        // if the balance is less then the connection cost continue
+                        .filter(balance -> balance < CONNECTION_COST)
+                        // delete the account
+                        .flatMapCompletable(___ -> accountHelper.delete(context))
+                        // after that have the client helper delete the account
+                        .andThen(Completable.fromAction(clientHelper::deleteAccount))
+                        // get a new account
+                        .andThen(clientHelper.getAccount())
+                        // pass it to the account helper
+                        .flatMapCompletable(account -> Completable.fromAction(() -> accountHelper.onNewAccount(context, account)))
+                        // ignore errors
+                        .onErrorComplete())
                 .subscribe();
 
         // start with this so distinct until changed will work
@@ -92,14 +117,6 @@ public class KinManager {
     }
 
     /**
-     * @param context the context
-     * @return the instance of the KinManager for testing
-     */
-    public static KinManager getTestInstance(Context context) {
-        return getInstance(context, Environment.TEST);
-    }
-
-    /**
      * @return an observable to check if the KinManager is ready.
      * Observable returns false when not ready yet or opted-out; true otherwise.
      */
@@ -118,8 +135,7 @@ public class KinManager {
         return isOptedInObservable()
                 .firstOrError()
                 .filter(optedIn -> optedIn)
-                .flatMapCompletable(__ -> accountHelper.transferOut(amount))
-                .onErrorComplete();
+                .flatMapCompletable(__ -> accountHelper.transferOut(amount));
     }
 
     public void chargeForNextConnection(boolean agreed) {

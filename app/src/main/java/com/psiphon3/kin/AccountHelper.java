@@ -102,16 +102,28 @@ class AccountHelper {
 
     Completable delete(Context context) {
         return getAccountIfRegistered()
+                // get the current balance
                 .flatMap(account -> getCurrentBalanceInner(account)
+                        // return 0 here if we err
+                        .onErrorReturnItem(new BigDecimal(0))
+                        // turn it into a double
                         .map(BigDecimal::doubleValue)
+                        // pass along the account & balance
                         .map(balance -> new Pair<>(account, balance)))
+                // transfer out the balance
                 .flatMap(pair -> transferOutInner(pair.first, pair.second)
+                        // it is ok if it errs here
+                        .onErrorComplete()
+                        // pass on the account
                         .toSingle(() -> pair.first))
+                // get the address
                 .map(KinAccount::getPublicAddress)
+                // mark the account as deleted
                 .doOnSuccess(address -> {
                     accountStateBehaviorRelay.accept(AccountState.DELETED);
                     settingsManager.setAccountRegistered(context, address, false);
                 })
+                // listeners don't care about err or not, just that everything is done
                 .ignoreElement()
                 .onErrorComplete();
     }
@@ -136,11 +148,12 @@ class AccountHelper {
                 .flatMap(serverCommunicator::whitelistTransaction)
                 // actually send the transaction
                 .flatMap(transaction -> sendWhitelistTransaction(account, transaction))
+                // log any errors
                 .doOnError(__ -> Utils.MyLog.g("error transferring " + amount + " kin out"))
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
+                // just care if it completed
                 .ignoreElement()
-                .onErrorComplete();
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     /**
@@ -158,7 +171,6 @@ class AccountHelper {
                 .map(KinAccount::getBalanceSync)
                 .map(Balance::value)
                 .doOnError(e -> Utils.MyLog.g("error getting account balance"))
-                .onErrorReturnItem(new BigDecimal(0))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
     }
