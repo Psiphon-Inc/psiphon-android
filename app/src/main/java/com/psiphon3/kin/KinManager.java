@@ -6,7 +6,6 @@ import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
 
 import io.reactivex.Completable;
-import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import kin.sdk.KinClient;
 
@@ -29,16 +28,11 @@ public class KinManager {
         chargeForConnectionPublishRelay = PublishRelay.create();
 
         isOptedInObservable()
+                // only observe opt-ins
+                .filter(optedIn -> optedIn)
                 // if they opted in get an account
-                .flatMapMaybe(optedIn -> {
-                    if (optedIn) {
-                        return clientHelper
-                                .getAccount()
-                                .toMaybe();
-                    } else {
-                        return Maybe.empty();
-                    }
-                })
+                .flatMapSingle(__ -> clientHelper.getAccount())
+                // pass the new account to account helper
                 .doOnNext(account -> accountHelper.onNewAccount(context, account))
                 .subscribe();
 
@@ -48,7 +42,7 @@ public class KinManager {
                 .skip(1)
                 // only observe opts out
                 .filter(optedIn -> !optedIn)
-                // delete the account and transfer it's funds out
+                // delete the account and transfer its funds out
                 .flatMapCompletable(__ -> accountHelper.delete(context)
                         .doOnComplete(clientHelper::deleteAccount))
                 .subscribe();
@@ -82,7 +76,7 @@ public class KinManager {
         KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
         ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getFriendBotServerUrl());
         ClientHelper clientHelper = new ClientHelper(kinClient, serverCommunicator);
-        SettingsManager settingsManager = new SettingsManager();
+        SettingsManager settingsManager = new SettingsManager(context);
         AccountHelper accountHelper = new AccountHelper(serverCommunicator, settingsManager, environment.getPsiphonWalletAddress());
 
         return instance = new KinManager(context, clientHelper, accountHelper, serverCommunicator, settingsManager);

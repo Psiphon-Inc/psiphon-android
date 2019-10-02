@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.psiphon3.TunnelState;
+import com.psiphon3.psiphonlibrary.Utils;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -101,9 +102,12 @@ class ServerCommunicator {
                 if (response.isSuccessful() && !emitter.isDisposed()) {
                     emitter.onComplete();
                 } else if (!emitter.isDisposed()) {
-                    emitter.onError(new Exception("create account failed with code " + response.code()));
+                    String msg = "create account failed with code " + response.code();
+                    Utils.MyLog.g(msg);
+                    emitter.onError(new Exception(msg));
                 }
             } catch (IOException e) {
+                Utils.MyLog.g(e.getMessage());
                 if (!emitter.isDisposed()) {
                     emitter.onError(e);
                 }
@@ -169,12 +173,17 @@ class ServerCommunicator {
                             emitter.onSuccess(hash);
                         }
                     } else if (!emitter.isDisposed()) {
-                        emitter.onError(new Exception("whitelist transaction didn't return a body"));
+                        String msg = "whitelist transaction didn't return a body";
+                        Utils.MyLog.g(msg);
+                        emitter.onError(new Exception(msg));
                     }
                 } else if (!emitter.isDisposed()) {
-                    emitter.onError(new Exception("whitelist transaction failed with code " + response.code()));
+                    String msg = "whitelist transaction failed with code " + response.code();
+                    Utils.MyLog.g(msg);
+                    emitter.onError(new Exception(msg));
                 }
             } catch (IOException e) {
+                Utils.MyLog.g(e.getMessage());
                 if (!emitter.isDisposed()) {
                     emitter.onError(e);
                 }

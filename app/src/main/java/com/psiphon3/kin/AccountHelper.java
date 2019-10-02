@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Pair;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
+import com.psiphon3.psiphonlibrary.Utils;
 
 import java.math.BigDecimal;
 
@@ -105,7 +106,7 @@ class AccountHelper {
                         .map(BigDecimal::doubleValue)
                         .map(balance -> new Pair<>(account, balance)))
                 .flatMap(pair -> transferOutInner(pair.first, pair.second)
-                        .toSingle(() -> account))
+                        .toSingle(() -> pair.first))
                 .map(KinAccount::getPublicAddress)
                 .doOnSuccess(address -> {
                     accountStateBehaviorRelay.accept(AccountState.DELETED);
@@ -135,6 +136,7 @@ class AccountHelper {
                 .flatMap(serverCommunicator::whitelistTransaction)
                 // actually send the transaction
                 .flatMap(transaction -> sendWhitelistTransaction(account, transaction))
+                .doOnError(__ -> Utils.MyLog.g("error transferring " + amount + " kin out"))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .ignoreElement()
@@ -155,6 +157,8 @@ class AccountHelper {
         return Single.just(account)
                 .map(KinAccount::getBalanceSync)
                 .map(Balance::value)
+                .doOnError(e -> Utils.MyLog.g("error getting account balance"))
+                .onErrorReturnItem(new BigDecimal(0))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
     }
