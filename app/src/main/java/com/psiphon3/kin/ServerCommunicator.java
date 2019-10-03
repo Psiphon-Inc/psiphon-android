@@ -241,14 +241,16 @@ class ServerCommunicator {
     public void onTunnelConnectionState(TunnelState tunnelState) {
         // Not running, prevent proxy
         TunnelState.ConnectionData connectionData = tunnelState.connectionData();
-        if (!tunnelState.isRunning() || connectionData == null || connectionData.httpPort() <= 0) {
-            setProxyPort(ServerCommunicator.PREVENT_CONNECTION_PORT);
-            isTunneledBehaviorRelay.accept(false);
-            return;
+        if (tunnelState.isRunning() && connectionData.httpPort() > 0) {
+            setProxyPort(connectionData.httpPort());
+        } else {
+            setProxyPort(PREVENT_CONNECTION_PORT);
         }
 
-        // Running, set the port
-        setProxyPort(connectionData.httpPort());
-        isTunneledBehaviorRelay.accept(true);
+        if(tunnelState.isRunning() && connectionData.isConnected()) {
+            isTunneledBehaviorRelay.accept(true);
+        } else {
+            isTunneledBehaviorRelay.accept(false);
+        }
     }
 }

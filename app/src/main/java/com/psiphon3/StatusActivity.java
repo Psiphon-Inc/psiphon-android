@@ -123,6 +123,8 @@ public class StatusActivity
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main);
 
+        initializeKin();
+
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_tabSpecsList = new ArrayList<>();
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
@@ -184,8 +186,6 @@ public class StatusActivity
 
         m_loadedSponsorTab = false;
         HandleCurrentIntent();
-
-        initializeKin();
     }
 
     private void preventAutoStart() {
