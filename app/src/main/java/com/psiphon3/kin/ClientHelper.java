@@ -1,5 +1,7 @@
 package com.psiphon3.kin;
 
+import android.util.Log;
+
 import com.psiphon3.psiphonlibrary.Utils;
 
 import io.reactivex.Single;
@@ -37,7 +39,6 @@ class ClientHelper {
             if (doesExportedAccountExist()) {
                 return Single.just(importAccount(retrieveAccountFromDisk()));
             }
-
             return Single.just(kinClient.addAccount());
         } catch (Exception e) {
             return Single.error(e);
@@ -49,7 +50,7 @@ class ClientHelper {
      */
     void deleteAccount() {
         if (!kinClient.hasAccount()) {
-            Utils.MyLog.d("Tried to delete an account when no account existed");
+            Utils.MyLog.d("Tried to delete account an account when no account existed");
             return;
         }
 

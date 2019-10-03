@@ -112,7 +112,8 @@ class ServerCommunicator {
                     emitter.onError(e);
                 }
             }
-        });
+        })
+                .doOnComplete(() -> Utils.MyLog.g("KinManager: success registering account on the blockchain"));
     }
 
     /**

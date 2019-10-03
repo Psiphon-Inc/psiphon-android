@@ -4,12 +4,13 @@ import android.content.Context;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
+import com.psiphon3.psiphonlibrary.Utils;
 
 import java.math.BigDecimal;
 
 import io.reactivex.Completable;
-import io.reactivex.Maybe;
 import io.reactivex.Observable;
+import io.reactivex.Single;
 import kin.sdk.KinClient;
 import kin.sdk.exception.InsufficientKinException;
 
@@ -23,7 +24,7 @@ public class KinManager {
     private final ServerCommunicator serverCommunicator;
     private final SettingsManager settingsManager;
 
-    private final PublishRelay<Boolean> chargeForConnectionPublishRelay;
+    private final PublishRelay<Object> chargeForConnectionPublishRelay;
 
     KinManager(Context context, ClientHelper clientHelper, AccountHelper accountHelper, ServerCommunicator serverCommunicator, SettingsManager settingsManager) {
         this.clientHelper = clientHelper;
@@ -48,42 +49,39 @@ public class KinManager {
                 .skip(1)
                 // only observe opts out
                 .filter(optedIn -> !optedIn)
-                // delete the account and transfer its funds out
-                .flatMapCompletable(__ -> accountHelper.delete(context)
+                // empty the account and delete upon completion
+                .doOnNext(__ -> Utils.MyLog.g("KinManager: user opted out"))
+                .flatMapCompletable(__ -> accountHelper.emptyAccount(context)
                         .doOnComplete(clientHelper::deleteAccount))
                 .subscribe();
 
         chargeForConnectionPublishRelay
-                // take only distinct events to prevent spam
-                .distinctUntilChanged()
-                // only take requests to charge them
-                .filter(chargeForConnection -> chargeForConnection)
                 // transfer out 1 kin, which on complete allows for a new charge for connection
-                .flatMapCompletable(__ -> transferOut(CONNECTION_COST)
-                        // mark the next connection as not requiring a charge
-                        .doOnComplete(() -> chargeForConnectionPublishRelay.accept(false))
-                        // convert to a maybe for handling exceptions
-                        .<BigDecimal>toMaybe()
+                .flatMapCompletable(__ -> transferOut(context, CONNECTION_COST)
                         // if it says we don't have enough kin, get the current balance, otherwise just let the error continue
-                        .onErrorResumeNext(e -> e instanceof InsufficientKinException ? accountHelper.getCurrentBalance().toMaybe() : Maybe.error(e))
-                        // convert the balance to a double
-                        .map(BigDecimal::doubleValue)
-                        // if the balance is less then the connection cost continue
-                        .filter(balance -> balance < CONNECTION_COST)
-                        // delete the account
-                        .flatMapCompletable(___ -> accountHelper.delete(context))
-                        // after that have the client helper delete the account
-                        .andThen(Completable.fromAction(clientHelper::deleteAccount))
-                        // get a new account
-                        .andThen(clientHelper.getAccount())
-                        // pass it to the account helper
-                        .flatMapCompletable(account -> Completable.fromAction(() -> accountHelper.onNewAccount(context, account)))
-                        // ignore errors
+                        .onErrorResumeNext(e -> chargeErrorHandler(context, e))
+                        .doOnError(e -> Utils.MyLog.g("KinManager: error charging " + CONNECTION_COST + " Kin(s) for connection: " + e))
                         .onErrorComplete())
                 .subscribe();
+    }
 
-        // start with this so distinct until changed will work
-        chargeForConnectionPublishRelay.accept(false);
+    private Completable chargeErrorHandler(Context context, Throwable e) {
+        if (!(e instanceof InsufficientKinException)) {
+            return Completable.error(e);
+        }
+        return accountHelper.getCurrentBalance(context)
+                .onErrorReturnItem(BigDecimal.ZERO)
+                .map(BigDecimal::doubleValue)
+                .flatMapCompletable(balance -> {
+                    if(balance <  CONNECTION_COST) {
+                        return accountHelper.emptyAccount(context)
+                                .andThen(Completable.fromAction(clientHelper::deleteAccount))
+                                .andThen(Single.defer(clientHelper::getAccount))
+                                // pass it to the account helper
+                                .flatMapCompletable(account -> Completable.fromAction(() -> accountHelper.onNewAccount(context, account)));
+                    } //else
+                    return Completable.error(e);
+                });
     }
 
     static KinManager getInstance(Context context, Environment environment) {
@@ -131,15 +129,17 @@ public class KinManager {
      * @param amount the amount to be taken from the active account
      * @return a completable which fires on complete after the transaction has successfully completed
      */
-    public Completable transferOut(Double amount) {
+    public Completable transferOut(Context context, Double amount) {
         return isOptedInObservable()
                 .firstOrError()
                 .filter(optedIn -> optedIn)
-                .flatMapCompletable(__ -> accountHelper.transferOut(amount));
+                .flatMapCompletable(__ -> accountHelper.transferOut(context, amount));
     }
 
     public void chargeForNextConnection(boolean agreed) {
-        chargeForConnectionPublishRelay.accept(agreed);
+        if(agreed) {
+            chargeForConnectionPublishRelay.accept(new Object());
+        }
     }
 
     public void onTunnelConnectionState(TunnelState tunnelState) {

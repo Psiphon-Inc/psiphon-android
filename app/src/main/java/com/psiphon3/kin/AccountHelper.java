@@ -1,6 +1,7 @@
 package com.psiphon3.kin;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.util.Pair;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
@@ -21,10 +22,7 @@ class AccountHelper {
     private final ServerCommunicator serverCommunicator;
     private final SettingsManager settingsManager;
     private final String psiphonWalletAddress;
-
-    private final BehaviorRelay<AccountState> accountStateBehaviorRelay;
-    private KinAccount account;
-
+    BehaviorRelay<KinAccount> accountRelay = BehaviorRelay.create();
     /**
      * @param serverCommunicator   the communicator for the server
      * @param settingsManager
@@ -34,97 +32,52 @@ class AccountHelper {
         this.serverCommunicator = serverCommunicator;
         this.settingsManager = settingsManager;
         this.psiphonWalletAddress = psiphonWalletAddress;
-
-        accountStateBehaviorRelay = BehaviorRelay.create();
     }
 
     void onNewAccount(Context context, KinAccount account) {
-        this.account = account;
-
-        accountStateBehaviorRelay.accept(AccountState.UNREGISTERED);
-        register(context).subscribe();
+        accountRelay.accept(account);
     }
 
-    Single<KinAccount> getAccountIfRegistered() {
-        return accountStateBehaviorRelay
+    Single<KinAccount> getRegisteredAccount(Context context) {
+        return accountRelay
                 .firstOrError()
-                .flatMap(state -> {
-                    switch (state) {
-                        case DELETED:
-                            return Single.error(new Exception("account deleted"));
-
-                        case REGISTERED:
-                            return Single.just(account);
-
-                        case UNREGISTERED:
-                        default:
-                            return accountStateBehaviorRelay
-                                    // wait for a change in state
-                                    .filter(state2 -> state2 != AccountState.UNREGISTERED)
-                                    .firstOrError()
-                                    // handle the new state
-                                    .flatMap(state2 -> {
-                                        if (state2 == AccountState.REGISTERED) {
-                                            return Single.just(account);
-                                        } else {
-                                            return Single.error(new Exception("account deleted"));
-                                        }
-                                    });
+                .flatMap(kinAccount -> {
+                    String address = kinAccount.getPublicAddress();
+                    if (TextUtils.isEmpty(address)) {
+                        return Single.error(new Exception("account deleted"));
                     }
-                });
-    }
-
-    Completable register(Context context) {
-        return Single.just(account)
-                .map(KinAccount::getPublicAddress)
-                .flatMapCompletable(address -> {
-                    if (address == null) {
-                        accountStateBehaviorRelay.accept(AccountState.DELETED);
-                        return Completable.error(new Exception("account deleted, unable to register"));
-                    }
-
                     if (settingsManager.isAccountRegistered(context, address)) {
-                        // the account is already registered, don't try to do it again
-                        accountStateBehaviorRelay.accept(AccountState.REGISTERED);
-                        return Completable.complete();
+                        return Single.just(kinAccount);
                     }
-
                     return serverCommunicator
                             .createAccount(address)
-                            .doOnComplete(() -> {
-                                accountStateBehaviorRelay.accept(AccountState.REGISTERED);
-                                settingsManager.setAccountRegistered(context, address, true);
-                            })
+                            .doOnComplete(() -> settingsManager.setAccountRegistered(context, address, true))
+                            .toSingleDefault(kinAccount)
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread());
                 });
     }
 
-    Completable delete(Context context) {
-        return getAccountIfRegistered()
+    Completable emptyAccount(Context context) {
+        return getRegisteredAccount(context)
                 // get the current balance
                 .flatMap(account -> getCurrentBalanceInner(account)
                         // return 0 here if we err
                         .onErrorReturnItem(new BigDecimal(0))
                         // turn it into a double
                         .map(BigDecimal::doubleValue)
+                        .doOnSuccess(amount -> Utils.MyLog.g("KinManager: will empty the account"))
                         // pass along the account & balance
                         .map(balance -> new Pair<>(account, balance)))
                 // transfer out the balance
-                .flatMap(pair -> transferOutInner(pair.first, pair.second)
-                        // it is ok if it errs here
-                        .onErrorComplete()
-                        // pass on the account
-                        .toSingle(() -> pair.first))
-                // get the address
-                .map(KinAccount::getPublicAddress)
-                // mark the account as deleted
-                .doOnSuccess(address -> {
-                    accountStateBehaviorRelay.accept(AccountState.DELETED);
-                    settingsManager.setAccountRegistered(context, address, false);
+                .flatMapCompletable(pair -> {
+                    KinAccount account = pair.first;
+                    Double amount = pair.second;
+                    if(amount > 0d) {
+                        return transferOutInner(account, amount);
+                    } //else
+                    return Completable.complete();
                 })
-                // listeners don't care about err or not, just that everything is done
-                .ignoreElement()
                 .onErrorComplete();
     }
 
@@ -135,8 +88,8 @@ class AccountHelper {
      * @param amount the amount to be taken from the active account
      * @return a completable which fires on complete after the transaction has successfully completed
      */
-    Completable transferOut(Double amount) {
-        return getAccountIfRegistered()
+    Completable transferOut(Context context, Double amount) {
+        return getRegisteredAccount(context)
                 .flatMapCompletable(account -> transferOutInner(account, amount));
     }
 
@@ -148,8 +101,9 @@ class AccountHelper {
                 .flatMap(serverCommunicator::whitelistTransaction)
                 // actually send the transaction
                 .flatMap(transaction -> sendWhitelistTransaction(account, transaction))
+                .doOnSuccess(transactionId -> Utils.MyLog.g("KinManager: success sending out " + amount + " Kin"))
                 // log any errors
-                .doOnError(__ -> Utils.MyLog.g("error transferring " + amount + " kin out"))
+                .doOnError(__ -> Utils.MyLog.g("KinManager: error transferring " + amount + " kin out"))
                 // just care if it completed
                 .ignoreElement()
                 .subscribeOn(Schedulers.io())
@@ -161,8 +115,8 @@ class AccountHelper {
      *
      * @return the current balance of the active account
      */
-    Single<BigDecimal> getCurrentBalance() {
-        return getAccountIfRegistered()
+    Single<BigDecimal> getCurrentBalance(Context context) {
+        return getRegisteredAccount(context)
                 .flatMap(this::getCurrentBalanceInner);
     }
 
@@ -170,7 +124,7 @@ class AccountHelper {
         return Single.just(account)
                 .map(KinAccount::getBalanceSync)
                 .map(Balance::value)
-                .doOnError(e -> Utils.MyLog.g("error getting account balance"))
+                .doOnError(e -> Utils.MyLog.g("KinManager: error getting account balance"))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
     }
@@ -181,11 +135,5 @@ class AccountHelper {
 
     private Single<TransactionId> sendWhitelistTransaction(KinAccount account, String whitelist) {
         return Single.fromCallable(() -> account.sendWhitelistTransactionSync(whitelist));
-    }
-
-    private enum AccountState {
-        UNREGISTERED,
-        REGISTERED,
-        DELETED
     }
 }
