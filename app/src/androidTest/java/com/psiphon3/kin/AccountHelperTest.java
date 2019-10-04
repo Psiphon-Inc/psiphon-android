@@ -1,11 +1,8 @@
 package com.psiphon3.kin;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.support.test.InstrumentationRegistry;
-
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 
 import java.math.BigDecimal;
 
@@ -26,26 +23,20 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class AccountHelperTest {
-
-    private static final Environment env = Environment.TEST;
+public class AccountHelperTest extends BaseKinTest {
+    @Mock
     private KinAccount account;
+    @Mock
     private ServerCommunicator serverCommunicator;
     private AccountHelper accountHelper;
 
     @Before
     public void setUp() {
-        SharedPreferences sharedPreferences = InstrumentationRegistry.getTargetContext().getSharedPreferences("test", Context.MODE_PRIVATE);
-        Context context = mock(Context.class);
-        when(context.getApplicationContext()).thenReturn(context);
-        when(context.getSharedPreferences(anyString(), anyInt())).thenReturn(sharedPreferences);
+        initMocks();
 
-        account = mock(KinAccount.class);
         when(account.getPublicAddress()).thenReturn("public_address");
 
-        serverCommunicator = mock(ServerCommunicator.class);
-
-        accountHelper = new AccountHelper(account, serverCommunicator, new SettingsManager(), env.getPsiphonWalletAddress());
+        accountHelper = new AccountHelper(serverCommunicator, new SettingsManager(context), env.getPsiphonWalletAddress());
     }
 
     @Test
@@ -59,10 +50,10 @@ public class AccountHelperTest {
         when(serverCommunicator.whitelistTransaction(any())).thenReturn(Single.just("whitelist"));
         when(account.sendWhitelistTransactionSync(any())).thenReturn(transactionId);
 
-        TestObserver<Void> test = accountHelper.transferOut(Utils.TRANSFER_AMOUNT).test();
-        Utils.assertTestCompleted(test);
+        TestObserver<Void> test = accountHelper.transferOut(TRANSFER_AMOUNT).test();
+        assertTestCompleted(test);
 
-        verify(account, times(1)).buildTransactionSync(env.getPsiphonWalletAddress(), Utils.TRANSFER_AMOUNT_BD, 0);
+        verify(account, times(1)).buildTransactionSync(env.getPsiphonWalletAddress(), TRANSFER_AMOUNT_BD, 0);
         verify(account, times(1)).sendWhitelistTransactionSync("whitelist");
         verify(serverCommunicator, times(1)).whitelistTransaction(whitelistableTransaction);
     }
@@ -70,13 +61,13 @@ public class AccountHelperTest {
     @Test
     public void getCurrentBalance() throws OperationFailedException {
         Balance balance = mock(Balance.class);
-        when(balance.value()).thenReturn(Utils.FUND_AMOUNT_BD);
+        when(balance.value()).thenReturn(FUND_AMOUNT_BD);
         when(account.getBalanceSync()).thenReturn(balance);
 
         TestObserver<BigDecimal> test = accountHelper.getCurrentBalance().test();
 
-        // Check that it completed
-        Utils.assertTestCompleted(test);
-        test.assertValue(Utils.FUND_AMOUNT_BD);
+        // check that it completed
+        assertTestCompleted(test);
+        test.assertValue(FUND_AMOUNT_BD);
     }
 }

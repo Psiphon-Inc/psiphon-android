@@ -1,9 +1,5 @@
 package com.psiphon3.kin;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.support.test.InstrumentationRegistry;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,24 +10,14 @@ import kin.sdk.KinClient;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-public class ClientHelperTest {
-
+public class ClientHelperTest extends BaseKinTest {
     private KinClient kinClient;
     private ClientHelper clientHelper;
 
     @Before
     public void setUp() {
-        Environment env = Environment.TEST;
-        SharedPreferences sharedPreferences = InstrumentationRegistry.getTargetContext().getSharedPreferences("test", Context.MODE_PRIVATE);
-        Context context = mock(Context.class);
-        when(context.getApplicationContext()).thenReturn(context);
-        when(context.getSharedPreferences(anyString(), anyInt())).thenReturn(sharedPreferences);
+        initMocks();
 
         kinClient = new KinClient(context, env.getKinEnvironment(), Environment.PSIPHON_APP_ID);
         clientHelper = new ClientHelper(kinClient);

@@ -100,7 +100,7 @@ public class KinManager {
         // Set up base communication & helper classes
         KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
         ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getFriendBotServerUrl());
-        ClientHelper clientHelper = new ClientHelper(kinClient, serverCommunicator);
+        ClientHelper clientHelper = new ClientHelper(kinClient);
         SettingsManager settingsManager = new SettingsManager(context);
         AccountHelper accountHelper = new AccountHelper(serverCommunicator, settingsManager, environment.getPsiphonWalletAddress());
 
