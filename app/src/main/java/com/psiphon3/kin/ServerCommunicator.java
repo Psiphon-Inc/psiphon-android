@@ -152,6 +152,7 @@ class ServerCommunicator {
      * @return the whitelist transaction data from the server
      */
     Single<String> whitelistTransaction(@NonNull WhitelistableTransaction whitelistableTransaction) {
+        // TODO: Include user address as a query param at some point
         return waitUntilTunneled()
                 .map(__ -> whitelistableTransaction)
                 .flatMap(this::whitelistTransactionInner);

@@ -5,20 +5,13 @@ import com.psiphon3.psiphonlibrary.Utils;
 import io.reactivex.Single;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
-import kin.sdk.exception.CorruptedDataException;
-import kin.sdk.exception.CreateAccountException;
-import kin.sdk.exception.CryptoException;
 import kin.sdk.exception.DeleteAccountException;
 
 class ClientHelper {
-    private final static String EXPORT_KIN_ACCOUNT_PASSPHRASE = "correct-horse-battery-staple";
-
     private final KinClient kinClient;
-    private final ServerCommunicator serverCommunicator;
 
-    ClientHelper(KinClient kinClient, ServerCommunicator serverCommunicator) {
+    ClientHelper(KinClient kinClient) {
         this.kinClient = kinClient;
-        this.serverCommunicator = serverCommunicator;
     }
 
     /**
@@ -32,10 +25,6 @@ class ClientHelper {
         try {
             if (kinClient.hasAccount()) {
                 return Single.just(kinClient.getAccount(0));
-            }
-
-            if (doesExportedAccountExist()) {
-                return Single.just(importAccount(retrieveAccountFromDisk()));
             }
 
             return Single.just(kinClient.addAccount());
@@ -58,43 +47,5 @@ class ClientHelper {
         } catch (DeleteAccountException e) {
             // TODO: Care?
         }
-    }
-
-    private Single<KinAccount> createKinAccount() {
-        try {
-            KinAccount account = kinClient.addAccount();
-            String address = account.getPublicAddress();
-            if (address == null) {
-                return Single.error(new Exception("failed to add a new KinAccount"));
-            }
-
-            return serverCommunicator.createAccount(address).toSingle(() -> account);
-        } catch (CreateAccountException e) {
-            return Single.error(e);
-        }
-    }
-
-    //
-    // TODO: Actually add the code to save to disk
-    //
-
-    private String exportAccount(KinAccount account) throws CryptoException {
-        return account.export(EXPORT_KIN_ACCOUNT_PASSPHRASE);
-    }
-
-    private KinAccount importAccount(String exportedJson) throws CorruptedDataException, CreateAccountException, CryptoException {
-        return kinClient.importAccount(exportedJson, EXPORT_KIN_ACCOUNT_PASSPHRASE);
-    }
-
-    private boolean doesExportedAccountExist() {
-        return false;
-    }
-
-    private void saveAccountToDisk(String exportedJson) {
-
-    }
-
-    private String retrieveAccountFromDisk() {
-        return "";
     }
 }
