@@ -24,7 +24,6 @@ import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 import kin.sdk.WhitelistableTransaction;
 import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -97,7 +96,10 @@ class ServerCommunicator {
                     .get()
                     .build();
 
+            final Call call;
             try {
+                call = okHttpClient.newCall(request);
+                emitter.setCancellable(call::cancel);
                 Response response = okHttpClient.newCall(request).execute();
                 if (response.isSuccessful() && !emitter.isDisposed()) {
                     emitter.onComplete();
@@ -114,35 +116,6 @@ class ServerCommunicator {
             }
         })
                 .doOnComplete(() -> Utils.MyLog.g("KinManager: success registering account on the blockchain"));
-    }
-
-    /**
-     * Let's the server know this user has opted out for coarse-stats.
-     * Runs async.
-     */
-    void optOut() {
-        waitUntilTunneled()
-                .doOnSuccess(__ -> optOutInner())
-                .subscribe();
-    }
-
-    private void optOutInner() {
-        Request request = new Request.Builder()
-                .url(getOptOutUrl())
-                .head()
-                .build();
-
-        okHttpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                // Don't give a hoot
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                // Don't give a hoot
-            }
-        });
     }
 
     /**
@@ -164,9 +137,11 @@ class ServerCommunicator {
                     .url(getWhiteListTransactionUrl())
                     .post(createWhitelistableTransactionBody(whitelistableTransaction))
                     .build();
-
+            final Call call;
             try {
-                Response response = okHttpClient.newCall(request).execute();
+                call = okHttpClient.newCall(request);
+                emitter.setCancellable(call::cancel);
+                Response response = call.execute();
                 if (response.isSuccessful()) {
                     if (response.body() != null) {
                         String hash = parseFriendBotResponse(response.body().charStream());

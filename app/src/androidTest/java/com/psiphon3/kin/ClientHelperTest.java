@@ -40,9 +40,8 @@ public class ClientHelperTest {
         when(context.getApplicationContext()).thenReturn(context);
         when(context.getSharedPreferences(anyString(), anyInt())).thenReturn(sharedPreferences);
 
-        ServerCommunicator serverCommunicator = new ServerCommunicator(env.getFriendBotServerUrl());
         kinClient = new KinClient(context, env.getKinEnvironment(), Environment.PSIPHON_APP_ID);
-        clientHelper = new ClientHelper(kinClient, serverCommunicator);
+        clientHelper = new ClientHelper(kinClient);
     }
 
     @After

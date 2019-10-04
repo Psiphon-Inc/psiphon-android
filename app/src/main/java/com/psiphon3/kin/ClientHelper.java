@@ -2,6 +2,7 @@ package com.psiphon3.kin;
 
 import com.psiphon3.psiphonlibrary.Utils;
 
+import io.reactivex.Maybe;
 import io.reactivex.Single;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
@@ -14,32 +15,41 @@ class ClientHelper {
     private final static String EXPORT_KIN_ACCOUNT_PASSPHRASE = "correct-horse-battery-staple";
 
     private final KinClient kinClient;
-    private final ServerCommunicator serverCommunicator;
 
-    ClientHelper(KinClient kinClient, ServerCommunicator serverCommunicator) {
+    ClientHelper(KinClient kinClient) {
         this.kinClient = kinClient;
-        this.serverCommunicator = serverCommunicator;
     }
 
     /**
      * Gets a Kin account for this device. Will try to use a saved account first, but if none are
-     * found it will create a new account and register it with the server.
+     * found it will create a new account.
      * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
      *
      * @return The account for this device.
      */
     Single<KinAccount> getAccount() {
+        return accountMaybe()
+                .switchIfEmpty(
+                        Maybe.fromCallable(kinClient::addAccount)
+                                .doOnSuccess(__ -> Utils.MyLog.g("KinManager: created new account")))
+                .toSingle();
+    }
+
+    /**
+     * Get a Kin account only if it exists wrapped in Maybe
+     * @return account or nothing
+     */
+    Maybe<KinAccount> accountMaybe() {
         try {
             if (kinClient.hasAccount()) {
-                return Single.just(kinClient.getAccount(0));
+                return Maybe.just(kinClient.getAccount(0));
             }
-
             if (doesExportedAccountExist()) {
-                return Single.just(importAccount(retrieveAccountFromDisk()));
+                return Maybe.just(importAccount(retrieveAccountFromDisk()));
             }
-            return Single.just(kinClient.addAccount());
+            return Maybe.empty();
         } catch (Exception e) {
-            return Single.error(e);
+            return Maybe.error(e);
         }
     }
 
@@ -47,29 +57,16 @@ class ClientHelper {
      * Deletes the Kin account. Silently handles failures.
      */
     void deleteAccount() {
+        Utils.MyLog.g("KinManager: deleting account");
         if (!kinClient.hasAccount()) {
-            Utils.MyLog.d("Tried to delete an account when no account existed");
+            Utils.MyLog.g("KinManager: tried to delete an account when no account existed");
             return;
         }
 
         try {
             kinClient.deleteAccount(0);
         } catch (DeleteAccountException e) {
-            // TODO: Care?
-        }
-    }
-
-    private Single<KinAccount> createKinAccount() {
-        try {
-            KinAccount account = kinClient.addAccount();
-            String address = account.getPublicAddress();
-            if (address == null) {
-                return Single.error(new Exception("failed to add a new KinAccount"));
-            }
-
-            return serverCommunicator.createAccount(address).toSingle(() -> account);
-        } catch (CreateAccountException e) {
-            return Single.error(e);
+            Utils.MyLog.g("KinManager: delete account error: " + e);
         }
     }
 

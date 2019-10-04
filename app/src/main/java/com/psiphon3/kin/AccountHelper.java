@@ -4,7 +4,6 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.util.Pair;
 
-import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.psiphon3.psiphonlibrary.Utils;
 
 import java.math.BigDecimal;
@@ -22,7 +21,6 @@ class AccountHelper {
     private final ServerCommunicator serverCommunicator;
     private final SettingsManager settingsManager;
     private final String psiphonWalletAddress;
-    BehaviorRelay<KinAccount> accountRelay = BehaviorRelay.create();
     /**
      * @param serverCommunicator   the communicator for the server
      * @param settingsManager
@@ -34,62 +32,62 @@ class AccountHelper {
         this.psiphonWalletAddress = psiphonWalletAddress;
     }
 
-    void onNewAccount(Context context, KinAccount account) {
-        accountRelay.accept(account);
+    private Single<KinAccount> getRegisteredAccount(Context context, KinAccount kinAccount) {
+        String address = kinAccount.getPublicAddress();
+        if (TextUtils.isEmpty(address)) {
+            return Single.error(new Exception("account deleted"));
+        }
+        if (settingsManager.isAccountRegistered(context, address)) {
+            return Single.just(kinAccount);
+        }
+        return serverCommunicator
+                .createAccount(address)
+                .doOnComplete(() -> settingsManager.setAccountRegistered(context, address, true))
+                .toSingleDefault(kinAccount)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
-    Single<KinAccount> getRegisteredAccount(Context context) {
-        return accountRelay
-                .firstOrError()
-                .flatMap(kinAccount -> {
-                    String address = kinAccount.getPublicAddress();
-                    if (TextUtils.isEmpty(address)) {
-                        return Single.error(new Exception("account deleted"));
-                    }
-                    if (settingsManager.isAccountRegistered(context, address)) {
-                        return Single.just(kinAccount);
-                    }
-                    return serverCommunicator
-                            .createAccount(address)
-                            .doOnComplete(() -> settingsManager.setAccountRegistered(context, address, true))
-                            .toSingleDefault(kinAccount)
-                            .subscribeOn(Schedulers.io())
-                            .observeOn(AndroidSchedulers.mainThread());
-                });
-    }
-
-    Completable emptyAccount(Context context) {
-        return getRegisteredAccount(context)
+    Completable emptyAccount(Context context, KinAccount kinAccount) {
+        Utils.MyLog.g("KinManager: schedule emptying the account");
+        String address = kinAccount.getPublicAddress();
+        if (!settingsManager.isAccountRegistered(context, address)) {
+            Utils.MyLog.g("KinManager: account is not registered on the blockchain, skip emptying");
+            return Completable.complete();
+        }
+        return getRegisteredAccount(context, kinAccount)
                 // get the current balance
                 .flatMap(account -> getCurrentBalanceInner(account)
                         // return 0 here if we err
                         .onErrorReturnItem(new BigDecimal(0))
                         // turn it into a double
                         .map(BigDecimal::doubleValue)
-                        .doOnSuccess(amount -> Utils.MyLog.g("KinManager: will empty the account"))
                         // pass along the account & balance
                         .map(balance -> new Pair<>(account, balance)))
                 // transfer out the balance
                 .flatMapCompletable(pair -> {
                     KinAccount account = pair.first;
                     Double amount = pair.second;
+                    Utils.MyLog.g("KinManager: account balance is " + amount);
                     if(amount > 0d) {
                         return transferOutInner(account, amount);
                     } //else
+                    Utils.MyLog.g("KinManager: account is already empty");
                     return Completable.complete();
-                })
-                .onErrorComplete();
+                });
     }
 
     /**
      * Requests that amount of Kin gets transferred out of the active accounts wallet to Psiphon's wallet.
      * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
      *
-     * @param amount the amount to be taken from the active account
+     *
+     * @param kinAccount Kin account
+     * @param amount the amount to be taken from the kinAccount
      * @return a completable which fires on complete after the transaction has successfully completed
      */
-    Completable transferOut(Context context, Double amount) {
-        return getRegisteredAccount(context)
+    Completable transferOut(Context context, KinAccount kinAccount, Double amount) {
+        return getRegisteredAccount(context, kinAccount)
                 .flatMapCompletable(account -> transferOutInner(account, amount));
     }
 
@@ -103,7 +101,7 @@ class AccountHelper {
                 .flatMap(transaction -> sendWhitelistTransaction(account, transaction))
                 .doOnSuccess(transactionId -> Utils.MyLog.g("KinManager: success sending out " + amount + " Kin"))
                 // log any errors
-                .doOnError(__ -> Utils.MyLog.g("KinManager: error transferring " + amount + " kin out"))
+                .doOnError(e -> Utils.MyLog.g("KinManager: error transferring " + amount + " kin out: " + e))
                 // just care if it completed
                 .ignoreElement()
                 .subscribeOn(Schedulers.io())
@@ -115,8 +113,8 @@ class AccountHelper {
      *
      * @return the current balance of the active account
      */
-    Single<BigDecimal> getCurrentBalance(Context context) {
-        return getRegisteredAccount(context)
+    Single<BigDecimal> getCurrentBalance(Context context, KinAccount kinAccount) {
+        return getRegisteredAccount(context, kinAccount)
                 .flatMap(this::getCurrentBalanceInner);
     }
 
