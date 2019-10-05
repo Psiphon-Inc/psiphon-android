@@ -65,10 +65,10 @@ public class KinManager {
                     if (isOptedIn) {
                         return chargeForConnectionPublishRelay
                                 // transfer out 1 kin for connection
-                                .flatMapSingle(__ -> clientHelper.getAccount())
+                                .switchMapSingle(__ -> clientHelper.getAccount())
                                 .flatMapCompletable(kinAccount -> accountHelper.transferOut(context, kinAccount, CONNECTION_COST)
                                         .onErrorResumeNext(e -> chargeErrorHandler(context, kinAccount, e))
-                                        .doOnError(e -> Utils.MyLog.g("KinManager: error charging " + CONNECTION_COST + " Kin(s) for connection: " + e))
+                                        .doOnError(e -> Utils.MyLog.g("KinManager: error charging for connection: " + e))
                                         .onErrorComplete())
                                 .toObservable();
                     } //else
@@ -90,7 +90,7 @@ public class KinManager {
                     if(balance <  CONNECTION_COST) {
                         return accountHelper.emptyAccount(context, kinAccount)
                                 .andThen(Completable.fromAction(clientHelper::deleteAccount))
-                                .andThen(Single.defer(clientHelper::getAccount))
+                                .andThen(clientHelper.getAccount())
                                 .ignoreElement();
                     } //else
                     return Completable.error(e);

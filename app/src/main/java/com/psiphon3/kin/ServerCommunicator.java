@@ -101,7 +101,8 @@ class ServerCommunicator {
                 call = okHttpClient.newCall(request);
                 emitter.setCancellable(call::cancel);
                 Response response = okHttpClient.newCall(request).execute();
-                if (response.isSuccessful() && !emitter.isDisposed()) {
+                // HTTP code 409 means account already registered, treat as success
+                if ((response.isSuccessful() || response.code() == 409) && !emitter.isDisposed()) {
                     emitter.onComplete();
                 } else if (!emitter.isDisposed()) {
                     String msg = "create account failed with code " + response.code();

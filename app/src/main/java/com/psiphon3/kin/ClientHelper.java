@@ -40,17 +40,17 @@ class ClientHelper {
      * @return account or nothing
      */
     Maybe<KinAccount> accountMaybe() {
-        try {
-            if (kinClient.hasAccount()) {
-                return Maybe.just(kinClient.getAccount(0));
-            }
-            if (doesExportedAccountExist()) {
-                return Maybe.just(importAccount(retrieveAccountFromDisk()));
-            }
-            return Maybe.empty();
-        } catch (Exception e) {
-            return Maybe.error(e);
-        }
+        return Maybe.fromCallable(() -> {
+                    if (kinClient.hasAccount()) {
+                        return kinClient.getAccount(0);
+                    }
+                    if (doesExportedAccountExist()) {
+                        return importAccount(retrieveAccountFromDisk());
+                    }
+                    // null is permitted in Maybe context, results in completion with no value.
+                    return null;
+                }
+        );
     }
 
     /**
