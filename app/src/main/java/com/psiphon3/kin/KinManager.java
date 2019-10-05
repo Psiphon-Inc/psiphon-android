@@ -64,12 +64,12 @@ public class KinManager {
                 .switchMap(isOptedIn -> {
                     if (isOptedIn) {
                         return chargeForConnectionPublishRelay
-                                // transfer out 1 kin for connection
-                                .switchMapSingle(__ -> clientHelper.getAccount())
-                                .flatMapCompletable(kinAccount -> accountHelper.transferOut(context, kinAccount, CONNECTION_COST)
-                                        .onErrorResumeNext(e -> chargeErrorHandler(context, kinAccount, e))
-                                        .doOnError(e -> Utils.MyLog.g("KinManager: error charging for connection: " + e))
-                                        .onErrorComplete())
+                                // transfer out CONNECTION_COST kin for connection
+                                .switchMapCompletable(__ -> clientHelper.accountMaybe()
+                                        .flatMapCompletable(kinAccount -> accountHelper.transferOut(context, kinAccount, CONNECTION_COST)
+                                                .onErrorResumeNext(e -> chargeErrorHandler(context, kinAccount, e))
+                                                .doOnError(e -> Utils.MyLog.g("KinManager: error charging for connection: " + e))
+                                                .onErrorComplete()))
                                 .toObservable();
                     } //else
                     return Observable.empty();
