@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Descriptive text telling the user how they can use Psiphon Pro: either
+         by subscribing or by having ads in the app.
+         Insert one or more newline characters as needed to keep the lines approximately as short
+         as the English. -->
+    <string name="SubscriptionPromptMessage">إشترك الآن لتحصل على نسخة خالية من الإعلانات من سايفون برو \n\n أو إضغط على \"إبدأ\" لإستعمال سايفون برو مجانا ل 700 دقيقة عند مشاهدتك إعلان \n\n شكرا لإستعمال سايفون!</string>
+
+    <!-- Prompt text telling the user that can continue to use Psiphon by watching
+         a video ad. (This is an alternative to subscribing.) -->
+    <string name="RewardedVideoPrompt">جديد! شاهد فيديو لتحصل على 100 دقيقة من سايفون برو خالية من الإعلانات.</string>
+
+    <!-- Text indicating to the user how much time they have left in their free trial. -->
+    <string name="FreeTrialRemainingTime">تجربة مجانية: %s</string>
+
+    <!-- Label for button that leads user to buy subscription or time pass to premium service.
+         When the user has a subscription or time pass, advertisements are removed from the app
+         ("ad-free"), additional features are enabled, and the app no longer periodically disconnects. -->
+    <string name="SubscribeButton">إحصل على نسخة خالية من الإعلانات من سايفون برو!</string>
+    
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">عناوين HTTP خاصة </string>
+
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">إعداد عناوين HTTP خاصة إضافية لطلبات البروكسي </string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">أضف عناوين HTTP خاصة </string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">أضف عناوين HTTP خاصة لكل طلبات بروكسي HTTP الخارجة </string>
+    <string name="custom_proxy_header_group_1">عنوان 1 </string>
+    <string name="custom_proxy_header_group_2">عنوان 2</string>
+    <string name="custom_proxy_header_group_3">عنوان 3 </string>
+    <string name="custom_proxy_header_group_4">عنوان 4</string>
+    <string name="custom_proxy_header_group_5">عنوان 5</string>
+    <string name="custom_proxy_header_group_6">عنوان 6</string>
+    <string name="custom_proxy_header_name">أدخل إسم العنوان </string>
+    <string name="custom_proxy_header_value">أدخل قيمة العنوان </string>
+    <string name="custom_proxy_header_ignored_values">تحذير: العناوين ذات الأسامي الفارغة سيتم تجاهلها</string>
+    <string name="custom_proxy_header_invalid_name">خطأ: إسم العنوان يحتوي على أحرف مشبوهة </string>
+    
+    <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day.
+         Insert one or more newline characters as needed to keep the lines approximately as short
+         as the English. -->
+    <string name="PaymentChooserFragment.UnlimitedSubscription">سريع جدا - %1$s / شهريا\n(%2$s / في اليوم)</string>
+
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day.
+         Insert one or more newline characters as needed to keep the lines approximately as short
+         as the English. -->
+    <string name="PaymentChooserFragment.LimitedSubscription">سريع - %1$s / شهريا\n(%2$s / في اليوم)</string>
+
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass7Day">إشتراك 7 أيام - %1$s\n(%2$s / في اليوم)</string>
+
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass30Day">إشتراك 30 يوم - %1$s\n(%2$s / في اليوم)</string>
+
+    <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass90Day">إشتراك 90 يوم - %1$s\n(%2$s / في اليوم)</string>
+
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+         The first formatted string is the price, and the second is what the price is per day. -->
+    <string name="PaymentChooserFragment.TimePass360Day">إشتراك 360 يوم - %1$s\n(%2$s / في اليوم)</string>
+
+    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
+         exclamatory. Indicates that premium access results in all in-app advertisements being
+         removed. -->
+    <string name="PaymentChooserFragment.NoAdsExclaim">خالٍ من الاعلانات!</string>
+
+    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
+         exclamatory. Indicates that premium access results in additional features being unlocked
+         (such as egress region selection). -->
+    <string name="PaymentChooserFragment.FeaturesExclaim">ميزات إضافية!</string>
+
+    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
+         exclamatory. Indicates that premium access results in no interruptions due to free trial
+         time expiring (as happens with non-premium access). -->
+    <string name="PaymentChooserFragment.InterruptionsExclaim">من غير إنقطاعات! </string>
+
+    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
+         amount of time. This string is a description specifically about buying a subscription.
+         The parenthetical remark about credit card requirements should be separated by a newline. -->
+    <string name="PaymentChooserFragment.SubscriptionDescription">إختر بين خدماتنا الشهرية السريعة بأسعار ممتازة.\n(التجديد أوتوماتيكي عبر بطاقة إئتمان)</string>
+
+    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
+         amount of time. This string announces that subscriptions include a free trial. -->
+    <string name="PaymentChooserFragment.FreeTrialDescription">جديد! شهر مجاني مع كل إشتراك.</string>
+
+    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
+         amount of time. This string is a description specifically about buying a time pass.
+         The parenthetical remark about credit card requirements should be separated by a newline. -->
+    <string name="PaymentChooserFragment.TimePassDescription">إذا كنت لا تملك بطاقة ائتمان تستطيع الدفع مرة واحدة لإشتراك \"سريع جدا\"\nبإستعمال بطاقة هدية أو أي رصيد من متجر جوجل.</string>
+
+    <!-- Title for other text showing what the user's current speed limit is. Users have limited
+         speed if they have not paid for premium service. -->
+    <string name="rate_limit_text_title">سرعتك القصوى الآن:</string>
+
+    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
+         and is in megabits-per-second. Users have limited speed if they have not paid for premium
+         service. -->
+    <string name="rate_limit_text_limited">%d Mb/s</string>
+
+    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
+         have access to a full-speed connection. Users have limited speed if they have not paid for
+         premium service. -->
+    <string name="rate_limit_text_unlimited">غير محدود </string>
+
+    <!-- Indicates that the user has an active speed boost.'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
+    anything that indicates a fast or unrestricted speed. -->
+    <string name="rate_limit_text_speed_boost">السرعة الخارقة</string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">زيد السرعة!</string>
+
+    <!-- Button title indicating to the user that they will earn PsiCash if they watch a video advertisement.
+    The word 'PsiCash' should not be translated or transliterated. Keep as short as possible.-->
+    <string name="watch_video_and_earn_psicash_button">شاهد الفيديو لكسب PsiCash</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because of
+    an unknown error. Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_transaction_invalid_message">رد غير صالح من خادم PsiCash.</string>
+
+    <!-- Internal message not seen by the users, indicates successful Speed Boost purchase. -->
+    <string name="psicash_transaction_success_message">تمّت بنجاح.</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because they have an insufficient balance.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
+    anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_insufficient_balance_message">رصيد غير كافٍ لشراء \"السرعة الخارقة\".</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because they tried to make the purchase with
+    an out of date product price. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
+    connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate',
+    'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_amount_mismatch_message">سعر \"السرعة الخارقة\"  ليس مُحدَّثًا. جارٍ تحديث المنتجات المحلية.</string>
+
+    <!-- Alert error message informing user that they have an active Speed Boost purchase.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed',
+    'blast off', or anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_existing_message">لديك عملية شراء \"السرعة الخارقة\" نشطة.</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because they attempted to buy a product that is no longer available
+    and that they should try updating or reinstalling the app. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
+    connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
+    anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_type_not_found_message">لم يُعثر على منتج \"السرعة الخارقة\". ربما يكون تطبيقك منتهي الصلاحية. يُرجى التحقق من وجود تحديثات.</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because their app has entered an invalid state and that they
+    should try updating or reinstalling the app. Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_transaction_invalid_tokens_message">دخل التطبيق في حالة غير صالحة. يُرجى إعادة تثبيت التطبيق لاستئناف استخدام PsiCash.</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed due to a server error and that they should try again in a few minutes -->
+    <string name="transaction_server_error_message">خطأ في الخادم. يُرجى إعادة المحاولة في غضون بضع دقائق</string>
+
+    <!-- Alert error message informing user that a critical PsiCash related error has occurred and encouraging users to send feedback diagnostics -->
+    <string name="psicash_critical_error_message">حدث خطأٌ فادح. يُرجى إرسال تعليق.</string>
+
+    <!-- Alert error message informing user that a recoverable PsiCash related error has occurred and last action will most likely succeed next time. -->
+    <string name="psicash_recoverable_error_message">حدث خطأ قابل للاسترداد. يُرجى إعادة المحاولة.</string>
+
+    <!-- Alert message informing user that a PsiCash rewarded video is currently not available. -->
+    <string name="psicash_video_not_available_message">الفيديو غير متاح، يُرجى إعادة المحاولة لاحقًا.</string>
+
+    <!-- Text which appears in the Speed Boost meter when the user has earned enough PsiCash to buy 1 hour of Speed Boost.
+    Please keep this text concise as the width of the text box is restricted in size. 'Speed Boost' is a reward
+    that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed',
+    'blast off', or anything that indicates a fast or unrestricted speed. -->
+    <string name="one_hour_of_speed_boost_available_button">تتوفر ساعة واحدة من \"السرعة الخارقة\"</string>
+
+    <!-- Text which appears in the Speed Boost meter when the user has not yet earned enough PsiCash to
+    Speed Boost. This text will be accompanied with a percentage indicating to the user how close they are
+    to earning enough PsiCash to buy an hour of Speed Boost. Please keep this text concise as the width
+    of the text box is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
+    <string name="charging_speed_boost_percents_label">جارٍ شحن \"السرعة الخارقة\"</string>
+
+    <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
+    <string name="unexpected_error_occured_send_feedback_message">حدث خطأ غير متوقّع، يُرجى إرسال تعليق.</string>
+
+    <!-- Alert error message informing user that the Psiphon tunnel needs to be running in order to make a Speed Boost purchase.
+     'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
+    <string name="speed_boost_connect_to_purchase_message">يُرجى تشغيل Psiphon لإجراء عملية شراء \"السرعة الخارقة\".</string>
+
+    <!-- Alert error message informing user that the Psiphon tunnel needs to complete its connection sequence in order to make a Speed Boost purchase.
+     'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_wait_tunnel_to_connect_to_purchase_message">يُرجى انتظار نفق لإجراء عملية شراء \"السرعة الخارقة\".</string>
+
+    <!-- Alert error message informing user that a critical error has occurred while trying to retrieve PsiCash balance and encouraging the user to
+    send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_cant_get_balance_critical_message">تعذّر استرجاع رصيد PsiCash من الخادم. يُرجى إرسال تعليق.</string>
+
+    <!-- Alert error message informing user that a recoverable error has occurred while trying to retrieve PsiCash balance and last action will most
+    likely succeed next time.  Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_cant_get_balance_recoverable_message">تعذّر استرجاع رصيد PsiCash من الخادم حاليًّا. يُرجى إعادة المحاولة لاحقًا.</string>
+
+    <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
+    of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
+    is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed. -->
+    <string name="speed_boost_active_label">السرعة الخارقة نشطة</string>
+
+    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
+    <string name="psicash_snackbar_action_ok">موافق</string>
+
+    <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
+    <string name="subscription_options_currently_not_available">خيارات الاشتراك ليست متوفرة حاليًّا، يُرجى إعادة المحاولة لاحقًا.</string>
+</resources>
