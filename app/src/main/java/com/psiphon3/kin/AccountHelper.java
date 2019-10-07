@@ -68,7 +68,6 @@ class AccountHelper {
                 .flatMapCompletable(pair -> {
                     KinAccount account = pair.first;
                     Double amount = pair.second;
-                    Utils.MyLog.g("KinManager: account balance is " + amount);
                     if(amount > 0d) {
                         return transferOutInner(account, amount);
                     } //else
@@ -123,6 +122,7 @@ class AccountHelper {
                 .map(KinAccount::getBalanceSync)
                 .map(Balance::value)
                 .doOnError(e -> Utils.MyLog.g("KinManager: error getting account balance"))
+                .doOnSuccess(amount -> Utils.MyLog.g("KinManager: account balance is " + amount))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
     }
@@ -132,6 +132,7 @@ class AccountHelper {
     }
 
     private Single<TransactionId> sendWhitelistTransaction(KinAccount account, String whitelist) {
+        Utils.MyLog.g("KinManager: sending whitelisted transaction");
         return Single.fromCallable(() -> account.sendWhitelistTransactionSync(whitelist));
     }
 }

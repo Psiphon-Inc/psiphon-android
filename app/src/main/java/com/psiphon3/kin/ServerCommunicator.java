@@ -104,10 +104,12 @@ class ServerCommunicator {
                 // HTTP code 409 means account already registered, treat as success
                 if ((response.isSuccessful() || response.code() == 409) && !emitter.isDisposed()) {
                     emitter.onComplete();
-                } else if (!emitter.isDisposed()) {
-                    String msg = "create account failed with code " + response.code();
+                } else {
+                    String msg = "KinManager: register account on the blockchain failed with code " + response.code();
                     Utils.MyLog.g(msg);
-                    emitter.onError(new Exception(msg));
+                    if (!emitter.isDisposed()) {
+                        emitter.onError(new Exception(msg));
+                    }
                 }
             } catch (IOException e) {
                 Utils.MyLog.g(e.getMessage());
@@ -141,6 +143,7 @@ class ServerCommunicator {
                     .build();
             final Call call;
             try {
+                Utils.MyLog.g("KinManager: whitelisting a transaction");
                 call = okHttpClient.newCall(request);
                 emitter.setCancellable(call::cancel);
                 Response response = call.execute();
@@ -150,15 +153,19 @@ class ServerCommunicator {
                         if (!emitter.isDisposed()) {
                             emitter.onSuccess(hash);
                         }
-                    } else if (!emitter.isDisposed()) {
-                        String msg = "whitelist transaction didn't return a body";
+                    } else {
+                        String msg = "KinManager: whitelist transaction failed with code " + response.code();
                         Utils.MyLog.g(msg);
+                        if (!emitter.isDisposed()) {
+                            emitter.onError(new Exception(msg));
+                        }
+                    }
+                } else {
+                    String msg = "KinManager: whitelist transaction failed with code " + response.code();
+                    Utils.MyLog.g(msg);
+                    if (!emitter.isDisposed()) {
                         emitter.onError(new Exception(msg));
                     }
-                } else if (!emitter.isDisposed()) {
-                    String msg = "whitelist transaction failed with code " + response.code();
-                    Utils.MyLog.g(msg);
-                    emitter.onError(new Exception(msg));
                 }
             } catch (IOException e) {
                 Utils.MyLog.g(e.getMessage());
@@ -203,12 +210,6 @@ class ServerCommunicator {
     private HttpUrl getWhiteListTransactionUrl() {
         return getFriendBotUrlBuilder()
                 .addPathSegment("whitelist")
-                .build();
-    }
-
-    private HttpUrl getOptOutUrl() {
-        return getFriendBotUrlBuilder()
-                .addPathSegment("no")
                 .build();
     }
 
