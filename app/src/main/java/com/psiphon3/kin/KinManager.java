@@ -4,12 +4,14 @@ import android.content.Context;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
+import com.psiphon3.psiphonlibrary.Utils;
 
 import java.math.BigDecimal;
 
 import io.reactivex.Completable;
-import io.reactivex.Maybe;
 import io.reactivex.Observable;
+import io.reactivex.Single;
+import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
 import kin.sdk.exception.InsufficientKinException;
 
@@ -23,7 +25,7 @@ public class KinManager {
     private final ServerCommunicator serverCommunicator;
     private final SettingsManager settingsManager;
 
-    private final PublishRelay<Boolean> chargeForConnectionPublishRelay;
+    private final PublishRelay<Object> chargeForConnectionPublishRelay = PublishRelay.create();
 
     KinManager(Context context, ClientHelper clientHelper, AccountHelper accountHelper, ServerCommunicator serverCommunicator, SettingsManager settingsManager) {
         this.clientHelper = clientHelper;
@@ -31,59 +33,68 @@ public class KinManager {
         this.serverCommunicator = serverCommunicator;
         this.settingsManager = settingsManager;
 
-        chargeForConnectionPublishRelay = PublishRelay.create();
-
+        // This is the main subscription that monitors opt in state and reacts accordingly
         isOptedInObservable()
-                // only observe opt-ins
-                .filter(optedIn -> optedIn)
-                // if they opted in get an account
-                .flatMapSingle(__ -> clientHelper.getAccount())
-                // pass the new account to account helper
-                .doOnNext(account -> accountHelper.onNewAccount(context, account))
+                .doOnNext(isOptedIn -> Utils.MyLog.g("KinManager: user " + (isOptedIn ? "opted in" : "opted out")))
+                // On opt outs schedule emptying and deletion of existing account.
+                // On opt ins just get an account locally, ether existing or new, do not try to
+                // register the account on the blockchain at this point, AccountHelper::emptyAccount
+                // and AccountHelper::transferOut will register the account on the blockchain if
+                // needed when tunnel connects.
+                //
+                // Note the usage of switchMap, we want to cancel any downstream chain when we are
+                // signaled a new opt in status.
+                .switchMapSingle(isOptedIn -> {
+                    Completable actionCompletable;
+                    if (isOptedIn) {
+                        actionCompletable = clientHelper.getAccount()
+                                .doOnError(e -> Utils.MyLog.g("KinManager: error getting an account: " + e))
+                                .ignoreElement();
+                    } else {
+                        actionCompletable = clientHelper.accountMaybe()
+                                .flatMapCompletable(kinAccount -> accountHelper.emptyAccount(context, kinAccount)
+                                        .andThen(Completable.fromRunnable(clientHelper::deleteAccount)))
+                                .doOnError(e -> Utils.MyLog.g("KinManager: error emptying account: " + e));
+                    }
+                    return actionCompletable
+                            // Pass through original opt in value
+                            .toSingleDefault(isOptedIn)
+                            .onErrorResumeNext(Single.just(isOptedIn));
+                })
+                .switchMap(isOptedIn -> {
+                    if (isOptedIn) {
+                        return chargeForConnectionPublishRelay
+                                // transfer out CONNECTION_COST kin for connection
+                                .switchMapCompletable(__ -> clientHelper.accountMaybe()
+                                        .flatMapCompletable(kinAccount -> accountHelper.transferOut(context, kinAccount, CONNECTION_COST)
+                                                .onErrorResumeNext(e -> chargeErrorHandler(context, kinAccount, e))
+                                                .doOnError(e -> Utils.MyLog.g("KinManager: error charging for connection: " + e))
+                                                .onErrorComplete()))
+                                .toObservable();
+                    } //else
+                    return Observable.empty();
+                })
                 .subscribe();
+    }
 
-        isOptedInObservable()
-                // skip the first emission to avoid starting opted out (so this triggers), opting in,
-                // and having the waiting for registration fire once the new opted in account is created
-                .skip(1)
-                // only observe opts out
-                .filter(optedIn -> !optedIn)
-                // delete the account and transfer its funds out
-                .flatMapCompletable(__ -> accountHelper.delete(context)
-                        .doOnComplete(clientHelper::deleteAccount))
-                .subscribe();
-
-        chargeForConnectionPublishRelay
-                // take only distinct events to prevent spam
-                .distinctUntilChanged()
-                // only take requests to charge them
-                .filter(chargeForConnection -> chargeForConnection)
-                // transfer out 1 kin, which on complete allows for a new charge for connection
-                .flatMapCompletable(__ -> transferOut(CONNECTION_COST)
-                        // mark the next connection as not requiring a charge
-                        .doOnComplete(() -> chargeForConnectionPublishRelay.accept(false))
-                        // convert to a maybe for handling exceptions
-                        .<BigDecimal>toMaybe()
-                        // if it says we don't have enough kin, get the current balance, otherwise just let the error continue
-                        .onErrorResumeNext(e -> e instanceof InsufficientKinException ? accountHelper.getCurrentBalance().toMaybe() : Maybe.error(e))
-                        // convert the balance to a double
-                        .map(BigDecimal::doubleValue)
-                        // if the balance is less then the connection cost continue
-                        .filter(balance -> balance < CONNECTION_COST)
-                        // delete the account
-                        .flatMapCompletable(___ -> accountHelper.delete(context))
-                        // after that have the client helper delete the account
-                        .andThen(Completable.fromAction(clientHelper::deleteAccount))
-                        // get a new account
-                        .andThen(clientHelper.getAccount())
-                        // pass it to the account helper
-                        .flatMapCompletable(account -> Completable.fromAction(() -> accountHelper.onNewAccount(context, account)))
-                        // ignore errors
-                        .onErrorComplete())
-                .subscribe();
-
-        // start with this so distinct until changed will work
-        chargeForConnectionPublishRelay.accept(false);
+    private Completable chargeErrorHandler(Context context, KinAccount kinAccount, Throwable e) {
+        // If it says we don't have enough kin, check if we should get new account
+        // otherwise just let the error continue
+        if (!(e instanceof InsufficientKinException)) {
+            return Completable.error(e);
+        }
+        return accountHelper.getCurrentBalance(context, kinAccount)
+                .onErrorReturnItem(BigDecimal.ZERO)
+                .map(BigDecimal::doubleValue)
+                .flatMapCompletable(balance -> {
+                    if(balance <  CONNECTION_COST) {
+                        return accountHelper.emptyAccount(context, kinAccount)
+                                .andThen(Completable.fromAction(clientHelper::deleteAccount))
+                                .andThen(clientHelper.getAccount())
+                                .ignoreElement();
+                    } //else
+                    return Completable.error(e);
+                });
     }
 
     static KinManager getInstance(Context context, Environment environment) {
@@ -99,9 +110,9 @@ public class KinManager {
 
         // Set up base communication & helper classes
         KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
-        ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getFriendBotServerUrl());
         ClientHelper clientHelper = new ClientHelper(kinClient);
         SettingsManager settingsManager = new SettingsManager(context);
+        ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getFriendBotServerUrl());
         AccountHelper accountHelper = new AccountHelper(serverCommunicator, settingsManager, environment.getPsiphonWalletAddress());
 
         return instance = new KinManager(context, clientHelper, accountHelper, serverCommunicator, settingsManager);
@@ -124,22 +135,10 @@ public class KinManager {
         return settingsManager.isOptedInObservable();
     }
 
-    /**
-     * Requests that amount of Kin gets transferred out of the active accounts wallet to Psiphon's wallet.
-     * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
-     *
-     * @param amount the amount to be taken from the active account
-     * @return a completable which fires on complete after the transaction has successfully completed
-     */
-    public Completable transferOut(Double amount) {
-        return isOptedInObservable()
-                .firstOrError()
-                .filter(optedIn -> optedIn)
-                .flatMapCompletable(__ -> accountHelper.transferOut(amount));
-    }
-
     public void chargeForNextConnection(boolean agreed) {
-        chargeForConnectionPublishRelay.accept(agreed);
+        if(agreed) {
+            chargeForConnectionPublishRelay.accept(new Object());
+        }
     }
 
     public void onTunnelConnectionState(TunnelState tunnelState) {
