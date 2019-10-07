@@ -33,6 +33,7 @@ class AccountHelper {
     }
 
     private Single<KinAccount> getRegisteredAccount(Context context, KinAccount kinAccount) {
+
         String address = kinAccount.getPublicAddress();
         if (TextUtils.isEmpty(address)) {
             return Single.error(new Exception("account deleted"));
@@ -95,7 +96,7 @@ class AccountHelper {
                 // get the whitelistable transaction
                 .map(Transaction::getWhitelistableTransaction)
                 // whitelist it with the server
-                .flatMap(serverCommunicator::whitelistTransaction)
+                .flatMap(whitelistableTransaction -> serverCommunicator.whitelistTransaction(account.getPublicAddress(), whitelistableTransaction))
                 // actually send the transaction
                 .flatMap(transaction -> sendWhitelistTransaction(account, transaction))
                 .doOnSuccess(transactionId -> Utils.MyLog.g("KinManager: success sending out " + amount + " Kin"))

@@ -2,15 +2,15 @@ package com.psiphon3.kin;
 
 import android.content.Context;
 
+import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
-import com.psiphon3.TunnelState;
 import com.psiphon3.psiphonlibrary.Utils;
 
 import java.math.BigDecimal;
 
 import io.reactivex.Completable;
-import io.reactivex.Observable;
 import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
 import kin.sdk.exception.InsufficientKinException;
@@ -22,59 +22,13 @@ public class KinManager {
 
     private final ClientHelper clientHelper;
     private final AccountHelper accountHelper;
-    private final ServerCommunicator serverCommunicator;
-    private final SettingsManager settingsManager;
+    private final BehaviorRelay<Boolean> tunnelConnectedBehaviorRelay = BehaviorRelay.create();
 
-    private final PublishRelay<Object> chargeForConnectionPublishRelay = PublishRelay.create();
+    private PublishRelay<Boolean> kinOptInStateRelay = PublishRelay.create();
 
-    KinManager(Context context, ClientHelper clientHelper, AccountHelper accountHelper, ServerCommunicator serverCommunicator, SettingsManager settingsManager) {
+    KinManager(ClientHelper clientHelper, AccountHelper accountHelper) {
         this.clientHelper = clientHelper;
         this.accountHelper = accountHelper;
-        this.serverCommunicator = serverCommunicator;
-        this.settingsManager = settingsManager;
-
-        // This is the main subscription that monitors opt in state and reacts accordingly
-        isOptedInObservable()
-                .doOnNext(isOptedIn -> Utils.MyLog.g("KinManager: user " + (isOptedIn ? "opted in" : "opted out")))
-                // On opt outs schedule emptying and deletion of existing account.
-                // On opt ins just get an account locally, ether existing or new, do not try to
-                // register the account on the blockchain at this point, AccountHelper::emptyAccount
-                // and AccountHelper::transferOut will register the account on the blockchain if
-                // needed when tunnel connects.
-                //
-                // Note the usage of switchMap, we want to cancel any downstream chain when we are
-                // signaled a new opt in status.
-                .switchMapSingle(isOptedIn -> {
-                    Completable actionCompletable;
-                    if (isOptedIn) {
-                        actionCompletable = clientHelper.getAccount()
-                                .doOnError(e -> Utils.MyLog.g("KinManager: error getting an account: " + e))
-                                .ignoreElement();
-                    } else {
-                        actionCompletable = clientHelper.accountMaybe()
-                                .flatMapCompletable(kinAccount -> accountHelper.emptyAccount(context, kinAccount)
-                                        .andThen(Completable.fromRunnable(clientHelper::deleteAccount)))
-                                .doOnError(e -> Utils.MyLog.g("KinManager: error emptying account: " + e));
-                    }
-                    return actionCompletable
-                            // Pass through original opt in value
-                            .toSingleDefault(isOptedIn)
-                            .onErrorResumeNext(Single.just(isOptedIn));
-                })
-                .switchMap(isOptedIn -> {
-                    if (isOptedIn) {
-                        return chargeForConnectionPublishRelay
-                                // transfer out CONNECTION_COST kin for connection
-                                .switchMapCompletable(__ -> clientHelper.accountMaybe()
-                                        .flatMapCompletable(kinAccount -> accountHelper.transferOut(context, kinAccount, CONNECTION_COST)
-                                                .onErrorResumeNext(e -> chargeErrorHandler(context, kinAccount, e))
-                                                .doOnError(e -> Utils.MyLog.g("KinManager: error charging for connection: " + e))
-                                                .onErrorComplete()))
-                                .toObservable();
-                    } //else
-                    return Observable.empty();
-                })
-                .subscribe();
     }
 
     private Completable chargeErrorHandler(Context context, KinAccount kinAccount, Throwable e) {
@@ -111,11 +65,11 @@ public class KinManager {
         // Set up base communication & helper classes
         KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
         ClientHelper clientHelper = new ClientHelper(kinClient);
-        SettingsManager settingsManager = new SettingsManager(context);
+        SettingsManager settingsManager = new SettingsManager();
         ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getFriendBotServerUrl());
         AccountHelper accountHelper = new AccountHelper(serverCommunicator, settingsManager, environment.getPsiphonWalletAddress());
 
-        return instance = new KinManager(context, clientHelper, accountHelper, serverCommunicator, settingsManager);
+        return instance = new KinManager(clientHelper, accountHelper);
     }
 
     /**
@@ -128,28 +82,61 @@ public class KinManager {
     }
 
     /**
-     * @return an observable to check if the KinManager is ready.
-     * Observable returns false when not ready yet or opted-out; true otherwise.
+     * @param context the context
+     * @return disposable subscription that monitors tunnel connection state and Kin opt in state,
+     * creates and deletes accounts, and makes transactions on the remote blockchain.
      */
-    public Observable<Boolean> isOptedInObservable() {
-        return settingsManager.isOptedInObservable();
+    public Disposable kinFlowDisposable(Context context) {
+        // This is the main subscription that does all the work. It waits for exactly one
+        // 'connected' event from the tunnel state relay, then checks the Kin opt in state,
+        // runs Kin related operations according to that state and completes.
+        return tunnelConnectedBehaviorRelay
+                .filter(isConnected -> isConnected)
+                .firstOrError()
+                .flatMap(__ -> kinOptInStateRelay
+                        // Once connected take exactly one Kin opt in state
+                        .firstOrError())
+                .doOnSuccess(isOptedIn -> Utils.MyLog.g("KinManager: user " + (isOptedIn ? "opted in" : "opted out")))
+                // On opt outs schedule emptying and deletion of existing account.
+                // On opt ins just get an account locally, either existing or new, do not try to
+                // register the account on the blockchain at this point, AccountHelper::emptyAccount
+                // and AccountHelper::transferOut will register the account on the blockchain if
+                // needed.
+                .flatMap(isOptedIn -> {
+                    Completable actionCompletable;
+                    if (isOptedIn) {
+                        actionCompletable = clientHelper.getAccount()
+                                .doOnError(e -> Utils.MyLog.g("KinManager: error getting an account: " + e))
+                                .ignoreElement();
+                    } else {
+                        actionCompletable = clientHelper.accountMaybe()
+                                .flatMapCompletable(kinAccount -> accountHelper.emptyAccount(context, kinAccount)
+                                        .andThen(Completable.fromRunnable(clientHelper::deleteAccount)))
+                                .doOnError(e -> Utils.MyLog.g("KinManager: error emptying account: " + e));
+                    }
+                    return actionCompletable
+                            // Pass through original opt in value
+                            .toSingleDefault(isOptedIn)
+                            .onErrorResumeNext(Single.just(isOptedIn));
+                })
+                .flatMapCompletable(isOptedIn -> {
+                    if (isOptedIn) {
+                        return clientHelper.accountMaybe()
+                                .flatMapCompletable(kinAccount -> accountHelper.transferOut(context, kinAccount, CONNECTION_COST)
+                                        .onErrorResumeNext(e -> chargeErrorHandler(context, kinAccount, e))
+                                        .doOnError(e -> Utils.MyLog.g("KinManager: error charging for connection: " + e))
+                                        .onErrorComplete());
+                    } //else
+                    return Completable.complete();
+                })
+                .subscribe();
     }
 
-    public void chargeForNextConnection(boolean agreed) {
-        if(agreed) {
-            chargeForConnectionPublishRelay.accept(new Object());
-        }
+    public void onTunnelConnected(boolean isConnected) {
+        tunnelConnectedBehaviorRelay.accept(isConnected);
     }
 
-    public void onTunnelConnectionState(TunnelState tunnelState) {
-        serverCommunicator.onTunnelConnectionState(tunnelState);
-    }
-
-    public KinPermissionManager getPermissionManager() {
-        return new KinPermissionManager(settingsManager);
-    }
-
-    public boolean isOptedIn(Context context) {
-        return settingsManager.isOptedIn(context);
+    public void onKinOptInState(Boolean isOptedIn) {
+        kinOptInStateRelay.accept(isOptedIn);
     }
 }

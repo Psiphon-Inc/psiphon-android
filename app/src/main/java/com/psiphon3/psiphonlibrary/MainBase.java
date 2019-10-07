@@ -1678,11 +1678,11 @@ public abstract class MainBase {
             mp.put(this.getString(R.string.persistentAuthorizationsRemovedFlag), false);
         }
 
-        private void sendServiceMessage(int what) {
+        protected void sendServiceMessage(int what) {
             sendServiceMessage(what, null);
         }
 
-        private void sendServiceMessage(int what, Bundle data) {
+        protected void sendServiceMessage(int what, Bundle data) {
             try {
                 Message msg = Message.obtain(null, what);
                 if(data != null) {

@@ -44,6 +44,7 @@ import android.text.TextUtils;
 
 import com.psiphon3.PurchaseVerificationNetworkHelper;
 import com.psiphon3.StatusActivity;
+import com.psiphon3.kin.KinManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
@@ -83,10 +84,11 @@ import static android.os.Build.VERSION_CODES.LOLLIPOP;
 public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     // Android IPC messages
     // Client -> Service
-    enum ClientToServiceMessage {
+    public enum ClientToServiceMessage {
         UNREGISTER,
         STOP_SERVICE,
         RESTART_SERVICE,
+        KIN_OPT_IN_STATE,
     }
     // Service -> Client
     enum ServiceToClientMessage {
@@ -130,6 +132,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     static final String DATA_PURCHASE_IS_SUBSCRIPTION = "purchaseIsSubscription";
     private static final String PREFERENCE_PURCHASE_AUTHORIZATION_ID = "preferencePurchaseAuthorization";
     private static final String PREFERENCE_PURCHASE_TOKEN = "preferencePurchaseToken";
+
+    public static final String KIN_OPT_IN_STATE_EXTRA = "kinOptInStateExtra";
 
     // a snapshot of all authorizations pulled by getPsiphonConfig
     private static List<Authorization> m_tunnelConfigAuthorizations;
@@ -212,7 +216,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     private CompositeDisposable m_compositeDisposable;
     private String m_expiredPurchaseToken;
 
-
     public TunnelManager(Service parentService) {
         m_parentService = parentService;
         m_context = parentService;
@@ -249,6 +252,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 }
             });
             m_tunnelThread.start();
+            m_tunnelConnectedSubject.onNext(Boolean.FALSE);
+            if(m_tunnelState.isVPN) {
+                KinManager.getInstance(m_parentService).onKinOptInState(intent.getBooleanExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, false));
+            }
         }
 
         if (intent != null) {
@@ -316,10 +323,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_compositeDisposable.clear();
         m_compositeDisposable.add(purchaseCheckFlowDisposable());
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
+        m_compositeDisposable.add(KinManager.getInstance(m_parentService).kinFlowDisposable(m_parentService.getApplicationContext()));
     }
 
     // Sends handshake intent and tunnel state updates to the client Activity
-    // also updates service notification
+    // Updates service notification
+    // Provides tunnel state updates for KinManager
     private Disposable connectionStatusUpdaterDisposable() {
         return connectionObservable()
                 .doOnNext(isConnected -> {
@@ -334,6 +343,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                         // We expect only distinct connection status from connectionObservable
                         // which means we always add a sound / vibration alert to the notification
                         postServiceNotification(true, isConnected);
+                    }
+                })
+                .doOnNext(isConnected -> {
+                    if(m_tunnelState.isVPN) {
+                        KinManager.getInstance(m_parentService).onTunnelConnected(isConnected);
                     }
                 })
                 .subscribe();
@@ -547,6 +561,16 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     }
                     break;
 
+                case KIN_OPT_IN_STATE:
+                    if (manager != null) {
+                        Bundle data = msg.getData();
+                        Context context = manager.m_parentService;
+                        if(manager.m_tunnelState.isVPN) {
+                            KinManager.getInstance(context).onKinOptInState(data.getBoolean(KIN_OPT_IN_STATE_EXTRA, false));
+                        }
+                    }
+                    break;
+
                 default:
                     super.handleMessage(msg);
             }
@@ -713,6 +737,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
             m_isStopping.set(true);
+            m_tunnelConnectedSubject.onNext(Boolean.FALSE);
             m_tunnel.stop();
 
             periodicMaintenanceHandler.removeCallbacks(periodicMaintenance);

@@ -50,7 +50,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.jakewharton.rxrelay2.PublishRelay;
-import com.psiphon3.kin.KinManager;
 import com.psiphon3.kin.KinPermissionManager;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.util.BroadcastIntent;
@@ -112,18 +111,19 @@ public class StatusActivity
     private boolean disableInterstitialOnNextTabChange;
     private PublishRelay<RateLimitMode> currentRateLimitModeRelay;
     private Disposable currentRateModeDisposable;
+    private Disposable kinOptInStateDisposable;
     private PublishRelay<Boolean> activeSpeedBoostRelay;
-    private KinManager kinManager;
     private KinPermissionManager kinPermissionManager;
+    private Disposable toggleClickDisposable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        kinPermissionManager = new KinPermissionManager();
+
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main);
-
-        initializeKin();
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_tabSpecsList = new ArrayList<>();
@@ -215,6 +215,7 @@ public class StatusActivity
     protected void onResume()
     {
         startIab();
+        startObservingKinOptInState();
         super.onResume();
         if (m_startupPending) {
             m_startupPending = false;
@@ -227,6 +228,9 @@ public class StatusActivity
     {
         if(startUpInterstitialDisposable != null) {
             startUpInterstitialDisposable.dispose();
+        }
+        if(kinOptInStateDisposable != null) {
+            kinOptInStateDisposable.dispose();
         }
         currentRateModeDisposable.dispose();
         psiphonAdManager.onDestroy();
@@ -331,7 +335,6 @@ public class StatusActivity
 
         psiphonAdManager.onTunnelConnectionState(tunnelState);
         psiCashFragment.onTunnelConnectionState(tunnelState);
-        kinManager.onTunnelConnectionState(tunnelState);
     }
 
     @Override
@@ -413,23 +416,14 @@ public class StatusActivity
         }
     }
 
-    public void onToggleClick(View v)
-    {
+    public void onToggleClick(View v) {
         // Only check for payment when starting in WDM
         if (!isServiceRunning() && getTunnelConfigWholeDevice()) {
-            kinManager
-                    .isOptedInObservable()
-                    // take one or give up
-                    .firstOrError()
-                    // make sure they're opted in
-                    .flatMap(optedIn -> optedIn ? kinPermissionManager.confirmDonation(this) : Single.just(false))
-                    // on success notify the charge for connection relay
-                    .doOnSuccess(agreed -> kinManager.chargeForNextConnection(agreed))
-                    // either way, when the dialog is dismissed connect
-                    .ignoreElement()
-                    .onErrorComplete()
-                    .doOnComplete(this::doToggle)
-                    .subscribe();
+            if (toggleClickDisposable != null && !toggleClickDisposable.isDisposed())
+                toggleClickDisposable = Single.fromCallable(() -> kinPermissionManager.isOptedIn(getApplicationContext()))
+                        .flatMap(optedIn -> optedIn ? kinPermissionManager.confirmDonation(this) : Single.just(false))
+                        .doOnSuccess(__ -> doToggle())
+                        .subscribe();
         } else {
             doToggle();
         }
@@ -452,13 +446,15 @@ public class StatusActivity
         CheckBox checkBox = (CheckBox) v;
         // Prevent the default toggle, that's handled automatically by a subscription to the opted-in state
         checkBox.setChecked(!checkBox.isChecked());
-        if (kinManager.isOptedIn(this)) {
+        if (kinPermissionManager.isOptedIn(this)) {
             kinPermissionManager
                     .optOut(this)
+                    .doOnSuccess(this::setKinState)
                     .subscribe();
         } else {
             kinPermissionManager
                     .optIn(this)
+                    .doOnSuccess(this::setKinState)
                     .subscribe();
         }
     }
@@ -1289,6 +1285,12 @@ public class StatusActivity
         showVpnAlertDialog(R.string.StatusActivity_VpnPromptCancelledTitle, R.string.StatusActivity_VpnPromptCancelledMessage);
     }
 
+    @Override
+    protected void configureServiceIntent(Intent intent) {
+        super.configureServiceIntent(intent);
+        intent.putExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, kinPermissionManager.isOptedIn(this));
+    }
+
     private void showVpnAlertDialog(int titleId, int messageId) {
         new AlertDialog.Builder(getContext())
                 .setCancelable(true)
@@ -1311,19 +1313,11 @@ public class StatusActivity
         }
     };
 
-    private void initializeKin() {
-        kinManager = KinManager.getInstance(this);
-        kinPermissionManager = kinManager.getPermissionManager();
-
-        kinManager
-                .isOptedInObservable()
-                // when the opted-in status changes update the UI state
-                .doOnNext(this::setKinState)
-                .subscribe();
-
-        kinPermissionManager
+    private void startObservingKinOptInState() {
+        kinOptInStateDisposable = kinPermissionManager
                 // ask if the user agrees to kin if they haven't yet
                 .getUsersAgreementToKin(this)
+                .doOnSuccess(this::setKinState)
                 .subscribe();
     }
 
@@ -1333,6 +1327,13 @@ public class StatusActivity
             checkBoxKinEnabled.setChecked(true);
         } else {
             checkBoxKinEnabled.setChecked(false);
+        }
+
+        // Notify tunnel service too if it is running.
+        if(isServiceRunning()) {
+            Bundle data = new Bundle();
+            data.putBoolean(TunnelManager.KIN_OPT_IN_STATE_EXTRA, optedIn);
+            sendServiceMessage(TunnelManager.ClientToServiceMessage.KIN_OPT_IN_STATE.ordinal(), data);
         }
     }
 }
