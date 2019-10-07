@@ -419,11 +419,15 @@ public class StatusActivity
     public void onToggleClick(View v) {
         // Only check for payment when starting in WDM
         if (!isServiceRunning() && getTunnelConfigWholeDevice()) {
-            if (toggleClickDisposable != null && !toggleClickDisposable.isDisposed())
-                toggleClickDisposable = Single.fromCallable(() -> kinPermissionManager.isOptedIn(getApplicationContext()))
-                        .flatMap(optedIn -> optedIn ? kinPermissionManager.confirmDonation(this) : Single.just(false))
-                        .doOnSuccess(__ -> doToggle())
-                        .subscribe();
+            // prevent multiple confirmation dialogs
+            if (toggleClickDisposable != null && !toggleClickDisposable.isDisposed()) {
+                return;
+            }
+
+            toggleClickDisposable = Single.fromCallable(() -> kinPermissionManager.isOptedIn(getApplicationContext()))
+                    .flatMap(optedIn -> optedIn ? kinPermissionManager.confirmDonation(this) : Single.just(false))
+                    .doOnSuccess(__ -> doToggle())
+                    .subscribe();
         } else {
             doToggle();
         }
