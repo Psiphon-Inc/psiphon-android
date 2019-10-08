@@ -11,6 +11,7 @@ import java.io.Reader;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
 import io.reactivex.Single;
 import kin.sdk.WhitelistableTransaction;
 import okhttp3.Call;
@@ -22,14 +23,15 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 class ServerCommunicator {
-    private final String friendBotUrl;
+    private static final int RETRIES_LIMIT = 5;
+    private final String kinApplicationServerUrl;
     private final OkHttpClient okHttpClient;
 
     /**
-     * @param friendBotUrl the URL to the friend bot server
+     * @param kinApplicationServerUrl the URL to the kin application server URL
      */
-    ServerCommunicator(@NonNull String friendBotUrl) {
-        this.friendBotUrl = friendBotUrl;
+    ServerCommunicator(@NonNull String kinApplicationServerUrl) {
+        this.kinApplicationServerUrl = kinApplicationServerUrl;
 
         okHttpClient = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
@@ -45,7 +47,23 @@ class ServerCommunicator {
      * @return a completable which fires on complete after receiving a successful response
      */
     Completable createAccount(@NonNull String address) {
-        return createAccountInner(address);
+        return createAccountInner(address)
+                .retryWhen(errors ->
+                        errors.zipWith(
+                                Flowable.range(1, RETRIES_LIMIT),
+                                (error, retryCount) -> {
+                                    if (retryCount < RETRIES_LIMIT) {
+                                        // exponential backoff with timer
+                                        double retryInSeconds = Math.pow(3, retryCount);
+                                        Utils.MyLog.g("KinManager: will retry registering account on blockchain in " + retryInSeconds + " seconds due to error: " + error);
+                                        return Flowable.timer((long) retryInSeconds, TimeUnit.SECONDS);
+                                    } else {
+                                        return Flowable.error(error);
+                                    }
+                                })
+                                .flatMap(x -> x)
+                )
+                .doOnComplete(() -> Utils.MyLog.g("KinManager: success registering account on the blockchain"));
     }
 
     private Completable createAccountInner(@NonNull String address) {
@@ -57,6 +75,7 @@ class ServerCommunicator {
 
             final Call call;
             try {
+                Utils.MyLog.g("KinManager: registering account on the blockchain");
                 call = okHttpClient.newCall(request);
                 emitter.setCancellable(call::cancel);
                 Response response = okHttpClient.newCall(request).execute();
@@ -78,8 +97,7 @@ class ServerCommunicator {
                     emitter.onError(e);
                 }
             }
-        })
-                .doOnComplete(() -> Utils.MyLog.g("KinManager: success registering account on the blockchain"));
+        });
     }
 
     /**
@@ -90,7 +108,23 @@ class ServerCommunicator {
      * @return the whitelist transaction data from the server
      */
     Single<String> whitelistTransaction(@NonNull String address, @NonNull WhitelistableTransaction whitelistableTransaction) {
-        return whitelistTransactionInner(address, whitelistableTransaction);
+        return whitelistTransactionInner(address, whitelistableTransaction)
+                .retryWhen(errors ->
+                        errors.zipWith(
+                                Flowable.range(1, RETRIES_LIMIT),
+                                (error, retryCount) -> {
+                                    if (retryCount < RETRIES_LIMIT) {
+                                        // exponential backoff with timer
+                                        double retryInSeconds = Math.pow(3, retryCount);
+                                        Utils.MyLog.g("KinManager: will retry whitelisting transaction in " + retryInSeconds + " seconds due to error: " + error);
+                                        return Flowable.timer((long) retryInSeconds, TimeUnit.SECONDS);
+                                    } else {
+                                        return Flowable.error(error);
+                                    }
+                                })
+                                .flatMap(x -> x)
+                )
+                .doOnSuccess(__ -> Utils.MyLog.g("KinManager: success whitelisting a transaction"));
     }
 
     private Single<String> whitelistTransactionInner(@NonNull String address, @NonNull WhitelistableTransaction whitelistableTransaction) {
@@ -107,12 +141,12 @@ class ServerCommunicator {
                 Response response = call.execute();
                 if (response.isSuccessful()) {
                     if (response.body() != null) {
-                        String hash = parseFriendBotResponse(response.body().charStream());
+                        String hash = parseKinApplicationServerResponse(response.body().charStream());
                         if (!emitter.isDisposed()) {
                             emitter.onSuccess(hash);
                         }
                     } else {
-                        String msg = "KinManager: whitelist transaction failed with code " + response.code();
+                        String msg = "KinManager: whitelist transaction failed with empty body";
                         Utils.MyLog.g(msg);
                         if (!emitter.isDisposed()) {
                             emitter.onError(new Exception(msg));
@@ -144,23 +178,23 @@ class ServerCommunicator {
     }
 
     @NonNull
-    private String parseFriendBotResponse(@NonNull Reader reader) {
+    private String parseKinApplicationServerResponse(@NonNull Reader reader) {
         JsonParser jsonParser = new JsonParser();
         JsonObject jsonObject = jsonParser.parse(reader).getAsJsonObject();
         return jsonObject.get("hash").getAsString();
     }
 
     @NonNull
-    private HttpUrl.Builder getFriendBotUrlBuilder() {
+    private HttpUrl.Builder getKinApplicationServerUrlBuilder() {
         return new HttpUrl.Builder()
                 .scheme("https")
-                .host(friendBotUrl)
+                .host(kinApplicationServerUrl)
                 .addPathSegment("v1");
     }
 
     @NonNull
     private HttpUrl getCreateAccountUrl(@NonNull String address) {
-        return getFriendBotUrlBuilder()
+        return getKinApplicationServerUrlBuilder()
                 .addPathSegment("create")
                 .addQueryParameter("address", address)
                 .build();
@@ -168,7 +202,7 @@ class ServerCommunicator {
 
     @NonNull
     private HttpUrl getWhiteListTransactionUrl(@NonNull String address) {
-        return getFriendBotUrlBuilder()
+        return getKinApplicationServerUrlBuilder()
                 .addPathSegment("whitelist")
                 .addQueryParameter("address", address)
                 .build();

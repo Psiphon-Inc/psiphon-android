@@ -8,7 +8,7 @@ import com.psiphon3.psiphonlibrary.Utils;
 import java.math.BigDecimal;
 
 import io.reactivex.Completable;
-import io.reactivex.Maybe;
+import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
 import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
@@ -91,46 +91,51 @@ public class KinManager {
         // Note the usage of switchMap
         return tunnelConnectedBehaviorRelay
                 .distinctUntilChanged()
-                .switchMapMaybe(isConnected ->
-                        isConnected ? kinOptInStateBehaviorRelay.firstOrError().toMaybe() : Maybe.empty())
-                .distinctUntilChanged()
-                .doOnNext(isOptedIn -> Utils.MyLog.g("KinManager: user " + (isOptedIn ? "opted in" : "opted out")))
-                .switchMapSingle(isOptedIn -> {
-                    // On opt outs schedule emptying and deletion of existing account.
-                    // On opt ins just get an account locally, either existing or new, do not try to
-                    // register the account on the blockchain at this point, AccountHelper::emptyAccount
-                    // and AccountHelper::transferOut will register the account on the blockchain if
-                    // needed.
-                    Completable completable;
-                    if (isOptedIn) {
-                        completable = clientHelper.getAccount()
-                                .doOnError(e -> Utils.MyLog.g("KinManager: error getting an account: " + e))
-                                .ignoreElement();
+                .switchMapSingle(isConnected -> {
+                    if (isConnected) {
+                        return kinOptInStateBehaviorRelay
+                                .firstOrError()
+                                .doOnSuccess(isOptedIn -> Utils.MyLog.g("KinManager: user " + (isOptedIn ? "opted in" : "opted out")))
+                                .flatMap(isOptedIn -> {
+                                    // On opt outs schedule emptying and deletion of existing account.
+                                    // On opt ins just get an account locally, either existing or new, do not try to
+                                    // register the account on the blockchain at this point, AccountHelper::emptyAccount
+                                    // and AccountHelper::transferOut will register the account on the blockchain if
+                                    // needed.
+                                    Completable completable;
+                                    if (isOptedIn) {
+                                        completable = clientHelper.getAccount()
+                                                .doOnError(e -> Utils.MyLog.g("KinManager: error getting an account: " + e))
+                                                .ignoreElement();
+                                    } else {
+                                        completable = clientHelper.accountMaybe()
+                                                .flatMapCompletable(kinAccount -> accountHelper.emptyAccount(context, kinAccount)
+                                                        .andThen(Completable.fromRunnable(clientHelper::deleteAccount)))
+                                                .doOnError(e -> Utils.MyLog.g("KinManager: error emptying account: " + e));
+                                    }
+                                    return completable
+                                            // Pass through original opt in value
+                                            .toSingleDefault(isOptedIn);
+                                })
+                                .flatMap(isOptedIn -> {
+                                    // If opted in charge for connection
+                                    Completable completable;
+                                    if (isOptedIn) {
+                                        completable = clientHelper.accountMaybe()
+                                                .flatMapCompletable(kinAccount -> accountHelper.transferOut(context, kinAccount, CONNECTION_COST)
+                                                        .onErrorResumeNext(e -> chargeErrorHandler(context, kinAccount, e)));
+                                    } else {
+                                        completable = Completable.complete();
+                                    }
+                                    return completable
+                                            // Emit any value at this point as it will be ignored and only
+                                            // serves a purpose of signaling that the flow has completed.
+                                            .toSingleDefault(new Object());
+                                });
                     } else {
-                        completable = clientHelper.accountMaybe()
-                                .flatMapCompletable(kinAccount -> accountHelper.emptyAccount(context, kinAccount)
-                                        .andThen(Completable.fromRunnable(clientHelper::deleteAccount)))
-                                .doOnError(e -> Utils.MyLog.g("KinManager: error emptying account: " + e));
+                        return Single.never();
                     }
-                    return completable
-                            // Pass through original opt in value
-                            .toSingleDefault(isOptedIn);
                 })
-                .flatMapSingle(isOptedIn -> {
-                    // If opted in charge for connection
-                    Completable completable;
-                    if (isOptedIn) {
-                        completable = clientHelper.accountMaybe()
-                                .flatMapCompletable(kinAccount -> accountHelper.transferOut(context, kinAccount, CONNECTION_COST)
-                                        .onErrorResumeNext(e -> chargeErrorHandler(context, kinAccount, e)));
-                    } else {
-                        completable = Completable.complete();
-                    }
-                    return completable
-                            // Pass through original opt in value
-                            .toSingleDefault(isOptedIn);
-                })
-                // take exactly one emission and complete ignoring the value.
                 .firstOrError()
                 .ignoreElement()
                 .doOnError(e -> Utils.MyLog.g("KinManager: kin flow error: " + e))
