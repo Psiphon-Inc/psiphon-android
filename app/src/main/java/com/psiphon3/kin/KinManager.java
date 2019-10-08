@@ -93,6 +93,7 @@ public class KinManager {
                 .distinctUntilChanged()
                 .switchMapMaybe(isConnected ->
                         isConnected ? kinOptInStateBehaviorRelay.firstOrError().toMaybe() : Maybe.empty())
+                .distinctUntilChanged()
                 .doOnNext(isOptedIn -> Utils.MyLog.g("KinManager: user " + (isOptedIn ? "opted in" : "opted out")))
                 .switchMapSingle(isOptedIn -> {
                     // On opt outs schedule emptying and deletion of existing account.
