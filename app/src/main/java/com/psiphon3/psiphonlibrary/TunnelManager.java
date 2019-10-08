@@ -254,6 +254,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             m_tunnelThread.start();
             m_tunnelConnectedSubject.onNext(Boolean.FALSE);
             if(m_tunnelState.isVPN) {
+                // If the Kin opt in state is not present such as in case of a active subscription treat as opt out
                 KinManager.getInstance(m_parentService).onKinOptInState(intent.getBooleanExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, false));
             }
         }
@@ -327,7 +328,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_compositeDisposable.clear();
         m_compositeDisposable.add(purchaseCheckFlowDisposable());
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
-        m_compositeDisposable.add(KinManager.getInstance(m_parentService).kinFlowDisposable(m_parentService.getApplicationContext()));
+        m_compositeDisposable.add(KinManager.getInstance(m_parentService).kinFlowDisposable(m_parentService));
     }
 
     // Sends handshake intent and tunnel state updates to the client Activity

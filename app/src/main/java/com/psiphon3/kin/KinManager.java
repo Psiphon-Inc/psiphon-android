@@ -3,7 +3,6 @@ package com.psiphon3.kin;
 import android.content.Context;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
-import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.psiphonlibrary.Utils;
 
 import java.math.BigDecimal;
@@ -23,8 +22,7 @@ public class KinManager {
     private final ClientHelper clientHelper;
     private final AccountHelper accountHelper;
     private final BehaviorRelay<Boolean> tunnelConnectedBehaviorRelay = BehaviorRelay.create();
-
-    private PublishRelay<Boolean> kinOptInStateRelay = PublishRelay.create();
+    private BehaviorRelay<Boolean> kinOptInStateBehaviorRelay = BehaviorRelay.create();
 
     KinManager(ClientHelper clientHelper, AccountHelper accountHelper) {
         this.clientHelper = clientHelper;
@@ -66,7 +64,7 @@ public class KinManager {
         KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
         ClientHelper clientHelper = new ClientHelper(kinClient);
         SettingsManager settingsManager = new SettingsManager();
-        ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getFriendBotServerUrl());
+        ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getKinApplicationServerUrl());
         AccountHelper accountHelper = new AccountHelper(serverCommunicator, settingsManager, environment.getPsiphonWalletAddress());
 
         return instance = new KinManager(clientHelper, accountHelper);
@@ -93,7 +91,8 @@ public class KinManager {
         // Note the usage of switchMap
         return tunnelConnectedBehaviorRelay
                 .distinctUntilChanged()
-                .switchMapMaybe(isConnected -> isConnected ? kinOptInStateRelay.firstOrError().toMaybe() : Maybe.empty())
+                .switchMapMaybe(isConnected ->
+                        isConnected ? kinOptInStateBehaviorRelay.firstOrError().toMaybe() : Maybe.empty())
                 .doOnNext(isOptedIn -> Utils.MyLog.g("KinManager: user " + (isOptedIn ? "opted in" : "opted out")))
                 .switchMapSingle(isOptedIn -> {
                     // On opt outs schedule emptying and deletion of existing account.
@@ -144,6 +143,6 @@ public class KinManager {
     }
 
     public void onKinOptInState(Boolean isOptedIn) {
-        kinOptInStateRelay.accept(isOptedIn);
+        kinOptInStateBehaviorRelay.accept(isOptedIn);
     }
 }

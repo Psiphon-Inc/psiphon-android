@@ -1,9 +1,5 @@
 package com.psiphon3.kin;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.support.test.InstrumentationRegistry;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,10 +13,7 @@ import kin.sdk.exception.OperationFailedException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ServerCommunicatorTest extends BaseKinTest {
     private ServerCommunicator serverCommunicator;
@@ -30,7 +23,7 @@ public class ServerCommunicatorTest extends BaseKinTest {
     public void setUp() {
         initMocks();
 
-        serverCommunicator = new ServerCommunicator(env.getFriendBotServerUrl());
+        serverCommunicator = new ServerCommunicator(env.getKinApplicationServerUrl());
         kinClient = new KinClient(context, env.getKinEnvironment(), Environment.PSIPHON_APP_ID);
     }
 

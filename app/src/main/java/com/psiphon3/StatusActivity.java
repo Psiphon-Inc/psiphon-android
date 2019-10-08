@@ -49,6 +49,7 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.kin.KinPermissionManager;
 import com.psiphon3.psicash.PsiCashClient;
@@ -80,6 +81,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -115,6 +117,7 @@ public class StatusActivity
     private PublishRelay<Boolean> activeSpeedBoostRelay;
     private KinPermissionManager kinPermissionManager;
     private Disposable toggleClickDisposable;
+    private BehaviorRelay<PsiphonAdManager.SubscriptionStatus> subscriptionStatusBehaviorRelay = BehaviorRelay.create();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -417,8 +420,8 @@ public class StatusActivity
     }
 
     public void onToggleClick(View v) {
-        // Only check for payment when starting in WDM
-        if (!isServiceRunning() && getTunnelConfigWholeDevice()) {
+        // Only check for payment when starting in WDM, also make sure subscribers don't get prompted for Kin.
+        if (!isServiceRunning() && getTunnelConfigWholeDevice() && !Utils.getHasValidSubscription(getApplicationContext())) {
             // prevent multiple confirmation dialogs
             if (toggleClickDisposable != null && !toggleClickDisposable.isDisposed()) {
                 return;
@@ -1071,9 +1074,11 @@ public class StatusActivity
     {
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
         psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
+        onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
         Utils.setHasValidSubscription(this, true);
         this.m_retainedDataFragment.setCurrentPurchase(purchase);
         hidePsiCashTab();
+        enableKinOptInCheckBox(false);
 
         // Pass the most current purchase data to the service if it is running so the tunnel has a
         // chance to update authorization and restart if the purchase is new.
@@ -1093,10 +1098,21 @@ public class StatusActivity
     {
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
         psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
+        onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
         Utils.setHasValidSubscription(this, false);
         currentRateLimitModeRelay.accept(RateLimitMode.AD_MODE_LIMITED);
         this.m_retainedDataFragment.setCurrentPurchase(null);
         showPsiCashTabIfHasValidToken();
+        enableKinOptInCheckBox(true);
+    }
+
+    private void enableKinOptInCheckBox(boolean enable) {
+        CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
+        if(enable) {
+            checkBoxKinEnabled.setVisibility(View.VISIBLE);
+        } else {
+            checkBoxKinEnabled.setVisibility(View.GONE);
+        }
     }
 
     private void setRateLimitUI(RateLimitMode rateLimitMode) {
@@ -1126,7 +1142,10 @@ public class StatusActivity
     {
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
         psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
+        onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
+
         showPsiCashTabIfHasValidToken();
+        enableKinOptInCheckBox(true);
 
         // try again next time
         deInitIab();
@@ -1145,6 +1164,10 @@ public class StatusActivity
                 doStartUp();
             }
         }
+    }
+
+    private void onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus status) {
+        subscriptionStatusBehaviorRelay.accept(status);
     }
 
     public void onRateLimitUpgradeButtonClick(View v) {
@@ -1292,7 +1315,10 @@ public class StatusActivity
     @Override
     protected void configureServiceIntent(Intent intent) {
         super.configureServiceIntent(intent);
-        intent.putExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, kinPermissionManager.isOptedIn(this));
+        // Only pass Kin opt in state if user is not currently subscribed
+        if(!Utils.getHasValidSubscription(getApplicationContext())) {
+            intent.putExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, kinPermissionManager.isOptedIn(this));
+        }
     }
 
     private void showVpnAlertDialog(int titleId, int messageId) {
@@ -1318,11 +1344,16 @@ public class StatusActivity
     };
 
     private void startObservingKinOptInState() {
-        kinOptInStateDisposable = kinPermissionManager
+        kinOptInStateDisposable = subscriptionStatusBehaviorRelay.switchMapMaybe(subscriptionStatus -> {
+            if (subscriptionStatus == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER) {
+                return Maybe.empty();
+            } else {
                 // ask if the user agrees to kin if they haven't yet
-                .getUsersAgreementToKin(this)
-                .doOnSuccess(this::setKinState)
-                .subscribe();
+                return kinPermissionManager.getUsersAgreementToKin(this)
+                        .toMaybe()
+                        .doOnSuccess(this::setKinState);
+            }
+        }).subscribe();
     }
 
     private void setKinState(boolean optedIn) {
@@ -1333,8 +1364,8 @@ public class StatusActivity
             checkBoxKinEnabled.setChecked(false);
         }
 
-        // Notify tunnel service too if it is running.
-        if(isServiceRunning()) {
+        // Notify tunnel service too if it is running and the user is not subscribed
+        if(isServiceRunning() && !Utils.getHasValidSubscription(getApplicationContext())) {
             Bundle data = new Bundle();
             data.putBoolean(TunnelManager.KIN_OPT_IN_STATE_EXTRA, optedIn);
             sendServiceMessage(TunnelManager.ClientToServiceMessage.KIN_OPT_IN_STATE.ordinal(), data);

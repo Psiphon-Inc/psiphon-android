@@ -4,12 +4,11 @@ package com.psiphon3.kin;
  * Provides network details
  */
 public class Environment {
-    // TODO: Get these values
     public static final Environment PRODUCTION = new Environment(
             "kin.psiphon.io",
             "GAH3A3LKC4XOX6ZUKQWMW3KIMVB2J45NV3OPYBVWADS2RRCYXK7BU3XK",
             new kin.sdk.Environment(
-                    "https://horizon.kinfederation.com",
+                    "https://horizon.psiphon.io",
                     "Kin Mainnet ; December 2018"
             )
     );
@@ -17,7 +16,7 @@ public class Environment {
             "kin-testnet.psiphon.io",
             "GCWUL5BFYTRVMM4WYHABI5C2Y5VZ7VB5N2BKPDMGG3OG7DYN3FBCTVDS",
             new kin.sdk.Environment(
-                    "https://horizon-testnet.kininfrastructure.com/",
+                    "https://horizon-testnet.psiphon.io/",
                     "Kin Testnet ; December 2018"
             )
     );
@@ -25,18 +24,18 @@ public class Environment {
     // TODO: Get real app id
     static final String PSIPHON_APP_ID = "FAKE";
 
-    private final String friendBotServerUrl;
+    private final String kinApplicationServerUrl;
     private final String psiphonWalletAddress;
     private final kin.sdk.Environment kinEnvironment;
 
-    private Environment(String friendBotServerUrl, String psiphonWalletAddress, kin.sdk.Environment kinEnvironment) {
-        this.friendBotServerUrl = friendBotServerUrl;
+    private Environment(String kinApplicationServerUrl, String psiphonWalletAddress, kin.sdk.Environment kinEnvironment) {
+        this.kinApplicationServerUrl = kinApplicationServerUrl;
         this.psiphonWalletAddress = psiphonWalletAddress;
         this.kinEnvironment = kinEnvironment;
     }
 
-    final String getFriendBotServerUrl() {
-        return friendBotServerUrl;
+    final String getKinApplicationServerUrl() {
+        return kinApplicationServerUrl;
     }
 
     final String getPsiphonWalletAddress() {
