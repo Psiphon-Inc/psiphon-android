@@ -50,19 +50,20 @@ class ServerCommunicator {
         return createAccountInner(address)
                 .retryWhen(errors ->
                         errors.zipWith(
-                                Flowable.range(1, RETRIES_LIMIT),
+                                Flowable.range(1, RETRIES_LIMIT + 1),
                                 (error, retryCount) -> {
-                                    if (retryCount < RETRIES_LIMIT) {
+                                    if (retryCount > RETRIES_LIMIT || error instanceof FatalException) {
+                                        return Flowable.error(error);
+                                    } else {
                                         // exponential backoff with timer
                                         double retryInSeconds = Math.pow(3, retryCount);
                                         Utils.MyLog.g("KinManager: will retry registering account on blockchain in " + retryInSeconds + " seconds due to error: " + error);
                                         return Flowable.timer((long) retryInSeconds, TimeUnit.SECONDS);
-                                    } else {
-                                        return Flowable.error(error);
                                     }
                                 })
                                 .flatMap(x -> x)
                 )
+                .doOnDispose(() ->  Utils.MyLog.g("KinManager: register account subscription is disposed"))
                 .doOnComplete(() -> Utils.MyLog.g("KinManager: success registering account on the blockchain"));
     }
 
@@ -87,15 +88,21 @@ class ServerCommunicator {
                 } else {
                     String msg = "KinManager: register account on the blockchain failed with code " + response.code();
                     Utils.MyLog.g(msg);
+                    final Throwable e;
+                    if (response.code() >= 400 && response.code() <= 499) {
+                        e = new FatalException(msg);
+                    } else {
+                        e = new RetriableException(msg);
+                    }
                     if (!emitter.isDisposed()) {
-                        emitter.onError(new Exception(msg));
+                        emitter.onError(e);
                     }
                 }
                 response.close();
             } catch (IOException e) {
                 Utils.MyLog.g(e.getMessage());
                 if (!emitter.isDisposed()) {
-                    emitter.onError(e);
+                    emitter.onError(new RetriableException(e));
                 }
             }
         });
@@ -112,19 +119,20 @@ class ServerCommunicator {
         return whitelistTransactionInner(address, whitelistableTransaction)
                 .retryWhen(errors ->
                         errors.zipWith(
-                                Flowable.range(1, RETRIES_LIMIT),
+                                Flowable.range(1, RETRIES_LIMIT + 1),
                                 (error, retryCount) -> {
-                                    if (retryCount < RETRIES_LIMIT) {
+                                    if (retryCount > RETRIES_LIMIT || error instanceof FatalException) {
+                                        return Flowable.error(error);
+                                    } else {
                                         // exponential backoff with timer
                                         double retryInSeconds = Math.pow(3, retryCount);
                                         Utils.MyLog.g("KinManager: will retry whitelisting transaction in " + retryInSeconds + " seconds due to error: " + error);
                                         return Flowable.timer((long) retryInSeconds, TimeUnit.SECONDS);
-                                    } else {
-                                        return Flowable.error(error);
                                     }
                                 })
                                 .flatMap(x -> x)
                 )
+                .doOnDispose(() ->  Utils.MyLog.g("KinManager: whitelisting a transaction subscription is disposed"))
                 .doOnSuccess(__ -> Utils.MyLog.g("KinManager: success whitelisting a transaction"));
     }
 
@@ -150,21 +158,27 @@ class ServerCommunicator {
                         String msg = "KinManager: whitelist transaction failed with empty body";
                         Utils.MyLog.g(msg);
                         if (!emitter.isDisposed()) {
-                            emitter.onError(new Exception(msg));
+                            emitter.onError(new RetriableException(msg));
                         }
                     }
                 } else {
                     String msg = "KinManager: whitelist transaction failed with code " + response.code();
                     Utils.MyLog.g(msg);
+                    final Throwable e;
+                    if (response.code() >= 400 && response.code() <= 499) {
+                        e = new FatalException(msg);
+                    } else {
+                        e = new RetriableException(msg);
+                    }
                     if (!emitter.isDisposed()) {
-                        emitter.onError(new Exception(msg));
+                        emitter.onError(e);
                     }
                 }
                 response.close();
             } catch (IOException e) {
                 Utils.MyLog.g(e.getMessage());
                 if (!emitter.isDisposed()) {
-                    emitter.onError(e);
+                    emitter.onError(new RetriableException(e));
                 }
             }
         });
@@ -208,5 +222,21 @@ class ServerCommunicator {
                 .addPathSegment("whitelist")
                 .addQueryParameter("address", address)
                 .build();
+    }
+
+    private class RetriableException extends Throwable {
+        RetriableException(String cause) {
+            super(cause);
+        }
+
+        public RetriableException(Throwable cause) {
+            super.initCause(cause);
+        }
+    }
+
+    private class FatalException extends Throwable {
+        FatalException(String cause) {
+            super(cause);
+        }
     }
 }
