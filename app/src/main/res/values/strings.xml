@@ -67,4 +67,13 @@
     <string name="label_ok">OK</string>
     <string name="preference_navigate_to_vpn_setting_title">Always-on VPN</string>
     <string name="preference_navigate_to_vpn_setting_summary">Go to system settings to enable Always-on VPN</string>
+    <string name="lbl_kin_onboard_explanation"><![CDATA[Kin is a new way to help support Psiphon.\n\nIf you agree, a Kin wallet will be created for you, and each time you connect it will make a small donation to Psiphon.\n\nWhy participate? When people spend Kin through Psiphon it helps to fund our servers.\n\nTo learn more about Kin go to: kin.org]]></string>
+    <string name="lbl_no">No</string>
+    <string name="lbl_yes">Yes</string>
+    <string name="lbl_kin_opt_out">Are you sure you want to opt out of Kin? \n\nYou can always re-join the program in the future but until then you won\'t be helping Psiphon out.</string>
+    <string name="lbl_opt_in_to_kin">Opt in to Kin</string>
+    <string name="lbl_kin_pay">Thank you for opting into Kin, would you like to continue donating 1 Kin to Psiphon when you connect?</string>
+    <string name="title_donate_kin">Donate Kin</string>
+    <string name="lbl_help_psiphon">Help Psiphon!</string>
+    <string name="lbl_opt_out">Opt-out</string>
 </resources>

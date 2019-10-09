@@ -4,6 +4,8 @@ android {
     compileSdkVersion 28
     useLibrary 'org.apache.http.legacy'
 
+    android.defaultConfig.vectorDrawables.useSupportLibrary = true
+
     repositories{
         flatDir{
             dirs 'libs'
@@ -28,7 +30,7 @@ android {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
                 applicationId "com.psiphon3.subscription"
                 resValue "string", "tray__authority", "${applicationId}.tray"
-                minSdkVersion 14
+                minSdkVersion 16
                 targetSdkVersion 28
                 versionCode verCode
                 versionName verName
@@ -49,9 +51,11 @@ android {
 
     buildTypes {
         debug {
+            debuggable true
             pseudoLocalesEnabled true
         }
         release {
+            debuggable false
             ndk {
                 // ABI configurations of native libraries Gradle should package with the APK.
                 abiFilters 'armeabi-v7a', 'arm64-v8a'
@@ -118,6 +122,9 @@ def getBuildProperty(String propertyName) {
 repositories {
     jcenter()
     maven { url "https://s3.amazonaws.com/moat-sdk-builds" }
+    maven {
+        url 'https://jitpack.io'
+    }
 }
 
 dependencies {
@@ -156,11 +163,16 @@ dependencies {
     implementation "com.jakewharton.rxbinding2:rxbinding-support-v4:$rootProject.ext.rxbindingSupportVersion"
     implementation "com.squareup.okhttp3:okhttp:$rootProject.ext.okhttpVersion"
 
+    implementation 'com.github.kinecosystem.kin-sdk-android:kin-sdk-lib:1.0.7'
+
     api "android.arch.lifecycle:extensions:$rootProject.ext.androidLifecycleExtensionsVersion"
 
     compileOnly "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
     annotationProcessor "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
 
     testImplementation "junit:junit:$rootProject.ext.junitVersion"
+    testImplementation "org.mockito:mockito-core:$rootProject.ext.mockitoVersion"
+    testImplementation "org.mockito:mockito-core:$rootProject.ext.mockitoVersion"
+    androidTestImplementation "org.mockito:mockito-android:$rootProject.ext.mockitoVersion"
     androidTestImplementation "com.android.support.test:runner:$rootProject.ext.testRunnerVersion"
 }
