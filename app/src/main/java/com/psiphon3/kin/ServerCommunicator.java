@@ -102,7 +102,7 @@ class ServerCommunicator {
             } catch (IOException e) {
                 Utils.MyLog.g(e.getMessage());
                 if (!emitter.isDisposed()) {
-                    emitter.onError(new RetriableException(e));
+                    emitter.onError(new RetriableException(e.toString()));
                 }
             }
         });
@@ -178,7 +178,7 @@ class ServerCommunicator {
             } catch (IOException e) {
                 Utils.MyLog.g(e.getMessage());
                 if (!emitter.isDisposed()) {
-                    emitter.onError(new RetriableException(e));
+                    emitter.onError(new RetriableException(e.toString()));
                 }
             }
         });
@@ -227,10 +227,6 @@ class ServerCommunicator {
     private class RetriableException extends Throwable {
         RetriableException(String cause) {
             super(cause);
-        }
-
-        public RetriableException(Throwable cause) {
-            super.initCause(cause);
         }
     }
 
