@@ -253,9 +253,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             });
             m_tunnelThread.start();
             m_tunnelConnectedSubject.onNext(Boolean.FALSE);
+            // If running in WDM pass Kin opt in state to KinManager.
             if(m_tunnelState.isVPN) {
-                // If the Kin opt in state is not present such as in case of a active subscription treat as opt out
-                KinManager.getInstance(m_parentService).onKinOptInState(intent.getBooleanExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, false));
+                if(intent.hasExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA)) {
+                    KinManager.getInstance(m_parentService).onKinOptInState(intent.getBooleanExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, false));
+                }
             }
         }
 
@@ -570,6 +572,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     if (manager != null) {
                         Bundle data = msg.getData();
                         Context context = manager.m_parentService;
+                        // If running in WDM pass Kin opt in state to KinManager.
                         if(manager.m_tunnelState.isVPN) {
                             KinManager.getInstance(context).onKinOptInState(data.getBoolean(KIN_OPT_IN_STATE_EXTRA, false));
                         }
