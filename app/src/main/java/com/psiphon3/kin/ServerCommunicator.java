@@ -91,6 +91,7 @@ class ServerCommunicator {
                         emitter.onError(new Exception(msg));
                     }
                 }
+                response.close();
             } catch (IOException e) {
                 Utils.MyLog.g(e.getMessage());
                 if (!emitter.isDisposed()) {
@@ -159,6 +160,7 @@ class ServerCommunicator {
                         emitter.onError(new Exception(msg));
                     }
                 }
+                response.close();
             } catch (IOException e) {
                 Utils.MyLog.g(e.getMessage());
                 if (!emitter.isDisposed()) {
