@@ -1315,10 +1315,10 @@ public class StatusActivity
     @Override
     protected void configureServiceIntent(Intent intent) {
         super.configureServiceIntent(intent);
-        // Only pass Kin opt in state if user is not currently subscribed
-        if(!Utils.getHasValidSubscription(getApplicationContext())) {
-            intent.putExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, kinPermissionManager.isOptedIn(this));
-        }
+        // Pass Kin opt in state, if user is not subscribed treat as opt out.
+        boolean kinOptInState = !Utils.getHasValidSubscription(getApplicationContext())
+                && kinPermissionManager.isOptedIn(this);
+        intent.putExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, kinOptInState);
     }
 
     private void showVpnAlertDialog(int titleId, int messageId) {
