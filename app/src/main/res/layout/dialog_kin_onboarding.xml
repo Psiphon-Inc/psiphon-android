@@ -45,7 +45,7 @@
         app:layout_constraintTop_toBottomOf="@+id/img_kin_onboarding_logo" />
 
     <android.support.constraint.ConstraintLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:paddingTop="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
