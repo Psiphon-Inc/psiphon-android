@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import io.reactivex.disposables.Disposables;
 import kin.sdk.WhitelistableTransaction;
 import okhttp3.Call;
 import okhttp3.HttpUrl;
@@ -78,7 +79,7 @@ class ServerCommunicator {
             try {
                 Utils.MyLog.g("KinManager: registering account on the blockchain");
                 call = okHttpClient.newCall(request);
-                emitter.setCancellable(call::cancel);
+                emitter.setDisposable(Disposables.fromAction(call::cancel));
                 Response response = okHttpClient.newCall(request).execute();
                 // HTTP code 409 means account already registered, treat as success
                 if ((response.isSuccessful() || response.code() == 409)) {
@@ -146,7 +147,7 @@ class ServerCommunicator {
             try {
                 Utils.MyLog.g("KinManager: whitelisting a transaction");
                 call = okHttpClient.newCall(request);
-                emitter.setCancellable(call::cancel);
+                emitter.setDisposable(Disposables.fromAction(call::cancel));
                 Response response = call.execute();
                 if (response.isSuccessful()) {
                     if (response.body() != null) {
