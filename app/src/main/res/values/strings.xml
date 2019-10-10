@@ -75,5 +75,6 @@
     <string name="lbl_kin_pay">Thank you for opting into Kin, would you like to continue donating 1 Kin to Psiphon when you connect?</string>
     <string name="title_donate_kin">Donate Kin</string>
     <string name="lbl_help_psiphon">Help Psiphon!</string>
+    <string name="lbl_help_psiphon_no_thanks">No thanks</string>
     <string name="lbl_opt_out">Opt-out</string>
 </resources>
