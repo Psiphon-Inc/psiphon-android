@@ -5,8 +5,6 @@ import android.content.Context;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.psiphon3.psiphonlibrary.Utils;
 
-import java.math.BigDecimal;
-
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
@@ -34,19 +32,11 @@ public class KinManager {
         // otherwise just let the error continue
         if (!(e instanceof InsufficientKinException)) {
             return Completable.error(e);
-        }
-        return accountHelper.getCurrentBalance(context, kinAccount)
-                .onErrorReturnItem(BigDecimal.ZERO)
-                .map(BigDecimal::doubleValue)
-                .flatMapCompletable(balance -> {
-                    if(balance <  CONNECTION_COST) {
-                        return accountHelper.emptyAccount(context, kinAccount)
-                                .andThen(Completable.fromAction(clientHelper::deleteAccount))
-                                .andThen(clientHelper.getAccount())
-                                .flatMapCompletable(newAccount -> accountHelper.transferOut(context, newAccount, CONNECTION_COST));
-                    } //else
-                    return Completable.error(e);
-                });
+        } //else
+        return accountHelper.emptyAccount(context, kinAccount)
+                .andThen(Completable.fromAction(clientHelper::deleteAccount))
+                .andThen(clientHelper.getAccount())
+                .flatMapCompletable(newAccount -> accountHelper.transferOut(context, newAccount, CONNECTION_COST));
     }
 
     static KinManager getInstance(Context context, Environment environment) {

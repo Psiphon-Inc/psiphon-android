@@ -60,7 +60,7 @@ class AccountHelper {
                 // get the current balance
                 .flatMap(account -> getCurrentBalanceInner(account)
                         // return 0 here if we err
-                        .onErrorReturnItem(new BigDecimal(0))
+                        .onErrorReturnItem(BigDecimal.ZERO)
                         // turn it into a double
                         .map(BigDecimal::doubleValue)
                         // pass along the account & balance
