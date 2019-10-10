@@ -15,7 +15,7 @@ import kin.sdk.KinClient;
 import kin.sdk.exception.InsufficientKinException;
 
 public class KinManager {
-    private static final Double CONNECTION_COST = 33d;
+    private static final Double CONNECTION_COST = 1d;
 
     private static KinManager instance;
 
