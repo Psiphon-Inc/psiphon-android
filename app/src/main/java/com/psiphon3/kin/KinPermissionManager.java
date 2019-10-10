@@ -99,6 +99,7 @@ public class KinPermissionManager {
                     .setMessage(R.string.lbl_kin_pay)
                     .setNeutralButton(R.string.lbl_opt_out, (dialog, which) -> {
                         settingsManager.setHasAgreedToAutoPay(context, false);
+                        settingsManager.setIsOptedIn(context, false);
                         if (!emitter.isDisposed()) {
                             emitter.onSuccess(false);
                         }

@@ -433,6 +433,7 @@ public class StatusActivity
 
             toggleClickDisposable = Single.fromCallable(() -> kinPermissionManager.isOptedIn(getApplicationContext()))
                     .flatMap(optedIn -> optedIn ? kinPermissionManager.confirmDonation(this) : Single.just(false))
+                    .doOnSuccess(this::setKinState)
                     .doOnSuccess(__ -> doToggle())
                     .subscribe();
         } else {
