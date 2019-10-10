@@ -28,15 +28,15 @@ public class KinManager {
     }
 
     private Completable chargeErrorHandler(Context context, KinAccount kinAccount, Throwable e) {
-        // If it says we don't have enough kin, check if we should get new account
-        // otherwise just let the error continue
-        if (!(e instanceof InsufficientKinException)) {
-            return Completable.error(e);
+        // If it says we don't have enough kin then empty current account, get a new one and try
+        // charging for connection again, otherwise just let the error continue
+        if (e instanceof InsufficientKinException) {
+            return accountHelper.emptyAccount(context, kinAccount)
+                    .andThen(Completable.fromAction(clientHelper::deleteAccount))
+                    .andThen(clientHelper.getAccount())
+                    .flatMapCompletable(newAccount -> accountHelper.transferOut(context, newAccount, CONNECTION_COST));
         } //else
-        return accountHelper.emptyAccount(context, kinAccount)
-                .andThen(Completable.fromAction(clientHelper::deleteAccount))
-                .andThen(clientHelper.getAccount())
-                .flatMapCompletable(newAccount -> accountHelper.transferOut(context, newAccount, CONNECTION_COST));
+        return Completable.error(e);
     }
 
     static KinManager getInstance(Context context, Environment environment) {
