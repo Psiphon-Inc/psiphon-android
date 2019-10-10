@@ -158,14 +158,6 @@
                     android:layout_gravity="center"
                     android:orientation="horizontal">
 
-                    <Spinner
-                        android:id="@+id/regionSelector"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:drawSelectorOnTop="true"
-                        android:textAppearance="?android:attr/textAppearanceSmall" />
-
                     <TextView
                         android:id="@+id/regionPrompt"
                         android:layout_width="wrap_content"
@@ -174,6 +166,15 @@
                         android:layout_marginRight="5dp"
                         android:text="@string/region_selector"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
+
+                    <Spinner
+                        android:id="@+id/regionSelector"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:drawSelectorOnTop="true"
+                        android:textAppearance="?android:attr/textAppearanceSmall" />
+
                 </LinearLayout>
 
                 <LinearLayout
