@@ -114,7 +114,6 @@ public class StatusActivity
     private boolean disableInterstitialOnNextTabChange;
     private PublishRelay<RateLimitMode> currentRateLimitModeRelay;
     private Disposable currentRateModeDisposable;
-    private Disposable kinOptInStateDisposable;
     private PublishRelay<Boolean> activeSpeedBoostRelay;
     private KinPermissionManager kinPermissionManager;
     private Disposable toggleClickDisposable;
@@ -124,10 +123,11 @@ public class StatusActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        kinPermissionManager = new KinPermissionManager();
-
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main);
+
+        kinPermissionManager = new KinPermissionManager();
+        initializeKinOptInState();
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_tabSpecsList = new ArrayList<>();
@@ -219,7 +219,6 @@ public class StatusActivity
     protected void onResume()
     {
         startIab();
-        startObservingKinOptInState();
         super.onResume();
         if (m_startupPending) {
             m_startupPending = false;
@@ -228,17 +227,12 @@ public class StatusActivity
     }
 
     @Override
-    public void onDestroy()
-    {
-        if(startUpInterstitialDisposable != null) {
+    public void onDestroy() {
+        if (startUpInterstitialDisposable != null) {
             startUpInterstitialDisposable.dispose();
-        }
-        if(kinOptInStateDisposable != null) {
-            kinOptInStateDisposable.dispose();
         }
         currentRateModeDisposable.dispose();
         psiphonAdManager.onDestroy();
-
         super.onDestroy();
     }
 
@@ -1356,8 +1350,8 @@ public class StatusActivity
         }
     };
 
-    private void startObservingKinOptInState() {
-        kinOptInStateDisposable = subscriptionStatusBehaviorRelay.switchMapMaybe(subscriptionStatus -> {
+    private void initializeKinOptInState() {
+        subscriptionStatusBehaviorRelay.concatMapMaybe(subscriptionStatus -> {
             if (subscriptionStatus == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER) {
                 return Maybe.empty();
             } else {
@@ -1366,7 +1360,9 @@ public class StatusActivity
                         .toMaybe()
                         .doOnSuccess(this::setKinState);
             }
-        }).subscribe();
+        })
+                .take(1)
+                .subscribe();
     }
 
     private void setKinState(boolean optedIn) {
