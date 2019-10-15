@@ -67,14 +67,36 @@
     <string name="label_ok">OK</string>
     <string name="preference_navigate_to_vpn_setting_title">Always-on VPN</string>
     <string name="preference_navigate_to_vpn_setting_summary">Go to system settings to enable Always-on VPN</string>
-    <string name="lbl_kin_onboard_explanation"><![CDATA[Kin is a new way to help support Psiphon.\n\nIf you agree, a Kin wallet will be created for you, and each time you connect it will make a small donation to Psiphon.\n\nWhy participate? When people spend Kin through Psiphon it helps to fund our servers.\n\nTo learn more about Kin go to: kin.org]]></string>
-    <string name="lbl_no">No</string>
-    <string name="lbl_yes">Yes</string>
-    <string name="lbl_kin_opt_out">Are you sure you want to opt out of Kin? \n\nYou can always re-join the program in the future but until then you won\'t be helping Psiphon out.</string>
-    <string name="lbl_opt_in_to_kin">Opt in to Kin</string>
-    <string name="lbl_kin_pay">Thank you for opting into Kin, would you like to continue donating 1 Kin to Psiphon when you connect?</string>
-    <string name="title_donate_kin">Donate Kin</string>
+
+    <!-- Kin onboarding prompt text. Kin is a cryptocurrency name and should not be translated. Please, keep the line breaks and do not translate 'kin.org' at the end of the sentence
+    since it gets converted to a hyperlink automatically.-->
+    <string name="lbl_kin_onboard_explanation">Kin is a new way to help support Psiphon.\n\nIf you agree, a Kin wallet will be created for you, and each time you connect it will make a small donation to Psiphon.\n\nWhy participate? When people spend Kin through Psiphon it helps to fund our servers.\n\nTo learn more about Kin go to: kin.org</string>
+
+    <!-- Kin onboarding prompt positive button label.-->
     <string name="lbl_help_psiphon">Help Psiphon!</string>
+
+    <!-- Kin onboarding prompt negative button label.-->
     <string name="lbl_help_psiphon_no_thanks">No thanks</string>
+
+    <!-- Kin opt-out prompt text. Kin is a cryptocurrency name and should not be translated.-->
+    <string name="lbl_kin_opt_out">Are you sure you want to opt out of Kin? \n\nYou can always re-join the program in the future but until then you won\'t be helping Psiphon out.</string>
+
+    <!-- Kin opt-out prompt negative button label.-->
+    <string name="lbl_no">No</string>
+
+    <!-- Kin opt-out prompt positive button label, Kin auto-pay confirmation positive button label.-->
+    <string name="lbl_yes">Yes</string>
+
+    <!-- Kin opt-in checkbox label text, this checkbox is a part of the settings UI and can be clicked by the user at any time in order to opt in or opt out of Kin donations.
+     Kin is a cryptocurrency name and should not be translated.-->
+    <string name="lbl_opt_in_to_kin">Opt in to Kin</string>
+
+    <!-- Kin auto-pay confirmation prompt dialog title. Kin is a cryptocurrency name and should not be translated.-->
+    <string name="title_donate_kin">Donate Kin</string>
+
+    <!-- Kin autopay confirmation prompt text, appears every 30 days for opted-in users. Kin is a cryptocurrency name and should not be translated.-->
+    <string name="lbl_kin_pay">Thank you for opting into Kin, would you like to continue donating 1 Kin to Psiphon when you connect?</string>
+
+    <!-- Kin autopay confirmation negative button label.-->
     <string name="lbl_opt_out">Opt-out</string>
 </resources>
