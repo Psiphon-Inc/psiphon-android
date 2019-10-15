@@ -81,7 +81,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -118,6 +117,7 @@ public class StatusActivity
     private KinPermissionManager kinPermissionManager;
     private Disposable toggleClickDisposable;
     private BehaviorRelay<PsiphonAdManager.SubscriptionStatus> subscriptionStatusBehaviorRelay = BehaviorRelay.create();
+    private Disposable initializeKinOptInStateDisposable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,7 +127,6 @@ public class StatusActivity
         setContentView(R.layout.main);
 
         kinPermissionManager = new KinPermissionManager();
-        initializeKinOptInState();
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_tabSpecsList = new ArrayList<>();
@@ -216,8 +215,8 @@ public class StatusActivity
     }
 
     @Override
-    protected void onResume()
-    {
+    protected void onResume() {
+        initializeKinOptInState();
         startIab();
         super.onResume();
         if (m_startupPending) {
@@ -1351,17 +1350,21 @@ public class StatusActivity
     };
 
     private void initializeKinOptInState() {
-        subscriptionStatusBehaviorRelay.concatMapMaybe(subscriptionStatus -> {
+        if(initializeKinOptInStateDisposable != null && !initializeKinOptInStateDisposable.isDisposed()) {
+            return;
+        }
+        initializeKinOptInStateDisposable = subscriptionStatusBehaviorRelay.concatMapSingle(subscriptionStatus -> {
             if (subscriptionStatus == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER) {
-                return Maybe.empty();
+                // Return 'any' object, the return value is ignored anyway.
+                return Single.just(new Object());
             } else {
                 // ask if the user agrees to kin if they haven't yet
                 return kinPermissionManager.getUsersAgreementToKin(this)
-                        .toMaybe()
                         .doOnSuccess(this::setKinState);
             }
         })
-                .take(1)
+                .firstOrError()
+                .ignoreElement()
                 .subscribe();
     }
 
