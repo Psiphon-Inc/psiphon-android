@@ -6,16 +6,25 @@
 -->
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_weight="1.0"
     android:orientation="vertical">
 
+    <LinearLayout
+        android:id="@+id/largeAdSlot"
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center" />
+
     <RelativeLayout
         android:id="@+id/tablayout"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/largeAdSlot" >
 
         <HorizontalScrollView
             android:layout_width="fill_parent"
@@ -36,71 +45,98 @@
         android:layout_height="fill_parent"
         android:layout_below="@+id/tablayout" >
 
-        <ViewFlipper
-            android:id="@+id/sponsorViewFlipper"
+        <android.support.constraint.ConstraintLayout
+            android:id="@+id/homeTab"
             android:layout_width="fill_parent"
-            android:layout_height="fill_parent" >
+            android:layout_height="fill_parent">
 
-            <LinearLayout
-                android:id="@+id/statusLayout"
+            <!-- Using 0dp, which is the equivalent of "MATCH_CONSTRAINT" -->
+            <ViewFlipper
+                android:id="@+id/sponsorViewFlipper"
                 android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:layout_gravity="center"
-                android:gravity="center"
-                android:orientation="vertical" >
+                android:layout_height="0dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/rateLimitLinearLayout"
+                app:layout_constraintTop_toTopOf="parent">
 
-                <ImageButton
-                    android:id="@+id/statusViewImage"
-                    android:layout_width="wrap_content"
-                    android:layout_height="150dp"
-                    android:layout_gravity="center"
-                    android:background="@android:color/transparent"
-                    android:padding="20dp"
-                    android:scaleType="fitCenter" />
-
-                <TextView
-                    android:id="@+id/versionline"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="" />
-
-                <TextView
-                    android:id="@+id/lastlogline"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="" />
-
-                <Button
-                    android:id="@+id/getHelpConnectingButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:onClick="onGetHelpConnectingClick"
-                    android:text="@string/need_help_connecting"
-                    android:visibility="gone"
-                    tools:visibility="visible" />
-            </LinearLayout>
-
-            <RelativeLayout
-                android:id="@+id/sponsorLayout"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" >
-
-                <WebView
-                    android:id="@+id/sponsorWebView"
+                <ScrollView
+                    android:id="@+id/statusLayout"
                     android:layout_width="fill_parent"
-                    android:layout_height="fill_parent" />
+                    android:layout_height="fill_parent"
+                    android:orientation="vertical"
+                    android:scrollbarAlwaysDrawVerticalTrack="false">
 
-                <ProgressBar
-                    android:id="@+id/sponsorWebViewProgressBar"
-                    style="?android:attr/progressBarStyleHorizontal"
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentBottom="true"
-                    android:progressDrawable="@drawable/home_progressbar" />
-            </RelativeLayout>
-        </ViewFlipper>
+                    <LinearLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <ImageButton
+                            android:id="@+id/statusViewImage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="150dp"
+                            android:layout_gravity="center"
+                            android:background="@android:color/transparent"
+                            android:padding="20dp"
+                            android:scaleType="fitCenter" />
+
+                        <TextView
+                            android:id="@+id/versionline"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:text="" />
+
+                        <TextView
+                            android:id="@+id/lastlogline"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:text="" />
+
+                        <Button
+                            android:id="@+id/getHelpConnectingButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:onClick="onGetHelpConnectingClick"
+                            android:text="@string/need_help_connecting"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+                    </LinearLayout>
+                </ScrollView>
+
+                <RelativeLayout
+                    android:id="@+id/sponsorLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <WebView
+                        android:id="@+id/sponsorWebView"
+                        android:layout_width="fill_parent"
+                        android:layout_height="fill_parent" />
+
+                    <ProgressBar
+                        android:id="@+id/sponsorWebViewProgressBar"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentBottom="true"
+                        android:progressDrawable="@drawable/home_progressbar" />
+                </RelativeLayout>
+            </ViewFlipper>
+
+            <include
+                layout="@layout/rate_limit_info"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+        </android.support.constraint.ConstraintLayout>
 
         <ScrollView
             android:id="@+id/settingsView"
@@ -120,7 +156,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:orientation="horizontal" >
+                    android:orientation="horizontal">
 
                     <TextView
                         android:id="@+id/regionPrompt"
@@ -138,13 +174,14 @@
                         android:layout_gravity="center"
                         android:drawSelectorOnTop="true"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
+
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:orientation="vertical" >
+                    android:orientation="vertical">
 
                     <CheckBox
                         android:id="@+id/tunnelWholeDeviceToggle"
@@ -172,6 +209,15 @@
                         android:onClick="onDisableTimeoutsToggle"
                         android:text="@string/disable_timeouts"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
+
+                    <CheckBox
+                        android:id="@+id/check_box_kin_enabled"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="start"
+                        android:onClick="onKinEnabledClick"
+                        android:text="@string/lbl_opt_in_to_kin"
+                        android:textAppearance="?android:attr/textAppearanceSmall" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -179,7 +225,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_marginTop="8dp"
-                    android:orientation="horizontal" >
+                    android:orientation="horizontal">
 
                     <Button
                         android:id="@+id/moreOptionsButton"
@@ -236,6 +282,32 @@
                 android:layout_height="wrap_content"
                 layout="@layout/statistics" />
         </ScrollView>
+
+        <android.support.design.widget.CoordinatorLayout
+            android:id="@+id/psicash_coordinator_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <ScrollView
+                android:id="@+id/psicashTab"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:orientation="vertical"
+                android:padding="10dp"
+                android:scrollbarAlwaysDrawVerticalTrack="false"
+                android:weightSum="1.0">
+
+                <fragment
+                    android:id="@+id/psicash_fragment_container"
+                    android:name="com.psiphon3.PsiCashFragment"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+            </ScrollView>
+        </android.support.design.widget.CoordinatorLayout>
 
         <LinearLayout
             android:id="@+id/logsTab"
