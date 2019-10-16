@@ -94,9 +94,9 @@
     <!-- Kin auto-pay confirmation prompt dialog title. Kin is a cryptocurrency name and should not be translated.-->
     <string name="title_donate_kin">Donate Kin</string>
 
-    <!-- Kin autopay confirmation prompt text, appears every 30 days for opted-in users. Kin is a cryptocurrency name and should not be translated.-->
+    <!-- Kin auto-pay confirmation prompt text, appears every 30 days for opted-in users. Kin is a cryptocurrency name and should not be translated.-->
     <string name="lbl_kin_pay">Thank you for opting into Kin, would you like to continue donating 1 Kin to Psiphon when you connect?</string>
 
-    <!-- Kin autopay confirmation negative button label.-->
-    <string name="lbl_opt_out">Opt-out</string>
+    <!-- Kin auto-pay confirmation negative button label. Clicking this button when presented auto-pay prompt will opt out the user of making Kin donations.-->
+    <string name="lbl_opt_out">Opt out</string>
 </resources>
