@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Psiphon Inc.
+ *
+ * Copyright (c) 2019, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,6 +20,7 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
@@ -32,6 +34,8 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.OvalShape;
 import android.net.Uri;
 import android.net.VpnService;
 import android.nfc.NdefMessage;
@@ -42,14 +46,20 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v4.text.TextUtilsCompat;
+import android.support.v4.view.ViewCompat;
 import android.text.TextUtils;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.LayoutInflater;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
@@ -63,10 +73,14 @@ import android.webkit.WebViewClient;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TabHost.TabSpec;
@@ -74,11 +88,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
-import com.psiphon3.R;
 import com.psiphon3.StatusActivity;
 import com.psiphon3.TunnelState;
+import com.psiphon3.psicash.PsiCashClient;
+import com.psiphon3.psicash.PsiCashException;
+import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.SharedPreferencesImport;
@@ -89,8 +106,12 @@ import org.achartengine.model.XYMultipleSeriesDataset;
 import org.achartengine.model.XYSeries;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
@@ -136,19 +157,29 @@ public abstract class MainBase {
         public static final String INTENT_EXTRA_PREVENT_AUTO_START = "com.psiphon3.MainBase.TabbedActivityBase.PREVENT_AUTO_START";
         protected static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
         protected static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
+        protected static final String ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION = "askedToAccessCoarseLocationPermission";
         protected static final String CURRENT_TAB = "currentTab";
+        protected static final String CURRENT_PURCHASE = "currentPurchase";
 
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
         protected static final int REQUEST_CODE_PREFERENCE = 101;
+        protected static final int REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 102;
+
+        public static final String HOME_TAB_TAG = "home_tab_tag";
+        public static final String PSICASH_TAB_TAG = "psicash_tab_tag";
+        public static final String STATISTICS_TAB_TAG = "statistics_tab_tag";
+        public static final String SETTINGS_TAB_TAG = "settings_tab_tag";
+        public static final String LOGS_TAB_TAG = "logs_tab_tag";
+
 
         private boolean m_canWholeDevice = false;
         protected boolean m_loadedSponsorTab = false;
 
         protected Button m_toggleButton;
         private StatusListViewManager m_statusListManager = null;
-        private AppPreferences m_multiProcessPreferences;
+        protected AppPreferences m_multiProcessPreferences;
         private ViewFlipper m_sponsorViewFlipper;
-        private LinearLayout m_statusLayout;
+        private ScrollView m_statusLayout;
         private TextView m_statusTabLogLine;
         private TextView m_statusTabVersionLine;
         protected SponsorHomePage m_sponsorHomePage;
@@ -170,18 +201,17 @@ public abstract class MainBase {
         private Button m_openBrowserButton;
         private LoggingObserver m_loggingObserver;
         private CompositeDisposable compositeDisposable = new CompositeDisposable();
-        private TunnelServiceInteractor tunnelServiceInteractor;
+        protected TunnelServiceInteractor tunnelServiceInteractor;
         private Disposable handleNfcIntentDisposable;
+
+        protected boolean isAppInForeground;
 
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
         }
 
-        // Avoid calling m_statusTabToggleButton.setImageResource() every 250 ms
-        // when it is set to the connected image
         private ImageButton m_statusViewImage;
 
-        private View mGetHelpConnectingButton;
         private View mHelpConnectButton;
 
         private NfcAdapter mNfcAdapter;
@@ -234,10 +264,12 @@ public abstract class MainBase {
         // http://danielkvist.net/code/animated-tabhost-with-slide-gesture-in-android
         private static final int ANIMATION_TIME = 240;
         protected TabHost m_tabHost;
+        protected List<TabSpec> m_tabSpecsList;
         private int m_currentTab;
         private View m_previousView;
         private View m_currentView;
         private GestureDetector m_gestureDetector;
+        protected enum TabIndex {HOME, PSICASH, STATISTICS, OPTIONS, LOGS}
 
         /**
          * A gesture listener that listens for a left or right swipe and uses
@@ -271,22 +303,31 @@ public abstract class MainBase {
             @Override
             public boolean onFling(MotionEvent event1, MotionEvent event2, float velocityX, float velocityY) {
                 if (event1 != null && event2 != null) {
-                    int newTab;
+                    // Determine tab swipe direction
+                    int direction;
                     if (Math.abs(event1.getY() - event2.getY()) > SWIPE_MAX_OFF_PATH) {
                         return false;
                     }
                     if (event1.getX() - event2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
                         // Swipe right to left
-                        newTab = m_currentTab + 1;
+                        direction = 1;
                     } else if (event2.getX() - event1.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
                         // Swipe left to right
-                        newTab = m_currentTab - 1;
+                        direction = -1;
                     } else {
                         return false;
                     }
+
+                    // Move in direction until we hit a visible tab, or go out of bounds
+                    int newTab = m_currentTab + direction;
+                    while (newTab >= 0 && newTab < maxTabs && m_tabHost.getTabWidget().getChildTabViewAt(newTab).getVisibility() != View.VISIBLE) {
+                        newTab += direction;
+                    }
+
                     if (newTab < 0 || newTab > (maxTabs - 1)) {
                         return false;
                     }
+
                     m_tabHost.setCurrentTab(newTab);
                 }
                 return super.onFling(event1, event2, velocityX, velocityY);
@@ -406,30 +447,46 @@ public abstract class MainBase {
             );
 
             EmbeddedValues.initialize(this);
+            tunnelServiceInteractor = new TunnelServiceInteractor();
 
+            // remove logs from previous sessions
+            if (!tunnelServiceInteractor.isServiceRunning(getApplicationContext())) {
+                LoggingProvider.LogDatabaseHelper.truncateLogs(this, true);
+            }
+
+            // Listen to GOT_NEW_EXPIRING_PURCHASE intent from psicash module
+            IntentFilter intentFilter = new IntentFilter();
+            intentFilter.addAction(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
+            LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter);
+        }
+
+        @Override
+        protected void onDestroy() {
+            super.onDestroy();
+
+            if (m_sponsorHomePage != null) {
+                m_sponsorHomePage.stop();
+                m_sponsorHomePage = null;
+            }
+        }
+
+        protected void setupActivityLayout() {
             // Set up tabs
             m_tabHost.setup();
 
-            TabSpec homeTab = m_tabHost.newTabSpec("home");
-            homeTab.setContent(R.id.sponsorViewFlipper);
-            homeTab.setIndicator(getText(R.string.home_tab_name));
+            m_tabSpecsList.clear();
+            m_tabSpecsList.add(TabIndex.HOME.ordinal(), m_tabHost.newTabSpec(HOME_TAB_TAG).setContent(R.id.homeTab).setIndicator(getText(R.string.home_tab_name)));
+            m_tabSpecsList.add(TabIndex.PSICASH.ordinal(), m_tabHost.newTabSpec(PSICASH_TAB_TAG).setContent(R.id.psicashTab).setIndicator(getText(R.string.psicash_tab_name)));
+            m_tabSpecsList.add(TabIndex.STATISTICS.ordinal(), m_tabHost.newTabSpec(STATISTICS_TAB_TAG).setContent(R.id.statisticsView).setIndicator(getText(R.string.statistics_tab_name)));
+            m_tabSpecsList.add(TabIndex.OPTIONS.ordinal(), m_tabHost.newTabSpec(SETTINGS_TAB_TAG).setContent(R.id.settingsView).setIndicator(getText(R.string.settings_tab_name)));
+            m_tabSpecsList.add(TabIndex.LOGS.ordinal(), m_tabHost.newTabSpec(LOGS_TAB_TAG).setContent(R.id.logsTab).setIndicator(getText(R.string.logs_tab_name)));
 
-            TabSpec statisticsTab = m_tabHost.newTabSpec("statistics");
-            statisticsTab.setContent(R.id.statisticsView);
-            statisticsTab.setIndicator(getText(R.string.statistics_tab_name));
+            for (TabSpec tabSpec : m_tabSpecsList) {
+                m_tabHost.addTab(tabSpec);
+            }
 
-            TabSpec settingsTab = m_tabHost.newTabSpec("settings");
-            settingsTab.setContent(R.id.settingsView);
-            settingsTab.setIndicator(getText(R.string.settings_tab_name));
-
-            TabSpec logsTab = m_tabHost.newTabSpec("logs");
-            logsTab.setContent(R.id.logsTab);
-            logsTab.setIndicator(getText(R.string.logs_tab_name));
-
-            m_tabHost.addTab(homeTab);
-            m_tabHost.addTab(statisticsTab);
-            m_tabHost.addTab(settingsTab);
-            m_tabHost.addTab(logsTab);
+            LinearLayout psiCashTabLayout = (LinearLayout) m_tabHost.getTabWidget().getChildTabViewAt(TabIndex.PSICASH.ordinal());
+            decorateWithRedDot(psiCashTabLayout);
 
             m_gestureDetector = new GestureDetector(this, new LateralGestureDetector());
             OnTouchListener onTouchListener = new OnTouchListener() {
@@ -444,7 +501,7 @@ public abstract class MainBase {
             };
 
             m_tabHost.setOnTouchListener(onTouchListener);
-            m_statusLayout = (LinearLayout) findViewById(R.id.statusLayout);
+            m_statusLayout = (ScrollView) findViewById(R.id.statusLayout);
             m_statusLayout.setOnTouchListener(onTouchListener);
             m_statusViewImage = (ImageButton) findViewById(R.id.statusViewImage);
             m_statusViewImage.setOnTouchListener(onTouchListener);
@@ -456,14 +513,17 @@ public abstract class MainBase {
             findViewById(R.id.tunnelWholeDeviceToggle).setOnTouchListener(onTouchListener);
             findViewById(R.id.feedbackButton).setOnTouchListener(onTouchListener);
             findViewById(R.id.aboutButton).setOnTouchListener(onTouchListener);
+            findViewById(R.id.psicashTab).setOnTouchListener(onTouchListener);
             ListView statusListView = (ListView) findViewById(R.id.statusList);
             statusListView.setOnTouchListener(onTouchListener);
-
-            m_tabHost.setOnTabChangedListener(this);
 
             int currentTab = m_multiProcessPreferences.getInt(CURRENT_TAB, 0);
             m_currentTab = currentTab;
             m_tabHost.setCurrentTab(currentTab);
+
+            // Set TabChangedListener after restoring last tab to avoid triggering an interstitial,
+            // we only want interstitial to be triggered by user actions
+            m_tabHost.setOnTabChangedListener(this);
 
             m_sponsorViewFlipper = (ViewFlipper) findViewById(R.id.sponsorViewFlipper);
             m_sponsorViewFlipper.setInAnimation(AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left));
@@ -547,7 +607,6 @@ public abstract class MainBase {
             }
 
             // Get the connection help buttons
-            mGetHelpConnectingButton = findViewById(R.id.getHelpConnectingButton);
             mHelpConnectButton = findViewById(R.id.howToHelpButton);
 
             // Only handle NFC if the version is sufficient
@@ -614,7 +673,11 @@ public abstract class MainBase {
                                 break;
                         }
                     })
-                    .subscribe()
+                    .subscribe(),
+
+                    tunnelServiceInteractor.authorizationsRemovedFlowable()
+                            .doOnNext(__ -> onAuthorizationsRemoved())
+                            .subscribe()
             );
         }
 
@@ -638,17 +701,14 @@ public abstract class MainBase {
 
             switch (state) {
                 case DISABLED:
-                    hideGetHelpConnectingUI();
                     hideHelpConnectUI();
                     mNfcAdapter.setNdefPushMessageCallback(null, this);
                     break;
                 case NEEDS_HELP:
-                    showGetHelpConnectingUI();
                     hideHelpConnectUI();
                     mNfcAdapter.setNdefPushMessageCallback(null, this);
                     break;
                 case CAN_HELP:
-                    hideGetHelpConnectingUI();
                     showHelpConnectUI();
                     mNfcAdapter.setNdefPushMessageCallback(mNfcAdapterCallback, this);
                     break;
@@ -671,24 +731,6 @@ public abstract class MainBase {
                     })
                     .create();
             mConnectionHelpDialog.show();
-        }
-
-        private void showGetHelpConnectingUI() {
-            // Ensure that they have NFC
-            if (!ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
-                return;
-            }
-
-            mGetHelpConnectingButton.setVisibility(View.VISIBLE);
-        }
-
-        private void hideGetHelpConnectingUI() {
-            // Ensure that they have NFC
-            if (!ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
-                return;
-            }
-
-            mGetHelpConnectingButton.setVisibility(View.GONE);
         }
 
         private void showHelpConnectUI() {
@@ -731,20 +773,76 @@ public abstract class MainBase {
         }
 
 
-        @Override
-        protected void onDestroy() {
-            super.onDestroy();
+        private void decorateWithRedDot(LinearLayout psiCashTabLayout) {
+            // Get parent and index of the current tab layout. We will need the index later when we
+            // wrap and replace the original layout with a wrapper layout.
+            ViewGroup parent = (ViewGroup) psiCashTabLayout.getParent();
+            final int index = parent.indexOfChild(psiCashTabLayout);
 
-            if (m_sponsorHomePage != null) {
-                m_sponsorHomePage.stop();
-                m_sponsorHomePage = null;
+            LinearLayout linearLayout = new LinearLayout(this);
+            linearLayout.setLayoutParams(psiCashTabLayout.getLayoutParams());
+
+            // Remove the tab layout from parent tab widget.
+            parent.removeView(psiCashTabLayout);
+            // Add a new linear layout in place of original one.
+            parent.addView(linearLayout, index);
+
+            // Create a new relative layout to wrap old layout.
+            RelativeLayout wrapperRelativeLayout = new RelativeLayout(this);
+            RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+            wrapperRelativeLayout.addView(psiCashTabLayout, lp);
+
+            // Add wrapper relative layout to the top tab linear layout.
+            linearLayout.addView(wrapperRelativeLayout);
+
+            // Create a frame layout which will hold a red dot image view.
+            FrameLayout redDotLayout= new FrameLayout(this);
+            FrameLayout.LayoutParams flp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+            redDotLayout.setLayoutParams(flp);
+
+            // Get original tab layout side padding, since it is centered
+            // we assume left padding == right padding.
+            int paddingSide = psiCashTabLayout.getPaddingLeft();
+
+            // Create the red dot image and add it to the holder frame layout
+            int redDotSize = paddingSide / 3;
+            ImageView redDotImage = new ImageView(getContext());
+            ShapeDrawable badge = new ShapeDrawable(new OvalShape());
+            badge.setIntrinsicWidth(redDotSize);
+            badge.setIntrinsicHeight(redDotSize);
+            badge.getPaint().setColor(Color.RED);
+            redDotImage.setImageDrawable(badge);
+            redDotImage.setLayoutParams(new LinearLayout.LayoutParams(redDotSize, redDotSize));
+            redDotLayout.addView(redDotImage);
+
+            // Position and add the red dot layout to the wrapper layout
+            lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+            lp.addRule(RelativeLayout.CENTER_VERTICAL);
+
+            psiCashTabLayout.setId(R.id.psicash_tab_layout_id);
+
+            // Calculate side margin of the red dot holder layout.
+            int redDotMargin = - (paddingSide + redDotSize) / 2;
+
+            boolean isRtl = ViewCompat.LAYOUT_DIRECTION_RTL == TextUtilsCompat.getLayoutDirectionFromLocale(getResources().getConfiguration().locale);
+            if (isRtl) {
+                lp.addRule(RelativeLayout.LEFT_OF, psiCashTabLayout.getId());
+                lp.rightMargin = redDotMargin;
+            } else {
+                lp.addRule(RelativeLayout.RIGHT_OF, psiCashTabLayout.getId());
+                lp.leftMargin = redDotMargin;
             }
+            redDotLayout.setLayoutParams(lp);
+            wrapperRelativeLayout.addView(redDotLayout, lp);
+            wrapperRelativeLayout.setId(R.id.psicash_tab_wrapper_layout_id);
         }
 
         @Override
         protected void onResume() {
             super.onResume();
 
+            isAppInForeground = true;
+            
             // Load new logs from the logging provider now
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                 m_loggingObserver.dispatchChange(false, LoggingProvider.INSERT_URI);
@@ -813,6 +911,9 @@ public abstract class MainBase {
         @Override
         protected void onPause() {
             super.onPause();
+
+            isAppInForeground = false;
+
             getContentResolver().unregisterContentObserver(m_loggingObserver);
             cancelInvalidProxySettingsToast();
             tunnelServiceInteractor.pause(getApplicationContext());
@@ -848,6 +949,19 @@ public abstract class MainBase {
                     }
                 });
             }
+        }
+
+        final protected String PsiCashModifyUrl(String originalUrlString) {
+            if (TextUtils.isEmpty(originalUrlString)) {
+                return originalUrlString;
+            }
+
+            try {
+                return PsiCashClient.getInstance(getContext()).modifiedHomePageURL(originalUrlString);
+            } catch (PsiCashException e) {
+                MyLog.g("PsiCash: error modifying home page: " + e);
+            }
+            return originalUrlString;
         }
 
         protected abstract void startUp();
@@ -1093,7 +1207,7 @@ public abstract class MainBase {
                 m_openBrowserButton.setEnabled(false);
             }
         }
-        
+
         protected void enableToggleServiceUI() {
             m_toggleButton.setEnabled(true);
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
@@ -1103,6 +1217,7 @@ public abstract class MainBase {
         }
 
         protected void disableToggleServiceUI() {
+            m_toggleButton.setText(getText(R.string.waiting));
             m_toggleButton.setEnabled(false);
             m_tunnelWholeDeviceToggle.setEnabled(false);
             m_disableTimeoutsToggle.setEnabled(false);
@@ -1111,6 +1226,75 @@ public abstract class MainBase {
         }
 
         protected void startTunnel() {
+            // Tunnel core needs this dangerous permission to obtain the WiFi BSSID, which is used
+            // as a key for applying tactics
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                            == PackageManager.PERMISSION_GRANTED) {
+                proceedStartTunnel();
+            } else {
+                AppPreferences mpPreferences = new AppPreferences(this);
+                if (mpPreferences.getBoolean(ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION, false)) {
+                    proceedStartTunnel();
+                } else if(!this.isFinishing()){
+                    final Context context = this;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            new AlertDialog.Builder(context)
+                                    .setCancelable(false)
+                                    .setOnKeyListener(
+                                            new DialogInterface.OnKeyListener() {
+                                                @Override
+                                                public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                                                    // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
+                                                    return keyCode == KeyEvent.KEYCODE_SEARCH;
+                                                }})
+                                    .setTitle(R.string.MainBase_AccessCoarseLocationPermissionPromptTitle)
+                                    .setMessage(R.string.MainBase_AccessCoarseLocationPermissionPromptMessage)
+                                    .setPositiveButton(R.string.MainBase_AccessCoarseLocationPermissionPositiveButton,
+                                            new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int whichButton) {
+                                                    m_multiProcessPreferences.put(ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION, true);
+                                                    ActivityCompat.requestPermissions(TabbedActivityBase.this,
+                                                            new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                                                            REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION);
+                                                }})
+                                    .setNegativeButton(R.string.MainBase_AccessCoarseLocationPermissionNegativeButton,
+                                            new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int whichButton) {
+                                                    m_multiProcessPreferences.put(ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION, true);
+                                                    proceedStartTunnel();
+                                                }})
+                                    .setOnCancelListener(
+                                            new DialogInterface.OnCancelListener() {
+                                                @Override
+                                                public void onCancel(DialogInterface dialog) {
+                                                    // Do nothing (this prompt may reappear)
+                                                }})
+                                    .show();
+                        }
+                    });
+                }
+            }
+        }
+
+        @Override
+        public void onRequestPermissionsResult(int requestCode,
+                                               String permissions[], int[] grantResults) {
+            switch (requestCode) {
+                case REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION:
+                    proceedStartTunnel();
+                    break;
+
+                default:
+                    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            }
+        }
+
+        private void proceedStartTunnel() {
             // Don't start if custom proxy settings is selected and values are
             // invalid
             boolean useHTTPProxyPreference = UpstreamProxySettings.getUseHTTPProxy(this);
@@ -1208,6 +1392,45 @@ public abstract class MainBase {
                 return false;
             }
 
+            //check if "add custom headers" checkbox changed
+            boolean addCustomHeadersPreference = prefs.getBoolean(
+                    getString(R.string.addCustomHeadersPreference), false);
+            if (addCustomHeadersPreference != UpstreamProxySettings.getAddCustomHeadersPreference(this)) {
+                return true;
+            }
+
+            // "add custom headers" is selected, check if
+            // upstream headers string has changed
+            if (addCustomHeadersPreference) {
+                JSONObject newHeaders = new JSONObject();
+
+                for (int position = 1; position <= 6; position++) {
+                    int nameID = getResources().getIdentifier("customProxyHeaderName" + position, "string", getPackageName());
+                    int valueID = getResources().getIdentifier("customProxyHeaderValue" + position, "string", getPackageName());
+
+                    String namePrefStr = getResources().getString(nameID);
+                    String valuePrefStr = getResources().getString(valueID);
+
+                    String name = prefs.getString(namePrefStr, "");
+                    String value = prefs.getString(valuePrefStr, "");
+                    try {
+                        if (!TextUtils.isEmpty(name)) {
+                            JSONArray arr = new JSONArray();
+                            arr.put(value);
+                            newHeaders.put(name, arr);
+                        }
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                JSONObject oldHeaders = UpstreamProxySettings.getUpstreamProxyCustomHeaders(this);
+
+                if (0 != oldHeaders.toString().compareTo(newHeaders.toString())) {
+                    return true;
+                }
+            }
+
             // check if "use custom proxy settings"
             // radio has changed
             boolean useCustomProxySettingsPreference = prefs.getBoolean(
@@ -1283,7 +1506,20 @@ public abstract class MainBase {
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyAuthenticationPreference), getString(R.string.useProxyAuthenticationPreference)),
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyUsernamePreference), getString(R.string.useProxyUsernamePreference)),
                         new SharedPreferencesImport(this, prefName, getString(R.string.useProxyPasswordPreference), getString(R.string.useProxyPasswordPreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference))
+                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.addCustomHeadersPreference), getString(R.string.addCustomHeadersPreference)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName1), getString(R.string.customProxyHeaderName1)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue1), getString(R.string.customProxyHeaderValue1)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName2), getString(R.string.customProxyHeaderName2)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue2), getString(R.string.customProxyHeaderValue2)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName3), getString(R.string.customProxyHeaderName3)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue3), getString(R.string.customProxyHeaderValue3)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName4), getString(R.string.customProxyHeaderName4)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue4), getString(R.string.customProxyHeaderValue4)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName5), getString(R.string.customProxyHeaderName5)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue5), getString(R.string.customProxyHeaderValue5)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName6), getString(R.string.customProxyHeaderName6)),
+                        new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue6), getString(R.string.customProxyHeaderValue6))
                 );
 
                 if (bRestartRequired) {
@@ -1338,6 +1574,11 @@ public abstract class MainBase {
 
         private void stopTunnelService() {
             tunnelServiceInteractor.stopTunnelService();
+        }
+
+        protected void onAuthorizationsRemoved() {
+            final AppPreferences mp = new AppPreferences(getContext());
+            mp.put(this.getString(R.string.persistentAuthorizationsRemovedFlag), false);
         }
 
         /**
@@ -1399,7 +1640,9 @@ public abstract class MainBase {
                     }
 
                     if (mWebViewLoaded) {
-                        displayBrowser(getContext(), url);
+                        // Do not PsiCash modify the URL, this is a link on the landing page
+                        // that has been clicked
+                        displayBrowser(getContext(), url, false);
                     }
                     return mWebViewLoaded;
                 }
@@ -1430,7 +1673,8 @@ public abstract class MainBase {
             private final SponsorWebChromeClient mWebChromeClient;
             private final ProgressBar mProgressBar;
 
-            @TargetApi(Build.VERSION_CODES.HONEYCOMB) public SponsorHomePage(WebView webView, ProgressBar progressBar) {
+            @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+            public SponsorHomePage(WebView webView, ProgressBar progressBar) {
                 mWebView = webView;
                 mProgressBar = progressBar;
                 mWebChromeClient = new SponsorWebChromeClient(mProgressBar);
@@ -1467,8 +1711,13 @@ public abstract class MainBase {
             }
         }
 
-        protected void displayBrowser(Context context, String urlString) {
+        protected void displayBrowser(Context context, String url, boolean b) {
 
+        }
+
+        final protected void displayBrowser(Context context, String urlString) {
+            // PsiCash modify URLs by default
+            displayBrowser(context, urlString, true);
         }
 
         protected boolean shouldLoadInEmbeddedWebView(String url) {
@@ -1479,5 +1728,17 @@ public abstract class MainBase {
             }
             return true;
         }
+
+        private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, android.content.Intent intent) {
+                String action = intent.getAction();
+                if (action != null) {
+                    if (action.equals(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE)) {
+                        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), m_tunnelConfig);
+                    }
+                }
+            }
+        };
     }
 }
