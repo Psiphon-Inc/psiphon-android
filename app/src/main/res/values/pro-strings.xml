@@ -173,6 +173,9 @@
     <!-- Alert error message informing user that a critical PsiCash related error has occurred and encouraging users to send feedback diagnostics -->
     <string name="psicash_critical_error_message">A critical error has occurred. Please send feedback.</string>
 
+    <!-- Alert error message informing user that a critical PsiCash error has occurred and their PsiCash balance and purchases are reset(lost) -->
+    <string name="psicash_critical_error_reset_message">A critical error has occurred. Your PsiCash balance and other state have been reset.</string>
+
     <!-- Alert error message informing user that a recoverable PsiCash related error has occurred and last action will most likely succeed next time. -->
     <string name="psicash_recoverable_error_message">A recoverable error has occurred. Please try again.</string>
 
