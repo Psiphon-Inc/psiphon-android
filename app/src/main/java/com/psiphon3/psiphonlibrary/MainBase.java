@@ -130,11 +130,11 @@ import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static android.nfc.NdefRecord.createMime;
-
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
+
+import static android.nfc.NdefRecord.createMime;
 
 public abstract class MainBase {
     public static abstract class Activity extends LocalizedActivities.AppCompatActivity implements MyLog.ILogger {
@@ -699,12 +699,6 @@ public abstract class MainBase {
                     getString(R.string.disableTimeoutsPreference), false);
             m_disableTimeoutsToggle.setChecked(disableTimeoutsPreference);
             setTunnelConfigDisableTimeouts(disableTimeoutsPreference);
-
-            // Note that this must come after the above lines, or else the
-            // activity
-            // will not be sufficiently initialized for isDebugMode to succeed.
-            // (Voodoo.)
-            PsiphonConstants.DEBUG = Utils.isDebugMode(this);
 
             String msg = getContext().getString(R.string.client_version, EmbeddedValues.CLIENT_VERSION);
             m_statusTabVersionLine.setText(msg);
@@ -1928,11 +1922,11 @@ public abstract class MainBase {
             mp.put(this.getString(R.string.persistentAuthorizationsRemovedFlag), false);
         }
 
-        private void sendServiceMessage(int what) {
+        protected void sendServiceMessage(int what) {
             sendServiceMessage(what, null);
         }
 
-        private void sendServiceMessage(int what, Bundle data) {
+        protected void sendServiceMessage(int what, Bundle data) {
             try {
                 Message msg = Message.obtain(null, what);
                 if(data != null) {

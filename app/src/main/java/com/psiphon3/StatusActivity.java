@@ -44,11 +44,14 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.kin.KinPermissionManager;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
@@ -116,6 +119,10 @@ public class StatusActivity
     private PublishRelay<RateLimitMode> currentRateLimitModeRelay;
     private Disposable currentRateModeDisposable;
     private PublishRelay<Boolean> activeSpeedBoostRelay;
+    private KinPermissionManager kinPermissionManager;
+    private Disposable toggleClickDisposable;
+    private BehaviorRelay<PsiphonAdManager.SubscriptionStatus> subscriptionStatusBehaviorRelay = BehaviorRelay.create();
+    private Disposable initializeKinOptInStateDisposable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,6 +130,15 @@ public class StatusActivity
 
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            kinPermissionManager = new KinPermissionManager();
+        } else {
+            CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
+            if (checkBoxKinEnabled != null) {
+                checkBoxKinEnabled.setVisibility(View.GONE);
+            }
+        }
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_tabSpecsList = new ArrayList<>();
@@ -211,8 +227,8 @@ public class StatusActivity
     }
 
     @Override
-    protected void onResume()
-    {
+    protected void onResume() {
+        initializeKinOptInState();
         startIab();
         super.onResume();
         if (m_startupPending) {
@@ -222,9 +238,8 @@ public class StatusActivity
     }
 
     @Override
-    public void onDestroy()
-    {
-        if(startUpInterstitialDisposable != null) {
+    public void onDestroy() {
+        if (startUpInterstitialDisposable != null) {
             startUpInterstitialDisposable.dispose();
         }
         currentRateModeDisposable.dispose();
@@ -412,10 +427,25 @@ public class StatusActivity
             onGetHelpConnectingClick(null);
         }
     }
-    
-    public void onToggleClick(View v)
-    {
-        doToggle();
+
+    public void onToggleClick(View v) {
+        // Only check for payment when starting in WDM, also make sure subscribers don't get prompted for Kin.
+        if (!isServiceRunning() && getTunnelConfigWholeDevice()
+                && !Utils.getHasValidSubscription(getApplicationContext())
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            // prevent multiple confirmation dialogs
+            if (toggleClickDisposable != null && !toggleClickDisposable.isDisposed()) {
+                return;
+            }
+
+            toggleClickDisposable = Single.fromCallable(() -> kinPermissionManager.isOptedIn(getApplicationContext()))
+                    .flatMap(optedIn -> optedIn ? kinPermissionManager.confirmDonation(this) : Single.just(false))
+                    .doOnSuccess(this::setKinState)
+                    .doOnSuccess(__ -> doToggle())
+                    .subscribe();
+        } else {
+            doToggle();
+        }
     }
 
     public void onOpenBrowserClick(View v)
@@ -436,6 +466,27 @@ public class StatusActivity
     {
         Intent feedbackIntent = new Intent(this, FeedbackActivity.class);
         startActivity(feedbackIntent);
+    }
+
+    public void onKinEnabledClick(View v) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            return;
+        }
+        // Assume this will always be the kin enabled checkbox
+        CheckBox checkBox = (CheckBox) v;
+        // Prevent the default toggle, that's handled automatically by a subscription to the opted-in state
+        checkBox.setChecked(!checkBox.isChecked());
+        if (kinPermissionManager.isOptedIn(this)) {
+            kinPermissionManager
+                    .optOut(this)
+                    .doOnSuccess(this::setKinState)
+                    .subscribe();
+        } else {
+            kinPermissionManager
+                    .optIn(this)
+                    .doOnSuccess(this::setKinState)
+                    .subscribe();
+        }
     }
 
     @Override
@@ -486,7 +537,7 @@ public class StatusActivity
                 .onErrorResumeNext(Observable.empty())
                 .subscribe();
     }
-    
+
     private void doStartUp()
     {
         // cancel any ongoing startUp subscription
@@ -748,7 +799,7 @@ public class StatusActivity
     private boolean isIabInitialized() {
         return mIabHelper != null && mIabHelperIsInitialized;
     }
-    
+
     private IabHelper.OnIabSetupFinishedListener m_iabSetupFinishedListener =
             new IabHelper.OnIabSetupFinishedListener()
     {
@@ -878,12 +929,12 @@ public class StatusActivity
             }
         }
     };
-    
-    private IabHelper.OnIabPurchaseFinishedListener m_iabPurchaseFinishedListener = 
+
+    private IabHelper.OnIabPurchaseFinishedListener m_iabPurchaseFinishedListener =
             new IabHelper.OnIabPurchaseFinishedListener()
     {
         @Override
-        public void onIabPurchaseFinished(IabResult result, Purchase purchase) 
+        public void onIabPurchaseFinished(IabResult result, Purchase purchase)
         {
             if (result.isFailure())
             {
@@ -940,7 +991,7 @@ public class StatusActivity
             }
         }
     };
-    
+
     private void queryInventory()
     {
         try
@@ -1042,9 +1093,11 @@ public class StatusActivity
     {
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
         psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
+        onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
         Utils.setHasValidSubscription(this, true);
         this.m_retainedDataFragment.setCurrentPurchase(purchase);
         hidePsiCashTab();
+        enableKinOptInCheckBox(false);
 
         // Pass the most current purchase data to the service if it is running so the tunnel has a
         // chance to update authorization and restart if the purchase is new.
@@ -1064,10 +1117,21 @@ public class StatusActivity
     {
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
         psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
+        onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
         Utils.setHasValidSubscription(this, false);
         currentRateLimitModeRelay.accept(RateLimitMode.AD_MODE_LIMITED);
         this.m_retainedDataFragment.setCurrentPurchase(null);
         showPsiCashTabIfHasValidToken();
+        enableKinOptInCheckBox(true);
+    }
+
+    private void enableKinOptInCheckBox(boolean enable) {
+        CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
+        if(enable) {
+            checkBoxKinEnabled.setVisibility(View.VISIBLE);
+        } else {
+            checkBoxKinEnabled.setVisibility(View.GONE);
+        }
     }
 
     private void setRateLimitUI(RateLimitMode rateLimitMode) {
@@ -1097,7 +1161,10 @@ public class StatusActivity
     {
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
         psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
+        onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
+
         showPsiCashTabIfHasValidToken();
+        enableKinOptInCheckBox(true);
 
         // try again next time
         deInitIab();
@@ -1116,6 +1183,10 @@ public class StatusActivity
                 doStartUp();
             }
         }
+    }
+
+    private void onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus status) {
+        subscriptionStatusBehaviorRelay.accept(status);
     }
 
     public void onRateLimitUpgradeButtonClick(View v) {
@@ -1194,7 +1265,7 @@ public class StatusActivity
             mIabHelper = null;
         }
     }
-    
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == IAB_REQUEST_CODE) {
@@ -1232,6 +1303,17 @@ public class StatusActivity
         showVpnAlertDialog(R.string.StatusActivity_VpnPromptCancelledTitle, R.string.StatusActivity_VpnPromptCancelledMessage);
     }
 
+    @Override
+    protected void configureServiceIntent(Intent intent) {
+        super.configureServiceIntent(intent);
+        // Pass Kin opt in state, if user is not subscribed treat as opt out.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            boolean kinOptInState = !Utils.getHasValidSubscription(getApplicationContext())
+                    && kinPermissionManager.isOptedIn(this);
+            intent.putExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, kinOptInState);
+        }
+    }
+
     private void showVpnAlertDialog(int titleId, int messageId) {
         new AlertDialog.Builder(getContext())
                 .setCancelable(true)
@@ -1253,4 +1335,42 @@ public class StatusActivity
             }
         }
     };
+
+    private void initializeKinOptInState() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            return;
+        }
+        if(initializeKinOptInStateDisposable != null && !initializeKinOptInStateDisposable.isDisposed()) {
+            return;
+        }
+        initializeKinOptInStateDisposable = subscriptionStatusBehaviorRelay.concatMapSingle(subscriptionStatus -> {
+            if (subscriptionStatus == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER) {
+                // Return 'any' object, the return value is ignored anyway.
+                return Single.just(new Object());
+            } else {
+                // ask if the user agrees to kin if they haven't yet
+                return kinPermissionManager.getUsersAgreementToKin(this)
+                        .doOnSuccess(this::setKinState);
+            }
+        })
+                .firstOrError()
+                .ignoreElement()
+                .subscribe();
+    }
+
+    private void setKinState(boolean optedIn) {
+        CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
+        if (optedIn) {
+            checkBoxKinEnabled.setChecked(true);
+        } else {
+            checkBoxKinEnabled.setChecked(false);
+        }
+
+        // Notify tunnel service too if it is running and the user is not subscribed
+        if(isServiceRunning() && !Utils.getHasValidSubscription(getApplicationContext())) {
+            Bundle data = new Bundle();
+            data.putBoolean(TunnelManager.KIN_OPT_IN_STATE_EXTRA, optedIn);
+            sendServiceMessage(TunnelManager.ClientToServiceMessage.KIN_OPT_IN_STATE.ordinal(), data);
+        }
+    }
 }
