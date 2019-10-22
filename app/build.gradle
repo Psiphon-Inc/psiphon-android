@@ -30,7 +30,7 @@ android {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
                 applicationId "com.psiphon3.subscription"
                 resValue "string", "tray__authority", "${applicationId}.tray"
-                minSdkVersion 16
+                minSdkVersion 14
                 targetSdkVersion 28
                 versionCode verCode
                 versionName verName
@@ -125,13 +125,18 @@ repositories {
     maven {
         url 'https://jitpack.io'
     }
+    maven {
+        url "https://raw.github.com/Psiphon-Labs/psiphon-tunnel-core-Android-library/master"
+    }
 }
 
 dependencies {
     implementation files('libs/jackson-core-2.2.0.jar')
     implementation files('libs/achartengine-1.0.0.jar')
     implementation files('libs/snakeyaml-1.10-android.jar')
-    implementation(name: 'ca.psiphon', ext: 'aar')
+//    implementation(name: 'ca.psiphon', ext: 'aar')
+    implementation 'ca.psiphon:psiphontunnel:2.0.9'
+
 
     implementation project(':tray')
 

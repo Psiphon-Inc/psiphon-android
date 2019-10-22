@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
     <uses-sdk tools:overrideLibrary="ca.psiphon,com.mopub.mobileads.banner,com.mopub.mobileads.base,
-    com.mopub.mobileads.interstitial,com.mopub.mobileads.rewarded_video,com.moat.analytics.mobile.mpub" />
+    com.mopub.mobileads.interstitial,com.mopub.mobileads.rewarded_video,com.moat.analytics.mobile.mpub,
+    kin.sdk, kin.base,kin.utils" />
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"

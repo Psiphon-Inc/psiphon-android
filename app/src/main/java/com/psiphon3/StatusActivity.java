@@ -126,7 +126,14 @@ public class StatusActivity
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main);
 
-        kinPermissionManager = new KinPermissionManager();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            kinPermissionManager = new KinPermissionManager();
+        } else {
+            CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
+            if (checkBoxKinEnabled != null) {
+                checkBoxKinEnabled.setVisibility(View.GONE);
+            }
+        }
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_tabSpecsList = new ArrayList<>();
@@ -418,7 +425,9 @@ public class StatusActivity
 
     public void onToggleClick(View v) {
         // Only check for payment when starting in WDM, also make sure subscribers don't get prompted for Kin.
-        if (!isServiceRunning() && getTunnelConfigWholeDevice() && !Utils.getHasValidSubscription(getApplicationContext())) {
+        if (!isServiceRunning() && getTunnelConfigWholeDevice()
+                && !Utils.getHasValidSubscription(getApplicationContext())
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             // prevent multiple confirmation dialogs
             if (toggleClickDisposable != null && !toggleClickDisposable.isDisposed()) {
                 return;
@@ -455,6 +464,9 @@ public class StatusActivity
     }
 
     public void onKinEnabledClick(View v) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            return;
+        }
         // Assume this will always be the kin enabled checkbox
         CheckBox checkBox = (CheckBox) v;
         // Prevent the default toggle, that's handled automatically by a subscription to the opted-in state
@@ -1322,9 +1334,11 @@ public class StatusActivity
     protected void configureServiceIntent(Intent intent) {
         super.configureServiceIntent(intent);
         // Pass Kin opt in state, if user is not subscribed treat as opt out.
-        boolean kinOptInState = !Utils.getHasValidSubscription(getApplicationContext())
-                && kinPermissionManager.isOptedIn(this);
-        intent.putExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, kinOptInState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            boolean kinOptInState = !Utils.getHasValidSubscription(getApplicationContext())
+                    && kinPermissionManager.isOptedIn(this);
+            intent.putExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, kinOptInState);
+        }
     }
 
     private void showVpnAlertDialog(int titleId, int messageId) {
@@ -1350,6 +1364,9 @@ public class StatusActivity
     };
 
     private void initializeKinOptInState() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            return;
+        }
         if(initializeKinOptInStateDisposable != null && !initializeKinOptInStateDisposable.isDisposed()) {
             return;
         }

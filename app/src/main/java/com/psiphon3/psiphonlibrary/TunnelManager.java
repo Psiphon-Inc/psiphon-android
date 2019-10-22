@@ -302,10 +302,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             m_tunnelThread.start();
             m_tunnelConnectedSubject.onNext(Boolean.FALSE);
             // If running in WDM pass Kin opt in state to KinManager.
-            if(m_tunnelState.isVPN) {
-                if(intent.hasExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA)) {
-                    KinManager.getInstance(m_parentService).onKinOptInState(intent.getBooleanExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, false));
-                }
+            if (m_tunnelState.isVPN
+                    && intent.hasExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA)
+                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                KinManager.getInstance(m_parentService).onKinOptInState(intent.getBooleanExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, false));
             }
         }
 
@@ -377,7 +377,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_compositeDisposable.clear();
         m_compositeDisposable.add(purchaseCheckFlowDisposable());
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
-        m_compositeDisposable.add(KinManager.getInstance(m_parentService).kinFlowDisposable(m_parentService));
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            m_compositeDisposable.add(KinManager.getInstance(m_parentService).kinFlowDisposable(m_parentService));
+        }
     }
 
     // Sends handshake intent and tunnel state updates to the client Activity
@@ -400,7 +402,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     }
                 })
                 .doOnNext(isConnected -> {
-                    if(m_tunnelState.isVPN) {
+                    if(m_tunnelState.isVPN && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                         KinManager.getInstance(m_parentService).onTunnelConnected(isConnected);
                     }
                 })
@@ -631,7 +633,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     break;
 
                 case KIN_OPT_IN_STATE:
-                    if (manager != null) {
+                    if (manager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                         Bundle data = msg.getData();
                         Context context = manager.m_parentService;
                         // If running in WDM pass Kin opt in state to KinManager.
