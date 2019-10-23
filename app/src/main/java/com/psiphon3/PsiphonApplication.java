@@ -24,6 +24,7 @@ import android.app.Application;
 import android.content.Context;
 
 import com.psiphon3.psiphonlibrary.LocaleManager;
+import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.Utils;
 
 import io.reactivex.exceptions.UndeliverableException;
@@ -46,6 +47,8 @@ public class PsiphonApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        PsiphonConstants.DEBUG = Utils.isDebugMode(this);
+
         // If an Rx subscription is disposed while the observable is still running its async task
         // which may throw an error the error will have nowhere to go and will result in an uncaught
         // UndeliverableException being thrown. We are going to set up a global error handler to make
