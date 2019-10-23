@@ -44,12 +44,6 @@ public class KinManager {
             return instance;
         }
 
-        // Use the application context to try and avoid memory leaks
-        // TODO: Why doesn't this work?
-        if (context.getApplicationContext() != null) {
-            context = context.getApplicationContext();
-        }
-
         // Set up base communication & helper classes
         KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
         ClientHelper clientHelper = new ClientHelper(kinClient);
@@ -65,8 +59,8 @@ public class KinManager {
      * @return the instance of the KinManager
      */
     public static KinManager getInstance(Context context) {
-        // TODO: Switch to prod at some point
-        return getInstance(context, Environment.TEST);
+        // For test network use Environment.TEST
+        return getInstance(context, Environment.PRODUCTION);
     }
 
     /**

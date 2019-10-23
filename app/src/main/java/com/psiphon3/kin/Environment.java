@@ -21,8 +21,7 @@ public class Environment {
             )
     );
 
-    // TODO: Get real app id
-    static final String PSIPHON_APP_ID = "FAKE";
+    static final String PSIPHON_APP_ID = "PSIP";
 
     private final String kinApplicationServerUrl;
     private final String psiphonWalletAddress;
