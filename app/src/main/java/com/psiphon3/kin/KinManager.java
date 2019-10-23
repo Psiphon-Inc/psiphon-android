@@ -2,14 +2,13 @@ package com.psiphon3.kin;
 
 import android.content.Context;
 
-import com.jakewharton.rxrelay2.PublishRelay;
-import com.psiphon3.TunnelState;
-
-import java.math.BigDecimal;
+import com.jakewharton.rxrelay2.BehaviorRelay;
+import com.psiphon3.psiphonlibrary.Utils;
 
 import io.reactivex.Completable;
-import io.reactivex.Maybe;
-import io.reactivex.Observable;
+import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
+import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
 import kin.sdk.exception.InsufficientKinException;
 
@@ -20,70 +19,24 @@ public class KinManager {
 
     private final ClientHelper clientHelper;
     private final AccountHelper accountHelper;
-    private final ServerCommunicator serverCommunicator;
-    private final SettingsManager settingsManager;
+    private final BehaviorRelay<Boolean> tunnelConnectedBehaviorRelay = BehaviorRelay.create();
+    private BehaviorRelay<Boolean> kinOptInStateBehaviorRelay = BehaviorRelay.create();
 
-    private final PublishRelay<Boolean> chargeForConnectionPublishRelay;
-
-    KinManager(Context context, ClientHelper clientHelper, AccountHelper accountHelper, ServerCommunicator serverCommunicator, SettingsManager settingsManager) {
+    KinManager(ClientHelper clientHelper, AccountHelper accountHelper) {
         this.clientHelper = clientHelper;
         this.accountHelper = accountHelper;
-        this.serverCommunicator = serverCommunicator;
-        this.settingsManager = settingsManager;
+    }
 
-        chargeForConnectionPublishRelay = PublishRelay.create();
-
-        isOptedInObservable()
-                // only observe opt-ins
-                .filter(optedIn -> optedIn)
-                // if they opted in get an account
-                .flatMapSingle(__ -> clientHelper.getAccount())
-                // pass the new account to account helper
-                .doOnNext(account -> accountHelper.onNewAccount(context, account))
-                .subscribe();
-
-        isOptedInObservable()
-                // skip the first emission to avoid starting opted out (so this triggers), opting in,
-                // and having the waiting for registration fire once the new opted in account is created
-                .skip(1)
-                // only observe opts out
-                .filter(optedIn -> !optedIn)
-                // delete the account and transfer its funds out
-                .flatMapCompletable(__ -> accountHelper.delete(context)
-                        .doOnComplete(clientHelper::deleteAccount))
-                .subscribe();
-
-        chargeForConnectionPublishRelay
-                // take only distinct events to prevent spam
-                .distinctUntilChanged()
-                // only take requests to charge them
-                .filter(chargeForConnection -> chargeForConnection)
-                // transfer out 1 kin, which on complete allows for a new charge for connection
-                .flatMapCompletable(__ -> transferOut(CONNECTION_COST)
-                        // mark the next connection as not requiring a charge
-                        .doOnComplete(() -> chargeForConnectionPublishRelay.accept(false))
-                        // convert to a maybe for handling exceptions
-                        .<BigDecimal>toMaybe()
-                        // if it says we don't have enough kin, get the current balance, otherwise just let the error continue
-                        .onErrorResumeNext(e -> e instanceof InsufficientKinException ? accountHelper.getCurrentBalance().toMaybe() : Maybe.error(e))
-                        // convert the balance to a double
-                        .map(BigDecimal::doubleValue)
-                        // if the balance is less then the connection cost continue
-                        .filter(balance -> balance < CONNECTION_COST)
-                        // delete the account
-                        .flatMapCompletable(___ -> accountHelper.delete(context))
-                        // after that have the client helper delete the account
-                        .andThen(Completable.fromAction(clientHelper::deleteAccount))
-                        // get a new account
-                        .andThen(clientHelper.getAccount())
-                        // pass it to the account helper
-                        .flatMapCompletable(account -> Completable.fromAction(() -> accountHelper.onNewAccount(context, account)))
-                        // ignore errors
-                        .onErrorComplete())
-                .subscribe();
-
-        // start with this so distinct until changed will work
-        chargeForConnectionPublishRelay.accept(false);
+    private Completable chargeErrorHandler(Context context, KinAccount kinAccount, Throwable e) {
+        // If it says we don't have enough kin then empty current account, get a new one and try
+        // charging for connection again, otherwise just let the error continue
+        if (e instanceof InsufficientKinException) {
+            return accountHelper.emptyAccount(context, kinAccount)
+                    .andThen(Completable.fromAction(clientHelper::deleteAccount))
+                    .andThen(clientHelper.getAccount())
+                    .flatMapCompletable(newAccount -> accountHelper.transferOut(context, newAccount, CONNECTION_COST));
+        } //else
+        return Completable.error(e);
     }
 
     static KinManager getInstance(Context context, Environment environment) {
@@ -99,12 +52,12 @@ public class KinManager {
 
         // Set up base communication & helper classes
         KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
-        ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getFriendBotServerUrl());
         ClientHelper clientHelper = new ClientHelper(kinClient);
-        SettingsManager settingsManager = new SettingsManager(context);
+        SettingsManager settingsManager = new SettingsManager();
+        ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getKinApplicationServerUrl());
         AccountHelper accountHelper = new AccountHelper(serverCommunicator, settingsManager, environment.getPsiphonWalletAddress());
 
-        return instance = new KinManager(context, clientHelper, accountHelper, serverCommunicator, settingsManager);
+        return instance = new KinManager(clientHelper, accountHelper);
     }
 
     /**
@@ -117,40 +70,75 @@ public class KinManager {
     }
 
     /**
-     * @return an observable to check if the KinManager is ready.
-     * Observable returns false when not ready yet or opted-out; true otherwise.
+     * @param context the context
+     * @return disposable subscription that monitors tunnel connection state and Kin opt in state,
+     * creates and deletes accounts, and makes transactions on the remote blockchain.
      */
-    public Observable<Boolean> isOptedInObservable() {
-        return settingsManager.isOptedInObservable();
-    }
-
-    /**
-     * Requests that amount of Kin gets transferred out of the active accounts wallet to Psiphon's wallet.
-     * Runs synchronously, so specify a scheduler if the current scheduler isn't desired.
-     *
-     * @param amount the amount to be taken from the active account
-     * @return a completable which fires on complete after the transaction has successfully completed
-     */
-    public Completable transferOut(Double amount) {
-        return isOptedInObservable()
+    public Disposable kinFlowDisposable(Context context) {
+        // This is the main subscription that does all the work.
+        // It observes tunnel state relay emissions, checks the Kin opt in state when tunnel goes 'connected',
+        // runs Kin related operations according to that state and completes with either success or error.
+        // Note the usage of switchMap
+        return tunnelConnectedBehaviorRelay
+                .distinctUntilChanged()
+                .switchMapSingle(isConnected -> {
+                    if (isConnected) {
+                        return kinOptInStateBehaviorRelay
+                                .firstOrError()
+                                .doOnSuccess(isOptedIn -> Utils.MyLog.g("KinManager: user " + (isOptedIn ? "opted in" : "opted out")))
+                                .flatMap(isOptedIn -> {
+                                    // On opt outs schedule emptying and deletion of existing account.
+                                    // On opt ins just get an account locally, either existing or new, do not try to
+                                    // register the account on the blockchain at this point, AccountHelper::emptyAccount
+                                    // and AccountHelper::transferOut will register the account on the blockchain if
+                                    // needed.
+                                    Completable completable;
+                                    if (isOptedIn) {
+                                        completable = clientHelper.getAccount()
+                                                .doOnError(e -> Utils.MyLog.g("KinManager: error getting an account: " + e))
+                                                .ignoreElement();
+                                    } else {
+                                        completable = clientHelper.accountMaybe()
+                                                .flatMapCompletable(kinAccount -> accountHelper.emptyAccount(context, kinAccount)
+                                                        .andThen(Completable.fromRunnable(clientHelper::deleteAccount)))
+                                                .doOnError(e -> Utils.MyLog.g("KinManager: error emptying account: " + e));
+                                    }
+                                    return completable
+                                            // Pass through original opt in value
+                                            .toSingleDefault(isOptedIn);
+                                })
+                                .flatMap(isOptedIn -> {
+                                    // If opted in charge for connection
+                                    Completable completable;
+                                    if (isOptedIn) {
+                                        completable = clientHelper.accountMaybe()
+                                                .flatMapCompletable(kinAccount -> accountHelper.transferOut(context, kinAccount, CONNECTION_COST)
+                                                        .onErrorResumeNext(e -> chargeErrorHandler(context, kinAccount, e)));
+                                    } else {
+                                        completable = Completable.complete();
+                                    }
+                                    return completable
+                                            // Emit any value at this point as it will be ignored and only
+                                            // serves a purpose of signaling that the flow has completed.
+                                            .toSingleDefault(new Object());
+                                });
+                    } else {
+                        return Single.never();
+                    }
+                })
                 .firstOrError()
-                .filter(optedIn -> optedIn)
-                .flatMapCompletable(__ -> accountHelper.transferOut(amount));
+                .ignoreElement()
+                .doOnError(e -> Utils.MyLog.g("KinManager: kin flow error: " + e))
+                .onErrorComplete()
+                .doOnComplete(() -> Utils.MyLog.g("KinManager: completed kin flow"))
+                .subscribe();
     }
 
-    public void chargeForNextConnection(boolean agreed) {
-        chargeForConnectionPublishRelay.accept(agreed);
+    public void onTunnelConnected(boolean isConnected) {
+        tunnelConnectedBehaviorRelay.accept(isConnected);
     }
 
-    public void onTunnelConnectionState(TunnelState tunnelState) {
-        serverCommunicator.onTunnelConnectionState(tunnelState);
-    }
-
-    public KinPermissionManager getPermissionManager() {
-        return new KinPermissionManager(settingsManager);
-    }
-
-    public boolean isOptedIn(Context context) {
-        return settingsManager.isOptedIn(context);
+    public void onKinOptInState(Boolean isOptedIn) {
+        kinOptInStateBehaviorRelay.accept(isOptedIn);
     }
 }

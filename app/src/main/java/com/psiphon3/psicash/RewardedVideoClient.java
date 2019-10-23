@@ -63,6 +63,8 @@ public class RewardedVideoClient {
         return INSTANCE;
     }
 
+    private RewardedVideoClient() {}
+
     private Observable<? extends PsiCashModel> loadMoPubVideos(final String customData) {
         return Observable.create(emitter -> {
             final int rewardAmount;

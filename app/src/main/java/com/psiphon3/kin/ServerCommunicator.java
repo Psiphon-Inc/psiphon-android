@@ -4,27 +4,18 @@ import android.support.annotation.NonNull;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.jakewharton.rxrelay2.BehaviorRelay;
-import com.psiphon3.TunnelState;
 import com.psiphon3.psiphonlibrary.Utils;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.ProxySelector;
-import java.net.SocketAddress;
-import java.net.URI;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
 import io.reactivex.Single;
-import io.reactivex.schedulers.Schedulers;
+import io.reactivex.disposables.Disposables;
 import kin.sdk.WhitelistableTransaction;
 import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -33,48 +24,20 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 class ServerCommunicator {
-    // This port is unable to be used for connection
-    // According to https://stackoverflow.com/questions/42112735/android-7-reserved-ip-ports-restriction
-    // ports 32100 to 32600 are reserved by android
-    static final int PREVENT_CONNECTION_PORT = 32123;
-
-    private final String friendBotUrl;
+    private static final int RETRIES_LIMIT = 5;
+    private final String kinApplicationServerUrl;
     private final OkHttpClient okHttpClient;
-    private final BehaviorRelay<Boolean> isTunneledBehaviorRelay;
-    private int port = PREVENT_CONNECTION_PORT; // start with a port which prevents connection
 
     /**
-     * @param friendBotUrl the URL to the friend bot server
+     * @param kinApplicationServerUrl the URL to the kin application server URL
      */
-    ServerCommunicator(@NonNull String friendBotUrl) {
-        this.friendBotUrl = friendBotUrl;
+    ServerCommunicator(@NonNull String kinApplicationServerUrl) {
+        this.kinApplicationServerUrl = kinApplicationServerUrl;
 
         okHttpClient = new OkHttpClient.Builder()
-                .proxySelector(new ProxySelector() {
-                    @Override
-                    public List<Proxy> select(URI uri) {
-                        return Collections.singletonList(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", port)));
-                    }
-
-                    @Override
-                    public void connectFailed(URI uri, SocketAddress socketAddress, IOException e) {
-                    }
-                })
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .build();
-
-        isTunneledBehaviorRelay = BehaviorRelay.createDefault(false);
-    }
-
-    private Single<Boolean> waitUntilTunneled() {
-        return isTunneledBehaviorRelay
-                .distinctUntilChanged()
-                .hide()
-                .filter(isTunneled -> isTunneled)
-                .firstOrError()
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io());
     }
 
     /**
@@ -85,9 +48,24 @@ class ServerCommunicator {
      * @return a completable which fires on complete after receiving a successful response
      */
     Completable createAccount(@NonNull String address) {
-        return waitUntilTunneled()
-                .map(__ -> address)
-                .flatMapCompletable(this::createAccountInner);
+        return createAccountInner(address)
+                .retryWhen(errors ->
+                        errors.zipWith(
+                                Flowable.range(1, RETRIES_LIMIT + 1),
+                                (error, retryCount) -> {
+                                    if (retryCount > RETRIES_LIMIT || error instanceof FatalException) {
+                                        return Flowable.error(error);
+                                    } else {
+                                        // exponential backoff with timer
+                                        double retryInSeconds = Math.pow(3, retryCount);
+                                        Utils.MyLog.g("KinManager: will retry registering account on blockchain in " + retryInSeconds + " seconds due to error: " + error);
+                                        return Flowable.timer((long) retryInSeconds, TimeUnit.SECONDS);
+                                    }
+                                })
+                                .flatMap(x -> x)
+                )
+                .doOnDispose(() ->  Utils.MyLog.g("KinManager: register account subscription is disposed"))
+                .doOnComplete(() -> Utils.MyLog.g("KinManager: success registering account on the blockchain"));
     }
 
     private Completable createAccountInner(@NonNull String address) {
@@ -97,49 +75,36 @@ class ServerCommunicator {
                     .get()
                     .build();
 
+            final Call call;
             try {
+                Utils.MyLog.g("KinManager: registering account on the blockchain");
+                call = okHttpClient.newCall(request);
+                emitter.setDisposable(Disposables.fromAction(call::cancel));
                 Response response = okHttpClient.newCall(request).execute();
-                if (response.isSuccessful() && !emitter.isDisposed()) {
-                    emitter.onComplete();
-                } else if (!emitter.isDisposed()) {
-                    String msg = "create account failed with code " + response.code();
+                // HTTP code 409 means account already registered, treat as success
+                if ((response.isSuccessful() || response.code() == 409)) {
+                    if (!emitter.isDisposed()) {
+                        emitter.onComplete();
+                    }
+                } else {
+                    String msg = "KinManager: register account on the blockchain failed with code " + response.code();
                     Utils.MyLog.g(msg);
-                    emitter.onError(new Exception(msg));
+                    final Throwable e;
+                    if (response.code() >= 400 && response.code() <= 499) {
+                        e = new FatalException(msg);
+                    } else {
+                        e = new RetriableException(msg);
+                    }
+                    if (!emitter.isDisposed()) {
+                        emitter.onError(e);
+                    }
                 }
+                response.close();
             } catch (IOException e) {
                 Utils.MyLog.g(e.getMessage());
                 if (!emitter.isDisposed()) {
-                    emitter.onError(e);
+                    emitter.onError(new RetriableException(e.toString()));
                 }
-            }
-        });
-    }
-
-    /**
-     * Let's the server know this user has opted out for coarse-stats.
-     * Runs async.
-     */
-    void optOut() {
-        waitUntilTunneled()
-                .doOnSuccess(__ -> optOutInner())
-                .subscribe();
-    }
-
-    private void optOutInner() {
-        Request request = new Request.Builder()
-                .url(getOptOutUrl())
-                .head()
-                .build();
-
-        okHttpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                // Don't give a hoot
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                // Don't give a hoot
             }
         });
     }
@@ -151,42 +116,70 @@ class ServerCommunicator {
      * @param whitelistableTransaction a transaction to be whitelisted by the server
      * @return the whitelist transaction data from the server
      */
-    Single<String> whitelistTransaction(@NonNull WhitelistableTransaction whitelistableTransaction) {
-        // TODO: Include user address as a query param at some point
-        return waitUntilTunneled()
-                .map(__ -> whitelistableTransaction)
-                .flatMap(this::whitelistTransactionInner);
+    Single<String> whitelistTransaction(@NonNull String address, @NonNull WhitelistableTransaction whitelistableTransaction) {
+        return whitelistTransactionInner(address, whitelistableTransaction)
+                .retryWhen(errors ->
+                        errors.zipWith(
+                                Flowable.range(1, RETRIES_LIMIT + 1),
+                                (error, retryCount) -> {
+                                    if (retryCount > RETRIES_LIMIT || error instanceof FatalException) {
+                                        return Flowable.error(error);
+                                    } else {
+                                        // exponential backoff with timer
+                                        double retryInSeconds = Math.pow(3, retryCount);
+                                        Utils.MyLog.g("KinManager: will retry whitelisting transaction in " + retryInSeconds + " seconds due to error: " + error);
+                                        return Flowable.timer((long) retryInSeconds, TimeUnit.SECONDS);
+                                    }
+                                })
+                                .flatMap(x -> x)
+                )
+                .doOnDispose(() ->  Utils.MyLog.g("KinManager: whitelisting a transaction subscription is disposed"))
+                .doOnSuccess(__ -> Utils.MyLog.g("KinManager: success whitelisting a transaction"));
     }
 
-    private Single<String> whitelistTransactionInner(@NonNull WhitelistableTransaction whitelistableTransaction) {
+    private Single<String> whitelistTransactionInner(@NonNull String address, @NonNull WhitelistableTransaction whitelistableTransaction) {
         return Single.create(emitter -> {
             Request request = new Request.Builder()
-                    .url(getWhiteListTransactionUrl())
+                    .url(getWhiteListTransactionUrl(address))
                     .post(createWhitelistableTransactionBody(whitelistableTransaction))
                     .build();
-
+            final Call call;
             try {
-                Response response = okHttpClient.newCall(request).execute();
+                Utils.MyLog.g("KinManager: whitelisting a transaction");
+                call = okHttpClient.newCall(request);
+                emitter.setDisposable(Disposables.fromAction(call::cancel));
+                Response response = call.execute();
                 if (response.isSuccessful()) {
                     if (response.body() != null) {
-                        String hash = parseFriendBotResponse(response.body().charStream());
+                        String hash = parseKinApplicationServerResponse(response.body().charStream());
                         if (!emitter.isDisposed()) {
                             emitter.onSuccess(hash);
                         }
-                    } else if (!emitter.isDisposed()) {
-                        String msg = "whitelist transaction didn't return a body";
+                    } else {
+                        String msg = "KinManager: whitelist transaction failed with empty body";
                         Utils.MyLog.g(msg);
-                        emitter.onError(new Exception(msg));
+                        if (!emitter.isDisposed()) {
+                            emitter.onError(new RetriableException(msg));
+                        }
                     }
-                } else if (!emitter.isDisposed()) {
-                    String msg = "whitelist transaction failed with code " + response.code();
+                } else {
+                    String msg = "KinManager: whitelist transaction failed with code " + response.code();
                     Utils.MyLog.g(msg);
-                    emitter.onError(new Exception(msg));
+                    final Throwable e;
+                    if (response.code() >= 400 && response.code() <= 499) {
+                        e = new FatalException(msg);
+                    } else {
+                        e = new RetriableException(msg);
+                    }
+                    if (!emitter.isDisposed()) {
+                        emitter.onError(e);
+                    }
                 }
+                response.close();
             } catch (IOException e) {
                 Utils.MyLog.g(e.getMessage());
                 if (!emitter.isDisposed()) {
-                    emitter.onError(e);
+                    emitter.onError(new RetriableException(e.toString()));
                 }
             }
         });
@@ -202,56 +195,45 @@ class ServerCommunicator {
     }
 
     @NonNull
-    private String parseFriendBotResponse(@NonNull Reader reader) {
+    private String parseKinApplicationServerResponse(@NonNull Reader reader) {
         JsonParser jsonParser = new JsonParser();
         JsonObject jsonObject = jsonParser.parse(reader).getAsJsonObject();
         return jsonObject.get("hash").getAsString();
     }
 
     @NonNull
-    private HttpUrl.Builder getFriendBotUrlBuilder() {
+    private HttpUrl.Builder getKinApplicationServerUrlBuilder() {
         return new HttpUrl.Builder()
                 .scheme("https")
-                .host(friendBotUrl);
+                .host(kinApplicationServerUrl)
+                .addPathSegment("v1");
     }
 
     @NonNull
     private HttpUrl getCreateAccountUrl(@NonNull String address) {
-        return getFriendBotUrlBuilder()
-                .addQueryParameter("addr", address)
+        return getKinApplicationServerUrlBuilder()
+                .addPathSegment("create")
+                .addQueryParameter("address", address)
                 .build();
     }
 
     @NonNull
-    private HttpUrl getWhiteListTransactionUrl() {
-        return getFriendBotUrlBuilder()
+    private HttpUrl getWhiteListTransactionUrl(@NonNull String address) {
+        return getKinApplicationServerUrlBuilder()
                 .addPathSegment("whitelist")
+                .addQueryParameter("address", address)
                 .build();
     }
 
-    private HttpUrl getOptOutUrl() {
-        return getFriendBotUrlBuilder()
-                .addPathSegment("no")
-                .build();
-    }
-
-    public void setProxyPort(int port) {
-        this.port = port;
-    }
-
-    public void onTunnelConnectionState(TunnelState tunnelState) {
-        // Not running, prevent proxy
-        TunnelState.ConnectionData connectionData = tunnelState.connectionData();
-        if (tunnelState.isRunning() && connectionData.httpPort() > 0) {
-            setProxyPort(connectionData.httpPort());
-        } else {
-            setProxyPort(PREVENT_CONNECTION_PORT);
+    private class RetriableException extends Throwable {
+        RetriableException(String cause) {
+            super(cause);
         }
+    }
 
-        if(tunnelState.isRunning() && connectionData.isConnected()) {
-            isTunneledBehaviorRelay.accept(true);
-        } else {
-            isTunneledBehaviorRelay.accept(false);
+    private class FatalException extends Throwable {
+        FatalException(String cause) {
+            super(cause);
         }
     }
 }

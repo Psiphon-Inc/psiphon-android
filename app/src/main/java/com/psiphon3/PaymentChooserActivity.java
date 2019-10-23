@@ -20,214 +20,158 @@
 package com.psiphon3;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
+import com.psiphon3.util.SkuDetails;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
+import org.threeten.bp.Period;
+import org.threeten.bp.format.DateTimeParseException;
 
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Currency;
-import java.util.HashMap;
-import java.util.Map;
+
+import static com.psiphon3.util.IabHelper.ITEM_TYPE_SUBS;
 
 public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivity {
-    public static final String SKU_INFO_EXTRA = "SKU_INFO";
-    public static final String BUY_TYPE_EXTRA = "BUY_TYPE";
-    public static final int BUY_SUBSCRIPTION = 1;
-    public static final int BUY_TIMEPASS = 2;
-
-    SkuInfo mSkuInfo;
+    public static final String USER_PICKED_SKU_DETAILS_EXTRA = "USER_PICKED_SKU_DETAILS_EXTRA";
+    public static final String SKU_DETAILS_ARRAY_LIST_EXTRA = "SKU_DETAILS_ARRAY_LIST_EXTRA";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.payment_chooser);
 
-        Intent intent = getIntent();
-        String jsonString = intent.getStringExtra(SKU_INFO_EXTRA);
+        ArrayList<String> jsonSkuDetailsList =
+                getIntent().getStringArrayListExtra(SKU_DETAILS_ARRAY_LIST_EXTRA);
 
-        mSkuInfo = new SkuInfo(jsonString);
+        for (String jsonSkuDetails : jsonSkuDetailsList) {
+            SkuDetails skuDetails;
+            try {
+                skuDetails = new SkuDetails(jsonSkuDetails);
+            } catch (JSONException e) {
+                Utils.MyLog.g("PaymentChooserActivity: error parsing SkuDetails: " + e);
+                continue;
+            }
 
-        // Set up the buttons, including adding a tag with the product SKU and setting the
-        // price-per-day value.
+            int buttonResId = 0;
+            float pricePerDay = 0f;
 
-        setUpButton(R.id.limitedSubscription, mSkuInfo.mLimitedSubscriptionInfo);
-        setUpButton(R.id.unlimitedSubscription, mSkuInfo.mUnlimitedSubscriptionInfo);
+            // Calculate life time in days for subscriptions
+            // Note: we are not using Period.parse() because there are only 5 possible predefined periods
+            String subscriptionPeriod = skuDetails.getSubscriptionPeriod();
+            if(TextUtils.isEmpty(subscriptionPeriod)) {
+                // Our  subscriptions are all 1 month, set as default in case the user has a very old
+                // Google Play Services version which doesn't return subscription period value.
+                subscriptionPeriod = "P1M";
+            }
 
-        for (SkuInfo.Info info : mSkuInfo.mTimePassSkuToInfo.values()) {
-            long lifetimeInDays = info.lifetime / 24 / 60 / 60 / 1000;
-            int id = getResources().getIdentifier("timepass"+lifetimeInDays, "id", getPackageName());
+            if (skuDetails.getType().equals(ITEM_TYPE_SUBS)) {
+                if (subscriptionPeriod.equals("P1W")) {
+                    pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / 7f;
+                } else if (subscriptionPeriod.equals("P1M")) {
+                    pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / (365f / 12);
+                } else if (subscriptionPeriod.equals("P3M")) {
+                    pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / (365f / 4);
+                } else if (subscriptionPeriod.equals("P6M")) {
+                    pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / (365f / 2);
+                } else if (subscriptionPeriod.equals("P1Y")) {
+                    pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / 365f;
+                }
+                if (pricePerDay == 0f) {
+                    Utils.MyLog.g("PaymentChooserActivity error: bad subscription period for sku: " + skuDetails);
+                    continue;
+                }
 
-            setUpButton(id, info);
+                // Get button resource ID
+                if (skuDetails.getSku().equals(StatusActivity.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
+                    buttonResId = R.id.limitedSubscription;
+                } else if (skuDetails.getSku().equals(StatusActivity.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
+                    buttonResId = R.id.unlimitedSubscription;
+                }
+            } else {
+                String timepassSku = skuDetails.getSku();
+                // Get pre-calculated life time in days for time passes
+                Long lifetimeInDays = StatusActivity.IAB_TIMEPASS_SKUS_TO_DAYS.get(timepassSku);
+                if (lifetimeInDays == null || lifetimeInDays == 0L) {
+                    Utils.MyLog.g("PaymentChooserActivity error: unknown timepass period for sku: " + skuDetails);
+                    continue;
+                }
+                // Get button resource ID
+                buttonResId = getResources().getIdentifier("timepass" + lifetimeInDays, "id", getPackageName());
+                pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / lifetimeInDays;
+            }
+
+            if (buttonResId == 0) {
+                Utils.MyLog.g("PaymentChooserActivity error: no button resource for sku: " + skuDetails);
+                continue;
+            }
+
+            setUpButton(buttonResId, skuDetails, pricePerDay);
         }
     }
 
     /**
-     * Sets up the payment chooser buttons. This includes adding a tag with the product SKU and
-     * putting the price-per-day value into the label.
-     * @param buttonId ID of the button to set up.
-     * @param skuInfo Info about the SKU.
+     * Sets up the payment chooser buttons. This includes putting the price-per-day value into the label.
+     *
+     * @param buttonId   ID of the button to set up.
+     * @param skuDetails Info about the SKU.
+     * @param pricePerDay Price per day value.
      */
-    private void setUpButton(int buttonId, SkuInfo.Info skuInfo) {
-        skuInfo.button = (Button)findViewById(buttonId);
+    private void setUpButton(int buttonId, SkuDetails skuDetails, float pricePerDay) {
+        Button button = findViewById(buttonId);
 
-        long lifetimeInDays = skuInfo.lifetime / 24 / 60 / 60 / 1000;
-        skuInfo.button.setTag(skuInfo.sku);
-
-        float pricePerDay = skuInfo.priceMicros / 1000000.0f / lifetimeInDays;
-
-        // If the formatting for pricePerDayText fails below, use this as a default.
-        String pricePerDayText = skuInfo.priceCurrency + " " + pricePerDay;
+        // skuDetails.getPrice() returns a differently looking string than the one we get by using priceFormatter
+        // below, so for consistency we'll use priceFormatter on the subscription price amount too.
+        // If the formatting for pricePerDayText or priceText fails, use these as default
+        String pricePerDayText = String.format("%s %.2f", skuDetails.getPriceCurrencyCode(), pricePerDay);
+        String priceText = skuDetails.getPrice();
 
         try {
-            Currency currency = Currency.getInstance(skuInfo.priceCurrency);
+            Currency currency = Currency.getInstance(skuDetails.getPriceCurrencyCode());
             NumberFormat priceFormatter = NumberFormat.getCurrencyInstance();
             priceFormatter.setCurrency(currency);
             pricePerDayText = priceFormatter.format(pricePerDay);
+            priceText = priceFormatter.format(skuDetails.getPriceAmountMicros() / 1000000.0f);
         } catch (IllegalArgumentException e) {
             // do nothing
         }
-
-        String formatString = skuInfo.button.getText().toString();
-        String buttonText = String.format(formatString, skuInfo.price, pricePerDayText);
-        skuInfo.button.setText(buttonText);
-    }
-
-    public void onLimitedSubscriptionButtonClick(View v) {
-        Utils.MyLog.g("PaymentChooserActivity::onLimitedSubscriptionButtonClick");
-        Intent intent = getIntent();
-        intent.putExtra(BUY_TYPE_EXTRA, BUY_SUBSCRIPTION);
-        intent.putExtra(SKU_INFO_EXTRA, mSkuInfo.mLimitedSubscriptionInfo.sku);
-        setResult(RESULT_OK, intent);
-        finish();
-    }
-
-    public void onUnlimitedSubscriptionButtonClick(View v) {
-        Utils.MyLog.g("PaymentChooserActivity::onUnlimitedSubscriptionButtonClick");
-        Intent intent = getIntent();
-        intent.putExtra(BUY_TYPE_EXTRA, BUY_SUBSCRIPTION);
-        intent.putExtra(SKU_INFO_EXTRA, mSkuInfo.mUnlimitedSubscriptionInfo.sku);
-        setResult(RESULT_OK, intent);
-        finish();
-    }
-
-    public void onTimePassButtonClick(View v) {
-        Utils.MyLog.g("PaymentChooserActivity::onTimePassButtonClick");
-
-        // One of the time-pass buttons was clicked, but we don't know which. Figure it out from the
-        // tag attribute, which is set to the SKU.
-
-        String sku = (String)v.getTag();
-
-        assert(sku != null);
-
-        Intent intent = getIntent();
-        intent.putExtra(BUY_TYPE_EXTRA, BUY_TIMEPASS);
-        intent.putExtra(SKU_INFO_EXTRA, sku);
-        setResult(RESULT_OK, intent);
-        finish();
-    }
-
-    static public class SkuInfo {
-        static public class Info {
-            public String sku;
-            public long lifetime;
-            public String price;
-            public long priceMicros;
-            public String priceCurrency;
-            public Button button;
-        }
-
-        Info mLimitedSubscriptionInfo = new Info();
-        Info mUnlimitedSubscriptionInfo = new Info();
-        Map<String, Info> mTimePassSkuToInfo = new HashMap<>();
-
-        public SkuInfo() { }
-
-        public SkuInfo(String jsonString) {
+        String formatString = button.getText().toString();
+        String buttonTextHtml = String.format(formatString, priceText, pricePerDayText).replace("\n", "<br>");
+        String freeTrialPeriodISO8061 = skuDetails.getFreeTrialPeriod();
+        if(!TextUtils.isEmpty(freeTrialPeriodISO8061) &&
+                // Make sure we are compatible with the minSdk 15 of com.jakewharton.threetenabp
+                Build.VERSION.SDK_INT > Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             try {
-                JSONObject json = new JSONObject(jsonString);
-
-                JSONObject limitedSubscriptionInfo = json.getJSONObject("limitedSubscriptionInfo");
-                mLimitedSubscriptionInfo.sku = limitedSubscriptionInfo.getString("sku");
-                mLimitedSubscriptionInfo.lifetime = limitedSubscriptionInfo.getLong("lifetime");
-                mLimitedSubscriptionInfo.price = limitedSubscriptionInfo.getString("price");
-                mLimitedSubscriptionInfo.priceMicros = limitedSubscriptionInfo.getLong("priceMicros");
-                mLimitedSubscriptionInfo.priceCurrency = limitedSubscriptionInfo.getString("priceCurrency");
-
-                JSONObject unlimitedSubscriptionInfo = json.getJSONObject("unlimitedSubscriptionInfo");
-                mUnlimitedSubscriptionInfo.sku = unlimitedSubscriptionInfo.getString("sku");
-                mUnlimitedSubscriptionInfo.lifetime = unlimitedSubscriptionInfo.getLong("lifetime");
-                mUnlimitedSubscriptionInfo.price = unlimitedSubscriptionInfo.getString("price");
-                mUnlimitedSubscriptionInfo.priceMicros = unlimitedSubscriptionInfo.getLong("priceMicros");
-                mUnlimitedSubscriptionInfo.priceCurrency = unlimitedSubscriptionInfo.getString("priceCurrency");
-
-                JSONArray timepassInfo = json.getJSONArray("timepassInfo");
-                for (int i = 0; i < timepassInfo.length(); i++) {
-                    JSONObject infoJson = timepassInfo.getJSONObject(i);
-                    Info info = new Info();
-                    info.sku = infoJson.getString("sku");
-                    info.lifetime = infoJson.getLong("lifetime");
-                    info.price = infoJson.getString("price");
-                    info.priceMicros = infoJson.getLong("priceMicros");
-                    info.priceCurrency = infoJson.getString("priceCurrency");
-
-                    mTimePassSkuToInfo.put(info.sku, info);
+                Period period = Period.parse(freeTrialPeriodISO8061);
+                long freeTrialPeriodInDays = period.getDays();
+                if (freeTrialPeriodInDays > 0L) {
+                    String freeTrialPeriodText = String.format(getString(R.string.PaymentChooserFragment_FreeTrialPeriod), freeTrialPeriodInDays);
+                    buttonTextHtml = String.format("%s<br><sub><small>%s</small></sub>", buttonTextHtml, freeTrialPeriodText);
                 }
-            }
-            catch (JSONException e) {
-                e.printStackTrace();
+            } catch (DateTimeParseException e) {
+                Utils.MyLog.g("PaymentChooserActivity failed to parse free trial period: " + freeTrialPeriodISO8061);
             }
         }
 
-        public String toString() {
-            JSONObject json = new JSONObject();
-
-            try {
-                JSONObject jsonLimitedSubscriptionObj = new JSONObject();
-                jsonLimitedSubscriptionObj.put("sku", mLimitedSubscriptionInfo.sku);
-                jsonLimitedSubscriptionObj.put("lifetime", mLimitedSubscriptionInfo.lifetime);
-                jsonLimitedSubscriptionObj.put("price", mLimitedSubscriptionInfo.price);
-                jsonLimitedSubscriptionObj.put("priceMicros", mLimitedSubscriptionInfo.priceMicros);
-                jsonLimitedSubscriptionObj.put("priceCurrency", mLimitedSubscriptionInfo.priceCurrency);
-
-                JSONObject jsonUnlimitedSubscriptionObj = new JSONObject();
-                jsonUnlimitedSubscriptionObj.put("sku", mUnlimitedSubscriptionInfo.sku);
-                jsonUnlimitedSubscriptionObj.put("lifetime", mUnlimitedSubscriptionInfo.lifetime);
-                jsonUnlimitedSubscriptionObj.put("price", mUnlimitedSubscriptionInfo.price);
-                jsonUnlimitedSubscriptionObj.put("priceMicros", mUnlimitedSubscriptionInfo.priceMicros);
-                jsonUnlimitedSubscriptionObj.put("priceCurrency", mUnlimitedSubscriptionInfo.priceCurrency);
-
-                JSONArray timepassInfo = new JSONArray();
-                for (Info info : mTimePassSkuToInfo.values()) {
-                    JSONObject jsonTimePassObj = new JSONObject();
-
-                    jsonTimePassObj.put("sku", info.sku);
-                    jsonTimePassObj.put("lifetime", info.lifetime);
-                    jsonTimePassObj.put("price", info.price);
-                    jsonTimePassObj.put("priceMicros", info.priceMicros);
-                    jsonTimePassObj.put("priceCurrency", info.priceCurrency);
-
-                    timepassInfo.put(jsonTimePassObj);
-                }
-
-                json.put("limitedSubscriptionInfo", jsonLimitedSubscriptionObj);
-                json.put("unlimitedSubscriptionInfo", jsonUnlimitedSubscriptionObj);
-                json.put("timepassInfo", timepassInfo);
-            }
-            catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-            return json.toString();
-        }
+        button.setText(Html.fromHtml(buttonTextHtml));
+        button.setVisibility(View.VISIBLE);
+        button.setOnClickListener(v -> {
+            Utils.MyLog.g("PaymentChooserActivity purchase button clicked.");
+            Intent intent = getIntent();
+            intent.putExtra(USER_PICKED_SKU_DETAILS_EXTRA, skuDetails.getOriginalJson());
+            setResult(RESULT_OK, intent);
+            finish();
+        });
     }
 }

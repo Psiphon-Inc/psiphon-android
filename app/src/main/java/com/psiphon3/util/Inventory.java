@@ -88,4 +88,8 @@ public class Inventory {
     void addPurchase(Purchase p) {
         mPurchaseMap.put(p.getSku(), p);
     }
+
+    public ArrayList<SkuDetails> getAllSkuDetails() {
+        return new ArrayList<>(mSkuMap.values());
+    }
 }

@@ -24,6 +24,7 @@ import android.app.Application;
 import android.content.Context;
 
 import com.psiphon3.psiphonlibrary.LocaleManager;
+import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.Utils;
 
 import io.reactivex.exceptions.UndeliverableException;
@@ -35,17 +36,19 @@ public class PsiphonApplication extends Application {
         // Do not set locale in the base context if we detected system language should be used
         // because it will prevent locale change when it is triggered via onConfigurationChanged
         // callback when user changes locale in the OS settings.
-        LocaleManager.initialize(base);
-        if (LocaleManager.getLanguage().equals(LocaleManager.USE_SYSTEM_LANGUAGE_VAL)) {
+        LocaleManager localeManager = LocaleManager.getInstance(base);
+        if (localeManager.isSetToSystemLocale()) {
             super.attachBaseContext(base);
         } else {
-            super.attachBaseContext(LocaleManager.setLocale(base));
+            super.attachBaseContext(localeManager.setLocale(base));
         }
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        PsiphonConstants.DEBUG = Utils.isDebugMode(this);
+
         // If an Rx subscription is disposed while the observable is still running its async task
         // which may throw an error the error will have nowhere to go and will result in an uncaught
         // UndeliverableException being thrown. We are going to set up a global error handler to make

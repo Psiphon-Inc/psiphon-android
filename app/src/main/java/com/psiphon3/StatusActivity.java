@@ -24,6 +24,7 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -49,8 +50,8 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
-import com.psiphon3.kin.KinManager;
 import com.psiphon3.kin.KinPermissionManager;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.util.BroadcastIntent;
@@ -71,6 +72,8 @@ import com.psiphon3.util.SkuDetails;
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
+import org.json.JSONException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -88,10 +91,14 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
 
+import static com.psiphon3.util.IabHelper.ITEM_TYPE_SUBS;
+
 
 public class StatusActivity
     extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase implements PsiCashFragment.ActiveSpeedBoostListener
 {
+    public static final String ACTION_SHOW_GET_HELP_DIALOG = "com.psiphon3.StatusActivity.SHOW_GET_HELP_CONNECTING_DIALOG";
+
     private View mRateLimitedTextSection;
     private TextView mRateLimitedText;
     private TextView mRateUnlimitedText;
@@ -113,8 +120,10 @@ public class StatusActivity
     private PublishRelay<RateLimitMode> currentRateLimitModeRelay;
     private Disposable currentRateModeDisposable;
     private PublishRelay<Boolean> activeSpeedBoostRelay;
-    private KinManager kinManager;
     private KinPermissionManager kinPermissionManager;
+    private Disposable toggleClickDisposable;
+    private BehaviorRelay<PsiphonAdManager.SubscriptionStatus> subscriptionStatusBehaviorRelay = BehaviorRelay.create();
+    private Disposable initializeKinOptInStateDisposable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,7 +132,14 @@ public class StatusActivity
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main);
 
-        initializeKin();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            kinPermissionManager = new KinPermissionManager();
+        } else {
+            CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
+            if (checkBoxKinEnabled != null) {
+                checkBoxKinEnabled.setVisibility(View.GONE);
+            }
+        }
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_tabSpecsList = new ArrayList<>();
@@ -212,8 +228,8 @@ public class StatusActivity
     }
 
     @Override
-    protected void onResume()
-    {
+    protected void onResume() {
+        initializeKinOptInState();
         startIab();
         super.onResume();
         if (m_startupPending) {
@@ -223,14 +239,12 @@ public class StatusActivity
     }
 
     @Override
-    public void onDestroy()
-    {
-        if(startUpInterstitialDisposable != null) {
+    public void onDestroy() {
+        if (startUpInterstitialDisposable != null) {
             startUpInterstitialDisposable.dispose();
         }
         currentRateModeDisposable.dispose();
         psiphonAdManager.onDestroy();
-
         super.onDestroy();
     }
 
@@ -253,7 +267,7 @@ public class StatusActivity
         // Wrap in Rx Single to run the valid tokens check on a non-UI thread and then
         // update the UI on main thread when we get result.
         Single.fromCallable(() -> PsiCashClient.getInstance(this).hasValidTokens())
-                .doOnError(err -> MyLog.g("Error showing or hiding PsiCash tab:"))
+                .doOnError(err -> MyLog.g("Error showing PsiCash tab:" + err))
                 .onErrorResumeNext(Single.just(Boolean.FALSE))
                 .subscribeOn(Schedulers.computation())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -331,7 +345,6 @@ public class StatusActivity
 
         psiphonAdManager.onTunnelConnectionState(tunnelState);
         psiCashFragment.onTunnelConnectionState(tunnelState);
-        kinManager.onTunnelConnectionState(tunnelState);
     }
 
     @Override
@@ -344,14 +357,20 @@ public class StatusActivity
     protected void HandleCurrentIntent()
     {
         Intent intent = getIntent();
-
-        if (intent == null || intent.getAction() == null)
-        {
+        if (intent == null || intent.getAction() == null) {
+            return;
+        }
+        // StatusActivity is exposed to other apps because it is declared as an entry point activity of the app in the manifest.
+        // For the purpose of handling internal intents, such as handshake, etc., from the tunnel service we have declared a not
+        // exported activity alias 'com.psiphon3.psiphonlibrary.TunnelIntentsHandler' that should act as a proxy for StatusActivity.
+        // We expect our own intents have a component set to 'com.psiphon3.psiphonlibrary.TunnelIntentsHandler', all other intents
+        // should be ignored.
+        ComponentName tunnelIntentsActivityComponentName = new ComponentName(this, "com.psiphon3.psiphonlibrary.TunnelIntentsHandler");
+        if (!tunnelIntentsActivityComponentName.equals(intent.getComponent())) {
             return;
         }
 
-        if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_HANDSHAKE))
-        {
+        if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_HANDSHAKE)) {
             onTunnelConnectionState(getTunnelStateFromBundle(intent.getExtras()));
 
             // OLD COMMENT:
@@ -381,10 +400,10 @@ public class StatusActivity
             // We only want to respond to the HANDSHAKE_SUCCESS action once,
             // so we need to clear it (by setting it to a non-special intent).
             setIntent(new Intent(
-                            "ACTION_VIEW",
-                            null,
-                            this,
-                            this.getClass()));
+                    "ACTION_VIEW",
+                    null,
+                    this,
+                    this.getClass()));
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE)) {
             // Switch to settings tab
             disableInterstitialOnNextTabChange = true;
@@ -410,25 +429,26 @@ public class StatusActivity
                     this.getClass()));
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_VPN_REVOKED)) {
             showVpnAlertDialog(R.string.StatusActivity_VpnRevokedTitle, R.string.StatusActivity_VpnRevokedMessage);
+        } else if (0 == intent.getAction().compareTo(ACTION_SHOW_GET_HELP_DIALOG)) {
+            // OK to be null because we don't use it
+            onGetHelpConnectingClick(null);
         }
     }
+    
+    public void onToggleClick(View v) {
+        // Only check for payment when starting in WDM, also make sure subscribers don't get prompted for Kin.
+        if (!isServiceRunning() && getTunnelConfigWholeDevice()
+                && !Utils.getHasValidSubscription(getApplicationContext())
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            // prevent multiple confirmation dialogs
+            if (toggleClickDisposable != null && !toggleClickDisposable.isDisposed()) {
+                return;
+            }
 
-    public void onToggleClick(View v)
-    {
-        // Only check for payment when starting in WDM
-        if (!isServiceRunning() && getTunnelConfigWholeDevice()) {
-            kinManager
-                    .isOptedInObservable()
-                    // take one or give up
-                    .firstOrError()
-                    // make sure they're opted in
+            toggleClickDisposable = Single.fromCallable(() -> kinPermissionManager.isOptedIn(getApplicationContext()))
                     .flatMap(optedIn -> optedIn ? kinPermissionManager.confirmDonation(this) : Single.just(false))
-                    // on success notify the charge for connection relay
-                    .doOnSuccess(agreed -> kinManager.chargeForNextConnection(agreed))
-                    // either way, when the dialog is dismissed connect
-                    .ignoreElement()
-                    .onErrorComplete()
-                    .doOnComplete(this::doToggle)
+                    .doOnSuccess(this::setKinState)
+                    .doOnSuccess(__ -> doToggle())
                     .subscribe();
         } else {
             doToggle();
@@ -440,6 +460,14 @@ public class StatusActivity
         displayBrowser(this, null);
     }
 
+    public void onGetHelpConnectingClick(View v) {
+        showConnectionHelpDialog(this, R.layout.dialog_get_help_connecting);
+    }
+
+    public void onHowToHelpClick(View view) {
+        showConnectionHelpDialog(this, R.layout.dialog_how_to_help_connect);
+    }
+
     @Override
     public void onFeedbackClick(View v)
     {
@@ -448,17 +476,22 @@ public class StatusActivity
     }
 
     public void onKinEnabledClick(View v) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            return;
+        }
         // Assume this will always be the kin enabled checkbox
         CheckBox checkBox = (CheckBox) v;
         // Prevent the default toggle, that's handled automatically by a subscription to the opted-in state
         checkBox.setChecked(!checkBox.isChecked());
-        if (kinManager.isOptedIn(this)) {
+        if (kinPermissionManager.isOptedIn(this)) {
             kinPermissionManager
                     .optOut(this)
+                    .doOnSuccess(this::setKinState)
                     .subscribe();
         } else {
             kinPermissionManager
                     .optIn(this)
+                    .doOnSuccess(this::setKinState)
                     .subscribe();
         }
     }
@@ -530,7 +563,7 @@ public class StatusActivity
             hasPreference = false;
         }
 
-        if (m_tunnelWholeDeviceToggle.isEnabled() &&
+        if (Utils.hasVpnService() &&
             !hasPreference &&
             !isServiceRunning())
         {
@@ -733,18 +766,14 @@ public class StatusActivity
     static final String[] IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKUS = {IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU,
             "basic_ad_free_subscription", "basic_ad_free_subscription_2", "basic_ad_free_subscription_3", "basic_ad_free_subscription_4"};
 
-    static final String IAB_BASIC_7DAY_TIMEPASS_SKU = "basic_ad_free_7_day_timepass";
-    static final String IAB_BASIC_30DAY_TIMEPASS_SKU = "basic_ad_free_30_day_timepass";
-    static final String IAB_BASIC_360DAY_TIMEPASS_SKU = "basic_ad_free_360_day_timepass";
-    static final Map<String, Long> IAB_TIMEPASS_SKUS_TO_TIME;
+    static public final Map<String, Long> IAB_TIMEPASS_SKUS_TO_DAYS;
     static {
         Map<String, Long> m = new HashMap<>();
-        m.put(IAB_BASIC_7DAY_TIMEPASS_SKU, 7L * 24 * 60 * 60 * 1000);
-        m.put(IAB_BASIC_30DAY_TIMEPASS_SKU, 30L * 24 * 60 * 60 * 1000);
-        m.put(IAB_BASIC_360DAY_TIMEPASS_SKU, 360L * 24 * 60 * 60 * 1000);
-        IAB_TIMEPASS_SKUS_TO_TIME = Collections.unmodifiableMap(m);
+        m.put("basic_ad_free_7_day_timepass", 7L);
+        m.put("basic_ad_free_30_day_timepass", 30L);
+        m.put("basic_ad_free_360_day_timepass", 360L);
+        IAB_TIMEPASS_SKUS_TO_DAYS = Collections.unmodifiableMap(m);
     }
-
     @Override
     public void onActiveSpeedBoost(Boolean hasActiveSpeedBoost) {
         activeSpeedBoostRelay.accept(hasActiveSpeedBoost);
@@ -858,10 +887,10 @@ public class StatusActivity
 
             long now = System.currentTimeMillis();
             List<Purchase> timepassesToConsume = new ArrayList<>();
-            for (Map.Entry<String, Long> timepass : IAB_TIMEPASS_SKUS_TO_TIME.entrySet())
+            for (String sku : IAB_TIMEPASS_SKUS_TO_DAYS.keySet())
             {
-                String sku = timepass.getKey();
-                long lifetime = timepass.getValue();
+                Long lifetimeInDays = IAB_TIMEPASS_SKUS_TO_DAYS.get(sku);
+                long lifetimeMillis = lifetimeInDays * 24 * 60 * 60 * 1000;
 
                 // DEBUG: This line will convert days to minutes. Useful for testing.
                 //lifetime = lifetime / 24 / 60;
@@ -872,7 +901,7 @@ public class StatusActivity
                     continue;
                 }
 
-                long timepassExpiry = tempPurchase.getPurchaseTime() + lifetime;
+                long timepassExpiry = tempPurchase.getPurchaseTime() + lifetimeMillis;
                 if (now < timepassExpiry)
                 {
                     // This time pass is still valid.
@@ -931,7 +960,7 @@ public class StatusActivity
                 currentRateLimitModeRelay.accept(RateLimitMode.UNLIMITED_SUBSCRIPTION);
                 proceedWithValidSubscription(purchase);
             }
-            else if (IAB_TIMEPASS_SKUS_TO_TIME.containsKey(purchase.getSku()))
+            else if (IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(purchase.getSku()))
             {
                 Utils.MyLog.g(String.format("StatusActivity::onIabPurchaseFinished: success: %s", purchase.getSku()));
 
@@ -977,7 +1006,7 @@ public class StatusActivity
             if (isIabInitialized())
             {
                 List<String> timepassSkus = new ArrayList<>();
-                timepassSkus.addAll(IAB_TIMEPASS_SKUS_TO_TIME.keySet());
+                timepassSkus.addAll(IAB_TIMEPASS_SKUS_TO_DAYS.keySet());
 
                 List<String> subscriptionSkus = new ArrayList<>();
                 subscriptionSkus.add(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU);
@@ -1071,9 +1100,11 @@ public class StatusActivity
     {
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
         psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
+        onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIBER);
         Utils.setHasValidSubscription(this, true);
         this.m_retainedDataFragment.setCurrentPurchase(purchase);
         hidePsiCashTab();
+        enableKinOptInCheckBox(false);
 
         // Pass the most current purchase data to the service if it is running so the tunnel has a
         // chance to update authorization and restart if the purchase is new.
@@ -1093,10 +1124,21 @@ public class StatusActivity
     {
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
         psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
+        onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.NOT_SUBSCRIBER);
         Utils.setHasValidSubscription(this, false);
         currentRateLimitModeRelay.accept(RateLimitMode.AD_MODE_LIMITED);
         this.m_retainedDataFragment.setCurrentPurchase(null);
         showPsiCashTabIfHasValidToken();
+        enableKinOptInCheckBox(true);
+    }
+
+    private void enableKinOptInCheckBox(boolean enable) {
+        CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
+        if(enable) {
+            checkBoxKinEnabled.setVisibility(View.VISIBLE);
+        } else {
+            checkBoxKinEnabled.setVisibility(View.GONE);
+        }
     }
 
     private void setRateLimitUI(RateLimitMode rateLimitMode) {
@@ -1126,7 +1168,10 @@ public class StatusActivity
     {
         psiphonAdManager.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
         psiCashFragment.onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
+        onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus.SUBSCRIPTION_CHECK_FAILED);
+
         showPsiCashTabIfHasValidToken();
+        enableKinOptInCheckBox(true);
 
         // try again next time
         deInitIab();
@@ -1145,6 +1190,10 @@ public class StatusActivity
                 doStartUp();
             }
         }
+    }
+
+    private void onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus status) {
+        subscriptionStatusBehaviorRelay.accept(status);
     }
 
     public void onRateLimitUpgradeButtonClick(View v) {
@@ -1174,56 +1223,35 @@ public class StatusActivity
 
     @Override
     public void onSubscribeButtonClick(View v) {
+        // User has clicked the Subscribe button, now let them choose the payment method.
         Utils.MyLog.g("StatusActivity::onSubscribeButtonClick");
-        try {
-            // User has clicked the Subscribe button, now let them choose the payment method.
-
-            Intent feedbackIntent = new Intent(this, PaymentChooserActivity.class);
-
-            // Pass price and SKU info to payment chooser activity.
-            PaymentChooserActivity.SkuInfo skuInfo = new PaymentChooserActivity.SkuInfo();
-
-            SkuDetails limitedSubscriptionSkuDetails = mInventory.getSkuDetails(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU);
-            skuInfo.mLimitedSubscriptionInfo.sku = limitedSubscriptionSkuDetails.getSku();
-            skuInfo.mLimitedSubscriptionInfo.price = limitedSubscriptionSkuDetails.getPrice();
-            skuInfo.mLimitedSubscriptionInfo.priceMicros = limitedSubscriptionSkuDetails.getPriceAmountMicros();
-            skuInfo.mLimitedSubscriptionInfo.priceCurrency = limitedSubscriptionSkuDetails.getPriceCurrencyCode();
-            // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
-            // we'll set it to 30 days.
-            skuInfo.mLimitedSubscriptionInfo.lifetime = 30L * 24 * 60 * 60 * 1000;
-
-            SkuDetails unlimitedSubscriptionSkuDetails = mInventory.getSkuDetails(IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
-            skuInfo.mUnlimitedSubscriptionInfo.sku = unlimitedSubscriptionSkuDetails.getSku();
-            skuInfo.mUnlimitedSubscriptionInfo.price = unlimitedSubscriptionSkuDetails.getPrice();
-            skuInfo.mUnlimitedSubscriptionInfo.priceMicros = unlimitedSubscriptionSkuDetails.getPriceAmountMicros();
-            skuInfo.mUnlimitedSubscriptionInfo.priceCurrency = unlimitedSubscriptionSkuDetails.getPriceCurrencyCode();
-            // This is a subscription, so lifetime doesn't really apply. However, to keep things sane
-            // we'll set it to 30 days.
-            skuInfo.mUnlimitedSubscriptionInfo.lifetime = 30L * 24 * 60 * 60 * 1000;
-
-            for (Map.Entry<String, Long> timepassSku : IAB_TIMEPASS_SKUS_TO_TIME.entrySet()) {
-                SkuDetails timepassSkuDetails = mInventory.getSkuDetails(timepassSku.getKey());
-                PaymentChooserActivity.SkuInfo.Info info = new PaymentChooserActivity.SkuInfo.Info();
-
-                info.sku = timepassSkuDetails.getSku();
-                info.price = timepassSkuDetails.getPrice();
-                info.priceMicros = timepassSkuDetails.getPriceAmountMicros();
-                info.priceCurrency = timepassSkuDetails.getPriceCurrencyCode();
-                info.lifetime = timepassSku.getValue();
-
-                skuInfo.mTimePassSkuToInfo.put(info.sku, info);
+        // Build a list of  all available sku details to be passed to the payment chooser activity.
+        ArrayList<String> jsonSkuDetailsList = new ArrayList<>();
+        if(mInventory != null)  {
+            ArrayList<SkuDetails> allSkuDetails = mInventory.getAllSkuDetails();
+            for(SkuDetails skuDetails : allSkuDetails) {
+                jsonSkuDetailsList.add(skuDetails.getOriginalJson());
             }
-
-            feedbackIntent.putExtra(PaymentChooserActivity.SKU_INFO_EXTRA, skuInfo.toString());
-
-            startActivityForResult(feedbackIntent, PAYMENT_CHOOSER_ACTIVITY);
-        } catch (NullPointerException e) {
-            Utils.MyLog.g("StatusActivity::onSubscribeButtonClick error: " + e);
-            // Show "Subscription options not available" toast.
-            Toast toast = Toast.makeText(this, R.string.subscription_options_currently_not_available, Toast.LENGTH_LONG);
-            toast.setGravity(Gravity.CENTER, 0, 0);
-            toast.show();
         }
+
+        if(jsonSkuDetailsList.size() > 0) {
+            Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
+            paymentChooserActivityIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            paymentChooserActivityIntent.putStringArrayListExtra(
+                    PaymentChooserActivity.SKU_DETAILS_ARRAY_LIST_EXTRA,
+                    new ArrayList<>(jsonSkuDetailsList));
+            startActivityForResult(paymentChooserActivityIntent, PAYMENT_CHOOSER_ACTIVITY);
+        } else {
+            // Sku details list is empty, show "Subscription options not available" toast.
+            Utils.MyLog.g("StatusActivity::onSubscribeButtonClick sku list is empty, mInventory is " + (mInventory == null ? "null": "not null"));
+            showToast(R.string.subscription_options_currently_not_available);
+        }
+    }
+
+    private void showToast(int stringResId) {
+        Toast toast = Toast.makeText(this, stringResId, Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        toast.show();
     }
 
     synchronized
@@ -1246,40 +1274,33 @@ public class StatusActivity
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
-        if (requestCode == IAB_REQUEST_CODE)
-        {
-            if (isIabInitialized())
-            {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == IAB_REQUEST_CODE) {
+            if (isIabInitialized()) {
                 mIabHelper.handleActivityResult(requestCode, resultCode, data);
             }
-        }
-        else if (requestCode == PAYMENT_CHOOSER_ACTIVITY)
-        {
-            if (resultCode == RESULT_OK)
-            {
-                int buyType = data.getIntExtra(PaymentChooserActivity.BUY_TYPE_EXTRA, -1);
-                if (buyType == PaymentChooserActivity.BUY_SUBSCRIPTION)
-                {
-                    Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: subscription");
-                    String sku = data.getStringExtra(PaymentChooserActivity.SKU_INFO_EXTRA);
-                    launchSubscriptionPurchaseFlow(sku);
+        } else if (requestCode == PAYMENT_CHOOSER_ACTIVITY) {
+            if (resultCode == RESULT_OK) {
+                String skuString = data.getStringExtra(PaymentChooserActivity.USER_PICKED_SKU_DETAILS_EXTRA);
+                try {
+                    if (TextUtils.isEmpty(skuString)) {
+                        throw new IllegalArgumentException("SKU is empty.");
+                    }
+                    SkuDetails skuDetails = new SkuDetails(skuString);
+                    if (skuDetails.getType().equals(ITEM_TYPE_SUBS)) {
+                        launchSubscriptionPurchaseFlow(skuDetails.getSku());
+                    } else {
+                        launchTimePassPurchaseFlow(skuDetails.getSku());
+                    }
+                } catch (JSONException | IllegalArgumentException e) {
+                    Utils.MyLog.g("StatusActivity::onActivityResult purchase SKU error: " + e);
+                    // We've got bad sku data, show "Subscription options not available" toast.
+                    showToast(R.string.subscription_options_currently_not_available);
                 }
-                else if (buyType == PaymentChooserActivity.BUY_TIMEPASS)
-                {
-                    Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: time pass");
-                    String sku = data.getStringExtra(PaymentChooserActivity.SKU_INFO_EXTRA);
-                    launchTimePassPurchaseFlow(sku);
-                }
-            }
-            else
-            {
+            } else {
                 Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: canceled");
             }
-        }
-        else
-        {
+        } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
     }
@@ -1287,6 +1308,17 @@ public class StatusActivity
     @Override
     protected void onVpnPromptCancelled() {
         showVpnAlertDialog(R.string.StatusActivity_VpnPromptCancelledTitle, R.string.StatusActivity_VpnPromptCancelledMessage);
+    }
+
+    @Override
+    protected void configureServiceIntent(Intent intent) {
+        super.configureServiceIntent(intent);
+        // Pass Kin opt in state, if user is not subscribed treat as opt out.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            boolean kinOptInState = !Utils.getHasValidSubscription(getApplicationContext())
+                    && kinPermissionManager.isOptedIn(this);
+            intent.putExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, kinOptInState);
+        }
     }
 
     private void showVpnAlertDialog(int titleId, int messageId) {
@@ -1311,19 +1343,25 @@ public class StatusActivity
         }
     };
 
-    private void initializeKin() {
-        kinManager = KinManager.getInstance(this);
-        kinPermissionManager = kinManager.getPermissionManager();
-
-        kinManager
-                .isOptedInObservable()
-                // when the opted-in status changes update the UI state
-                .doOnNext(this::setKinState)
-                .subscribe();
-
-        kinPermissionManager
+    private void initializeKinOptInState() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            return;
+        }
+        if(initializeKinOptInStateDisposable != null && !initializeKinOptInStateDisposable.isDisposed()) {
+            return;
+        }
+        initializeKinOptInStateDisposable = subscriptionStatusBehaviorRelay.concatMapSingle(subscriptionStatus -> {
+            if (subscriptionStatus == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER) {
+                // Return 'any' object, the return value is ignored anyway.
+                return Single.just(new Object());
+            } else {
                 // ask if the user agrees to kin if they haven't yet
-                .getUsersAgreementToKin(this)
+                return kinPermissionManager.getUsersAgreementToKin(this)
+                        .doOnSuccess(this::setKinState);
+            }
+        })
+                .firstOrError()
+                .ignoreElement()
                 .subscribe();
     }
 
@@ -1333,6 +1371,13 @@ public class StatusActivity
             checkBoxKinEnabled.setChecked(true);
         } else {
             checkBoxKinEnabled.setChecked(false);
+        }
+
+        // Notify tunnel service too if it is running and the user is not subscribed
+        if(isServiceRunning() && !Utils.getHasValidSubscription(getApplicationContext())) {
+            Bundle data = new Bundle();
+            data.putBoolean(TunnelManager.KIN_OPT_IN_STATE_EXTRA, optedIn);
+            sendServiceMessage(TunnelManager.ClientToServiceMessage.KIN_OPT_IN_STATE.ordinal(), data);
         }
     }
 }

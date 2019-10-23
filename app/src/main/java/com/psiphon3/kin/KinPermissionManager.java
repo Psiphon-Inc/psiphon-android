@@ -14,8 +14,8 @@ import static android.content.DialogInterface.BUTTON_POSITIVE;
 public class KinPermissionManager {
     private final SettingsManager settingsManager;
 
-    KinPermissionManager(SettingsManager settingsManager) {
-        this.settingsManager = settingsManager;
+    public KinPermissionManager() {
+        this.settingsManager = new SettingsManager();
     }
 
     /**
@@ -71,12 +71,12 @@ public class KinPermissionManager {
                         settingsManager.setIsOptedIn(context, false);
                         settingsManager.setHasAgreedToAutoPay(context, false);
                         if (!emitter.isDisposed()) {
-                            emitter.onSuccess(true);
+                            emitter.onSuccess(false);
                         }
                     })
                     .setNegativeButton(R.string.lbl_no, (dialog, which) -> {
                         if (!emitter.isDisposed()) {
-                            emitter.onSuccess(false);
+                            emitter.onSuccess(true);
                         }
                     })
                     .setCancelable(false)
@@ -99,6 +99,7 @@ public class KinPermissionManager {
                     .setMessage(R.string.lbl_kin_pay)
                     .setNeutralButton(R.string.lbl_opt_out, (dialog, which) -> {
                         settingsManager.setHasAgreedToAutoPay(context, false);
+                        settingsManager.setIsOptedIn(context, false);
                         if (!emitter.isDisposed()) {
                             emitter.onSuccess(false);
                         }
@@ -113,5 +114,9 @@ public class KinPermissionManager {
                     .create()
                     .show();
         });
+    }
+
+    public boolean isOptedIn(Context context) {
+        return settingsManager.isOptedIn(context);
     }
 }

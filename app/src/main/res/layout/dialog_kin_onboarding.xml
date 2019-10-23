@@ -45,7 +45,7 @@
         app:layout_constraintTop_toBottomOf="@+id/img_kin_onboarding_logo" />
 
     <android.support.constraint.ConstraintLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:paddingTop="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -62,7 +62,7 @@
             android:layout_marginLeft="16dp"
             android:layout_marginBottom="16dp"
             android:background="@android:color/transparent"
-            android:text="No thanks"
+            android:text="@string/lbl_help_psiphon_no_thanks"
             android:textAppearance="@style/TextAppearance.AppCompat.Small"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent" />

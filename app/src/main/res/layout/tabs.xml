@@ -9,8 +9,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_weight="1.0"
-    android:orientation="vertical" >
+    android:orientation="vertical">
 
     <LinearLayout
         android:id="@+id/largeAdSlot"
@@ -95,6 +96,15 @@
                             android:layout_gravity="center"
                             android:text="" />
 
+                        <Button
+                            android:id="@+id/getHelpConnectingButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:onClick="onGetHelpConnectingClick"
+                            android:text="@string/need_help_connecting"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
                     </LinearLayout>
                 </ScrollView>
 
@@ -148,14 +158,6 @@
                     android:layout_gravity="center"
                     android:orientation="horizontal">
 
-                    <Spinner
-                        android:id="@+id/regionSelector"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:drawSelectorOnTop="true"
-                        android:textAppearance="?android:attr/textAppearanceSmall" />
-
                     <TextView
                         android:id="@+id/regionPrompt"
                         android:layout_width="wrap_content"
@@ -164,6 +166,15 @@
                         android:layout_marginRight="5dp"
                         android:text="@string/region_selector"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
+
+                    <Spinner
+                        android:id="@+id/regionSelector"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:drawSelectorOnTop="true"
+                        android:textAppearance="?android:attr/textAppearanceSmall" />
+
                 </LinearLayout>
 
                 <LinearLayout
@@ -244,6 +255,17 @@
                         android:textAppearance="?android:attr/textAppearanceSmall" />
                 </LinearLayout>
 
+                <Button
+                    android:id="@+id/howToHelpButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="0dp"
+                    android:layout_gravity="center"
+                    android:layout_weight="1"
+                    android:onClick="onHowToHelpClick"
+                    android:text="@string/how_to_help"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
             </LinearLayout>
         </ScrollView>
 

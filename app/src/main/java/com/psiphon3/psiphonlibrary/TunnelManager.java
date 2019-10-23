@@ -25,6 +25,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -44,6 +45,7 @@ import android.text.TextUtils;
 
 import com.psiphon3.PurchaseVerificationNetworkHelper;
 import com.psiphon3.StatusActivity;
+import com.psiphon3.kin.KinManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
@@ -79,14 +81,18 @@ import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.ReplaySubject;
 
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
+import static com.psiphon3.StatusActivity.ACTION_SHOW_GET_HELP_DIALOG;
 
 public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     // Android IPC messages
     // Client -> Service
-    enum ClientToServiceMessage {
+    public enum ClientToServiceMessage {
         UNREGISTER,
         STOP_SERVICE,
         RESTART_SERVICE,
+        NFC_CONNECTION_INFO_EXCHANGE_EXPORT,
+        NFC_CONNECTION_INFO_EXCHANGE_IMPORT,
+        KIN_OPT_IN_STATE,
     }
     // Service -> Client
     enum ServiceToClientMessage {
@@ -94,6 +100,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         TUNNEL_CONNECTION_STATE,
         DATA_TRANSFER_STATS,
         AUTHORIZATIONS_REMOVED,
+        NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_EXPORT,
+        NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT,
     }
 
     public static final String INTENT_ACTION_VIEW = "ACTION_VIEW";
@@ -101,10 +109,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE = "com.psiphon3.psiphonlibrary.TunnelManager.SELECTED_REGION_NOT_AVAILABLE";
     public static final String INTENT_ACTION_VPN_REVOKED = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_VPN_REVOKED";
 
+    // Client -> Service bundle parameter names
+    static final String DATA_NFC_CONNECTION_INFO_EXCHANGE_IMPORT = "dataNfcConnectionInfoExchangeImport";
+
     // Service -> Client bundle parameter names
     static final String DATA_TUNNEL_STATE_IS_RUNNING = "isRunning";
     static final String DATA_TUNNEL_STATE_IS_VPN = "isVpn";
     static final String DATA_TUNNEL_STATE_IS_CONNECTED = "isConnected";
+    static final String DATA_TUNNEL_STATE_NEEDS_HELP_CONNECTING = "needsHelpConnecting";
     static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT = "listeningLocalSocksProxyPort";
     static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT = "listeningLocalHttpProxyPort";
     static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
@@ -117,6 +129,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     static final String DATA_TRANSFER_STATS_SLOW_BUCKETS_LAST_START_TIME = "dataTransferStatsSlowBucketsLastStartTime";
     static final String DATA_TRANSFER_STATS_FAST_BUCKETS = "dataTransferStatsFastBuckets";
     static final String DATA_TRANSFER_STATS_FAST_BUCKETS_LAST_START_TIME = "dataTransferStatsFastBucketsLastStartTime";
+    static final String DATA_NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_EXPORT = "dataNfcConnectionInfoExchangeResponseExport";
+    static final String DATA_NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT = "dataNfcConnectionInfoExchangeResponseImport";
 
     // Extras in start service intent (Client -> Service)
     static final String DATA_TUNNEL_CONFIG_WHOLE_DEVICE = "tunnelConfigWholeDevice";
@@ -130,6 +144,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     static final String DATA_PURCHASE_IS_SUBSCRIPTION = "purchaseIsSubscription";
     private static final String PREFERENCE_PURCHASE_AUTHORIZATION_ID = "preferencePurchaseAuthorization";
     private static final String PREFERENCE_PURCHASE_TOKEN = "preferencePurchaseToken";
+
+    public static final String KIN_OPT_IN_STATE_EXTRA = "kinOptInStateExtra";
 
     // a snapshot of all authorizations pulled by getPsiphonConfig
     private static List<Authorization> m_tunnelConfigAuthorizations;
@@ -155,22 +171,58 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         public boolean isRunning = false;
         public boolean isConnected = false;
         public boolean isVPN = false;
-        int listeningLocalSocksProxyPort = 0;
+        public boolean needsHelpConnecting = false;
+        public int listeningLocalSocksProxyPort = 0;
         public int listeningLocalHttpProxyPort = 0;
         public String clientRegion = "";
         public String sponsorId = "";
-        ArrayList<String> homePages = new ArrayList<>();
+        public ArrayList<String> homePages = new ArrayList<>();
     }
 
     private State m_tunnelState = new State();
 
     private NotificationManager mNotificationManager = null;
     private NotificationCompat.Builder mNotificationBuilder = null;
+    private final static String NOTIFICATION_CHANNEL_ID = "psiphon_notification_channel";
     private Service m_parentService;
+    private boolean mGetHelpConnectingRunnablePosted = false;
+    private final Handler mGetHelpConnectingHandler = new Handler();
+    private final Runnable mGetHelpConnectingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            final Context context = getContext();
+            Intent intent = new Intent(context, StatusActivity.class);
+            intent.setAction(ACTION_SHOW_GET_HELP_DIALOG);
+            PendingIntent pendingIntent =
+                    PendingIntent.getActivity(
+                            context,
+                            0,
+                            intent,
+                            PendingIntent.FLAG_UPDATE_CURRENT
+                    );
+
+            Notification notification = new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.notification_icon_connecting_01)
+                    .setContentTitle(context.getString(R.string.get_help_connecting_notification_title))
+                    .setContentText(context.getString(R.string.get_help_connecting_notification_message))
+                    .setContentIntent(pendingIntent)
+                    .build();
+
+            if (mNotificationManager != null) {
+                mNotificationManager.notify(R.id.notification_id_get_help_connecting, notification);
+            }
+
+            m_tunnelState.needsHelpConnecting = true;
+            sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
+            mGetHelpConnectingRunnablePosted = false;
+        }
+    };
+
     private Context m_context;
     private boolean m_firstStart = true;
     private CountDownLatch m_tunnelThreadStopSignal;
     private Thread m_tunnelThread;
+    private AtomicBoolean m_startedTunneling;
     private AtomicBoolean m_isReconnect;
     private final AtomicBoolean m_isStopping;
     private PsiphonTunnel m_tunnel;
@@ -216,6 +268,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public TunnelManager(Service parentService) {
         m_parentService = parentService;
         m_context = parentService;
+        m_startedTunneling = new AtomicBoolean(false);
         m_isReconnect = new AtomicBoolean(false);
         m_isStopping = new AtomicBoolean(false);
         m_tunnel = PsiphonTunnel.newPsiphonTunnel(this);
@@ -249,6 +302,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 }
             });
             m_tunnelThread.start();
+            m_tunnelConnectedSubject.onNext(Boolean.FALSE);
+            // If running in WDM pass Kin opt in state to KinManager.
+            if (m_tunnelState.isVPN
+                    && intent.hasExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA)
+                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                KinManager.getInstance(m_parentService).onKinOptInState(intent.getBooleanExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, false));
+            }
         }
 
         if (intent != null) {
@@ -260,10 +320,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             if (intent.hasExtra(TunnelManager.EXTRA_LANGUAGE_CODE)) {
                 String languageCode = intent.getStringExtra(TunnelManager.EXTRA_LANGUAGE_CODE);
+
+                LocaleManager localeManager = LocaleManager.getInstance(m_parentService);
                 if (languageCode == null || languageCode.equals("")) {
-                    languageCode = LocaleManager.USE_SYSTEM_LANGUAGE_VAL;
+                    m_context = localeManager.resetToSystemLocale(m_parentService);
+                } else {
+                    m_context = localeManager.setNewLocale(m_parentService, languageCode);
                 }
-                m_context = LocaleManager.setNewLocale(m_parentService, languageCode);
+
                 updateNotifications();
             }
         }
@@ -273,23 +337,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     public void onCreate() {
         // At this point we've got application context, now we can initialize pending intents.
-        m_handshakePendingIntent = getPendingIntent(m_parentService,
-                StatusActivity.class,
-                INTENT_ACTION_HANDSHAKE);
+        m_handshakePendingIntent = getPendingIntent(m_parentService, INTENT_ACTION_HANDSHAKE);
 
-        m_notificationPendingIntent = getPendingIntent(m_parentService,
-                StatusActivity.class,
-                INTENT_ACTION_VIEW);
+        m_notificationPendingIntent = getPendingIntent(m_parentService, INTENT_ACTION_VIEW);
 
-        m_regionNotAvailablePendingIntent = getPendingIntent(m_parentService,
-                StatusActivity.class,
-                INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE);
+        m_regionNotAvailablePendingIntent = getPendingIntent(m_parentService, INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE);
 
-        m_vpnRevokedPendingIntent = getPendingIntent(m_parentService,
-                StatusActivity.class,
-                INTENT_ACTION_VPN_REVOKED);
+        m_vpnRevokedPendingIntent = getPendingIntent(m_parentService, INTENT_ACTION_VPN_REVOKED);
 
-        final String NOTIFICATION_CHANNEL_ID = "psiphon_notification_channel";
         if (mNotificationManager == null) {
             mNotificationManager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -316,10 +371,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_compositeDisposable.clear();
         m_compositeDisposable.add(purchaseCheckFlowDisposable());
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            m_compositeDisposable.add(KinManager.getInstance(m_parentService).kinFlowDisposable(m_parentService));
+        }
     }
 
     // Sends handshake intent and tunnel state updates to the client Activity
-    // also updates service notification
+    // Updates service notification
+    // Provides tunnel state updates for KinManager
     private Disposable connectionStatusUpdaterDisposable() {
         return connectionObservable()
                 .doOnNext(isConnected -> {
@@ -334,6 +393,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                         // We expect only distinct connection status from connectionObservable
                         // which means we always add a sound / vibration alert to the notification
                         postServiceNotification(true, isConnected);
+                    }
+                })
+                .doOnNext(isConnected -> {
+                    if(m_tunnelState.isVPN && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                        KinManager.getInstance(m_parentService).onTunnelConnected(isConnected);
                     }
                 })
                 .subscribe();
@@ -393,15 +457,25 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         if (m_tunnelThreadStopSignal != null) {
             m_tunnelThreadStopSignal.countDown();
         }
+
+        // Cancel the get help connecting
+        cancelGetHelpConnecting();
     }
 
-    private PendingIntent getPendingIntent(Context ctx, Class activityClass, final String actionString) {
-        Intent intent = new Intent(
-                actionString,
-                null,
-                ctx,
-                activityClass);
+    private PendingIntent getPendingIntent(Context ctx, final String actionString) {
+        // This comment is copied from StatusActivity::HandleCurrentIntent
+        //
+        // StatusActivity is exposed to other apps because it is declared as an entry point activity of the app in the manifest.
+        // For the purpose of handling internal intents, such as handshake, etc., from the tunnel service we have declared a not
+        // exported activity alias 'com.psiphon3.psiphonlibrary.TunnelIntentsHandler' that should act as a proxy for StatusActivity.
+        // We expect our own intents have a component set to 'com.psiphon3.psiphonlibrary.TunnelIntentsHandler', all other intents
+        // should be ignored.
+        Intent intent = new Intent();
+        ComponentName intentComponentName = new ComponentName(m_parentService, "com.psiphon3.psiphonlibrary.TunnelIntentsHandler");
+        intent.setComponent(intentComponentName);
+        intent.setAction(actionString);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
         return PendingIntent.getActivity(
                 ctx,
                 0,
@@ -547,10 +621,102 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     }
                     break;
 
+                case NFC_CONNECTION_INFO_EXCHANGE_IMPORT:
+                    if (manager != null) {
+                        manager.handleNfcConnectionInfoExchangeImport(msg.getData());
+                    }
+                    break;
+
+                case NFC_CONNECTION_INFO_EXCHANGE_EXPORT:
+                    if (manager != null) {
+                        manager.handleNfcConnectionInfoExchangeExport();
+                    }
+                    break;
+
+                case KIN_OPT_IN_STATE:
+                    if (manager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                        Bundle data = msg.getData();
+                        Context context = manager.m_parentService;
+                        // If running in WDM pass Kin opt in state to KinManager.
+                        if(manager.m_tunnelState.isVPN) {
+                            KinManager.getInstance(context).onKinOptInState(data.getBoolean(KIN_OPT_IN_STATE_EXTRA, false));
+                        }
+                    }
+                    break;
+
                 default:
                     super.handleMessage(msg);
             }
         }
+    }
+
+    private void handleNfcConnectionInfoExchangeImport(Bundle data) {
+        // Don't import if the tunnel is stopping or hasn't started yet
+        if (m_isStopping.get() || !m_startedTunneling.get()) {
+            return;
+        }
+
+        // Don't import if the tunnel is already connected
+        if (m_tunnelState.isConnected) {
+            return;
+        }
+
+        String connectionInfo = data.getString(TunnelManager.DATA_NFC_CONNECTION_INFO_EXCHANGE_IMPORT);
+        boolean success = m_tunnel.importExchangePayload(connectionInfo);
+
+        Bundle response = new Bundle();
+        response.putBoolean(TunnelManager.DATA_NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT, success);
+        sendClientMessage(ServiceToClientMessage.NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT.ordinal(), response);
+    }
+
+    private void handleNfcConnectionInfoExchangeExport() {
+        // Get the payload to export and send back to the StatusActivity
+        String connectionInfo = m_tunnel.exportExchangePayload();
+
+        Bundle response = new Bundle();
+        response.putString(TunnelManager.DATA_NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_EXPORT, connectionInfo);
+        sendClientMessage(ServiceToClientMessage.NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_EXPORT.ordinal(), response);
+    }
+
+    private void scheduleGetHelpConnecting() {
+        // Ensure that they have NFC
+        if (!ConnectionInfoExchangeUtils.isNfcSupported(m_context)) {
+            return;
+        }
+
+        // Already posted the event to run
+        if (mGetHelpConnectingRunnablePosted) {
+            return;
+        }
+
+        // The number of MS to wait before making the get help connecting UI visible.
+        // Equal to 30s.
+        final int duration = 30 * 1000;
+
+        // Prevent more posts and post the request
+        mGetHelpConnectingRunnablePosted = true;
+        mGetHelpConnectingHandler.postDelayed(mGetHelpConnectingRunnable, duration);
+    }
+
+    private void cancelGetHelpConnecting() {
+        // Ensure that they have NFC
+        if (!ConnectionInfoExchangeUtils.isNfcSupported(m_context)) {
+            return;
+        }
+
+        // Cancel the "Get help notification"
+        if (mNotificationManager != null) {
+            mNotificationManager.cancel(R.id.notification_id_get_help_connecting);
+        }
+
+        // We don't need help anymore
+        m_tunnelState.needsHelpConnecting = false;
+
+        // Remove any pending shows we might have and make sure the button is hidden
+        mGetHelpConnectingHandler.removeCallbacks(mGetHelpConnectingRunnable);
+
+        // Reset this to allow potential help
+        mGetHelpConnectingRunnablePosted = false;
     }
 
     private void sendClientMessage(int what, Bundle data) {
@@ -588,6 +754,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         data.putBoolean(DATA_TUNNEL_STATE_IS_RUNNING, m_tunnelState.isRunning);
         data.putBoolean(DATA_TUNNEL_STATE_IS_VPN, m_tunnelState.isVPN);
         data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, m_tunnelState.isConnected);
+        data.putBoolean(DATA_TUNNEL_STATE_NEEDS_HELP_CONNECTING, m_tunnelState.needsHelpConnecting);
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT, m_tunnelState.listeningLocalSocksProxyPort);
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT, m_tunnelState.listeningLocalHttpProxyPort);
         data.putString(DATA_TUNNEL_STATE_CLIENT_REGION, m_tunnelState.clientRegion);
@@ -675,10 +842,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
         m_isReconnect.set(false);
         m_isStopping.set(false);
+        m_startedTunneling.set(false);
 
         MyLog.v(R.string.current_network_type, MyLog.Sensitivity.NOT_SENSITIVE, Utils.getNetworkTypeName(m_parentService));
 
         MyLog.v(R.string.starting_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+
+        // Start the get help countdown
+        // TODO: Currently being called also in onConnecting as a small work
+        //  around onConnecting not being called if not able to connect. When fixed
+        //  one of these should be removed
+        scheduleGetHelpConnecting();
 
         m_tunnelState.homePages.clear();
 
@@ -701,6 +875,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             }
 
             m_tunnel.startTunneling(getServerEntries(m_parentService));
+            m_startedTunneling.set(true);
 
             try {
                 m_tunnelThreadStopSignal.await();
@@ -713,6 +888,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
             m_isStopping.set(true);
+            m_tunnelConnectedSubject.onNext(Boolean.FALSE);
             m_tunnel.stop();
 
             periodicMaintenanceHandler.removeCallbacks(periodicMaintenance);
@@ -883,6 +1059,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             json.put("RemoteServerListSignaturePublicKey", EmbeddedValues.REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY);
 
+            json.put("ServerEntrySignaturePublicKey", EmbeddedValues.SERVER_ENTRY_SIGNATURE_PUBLIC_KEY);
+
+            json.put("ExchangeObfuscationKey", EmbeddedValues.SERVER_ENTRY_EXCHANGE_OBFUSCATION_KEY);
+
             if (UpstreamProxySettings.getUseHTTPProxy(context)) {
                 if (UpstreamProxySettings.getProxySettings(context) != null) {
                     json.put("UpstreamProxyUrl", UpstreamProxySettings.getUpstreamProxyUrl(context));
@@ -938,7 +1118,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             if (tunnelConfig.disableTimeouts) {
                 //disable timeouts
                 MyLog.g("DisableTimeouts", "disableTimeouts", true);
-                json.put("NetworkLatencyMultiplier", 3.0);
+                json.put("NetworkLatencyMultiplierLambda", 0.1);
             } else {
                 // TEMP: The default value is too aggressive, it will be adjusted in a future release
                 json.put("TunnelPortForwardTimeoutSeconds", 30);
@@ -1219,6 +1399,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 // Do not log "Connecting" if tunnel is stopping
                 if (!m_isStopping.get()) {
                     MyLog.v(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
+                    // TODO: Currently being called also in runTunnel as a small work
+                    //  around this not being called if not able to connect. When fixed
+                    //  one of these should be removed
+                    scheduleGetHelpConnecting();
                 }
             }
         });
@@ -1232,6 +1416,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 DataTransferStats.getDataTransferStatsForService().startConnected();
 
                 MyLog.v(R.string.tunnel_connected, MyLog.Sensitivity.NOT_SENSITIVE);
+
+                cancelGetHelpConnecting();
 
                 m_tunnelConnectedSubject.onNext(Boolean.TRUE);
 
@@ -1322,6 +1508,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             @Override
             public void run() {
                 MyLog.v(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);
+
+                // If we're waiting for a network cancel any countdown for getting help and let the activity know
+                cancelGetHelpConnecting();
+                sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
             }
         });
     }

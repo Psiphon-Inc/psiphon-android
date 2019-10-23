@@ -3,34 +3,11 @@ package com.psiphon3.kin;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.jakewharton.rxrelay2.BehaviorRelay;
-
-import io.reactivex.Observable;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-
 class SettingsManager {
     private final String KIN_PREFERENCES_NAME = "kin_app_prefs";
     private final String OPTED_IN_KEY = "opted_in";
     private final String AUTO_PAY_KEY = "auto_pay";
     private final long TIME_1_MONTH = 30L * 24 * 60 * 60 * 1000;
-
-    private final BehaviorRelay<Boolean> isOptedInBehaviorRelay;
-    private final Observable<Boolean> isOptedInObservable;
-
-    SettingsManager(Context context) {
-        // initialize the relay with the current opt-in state
-        isOptedInBehaviorRelay = BehaviorRelay.createDefault(isOptedIn(context));
-
-        // create the observable once, here and allow people to access it in the future
-        isOptedInObservable = isOptedInBehaviorRelay
-                .distinctUntilChanged()
-                .hide()
-                .observeOn(AndroidSchedulers.mainThread());
-    }
-
-    Observable<Boolean> isOptedInObservable() {
-        return isOptedInObservable;
-    }
 
     /**
      * @param context context for shared preferences
@@ -59,8 +36,6 @@ class SettingsManager {
                 .edit()
                 .putBoolean(OPTED_IN_KEY, hasAgreedToKin)
                 .apply();
-
-        isOptedInBehaviorRelay.accept(hasAgreedToKin);
     }
 
     /**

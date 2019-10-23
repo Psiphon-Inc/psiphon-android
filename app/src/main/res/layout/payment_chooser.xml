@@ -47,19 +47,10 @@
             android:gravity="center_horizontal"
             android:layout_margin="10dp" />
 
-        <TextView
-            android:text="@string/PaymentChooserFragment.FreeTrialDescription"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:gravity="center_horizontal"
-            android:layout_margin="10dp"
-            android:textStyle="bold" />
-
         <Button
             android:text="@string/PaymentChooserFragment.UnlimitedSubscription"
             android:id="@+id/unlimitedSubscription"
-            android:onClick="onUnlimitedSubscriptionButtonClick"
+            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
@@ -69,7 +60,7 @@
         <Button
             android:text="@string/PaymentChooserFragment.LimitedSubscription"
             android:id="@+id/limitedSubscription"
-            android:onClick="onLimitedSubscriptionButtonClick"
+            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
@@ -89,7 +80,7 @@
         <Button
             android:text="@string/PaymentChooserFragment.TimePass7Day"
             android:id="@+id/timepass7"
-            android:onClick="onTimePassButtonClick"
+            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
@@ -99,7 +90,7 @@
         <Button
             android:text="@string/PaymentChooserFragment.TimePass30Day"
             android:id="@+id/timepass30"
-            android:onClick="onTimePassButtonClick"
+            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
@@ -109,7 +100,7 @@
         <Button
             android:text="@string/PaymentChooserFragment.TimePass360Day"
             android:id="@+id/timepass360"
-            android:onClick="onTimePassButtonClick"
+            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
