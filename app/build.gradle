@@ -45,12 +45,14 @@ android {
 
     buildTypes {
         debug {
+            debuggable true
             minifyEnabled true
             useProguard true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             pseudoLocalesEnabled true
         }
         release {
+            debuggable false
             ndk {
                 // ABI configurations of native libraries Gradle should package with the APK.
                 abiFilters 'armeabi-v7a', 'arm64-v8a'
