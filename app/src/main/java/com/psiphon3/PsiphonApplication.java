@@ -22,6 +22,7 @@ package com.psiphon3;
 
 import android.app.Application;
 import android.content.Context;
+import android.support.multidex.MultiDex;
 
 import com.psiphon3.psiphonlibrary.LocaleManager;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
@@ -42,6 +43,7 @@ public class PsiphonApplication extends Application {
         } else {
             super.attachBaseContext(localeManager.setLocale(base));
         }
+        MultiDex.install(this);
     }
 
     @Override
