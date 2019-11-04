@@ -8,6 +8,7 @@ import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
 import android.text.util.Linkify;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.TextView;
@@ -36,6 +37,14 @@ public class OptInDialog extends Dialog implements View.OnClickListener, DialogI
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.dialog_kin_onboarding);
+
+        Window w = getWindow();
+        if (w != null) {
+            w.setLayout(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+        }
 
         // Set up the on click listener for the buttons
         Button button = findViewById(R.id.btn_kin_agree);
