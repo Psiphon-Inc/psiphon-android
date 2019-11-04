@@ -11,60 +11,13 @@ import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
-import kin.sdk.KinAccount;
 import kin.sdk.KinClient;
 import kin.sdk.exception.InsufficientKinException;
 
 public class KinManager {
     private static final Double CONNECTION_COST = 1d;
-
-    private static KinManager instance;
-
-    private final ClientHelper clientHelper;
-    private final AccountHelper accountHelper;
     private final BehaviorRelay<Boolean> tunnelConnectedBehaviorRelay = BehaviorRelay.create();
     private BehaviorRelay<Boolean> kinOptInStateBehaviorRelay = BehaviorRelay.create();
-
-    KinManager(ClientHelper clientHelper, AccountHelper accountHelper) {
-        this.clientHelper = clientHelper;
-        this.accountHelper = accountHelper;
-    }
-
-    private Completable chargeErrorHandler(Context context, KinAccount kinAccount, Throwable e) {
-        // If it says we don't have enough kin then empty current account, get a new one and try
-        // charging for connection again, otherwise just let the error continue
-        if (e instanceof InsufficientKinException) {
-            return accountHelper.emptyAccount(context, kinAccount)
-                    .andThen(Completable.fromAction(clientHelper::deleteAccount))
-                    .andThen(clientHelper.getAccount())
-                    .flatMapCompletable(newAccount -> accountHelper.transferOut(context, newAccount, CONNECTION_COST));
-        } //else
-        return Completable.error(e);
-    }
-
-    static KinManager getInstance(Context context, Environment environment) {
-        if (instance != null) {
-            return instance;
-        }
-
-        // Set up base communication & helper classes
-        KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
-        ClientHelper clientHelper = new ClientHelper(kinClient);
-        SettingsManager settingsManager = new SettingsManager();
-        ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getKinApplicationServerUrl());
-        AccountHelper accountHelper = new AccountHelper(serverCommunicator, settingsManager, environment.getPsiphonWalletAddress());
-
-        return instance = new KinManager(clientHelper, accountHelper);
-    }
-
-    /**
-     * @param context the context
-     * @return the instance of the KinManager
-     */
-    public static KinManager getInstance(Context context) {
-        // For test network use Environment.TEST
-        return getInstance(context, Environment.PRODUCTION);
-    }
 
     /**
      * @param context the context
@@ -72,8 +25,14 @@ public class KinManager {
      * creates and deletes accounts, and makes transactions on the remote blockchain.
      * This subscription completes when the user opts out or a Kin operation error occurs.
      */
-    public Disposable kinFlowDisposable(Context context) {
+    public Disposable kinFlowDisposable(Context context, Environment environment) {
+        final KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
+        final ClientHelper clientHelper = new ClientHelper(kinClient);
+        final SettingsManager settingsManager = new SettingsManager();
+        final ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getKinApplicationServerUrl());
+        final AccountHelper accountHelper = new AccountHelper(serverCommunicator, settingsManager, environment.getPsiphonWalletAddress());
         AtomicBoolean hasBeenCharged = new AtomicBoolean(false);
+
         return tunnelConnectedBehaviorRelay
                 .distinctUntilChanged()
                 .switchMap(isConnected -> {
@@ -92,9 +51,18 @@ public class KinManager {
                                         return Maybe.empty();
                                     }
                                     return clientHelper.getAccount()
-                                            .doOnError(e -> Utils.MyLog.g("KinManager: error getting account: " + e))
                                             .flatMapCompletable(kinAccount -> accountHelper.transferOut(context, kinAccount, CONNECTION_COST)
-                                                    .onErrorResumeNext(e -> chargeErrorHandler(context, kinAccount, e)))
+                                                    .onErrorResumeNext(e -> {
+                                                        // If it says we don't have enough kin then empty current account, get a new one and try
+                                                        // charging for connection again, otherwise just let the error continue
+                                                        if (e instanceof InsufficientKinException) {
+                                                            return accountHelper.emptyAccount(context, kinAccount)
+                                                                    .andThen(Completable.fromAction(clientHelper::deleteAccount))
+                                                                    .andThen(clientHelper.getAccount())
+                                                                    .flatMapCompletable(newAccount -> accountHelper.transferOut(context, newAccount, CONNECTION_COST));
+                                                        } //else
+                                                        return Completable.error(e);
+                                                    }))
                                             .toMaybe();
                                 }
                                 // On opt out try emptying the account and emit any object to cancel the subscription.

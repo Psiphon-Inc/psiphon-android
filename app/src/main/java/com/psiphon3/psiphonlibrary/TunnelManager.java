@@ -45,6 +45,7 @@ import android.text.TextUtils;
 
 import com.psiphon3.PurchaseVerificationNetworkHelper;
 import com.psiphon3.StatusActivity;
+import com.psiphon3.kin.Environment;
 import com.psiphon3.kin.KinManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.BuildConfig;
@@ -263,6 +264,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     private ReplaySubject<Purchase> m_purchaseSubject;
     private CompositeDisposable m_compositeDisposable;
     private String m_expiredPurchaseToken;
+    private KinManager m_kinManager = new KinManager();
 
 
     public TunnelManager(Service parentService) {
@@ -307,7 +309,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             if (m_tunnelState.isVPN
                     && intent.hasExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA)
                     && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                KinManager.getInstance(m_parentService).onKinOptInState(intent.getBooleanExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, false));
+                m_kinManager.onKinOptInState(intent.getBooleanExtra(TunnelManager.KIN_OPT_IN_STATE_EXTRA, false));
             }
         }
 
@@ -372,7 +374,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_compositeDisposable.add(purchaseCheckFlowDisposable());
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            m_compositeDisposable.add(KinManager.getInstance(m_parentService).kinFlowDisposable(m_parentService));
+            m_compositeDisposable.add(m_kinManager.kinFlowDisposable(m_parentService, Environment.PRODUCTION));
         }
     }
 
@@ -397,7 +399,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 })
                 .doOnNext(isConnected -> {
                     if(m_tunnelState.isVPN && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                        KinManager.getInstance(m_parentService).onTunnelConnected(isConnected);
+                        m_kinManager.onTunnelConnected(isConnected);
                     }
                 })
                 .subscribe();
@@ -639,7 +641,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                         Context context = manager.m_parentService;
                         // If running in WDM pass Kin opt in state to KinManager.
                         if(manager.m_tunnelState.isVPN) {
-                            KinManager.getInstance(context).onKinOptInState(data.getBoolean(KIN_OPT_IN_STATE_EXTRA, false));
+                            manager.m_kinManager.onKinOptInState(data.getBoolean(KIN_OPT_IN_STATE_EXTRA, false));
                         }
                     }
                     break;
