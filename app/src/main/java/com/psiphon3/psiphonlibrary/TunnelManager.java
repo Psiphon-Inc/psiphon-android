@@ -45,7 +45,6 @@ import android.text.TextUtils;
 
 import com.psiphon3.PurchaseVerificationNetworkHelper;
 import com.psiphon3.StatusActivity;
-import com.psiphon3.kin.Environment;
 import com.psiphon3.kin.KinManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.BuildConfig;
@@ -374,7 +373,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_compositeDisposable.add(purchaseCheckFlowDisposable());
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            m_compositeDisposable.add(m_kinManager.kinFlowDisposable(m_parentService, Environment.PRODUCTION));
+            m_compositeDisposable.add(m_kinManager.kinFlowDisposable(m_parentService));
         }
     }
 

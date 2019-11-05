@@ -16,8 +16,9 @@ import kin.sdk.exception.InsufficientKinException;
 
 public class KinManager {
     private static final Double CONNECTION_COST = 1d;
+    private final Environment environment = Environment.PRODUCTION;
     private final BehaviorRelay<Boolean> tunnelConnectedBehaviorRelay = BehaviorRelay.create();
-    private BehaviorRelay<Boolean> kinOptInStateBehaviorRelay = BehaviorRelay.create();
+    private final BehaviorRelay<Boolean> kinOptInStateBehaviorRelay = BehaviorRelay.create();
 
     /**
      * @param context the context
@@ -25,7 +26,7 @@ public class KinManager {
      * creates and deletes accounts, and makes transactions on the remote blockchain.
      * This subscription completes when the user opts out or a Kin operation error occurs.
      */
-    public Disposable kinFlowDisposable(Context context, Environment environment) {
+    public Disposable kinFlowDisposable(Context context) {
         final KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
         final ClientHelper clientHelper = new ClientHelper(kinClient);
         final SettingsManager settingsManager = new SettingsManager();
