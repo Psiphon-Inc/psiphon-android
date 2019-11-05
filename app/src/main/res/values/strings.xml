@@ -68,6 +68,9 @@
     <string name="preference_navigate_to_vpn_setting_title">Always-on VPN</string>
     <string name="preference_navigate_to_vpn_setting_summary">Go to system settings to enable Always-on VPN</string>
 
+    <!-- Kin onboarding prompt dialog title. Kin is a cryptocurrency name and should not be translated or transliterated -->
+    <string name="title_kin_and_psiphon">Kin and Psiphon</string>
+
     <!-- Kin onboarding prompt text. Kin is a cryptocurrency name and should not be translated. Please, keep the line breaks and do not translate 'kin.org' at the end of the sentence
     since it gets converted to a hyperlink automatically.-->
     <string name="lbl_kin_onboard_explanation">Kin is a new way to help support Psiphon.\n\nIf you agree, a Kin wallet will be created for you, and each time you connect it will make a small donation to Psiphon.\n\nWhy participate? When people spend Kin through Psiphon it helps to fund our servers.\n\nTo learn more about Kin go to: kin.org</string>
