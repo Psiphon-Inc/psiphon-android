@@ -186,7 +186,7 @@
   <!--When the split tunnel option is enabled, this log message is shown when a domain is not tunneled (because it's detected as being in the same region as the user). The '%s' is the domain name.-->
   <string name="untunneled_address">Non tunnellizzato: %s</string>
   <!--The log message is shown to the user if an upstream proxy error occurs. The '%s' is the detail of the error.-->
-  <string name="upstream_proxy_error">Errore proxy upstream: %s</string>
+  <string name="upstream_proxy_error">Errore proxy di transito: %s</string>
   <string name="diagnostic">Diagnostica: %s</string>
   <string name="start_tunnel_failed">Avvio Tunnel fallito: %s</string>
   <string name="tunnel_connecting">Connessione Tunnel in corso...</string>

@@ -63,6 +63,7 @@
   <string name="preference_navigate_to_vpn_setting_title">VPN siempre activa</string>
   <string name="preference_navigate_to_vpn_setting_summary">Vaya a configuraciones del sistema para habilitar la VPN siempre activa</string>
   <!--Kin onboarding prompt dialog title. Kin is a cryptocurrency name and should not be translated or transliterated-->
+  <string name="title_kin_and_psiphon">Kin y Psiphon</string>
   <!--Kin onboarding prompt text. Kin is a cryptocurrency name and should not be translated. Please, keep the line breaks and do not translate 'kin.org' at the end of the sentence
     since it gets converted to a hyperlink automatically.-->
   <!--Kin onboarding prompt positive button label.-->
