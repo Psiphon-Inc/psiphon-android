@@ -4,6 +4,8 @@ android {
     compileSdkVersion 28
     useLibrary 'org.apache.http.legacy'
 
+    android.defaultConfig.vectorDrawables.useSupportLibrary = true
+
     repositories{
         flatDir{
             dirs 'libs'
@@ -120,6 +122,9 @@ def getBuildProperty(String propertyName) {
 repositories {
     jcenter()
     maven { url "https://s3.amazonaws.com/moat-sdk-builds" }
+    maven {
+        url 'https://jitpack.io'
+    }
 }
 
 dependencies {
@@ -127,6 +132,7 @@ dependencies {
     implementation files('libs/achartengine-1.0.0.jar')
     implementation files('libs/snakeyaml-1.10-android.jar')
     implementation(name: 'ca.psiphon', ext: 'aar')
+
 
     implementation project(':tray')
 
@@ -159,11 +165,16 @@ dependencies {
     implementation "com.jakewharton.threetenabp:threetenabp:$rootProject.ext.threetenabpVersion"
     implementation "com.squareup.okhttp3:okhttp:$rootProject.ext.okhttpVersion"
 
+    implementation 'com.github.kinecosystem.kin-sdk-android:kin-sdk-lib:1.0.7'
+
     api "android.arch.lifecycle:extensions:$rootProject.ext.androidLifecycleExtensionsVersion"
 
     compileOnly "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
     annotationProcessor "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
 
     testImplementation "junit:junit:$rootProject.ext.junitVersion"
+    testImplementation "org.mockito:mockito-core:$rootProject.ext.mockitoVersion"
+    testImplementation "org.mockito:mockito-core:$rootProject.ext.mockitoVersion"
+    androidTestImplementation "org.mockito:mockito-android:$rootProject.ext.mockitoVersion"
     androidTestImplementation "com.android.support.test:runner:$rootProject.ext.testRunnerVersion"
 }

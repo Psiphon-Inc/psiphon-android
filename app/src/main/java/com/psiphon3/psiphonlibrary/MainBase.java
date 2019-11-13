@@ -130,11 +130,11 @@ import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static android.nfc.NdefRecord.createMime;
-
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
+
+import static android.nfc.NdefRecord.createMime;
 
 public abstract class MainBase {
     public static abstract class Activity extends LocalizedActivities.AppCompatActivity implements MyLog.ILogger {
@@ -1922,11 +1922,11 @@ public abstract class MainBase {
             mp.put(this.getString(R.string.persistentAuthorizationsRemovedFlag), false);
         }
 
-        private void sendServiceMessage(int what) {
+        protected void sendServiceMessage(int what) {
             sendServiceMessage(what, null);
         }
 
-        private void sendServiceMessage(int what, Bundle data) {
+        protected void sendServiceMessage(int what, Bundle data) {
             try {
                 Message msg = Message.obtain(null, what);
                 if(data != null) {
