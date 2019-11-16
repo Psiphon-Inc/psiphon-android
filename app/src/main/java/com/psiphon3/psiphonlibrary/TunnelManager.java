@@ -187,16 +187,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         @Override
         public void run() {
             final Context context = getContext();
-            Intent intent = new Intent(context, StatusActivity.class);
-            intent.setAction(ACTION_SHOW_GET_HELP_DIALOG);
-            PendingIntent pendingIntent =
-                    PendingIntent.getActivity(
-                            context,
-                            0,
-                            intent,
-                            PendingIntent.FLAG_UPDATE_CURRENT
-                    );
-
+            PendingIntent pendingIntent = getPendingIntent(context, ACTION_SHOW_GET_HELP_DIALOG);
             Notification notification = new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
                     .setSmallIcon(R.drawable.notification_icon_connecting_01)
                     .setContentTitle(context.getString(R.string.get_help_connecting_notification_title))
