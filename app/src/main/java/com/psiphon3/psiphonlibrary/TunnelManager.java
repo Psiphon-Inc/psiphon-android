@@ -44,7 +44,6 @@ import android.support.v4.util.Pair;
 import android.text.TextUtils;
 
 import com.psiphon3.PurchaseVerificationNetworkHelper;
-import com.psiphon3.StatusActivity;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
