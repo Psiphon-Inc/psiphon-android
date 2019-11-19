@@ -44,7 +44,6 @@ import android.support.v4.util.Pair;
 import android.text.TextUtils;
 
 import com.psiphon3.PurchaseVerificationNetworkHelper;
-import com.psiphon3.StatusActivity;
 import com.psiphon3.kin.KinManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.BuildConfig;
@@ -191,16 +190,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         @Override
         public void run() {
             final Context context = getContext();
-            Intent intent = new Intent(context, StatusActivity.class);
-            intent.setAction(ACTION_SHOW_GET_HELP_DIALOG);
-            PendingIntent pendingIntent =
-                    PendingIntent.getActivity(
-                            context,
-                            0,
-                            intent,
-                            PendingIntent.FLAG_UPDATE_CURRENT
-                    );
-
+            PendingIntent pendingIntent = getPendingIntent(context, ACTION_SHOW_GET_HELP_DIALOG);
             Notification notification = new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
                     .setSmallIcon(R.drawable.notification_icon_connecting_01)
                     .setContentTitle(context.getString(R.string.get_help_connecting_notification_title))
@@ -1215,6 +1205,19 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                                                 return PurchaseVerificationAction.RESTART_AS_NON_SUBSCRIBER;
                                             } else {
                                                 persistPurchaseTokenAndAuthorizationId(purchase.token, authorization.Id());
+                                                // Remove all other authorizations of this type from storage. Psiphon
+                                                // server will only accept one authorization per access type. If there
+                                                // are multiple active authorizations of 'google-subscription' type it is
+                                                // not guaranteed the server will select the one associated with current
+                                                // purchase which may result in client connect-as-subscriber -> server-reject
+                                                // infinite re-connect loop.
+                                                List<Authorization> authorizationsToRemove = new ArrayList<>();
+                                                for (Authorization a : Authorization.geAllPersistedAuthorizations(m_parentService)) {
+                                                    if (a.accessType().equals(authorization.accessType())) {
+                                                        authorizationsToRemove.add(a);
+                                                    }
+                                                }
+                                                Authorization.removeAuthorizations(m_parentService, authorizationsToRemove);
                                                 Authorization.storeAuthorization(getContext(), authorization);
                                                 return PurchaseVerificationAction.RESTART_AS_SUBSCRIBER;
                                             }
@@ -1536,7 +1539,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     }
                 }
             }
-            // Build a list if not accepted authorizations from the authorizations snapshot
+            // Build a list of not accepted authorizations from the authorizations snapshot
             // by removing all elements of the accepted authorizations list.
             List<Authorization> notAcceptedAuthorizations = m_tunnelConfigAuthorizations;
             notAcceptedAuthorizations.removeAll(acceptedAuthorizations);
