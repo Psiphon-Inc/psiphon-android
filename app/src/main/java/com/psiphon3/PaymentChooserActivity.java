@@ -33,7 +33,6 @@ import com.psiphon3.billing.BillingRepository;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
-import com.psiphon3.util.SkuDetails;
 
 import org.json.JSONException;
 import org.threeten.bp.Period;

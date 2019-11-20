@@ -54,8 +54,8 @@ import android.support.v4.view.ViewCompat;
 import android.text.TextUtils;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
-import android.view.LayoutInflater;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
@@ -599,13 +599,6 @@ public abstract class MainBase {
             // Force the UI to display logs already loaded into the StatusList message history
             LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
 
-            tunnelServiceInteractor = new TunnelServiceInteractor(getApplicationContext());
-
-            // remove logs from previous sessions
-            if (!tunnelServiceInteractor.isServiceRunning(getApplicationContext())) {
-                LoggingProvider.LogDatabaseHelper.truncateLogs(this, true);
-            }
-
             // Get the connection help buttons
             mHelpConnectButton = findViewById(R.id.howToHelpButton);
 
@@ -916,8 +909,8 @@ public abstract class MainBase {
                         if (state.isRunning()) {
                             stopTunnelService();
                         } else {
-                startUp();
-            }
+                            startUp();
+                        }
                     })
                     .subscribe();
         }

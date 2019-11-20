@@ -21,6 +21,7 @@
 package com.psiphon3.psiphonlibrary;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -47,8 +48,8 @@ import android.text.TextUtils;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
-import com.psiphon3.subscription.R;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
@@ -234,10 +235,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
         if (mNotificationManager == null) {
             mNotificationManager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationChannel notificationChannel = new NotificationChannel(
+                        NOTIFICATION_CHANNEL_ID, getContext().getText(R.string.psiphon_service_notification_channel_name),
+                        NotificationManager.IMPORTANCE_LOW);
+                mNotificationManager.createNotificationChannel(notificationChannel);
+            }
         }
 
         if (mNotificationBuilder == null) {
-            mNotificationBuilder = new NotificationCompat.Builder(getContext());
+            mNotificationBuilder = new NotificationCompat.Builder(getContext(), NOTIFICATION_CHANNEL_ID);
         }
 
         m_tunnelState.isVPN = m_parentService instanceof TunnelVpnService;
