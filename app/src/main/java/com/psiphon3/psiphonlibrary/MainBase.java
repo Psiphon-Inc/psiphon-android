@@ -474,51 +474,6 @@ public abstract class MainBase {
                     packageManager.setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
                 }
             }
-
-            compositeDisposable.addAll(
-                    tunnelServiceInteractor.tunnelStateFlowable()
-                            // Update app UI state
-                            .doOnNext(state -> runOnUiThread(() -> updateServiceStateUI(state)))
-                            .map(state -> {
-                                if (state.isRunning()) {
-                                    if (state.connectionData().isConnected()) {
-                                        return ConnectionHelpState.CAN_HELP;
-                                    } else if (state.connectionData().needsHelpConnecting()) {
-                                        return ConnectionHelpState.NEEDS_HELP;
-                                    }
-                                } // else
-                                return ConnectionHelpState.DISABLED;
-                            })
-                            .distinctUntilChanged()
-                            .doOnNext(this::setConnectionHelpState)
-                            .subscribe(),
-
-                    tunnelServiceInteractor.dataStatsFlowable()
-                            .startWith(Boolean.FALSE)
-                            .doOnNext(isConnected -> runOnUiThread(() -> updateStatisticsUICallback(isConnected)))
-                            .subscribe(),
-
-                    tunnelServiceInteractor.knownRegionsFlowable()
-                            .doOnNext(__ -> m_regionAdapter.updateRegionsFromPreferences())
-                            .subscribe(),
-
-                    tunnelServiceInteractor.nfcExchangeFlowable()
-                            .doOnNext(nfcExchange -> {
-                                switch (nfcExchange.type()) {
-                                    case EXPORT:
-                                        handleNfcConnectionInfoExchangeResponseExport(nfcExchange.payload());
-                                        break;
-                                    case IMPORT:
-                                        handleNfcConnectionInfoExchangeResponseImport(nfcExchange.success());
-                                        break;
-                                }
-                            })
-                            .subscribe(),
-
-                    tunnelServiceInteractor.authorizationsRemovedFlowable()
-                            .doOnNext(__ -> onAuthorizationsRemoved())
-                            .subscribe()
-            );
         }
 
         @Override
@@ -662,6 +617,51 @@ public abstract class MainBase {
 
             // Get the connection help buttons
             mHelpConnectButton = findViewById(R.id.howToHelpButton);
+
+            compositeDisposable.addAll(
+                    tunnelServiceInteractor.tunnelStateFlowable()
+                            // Update app UI state
+                            .doOnNext(state -> runOnUiThread(() -> updateServiceStateUI(state)))
+                            .map(state -> {
+                                if (state.isRunning()) {
+                                    if (state.connectionData().isConnected()) {
+                                        return ConnectionHelpState.CAN_HELP;
+                                    } else if (state.connectionData().needsHelpConnecting()) {
+                                        return ConnectionHelpState.NEEDS_HELP;
+                                    }
+                                } // else
+                                return ConnectionHelpState.DISABLED;
+                            })
+                            .distinctUntilChanged()
+                            .doOnNext(this::setConnectionHelpState)
+                            .subscribe(),
+
+                    tunnelServiceInteractor.dataStatsFlowable()
+                            .startWith(Boolean.FALSE)
+                            .doOnNext(isConnected -> runOnUiThread(() -> updateStatisticsUICallback(isConnected)))
+                            .subscribe(),
+
+                    tunnelServiceInteractor.knownRegionsFlowable()
+                            .doOnNext(__ -> m_regionAdapter.updateRegionsFromPreferences())
+                            .subscribe(),
+
+                    tunnelServiceInteractor.nfcExchangeFlowable()
+                            .doOnNext(nfcExchange -> {
+                                switch (nfcExchange.type()) {
+                                    case EXPORT:
+                                        handleNfcConnectionInfoExchangeResponseExport(nfcExchange.payload());
+                                        break;
+                                    case IMPORT:
+                                        handleNfcConnectionInfoExchangeResponseImport(nfcExchange.success());
+                                        break;
+                                }
+                            })
+                            .subscribe(),
+
+                    tunnelServiceInteractor.authorizationsRemovedFlowable()
+                            .doOnNext(__ -> onAuthorizationsRemoved())
+                            .subscribe()
+            );
         }
 
         private enum ConnectionHelpState {
