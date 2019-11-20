@@ -27,6 +27,9 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 
+import com.android.billingclient.api.BillingClient;
+import com.android.billingclient.api.SkuDetails;
+import com.psiphon3.billing.BillingRepository;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
@@ -39,8 +42,6 @@ import org.threeten.bp.format.DateTimeParseException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Currency;
-
-import static com.psiphon3.util.IabHelper.ITEM_TYPE_SUBS;
 
 public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivity {
     public static final String USER_PICKED_SKU_DETAILS_EXTRA = "USER_PICKED_SKU_DETAILS_EXTRA";
@@ -76,7 +77,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                 subscriptionPeriod = "P1M";
             }
 
-            if (skuDetails.getType().equals(ITEM_TYPE_SUBS)) {
+            if (skuDetails.getType().equals(BillingClient.SkuType.SUBS)) {
                 if (subscriptionPeriod.equals("P1W")) {
                     pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / 7f;
                 } else if (subscriptionPeriod.equals("P1M")) {
@@ -94,15 +95,15 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                 }
 
                 // Get button resource ID
-                if (skuDetails.getSku().equals(StatusActivity.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
+                if (skuDetails.getSku().equals(BillingRepository.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
                     buttonResId = R.id.limitedSubscription;
-                } else if (skuDetails.getSku().equals(StatusActivity.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
+                } else if (skuDetails.getSku().equals(BillingRepository.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
                     buttonResId = R.id.unlimitedSubscription;
                 }
             } else {
                 String timepassSku = skuDetails.getSku();
                 // Get pre-calculated life time in days for time passes
-                Long lifetimeInDays = StatusActivity.IAB_TIMEPASS_SKUS_TO_DAYS.get(timepassSku);
+                Long lifetimeInDays = BillingRepository.IAB_TIMEPASS_SKUS_TO_DAYS.get(timepassSku);
                 if (lifetimeInDays == null || lifetimeInDays == 0L) {
                     Utils.MyLog.g("PaymentChooserActivity error: unknown timepass period for sku: " + skuDetails);
                     continue;

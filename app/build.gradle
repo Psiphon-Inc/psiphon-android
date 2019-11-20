@@ -158,6 +158,8 @@ dependencies {
     implementation "com.jakewharton.rxbinding2:rxbinding-support-v4:$rootProject.ext.rxbindingSupportVersion"
     implementation "com.jakewharton.threetenabp:threetenabp:$rootProject.ext.threetenabpVersion"
     implementation "com.squareup.okhttp3:okhttp:$rootProject.ext.okhttpVersion"
+    implementation "com.android.billingclient:billing:$playStoreBillingClientVersion"
+
 
     api "android.arch.lifecycle:extensions:$rootProject.ext.androidLifecycleExtensionsVersion"
 
