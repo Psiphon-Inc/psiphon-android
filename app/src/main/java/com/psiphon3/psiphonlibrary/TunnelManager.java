@@ -1430,7 +1430,39 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     }
 
     @Override
-    public void onActiveAuthorizationIDs(List<String> authorizations) {}
+    public void onActiveAuthorizationIDs(List<String> acceptedAuthorizationIds) {
+        m_Handler.post(() -> {
+            // Build a list of accepted authorizations from the authorizations snapshot.
+            List<Authorization> acceptedAuthorizations = new ArrayList<>();
+
+            for (String Id : acceptedAuthorizationIds) {
+                for (Authorization a : m_tunnelConfigAuthorizations) {
+                    if (a.Id().equals(Id)) {
+                        acceptedAuthorizations.add(a);
+                        String s = String.format(Locale.US, "[accessType: %s, expires: %s]", a.accessType(), a.expires().toString());
+                        MyLog.g("TunnelManager::onActiveAuthorizationIDs: accepted active authorization: " + s);
+                    }
+                }
+            }
+            // Build a list of not accepted authorizations from the authorizations snapshot
+            // by removing all elements of the accepted authorizations list.
+            List<Authorization> notAcceptedAuthorizations = m_tunnelConfigAuthorizations;
+            notAcceptedAuthorizations.removeAll(acceptedAuthorizations);
+
+            // Remove all not accepted authorizations from the database
+            Authorization.removeAuthorizations(getContext(), notAcceptedAuthorizations);
+
+            if(notAcceptedAuthorizations.size() > 0 ) {
+                final AppPreferences mp = new AppPreferences(getContext());
+                mp.put(m_parentService.getString(R.string.persistentAuthorizationsRemovedFlag), true);
+                sendClientMessage(ServiceToClientMessage.AUTHORIZATIONS_REMOVED.ordinal(), null);
+                for (Authorization removedAuth : notAcceptedAuthorizations) {
+                    String s = String.format(Locale.US, "[accessType: %s, expires: %s]", removedAuth.accessType(), removedAuth.expires().toString());
+                    MyLog.g("TunnelManager::onActiveAuthorizationIDs: removed not accepted persisted authorization: " + s);
+                }
+            }
+        });
+    }
 
     @Override
     public void onStoppedWaitingForNetworkConnectivity() {
