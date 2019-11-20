@@ -24,6 +24,7 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -180,7 +181,6 @@ public class StatusActivity
                             if (subscriptionState.error() != null) {
                                 MyLog.g("Subscription state billing error: " + subscriptionState.error());
                             }
-                            tunnelServiceInteractor.onSubscriptionState(subscriptionState);
                             psiCashFragment.onSubscriptionState(subscriptionState);
                             psiphonAdManager.onSubscriptionState(subscriptionState);
                             if (subscriptionState.hasValidPurchase()) {
@@ -329,8 +329,16 @@ public class StatusActivity
 
     protected void HandleCurrentIntent() {
         Intent intent = getIntent();
-
         if (intent == null || intent.getAction() == null) {
+            return;
+        }
+        // StatusActivity is exposed to other apps because it is declared as an entry point activity of the app in the manifest.
+        // For the purpose of handling internal intents, such as handshake, etc., from the tunnel service we have declared a not
+        // exported activity alias 'com.psiphon3.psiphonlibrary.TunnelIntentsHandler' that should act as a proxy for StatusActivity.
+        // We expect our own intents have a component set to 'com.psiphon3.psiphonlibrary.TunnelIntentsHandler', all other intents
+        // should be ignored.
+        ComponentName tunnelIntentsActivityComponentName = new ComponentName(this, "com.psiphon3.psiphonlibrary.TunnelIntentsHandler");
+        if (!tunnelIntentsActivityComponentName.equals(intent.getComponent())) {
             return;
         }
 
@@ -357,10 +365,10 @@ public class StatusActivity
             // We only want to respond to the HANDSHAKE_SUCCESS action once,
             // so we need to clear it (by setting it to a non-special intent).
             setIntent(new Intent(
-                            "ACTION_VIEW",
-                            null,
-                            this,
-                            this.getClass()));
+                    "ACTION_VIEW",
+                    null,
+                    this,
+                    this.getClass()));
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE)) {
             // Switch to settings tab
             disableInterstitialOnNextTabChange = true;

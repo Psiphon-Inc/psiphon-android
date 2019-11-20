@@ -447,7 +447,7 @@ public abstract class MainBase {
             );
 
             EmbeddedValues.initialize(this);
-            tunnelServiceInteractor = new TunnelServiceInteractor();
+            tunnelServiceInteractor = new TunnelServiceInteractor(getApplicationContext());
 
             // remove logs from previous sessions
             if (!tunnelServiceInteractor.isServiceRunning(getApplicationContext())) {
@@ -625,20 +625,10 @@ public abstract class MainBase {
                 }
             }
 
-            // Subscribe to service updates
             compositeDisposable.addAll(
                     tunnelServiceInteractor.tunnelStateFlowable()
                             // Update app UI state
                             .doOnNext(state -> runOnUiThread(() -> updateServiceStateUI(state)))
-                            // Stop loading embedded webview when tunnel disconnects
-                            .doOnNext(state -> runOnUiThread(() -> {
-                                if (!state.isRunning() || !state.connectionData().isConnected()) {
-                                    if (m_sponsorHomePage != null && m_loadedSponsorTab) {
-                                        m_sponsorHomePage.stop();
-                                        m_loadedSponsorTab = false;
-                                    }
-                                }
-                            }))
                             .map(state -> {
                                 if (state.isRunning()) {
                                     if (state.connectionData().isConnected()) {
@@ -650,7 +640,7 @@ public abstract class MainBase {
                                 return ConnectionHelpState.DISABLED;
                             })
                             .distinctUntilChanged()
-                            .doOnNext(connectionHelpState -> setConnectionHelpState(connectionHelpState))
+                            .doOnNext(this::setConnectionHelpState)
                             .subscribe(),
 
                     tunnelServiceInteractor.dataStatsFlowable()
@@ -1205,6 +1195,14 @@ public abstract class MainBase {
                 setStatusState(R.drawable.status_icon_disconnected);
                 m_toggleButton.setText(getText(R.string.start));
                 m_openBrowserButton.setEnabled(false);
+            }
+
+            // Also stop loading embedded webview if the tunnel is not connected
+            if (!tunnelState.isRunning() || !tunnelState.connectionData().isConnected()) {
+                if (m_sponsorHomePage != null && m_loadedSponsorTab) {
+                    m_sponsorHomePage.stop();
+                    m_loadedSponsorTab = false;
+                }
             }
         }
 

@@ -14,14 +14,11 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Pair;
 
-import com.android.billingclient.api.Purchase;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.TunnelState;
-import com.psiphon3.billing.SubscriptionState;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -32,7 +29,6 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.BiFunction;
 
 import static android.content.Context.ACTIVITY_SERVICE;
 
@@ -43,8 +39,6 @@ public class TunnelServiceInteractor {
     private Relay<Boolean> knownRegionsRelay = PublishRelay.<Boolean>create().toSerialized();
     private Relay<NfcExchange> nfcExchangeRelay = PublishRelay.<NfcExchange>create().toSerialized();
     private Relay<Boolean> authorizationsRemovedRelay = PublishRelay.<Boolean>create().toSerialized();
-
-    private Relay<SubscriptionState> subscriptionStatusPublishRelay = PublishRelay.<SubscriptionState>create().toSerialized();
 
     private final Messenger incomingMessenger = new Messenger(new IncomingMessageHandler(this));
     private Disposable restartServiceDisposable = null;
@@ -69,38 +63,6 @@ public class TunnelServiceInteractor {
             }
         };
         LocalBroadcastManager.getInstance(context).registerReceiver(broadcastReceiver, intentFilter);
-    }
-
-    public TunnelServiceInteractor() {
-        // Start an infinite subscription that will send most recent purchase data to the service
-        // when every time tunnel state changes to "connected" so the tunnel has a
-        // chance to update authorization and restart if the purchase is new.
-        // NOTE: we assume there can be only one valid purchase and authorization at a time
-        Observable.combineLatest(tunnelStateRelay, subscriptionStatusPublishRelay,
-                ((BiFunction<TunnelState, SubscriptionState, Pair>) Pair::new))
-                .switchMap(pair -> {
-                    TunnelState s = (TunnelState) pair.first;
-                    SubscriptionState subscriptionState = (SubscriptionState) pair.second;
-                    if (subscriptionState.hasValidPurchase() && s.isRunning() && s.connectionData().isConnected()) {
-                        return Observable.just(subscriptionState);
-                    } else {
-                        return Observable.empty();
-                    }
-                })
-                .map(subscriptionState -> {
-                    Purchase purchase = subscriptionState.purchase();
-                    Bundle data = new Bundle();
-
-                    data.putString(TunnelManager.DATA_PURCHASE_ID,
-                            purchase.getSku());
-                    data.putString(TunnelManager.DATA_PURCHASE_TOKEN,
-                            purchase.getPurchaseToken());
-                    data.putBoolean(TunnelManager.DATA_PURCHASE_IS_SUBSCRIPTION,
-                            subscriptionState.status() != SubscriptionState.Status.HAS_TIME_PASS);
-                    return data;
-                })
-                .doOnNext(data -> sendServiceMessage(TunnelManager.ClientToServiceMessage.PURCHASE.ordinal(), data))
-                .subscribe();
     }
 
     public void resume(Context context) {
@@ -318,10 +280,6 @@ public class TunnelServiceInteractor {
 
     public void nfcExportConnectionInfo() {
         sendServiceMessage(TunnelManager.ClientToServiceMessage.NFC_CONNECTION_INFO_EXCHANGE_EXPORT.ordinal(), null);
-    }
-
-    public void onSubscriptionState(SubscriptionState subscriptionState) {
-        subscriptionStatusPublishRelay.accept(subscriptionState);
     }
 
     private static class IncomingMessageHandler extends Handler {
