@@ -48,7 +48,6 @@ import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
@@ -73,10 +72,6 @@ public class PsiCashClient {
         httpProxyPort = 0;
         psiCashLib = new PsiCashLib();
         okHttpClient = new OkHttpClient.Builder()
-
-                // TODO: remove this workaround after applying proxy relay EOF fix in the tunnel-core
-                .protocols(Collections.singletonList(Protocol.HTTP_1_1))
-
                 .retryOnConnectionFailure(false)
                 .proxySelector(new ProxySelector() {
                     @Override
@@ -94,50 +89,48 @@ public class PsiCashClient {
                     public void connectFailed(URI uri, SocketAddress socketAddress, IOException e) {
                     }
                 }).build();
-        PsiCashLib.Error err = psiCashLib.init(
-                ctx.getFilesDir().toString(),
-                reqParams -> {
-                    PsiCashLib.HTTPRequester.Result result = new PsiCashLib.HTTPRequester.Result();
-                    Request.Builder reqBuilder = new Request.Builder();
-                    try {
-                        reqBuilder.url(reqParams.uri.toString());
-                        if (reqParams.method.equalsIgnoreCase("GET")) {
-                            reqBuilder.get();
-                        } else if (reqParams.method.equalsIgnoreCase("POST")) {
-                            reqBuilder.post(RequestBody.create(null, new byte[0]));
-                        } else if (reqParams.method.equalsIgnoreCase("PUT")) {
-                            reqBuilder.put(RequestBody.create(null, new byte[0]));
-                        } else if (reqParams.method.equalsIgnoreCase("HEAD")) {
-                            reqBuilder.head();
-                        }
-                        if (reqParams.headers != null) {
-                            reqBuilder.headers(Headers.of(reqParams.headers));
-                        }
+        final PsiCashLib.HTTPRequester httpRequester = reqParams -> {
+            PsiCashLib.HTTPRequester.Result result = new PsiCashLib.HTTPRequester.Result();
+            Request.Builder reqBuilder = new Request.Builder();
+            try {
+                reqBuilder.url(reqParams.uri.toString());
+                if (reqParams.method.equalsIgnoreCase("GET")) {
+                    reqBuilder.get();
+                } else if (reqParams.method.equalsIgnoreCase("POST")) {
+                    reqBuilder.post(RequestBody.create(null, new byte[0]));
+                } else if (reqParams.method.equalsIgnoreCase("PUT")) {
+                    reqBuilder.put(RequestBody.create(null, new byte[0]));
+                } else if (reqParams.method.equalsIgnoreCase("HEAD")) {
+                    reqBuilder.head();
+                }
+                if (reqParams.headers != null) {
+                    reqBuilder.headers(Headers.of(reqParams.headers));
+                }
+                Request request = reqBuilder.build();
+                Response response = okHttpClient.newCall(request).execute();
+                result.code = response.code();
+                result.date = response.header("Date");
+                if (response.body() != null) {
+                    result.body = response.body().string();
+                    response.body().close();
+                }
+            } catch (IOException e) {
+                result.code = PsiCashLib.HTTPRequester.Result.RECOVERABLE_ERROR;
+                result.error = e.toString();
+                result.body = null;
+            }
+            return result;
+        };
 
-                        // TODO: remove this workaround after applying proxy relay EOF fix in the tunnel-core
-                        reqBuilder.addHeader("Connection", "close");
-
-                        Request request = reqBuilder.build();
-                        Response response = okHttpClient.newCall(request).execute();
-                        result.code = response.code();
-                        result.date = response.header("Date");
-                        if (response.body() != null) {
-                            result.body = response.body().string();
-                            response.body().close();
-                        }
-                    } catch (IOException e) {
-                        result.code = PsiCashLib.HTTPRequester.Result.RECOVERABLE_ERROR;
-                        result.error = e.toString();
-                        result.body = null;
-                    }
-                    return result;
-                });
+        PsiCashLib.Error err = psiCashLib.init(ctx.getFilesDir().toString(), httpRequester, false);
 
         if (err != null) {
             String errorMessage = "Could not initialize PsiCash lib: error: " + err.message;
             Utils.MyLog.g("PsiCash: " + errorMessage);
             if (err.critical) {
-                throw new PsiCashException.Critical(errorMessage);
+                // Reset the datastore and throw original error.
+                psiCashLib.init(ctx.getFilesDir().toString(), httpRequester, true);
+                throw new PsiCashException.Critical(errorMessage, appContext.getString(R.string.psicash_critical_error_reset_message));
             } else {
                 throw new PsiCashException.Recoverable(errorMessage);
             }

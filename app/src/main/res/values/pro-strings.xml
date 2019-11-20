@@ -48,6 +48,11 @@
          as the English. -->
     <string name="PaymentChooserFragment.UnlimitedSubscription">Maximum Speed - %1$s / month\n(%2$s / day)</string>
 
+    <!-- Extra Label that appears on the subscription buying button for Psiphon Pro in case if there
+         is a trial period available for that subscription. The formated string is the length of the
+         trial period in days. Keep as short as possible -->
+    <string name="PaymentChooserFragment.FreeTrialPeriod">Free trial %d days</string>
+
     <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day.
          Insert one or more newline characters as needed to keep the lines approximately as short
@@ -167,6 +172,9 @@
 
     <!-- Alert error message informing user that a critical PsiCash related error has occurred and encouraging users to send feedback diagnostics -->
     <string name="psicash_critical_error_message">A critical error has occurred. Please send feedback.</string>
+
+    <!-- Alert error message informing user that a critical PsiCash error has occurred and their PsiCash balance and purchases are reset(lost) -->
+    <string name="psicash_critical_error_reset_message">A critical error has occurred. Your PsiCash balance and other state have been reset.</string>
 
     <!-- Alert error message informing user that a recoverable PsiCash related error has occurred and last action will most likely succeed next time. -->
     <string name="psicash_recoverable_error_message">A recoverable error has occurred. Please try again.</string>

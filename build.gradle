@@ -39,6 +39,7 @@ ext {
     junitVersion = '4.12'
     testRunnerVersion = '0.5'
     playStoreBillingClientVersion = '2.0.0'
+    threetenabpVersion = '1.2.1'
 }
 
 subprojects {

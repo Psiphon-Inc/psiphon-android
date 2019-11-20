@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
     <uses-sdk tools:overrideLibrary="ca.psiphon,com.mopub.mobileads.banner,com.mopub.mobileads.base,
-    com.mopub.mobileads.interstitial,com.mopub.mobileads.rewarded_video,com.moat.analytics.mobile.mpub" />
+    com.mopub.mobileads.interstitial,com.mopub.mobileads.rewarded_video,com.moat.analytics.mobile.mpub,com.jakewharton.threetenabp" />
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"
@@ -57,10 +57,10 @@
             android:exported="false"
             android:targetActivity="com.psiphon3.StatusActivity" />
 
-        <activity android:name=".psiphonlibrary.NfcActivity" />
+        <activity android:name="com.psiphon3.psiphonlibrary.NfcActivity" />
         <activity-alias
-            android:name=".psiphonlibrary.NfcActivity"
-            android:targetActivity=".StatusActivity"
+            android:name="com.psiphon3.psiphonlibrary.NfcActivity"
+            android:targetActivity="com.psiphon3.StatusActivity"
             android:enabled="false">
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED"/>

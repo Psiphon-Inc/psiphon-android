@@ -56,7 +56,6 @@ import com.psiphon3.psiphonlibrary.MainBase;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.R;
 
@@ -80,11 +79,11 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
 
+
 public class StatusActivity
-    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase implements PsiCashFragment.ActiveSpeedBoostListener
-{
-    public static final String BANNER_FILE_NAME = "bannerImage";
+    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase implements PsiCashFragment.ActiveSpeedBoostListener {
     public static final String ACTION_SHOW_GET_HELP_DIALOG = "com.psiphon3.StatusActivity.SHOW_GET_HELP_CONNECTING_DIALOG";
+
     private View mRateLimitedTextSection;
     private TextView mRateLimitedText;
     private TextView mRateUnlimitedText;
@@ -354,8 +353,8 @@ public class StatusActivity
                         // Reset m_loadedSponsorTab and switch to the home tab.
                         // The embedded web view will get loaded by the updateServiceStateUI.
                         m_loadedSponsorTab = false;
-                        disableInterstitialOnNextTabChange = true;
-                        m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
+            disableInterstitialOnNextTabChange = true;
+            m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
                     } else {
                         displayBrowser(this, url);
                     }
@@ -637,8 +636,8 @@ public class StatusActivity
                 // local HTTP proxy port for WebView tunneling.
 
                 if (urlString != null) {
-                    if(shouldPsiCashModifyUrls) {
-                        // Add PsiCash parameters
+                        if(shouldPsiCashModifyUrls) {
+                            // Add PsiCash parameters
                         urlString = PsiCashModifyUrl(urlString);
                     }
                     intent.putExtra("homePages", new ArrayList<>(Collections.singletonList(urlString)));
@@ -756,7 +755,7 @@ public class StatusActivity
                         })
         );
     }
-
+    
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == PAYMENT_CHOOSER_ACTIVITY) {

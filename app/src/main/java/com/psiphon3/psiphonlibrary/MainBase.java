@@ -916,8 +916,8 @@ public abstract class MainBase {
                         if (state.isRunning()) {
                             stopTunnelService();
                         } else {
-                            startUp();
-                        }
+                startUp();
+            }
                     })
                     .subscribe();
         }
