@@ -458,6 +458,67 @@ public abstract class MainBase {
             IntentFilter intentFilter = new IntentFilter();
             intentFilter.addAction(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
             LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter);
+
+            // Only handle NFC if the version is sufficient
+            if (ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
+                // Check for available NFC Adapter
+                mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
+                if (mNfcAdapter != null) {
+                    // Register callback
+                    mNfcAdapterCallback = new NfcAdapterCallback();
+
+                    // Always enable receiving an NFC tag, and determine what to do with it when we receive it based on the service state.
+                    // For example, in the Stopped state, we can receive a tag, and instruct the user to start the tunnel service and try again.
+                    PackageManager packageManager = getPackageManager();
+                    ComponentName componentName = new ComponentName(getPackageName(), NfcActivity.class.getName());
+                    packageManager.setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
+                }
+            }
+
+            compositeDisposable.addAll(
+                    tunnelServiceInteractor.tunnelStateFlowable()
+                            // Update app UI state
+                            .doOnNext(state -> runOnUiThread(() -> updateServiceStateUI(state)))
+                            .map(state -> {
+                                if (state.isRunning()) {
+                                    if (state.connectionData().isConnected()) {
+                                        return ConnectionHelpState.CAN_HELP;
+                                    } else if (state.connectionData().needsHelpConnecting()) {
+                                        return ConnectionHelpState.NEEDS_HELP;
+                                    }
+                                } // else
+                                return ConnectionHelpState.DISABLED;
+                            })
+                            .distinctUntilChanged()
+                            .doOnNext(this::setConnectionHelpState)
+                            .subscribe(),
+
+                    tunnelServiceInteractor.dataStatsFlowable()
+                            .startWith(Boolean.FALSE)
+                            .doOnNext(isConnected -> runOnUiThread(() -> updateStatisticsUICallback(isConnected)))
+                            .subscribe(),
+
+                    tunnelServiceInteractor.knownRegionsFlowable()
+                            .doOnNext(__ -> m_regionAdapter.updateRegionsFromPreferences())
+                            .subscribe(),
+
+                    tunnelServiceInteractor.nfcExchangeFlowable()
+                            .doOnNext(nfcExchange -> {
+                                switch (nfcExchange.type()) {
+                                    case EXPORT:
+                                        handleNfcConnectionInfoExchangeResponseExport(nfcExchange.payload());
+                                        break;
+                                    case IMPORT:
+                                        handleNfcConnectionInfoExchangeResponseImport(nfcExchange.success());
+                                        break;
+                                }
+                            })
+                            .subscribe(),
+
+                    tunnelServiceInteractor.authorizationsRemovedFlowable()
+                            .doOnNext(__ -> onAuthorizationsRemoved())
+                            .subscribe()
+            );
         }
 
         @Override
@@ -601,67 +662,6 @@ public abstract class MainBase {
 
             // Get the connection help buttons
             mHelpConnectButton = findViewById(R.id.howToHelpButton);
-
-            // Only handle NFC if the version is sufficient
-            if (ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
-                // Check for available NFC Adapter
-                mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
-                if (mNfcAdapter != null) {
-                    // Register callback
-                    mNfcAdapterCallback = new NfcAdapterCallback();
-
-                    // Always enable receiving an NFC tag, and determine what to do with it when we receive it based on the service state.
-                    // For example, in the Stopped state, we can receive a tag, and instruct the user to start the tunnel service and try again.
-                    PackageManager packageManager = getPackageManager();
-                    ComponentName componentName = new ComponentName(getPackageName(), NfcActivity.class.getName());
-                    packageManager.setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
-                }
-            }
-
-            compositeDisposable.addAll(
-                    tunnelServiceInteractor.tunnelStateFlowable()
-                            // Update app UI state
-                            .doOnNext(state -> runOnUiThread(() -> updateServiceStateUI(state)))
-                            .map(state -> {
-                                if (state.isRunning()) {
-                                    if (state.connectionData().isConnected()) {
-                                        return ConnectionHelpState.CAN_HELP;
-                                    } else if (state.connectionData().needsHelpConnecting()) {
-                                        return ConnectionHelpState.NEEDS_HELP;
-                                    }
-                                } // else
-                                return ConnectionHelpState.DISABLED;
-                            })
-                            .distinctUntilChanged()
-                            .doOnNext(this::setConnectionHelpState)
-                            .subscribe(),
-
-                    tunnelServiceInteractor.dataStatsFlowable()
-                            .startWith(Boolean.FALSE)
-                            .doOnNext(isConnected -> runOnUiThread(() -> updateStatisticsUICallback(isConnected)))
-                            .subscribe(),
-
-                    tunnelServiceInteractor.knownRegionsFlowable()
-                            .doOnNext(__ -> m_regionAdapter.updateRegionsFromPreferences())
-                            .subscribe(),
-
-                    tunnelServiceInteractor.nfcExchangeFlowable()
-                    .doOnNext(nfcExchange -> {
-                        switch (nfcExchange.type()) {
-                            case EXPORT:
-                                handleNfcConnectionInfoExchangeResponseExport(nfcExchange.payload());
-                                break;
-                            case IMPORT:
-                                handleNfcConnectionInfoExchangeResponseImport(nfcExchange.success());
-                                break;
-                        }
-                    })
-                    .subscribe(),
-
-                    tunnelServiceInteractor.authorizationsRemovedFlowable()
-                            .doOnNext(__ -> onAuthorizationsRemoved())
-                            .subscribe()
-            );
         }
 
         private enum ConnectionHelpState {
@@ -684,9 +684,6 @@ public abstract class MainBase {
 
             switch (state) {
                 case DISABLED:
-                    hideHelpConnectUI();
-                    mNfcAdapter.setNdefPushMessageCallback(null, this);
-                    break;
                 case NEEDS_HELP:
                     hideHelpConnectUI();
                     mNfcAdapter.setNdefPushMessageCallback(null, this);
