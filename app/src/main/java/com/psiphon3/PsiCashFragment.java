@@ -318,9 +318,9 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         // from the PsiCash server but only if tunnel is up an running.
         return lifeCycleEventsObservable()
                 .filter(s -> s == LifeCycleEvent.ON_START && shouldGetPsiCashRemote.getAndSet(false))
-                .switchMap(__ -> tunnelConnectionStateObservable()
-                        .take(1)
+                .switchMapSingle(__ -> tunnelConnectionStateObservable()
                         .filter(state -> state.isRunning() && state.connectionData().isConnected())
+                        .firstOrError()
                         .map(PsiCashIntent.GetPsiCashRemote::create))
                 .subscribe(intentsPublishRelay);
     }
