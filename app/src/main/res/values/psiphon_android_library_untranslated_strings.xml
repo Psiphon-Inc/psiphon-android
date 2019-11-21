@@ -34,6 +34,8 @@
     <string name="preferencesDownloading">preferencesDownloading</string>
     <string name="downloadWifiOnlyPreference">downloadWifiOnlyPreference</string>
     <string name="disableTimeoutsPreference">disableTimeoutsPreference</string>
+    <string name="egressRegionPreference">egressRegionPreference</string>
+    <string name="tunnelWholeDevicePreference">tunnelWholeDevicePreference</string>
     <string name="moreOptionsPreferencesName">moreOptionsPreferencesName</string>
     <string name="customProxyHeadersPreference">customProxyHeadersPreference</string>
     <string name="addCustomHeadersPreference">addCustomHeadersPreference</string>

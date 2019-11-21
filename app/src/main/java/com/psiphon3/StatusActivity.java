@@ -1,5 +1,4 @@
 /*
- *
  * Copyright (c) 2019, Psiphon Inc.
  * All rights reserved.
  *
@@ -476,7 +475,7 @@ public class StatusActivity
         boolean hasPreference;
         AppPreferences mpPreferences = new AppPreferences(this);
         try {
-            mpPreferences.getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE);
+            mpPreferences.getBoolean(getString(R.string.tunnelWholeDevicePreference));
             hasPreference = true;
         } catch (ItemNotFoundException e) {
             hasPreference = false;

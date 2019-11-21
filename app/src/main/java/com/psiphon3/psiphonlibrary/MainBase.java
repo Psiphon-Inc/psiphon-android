@@ -1,5 +1,4 @@
 /*
- *
  * Copyright (c) 2019, Psiphon Inc.
  * All rights reserved.
  *
@@ -155,8 +154,6 @@ public abstract class MainBase {
     public static abstract class TabbedActivityBase extends Activity implements OnTabChangeListener {
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.MainBase.TabbedActivityBase.STATUS_ENTRY_AVAILABLE";
         public static final String INTENT_EXTRA_PREVENT_AUTO_START = "com.psiphon3.MainBase.TabbedActivityBase.PREVENT_AUTO_START";
-        protected static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
-        protected static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
         protected static final String ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION = "askedToAccessCoarseLocationPermission";
         protected static final String CURRENT_TAB = "currentTab";
         protected static final String CURRENT_PURCHASE = "currentPurchase";
@@ -426,8 +423,8 @@ public abstract class MainBase {
             m_multiProcessPreferences.migrate(
                     // Top level  preferences
                     new SharedPreferencesImport(this, prefName, CURRENT_TAB, CURRENT_TAB),
-                    new SharedPreferencesImport(this, prefName, EGRESS_REGION_PREFERENCE, EGRESS_REGION_PREFERENCE),
-                    new SharedPreferencesImport(this, prefName, TUNNEL_WHOLE_DEVICE_PREFERENCE, TUNNEL_WHOLE_DEVICE_PREFERENCE),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.egressRegionPreference), getString(R.string.egressRegionPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.tunnelWholeDevicePreference), getString(R.string.tunnelWholeDevicePreference)),
                     new SharedPreferencesImport(this, prefName, getString(R.string.downloadWifiOnlyPreference), getString(R.string.downloadWifiOnlyPreference)),
                     new SharedPreferencesImport(this, prefName, getString(R.string.disableTimeoutsPreference), getString(R.string.disableTimeoutsPreference)),
                     // More Options preferences
@@ -570,8 +567,9 @@ public abstract class MainBase {
 
             m_regionAdapter = new RegionAdapter(this);
             m_regionSelector.setAdapter(m_regionAdapter);
-            String egressRegionPreference = m_multiProcessPreferences.getString(EGRESS_REGION_PREFERENCE,
-                    PsiphonConstants.REGION_CODE_ANY);
+            String egressRegionPreference = m_multiProcessPreferences
+                    .getString(getString(R.string.egressRegionPreference),
+                            PsiphonConstants.REGION_CODE_ANY);
 
             m_regionSelector.setSelectionByValue(egressRegionPreference);
 
@@ -582,8 +580,9 @@ public abstract class MainBase {
             m_canWholeDevice = Utils.hasVpnService();
 
             m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
-            boolean tunnelWholeDevicePreference = m_multiProcessPreferences.getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE,
-                    m_canWholeDevice);
+            boolean tunnelWholeDevicePreference = m_multiProcessPreferences
+                    .getBoolean(getString(R.string.tunnelWholeDevicePreference),
+                            m_canWholeDevice);
             m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
             setTunnelConfigWholeDevice(m_canWholeDevice && tunnelWholeDevicePreference);
 
@@ -986,9 +985,9 @@ public abstract class MainBase {
             if (!m_regionSelector.isEnabled()) {
                 return;
             }
-
-            String egressRegionPreference = m_multiProcessPreferences.getString(EGRESS_REGION_PREFERENCE,
-                    PsiphonConstants.REGION_CODE_ANY);
+            String egressRegionPreference = m_multiProcessPreferences
+                    .getString(getString(R.string.egressRegionPreference),
+                            PsiphonConstants.REGION_CODE_ANY);
             if (selectedRegionCode.equals(egressRegionPreference) && selectedRegionCode.equals(getTunnelConfigEgressRegion())) {
                 return;
             }
@@ -997,14 +996,15 @@ public abstract class MainBase {
 
             // NOTE: reconnects even when Any is selected: we could select a
             // faster server
-            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), m_tunnelConfig);
+            boolean wantVPN = m_multiProcessPreferences.getBoolean(getString(R.string.tunnelWholeDevicePreference), false);
+            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), wantVPN);
         }
 
         protected void updateEgressRegionPreference(String egressRegionPreference) {
             // No isRooted check: the user can specify whatever preference they
             // wish. Also, CheckBox enabling should cover this (but isn't
             // required to).
-            m_multiProcessPreferences.put(EGRESS_REGION_PREFERENCE, egressRegionPreference);
+            m_multiProcessPreferences.put(getString(R.string.egressRegionPreference), egressRegionPreference);
 
             setTunnelConfigEgressRegion(egressRegionPreference);
         }
@@ -1018,14 +1018,14 @@ public abstract class MainBase {
 
             boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
             updateWholeDevicePreference(tunnelWholeDevicePreference);
-            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), m_tunnelConfig);
+            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), tunnelWholeDevicePreference);
         }
 
         protected void updateWholeDevicePreference(boolean tunnelWholeDevicePreference) {
             // No isRooted check: the user can specify whatever preference they
             // wish. Also, CheckBox enabling should cover this (but isn't
             // required to).
-            m_multiProcessPreferences.put(TUNNEL_WHOLE_DEVICE_PREFERENCE, tunnelWholeDevicePreference);
+            m_multiProcessPreferences.put(getString(R.string.tunnelWholeDevicePreference), tunnelWholeDevicePreference);
 
             // When enabling BOM, we don't use the TunnelVpnService, so we can disable it
             // which prevents the user having Always On turned on.
@@ -1042,7 +1042,8 @@ public abstract class MainBase {
         public void onDisableTimeoutsToggle(View v) {
             boolean disableTimeoutsChecked = m_disableTimeoutsToggle.isChecked();
             updateDisableTimeoutsPreference(disableTimeoutsChecked);
-            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), m_tunnelConfig);
+            boolean wantVPN = m_multiProcessPreferences.getBoolean(getString(R.string.tunnelWholeDevicePreference), false);
+            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), wantVPN);
         }
         protected void updateDisableTimeoutsPreference(boolean disableTimeoutsPreference) {
             m_multiProcessPreferences.put(getString(R.string.disableTimeoutsPreference), disableTimeoutsPreference);
@@ -1511,7 +1512,8 @@ public abstract class MainBase {
                 );
 
                 if (bRestartRequired) {
-                    tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), m_tunnelConfig);
+                    boolean wantVPN = m_multiProcessPreferences.getBoolean(getString(R.string.tunnelWholeDevicePreference), false);
+                    tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), wantVPN);
                 }
 
                 if (data != null && data.getBooleanExtra(MoreOptionsPreferenceActivity.INTENT_EXTRA_LANGUAGE_CHANGED, false)) {
@@ -1557,7 +1559,9 @@ public abstract class MainBase {
         }
 
         protected void startAndBindTunnelService() {
-            tunnelServiceInteractor.startTunnelService(getApplicationContext(), m_tunnelConfig);
+            AppPreferences mpPreferences = new AppPreferences(this);
+            boolean wantVPN = mpPreferences.getBoolean(getString(R.string.tunnelWholeDevicePreference), false);
+            tunnelServiceInteractor.startTunnelService(getApplicationContext(), wantVPN);
         }
 
         private void stopTunnelService() {
@@ -1723,7 +1727,10 @@ public abstract class MainBase {
                 String action = intent.getAction();
                 if (action != null) {
                     if (action.equals(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE)) {
-                        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), m_tunnelConfig);
+                        boolean wantVPN = m_multiProcessPreferences
+                                .getBoolean(getString(R.string.tunnelWholeDevicePreference),
+                                        false);
+                        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), wantVPN);
                     }
                 }
             }

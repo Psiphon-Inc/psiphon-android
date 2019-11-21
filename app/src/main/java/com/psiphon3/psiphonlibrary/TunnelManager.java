@@ -1,5 +1,4 @@
 /*
- *
  * Copyright (c) 2019, Psiphon Inc.
  * All rights reserved.
  *
@@ -137,10 +136,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     public static final String DATA_NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_EXPORT = "dataNfcConnectionInfoExchangeResponseExport";
     public static final String DATA_NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT = "dataNfcConnectionInfoExchangeResponseImport";
 
-    // Extras in start service intent (Client -> Service)
-    static final String DATA_TUNNEL_CONFIG_WHOLE_DEVICE = "tunnelConfigWholeDevice";
-    static final String DATA_TUNNEL_CONFIG_EGRESS_REGION = "tunnelConfigEgressRegion";
-    static final String DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS = "tunnelConfigDisableTimeouts";
+    // Extras in  (Client -> Service) messages
     static final String EXTRA_LANGUAGE_CODE = "languageCode";
 
     // a snapshot of all authorizations pulled by getPsiphonConfig
@@ -271,8 +267,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
     // Implementation of android.app.Service.onStartCommand
     int onStartCommand(Intent intent, int flags, int startId) {
-        if (m_firstStart && intent != null) {
-            getTunnelConfig(intent);
+        if (m_firstStart) {
+            getTunnelConfig();
             MyLog.v(R.string.client_version, MyLog.Sensitivity.NOT_SENSITIVE, EmbeddedValues.CLIENT_VERSION);
             m_firstStart = false;
             m_tunnelThreadStopSignal = new CountDownLatch(1);
@@ -467,15 +463,21 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    private void getTunnelConfig(Intent intent) {
-        m_tunnelConfig.wholeDevice = intent.getBooleanExtra(
-                TunnelManager.DATA_TUNNEL_CONFIG_WHOLE_DEVICE, false);
+    private void getTunnelConfig() {
+        final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
 
-        m_tunnelConfig.egressRegion = intent.getStringExtra(
-                TunnelManager.DATA_TUNNEL_CONFIG_EGRESS_REGION);
+        m_tunnelConfig.wholeDevice = Utils.hasVpnService() &&
+                multiProcessPreferences
+                        .getBoolean(getContext().getString(R.string.tunnelWholeDevicePreference),
+                                false);
 
-        m_tunnelConfig.disableTimeouts = intent.getBooleanExtra(
-                TunnelManager.DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS, false);
+        m_tunnelConfig.egressRegion = multiProcessPreferences
+                .getString(getContext().getString(R.string.egressRegionPreference),
+                        PsiphonConstants.REGION_CODE_ANY);
+
+        m_tunnelConfig.disableTimeouts = multiProcessPreferences
+                .getBoolean(getContext().getString(R.string.disableTimeoutsPreference),
+                        false);
     }
 
     private Notification createNotification(boolean alert, boolean isConnected, boolean isVPN) {
@@ -637,15 +639,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
                 case RESTART_SERVICE:
                     if (manager != null) {
-                        Bundle configBundle = msg.getData();
-                        if (configBundle != null) {
-                            manager.getTunnelConfig(new Intent().putExtras(configBundle));
+                            manager.getTunnelConfig();
                             manager.onRestartCommand();
-                        } else {
-                            MyLog.g("TunnelManager::handleMessage TunnelManager.RESTART_SERVICE config bundle is null");
-                            // It is probably best to stop too.
-                            manager.signalStopService();
-                        }
                     }
                     break;
 
@@ -1389,14 +1384,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     }
 
     @Override
-    public void onClientUpgradeDownloaded(String filename) {
-    }
-
-    @Override
-    public void onClientIsLatestVersion() {
-    }
-
-    @Override
     public void onSplitTunnelRegion(final String region) {
         m_Handler.post(new Runnable() {
             @Override
@@ -1441,10 +1428,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 m_waitingForConnectivity.set(true);
             }
         });
-    }
-
-    @Override
-    public void onExiting() {
     }
 
     @Override
