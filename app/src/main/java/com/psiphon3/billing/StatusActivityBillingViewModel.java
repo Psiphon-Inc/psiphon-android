@@ -159,47 +159,23 @@ public class StatusActivityBillingViewModel extends AndroidViewModel {
             // [BillingClient.acknowledgePurchaseAsync] inside your app.
             compositeDisposable.add(repository.acknowledgePurchase(purchase).subscribe());
 
-            if (hasUnlimitedSubscription(purchase)) {
+            if (BillingRepository.hasUnlimitedSubscription(purchase)) {
                 subscriptionStateBehaviorRelay.accept(SubscriptionState.unlimitedSubscription(purchase));
                 return;
-            } else if (hasLimitedSubscription(purchase)) {
+            } else if (BillingRepository.hasLimitedSubscription(purchase)) {
                 subscriptionStateBehaviorRelay.accept(SubscriptionState.limitedSubscription(purchase));
                 return;
-            } else if (hasTimePass(purchase)) {
+            } else if (BillingRepository.hasTimePass(purchase)) {
                 subscriptionStateBehaviorRelay.accept(SubscriptionState.timePass(purchase));
                 return;
+            }
+            // Check if this purchase is an expired timepass which needs to be consumed
+            if (BillingRepository.IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(purchase.getSku())) {
+                compositeDisposable.add(repository.consumePurchase(purchase).subscribe());
             }
         }
 
         subscriptionStateBehaviorRelay.accept(SubscriptionState.noSubscription());
-    }
-
-    private boolean hasUnlimitedSubscription(@NonNull Purchase purchase) {
-        return Arrays.asList(BillingRepository.IAB_ALL_UNLIMITED_MONTHLY_SUBSCRIPTION_SKUS).contains(purchase.getSku());
-    }
-
-    private boolean hasLimitedSubscription(@NonNull Purchase purchase) {
-        return purchase.getSku().equals(BillingRepository.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU);
-    }
-
-    private boolean hasTimePass(@NonNull Purchase purchase) {
-        String purchaseSku = purchase.getSku();
-        Long lifetimeInDays = BillingRepository.IAB_TIMEPASS_SKUS_TO_DAYS.get(purchaseSku);
-        if (lifetimeInDays == null) {
-            // not a time pass SKU
-            return false;
-        }
-        // calculate expiry date based on the lifetime and purchase date
-        long lifetimeMillis = lifetimeInDays * 24 * 60 * 60 * 1000;
-        long timepassExpiryMillis = purchase.getPurchaseTime() + lifetimeMillis;
-        if (System.currentTimeMillis() < timepassExpiryMillis) {
-            // This time pass is still valid.
-            return true;
-        }
-        // Otherwise consume the purchase and return false.
-        compositeDisposable.add(repository.consumePurchase(purchase).subscribe());
-
-        return false;
     }
 
     public Completable launchFlow(Activity activity, SkuDetails skuDetails) {

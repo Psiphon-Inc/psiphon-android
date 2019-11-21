@@ -22,6 +22,7 @@ package com.psiphon3.billing;
 
 import android.app.Activity;
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 import com.android.billingclient.api.AcknowledgePurchaseParams;
@@ -39,6 +40,7 @@ import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.BuildConfig;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -257,6 +259,31 @@ public class BillingRepository {
                         }))
                 .doOnError(err -> Utils.MyLog.g("BillingRepository::acknowledgePurchase error: " + err))
                 .onErrorComplete();
+    }
+
+    static boolean hasUnlimitedSubscription(@NonNull Purchase purchase) {
+        return Arrays.asList(IAB_ALL_UNLIMITED_MONTHLY_SUBSCRIPTION_SKUS).contains(purchase.getSku());
+    }
+
+    static boolean hasLimitedSubscription(@NonNull Purchase purchase) {
+        return purchase.getSku().equals(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU);
+    }
+
+    static boolean hasTimePass(@NonNull Purchase purchase) {
+        String purchaseSku = purchase.getSku();
+        Long lifetimeInDays = IAB_TIMEPASS_SKUS_TO_DAYS.get(purchaseSku);
+        if (lifetimeInDays == null) {
+            // not a time pass SKU
+            return false;
+        }
+        // calculate expiry date based on the lifetime and purchase date
+        long lifetimeMillis = lifetimeInDays * 24 * 60 * 60 * 1000;
+        long timepassExpiryMillis = purchase.getPurchaseTime() + lifetimeMillis;
+        if (System.currentTimeMillis() < timepassExpiryMillis) {
+            // This time pass is still valid.
+            return true;
+        }
+        return false;
     }
 
     Single consumePurchase(Purchase purchase) {
