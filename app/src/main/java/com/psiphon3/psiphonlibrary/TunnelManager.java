@@ -48,7 +48,10 @@ import android.text.TextUtils;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.billing.BillingRepository;
+import com.psiphon3.billing.PurchaseVerifier;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
@@ -83,7 +86,7 @@ import io.reactivex.schedulers.Schedulers;
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
 import static com.psiphon3.StatusActivity.ACTION_SHOW_GET_HELP_DIALOG;
 
-public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
+public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, PurchaseVerifier.PurchaseAuthorizationListener {
     // Android IPC messages
     // Client -> Service
     enum ClientToServiceMessage {
@@ -223,6 +226,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     private ConnectivityManager.NetworkCallback networkCallback;
     private AtomicBoolean m_waitingForConnectivity = new AtomicBoolean(false);
 
+    private PurchaseVerifier purchaseVerifier;
+
     TunnelManager(Service parentService) {
         m_parentService = parentService;
         m_context = parentService;
@@ -231,6 +236,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_isStopping = new AtomicBoolean(false);
         // Note that we are requesting manual control over PsiphonTunnel.routeThroughTunnel() functionality.
         m_tunnel = PsiphonTunnel.newPsiphonTunnel(this, false);
+        purchaseVerifier = new PurchaseVerifier(BillingRepository.getInstance(m_parentService));
     }
 
     void onCreate() {
@@ -373,6 +379,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         stopAndWaitForTunnel();
         MyLog.unsetLogger();
         m_compositeDisposable.dispose();
+        purchaseVerifier.onDestroy();
     }
 
     void onRevoke() {
@@ -1478,5 +1485,35 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     @Override
     public void onStoppedWaitingForNetworkConnectivity() {
         m_waitingForConnectivity.set(false);
+    }
+
+    // PurchaseVerifier.PurchaseAuthorizationListener implementation
+    @Override
+    public void updateConnection(PurchaseVerifier.UpdateConnectionAction action) {
+        switch(action) {
+            case NO_ACTION:
+                break;
+            case RESTART_AS_NON_SUBSCRIBER:
+                MyLog.g("TunnelManager::startPurchaseCheckFlow: will restart as a non subscriber");
+                m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
+                restartTunnel();
+                break;
+            case RESTART_AS_SUBSCRIBER:
+                MyLog.g("TunnelManager::startPurchaseCheckFlow: will restart as a subscriber");
+                m_tunnelConfig.sponsorId = BuildConfig.SUBSCRIPTION_SPONSOR_ID;
+                restartTunnel();
+                break;
+        }
+    }
+
+    private void restartTunnel() {
+        m_Handler.post(() -> {
+            m_isReconnect.set(false);
+            try {
+                m_tunnel.restartPsiphon();
+            } catch (PsiphonTunnel.Exception e) {
+                MyLog.e(R.string.start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+            }
+        });
     }
 }
