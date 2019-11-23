@@ -29,7 +29,6 @@ import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.Utils;
 
 import java.io.IOException;
-import java.net.SocketException;
 
 import io.reactivex.exceptions.UndeliverableException;
 import io.reactivex.plugins.RxJavaPlugins;
