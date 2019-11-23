@@ -28,6 +28,9 @@ import com.psiphon3.psiphonlibrary.LocaleManager;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.Utils;
 
+import java.io.IOException;
+import java.net.SocketException;
+
 import io.reactivex.exceptions.UndeliverableException;
 import io.reactivex.plugins.RxJavaPlugins;
 
@@ -60,7 +63,15 @@ public class PsiphonApplication extends Application {
             if (e instanceof UndeliverableException) {
                 e = e.getCause();
             }
-            Utils.MyLog.g(String.format("RxJava undeliverable exception received: %s", e.getMessage()));
+            if ((e instanceof IOException)) {
+                // fine, irrelevant network problem or API that throws on cancellation
+                return;
+            }
+            if (e instanceof InterruptedException) {
+                // fine, some blocking code was interrupted by a dispose call
+                return;
+            }
+            Utils.MyLog.g("RxJava undeliverable exception received: " + e);
         });
     }
 }
