@@ -119,4 +119,8 @@ public class KinPermissionManager {
     public boolean isOptedIn(Context context) {
         return settingsManager.isOptedIn(context);
     }
+
+    public boolean hasOptInPreference(Context context) {
+        return !settingsManager.needsToOptIn(context);
+    }
 }

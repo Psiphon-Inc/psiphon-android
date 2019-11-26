@@ -1134,6 +1134,8 @@ public class StatusActivity
 
     private void enableKinOptInCheckBox(boolean enable) {
         CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
+        // Disable the checkbox if Kin opt-in preference was never initialized
+        enable = enable && kinPermissionManager.hasOptInPreference(getApplicationContext());
         if(enable) {
             checkBoxKinEnabled.setVisibility(View.VISIBLE);
         } else {
@@ -1351,7 +1353,8 @@ public class StatusActivity
             return;
         }
         initializeKinOptInStateDisposable = subscriptionStatusBehaviorRelay.concatMapSingle(subscriptionStatus -> {
-            if (subscriptionStatus == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER) {
+            if (subscriptionStatus == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER
+                    || !kinPermissionManager.hasOptInPreference(getApplicationContext())) {
                 // Return 'any' object, the return value is ignored anyway.
                 return Single.just(new Object());
             } else {

@@ -11,6 +11,7 @@ import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.disposables.Disposables;
 import kin.sdk.KinClient;
 import kin.sdk.exception.InsufficientKinException;
 
@@ -33,6 +34,12 @@ public class KinManager {
         final ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getKinApplicationServerUrl());
         final AccountHelper accountHelper = new AccountHelper(serverCommunicator, settingsManager, environment.getPsiphonWalletAddress());
         AtomicBoolean hasBeenCharged = new AtomicBoolean(false);
+
+        // If Kin opt-in preference was never initialized return a no-op disposable.
+        if (settingsManager.needsToOptIn(context)) {
+            Utils.MyLog.g("KinManager: user doesn't have Kin opt-in preference, completed Kin flow");
+            return Disposables.disposed();
+        }
 
         return tunnelConnectedBehaviorRelay
                 .distinctUntilChanged()
