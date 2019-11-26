@@ -6,7 +6,9 @@ import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.Purchase;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.subscription.BuildConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,9 +101,19 @@ public class PurchaseVerifier {
         );
     }
 
-    public Flowable<SubscriptionState> subscriptionStatusFlowable() {
+    private Flowable<SubscriptionState> subscriptionStatusFlowable() {
         return subscriptionStateBehaviorRelay
                 .toFlowable(BackpressureStrategy.LATEST);
+    }
+
+    public Single<String> sponsorIdSingle() {
+        return subscriptionStatusFlowable()
+                .firstOrError()
+                .map(subscriptionState ->
+                        subscriptionState.hasValidPurchase() ?
+                                BuildConfig.SUBSCRIPTION_SPONSOR_ID :
+                                EmbeddedValues.SPONSOR_ID
+                );
     }
 
     public void onTunnelConnected(Pair<Boolean, Integer> pair) {

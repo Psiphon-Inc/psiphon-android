@@ -80,6 +80,7 @@ import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
 
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
@@ -265,6 +266,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         EmbeddedValues.initialize(getContext());
         MyLog.setLogger(this);
 
+        purchaseVerifier.startIab();
         m_compositeDisposable.clear();
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
     }
@@ -489,7 +491,15 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
             return tunnelConfig;
         });
 
-        return configSingle;
+        Single <String> sponsorIdSingle = purchaseVerifier.sponsorIdSingle();
+
+        BiFunction<Config, String, Config> zipper =
+                (config, sponsorId) -> {
+                    config.sponsorId = sponsorId;
+                    return config;
+                };
+
+        return Single.zip(configSingle, sponsorIdSingle, zipper);
     }
 
     private Notification createNotification(boolean alert, boolean isConnected, boolean isVPN) {
@@ -786,7 +796,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
     private Bundle getTunnelStateBundle() {
         // Update with the latest sponsorId from the tunnel config
-        m_tunnelState.sponsorId = m_tunnelConfig.sponsorId;
+        m_tunnelState.sponsorId = m_tunnelConfig != null ? m_tunnelConfig.sponsorId : "";
 
         Bundle data = new Bundle();
         data.putBoolean(DATA_TUNNEL_STATE_IS_RUNNING, m_tunnelState.isRunning);
