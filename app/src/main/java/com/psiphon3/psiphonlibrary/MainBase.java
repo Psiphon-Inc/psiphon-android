@@ -169,7 +169,6 @@ public abstract class MainBase {
         public static final String LOGS_TAB_TAG = "logs_tab_tag";
 
 
-        private boolean m_canWholeDevice = false;
         protected boolean m_loadedSponsorTab = false;
 
         protected Button m_toggleButton;
@@ -573,18 +572,15 @@ public abstract class MainBase {
 
             m_regionSelector.setSelectionByValue(egressRegionPreference);
 
-            setTunnelConfigEgressRegion(egressRegionPreference);
-
             m_regionSelector.setOnItemSelectedListener(regionSpinnerOnItemSelected);
 
-            m_canWholeDevice = Utils.hasVpnService();
+            boolean canWholeDevice = Utils.hasVpnService();
 
-            m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
+            m_tunnelWholeDeviceToggle.setEnabled(canWholeDevice);
             boolean tunnelWholeDevicePreference = m_multiProcessPreferences
                     .getBoolean(getString(R.string.tunnelWholeDevicePreference),
-                            m_canWholeDevice);
+                            canWholeDevice);
             m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
-            setTunnelConfigWholeDevice(m_canWholeDevice && tunnelWholeDevicePreference);
 
             // Show download-wifi-only preference only in not Play Store build
             if (!EmbeddedValues.IS_PLAY_STORE_BUILD) {
@@ -601,7 +597,6 @@ public abstract class MainBase {
             boolean disableTimeoutsPreference = m_multiProcessPreferences.getBoolean(
                     getString(R.string.disableTimeoutsPreference), false);
             m_disableTimeoutsToggle.setChecked(disableTimeoutsPreference);
-            setTunnelConfigDisableTimeouts(disableTimeoutsPreference);
 
             String msg = getContext().getString(R.string.client_version, EmbeddedValues.CLIENT_VERSION);
             m_statusTabVersionLine.setText(msg);
@@ -988,7 +983,7 @@ public abstract class MainBase {
             String egressRegionPreference = m_multiProcessPreferences
                     .getString(getString(R.string.egressRegionPreference),
                             PsiphonConstants.REGION_CODE_ANY);
-            if (selectedRegionCode.equals(egressRegionPreference) && selectedRegionCode.equals(getTunnelConfigEgressRegion())) {
+            if (selectedRegionCode.equals(egressRegionPreference)) {
                 return;
             }
 
@@ -1005,8 +1000,6 @@ public abstract class MainBase {
             // wish. Also, CheckBox enabling should cover this (but isn't
             // required to).
             m_multiProcessPreferences.put(getString(R.string.egressRegionPreference), egressRegionPreference);
-
-            setTunnelConfigEgressRegion(egressRegionPreference);
         }
 
         public void onTunnelWholeDeviceToggle(View v) {
@@ -1035,8 +1028,6 @@ public abstract class MainBase {
             packageManager.setComponentEnabledSetting(componentName,
                     tunnelWholeDevicePreference ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                     PackageManager.DONT_KILL_APP);
-
-            setTunnelConfigWholeDevice(tunnelWholeDevicePreference);
         }
 
         public void onDisableTimeoutsToggle(View v) {
@@ -1047,8 +1038,6 @@ public abstract class MainBase {
         }
         protected void updateDisableTimeoutsPreference(boolean disableTimeoutsPreference) {
             m_multiProcessPreferences.put(getString(R.string.disableTimeoutsPreference), disableTimeoutsPreference);
-
-            setTunnelConfigDisableTimeouts(disableTimeoutsPreference);
         }
 
         public void onDownloadOnWifiOnlyToggle(View v) {
@@ -1199,7 +1188,7 @@ public abstract class MainBase {
 
         protected void enableToggleServiceUI() {
             m_toggleButton.setEnabled(true);
-            m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
+            m_tunnelWholeDeviceToggle.setEnabled(Utils.hasVpnService());
             m_disableTimeoutsToggle.setEnabled(true);
             m_regionSelector.setEnabled(true);
             m_moreOptionsButton.setEnabled(true);
@@ -1298,7 +1287,11 @@ public abstract class MainBase {
 
             boolean waitingForPrompt = false;
 
-            if (getTunnelConfigWholeDevice() && Utils.hasVpnService()) {
+            boolean wantVPN = m_multiProcessPreferences
+                    .getBoolean(getString(R.string.tunnelWholeDevicePreference),
+                            false);
+
+            if (wantVPN && Utils.hasVpnService()) {
                 // VpnService backwards compatibility: for lazy class loading
                 // the VpnService
                 // class reference has to be in another function (doVpnPrepare),
@@ -1531,36 +1524,10 @@ public abstract class MainBase {
 
         protected void onVpnPromptCancelled() {}
 
-        // Tunnel config, sent to the service.
-        private TunnelManager.Config m_tunnelConfig = new TunnelManager.Config();
-
-        protected void setTunnelConfigEgressRegion(String tunnelConfigEgressRegion) {
-            m_tunnelConfig.egressRegion = tunnelConfigEgressRegion;
-        }
-
-        protected String getTunnelConfigEgressRegion() {
-            return m_tunnelConfig.egressRegion;
-        }
-
-        protected void setTunnelConfigWholeDevice(boolean tunnelConfigWholeDevice) {
-            m_tunnelConfig.wholeDevice = tunnelConfigWholeDevice;
-        }
-
-        protected boolean getTunnelConfigWholeDevice() {
-            return m_tunnelConfig.wholeDevice;
-        }
-
-        protected void setTunnelConfigDisableTimeouts(boolean disableTimeouts) {
-            m_tunnelConfig.disableTimeouts = disableTimeouts;
-        }
-
-        protected boolean getTunnelConfigDisableTimeouts() {
-            return m_tunnelConfig.disableTimeouts;
-        }
-
         protected void startAndBindTunnelService() {
-            AppPreferences mpPreferences = new AppPreferences(this);
-            boolean wantVPN = mpPreferences.getBoolean(getString(R.string.tunnelWholeDevicePreference), false);
+            boolean wantVPN = m_multiProcessPreferences
+                    .getBoolean(getString(R.string.tunnelWholeDevicePreference),
+                            false);
             tunnelServiceInteractor.startTunnelService(getApplicationContext(), wantVPN);
         }
 
@@ -1689,7 +1656,11 @@ public abstract class MainBase {
 
             public void load(String url, int httpProxyPort) {
                 // Set WebView proxy only if we are not running in WD mode.
-                if(!getTunnelConfigWholeDevice() || !Utils.hasVpnService()) {
+                boolean wantVPN = m_multiProcessPreferences
+                        .getBoolean(getString(R.string.tunnelWholeDevicePreference),
+                                false);
+
+                if(!wantVPN || !Utils.hasVpnService()) {
                     WebViewProxySettings.setLocalProxy(mWebView.getContext(), httpProxyPort);
                 } else {
                     // We are running in WDM, reset WebView proxy if it has been previously set.
