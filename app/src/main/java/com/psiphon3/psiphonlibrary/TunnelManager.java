@@ -44,10 +44,10 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
+import android.util.Pair;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
-import com.psiphon3.billing.BillingRepository;
 import com.psiphon3.billing.PurchaseVerifier;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.BuildConfig;
@@ -237,7 +237,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         m_isStopping = new AtomicBoolean(false);
         // Note that we are requesting manual control over PsiphonTunnel.routeThroughTunnel() functionality.
         m_tunnel = PsiphonTunnel.newPsiphonTunnel(this, false);
-        purchaseVerifier = new PurchaseVerifier(BillingRepository.getInstance(m_parentService));
+        purchaseVerifier = new PurchaseVerifier(m_parentService, this);
     }
 
     void onCreate() {
@@ -334,11 +334,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 .doOnNext(isConnected -> {
                     m_tunnelState.isConnected = isConnected;
                     // Any subsequent onConnected after this first one will be a reconnect.
-                    if(isConnected && m_isReconnect.compareAndSet(false,true)) {
+                    if (isConnected && m_isReconnect.compareAndSet(false, true)) {
                         m_tunnel.routeThroughTunnel();
-                        if(m_tunnelState.homePages != null && m_tunnelState.homePages.size() > 0) {
-                        sendHandshakeIntent();
-                    }
+                        if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() > 0) {
+                            sendHandshakeIntent();
+                        }
                     }
                     sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
                     // Don't update notification to CONNECTING, etc., when a stop was commanded.
@@ -347,6 +347,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         // which means we always add a sound / vibration alert to the notification
                         postServiceNotification(true, isConnected);
                     }
+                    purchaseVerifier.onTunnelConnected(new Pair<>(isConnected, m_tunnelState.listeningLocalHttpProxyPort));
                 })
                 .subscribe();
     }
@@ -1462,6 +1463,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     @Override
     public void onActiveAuthorizationIDs(List<String> acceptedAuthorizationIds) {
         m_Handler.post(() -> {
+            purchaseVerifier.onActiveAuthorizationIDs(acceptedAuthorizationIds);
             // Build a list of accepted authorizations from the authorizations snapshot.
             List<Authorization> acceptedAuthorizations = new ArrayList<>();
 
@@ -1503,15 +1505,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     @Override
     public void updateConnection(PurchaseVerifier.UpdateConnectionAction action) {
         switch(action) {
-            case NO_ACTION:
-                break;
             case RESTART_AS_NON_SUBSCRIBER:
-                MyLog.g("TunnelManager::startPurchaseCheckFlow: will restart as a non subscriber");
+                MyLog.g("TunnelManager: purchase verification: will restart as a non subscriber");
                 m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
                 restartTunnel();
                 break;
             case RESTART_AS_SUBSCRIBER:
-                MyLog.g("TunnelManager::startPurchaseCheckFlow: will restart as a subscriber");
+                MyLog.g("TunnelManager: purchase verification: will restart as a subscriber");
                 m_tunnelConfig.sponsorId = BuildConfig.SUBSCRIPTION_SPONSOR_ID;
                 restartTunnel();
                 break;

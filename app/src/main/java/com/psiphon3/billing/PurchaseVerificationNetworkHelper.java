@@ -30,6 +30,8 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
@@ -104,7 +106,7 @@ public class PurchaseVerificationNetworkHelper {
     }
 
     @SuppressLint("DefaultLocale")
-    public Observable<String> fetchAuthorizationObservable() {
+    public Flowable<String> fetchAuthorizationFlowable() {
         return Observable.fromCallable(
                 () -> {
                     JSONObject json = new JSONObject();
@@ -152,6 +154,7 @@ public class PurchaseVerificationNetworkHelper {
                             }
                         }
                 )
+                .toFlowable(BackpressureStrategy.LATEST)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread());
     }

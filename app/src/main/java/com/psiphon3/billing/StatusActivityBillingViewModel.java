@@ -56,7 +56,7 @@ public class StatusActivityBillingViewModel extends AndroidViewModel {
         allSkuDetailsBehaviorRelay = BehaviorRelay.create();
     }
 
-    public Flowable<SubscriptionState> subscriptionStatusFlowable() {
+    public Flowable<SubscriptionState> subscriptionStateFlowable() {
         return subscriptionStateBehaviorRelay
                 .toFlowable(BackpressureStrategy.LATEST);
     }

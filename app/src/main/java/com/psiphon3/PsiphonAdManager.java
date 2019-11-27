@@ -166,7 +166,7 @@ public class PsiphonAdManager {
     private final Observable<AdResult> currentAdTypeObservable;
     private Disposable loadAdsDisposable;
     private Disposable tunneledInterstitialDisposable;
-    private PublishRelay<SubscriptionState> subscriptionStatusPublishRelay = PublishRelay.create();
+    private PublishRelay<SubscriptionState> subscriptionStatePublishRelay = PublishRelay.create();
     private PublishRelay<TunnelState> tunnelConnectionStatePublishRelay = PublishRelay.create();
 
     PsiphonAdManager(Activity activity, ViewGroup bannerLayout, Runnable adMobPayOptionRunnable, boolean hasSubsriptionFeature) {
@@ -218,7 +218,7 @@ public class PsiphonAdManager {
         // Note this observable also destroys ads according to subscription and/or
         // connection status without further delay.
         this.currentAdTypeObservable = Observable.combineLatest(tunnelConnectionStateObservable(),
-                subscriptionStatusObservable(),
+                subscriptionStateObservable(),
                 ((BiFunction<TunnelState, SubscriptionState, Pair>) Pair::new))
                 .flatMap(pair -> {
                     TunnelState s = (TunnelState) pair.first;
@@ -336,7 +336,7 @@ public class PsiphonAdManager {
     }
 
     void onSubscriptionState(SubscriptionState subscriptionState) {
-        subscriptionStatusPublishRelay.accept(subscriptionState);
+        subscriptionStatePublishRelay.accept(subscriptionState);
     }
 
     void onTabChanged() {
@@ -396,9 +396,9 @@ public class PsiphonAdManager {
         return tunnelConnectionStatePublishRelay.hide().distinctUntilChanged();
     }
 
-    private Observable<SubscriptionState> subscriptionStatusObservable() {
+    private Observable<SubscriptionState> subscriptionStateObservable() {
         if (hasSubscriptionFeature) {
-            return subscriptionStatusPublishRelay.hide().distinctUntilChanged();
+            return subscriptionStatePublishRelay.hide().distinctUntilChanged();
         } else {
             return Observable.just(SubscriptionState.notApplicable());
         }

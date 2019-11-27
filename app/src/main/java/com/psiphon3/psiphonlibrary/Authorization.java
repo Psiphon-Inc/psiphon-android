@@ -133,7 +133,7 @@ public abstract class Authorization {
         replaceAllPersistedAuthorizations(context, authorizationList);
     }
 
-    synchronized static void removeAuthorizations(Context context, List<Authorization> toRemove) {
+    public synchronized static void removeAuthorizations(Context context, List<Authorization> toRemove) {
         if (toRemove.size() == 0) {
             return;
         }
@@ -146,7 +146,7 @@ public abstract class Authorization {
 
     public abstract String Id();
 
-    abstract String accessType();
+    public abstract String accessType();
 
     abstract Date expires();
 

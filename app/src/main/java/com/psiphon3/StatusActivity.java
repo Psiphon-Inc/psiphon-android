@@ -127,7 +127,7 @@ public class StatusActivity
 
         // Rate limit observable
         Observable<RateLimitMode> currentRateLimitModeObservable =
-                billingViewModel.subscriptionStatusFlowable()
+                billingViewModel.subscriptionStateFlowable()
                         .toObservable()
                         .map(subscriptionState -> {
                             switch (subscriptionState.status()) {
@@ -172,7 +172,7 @@ public class StatusActivity
 
         // Components IAB state notifications and PsiCash tab view state Rx subscription.
         compositeDisposable.add(
-                billingViewModel.subscriptionStatusFlowable()
+                billingViewModel.subscriptionStateFlowable()
                         .doOnNext(subscriptionState -> {
                             MyLog.g("Billing: subscription status: " + subscriptionState.status());
                             if (subscriptionState.error() != null) {
@@ -686,7 +686,7 @@ public class StatusActivity
     public void onSubscribeButtonClick(View v) {
         Utils.MyLog.g("StatusActivity::onSubscribeButtonClick");
         compositeDisposable.add(
-                billingViewModel.subscriptionStatusFlowable()
+                billingViewModel.subscriptionStateFlowable()
                         .firstOrError()
                         .subscribe(subscriptionState -> {
                             switch (subscriptionState.status()) {
