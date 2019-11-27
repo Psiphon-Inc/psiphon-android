@@ -87,7 +87,7 @@ public class PurchaseVerifier {
             // Skip purchases that don't pass signature verification.
             if (!Security.verifyPurchase(BillingRepository.IAB_PUBLIC_KEY,
                     purchase.getOriginalJson(), purchase.getSignature())) {
-                Utils.MyLog.g("PurchaseVerifier::processPurchases: failed verification for purchase: " + purchase);
+                Utils.MyLog.g("PurchaseVerifier::processPurchases: failed on-device verification for purchase: " + purchase);
                 continue;
             }
 
@@ -105,7 +105,7 @@ public class PurchaseVerifier {
         subscriptionStateBehaviorRelay.accept(SubscriptionState.noSubscription());
     }
 
-    private void queryCurrentSubscriptionStatus() {
+    public void queryCurrentSubscriptionStatus() {
         compositeDisposable.add(
                 Single.mergeDelayError(repository.getSubscriptions(), repository.getPurchases())
                         .toList()
@@ -125,6 +125,7 @@ public class PurchaseVerifier {
 
     private Flowable<SubscriptionState> subscriptionStateFlowable() {
         return subscriptionStateBehaviorRelay
+                .distinctUntilChanged()
                 .toFlowable(BackpressureStrategy.LATEST);
     }
 
@@ -152,16 +153,19 @@ public class PurchaseVerifier {
                     SubscriptionState subscriptionState = pair.first;
                     final int httpProxyPort = pair.second;
                     if (!subscriptionState.hasValidPurchase()) {
+                        Utils.MyLog.g("PurchaseVerifier: user has no subscription, continue.");
                         // No subscription, do nothing
                         return Flowable.empty();
                     }
                     // Otherwise check if we have already tried to fetch an authorization for this token
                     String persistedPurchaseToken = appPreferences.getString(PREFERENCE_PURCHASE_TOKEN, "");
                     if (persistedPurchaseToken.equals(subscriptionState.purchase().getPurchaseToken())) {
+                        Utils.MyLog.g("PurchaseVerifier: purchase seen already, continue.");
                         // We already aware of this purchase, do nothing
                         return Flowable.empty();
                     }
                     // We have a fresh purchase. Store the purchase token and reset the persisted authorization Id
+                    Utils.MyLog.g("PurchaseVerifier: user has new valid purchase.");
                     Purchase purchase = subscriptionState.purchase();
                     appPreferences.put(PREFERENCE_PURCHASE_TOKEN, purchase.getPurchaseToken());
                     appPreferences.put(PREFERENCE_PURCHASE_AUTHORIZATION_ID, "");
@@ -178,6 +182,7 @@ public class PurchaseVerifier {
                                     .withHttpProxyPort(httpProxyPort)
                                     .build();
 
+                    Utils.MyLog.g("PurchaseVerifier: will try and fetch new authorization.");
                     return purchaseVerificationNetworkHelper.fetchAuthorizationFlowable()
                             .map(json -> {
                                         String encodedAuth = new JSONObject(json).getString("signed_authorization");
@@ -186,6 +191,7 @@ public class PurchaseVerifier {
                                             // Expired or invalid purchase, do nothing.
                                             // No action will be taken next time we receive the same token
                                             // because we persisted this token already.
+                                            Utils.MyLog.g("PurchaseVerifier: server returned empty authorization.");
                                             return UpdateConnectionAction.RESTART_AS_NON_SUBSCRIBER;
                                         }
 
@@ -204,13 +210,14 @@ public class PurchaseVerifier {
                                         }
                                         Authorization.removeAuthorizations(context, authorizationsToRemove);
                                         Authorization.storeAuthorization(context, authorization);
+                                        Utils.MyLog.g("PurchaseVerifier: server returned new authorization.");
                                         return UpdateConnectionAction.RESTART_AS_SUBSCRIBER;
                                     }
                             )
                             .doOnError(e -> {
                                 // On fetch error reset persisted purchase token so it can be retried next time
                                 appPreferences.put(PREFERENCE_PURCHASE_TOKEN, "");
-                                Utils.MyLog.g("PurchaseVerificationNetworkHelper: fetching authorization failed with error: " + e);
+                                Utils.MyLog.g("PurchaseVerifier: fetching authorization failed with error: " + e);
                             })
                             .onErrorResumeNext(Flowable.empty());
 
@@ -222,6 +229,10 @@ public class PurchaseVerifier {
     public Single<String> sponsorIdSingle() {
         return subscriptionStateFlowable()
                 .firstOrError()
+                .doOnSuccess(subscriptionState ->
+                        Utils.MyLog.g("PurchaseVerifier: will start with "
+                                + (subscriptionState.hasValidPurchase() ? "subscription" : "non-subscription")
+                                + " sponsor ID"))
                 .map(subscriptionState ->
                         subscriptionState.hasValidPurchase() ?
                                 BuildConfig.SUBSCRIPTION_SPONSOR_ID :
@@ -244,8 +255,11 @@ public class PurchaseVerifier {
         // If server hasn't accepted any authorizations or persisted authorization ID hasn't been
         // accepted then reset persisted purchase token and trigger new IAB check
         if (acceptedAuthorizationIds.isEmpty() || !acceptedAuthorizationIds.contains(purchaseAuthorizationID)) {
+            Utils.MyLog.g("PurchaseVerifier: subscription authorization rejected, will try getting a new one.");
             appPreferences.put(PREFERENCE_PURCHASE_TOKEN, "");
             queryCurrentSubscriptionStatus();
+        } else {
+            Utils.MyLog.g("PurchaseVerifier: subscription authorization accepted, continue.");
         }
     }
 

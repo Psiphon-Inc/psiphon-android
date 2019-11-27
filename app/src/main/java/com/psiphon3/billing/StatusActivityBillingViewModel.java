@@ -115,7 +115,6 @@ public class StatusActivityBillingViewModel extends AndroidViewModel {
         );
     }
 
-
     public void queryCurrentSubscriptionStatus() {
         compositeDisposable.add(
                 Single.mergeDelayError(repository.getSubscriptions(), repository.getPurchases())

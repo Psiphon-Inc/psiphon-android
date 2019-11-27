@@ -237,7 +237,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         m_isStopping = new AtomicBoolean(false);
         // Note that we are requesting manual control over PsiphonTunnel.routeThroughTunnel() functionality.
         m_tunnel = PsiphonTunnel.newPsiphonTunnel(this, false);
-        purchaseVerifier = new PurchaseVerifier(m_parentService, this);
     }
 
     void onCreate() {
@@ -266,7 +265,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         EmbeddedValues.initialize(getContext());
         MyLog.setLogger(this);
 
+        purchaseVerifier = new PurchaseVerifier(getContext(), this);
         purchaseVerifier.startIab();
+
         m_compositeDisposable.clear();
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
     }
@@ -643,6 +644,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         }
                         manager.mClients.add(client);
                         manager.m_newClientPublishRelay.accept(new Object());
+                        manager.purchaseVerifier.queryCurrentSubscriptionStatus();
                     }
                     break;
 
