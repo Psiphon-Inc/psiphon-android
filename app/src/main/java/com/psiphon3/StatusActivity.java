@@ -118,11 +118,6 @@ public class StatusActivity
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             kinPermissionManager = new KinPermissionManager();
-        } else {
-            CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
-            if (checkBoxKinEnabled != null) {
-                checkBoxKinEnabled.setVisibility(View.GONE);
-            }
         }
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
@@ -212,8 +207,8 @@ public class StatusActivity
         );
 
         // Setup Kin UI
-        if(kinPermissionManager != null
-                /*&& kinPermissionManager.hasOptInPreference(getApplicationContext())*/) {
+        if (kinPermissionManager != null &&
+                kinPermissionManager.hasOptInPreference(getApplicationContext())) {
             compositeDisposable.add(
                     billingViewModel.subscriptionStateFlowable()
                             .concatMapMaybe(subscriptionState -> {
@@ -751,9 +746,9 @@ public class StatusActivity
     private void enableKinOptInCheckBox(boolean enable) {
         CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
         // Disable the checkbox if Kin opt-in preference was never initialized
-        enable = enable
-                && kinPermissionManager != null;
-//                && kinPermissionManager.hasOptInPreference(getApplicationContext());
+        enable = enable &&
+                kinPermissionManager != null &&
+                kinPermissionManager.hasOptInPreference(getApplicationContext());
 
         if(enable) {
             checkBoxKinEnabled.setVisibility(View.VISIBLE);
