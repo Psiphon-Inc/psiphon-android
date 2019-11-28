@@ -123,7 +123,7 @@ public class PurchaseVerifier {
         );
     }
 
-    private Flowable<SubscriptionState> subscriptionStateFlowable() {
+    public Flowable<SubscriptionState> subscriptionStateFlowable() {
         return subscriptionStateBehaviorRelay
                 .distinctUntilChanged()
                 .toFlowable(BackpressureStrategy.LATEST);

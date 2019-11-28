@@ -894,16 +894,18 @@ public abstract class MainBase {
         }
 
         protected void doToggle() {
-            tunnelServiceInteractor.tunnelStateFlowable()
-                    .take(1)
-                    .doOnNext(state -> {
-                        if (state.isRunning()) {
-                            stopTunnelService();
-                        } else {
-                            startUp();
-                        }
-                    })
-                    .subscribe();
+            compositeDisposable.add(
+                    tunnelServiceInteractor.tunnelStateFlowable()
+                            .firstOrError()
+                            .doOnSuccess(state -> {
+                                if (state.isRunning()) {
+                                    stopTunnelService();
+                                } else {
+                                    startUp();
+                                }
+                            })
+                            .subscribe()
+            );
         }
 
         public class StatusEntryAdded extends BroadcastReceiver {

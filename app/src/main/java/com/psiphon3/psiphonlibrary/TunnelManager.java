@@ -49,6 +49,7 @@ import android.util.Pair;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.billing.PurchaseVerifier;
+import com.psiphon3.kin.KinManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
@@ -97,6 +98,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         SET_LANGUAGE,
         NFC_CONNECTION_INFO_EXCHANGE_EXPORT,
         NFC_CONNECTION_INFO_EXCHANGE_IMPORT,
+        KIN_OPT_IN_STATE,
     }
     // Service -> Client
     enum ServiceToClientMessage {
@@ -139,6 +141,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
     // Extras in  (Client -> Service) messages
     static final String EXTRA_LANGUAGE_CODE = "languageCode";
+    public static final String KIN_OPT_IN_STATE_EXTRA = "kinOptInStateExtra";
 
     // a snapshot of all authorizations pulled by getPsiphonConfig
     private static List<Authorization> m_tunnelConfigAuthorizations;
@@ -227,6 +230,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     private ConnectivityManager.NetworkCallback networkCallback;
     private AtomicBoolean m_waitingForConnectivity = new AtomicBoolean(false);
 
+    private KinManager m_kinManager = new KinManager();
     private PurchaseVerifier purchaseVerifier;
 
     TunnelManager(Service parentService) {
@@ -270,6 +274,22 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
         m_compositeDisposable.clear();
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
+
+        // Update Kin manager with Kin opt-in current state but only if the user is not subscribed
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && m_tunnelState.isVPN) {
+            m_compositeDisposable.add(
+                    purchaseVerifier.subscriptionStateFlowable()
+                            .firstOrError()
+                            .doOnSuccess(subscriptionState -> {
+                                if (!subscriptionState.hasValidPurchase()) {
+                                    boolean kinOptInState = m_kinManager.getPersistedOptInState(getContext());
+                                    m_kinManager.onKinOptInState(kinOptInState);
+                                }
+                            })
+                            .subscribe()
+            );
+            m_compositeDisposable.add(m_kinManager.kinFlowDisposable(m_parentService));
+        }
     }
 
     // Implementation of android.app.Service.onStartCommand
@@ -349,6 +369,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         postServiceNotification(true, isConnected);
                     }
                     purchaseVerifier.onTunnelConnected(new Pair<>(isConnected, m_tunnelState.listeningLocalHttpProxyPort));
+                })
+                .doOnNext(isConnected -> {
+                    if(m_tunnelState.isVPN && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                        m_kinManager.onTunnelConnected(isConnected);
+                    }
                 })
                 .subscribe();
     }
@@ -685,6 +710,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 case NFC_CONNECTION_INFO_EXCHANGE_EXPORT:
                     if (manager != null) {
                         manager.handleNfcConnectionInfoExchangeExport();
+                    }
+                    break;
+
+                case KIN_OPT_IN_STATE:
+                    if (manager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                        Bundle data = msg.getData();
+                        Context context = manager.m_parentService;
+                        // If running in WDM pass Kin opt in state to KinManager.
+                        if(manager.m_tunnelState.isVPN) {
+                            manager.m_kinManager.onKinOptInState(data.getBoolean(KIN_OPT_IN_STATE_EXTRA, false));
+                        }
                     }
                     break;
 
@@ -1037,7 +1073,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
     @Override
     public String getAppName() {
-        return m_parentService.getString(R.string.app_name);
+        return m_parentService.getString(R.string.app_name_psiphon_pro);
     }
 
     @Override
