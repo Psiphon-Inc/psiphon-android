@@ -10,8 +10,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.disposables.Disposables;
 import kin.sdk.KinClient;
 import kin.sdk.exception.InsufficientKinException;
 
@@ -28,7 +26,7 @@ public class KinManager {
      * creates and deletes accounts, and makes transactions on the remote blockchain.
      * This subscription completes when the user opts out or a Kin operation error occurs.
      */
-    public Disposable kinFlowDisposable(Context context) {
+    public Maybe<Object> kinFlowMaybe(Context context) {
         final KinClient kinClient = new KinClient(context, environment.getKinEnvironment(), Environment.PSIPHON_APP_ID);
         final ClientHelper clientHelper = new ClientHelper(kinClient);
         final ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getKinApplicationServerUrl());
@@ -37,9 +35,12 @@ public class KinManager {
 
         // If Kin opt-in preference was never initialized return a no-op disposable.
         if (settingsManager.needsToOptIn(context)) {
-            Utils.MyLog.g("KinManager: user doesn't have Kin opt-in preference, completed Kin flow");
-            return Disposables.disposed();
+            Utils.MyLog.g("KinManager: user doesn't have Kin opt-in preference.");
+            return Maybe.just(new Object());
         }
+
+        // Bootstrap kinOptInStateBehaviorRelay with current Kin opt-in state
+        onKinOptInState(settingsManager.isOptedIn(context));
 
         return tunnelConnectedBehaviorRelay
                 .distinctUntilChanged()
@@ -83,11 +84,7 @@ public class KinManager {
                             });
                 })
                 .firstOrError()
-                .ignoreElement()
-                .doOnError(e -> Utils.MyLog.g("KinManager: kin flow error: " + e))
-                .onErrorComplete()
-                .doOnComplete(() -> Utils.MyLog.g("KinManager: completed kin flow"))
-                .subscribe();
+                .toMaybe();
     }
 
     public void onTunnelConnected(boolean isConnected) {

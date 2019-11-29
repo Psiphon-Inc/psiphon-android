@@ -76,6 +76,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ca.psiphon.PsiphonTunnel;
+import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -277,18 +278,22 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
         // Update Kin manager with Kin opt-in current state but only if the user is not subscribed
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && m_tunnelState.isVPN) {
-            m_compositeDisposable.add(
-                    purchaseVerifier.subscriptionStateFlowable()
-                            .firstOrError()
-                            .doOnSuccess(subscriptionState -> {
-                                if (!subscriptionState.hasValidPurchase()) {
-                                    boolean kinOptInState = m_kinManager.getPersistedOptInState(getContext());
-                                    m_kinManager.onKinOptInState(kinOptInState);
-                                }
-                            })
-                            .subscribe()
+            m_compositeDisposable.add(purchaseVerifier.subscriptionStateFlowable()
+                    .switchMapMaybe(subscriptionState -> {
+                        if (subscriptionState.hasValidPurchase()) {
+                            Utils.MyLog.g("KinManager: user has a subscription");
+                            // complete kin flow
+                            return Maybe.just(new Object());
+                        }
+                        return m_kinManager.kinFlowMaybe(getContext());
+                    })
+                    .firstOrError()
+                    .ignoreElement()
+                    .doOnError(e -> Utils.MyLog.g("KinManager: kin flow error: " + e))
+                    .onErrorComplete()
+                    .doOnComplete(() -> Utils.MyLog.g("KinManager: completed kin flow"))
+                    .subscribe()
             );
-            m_compositeDisposable.add(m_kinManager.kinFlowDisposable(m_parentService));
         }
     }
 
