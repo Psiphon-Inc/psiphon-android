@@ -96,7 +96,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         UNREGISTER,
         STOP_SERVICE,
         RESTART_SERVICE,
-        SET_LANGUAGE,
         NFC_CONNECTION_INFO_EXCHANGE_EXPORT,
         NFC_CONNECTION_INFO_EXCHANGE_IMPORT,
         KIN_OPT_IN_STATE,
@@ -141,7 +140,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     public static final String DATA_NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT = "dataNfcConnectionInfoExchangeResponseImport";
 
     // Extras in  (Client -> Service) messages
-    static final String EXTRA_LANGUAGE_CODE = "languageCode";
     public static final String KIN_OPT_IN_STATE_EXTRA = "kinOptInStateExtra";
 
     // a snapshot of all authorizations pulled by getPsiphonConfig
@@ -311,6 +309,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                                 m_tunnelThread.start();
                             })
                             .subscribe());
+            // Also set locale
+            setLocale(this);
         }
         return Service.START_REDELIVER_INTENT;
     }
@@ -632,23 +632,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         public void handleMessage(Message msg) {
             TunnelManager manager = mTunnelManager.get();
             switch (csm[msg.what]) {
-                case SET_LANGUAGE:
-                    if (manager != null) {
-                        Bundle dataBundle = msg.getData();
-                        if (dataBundle == null) {
-                            return;
-                        }
-                        String languageCode = dataBundle.getString(EXTRA_LANGUAGE_CODE);
-                        LocaleManager localeManager = LocaleManager.getInstance(manager.m_parentService);
-                        if (languageCode == null || languageCode.equals("")) {
-                            manager.m_context = localeManager.resetToSystemLocale(manager.m_parentService);
-                        } else {
-                            manager.m_context = localeManager.setNewLocale(manager.m_parentService, languageCode);
-                        }
-                        manager.updateNotifications();
-                    }
-                    break;
-
                 case REGISTER:
                     if(manager != null) {
                         Messenger client = msg.replyTo;
@@ -675,6 +658,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         manager.mClients.add(client);
                         manager.m_newClientPublishRelay.accept(new Object());
                         manager.purchaseVerifier.queryCurrentSubscriptionStatus();
+
+                        // When new client binds also sync locale
+                        setLocale(manager);
                     }
                     break;
 
@@ -733,6 +719,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                     super.handleMessage(msg);
             }
         }
+    }
+
+    private static void setLocale(TunnelManager manager) {
+        LocaleManager localeManager = LocaleManager.getInstance(manager.m_parentService);
+        String languageCode = localeManager.getLanguage();
+        if (localeManager.isSystemLocale(languageCode)) {
+            manager.m_context = localeManager.resetToSystemLocale(manager.m_parentService);
+        } else {
+            manager.m_context = localeManager.setNewLocale(manager.m_parentService, languageCode);
+        }
+        manager.updateNotifications();
     }
 
     private Message composeClientMessage(int what, Bundle data) {
