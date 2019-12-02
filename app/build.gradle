@@ -133,7 +133,6 @@ dependencies {
     implementation files('libs/snakeyaml-1.10-android.jar')
     implementation(name: 'ca.psiphon', ext: 'aar')
 
-
     implementation project(':tray')
 
     implementation(name: 'psicashlib-release', ext: 'aar')
