@@ -279,7 +279,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
             m_compositeDisposable.add(purchaseVerifier.subscriptionStateFlowable()
                     .switchMapMaybe(subscriptionState -> {
                         if (subscriptionState.hasValidPurchase()) {
-                            Utils.MyLog.g("KinManager: user has a subscription");
+                            MyLog.g("KinManager: user has a subscription");
                             // complete kin flow
                             return Maybe.just(new Object());
                         }
@@ -287,9 +287,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                     })
                     .firstOrError()
                     .ignoreElement()
-                    .doOnError(e -> Utils.MyLog.g("KinManager: kin flow error: " + e))
+                    .doOnError(e -> MyLog.g("KinManager: kin flow error: " + e))
                     .onErrorComplete()
-                    .doOnComplete(() -> Utils.MyLog.g("KinManager: completed kin flow"))
+                    .doOnComplete(() -> MyLog.g("KinManager: completed kin flow"))
                     .subscribe()
             );
         }

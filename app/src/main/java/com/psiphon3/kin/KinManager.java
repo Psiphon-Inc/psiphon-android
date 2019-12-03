@@ -19,6 +19,7 @@ public class KinManager {
     private final SettingsManager settingsManager = new SettingsManager();
     private final BehaviorRelay<Boolean> tunnelConnectedBehaviorRelay = BehaviorRelay.create();
     private final BehaviorRelay<Boolean> kinOptInStateBehaviorRelay = BehaviorRelay.create();
+    private AtomicBoolean hasBeenCharged = new AtomicBoolean(false);
 
     /**
      * @param context the context
@@ -31,8 +32,6 @@ public class KinManager {
         final ClientHelper clientHelper = new ClientHelper(kinClient);
         final ServerCommunicator serverCommunicator = new ServerCommunicator(environment.getKinApplicationServerUrl());
         final AccountHelper accountHelper = new AccountHelper(serverCommunicator, settingsManager, environment.getPsiphonWalletAddress());
-        AtomicBoolean hasBeenCharged = new AtomicBoolean(false);
-
         // If Kin opt-in preference was never initialized return a no-op disposable.
         if (settingsManager.needsToOptIn(context)) {
             Utils.MyLog.g("KinManager: user doesn't have Kin opt-in preference.");
@@ -55,8 +54,9 @@ public class KinManager {
                                 Utils.MyLog.g("KinManager: user " + (isOptedIn ? "opted in" : "opted out"));
                                 // On opt in try and charge connection fee.
                                 if (isOptedIn) {
-                                    // Charge only once per subscription run.
-                                    if(hasBeenCharged.compareAndSet(true, true)) {
+                                    // Charge only once per instance.
+                                    if(hasBeenCharged.getAndSet(true)) {
+                                        Utils.MyLog.g("KinManager: already charged for this connection");
                                         return Maybe.empty();
                                     }
                                     return clientHelper.getAccount()
