@@ -94,8 +94,4 @@ public class KinManager {
     public void onKinOptInState(Boolean isOptedIn) {
         kinOptInStateBehaviorRelay.accept(isOptedIn);
     }
-
-    public boolean getPersistedOptInState(Context context) {
-        return settingsManager.isOptedIn(context);
-    }
 }
