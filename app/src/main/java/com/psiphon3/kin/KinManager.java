@@ -55,7 +55,7 @@ public class KinManager {
                                 // On opt in try and charge connection fee.
                                 if (isOptedIn) {
                                     // Charge only once per subscription run.
-                                    if(hasBeenCharged.compareAndSet(true, true)) {
+                                    if(hasBeenCharged.getAndSet(true)) {
                                         return Maybe.empty();
                                     }
                                     return clientHelper.getAccount()
