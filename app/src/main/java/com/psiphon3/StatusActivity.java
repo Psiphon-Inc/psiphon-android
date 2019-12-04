@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Psiphon Inc.
+ * Copyright (c) 2019, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,136 +19,227 @@
 
 package com.psiphon3;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.content.res.Configuration;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.support.annotation.NonNull;
+import android.support.v4.app.FragmentManager;
 import android.text.TextUtils;
+import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.CheckBox;
 import android.widget.TabHost;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.ads.consent.ConsentInformation;
-import com.google.ads.mediation.admob.AdMobAdapter;
-import com.google.android.gms.ads.AdListener;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdSize;
-import com.google.android.gms.ads.AdView;
-import com.google.android.gms.ads.InterstitialAd;
-import com.google.android.gms.ads.MobileAds;
-import com.mopub.common.MoPub;
-import com.mopub.common.SdkConfiguration;
-import com.mopub.common.SdkInitializationListener;
-import com.mopub.common.privacy.ConsentDialogListener;
-import com.mopub.common.privacy.ConsentStatus;
-import com.mopub.common.privacy.ConsentStatusChangeListener;
-import com.mopub.common.privacy.PersonalInfoManager;
-import com.mopub.mobileads.MoPubErrorCode;
-import com.mopub.mobileads.MoPubInterstitial;
-import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
-import com.mopub.mobileads.MoPubView;
-import com.mopub.mobileads.MoPubView.BannerAdListener;
-import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.android.billingclient.api.SkuDetails;
+import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.billing.BillingRepository;
+import com.psiphon3.billing.StatusActivityBillingViewModel;
+import com.psiphon3.billing.SubscriptionState;
+import com.psiphon3.kin.KinPermissionManager;
+import com.psiphon3.psicash.PsiCashClient;
+import com.psiphon3.psiphonlibrary.MainBase;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.psiphonlibrary.*;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.subscription.R;
 
-import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import org.json.JSONException;
+
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import io.reactivex.Completable;
+import io.reactivex.Maybe;
+import io.reactivex.Observable;
+import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.schedulers.Schedulers;
+
 
 public class StatusActivity
-    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase
-{
-    public static final String BANNER_FILE_NAME = "bannerImage";
+    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase implements PsiCashFragment.ActiveSpeedBoostListener {
     public static final String ACTION_SHOW_GET_HELP_DIALOG = "com.psiphon3.StatusActivity.SHOW_GET_HELP_CONNECTING_DIALOG";
 
-    private ImageView m_banner;
-    private LinearLayout m_bannerHolderLayout;
+    private View mRateLimitedTextSection;
+    private TextView mRateLimitedText;
+    private TextView mRateUnlimitedText;
+    private Button mRateLimitSubscribeButton;
 
     private boolean m_tunnelWholeDevicePromptShown = false;
-    private boolean m_loadedSponsorTab = false;
     private boolean m_firstRun = true;
-
-    private AdView m_adMobUntunneledBannerAdView = null;
-    private InterstitialAd m_adMobUntunneledInterstitial = null;
-    private boolean m_adMobUntunneledInterstitialFailed = false;
-    private boolean m_adMobUntunneledInterstitialShowWhenLoaded = false;
     private static boolean m_startupPending = false;
-    private MoPubView m_moPubTunneledBannerAdView = null;
-    private MoPubInterstitial m_moPubTunneledInterstitial = null;
-    private boolean m_moPubTunneledInterstitialShowWhenLoaded = false;
-    private int m_tunneledFullScreenAdCounter = 0;
-    private boolean m_temporarilyDisableTunneledInterstitial = false;
 
-    private boolean mAdsConsentInitializing;
-    private boolean mAdsConsentInitialized;
-    private AdMobGDPRHelper mAdMobGDPRHelper;
+    private PsiCashFragment psiCashFragment;
+
+    private PsiphonAdManager psiphonAdManager;
+    private Disposable startUpInterstitialDisposable;
+    private boolean disableInterstitialOnNextTabChange;
+    private PublishRelay<Boolean> activeSpeedBoostRelay;
+    private KinPermissionManager kinPermissionManager;
+    private Disposable toggleClickDisposable;
+
+    private StatusActivityBillingViewModel billingViewModel;
+    private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        billingViewModel = ViewModelProviders.of(this).get(StatusActivityBillingViewModel.class);
+        billingViewModel.startIab();
+
+        setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main);
 
-        m_banner = (ImageView) findViewById(R.id.banner);
-        m_bannerHolderLayout = findViewById(R.id.bannerHolderLayout);
-        m_tabHost = (TabHost) findViewById(R.id.tabHost);
-        m_toggleButton = (Button) findViewById(R.id.toggleButton);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            kinPermissionManager = new KinPermissionManager();
+        }
+
+        m_tabHost = (TabHost)findViewById(R.id.tabHost);
+        m_tabSpecsList = new ArrayList<>();
+        m_toggleButton = (Button)findViewById(R.id.toggleButton);
+
+        mRateLimitedTextSection = findViewById(R.id.rateLimitedTextSection);
+        mRateLimitedText = (TextView)findViewById(R.id.rateLimitedText);
+        mRateUnlimitedText = (TextView)findViewById(R.id.rateUnlimitedText);
+        mRateLimitSubscribeButton = (Button)findViewById(R.id.rateLimitUpgradeButton);
+
+        // PsiCash and rewarded video fragment
+        FragmentManager fm = getSupportFragmentManager();
+        psiCashFragment = (PsiCashFragment) fm.findFragmentById(R.id.psicash_fragment_container);
+        psiCashFragment.setActiveSpeedBoostListener(this);
+
+        // Rate limit observable
+        Observable<RateLimitMode> currentRateLimitModeObservable =
+                billingViewModel.subscriptionStateFlowable()
+                        .toObservable()
+                        .map(subscriptionState -> {
+                            switch (subscriptionState.status()) {
+                                case HAS_UNLIMITED_SUBSCRIPTION:
+                                case HAS_TIME_PASS:
+                                    return RateLimitMode.UNLIMITED_SUBSCRIPTION;
+                                case HAS_LIMITED_SUBSCRIPTION:
+                                    return RateLimitMode.LIMITED_SUBSCRIPTION;
+                                default:
+                                    return RateLimitMode.AD_MODE_LIMITED;
+                            }
+                        });
+
+        activeSpeedBoostRelay = PublishRelay.create();
+
+        // Update rate limit badge and 'Subscribe' button UI
+        compositeDisposable.add(Observable.combineLatest(currentRateLimitModeObservable, activeSpeedBoostRelay,
+                ((BiFunction<RateLimitMode, Boolean, Pair>) Pair::new))
+                .map(pair -> {
+                    RateLimitMode rateLimitMode = (RateLimitMode) pair.first;
+                    Boolean hasActiveSpeedBoost = (Boolean) pair.second;
+                    if (rateLimitMode == RateLimitMode.AD_MODE_LIMITED) {
+                        if (hasActiveSpeedBoost) {
+                            return RateLimitMode.SPEED_BOOST;
+                        } else {
+                            return RateLimitMode.AD_MODE_LIMITED;
+                        }
+                    }
+                    return rateLimitMode;
+                })
+                .doOnNext(this::setRateLimitUI)
+                .subscribe()
+        );
+
+        // bootstrap the activeSpeedBoost observable
+        activeSpeedBoostRelay.accept(Boolean.FALSE);
+
+        // ads
+        psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.largeAdSlot),
+                () -> onSubscribeButtonClick(null), true);
+        psiphonAdManager.startLoadingAds();
+
+        // Components IAB state notifications and PsiCash tab view state Rx subscription.
+        compositeDisposable.add(
+                billingViewModel.subscriptionStateFlowable()
+                        .doOnNext(subscriptionState -> {
+                            MyLog.g("Billing: subscription status: " + subscriptionState.status());
+                            if (subscriptionState.error() != null) {
+                                MyLog.g("Subscription state billing error: " + subscriptionState.error());
+                            }
+                            psiCashFragment.onSubscriptionState(subscriptionState);
+                            psiphonAdManager.onSubscriptionState(subscriptionState);
+                            if (subscriptionState.hasValidPurchase()) {
+                                hidePsiCashTab();
+                            } else {
+                                showPsiCashTabIfHasValidToken();
+                            }
+                            // Automatically start if user has a valid purchase or if IAB check failed
+                            // the IAB status check will be triggered again in onResume
+                            if(subscriptionState.hasValidPurchase() || subscriptionState.status() == SubscriptionState.Status.IAB_FAILURE) {
+                                if (shouldAutoStart()) {
+                                    preventAutoStart();
+                                    doStartUp();
+                                }
+                            }
+                        })
+                        .subscribe()
+        );
+
+        // Setup Kin UI
+        if (kinPermissionManager != null &&
+                kinPermissionManager.hasOptInPreference(getApplicationContext())) {
+            compositeDisposable.add(
+                    billingViewModel.subscriptionStateFlowable()
+                            .concatMapMaybe(subscriptionState -> {
+                                if (subscriptionState.hasValidPurchase()) {
+                                    enableKinOptInCheckBox(false);
+                                    return Maybe.empty();
+                                } else {
+                                    enableKinOptInCheckBox(true);
+                                    return kinPermissionManager.getUsersAgreementToKin(this)
+                                            .doOnSuccess(this::setKinOptInUiState)
+                                            .toMaybe();
+                                }
+                            })
+                            .subscribe()
+            );
+        } else {
+            enableKinOptInCheckBox(false);
+        }
+
+        compositeDisposable.add(
+                tunnelServiceInteractor.tunnelStateFlowable()
+                        // Update app UI state
+                        .doOnNext(state -> psiphonAdManager.onTunnelConnectionState(state))
+                        .doOnNext(state -> psiCashFragment.onTunnelConnectionState(state))
+                        .subscribe()
+        );
 
         setupActivityLayout();
+        hidePsiCashTab();
 
-        // Don't let this tab change trigger an interstitial ad
-        // OnResume() will reset this flag
-        m_temporarilyDisableTunneledInterstitial = true;
-
-        if (shouldShowUntunneledAds()) {
-            // Start at the Home tab if the service isn't running and we want to show ads
-            m_tabHost.setCurrentTabByTag("home");
-        }
-
-        // EmbeddedValues.initialize(this); is called in MainBase.OnCreate
-
-        setUpBanner();
-
-        // Auto-start on app first run
-        if (shouldAutoStart()) {
-            preventAutoStart();
-            startUp();
-        }
-
-        m_loadedSponsorTab = false;
         HandleCurrentIntent();
-
-        restoreSponsorTab();
     }
 
     private void preventAutoStart() {
@@ -156,131 +247,68 @@ public class StatusActivity
     }
 
     private boolean shouldAutoStart() {
-        return m_firstRun && !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false) && !shouldShowUntunneledAds();
+        return m_firstRun && !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
     }
 
     @Override
-    protected void restoreSponsorTab() {
-        // HandleCurrentIntent() may have already loaded the sponsor tab
-        if (isTunnelConnected() && !m_loadedSponsorTab)
-        {
-            loadSponsorTab(false);
-        }
-    }
-
-    @Override
-    public void onPause()
+    protected void onPause()
     {
         super.onPause();
     }
 
     @Override
-    public void onResume() {
-        // Don't miss a chance to get personalized ads consent if user hasn't set it yet.
-        mAdsConsentInitialized = false;
-
+    protected void onResume() {
+        billingViewModel.queryCurrentSubscriptionStatus();
+        billingViewModel.queryAllSkuDetails();
         super.onResume();
         if (m_startupPending) {
             m_startupPending = false;
-            resumeServiceStateUI();
             doStartUp();
         }
     }
 
     @Override
-    protected void onTunnelStateReceived() {
-        m_temporarilyDisableTunneledInterstitial = false;
-        initTunneledAds(false);
-    }
+    public void onDestroy() {
+        billingViewModel.stopIab();
+        compositeDisposable.dispose();
 
-    @Override
-    public void onDestroy()
-    {
-        deInitAllAds();
-        delayHandler.removeCallbacks(enableAdMode);
+        psiphonAdManager.onDestroy();
         super.onDestroy();
     }
 
-    private void loadSponsorTab(boolean freshConnect)
-    {
-        if (!getSkipHomePage())
-        {
-            resetSponsorHomePage(freshConnect);
+    private void hidePsiCashTab() {
+        m_tabHost
+                .getTabWidget()
+                .getChildTabViewAt(MainBase.TabbedActivityBase.TabIndex.PSICASH.ordinal())
+                .setVisibility(View.GONE);
+        // also reset current tab to HOME if PsiCash is currently selected
+        String currentTabTag = m_tabHost.getCurrentTabTag();
+        if (currentTabTag != null && currentTabTag.equals(PSICASH_TAB_TAG)) {
+            disableInterstitialOnNextTabChange = true;
+            m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
         }
     }
 
-    private void setUpBanner() {
-        // Play Store Build instances should use existing banner from previously installed APK
-        // (if present). To enable this, non-Play Store Build instances write their banner to
-        // a private file.
-        try {
-            Bitmap bitmap = getBannerBitmap();
-            if (!EmbeddedValues.IS_PLAY_STORE_BUILD) {
-                saveBanner(bitmap);
-            }
-
-            // If we successfully got the banner image set it and it's background
-            if (bitmap != null) {
-                m_banner.setImageBitmap(bitmap);
-                m_banner.setBackgroundColor(getMostCommonColor(bitmap));
-            }
-        } catch (IOException e) {
-            // Ignore failure
-        }
-    }
-
-    private void saveBanner(Bitmap bitmap) throws IOException {
-        if (bitmap == null) {
-            return;
-        }
-
-        FileOutputStream out = openFileOutput(BANNER_FILE_NAME, Context.MODE_PRIVATE);
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-        out.close();
-    }
-
-    private Bitmap getBannerBitmap() {
-        if (EmbeddedValues.IS_PLAY_STORE_BUILD) {
-            File bannerImageFile = new File(getFilesDir(), BANNER_FILE_NAME);
-            if (bannerImageFile.exists()) {
-                return BitmapFactory.decodeFile(bannerImageFile.getAbsolutePath());
-            }
-        }
-
-        return BitmapFactory.decodeResource(getResources(), R.drawable.banner);
-    }
-
-    private int getMostCommonColor(Bitmap bitmap) {
-        if (bitmap == null) {
-            return Color.WHITE;
-        }
-
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-        int size = width * height;
-        int pixels[] = new int[size];
-
-        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
-
-        HashMap<Integer, Integer> colorMap = new HashMap<>();
-
-        for (int i = 0; i < pixels.length; i++) {
-            int color = pixels[i];
-            if (colorMap.containsKey(color)) {
-                colorMap.put(color, colorMap.get(color) + 1);
-            } else {
-                colorMap.put(color, 1);
-            }
-        }
-
-        ArrayList<Map.Entry<Integer, Integer>> entries = new ArrayList<>(colorMap.entrySet());
-        Collections.sort(entries, new Comparator<Map.Entry<Integer, Integer>>() {
-            @Override
-            public int compare(Map.Entry<Integer, Integer> o1, Map.Entry<Integer, Integer> o2) {
-                return o2.getValue().compareTo(o1.getValue());
-            }
-        });
-        return entries.get(0).getKey();
+    @SuppressLint("CheckResult")
+    private void showPsiCashTabIfHasValidToken() {
+        // Hide or show the PsiCash tab depending on presence of valid PsiCash tokens.
+        // Wrap in Rx Single to run the valid tokens check on a non-UI thread and then
+        // update the UI on main thread when we get result.
+        Single.fromCallable(() -> PsiCashClient.getInstance(this).hasValidTokens())
+                .doOnError(err -> MyLog.g("Error showing PsiCash tab:" + err))
+                .onErrorResumeNext(Single.just(Boolean.FALSE))
+                .subscribeOn(Schedulers.computation())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(showTab -> {
+                    if (showTab) {
+                        m_tabHost
+                                .getTabWidget()
+                                .getChildTabViewAt(MainBase.TabbedActivityBase.TabIndex.PSICASH.ordinal())
+                                .setVisibility(View.VISIBLE);
+                    } else {
+                        hidePsiCashTab();
+                    }
+                });
     }
 
     @Override
@@ -297,21 +325,30 @@ public class StatusActivity
         HandleCurrentIntent();
     }
 
-    protected void doToggle()
-    {
-        super.doToggle();
-    }
-
     @Override
-    public void onTabChanged(String tabId)
-    {
-        showTunneledFullScreenAd();
+    public void onTabChanged(String tabId) {
+        if(mayTriggerInterstitial(tabId)) {
+            psiphonAdManager.onTabChanged();
+        }
         super.onTabChanged(tabId);
     }
 
+    private boolean mayTriggerInterstitial(String tabId) {
+        if(disableInterstitialOnNextTabChange) {
+            disableInterstitialOnNextTabChange = false;
+            return false;
+        }
+        if(tabId.equals(PSICASH_TAB_TAG)) {
+            return false;
+        }
+        return true;
+    }
+
     @Override
-    protected void onTunnelDisconnected() {
-        deInitTunneledAds();
+    protected void onAuthorizationsRemoved() {
+        MyLog.g("PsiCash: received onAuthorizationsRemoved() notification");
+        super.onAuthorizationsRemoved();
+        psiCashFragment.removePurchases(getApplicationContext());
     }
 
     protected void HandleCurrentIntent() {
@@ -330,28 +367,23 @@ public class StatusActivity
         }
 
         if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_HANDSHAKE)) {
-            getTunnelStateFromHandshakeIntent(intent);
-
-            // OLD COMMENT:
-            // Show the home page. Always do this in browser-only mode, even
-            // after an automated reconnect -- since the status activity was
-            // brought to the front after an unexpected disconnect. In whole
-            // device mode, after an automated reconnect, we don't re-invoke
-            // the browser.
-            // UPDATED:
-            // We don't bring the status activity to the front after an
-            // unexpected disconnect in browser-only mode any more.
-            // Show the home page, unless this was an automatic reconnect,
-            // since the homepage should already be showing.
-            if (!intent.getBooleanExtra(TunnelManager.DATA_HANDSHAKE_IS_RECONNECT, false)) {
-                // Don't let this tab change trigger an interstitial ad
-                // OnResume() will reset this flag
-                m_temporarilyDisableTunneledInterstitial = true;
-                m_tunneledFullScreenAdCounter = 0;
-
-                m_tabHost.setCurrentTabByTag("home");
-                loadSponsorTab(true);
-                m_loadedSponsorTab = true;
+            Bundle data = intent.getExtras();
+            if(data != null) {
+                ArrayList<String> homePages = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_HOME_PAGES);
+                if (homePages != null && homePages.size() > 0) {
+                    String url = homePages.get(0);
+                    // At this point we're showing the URL in either the embedded webview or in a browser.
+                    // Some URLs are excluded from being embedded as home pages.
+                    if(shouldLoadInEmbeddedWebView(url)) {
+                        // Reset m_loadedSponsorTab and switch to the home tab.
+                        // The embedded web view will get loaded by the updateServiceStateUI.
+                        m_loadedSponsorTab = false;
+                       disableInterstitialOnNextTabChange = true;
+                       m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
+                    } else {
+                        displayBrowser(this, url);
+                    }
+                }
             }
 
             // We only want to respond to the HANDSHAKE_SUCCESS action once,
@@ -363,7 +395,8 @@ public class StatusActivity
                     this.getClass()));
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE)) {
             // Switch to settings tab
-            m_tabHost.setCurrentTabByTag("settings");
+            disableInterstitialOnNextTabChange = true;
+            m_tabHost.setCurrentTabByTag(SETTINGS_TAB_TAG);
 
             // Set egress region preference to 'Best Performance'
             updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
@@ -372,9 +405,7 @@ public class StatusActivity
             m_regionSelector.setSelectionByValue(PsiphonConstants.REGION_CODE_ANY);
 
             // Show "Selected region unavailable" toast
-            Toast toast = Toast.makeText(this, R.string.selected_region_currently_not_available, Toast.LENGTH_LONG);
-            toast.setGravity(Gravity.CENTER, 0, 0);
-            toast.show();
+            showToast(R.string.selected_region_currently_not_available);
 
             // We only want to respond to the INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE action once,
             // so we need to clear it (by setting it to a non-special intent).
@@ -391,14 +422,41 @@ public class StatusActivity
         }
     }
 
-    public void onToggleClick(View v)
-    {
-        doToggle();
-    }
+    public void onToggleClick(View v) {
+        // Only check for payment when starting in WDM, also make sure subscribers don't get prompted for Kin.
+        boolean wantVPN = m_multiProcessPreferences
+                .getBoolean(getString(R.string.tunnelWholeDevicePreference),
+                        false);
 
-    public void onOpenBrowserClick(View v)
-    {
-        displayBrowser(this, null);
+        if (wantVPN && Utils.hasVpnService() && kinPermissionManager != null) {
+            // prevent multiple confirmation dialogs
+            if (toggleClickDisposable != null && !toggleClickDisposable.isDisposed()) {
+                return;
+            }
+            // else
+            toggleClickDisposable = billingViewModel.subscriptionStateFlowable()
+                    .switchMapSingle(subscriptionState -> {
+                        if (subscriptionState.hasValidPurchase()) {
+                            // Return any object to complete subscription, the value is ignored
+                            return Single.just(new Object());
+                        }
+                        return Single.fromCallable(() -> kinPermissionManager.isOptedIn(getApplicationContext()))
+                                .flatMap(optedIn -> optedIn ?
+                                                kinPermissionManager.confirmDonation(this) :
+                                                Single.just(false)
+                                )
+                                .doOnSuccess(this::notifyTunnelKinState)
+                                .doOnSuccess(this::setKinOptInUiState);
+
+                    })
+                    .firstOrError()
+                    .ignoreElement()
+                    .doOnComplete(this::doToggle)
+                    .subscribe();
+            compositeDisposable.add(toggleClickDisposable);
+        } else {
+            doToggle();
+        }
     }
 
     public void onGetHelpConnectingClick(View v) {
@@ -416,38 +474,93 @@ public class StatusActivity
         startActivity(feedbackIntent);
     }
 
-    @Override
-    protected void startUp() {
-        if (shouldShowUntunneledAds()) {
-            pauseServiceStateUI();
-            adModeCountdown = 10;
-            delayHandler.postDelayed(enableAdMode, 1000);
-            showUntunneledFullScreenAd();
-        } else {
-            doStartUp();
+    public void onKinEnabledClick(View v) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            return;
         }
+        // Assume this will always be the kin enabled checkbox
+        CheckBox checkBox = (CheckBox) v;
+        // Prevent the default toggle, that's handled automatically by a subscription to the opted-in state
+        checkBox.setChecked(!checkBox.isChecked());
+        Single<Boolean> kinOptInStateSingle;
+        if (kinPermissionManager.isOptedIn(this)) {
+            kinOptInStateSingle = kinPermissionManager.optOut(this);
+        } else {
+            kinOptInStateSingle = kinPermissionManager.optIn(this);
+        }
+        compositeDisposable.add(
+                kinOptInStateSingle
+                        .doOnSuccess(this::setKinOptInUiState)
+                        .doOnSuccess(this::notifyTunnelKinState)
+                        .subscribe());
     }
 
-    private void doStartUp()
-    {
+    @Override
+    protected void startUp() {
+        if (startUpInterstitialDisposable != null && !startUpInterstitialDisposable.isDisposed()) {
+            // already in progress, do nothing
+            return;
+        }
+        int countdownSeconds = 10;
+        startUpInterstitialDisposable = psiphonAdManager.getCurrentAdTypeObservable()
+                .take(1)
+                .switchMap(adResult -> {
+                    if (adResult.type() == PsiphonAdManager.AdResult.Type.NONE) {
+                        doStartUp();
+                        return Observable.empty();
+                    }
+                    else if (adResult.type() == PsiphonAdManager.AdResult.Type.TUNNELED) {
+                        MyLog.g("startUp interstitial bad ad type: " + adResult.type());
+                        return Observable.empty();
+                    }
+
+                    Observable<PsiphonAdManager.InterstitialResult> interstitial =
+                            Observable.just(adResult)
+                                    .compose(psiphonAdManager.getInterstitialWithTimeoutForAdType(countdownSeconds, TimeUnit.SECONDS))
+                                    .doOnNext(interstitialResult -> {
+                                        if (interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.READY) {
+                                            m_startupPending = true;
+                                            interstitialResult.show();
+                                        }
+                                    })
+                                    .doOnComplete(() -> {
+                                        if(m_startupPending) {
+                                            m_startupPending = false;
+                                            doStartUp();
+                                        }
+                                    });
+
+                    Observable<Long> countdown =
+                            Observable.intervalRange(0, countdownSeconds, 0, 1, TimeUnit.SECONDS)
+                                    .map(t -> countdownSeconds - t)
+                                    .concatWith(Observable.error(new TimeoutException("Ad countdown timeout.")))
+                                    .doOnNext(t -> runOnUiThread(() ->m_toggleButton.setText(String.format(Locale.US, "%d", t))));
+
+                    return countdown
+                            .takeUntil(interstitial)
+                            .doOnError(__->doStartUp());
+                })
+                .onErrorResumeNext(Observable.empty())
+                .subscribe();
+        compositeDisposable.add(startUpInterstitialDisposable);
+    }
+
+    private void doStartUp() {
+        // cancel any ongoing startUp subscription
+        if(startUpInterstitialDisposable != null) {
+            startUpInterstitialDisposable.dispose();
+        }
         // If the user hasn't set a whole-device-tunnel preference, show a prompt
         // (and delay starting the tunnel service until the prompt is completed)
-
         boolean hasPreference;
-        AppPreferences mpPreferences = new AppPreferences(this);
         try {
-            mpPreferences.getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE);
+            m_multiProcessPreferences.getBoolean(getString(R.string.tunnelWholeDevicePreference));
             hasPreference = true;
         } catch (ItemNotFoundException e) {
             hasPreference = false;
         }
-
-        if (Utils.hasVpnService() &&
-            !hasPreference &&
-            !isServiceRunning())
-        {
-            if (!m_tunnelWholeDevicePromptShown && !this.isFinishing())
-            {
+        if (Utils.hasVpnService() && !hasPreference) {
+            if (!m_tunnelWholeDevicePromptShown && !this.isFinishing()) {
                 final Context context = this;
                 runOnUiThread(new Runnable() {
                     @Override
@@ -492,46 +605,44 @@ public class StatusActivity
                                             }
                                         })
                                 .show();
-
                         // Our text no longer fits in the AlertDialog buttons on Lollipop, so force the
                         // font size (on older versions, the text seemed to be scaled down to fit).
                         // TODO: custom layout
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                        {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                             dialog.getButton(DialogInterface.BUTTON_POSITIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
                             dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
                         }
                     }
                 });
-                
+
                 m_tunnelWholeDevicePromptShown = true;
-            }
-            else
-            {
+            } else {
                 // ...there's a prompt already showing (e.g., user hit Home with the
                 // prompt up, then resumed Psiphon)
             }
-
             // ...wait and let onClick handlers will start tunnel
-        }
-        else
-        {
+        } else {
             // No prompt, just start the tunnel (if not already running)
             startTunnel();
         }
     }
 
     @Override
-    public void displayBrowser(Context context, String urlString) {
-        if (urlString == null) {
-            ArrayList<String> homePages = getHomePages();
-            if (homePages.size() > 0) {
-                urlString = homePages.get(0);
-            }
+    public void displayBrowser(Context context, String urlString, boolean shouldPsiCashModifyUrls) {
+        if (shouldPsiCashModifyUrls) {
+            // Add PsiCash parameters
+            urlString = PsiCashModifyUrl(urlString);
         }
 
+        // Notify PsiCash fragment so it will know to refresh state on next app foreground.
+        psiCashFragment.onOpenHomePage();
+
         try {
-            if (getTunnelConfigWholeDevice()) {
+            boolean wantVPN = m_multiProcessPreferences
+                    .getBoolean(getString(R.string.tunnelWholeDevicePreference),
+                            false);
+
+            if (wantVPN && Utils.hasVpnService()) {
                 // TODO: support multiple home pages in whole device mode. This is
                 // disabled due to the case where users haven't set a default browser
                 // and will get the prompt once per home page.
@@ -606,7 +717,13 @@ public class StatusActivity
                 // Note: Zirco now directly accesses PsiphonData to get the current
                 // local HTTP proxy port for WebView tunneling.
 
-                intent.putExtra("homePages", getHomePages());
+                if (urlString != null) {
+                        if(shouldPsiCashModifyUrls) {
+                            // Add PsiCash parameters
+                        urlString = PsiCashModifyUrl(urlString);
+                    }
+                    intent.putExtra("homePages", new ArrayList<>(Collections.singletonList(urlString)));
+                }
 
                 context.startActivity(intent);
             }
@@ -615,506 +732,158 @@ public class StatusActivity
         }
     }
 
-    private Handler delayHandler = new Handler();
-    private Runnable enableAdMode = new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            if (adModeCountdown > 0 && !m_adMobUntunneledInterstitialFailed)
-            {
-                m_toggleButton.setText(String.valueOf(adModeCountdown));
-                adModeCountdown--;
-                delayHandler.postDelayed(this, 1000);
-            }
-            else
-            {
-                resumeServiceStateUI();
-                doStartUp();
-            }
-        }
-    };
-    private int adModeCountdown;
+    @Override
+    public void onActiveSpeedBoost(Boolean hasActiveSpeedBoost) {
+        activeSpeedBoostRelay.accept(hasActiveSpeedBoost);
+    }
 
-    static final String ADMOB_APP_ID = "ca-app-pub-1072041961750291~3741619967";
-    static final String ADMOB_UNTUNNELED_BANNER_PROPERTY_ID = "ca-app-pub-1072041961750291/7238659523";
-    static final String ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID = "ca-app-pub-1072041961750291/3275363789";
-    static final String ADMOB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID = "ca-app-pub-1072041961750291/9298519104";
-    static final String MOPUB_TUNNELED_BANNER_PROPERTY_ID = "6848f6c3bce64522b771ea8ce9b5f1cd";
-    static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "0ad7bcfc9b17444aa80b1c198e5ebda5";
-    static final String MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID = "b17a746d77c9436bb805c958f7879342";
+    private void notifyTunnelKinState(Boolean state) {
+        tunnelServiceInteractor.onKinOptInState(state);
+    }
+
+    enum RateLimitMode {AD_MODE_LIMITED, LIMITED_SUBSCRIPTION, UNLIMITED_SUBSCRIPTION, SPEED_BOOST}
+
+    private void enableKinOptInCheckBox(boolean enable) {
+        CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
+        // Disable the checkbox if Kin opt-in preference was never initialized
+        enable = enable &&
+                kinPermissionManager != null &&
+                kinPermissionManager.hasOptInPreference(getApplicationContext());
+
+        if(enable) {
+            checkBoxKinEnabled.setVisibility(View.VISIBLE);
+        } else {
+            checkBoxKinEnabled.setVisibility(View.GONE);
+        }
+    }
+
+    private void setRateLimitUI(RateLimitMode rateLimitMode) {
+        // Update UI elements showing the current speed.
+        if (rateLimitMode == RateLimitMode.UNLIMITED_SUBSCRIPTION) {
+            mRateLimitedText.setVisibility(View.GONE);
+            mRateUnlimitedText.setVisibility(View.VISIBLE);
+            mRateLimitSubscribeButton.setVisibility(View.GONE);
+            mRateLimitedTextSection.setVisibility(View.VISIBLE);
+        } else{
+            if(rateLimitMode == RateLimitMode.AD_MODE_LIMITED) {
+                mRateLimitedText.setText(getString(R.string.rate_limit_text_limited, 2));
+            } else if (rateLimitMode == RateLimitMode.LIMITED_SUBSCRIPTION) {
+                mRateLimitedText.setText(getString(R.string.rate_limit_text_limited, 5));
+            } else if (rateLimitMode == RateLimitMode.SPEED_BOOST) {
+                mRateLimitedText.setText(getString(R.string.rate_limit_text_speed_boost));
+            }
+            mRateLimitedText.setVisibility(View.VISIBLE);
+            mRateUnlimitedText.setVisibility(View.GONE);
+            mRateLimitSubscribeButton.setVisibility(View.VISIBLE);
+            mRateLimitedTextSection.setVisibility(View.VISIBLE);
+        }
+    }
+
+
+    private final int PAYMENT_CHOOSER_ACTIVITY = 20001;
+
+    public void onSubscribeButtonClick(View v) {
+        Utils.MyLog.g("StatusActivity::onSubscribeButtonClick");
+        compositeDisposable.add(
+                billingViewModel.subscriptionStateFlowable()
+                        .firstOrError()
+                        .subscribe(subscriptionState -> {
+                            switch (subscriptionState.status()) {
+                                case HAS_UNLIMITED_SUBSCRIPTION:
+                                case HAS_TIME_PASS:
+                                    // User has a subscription, do nothing, the 'Subscribe' button
+                                    // visibility will be updated by rate limit badge UI Rx subscription
+                                    // that we have set up in onCreate().
+                                    return;
+
+                                case HAS_LIMITED_SUBSCRIPTION:
+                                    // If user has limited subscription launch upgrade to unlimited
+                                    // flow and replace current subscription sku.
+                                    String currentSku = subscriptionState.purchase().getSku();
+                                    compositeDisposable.add(
+                                            billingViewModel.getUnlimitedSubscriptionSkuDetails()
+                                                    .flatMapCompletable(skuDetailsList -> {
+                                                        if (skuDetailsList.size() == 1) {
+                                                            return billingViewModel.launchFlow(this, currentSku, skuDetailsList.get(0));
+                                                        }
+                                                        // else
+                                                        return Completable.error(
+                                                                new IllegalArgumentException("Bad unlimited subscription sku details list size: "
+                                                                        + skuDetailsList.size())
+                                                        );
+                                                    })
+                                                    .doOnError(err -> {
+                                                        Utils.MyLog.g("Upgrade limited subscription error: " + err);
+                                                        // Show "Subscription options not available" toast.
+                                                        showToast(R.string.subscription_options_currently_not_available);
+                                                    })
+                                                    .onErrorComplete()
+                                                    .subscribe()
+                                    );
+                                    return;
+
+                                default:
+                                    // If user has no subscription launch PaymentChooserActivity
+                                    // to show all available subscriptions options.
+                                    compositeDisposable.add(
+                                            billingViewModel.allSkuDetailsSingle()
+                                                    .toObservable()
+                                                    .flatMap(Observable::fromIterable)
+                                                    .filter(skuDetails -> {
+                                                        String sku = skuDetails.getSku();
+                                                        return BillingRepository.IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(sku) ||
+                                                                sku.equals(BillingRepository.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU) ||
+                                                                sku.equals(BillingRepository.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
+                                                    })
+                                                    .map(SkuDetails::getOriginalJson)
+                                                    .toList()
+                                                    .doOnSuccess(jsonSkuDetailsList -> {
+                                                        if(jsonSkuDetailsList.size() > 0) {
+                                                            Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
+                                                            paymentChooserActivityIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                                                            paymentChooserActivityIntent.putStringArrayListExtra(
+                                                                    PaymentChooserActivity.SKU_DETAILS_ARRAY_LIST_EXTRA,
+                                                                    new ArrayList<>(jsonSkuDetailsList));
+                                                            startActivityForResult(paymentChooserActivityIntent, PAYMENT_CHOOSER_ACTIVITY);
+                                                        } else {
+                                                            showToast(R.string.subscription_options_currently_not_available);
+                                                        }
+                                                    })
+                                                    .subscribe()
+                                    );
+                            }
+                        })
+        );
+    }
 
     @Override
-    protected void updateAdsForServiceState() {
-        if (isServiceRunning()) {
-            deInitUntunneledAds();
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PAYMENT_CHOOSER_ACTIVITY) {
+            if (resultCode == RESULT_OK) {
+                String skuString = data.getStringExtra(PaymentChooserActivity.USER_PICKED_SKU_DETAILS_EXTRA);
+                try {
+                    if (TextUtils.isEmpty(skuString)) {
+                        throw new IllegalArgumentException("SKU is empty.");
+                    }
+                    SkuDetails skuDetails = new SkuDetails(skuString);
+                    billingViewModel.launchFlow(this, skuDetails).subscribe();
+                } catch (JSONException | IllegalArgumentException e) {
+                    Utils.MyLog.g("StatusActivity::onActivityResult purchase SKU error: " + e);
+                    // Show "Subscription options not available" toast.
+                    showToast(R.string.subscription_options_currently_not_available);
+                }
+            } else {
+                Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: canceled");
+            }
         } else {
-            deInitTunneledAds();
-            initUntunneledAds();
+            super.onActivityResult(requestCode, resultCode, data);
         }
     }
 
-    private boolean getShowAds() {
-        return m_multiProcessPreferences.getBoolean(getString(R.string.persistent_show_ads_setting), false) &&
-                !EmbeddedValues.hasEverBeenSideLoaded(this) &&
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN;
-    }
-
-    private boolean shouldShowUntunneledAds()
-    {
-        return getShowAds() && !isServiceRunning();
-    }
-
-    private void initUntunneledAds() {
-        final Context context = this;
-
-        if (shouldShowUntunneledAds()) {
-            Runnable adsRunnable = new Runnable() {
-                @Override
-                public void run() {
-                    MobileAds.initialize(context, ADMOB_APP_ID);
-                    initUntunneledBanners();
-
-                    if (m_adMobUntunneledInterstitial == null)
-                    {
-                        loadUntunneledFullScreenAd();
-                    }
-                }
-            };
-
-            initAdsConsentAndRunAds(adsRunnable);
-        }
-    }
-
-    private void initUntunneledBanners()
-    {
-        if (m_adMobUntunneledBannerAdView == null)
-        {
-            m_adMobUntunneledBannerAdView = new AdView(this);
-            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-                m_adMobUntunneledBannerAdView.setAdSize(AdSize.MEDIUM_RECTANGLE);
-                m_adMobUntunneledBannerAdView.setAdUnitId(ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
-            } else {
-                m_adMobUntunneledBannerAdView.setAdSize(AdSize.SMART_BANNER);
-                m_adMobUntunneledBannerAdView.setAdUnitId(ADMOB_UNTUNNELED_BANNER_PROPERTY_ID);
-            }
-
-            m_adMobUntunneledBannerAdView.setAdListener(new AdListener() {
-                @Override
-                public void onAdLoaded()
-                {
-                    if (m_adMobUntunneledBannerAdView.getParent() == null)
-                    {
-                        LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
-                        layout.removeAllViewsInLayout();
-                        layout.addView(m_adMobUntunneledBannerAdView);
-                    }
-                }
-                @Override
-                public void onAdFailedToLoad(int errorCode) {
-                }
-                @Override
-                public void onAdOpened() {
-                }
-                @Override
-                public void onAdLeftApplication() {
-                }
-                @Override
-                public void onAdClosed() {
-                }
-            });
-
-            Bundle extras = new Bundle();
-            if (ConsentInformation.getInstance(this).getConsentStatus() == com.google.ads.consent.ConsentStatus.NON_PERSONALIZED) {
-                extras.putString("npa", "1");
-            }
-            AdRequest adRequest = new AdRequest.Builder()
-                    .addNetworkExtrasBundle(AdMobAdapter.class, extras)
-                    .build();
-            m_adMobUntunneledBannerAdView.loadAd(adRequest);
-        }
-    }
-
-    synchronized
-    private void loadUntunneledFullScreenAd()
-    {
-        m_adMobUntunneledInterstitial = new InterstitialAd(this);
-        m_adMobUntunneledInterstitial.setAdUnitId(ADMOB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
-
-        m_adMobUntunneledInterstitial.setAdListener(new AdListener() {
-            @Override
-            public void onAdLoaded() {
-                if (m_adMobUntunneledInterstitial != null && m_adMobUntunneledInterstitial.isLoaded() &&
-                        m_adMobUntunneledInterstitialShowWhenLoaded)
-                {
-                    m_adMobUntunneledInterstitial.show();
-                }
-            }
-            @Override
-            public void onAdFailedToLoad(int errorCode) {
-                m_adMobUntunneledInterstitialFailed = true;
-            }
-            @Override
-            public void onAdOpened() {
-                // Enable the free trial right away
-                m_startupPending = true;
-                delayHandler.removeCallbacks(enableAdMode);
-                resumeServiceStateUI();
-            }
-            @Override
-            public void onAdLeftApplication() {
-            }
-            @Override
-            public void onAdClosed() {
-            }
-        });
-
-        m_adMobUntunneledInterstitialFailed = false;
-        m_adMobUntunneledInterstitialShowWhenLoaded = false;
-
-        Bundle extras = new Bundle();
-        if (ConsentInformation.getInstance(this).getConsentStatus() == com.google.ads.consent.ConsentStatus.NON_PERSONALIZED) {
-            extras.putString("npa", "1");
-        }
-        AdRequest adRequest = new AdRequest.Builder()
-                .addNetworkExtrasBundle(AdMobAdapter.class, extras)
-                .build();
-        m_adMobUntunneledInterstitial.loadAd(adRequest);
-    }
-
-    private void showUntunneledFullScreenAd()
-    {
-        if (m_adMobUntunneledInterstitial != null)
-        {
-            if (m_adMobUntunneledInterstitial.isLoaded())
-            {
-                m_adMobUntunneledInterstitial.show();
-            }
-            else
-            {
-                if (m_adMobUntunneledInterstitialFailed)
-                {
-                    loadUntunneledFullScreenAd();
-                }
-                m_adMobUntunneledInterstitialShowWhenLoaded = true;
-            }
-        }
-    }
-
-    synchronized
-    private void deInitUntunneledAds()
-    {
-        if (m_adMobUntunneledBannerAdView != null)
-        {
-            if (m_adMobUntunneledBannerAdView.getParent() != null) {
-                LinearLayout layout = (LinearLayout) findViewById(R.id.bannerLayout);
-                layout.removeAllViewsInLayout();
-                layout.addView(m_bannerHolderLayout);
-            }
-
-            m_adMobUntunneledBannerAdView.destroy();
-        }
-        m_adMobUntunneledBannerAdView = null;
-
-        m_adMobUntunneledInterstitial = null;
-    }
-
-    private boolean shouldShowTunneledAds()
-    {
-        return getShowAds() && isTunnelConnected();
-    }
-
-    private void initTunneledAds(final boolean initFullScreenAd)
-    {
-        if (shouldShowTunneledAds() && m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false))
-        {
-            final Context that = this;
-            Runnable adsRunnable = new Runnable() {
-                @Override
-                public void run() {
-                    // make sure WebView proxy settings are up to date
-                    // Set WebView proxy only if we are not running in WD mode.
-                    if (!getTunnelConfigWholeDevice() || !Utils.hasVpnService()) {
-                        WebViewProxySettings.setLocalProxy(that, getListeningLocalHttpProxyPort());
-                    } else {
-                        // We are running in WDM, reset WebView proxy if it has been previously set.
-                        if (WebViewProxySettings.isLocalProxySet()){
-                            WebViewProxySettings.resetLocalProxy(that);
-                        }
-                    }
-
-                    initTunneledBanners();
-                    if (initFullScreenAd) {
-                        loadTunneledFullScreenAd();
-                    }
-                }
-            };
-
-            initAdsConsentAndRunAds(adsRunnable);
-        }
-    }
-
-    private void initTunneledBanners()
-    {
-        if (shouldShowTunneledAds())
-        {
-            if (m_moPubTunneledBannerAdView == null && MoPub.isSdkInitialized())
-            {
-                m_moPubTunneledBannerAdView = new MoPubView(this);
-                m_moPubTunneledBannerAdView.setAdUnitId(
-                        getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT &&
-                                new Random().nextBoolean() ?
-                                MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID :
-                                MOPUB_TUNNELED_BANNER_PROPERTY_ID);
-                if (isTunnelConnected()) {
-                    m_moPubTunneledBannerAdView.setKeywords("client_region:" + getClientRegion());
-                    Map<String,Object> localExtras = new HashMap<>();
-                    localExtras.put("client_region", getClientRegion());
-                    m_moPubTunneledBannerAdView.setLocalExtras(localExtras);
-                }
-
-                m_moPubTunneledBannerAdView.setBannerAdListener(new BannerAdListener() {
-                    @Override
-                    public void onBannerLoaded(MoPubView banner)
-                    {
-                        if (m_moPubTunneledBannerAdView.getParent() == null)
-                        {
-                            LinearLayout layout = (LinearLayout)findViewById(R.id.bannerLayout);
-                            layout.removeAllViewsInLayout();
-                            layout.addView(m_moPubTunneledBannerAdView);
-                        }
-                    }
-                    @Override
-                    public void onBannerClicked(MoPubView arg0) {
-                    }
-                    @Override
-                    public void onBannerCollapsed(MoPubView arg0) {
-                    }
-                    @Override
-                    public void onBannerExpanded(MoPubView arg0) {
-                    }
-                    @Override
-                    public void onBannerFailed(MoPubView arg0,
-                                               MoPubErrorCode arg1) {
-                    }
-                });
-
-                m_moPubTunneledBannerAdView.loadAd();
-                m_moPubTunneledBannerAdView.setAutorefreshEnabled(true);
-            }
-        }
-    }
-
-    synchronized
-    private void loadTunneledFullScreenAd()
-    {
-        if (shouldShowTunneledAds() && m_moPubTunneledInterstitial == null && MoPub.isSdkInitialized())
-        {
-            m_moPubTunneledInterstitial = new MoPubInterstitial(this, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
-            if (isTunnelConnected()) {
-                m_moPubTunneledInterstitial.setKeywords("client_region:" + getClientRegion());
-                Map<String,Object> localExtras = new HashMap<>();
-                localExtras.put("client_region", getClientRegion());
-                m_moPubTunneledInterstitial.setLocalExtras(localExtras);
-            }
-
-            m_moPubTunneledInterstitial.setInterstitialAdListener(new InterstitialAdListener() {
-                @Override
-                public void onInterstitialClicked(MoPubInterstitial arg0) {
-                }
-                @Override
-                public void onInterstitialDismissed(MoPubInterstitial arg0) {
-                    m_moPubTunneledInterstitialShowWhenLoaded = false;
-                    m_moPubTunneledInterstitial.load();
-                }
-                @Override
-                public void onInterstitialFailed(MoPubInterstitial arg0,
-                                                 MoPubErrorCode arg1) {
-                    m_moPubTunneledInterstitial.destroy();
-                    m_moPubTunneledInterstitial = null;
-                }
-                @Override
-                public void onInterstitialLoaded(MoPubInterstitial interstitial) {
-                    if (interstitial != null && interstitial.isReady() &&
-                            m_moPubTunneledInterstitialShowWhenLoaded &&
-                            m_multiProcessPreferences.getBoolean(getString(R.string.status_activity_foreground), false))
-                    {
-                        m_tunneledFullScreenAdCounter++;
-                        interstitial.show();
-                    }
-                }
-                @Override
-                public void onInterstitialShown(MoPubInterstitial arg0) {
-                }
-            });
-            m_moPubTunneledInterstitialShowWhenLoaded = false;
-            m_moPubTunneledInterstitial.load();
-        }
-    }
-
-    private void showTunneledFullScreenAd()
-    {
-        initTunneledAds(true);
-
-        if (shouldShowTunneledAds() && !m_temporarilyDisableTunneledInterstitial)
-        {
-            if (m_tunneledFullScreenAdCounter % 3 == 0)
-            {
-                if (m_moPubTunneledInterstitial != null)
-                {
-                    if (m_moPubTunneledInterstitial.isReady())
-                    {
-                        m_tunneledFullScreenAdCounter++;
-                        m_moPubTunneledInterstitial.show();
-                    }
-                    else
-                    {
-                        m_moPubTunneledInterstitialShowWhenLoaded = true;
-                    }
-                }
-            }
-            else
-            {
-                m_tunneledFullScreenAdCounter++;
-            }
-        }
-    }
-
-    private void deInitTunneledAds()
-    {
-        if (m_moPubTunneledBannerAdView != null)
-        {
-            if (m_moPubTunneledBannerAdView.getParent() != null) {
-                LinearLayout layout = (LinearLayout) findViewById(R.id.bannerLayout);
-                layout.removeAllViewsInLayout();
-                layout.addView(m_bannerHolderLayout);
-            }
-
-            m_moPubTunneledBannerAdView.destroy();
-        }
-        m_moPubTunneledBannerAdView = null;
-
-        if (m_moPubTunneledInterstitial != null)
-        {
-            m_moPubTunneledInterstitial.destroy();
-        }
-        m_moPubTunneledInterstitial = null;
-    }
-
-    synchronized
-    private void deInitAllAds()
-    {
-        deInitUntunneledAds();
-        deInitTunneledAds();
-    }
-
-    // New MoPub initializer with GDPR consent dialog
-    static class MoPubConsentDialogHelper {
-        public static ConsentDialogListener initDialogLoadListener() {
-            return new ConsentDialogListener() {
-
-                @Override
-                public void onConsentDialogLoaded() {
-                    PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-                    if (personalInfoManager != null) {
-                        personalInfoManager.showConsentDialog();
-                    }
-                }
-
-                @Override
-                public void onConsentDialogLoadFailed(@NonNull MoPubErrorCode moPubErrorCode) {
-                    Utils.MyLog.d( "MoPub consent dialog failed to load.");
-                }
-            };
-        }
-    }
-
-    synchronized
-    private void initAdsConsentAndRunAds(final Runnable runnable) {
-        if (mAdsConsentInitialized) {
-            runnable.run();
-            return;
-        }
-
-        if (mAdsConsentInitializing) {
-            return;
-        }
-        mAdsConsentInitializing = true;
-
-        MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
-        final Context context = this;
-
-        // If tunnel is not running run AdMob GDPR check and pass
-        // MoPub GDPR consent check as a completion callback.
-        // Otherwise just run MoPub GDPR consent check
-
-        AdMobGDPRHelper.AdMobGDPRHelperCallback moPubGDPRCheckCallback = new AdMobGDPRHelper.AdMobGDPRHelperCallback() {
-            @Override
-            public void onComplete() {
-                PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-                // initialized MoPub SDK if needed
-                if (personalInfoManager == null) {
-                    SdkConfiguration.Builder builder = new SdkConfiguration.Builder(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
-                    SdkConfiguration sdkConfiguration = builder.build();
-
-                    MoPub.initializeSdk(context, sdkConfiguration, new SdkInitializationListener() {
-                        @Override
-                        public void onInitializationFinished() {
-                            PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-                            if (personalInfoManager != null) {
-                                // subscribe to consent change state event
-                                personalInfoManager.subscribeConsentStatusChangeListener(new ConsentStatusChangeListener() {
-
-                                    @Override
-                                    public void onConsentStateChange(@NonNull ConsentStatus oldConsentStatus,
-                                                                     @NonNull ConsentStatus newConsentStatus,
-                                                                     boolean canCollectPersonalInformation) {
-                                        PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-                                        if (personalInfoManager != null && personalInfoManager.shouldShowConsentDialog()) {
-                                            personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
-                                        }
-                                    }
-                                });
-
-                                // If consent is required load the consent dialog
-                                if (personalInfoManager.shouldShowConsentDialog()) {
-                                    personalInfoManager.loadConsentDialog(MoPubConsentDialogHelper.initDialogLoadListener());
-                                }
-                            } else {
-                                Utils.MyLog.d( "MoPub SDK has failed to initialize.");
-                            }
-                            // Don't retry if MoPub SDK fails to initialize.
-                            // We don't want this failure case to prevent loading AdMob ads.
-                            runnable.run();
-                            mAdsConsentInitializing = false;
-                            mAdsConsentInitialized = true;
-                        }
-                    });
-
-                } else {
-                    runnable.run();
-                    mAdsConsentInitializing = false;
-                    mAdsConsentInitialized = true;
-                }
-            }
-        };
-
-        if (!this.isFinishing()) {
-            if (!isServiceRunning()) {
-                if (mAdMobGDPRHelper != null) {
-                    mAdMobGDPRHelper.destroy();
-                    mAdMobGDPRHelper = null;
-                }
-                String[] publisherIds = {"pub-1072041961750291"};
-                mAdMobGDPRHelper = new AdMobGDPRHelper(this, publisherIds, moPubGDPRCheckCallback);
-
-                // Do not show 'Upgrade to ad-free" button
-                mAdMobGDPRHelper.setShowBuyAdFree(false);
-                mAdMobGDPRHelper.presentGDPRConsentDialogIfNeeded();
-            } else {
-                moPubGDPRCheckCallback.onComplete();
-            }
-        }
+    private void showToast(int stringResId) {
+        Toast toast = Toast.makeText(this, stringResId, Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        toast.show();
     }
 
     @Override
@@ -1130,5 +899,14 @@ public class StatusActivity
                 .setMessage(messageId)
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
+    }
+
+    private void setKinOptInUiState(boolean optedIn) {
+        CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
+        if (optedIn) {
+            checkBoxKinEnabled.setChecked(true);
+        } else {
+            checkBoxKinEnabled.setChecked(false);
+        }
     }
 }
