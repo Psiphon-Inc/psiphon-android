@@ -26,7 +26,7 @@ import android.content.SharedPreferences;
 
 import com.psiphon3.TunnelState;
 import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.subscription.R;
+import com.psiphon3.R;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

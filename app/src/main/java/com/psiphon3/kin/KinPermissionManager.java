@@ -3,7 +3,7 @@ package com.psiphon3.kin;
 import android.content.Context;
 import android.support.v7.app.AlertDialog;
 
-import com.psiphon3.subscription.R;
+import com.psiphon3.R;
 
 import io.reactivex.Single;
 

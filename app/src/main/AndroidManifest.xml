@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.psiphon3.subscription"
+    package="com.psiphon3"
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
     <uses-sdk tools:overrideLibrary="ca.psiphon,com.mopub.mobileads.banner,com.mopub.mobileads.base,
@@ -32,7 +32,7 @@
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
         android:supportsRtl="true"
-        android:label="@string/app_name_psiphon_pro"
+        android:label="@string/app_name"
         android:usesCleartextTraffic="true"
         tools:ignore="GoogleAppIndexingWarning"
         tools:replace="android:label">
@@ -46,7 +46,7 @@
 
         <activity
             android:name="com.psiphon3.StatusActivity"
-            android:label="@string/app_name_psiphon_pro"
+            android:label="@string/app_name"
             android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -72,7 +72,7 @@
 
         <activity
             android:name="com.psiphon3.FeedbackActivity"
-            android:label="@string/app_name_psiphon_pro">
+            android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -85,20 +85,20 @@
         </activity>
         <activity
             android:name="com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity"
-            android:label="@string/app_name_psiphon_pro">
+            android:label="@string/app_name">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.psiphon3.StatusActivity" />
         </activity>
         <service
             android:name="com.psiphon3.psiphonlibrary.TunnelService"
-            android:label="@string/app_name_psiphon_pro"
+            android:label="@string/app_name"
             android:exported="false"
             android:process=":TunnelService" >
         </service>
         <service
             android:name="com.psiphon3.psiphonlibrary.TunnelVpnService"
-            android:label="@string/app_name_psiphon_pro"
+            android:label="@string/app_name"
             android:permission="android.permission.BIND_VPN_SERVICE"
             android:exported="false"
             android:process=":TunnelService" >
@@ -111,13 +111,13 @@
         </service>
         <activity
             android:name="com.psiphon3.PaymentChooserActivity"
-            android:label="@string/app_name_psiphon_pro">
+            android:label="@string/app_name">
         </activity>
 
 
         <provider
             android:name="com.psiphon3.psiphonlibrary.LoggingProvider"
-            android:authorities="com.psiphon3.subscription.LoggingProvider"
+            android:authorities="com.psiphon3.LoggingProvider"
             android:exported="false">
         </provider>
 
@@ -148,8 +148,8 @@
         <activity android:name="org.zirco.ui.activities.preferences.WeavePreferencesActivity"/>
         <activity android:name="org.zirco.ui.activities.preferences.WeaveServerPreferenceActivity"/>
 
-        <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonsubscriptionzircobookmarkscontentprovider"/>
-        <provider android:name="org.zirco.providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonsubscriptionweavecontentprovider"/>
+        <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonzircobookmarkscontentprovider"/>
+        <provider android:name="org.zirco.providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonweavecontentprovider"/>
 
         <meta-data android:name="com.google.android.gms.version"
 			   android:value="@integer/google_play_services_version" />

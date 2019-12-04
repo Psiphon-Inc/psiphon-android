@@ -43,7 +43,7 @@ import android.widget.Toast;
 
 import com.google.ads.consent.ConsentInformation;
 import com.google.ads.consent.ConsentStatus;
-import com.psiphon3.subscription.R;
+import com.psiphon3.R;
 
 import net.grandcentrix.tray.AppPreferences;
 

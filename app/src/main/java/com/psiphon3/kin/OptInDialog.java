@@ -13,7 +13,7 @@ import android.view.Window;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.psiphon3.subscription.R;
+import com.psiphon3.R;
 
 public class OptInDialog extends Dialog implements View.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener {
     private final Context context;

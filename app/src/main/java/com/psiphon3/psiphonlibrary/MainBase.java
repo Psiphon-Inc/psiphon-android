@@ -94,7 +94,7 @@ import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-import com.psiphon3.subscription.R;
+import com.psiphon3.R;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.SharedPreferencesImport;

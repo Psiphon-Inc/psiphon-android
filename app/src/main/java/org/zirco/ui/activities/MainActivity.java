@@ -85,7 +85,7 @@ import com.psiphon3.FeedbackActivity;
 import com.psiphon3.StatusActivity;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.TunnelService;
-import com.psiphon3.subscription.R;
+import com.psiphon3.R;
 
 import net.grandcentrix.tray.AppPreferences;
 

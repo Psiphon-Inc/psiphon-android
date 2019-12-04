@@ -15,7 +15,7 @@
 
 package org.zirco.ui.activities;
 
-import com.psiphon3.subscription.R;
+import com.psiphon3.R;
 
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;

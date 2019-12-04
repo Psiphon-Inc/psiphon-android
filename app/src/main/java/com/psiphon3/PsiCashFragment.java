@@ -68,7 +68,7 @@ import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.Authorization;
 import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.subscription.R;
+import com.psiphon3.R;
 
 import net.grandcentrix.tray.AppPreferences;
 

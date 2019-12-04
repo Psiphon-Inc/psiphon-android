@@ -51,8 +51,8 @@ import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.billing.PurchaseVerifier;
 import com.psiphon3.kin.KinManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-import com.psiphon3.subscription.BuildConfig;
-import com.psiphon3.subscription.R;
+import com.psiphon3.BuildConfig;
+import com.psiphon3.R;
 
 import net.grandcentrix.tray.AppPreferences;
 

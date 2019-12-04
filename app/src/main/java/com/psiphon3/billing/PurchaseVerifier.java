@@ -11,7 +11,7 @@ import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.psiphonlibrary.Authorization;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.subscription.BuildConfig;
+import com.psiphon3.BuildConfig;
 
 import net.grandcentrix.tray.AppPreferences;
 

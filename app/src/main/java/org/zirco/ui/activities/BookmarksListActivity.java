@@ -16,7 +16,7 @@
 package org.zirco.ui.activities;
 
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
-import com.psiphon3.subscription.R;
+import com.psiphon3.R;
 import org.zirco.model.adapters.BookmarksCursorAdapter;
 import org.zirco.model.items.BookmarkItem;
 import org.zirco.providers.BookmarksProviderWrapper;

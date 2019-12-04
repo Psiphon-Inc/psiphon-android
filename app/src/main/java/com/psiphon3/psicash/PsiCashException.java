@@ -23,7 +23,7 @@ package com.psiphon3.psicash;
 import android.content.Context;
 
 import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.subscription.R;
+import com.psiphon3.R;
 
 import ca.psiphon.psicashlib.PsiCashLib;
 

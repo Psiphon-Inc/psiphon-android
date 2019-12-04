@@ -39,7 +39,7 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.psiphon3.subscription.R;
+import com.psiphon3.R;
 
 import java.util.ArrayList;
 import java.util.Collections;

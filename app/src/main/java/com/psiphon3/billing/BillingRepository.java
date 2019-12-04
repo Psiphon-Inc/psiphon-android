@@ -38,7 +38,7 @@ import com.android.billingclient.api.SkuDetails;
 import com.android.billingclient.api.SkuDetailsParams;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.subscription.BuildConfig;
+import com.psiphon3.BuildConfig;
 
 import java.util.Arrays;
 import java.util.Collections;

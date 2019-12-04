@@ -28,7 +28,7 @@ android {
 
             defaultConfig {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
-                applicationId "com.psiphon3.subscription"
+                applicationId "com.psiphon3"
                 resValue "string", "tray__authority", "${applicationId}.tray"
                 minSdkVersion 14
                 targetSdkVersion 28

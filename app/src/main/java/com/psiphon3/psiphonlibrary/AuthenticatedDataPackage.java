@@ -44,7 +44,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-import com.psiphon3.subscription.R;
+import com.psiphon3.R;
 
 
 public class AuthenticatedDataPackage

@@ -55,7 +55,6 @@ import com.mopub.mobileads.MoPubView;
 import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.subscription.BuildConfig;
 
 import java.net.MalformedURLException;
 import java.net.URL;
