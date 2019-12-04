@@ -21,11 +21,9 @@
 package com.psiphon3;
 
 import android.app.Activity;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Pair;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 
@@ -52,7 +50,6 @@ import com.mopub.common.privacy.PersonalInfoManager;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubView;
-import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
 
@@ -68,7 +65,6 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
 
 public class PsiphonAdManager {
@@ -155,24 +151,19 @@ public class PsiphonAdManager {
     private ConsentForm adMobConsentForm;
 
     private Activity activity;
-    private final boolean hasSubscriptionFeature;
     private int tabChangeCount = 0;
 
-    private final Runnable adMobPayOptionRunnable;
     private final Completable initializeMoPubSdk;
     private final Completable initializeAdMobSdk;
 
     private final Observable<AdResult> currentAdTypeObservable;
     private Disposable loadAdsDisposable;
     private Disposable tunneledInterstitialDisposable;
-    private PublishRelay<SubscriptionState> subscriptionStatePublishRelay = PublishRelay.create();
     private PublishRelay<TunnelState> tunnelConnectionStatePublishRelay = PublishRelay.create();
 
-    PsiphonAdManager(Activity activity, ViewGroup bannerLayout, Runnable adMobPayOptionRunnable, boolean hasSubsriptionFeature) {
+    PsiphonAdManager(Activity activity, ViewGroup bannerLayout) {
         this.activity = activity;
         this.bannerLayout = bannerLayout;
-        this.adMobPayOptionRunnable = adMobPayOptionRunnable;
-        this.hasSubscriptionFeature = hasSubsriptionFeature;
 
         // MoPub SDK is also tracking GDPR status and will present a GDPR consent collection dialog if needed.
         this.initializeMoPubSdk = Completable.create(emitter -> {
@@ -216,19 +207,10 @@ public class PsiphonAdManager {
 
         // Note this observable also destroys ads according to subscription and/or
         // connection status without further delay.
-        this.currentAdTypeObservable = Observable.combineLatest(tunnelConnectionStateObservable(),
-                subscriptionStateObservable(),
-                ((BiFunction<TunnelState, SubscriptionState, Pair>) Pair::new))
-                .flatMap(pair -> {
-                    TunnelState s = (TunnelState) pair.first;
-                    SubscriptionState subscriptionState = (SubscriptionState) pair.second;
-                    if (subscriptionState.hasValidPurchase() ||
-                            Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-                        destroyAllAds();
-                        return Observable.just(AdResult.none());
-                    }
-                    if (s.isRunning()) {
-                        TunnelState.ConnectionData connectionData = s.connectionData();
+        this.currentAdTypeObservable = tunnelConnectionStateObservable()
+                .flatMap(tunnelState -> {
+                    if (tunnelState.isRunning()) {
+                        TunnelState.ConnectionData connectionData = tunnelState.connectionData();
                         if (connectionData.isConnected()) {
                             // Tunnel is connected, destroy untunneled banners and send AdResult.TUNNELED
                             destroyUnTunneledBanners();
@@ -304,9 +286,6 @@ public class PsiphonAdManager {
 
                                     @Override
                                     public void onConsentFormClosed(ConsentStatus consentStatus, Boolean userPrefersAdFree) {
-                                        if (userPrefersAdFree) {
-                                            adMobPayOptionRunnable.run();
-                                        }
                                     }
 
                                     @Override
@@ -332,10 +311,6 @@ public class PsiphonAdManager {
 
     void onTunnelConnectionState(TunnelState state) {
         tunnelConnectionStatePublishRelay.accept(state);
-    }
-
-    void onSubscriptionState(SubscriptionState subscriptionState) {
-        subscriptionStatePublishRelay.accept(subscriptionState);
     }
 
     void onTabChanged() {
@@ -393,14 +368,6 @@ public class PsiphonAdManager {
 
     private Observable<TunnelState> tunnelConnectionStateObservable() {
         return tunnelConnectionStatePublishRelay.hide().distinctUntilChanged();
-    }
-
-    private Observable<SubscriptionState> subscriptionStateObservable() {
-        if (hasSubscriptionFeature) {
-            return subscriptionStatePublishRelay.hide().distinctUntilChanged();
-        } else {
-            return Observable.just(SubscriptionState.notApplicable());
-        }
     }
 
     private Completable loadAndShowBanner(AdResult adResult) {

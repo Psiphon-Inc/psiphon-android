@@ -20,7 +20,6 @@
 package com.psiphon3;
 
 import android.app.AlertDialog;
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
@@ -33,23 +32,14 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.TabHost;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.billingclient.api.SkuDetails;
-import com.jakewharton.rxrelay2.PublishRelay;
-import com.psiphon3.billing.BillingRepository;
-import com.psiphon3.billing.StatusActivityBillingViewModel;
-import com.psiphon3.billing.SubscriptionState;
-import com.psiphon3.kin.KinPermissionManager;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -57,31 +47,20 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
-import org.json.JSONException;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import io.reactivex.Completable;
-import io.reactivex.Maybe;
 import io.reactivex.Observable;
-import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.BiFunction;
 
 
 public class StatusActivity
     extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase {
     public static final String ACTION_SHOW_GET_HELP_DIALOG = "com.psiphon3.StatusActivity.SHOW_GET_HELP_CONNECTING_DIALOG";
-
-    private View mRateLimitedTextSection;
-    private TextView mRateLimitedText;
-    private TextView mRateUnlimitedText;
-    private Button mRateLimitSubscribeButton;
 
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_firstRun = true;
@@ -90,123 +69,23 @@ public class StatusActivity
     private PsiphonAdManager psiphonAdManager;
     private Disposable startUpInterstitialDisposable;
     private boolean disableInterstitialOnNextTabChange;
-    private PublishRelay<Boolean> activeSpeedBoostRelay;
-    private KinPermissionManager kinPermissionManager;
-    private Disposable toggleClickDisposable;
 
-    private StatusActivityBillingViewModel billingViewModel;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        billingViewModel = ViewModelProviders.of(this).get(StatusActivityBillingViewModel.class);
-        billingViewModel.startIab();
-
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            kinPermissionManager = new KinPermissionManager();
-        }
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_tabSpecsList = new ArrayList<>();
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
 
-        mRateLimitedTextSection = findViewById(R.id.rateLimitedTextSection);
-        mRateLimitedText = (TextView)findViewById(R.id.rateLimitedText);
-        mRateUnlimitedText = (TextView)findViewById(R.id.rateUnlimitedText);
-        mRateLimitSubscribeButton = (Button)findViewById(R.id.rateLimitUpgradeButton);
-
-        // Rate limit observable
-        Observable<RateLimitMode> currentRateLimitModeObservable =
-                billingViewModel.subscriptionStateFlowable()
-                        .toObservable()
-                        .map(subscriptionState -> {
-                            switch (subscriptionState.status()) {
-                                case HAS_UNLIMITED_SUBSCRIPTION:
-                                case HAS_TIME_PASS:
-                                    return RateLimitMode.UNLIMITED_SUBSCRIPTION;
-                                case HAS_LIMITED_SUBSCRIPTION:
-                                    return RateLimitMode.LIMITED_SUBSCRIPTION;
-                                default:
-                                    return RateLimitMode.AD_MODE_LIMITED;
-                            }
-                        });
-
-        activeSpeedBoostRelay = PublishRelay.create();
-
-        // Update rate limit badge and 'Subscribe' button UI
-        compositeDisposable.add(Observable.combineLatest(currentRateLimitModeObservable, activeSpeedBoostRelay,
-                ((BiFunction<RateLimitMode, Boolean, Pair>) Pair::new))
-                .map(pair -> {
-                    RateLimitMode rateLimitMode = (RateLimitMode) pair.first;
-                    Boolean hasActiveSpeedBoost = (Boolean) pair.second;
-                    if (rateLimitMode == RateLimitMode.AD_MODE_LIMITED) {
-                        if (hasActiveSpeedBoost) {
-                            return RateLimitMode.SPEED_BOOST;
-                        } else {
-                            return RateLimitMode.AD_MODE_LIMITED;
-                        }
-                    }
-                    return rateLimitMode;
-                })
-                .doOnNext(this::setRateLimitUI)
-                .subscribe()
-        );
-
-        // bootstrap the activeSpeedBoost observable
-        activeSpeedBoostRelay.accept(Boolean.FALSE);
-
         // ads
-        psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.largeAdSlot),
-                () -> onSubscribeButtonClick(null), true);
+        psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.largeAdSlot));
         psiphonAdManager.startLoadingAds();
-
-        // Components IAB state notifications and PsiCash tab view state Rx subscription.
-        compositeDisposable.add(
-                billingViewModel.subscriptionStateFlowable()
-                        .doOnNext(subscriptionState -> {
-                            MyLog.g("Billing: subscription status: " + subscriptionState.status());
-                            if (subscriptionState.error() != null) {
-                                MyLog.g("Subscription state billing error: " + subscriptionState.error());
-                            }
-                            psiphonAdManager.onSubscriptionState(subscriptionState);
-                            // Automatically start if user has a valid purchase or if IAB check failed
-                            // the IAB status check will be triggered again in onResume
-                            if(subscriptionState.hasValidPurchase() || subscriptionState.status() == SubscriptionState.Status.IAB_FAILURE) {
-                                if (shouldAutoStart()) {
-                                    preventAutoStart();
-                                    doStartUp();
-                                }
-                            }
-                        })
-                        .subscribe()
-        );
-
-        // Setup Kin UI
-        if (kinPermissionManager != null &&
-                kinPermissionManager.hasOptInPreference(getApplicationContext())) {
-            compositeDisposable.add(
-                    billingViewModel.subscriptionStateFlowable()
-                            .concatMapMaybe(subscriptionState -> {
-                                if (subscriptionState.hasValidPurchase()) {
-                                    enableKinOptInCheckBox(false);
-                                    return Maybe.empty();
-                                } else {
-                                    enableKinOptInCheckBox(true);
-                                    return kinPermissionManager.getUsersAgreementToKin(this)
-                                            .doOnSuccess(this::setKinOptInUiState)
-                                            .toMaybe();
-                                }
-                            })
-                            .subscribe()
-            );
-        } else {
-            enableKinOptInCheckBox(false);
-        }
 
         compositeDisposable.add(
                 tunnelServiceInteractor.tunnelStateFlowable()
@@ -236,8 +115,6 @@ public class StatusActivity
 
     @Override
     protected void onResume() {
-        billingViewModel.queryCurrentSubscriptionStatus();
-        billingViewModel.queryAllSkuDetails();
         super.onResume();
         if (m_startupPending) {
             m_startupPending = false;
@@ -247,7 +124,6 @@ public class StatusActivity
 
     @Override
     public void onDestroy() {
-        billingViewModel.stopIab();
         compositeDisposable.dispose();
 
         psiphonAdManager.onDestroy();
@@ -356,40 +232,7 @@ public class StatusActivity
     }
 
     public void onToggleClick(View v) {
-        // Only check for payment when starting in WDM, also make sure subscribers don't get prompted for Kin.
-        boolean wantVPN = m_multiProcessPreferences
-                .getBoolean(getString(R.string.tunnelWholeDevicePreference),
-                        false);
-
-        if (wantVPN && Utils.hasVpnService() && kinPermissionManager != null) {
-            // prevent multiple confirmation dialogs
-            if (toggleClickDisposable != null && !toggleClickDisposable.isDisposed()) {
-                return;
-            }
-            // else
-            toggleClickDisposable = billingViewModel.subscriptionStateFlowable()
-                    .switchMapSingle(subscriptionState -> {
-                        if (subscriptionState.hasValidPurchase()) {
-                            // Return any object to complete subscription, the value is ignored
-                            return Single.just(new Object());
-                        }
-                        return Single.fromCallable(() -> kinPermissionManager.isOptedIn(getApplicationContext()))
-                                .flatMap(optedIn -> optedIn ?
-                                                kinPermissionManager.confirmDonation(this) :
-                                                Single.just(false)
-                                )
-                                .doOnSuccess(this::notifyTunnelKinState)
-                                .doOnSuccess(this::setKinOptInUiState);
-
-                    })
-                    .firstOrError()
-                    .ignoreElement()
-                    .doOnComplete(this::doToggle)
-                    .subscribe();
-            compositeDisposable.add(toggleClickDisposable);
-        } else {
-            doToggle();
-        }
+        doToggle();
     }
 
     public void onGetHelpConnectingClick(View v) {
@@ -405,27 +248,6 @@ public class StatusActivity
     {
         Intent feedbackIntent = new Intent(this, FeedbackActivity.class);
         startActivity(feedbackIntent);
-    }
-
-    public void onKinEnabledClick(View v) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-            return;
-        }
-        // Assume this will always be the kin enabled checkbox
-        CheckBox checkBox = (CheckBox) v;
-        // Prevent the default toggle, that's handled automatically by a subscription to the opted-in state
-        checkBox.setChecked(!checkBox.isChecked());
-        Single<Boolean> kinOptInStateSingle;
-        if (kinPermissionManager.isOptedIn(this)) {
-            kinOptInStateSingle = kinPermissionManager.optOut(this);
-        } else {
-            kinOptInStateSingle = kinPermissionManager.optIn(this);
-        }
-        compositeDisposable.add(
-                kinOptInStateSingle
-                        .doOnSuccess(this::setKinOptInUiState)
-                        .doOnSuccess(this::notifyTunnelKinState)
-                        .subscribe());
     }
 
     @Override
@@ -653,149 +475,6 @@ public class StatusActivity
         }
     }
 
-    private void notifyTunnelKinState(Boolean state) {
-        tunnelServiceInteractor.onKinOptInState(state);
-    }
-
-    enum RateLimitMode {AD_MODE_LIMITED, LIMITED_SUBSCRIPTION, UNLIMITED_SUBSCRIPTION, SPEED_BOOST}
-
-    private void enableKinOptInCheckBox(boolean enable) {
-        CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
-        // Disable the checkbox if Kin opt-in preference was never initialized
-        enable = enable &&
-                kinPermissionManager != null &&
-                kinPermissionManager.hasOptInPreference(getApplicationContext());
-
-        if(enable) {
-            checkBoxKinEnabled.setVisibility(View.VISIBLE);
-        } else {
-            checkBoxKinEnabled.setVisibility(View.GONE);
-        }
-    }
-
-    private void setRateLimitUI(RateLimitMode rateLimitMode) {
-        // Update UI elements showing the current speed.
-        if (rateLimitMode == RateLimitMode.UNLIMITED_SUBSCRIPTION) {
-            mRateLimitedText.setVisibility(View.GONE);
-            mRateUnlimitedText.setVisibility(View.VISIBLE);
-            mRateLimitSubscribeButton.setVisibility(View.GONE);
-            mRateLimitedTextSection.setVisibility(View.VISIBLE);
-        } else{
-            if(rateLimitMode == RateLimitMode.AD_MODE_LIMITED) {
-                mRateLimitedText.setText(getString(R.string.rate_limit_text_limited, 2));
-            } else if (rateLimitMode == RateLimitMode.LIMITED_SUBSCRIPTION) {
-                mRateLimitedText.setText(getString(R.string.rate_limit_text_limited, 5));
-            } else if (rateLimitMode == RateLimitMode.SPEED_BOOST) {
-                mRateLimitedText.setText(getString(R.string.rate_limit_text_speed_boost));
-            }
-            mRateLimitedText.setVisibility(View.VISIBLE);
-            mRateUnlimitedText.setVisibility(View.GONE);
-            mRateLimitSubscribeButton.setVisibility(View.VISIBLE);
-            mRateLimitedTextSection.setVisibility(View.VISIBLE);
-        }
-    }
-
-
-    private final int PAYMENT_CHOOSER_ACTIVITY = 20001;
-
-    public void onSubscribeButtonClick(View v) {
-        Utils.MyLog.g("StatusActivity::onSubscribeButtonClick");
-        compositeDisposable.add(
-                billingViewModel.subscriptionStateFlowable()
-                        .firstOrError()
-                        .subscribe(subscriptionState -> {
-                            switch (subscriptionState.status()) {
-                                case HAS_UNLIMITED_SUBSCRIPTION:
-                                case HAS_TIME_PASS:
-                                    // User has a subscription, do nothing, the 'Subscribe' button
-                                    // visibility will be updated by rate limit badge UI Rx subscription
-                                    // that we have set up in onCreate().
-                                    return;
-
-                                case HAS_LIMITED_SUBSCRIPTION:
-                                    // If user has limited subscription launch upgrade to unlimited
-                                    // flow and replace current subscription sku.
-                                    String currentSku = subscriptionState.purchase().getSku();
-                                    compositeDisposable.add(
-                                            billingViewModel.getUnlimitedSubscriptionSkuDetails()
-                                                    .flatMapCompletable(skuDetailsList -> {
-                                                        if (skuDetailsList.size() == 1) {
-                                                            return billingViewModel.launchFlow(this, currentSku, skuDetailsList.get(0));
-                                                        }
-                                                        // else
-                                                        return Completable.error(
-                                                                new IllegalArgumentException("Bad unlimited subscription sku details list size: "
-                                                                        + skuDetailsList.size())
-                                                        );
-                                                    })
-                                                    .doOnError(err -> {
-                                                        Utils.MyLog.g("Upgrade limited subscription error: " + err);
-                                                        // Show "Subscription options not available" toast.
-                                                        showToast(R.string.subscription_options_currently_not_available);
-                                                    })
-                                                    .onErrorComplete()
-                                                    .subscribe()
-                                    );
-                                    return;
-
-                                default:
-                                    // If user has no subscription launch PaymentChooserActivity
-                                    // to show all available subscriptions options.
-                                    compositeDisposable.add(
-                                            billingViewModel.allSkuDetailsSingle()
-                                                    .toObservable()
-                                                    .flatMap(Observable::fromIterable)
-                                                    .filter(skuDetails -> {
-                                                        String sku = skuDetails.getSku();
-                                                        return BillingRepository.IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(sku) ||
-                                                                sku.equals(BillingRepository.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU) ||
-                                                                sku.equals(BillingRepository.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
-                                                    })
-                                                    .map(SkuDetails::getOriginalJson)
-                                                    .toList()
-                                                    .doOnSuccess(jsonSkuDetailsList -> {
-                                                        if(jsonSkuDetailsList.size() > 0) {
-                                                            Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
-                                                            paymentChooserActivityIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                                                            paymentChooserActivityIntent.putStringArrayListExtra(
-                                                                    PaymentChooserActivity.SKU_DETAILS_ARRAY_LIST_EXTRA,
-                                                                    new ArrayList<>(jsonSkuDetailsList));
-                                                            startActivityForResult(paymentChooserActivityIntent, PAYMENT_CHOOSER_ACTIVITY);
-                                                        } else {
-                                                            showToast(R.string.subscription_options_currently_not_available);
-                                                        }
-                                                    })
-                                                    .subscribe()
-                                    );
-                            }
-                        })
-        );
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == PAYMENT_CHOOSER_ACTIVITY) {
-            if (resultCode == RESULT_OK) {
-                String skuString = data.getStringExtra(PaymentChooserActivity.USER_PICKED_SKU_DETAILS_EXTRA);
-                try {
-                    if (TextUtils.isEmpty(skuString)) {
-                        throw new IllegalArgumentException("SKU is empty.");
-                    }
-                    SkuDetails skuDetails = new SkuDetails(skuString);
-                    billingViewModel.launchFlow(this, skuDetails).subscribe();
-                } catch (JSONException | IllegalArgumentException e) {
-                    Utils.MyLog.g("StatusActivity::onActivityResult purchase SKU error: " + e);
-                    // Show "Subscription options not available" toast.
-                    showToast(R.string.subscription_options_currently_not_available);
-                }
-            } else {
-                Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: canceled");
-            }
-        } else {
-            super.onActivityResult(requestCode, resultCode, data);
-        }
-    }
-
     private void showToast(int stringResId) {
         Toast toast = Toast.makeText(this, stringResId, Toast.LENGTH_LONG);
         toast.setGravity(Gravity.CENTER, 0, 0);
@@ -815,14 +494,5 @@ public class StatusActivity
                 .setMessage(messageId)
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
-    }
-
-    private void setKinOptInUiState(boolean optedIn) {
-        CheckBox checkBoxKinEnabled = findViewById(R.id.check_box_kin_enabled);
-        if (optedIn) {
-            checkBoxKinEnabled.setChecked(true);
-        } else {
-            checkBoxKinEnabled.setChecked(false);
-        }
     }
 }

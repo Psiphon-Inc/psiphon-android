@@ -470,7 +470,7 @@ public abstract class MainBase {
             m_tabHost.setup();
 
             m_tabSpecsList.clear();
-            m_tabSpecsList.add(TabIndex.HOME.ordinal(), m_tabHost.newTabSpec(HOME_TAB_TAG).setContent(R.id.homeTab).setIndicator(getText(R.string.home_tab_name)));
+            m_tabSpecsList.add(TabIndex.HOME.ordinal(), m_tabHost.newTabSpec(HOME_TAB_TAG).setContent(R.id.sponsorViewFlipper).setIndicator(getText(R.string.home_tab_name)));
             m_tabSpecsList.add(TabIndex.STATISTICS.ordinal(), m_tabHost.newTabSpec(STATISTICS_TAB_TAG).setContent(R.id.statisticsView).setIndicator(getText(R.string.statistics_tab_name)));
             m_tabSpecsList.add(TabIndex.OPTIONS.ordinal(), m_tabHost.newTabSpec(SETTINGS_TAB_TAG).setContent(R.id.settingsView).setIndicator(getText(R.string.settings_tab_name)));
             m_tabSpecsList.add(TabIndex.LOGS.ordinal(), m_tabHost.newTabSpec(LOGS_TAB_TAG).setContent(R.id.logsTab).setIndicator(getText(R.string.logs_tab_name)));

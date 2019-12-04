@@ -44,15 +44,11 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
-import android.util.Pair;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
-import com.psiphon3.billing.PurchaseVerifier;
-import com.psiphon3.kin.KinManager;
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
-import com.psiphon3.BuildConfig;
 import com.psiphon3.R;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import net.grandcentrix.tray.AppPreferences;
 
@@ -76,19 +72,17 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ca.psiphon.PsiphonTunnel;
-import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
 
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
 import static com.psiphon3.StatusActivity.ACTION_SHOW_GET_HELP_DIALOG;
 
-public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, PurchaseVerifier.PurchaseAuthorizationListener {
+public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     // Android IPC messages
     // Client -> Service
     enum ClientToServiceMessage {
@@ -98,7 +92,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         RESTART_SERVICE,
         NFC_CONNECTION_INFO_EXCHANGE_EXPORT,
         NFC_CONNECTION_INFO_EXCHANGE_IMPORT,
-        KIN_OPT_IN_STATE,
     }
     // Service -> Client
     enum ServiceToClientMessage {
@@ -229,9 +222,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     private ConnectivityManager.NetworkCallback networkCallback;
     private AtomicBoolean m_waitingForConnectivity = new AtomicBoolean(false);
 
-    private KinManager m_kinManager = new KinManager();
-    private PurchaseVerifier purchaseVerifier;
-
     TunnelManager(Service parentService) {
         m_parentService = parentService;
         m_context = parentService;
@@ -268,31 +258,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         EmbeddedValues.initialize(getContext());
         MyLog.setLogger(this);
 
-        purchaseVerifier = new PurchaseVerifier(getContext(), this);
-        purchaseVerifier.startIab();
-
         m_compositeDisposable.clear();
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
-
-        // Update Kin manager with Kin opt-in current state but only if the user is not subscribed
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && m_tunnelState.isVPN) {
-            m_compositeDisposable.add(purchaseVerifier.subscriptionStateFlowable()
-                    .switchMapMaybe(subscriptionState -> {
-                        if (subscriptionState.hasValidPurchase()) {
-                            MyLog.g("KinManager: user has a subscription");
-                            // complete kin flow
-                            return Maybe.just(new Object());
-                        }
-                        return m_kinManager.kinFlowMaybe(getContext());
-                    })
-                    .firstOrError()
-                    .ignoreElement()
-                    .doOnError(e -> MyLog.g("KinManager: kin flow error: " + e))
-                    .onErrorComplete()
-                    .doOnComplete(() -> MyLog.g("KinManager: completed kin flow"))
-                    .subscribe()
-            );
-        }
     }
 
     // Implementation of android.app.Service.onStartCommand
@@ -373,12 +340,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         // which means we always add a sound / vibration alert to the notification
                         postServiceNotification(true, isConnected);
                     }
-                    purchaseVerifier.onTunnelConnected(new Pair<>(isConnected, m_tunnelState.listeningLocalHttpProxyPort));
-                })
-                .doOnNext(isConnected -> {
-                    if(m_tunnelState.isVPN && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                        m_kinManager.onTunnelConnected(isConnected);
-                    }
                 })
                 .subscribe();
     }
@@ -418,7 +379,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         stopAndWaitForTunnel();
         MyLog.unsetLogger();
         m_compositeDisposable.dispose();
-        purchaseVerifier.onDestroy();
     }
 
     void onRevoke() {
@@ -523,15 +483,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
             return tunnelConfig;
         });
 
-        Single <String> sponsorIdSingle = purchaseVerifier.sponsorIdSingle();
-
-        BiFunction<Config, String, Config> zipper =
-                (config, sponsorId) -> {
-                    config.sponsorId = sponsorId;
-                    return config;
-                };
-
-        return Single.zip(configSingle, sponsorIdSingle, zipper);
+        return configSingle;
     }
 
     private Notification createNotification(boolean alert, boolean isConnected, boolean isVPN) {
@@ -657,7 +609,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         }
                         manager.mClients.add(client);
                         manager.m_newClientPublishRelay.accept(new Object());
-                        manager.purchaseVerifier.queryCurrentSubscriptionStatus();
 
                         // When new client binds also sync locale
                         setLocale(manager);
@@ -701,17 +652,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 case NFC_CONNECTION_INFO_EXCHANGE_EXPORT:
                     if (manager != null) {
                         manager.handleNfcConnectionInfoExchangeExport();
-                    }
-                    break;
-
-                case KIN_OPT_IN_STATE:
-                    if (manager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                        Bundle data = msg.getData();
-                        Context context = manager.m_parentService;
-                        // If running in WDM pass Kin opt in state to KinManager.
-                        if(manager.m_tunnelState.isVPN) {
-                            manager.m_kinManager.onKinOptInState(data.getBoolean(KIN_OPT_IN_STATE_EXTRA, false));
-                        }
                     }
                     break;
 
@@ -1503,7 +1443,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     @Override
     public void onActiveAuthorizationIDs(List<String> acceptedAuthorizationIds) {
         m_Handler.post(() -> {
-            purchaseVerifier.onActiveAuthorizationIDs(acceptedAuthorizationIds);
             // Build a list of accepted authorizations from the authorizations snapshot.
             List<Authorization> acceptedAuthorizations = new ArrayList<>();
 
@@ -1539,33 +1478,5 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     @Override
     public void onStoppedWaitingForNetworkConnectivity() {
         m_waitingForConnectivity.set(false);
-    }
-
-    // PurchaseVerifier.PurchaseAuthorizationListener implementation
-    @Override
-    public void updateConnection(PurchaseVerifier.UpdateConnectionAction action) {
-        switch(action) {
-            case RESTART_AS_NON_SUBSCRIBER:
-                MyLog.g("TunnelManager: purchase verification: will restart as a non subscriber");
-                m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
-                restartTunnel();
-                break;
-            case RESTART_AS_SUBSCRIBER:
-                MyLog.g("TunnelManager: purchase verification: will restart as a subscriber");
-                m_tunnelConfig.sponsorId = BuildConfig.SUBSCRIPTION_SPONSOR_ID;
-                restartTunnel();
-                break;
-        }
-    }
-
-    private void restartTunnel() {
-        m_Handler.post(() -> {
-            m_isReconnect.set(false);
-            try {
-                m_tunnel.restartPsiphon();
-            } catch (PsiphonTunnel.Exception e) {
-                MyLog.e(R.string.start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
-            }
-        });
     }
 }
