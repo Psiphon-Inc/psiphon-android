@@ -135,8 +135,6 @@ dependencies {
 
     implementation project(':tray')
 
-    implementation(name: 'psicashlib-release', ext: 'aar')
-
     implementation "com.android.support:multidex:$rootProject.ext.multidexVersion"
     implementation "com.android.support:appcompat-v7:$rootProject.ext.androidSupportLibraryVersion"
     implementation "com.android.support:cardview-v7:$rootProject.ext.androidSupportLibraryVersion"

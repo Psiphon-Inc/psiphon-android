@@ -19,7 +19,6 @@
 
 package com.psiphon3;
 
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.ActivityNotFoundException;
@@ -33,7 +32,6 @@ import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.FragmentManager;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.util.TypedValue;
@@ -52,13 +50,10 @@ import com.psiphon3.billing.BillingRepository;
 import com.psiphon3.billing.StatusActivityBillingViewModel;
 import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.kin.KinPermissionManager;
-import com.psiphon3.psicash.PsiCashClient;
-import com.psiphon3.psiphonlibrary.MainBase;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-import com.psiphon3.R;
 
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
@@ -74,15 +69,13 @@ import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
-import io.reactivex.schedulers.Schedulers;
 
 
 public class StatusActivity
-    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase implements PsiCashFragment.ActiveSpeedBoostListener {
+    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase {
     public static final String ACTION_SHOW_GET_HELP_DIALOG = "com.psiphon3.StatusActivity.SHOW_GET_HELP_CONNECTING_DIALOG";
 
     private View mRateLimitedTextSection;
@@ -93,8 +86,6 @@ public class StatusActivity
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_firstRun = true;
     private static boolean m_startupPending = false;
-
-    private PsiCashFragment psiCashFragment;
 
     private PsiphonAdManager psiphonAdManager;
     private Disposable startUpInterstitialDisposable;
@@ -128,11 +119,6 @@ public class StatusActivity
         mRateLimitedText = (TextView)findViewById(R.id.rateLimitedText);
         mRateUnlimitedText = (TextView)findViewById(R.id.rateUnlimitedText);
         mRateLimitSubscribeButton = (Button)findViewById(R.id.rateLimitUpgradeButton);
-
-        // PsiCash and rewarded video fragment
-        FragmentManager fm = getSupportFragmentManager();
-        psiCashFragment = (PsiCashFragment) fm.findFragmentById(R.id.psicash_fragment_container);
-        psiCashFragment.setActiveSpeedBoostListener(this);
 
         // Rate limit observable
         Observable<RateLimitMode> currentRateLimitModeObservable =
@@ -187,13 +173,7 @@ public class StatusActivity
                             if (subscriptionState.error() != null) {
                                 MyLog.g("Subscription state billing error: " + subscriptionState.error());
                             }
-                            psiCashFragment.onSubscriptionState(subscriptionState);
                             psiphonAdManager.onSubscriptionState(subscriptionState);
-                            if (subscriptionState.hasValidPurchase()) {
-                                hidePsiCashTab();
-                            } else {
-                                showPsiCashTabIfHasValidToken();
-                            }
                             // Automatically start if user has a valid purchase or if IAB check failed
                             // the IAB status check will be triggered again in onResume
                             if(subscriptionState.hasValidPurchase() || subscriptionState.status() == SubscriptionState.Status.IAB_FAILURE) {
@@ -232,12 +212,10 @@ public class StatusActivity
                 tunnelServiceInteractor.tunnelStateFlowable()
                         // Update app UI state
                         .doOnNext(state -> psiphonAdManager.onTunnelConnectionState(state))
-                        .doOnNext(state -> psiCashFragment.onTunnelConnectionState(state))
                         .subscribe()
         );
 
         setupActivityLayout();
-        hidePsiCashTab();
 
         HandleCurrentIntent();
     }
@@ -276,41 +254,6 @@ public class StatusActivity
         super.onDestroy();
     }
 
-    private void hidePsiCashTab() {
-        m_tabHost
-                .getTabWidget()
-                .getChildTabViewAt(MainBase.TabbedActivityBase.TabIndex.PSICASH.ordinal())
-                .setVisibility(View.GONE);
-        // also reset current tab to HOME if PsiCash is currently selected
-        String currentTabTag = m_tabHost.getCurrentTabTag();
-        if (currentTabTag != null && currentTabTag.equals(PSICASH_TAB_TAG)) {
-            disableInterstitialOnNextTabChange = true;
-            m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
-        }
-    }
-
-    @SuppressLint("CheckResult")
-    private void showPsiCashTabIfHasValidToken() {
-        // Hide or show the PsiCash tab depending on presence of valid PsiCash tokens.
-        // Wrap in Rx Single to run the valid tokens check on a non-UI thread and then
-        // update the UI on main thread when we get result.
-        Single.fromCallable(() -> PsiCashClient.getInstance(this).hasValidTokens())
-                .doOnError(err -> MyLog.g("Error showing PsiCash tab:" + err))
-                .onErrorResumeNext(Single.just(Boolean.FALSE))
-                .subscribeOn(Schedulers.computation())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(showTab -> {
-                    if (showTab) {
-                        m_tabHost
-                                .getTabWidget()
-                                .getChildTabViewAt(MainBase.TabbedActivityBase.TabIndex.PSICASH.ordinal())
-                                .setVisibility(View.VISIBLE);
-                    } else {
-                        hidePsiCashTab();
-                    }
-                });
-    }
-
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
@@ -338,17 +281,7 @@ public class StatusActivity
             disableInterstitialOnNextTabChange = false;
             return false;
         }
-        if(tabId.equals(PSICASH_TAB_TAG)) {
-            return false;
-        }
         return true;
-    }
-
-    @Override
-    protected void onAuthorizationsRemoved() {
-        MyLog.g("PsiCash: received onAuthorizationsRemoved() notification");
-        super.onAuthorizationsRemoved();
-        psiCashFragment.removePurchases(getApplicationContext());
     }
 
     protected void HandleCurrentIntent() {
@@ -628,15 +561,7 @@ public class StatusActivity
     }
 
     @Override
-    public void displayBrowser(Context context, String urlString, boolean shouldPsiCashModifyUrls) {
-        if (shouldPsiCashModifyUrls) {
-            // Add PsiCash parameters
-            urlString = PsiCashModifyUrl(urlString);
-        }
-
-        // Notify PsiCash fragment so it will know to refresh state on next app foreground.
-        psiCashFragment.onOpenHomePage();
-
+    public void displayBrowser(Context context, String urlString) {
         try {
             boolean wantVPN = m_multiProcessPreferences
                     .getBoolean(getString(R.string.tunnelWholeDevicePreference),
@@ -718,10 +643,6 @@ public class StatusActivity
                 // local HTTP proxy port for WebView tunneling.
 
                 if (urlString != null) {
-                        if(shouldPsiCashModifyUrls) {
-                            // Add PsiCash parameters
-                        urlString = PsiCashModifyUrl(urlString);
-                    }
                     intent.putExtra("homePages", new ArrayList<>(Collections.singletonList(urlString)));
                 }
 
@@ -730,11 +651,6 @@ public class StatusActivity
         } catch (ActivityNotFoundException e) {
             // Thrown by startActivity; in this case, we ignore and the URI isn't opened
         }
-    }
-
-    @Override
-    public void onActiveSpeedBoost(Boolean hasActiveSpeedBoost) {
-        activeSpeedBoostRelay.accept(hasActiveSpeedBoost);
     }
 
     private void notifyTunnelKinState(Boolean state) {

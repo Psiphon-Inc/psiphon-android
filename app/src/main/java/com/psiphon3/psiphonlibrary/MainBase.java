@@ -33,8 +33,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.drawable.ShapeDrawable;
-import android.graphics.drawable.shapes.OvalShape;
 import android.net.Uri;
 import android.net.VpnService;
 import android.nfc.NdefMessage;
@@ -48,8 +46,6 @@ import android.os.HandlerThread;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.text.TextUtilsCompat;
-import android.support.v4.view.ViewCompat;
 import android.text.TextUtils;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -58,7 +54,6 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
@@ -72,13 +67,10 @@ import android.webkit.WebViewClient;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
@@ -87,14 +79,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
+import com.psiphon3.R;
 import com.psiphon3.StatusActivity;
 import com.psiphon3.TunnelState;
-import com.psiphon3.psicash.PsiCashClient;
-import com.psiphon3.psicash.PsiCashException;
-import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
-import com.psiphon3.R;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.SharedPreferencesImport;
@@ -163,7 +152,6 @@ public abstract class MainBase {
         protected static final int REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 102;
 
         public static final String HOME_TAB_TAG = "home_tab_tag";
-        public static final String PSICASH_TAB_TAG = "psicash_tab_tag";
         public static final String STATISTICS_TAB_TAG = "statistics_tab_tag";
         public static final String SETTINGS_TAB_TAG = "settings_tab_tag";
         public static final String LOGS_TAB_TAG = "logs_tab_tag";
@@ -265,7 +253,7 @@ public abstract class MainBase {
         private View m_previousView;
         private View m_currentView;
         private GestureDetector m_gestureDetector;
-        protected enum TabIndex {HOME, PSICASH, STATISTICS, OPTIONS, LOGS}
+        protected enum TabIndex {HOME, STATISTICS, OPTIONS, LOGS}
 
         /**
          * A gesture listener that listens for a left or right swipe and uses
@@ -450,11 +438,6 @@ public abstract class MainBase {
                 LoggingProvider.LogDatabaseHelper.truncateLogs(this, true);
             }
 
-            // Listen to GOT_NEW_EXPIRING_PURCHASE intent from psicash module
-            IntentFilter intentFilter = new IntentFilter();
-            intentFilter.addAction(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
-            LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter);
-
             // Only handle NFC if the version is sufficient
             if (ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
                 // Check for available NFC Adapter
@@ -488,7 +471,6 @@ public abstract class MainBase {
 
             m_tabSpecsList.clear();
             m_tabSpecsList.add(TabIndex.HOME.ordinal(), m_tabHost.newTabSpec(HOME_TAB_TAG).setContent(R.id.homeTab).setIndicator(getText(R.string.home_tab_name)));
-            m_tabSpecsList.add(TabIndex.PSICASH.ordinal(), m_tabHost.newTabSpec(PSICASH_TAB_TAG).setContent(R.id.psicashTab).setIndicator(getText(R.string.psicash_tab_name)));
             m_tabSpecsList.add(TabIndex.STATISTICS.ordinal(), m_tabHost.newTabSpec(STATISTICS_TAB_TAG).setContent(R.id.statisticsView).setIndicator(getText(R.string.statistics_tab_name)));
             m_tabSpecsList.add(TabIndex.OPTIONS.ordinal(), m_tabHost.newTabSpec(SETTINGS_TAB_TAG).setContent(R.id.settingsView).setIndicator(getText(R.string.settings_tab_name)));
             m_tabSpecsList.add(TabIndex.LOGS.ordinal(), m_tabHost.newTabSpec(LOGS_TAB_TAG).setContent(R.id.logsTab).setIndicator(getText(R.string.logs_tab_name)));
@@ -496,9 +478,6 @@ public abstract class MainBase {
             for (TabSpec tabSpec : m_tabSpecsList) {
                 m_tabHost.addTab(tabSpec);
             }
-
-            LinearLayout psiCashTabLayout = (LinearLayout) m_tabHost.getTabWidget().getChildTabViewAt(TabIndex.PSICASH.ordinal());
-            decorateWithRedDot(psiCashTabLayout);
 
             m_gestureDetector = new GestureDetector(this, new LateralGestureDetector());
             OnTouchListener onTouchListener = new OnTouchListener() {
@@ -525,7 +504,6 @@ public abstract class MainBase {
             findViewById(R.id.tunnelWholeDeviceToggle).setOnTouchListener(onTouchListener);
             findViewById(R.id.feedbackButton).setOnTouchListener(onTouchListener);
             findViewById(R.id.aboutButton).setOnTouchListener(onTouchListener);
-            findViewById(R.id.psicashTab).setOnTouchListener(onTouchListener);
             ListView statusListView = (ListView) findViewById(R.id.statusList);
             statusListView.setOnTouchListener(onTouchListener);
 
@@ -746,71 +724,6 @@ public abstract class MainBase {
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         }
 
-
-        private void decorateWithRedDot(LinearLayout psiCashTabLayout) {
-            // Get parent and index of the current tab layout. We will need the index later when we
-            // wrap and replace the original layout with a wrapper layout.
-            ViewGroup parent = (ViewGroup) psiCashTabLayout.getParent();
-            final int index = parent.indexOfChild(psiCashTabLayout);
-
-            LinearLayout linearLayout = new LinearLayout(this);
-            linearLayout.setLayoutParams(psiCashTabLayout.getLayoutParams());
-
-            // Remove the tab layout from parent tab widget.
-            parent.removeView(psiCashTabLayout);
-            // Add a new linear layout in place of original one.
-            parent.addView(linearLayout, index);
-
-            // Create a new relative layout to wrap old layout.
-            RelativeLayout wrapperRelativeLayout = new RelativeLayout(this);
-            RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-            wrapperRelativeLayout.addView(psiCashTabLayout, lp);
-
-            // Add wrapper relative layout to the top tab linear layout.
-            linearLayout.addView(wrapperRelativeLayout);
-
-            // Create a frame layout which will hold a red dot image view.
-            FrameLayout redDotLayout= new FrameLayout(this);
-            FrameLayout.LayoutParams flp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
-            redDotLayout.setLayoutParams(flp);
-
-            // Get original tab layout side padding, since it is centered
-            // we assume left padding == right padding.
-            int paddingSide = psiCashTabLayout.getPaddingLeft();
-
-            // Create the red dot image and add it to the holder frame layout
-            int redDotSize = paddingSide / 3;
-            ImageView redDotImage = new ImageView(getContext());
-            ShapeDrawable badge = new ShapeDrawable(new OvalShape());
-            badge.setIntrinsicWidth(redDotSize);
-            badge.setIntrinsicHeight(redDotSize);
-            badge.getPaint().setColor(Color.RED);
-            redDotImage.setImageDrawable(badge);
-            redDotImage.setLayoutParams(new LinearLayout.LayoutParams(redDotSize, redDotSize));
-            redDotLayout.addView(redDotImage);
-
-            // Position and add the red dot layout to the wrapper layout
-            lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-            lp.addRule(RelativeLayout.CENTER_VERTICAL);
-
-            psiCashTabLayout.setId(R.id.psicash_tab_layout_id);
-
-            // Calculate side margin of the red dot holder layout.
-            int redDotMargin = - (paddingSide + redDotSize) / 2;
-
-            boolean isRtl = ViewCompat.LAYOUT_DIRECTION_RTL == TextUtilsCompat.getLayoutDirectionFromLocale(getResources().getConfiguration().locale);
-            if (isRtl) {
-                lp.addRule(RelativeLayout.LEFT_OF, psiCashTabLayout.getId());
-                lp.rightMargin = redDotMargin;
-            } else {
-                lp.addRule(RelativeLayout.RIGHT_OF, psiCashTabLayout.getId());
-                lp.leftMargin = redDotMargin;
-            }
-            redDotLayout.setLayoutParams(lp);
-            wrapperRelativeLayout.addView(redDotLayout, lp);
-            wrapperRelativeLayout.setId(R.id.psicash_tab_wrapper_layout_id);
-        }
-
         @Override
         protected void onResume() {
             super.onResume();
@@ -925,19 +838,6 @@ public abstract class MainBase {
                     }
                 });
             }
-        }
-
-        final protected String PsiCashModifyUrl(String originalUrlString) {
-            if (TextUtils.isEmpty(originalUrlString)) {
-                return originalUrlString;
-            }
-
-            try {
-                return PsiCashClient.getInstance(getContext()).modifiedHomePageURL(originalUrlString);
-            } catch (PsiCashException e) {
-                MyLog.g("PsiCash: error modifying home page: " + e);
-            }
-            return originalUrlString;
         }
 
         protected abstract void startUp();
@@ -1601,9 +1501,7 @@ public abstract class MainBase {
                     }
 
                     if (mWebViewLoaded) {
-                        // Do not PsiCash modify the URL, this is a link on the landing page
-                        // that has been clicked
-                        displayBrowser(getContext(), url, false);
+                        displayBrowser(getContext(), url);
                     }
                     return mWebViewLoaded;
                 }
@@ -1676,13 +1574,7 @@ public abstract class MainBase {
             }
         }
 
-        protected void displayBrowser(Context context, String url, boolean b) {
-
-        }
-
-        final protected void displayBrowser(Context context, String urlString) {
-            // PsiCash modify URLs by default
-            displayBrowser(context, urlString, true);
+        protected void displayBrowser(Context context, String urlString) {
         }
 
         protected boolean shouldLoadInEmbeddedWebView(String url) {
@@ -1693,20 +1585,5 @@ public abstract class MainBase {
             }
             return true;
         }
-
-        private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, android.content.Intent intent) {
-                String action = intent.getAction();
-                if (action != null) {
-                    if (action.equals(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE)) {
-                        boolean wantVPN = m_multiProcessPreferences
-                                .getBoolean(getString(R.string.tunnelWholeDevicePreference),
-                                        false);
-                        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), wantVPN);
-                    }
-                }
-            }
-        };
     }
 }
