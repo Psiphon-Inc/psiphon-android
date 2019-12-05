@@ -1295,9 +1295,14 @@ public abstract class MainBase {
                 intent = new Intent(this, TunnelService.class);
             }
             configureServiceIntent(intent);
-            startService(intent);
-            if (bindService(intent, m_tunnelServiceConnection, 0)) {
-                m_boundToTunnelService = true;
+            try {
+                startService(intent);
+                if (bindService(intent, m_tunnelServiceConnection, 0)) {
+                    m_boundToTunnelService = true;
+                }
+            } catch (IllegalStateException | SecurityException e) {
+                // Also log to diagnostics
+                MyLog.g("startAndBindTunnelService failed with error: " + e);
             }
         }
 
