@@ -24,7 +24,7 @@ android {
         if (props != null && props.containsKey('VERSION_CODE')) {
             def verName = props['VERSION_CODE']
             def verCode = verName.toInteger()
-            def admobAppId = getBuildProperty('ADMOB_APP_ID').replaceAll('^\"|\"$', "")
+            def admobAppId = getBuildProperty('GP_ADMOB_APP_ID').replaceAll('^\"|\"$', "")
 
             defaultConfig {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
@@ -100,7 +100,7 @@ android {
     buildTypes.each {
         it.buildConfigField 'String', 'SUBSCRIPTION_SPONSOR_ID', getBuildProperty('SUBSCRIPTION_SPONSOR_ID')
         it.buildConfigField 'String', 'IAB_PUBLIC_KEY', getBuildProperty('IAB_PUBLIC_KEY')
-        it.buildConfigField 'String', 'ADMOB_APP_ID', getBuildProperty('ADMOB_APP_ID')
+        it.buildConfigField 'String', 'ADMOB_APP_ID', getBuildProperty('GP_ADMOB_APP_ID')
     }
 }
 
@@ -170,7 +170,6 @@ dependencies {
     annotationProcessor "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
 
     testImplementation "junit:junit:$rootProject.ext.junitVersion"
-    testImplementation "org.mockito:mockito-core:$rootProject.ext.mockitoVersion"
     testImplementation "org.mockito:mockito-core:$rootProject.ext.mockitoVersion"
     androidTestImplementation "org.mockito:mockito-android:$rootProject.ext.mockitoVersion"
     androidTestImplementation "com.android.support.test:runner:$rootProject.ext.testRunnerVersion"
