@@ -26,6 +26,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -114,7 +115,22 @@ public class TunnelServiceInteractor {
         tunnelStateRelay.accept(TunnelState.unknown());
         Intent intent = getServiceIntent(context, wantVPN);
         try {
-            context.startService(intent);
+            // Starting with API 26 use startForegroundService
+            //
+            // From the docs:
+            // Similar to startService(android.content.Intent), but with an implicit promise that the
+            // Service will call startForeground(int, android.app.Notification) once it begins running.
+            // The service is given an amount of time comparable to the ANR interval to do this, otherwise
+            // the system will automatically stop the service and declare the app ANR.
+            //
+            // Unlike the ordinary startService(android.content.Intent), this method can be used at
+            // any time, regardless of whether the app hosting the service is in a foreground state.
+            if (Build.VERSION.SDK_INT >= 26) {
+                context.startForegroundService(intent);
+            } else {
+                // Pre-O behavior.
+                context.startService(intent);
+            }
             // Send tunnel starting service broadcast to all instances so they all bind
             LocalBroadcastManager.getInstance(context).sendBroadcast(intent.setAction(SERVICE_STARTING_BROADCAST_INTENT));
         } catch (SecurityException | IllegalStateException e) {
