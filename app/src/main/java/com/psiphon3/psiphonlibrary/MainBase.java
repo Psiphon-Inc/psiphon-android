@@ -1427,10 +1427,14 @@ public abstract class MainBase {
                     }
                 }
              */
-            ContextCompat.startForegroundService(this, intent);
-
-            if (bindService(intent, m_tunnelServiceConnection, 0)) {
-                m_boundToTunnelService = true;
+            try {
+                ContextCompat.startForegroundService(this, intent);
+                if (bindService(intent, m_tunnelServiceConnection, 0)) {
+                    m_boundToTunnelService = true;
+                }
+            } catch (IllegalStateException | SecurityException e) {
+                // Also log to diagnostics
+                MyLog.g("startAndBindTunnelService failed with error: " + e);
             }
         }
 
