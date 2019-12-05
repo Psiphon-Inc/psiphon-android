@@ -1643,12 +1643,14 @@ public abstract class MainBase {
             // when services are not allowed, such as not in foreground
             try {
                 ContextCompat.startForegroundService(this, intent);
-            } catch(IllegalStateException e) {
-                // do nothing
-            }
-
-            if (bindService(intent, m_tunnelServiceConnection, 0)) {
-                m_boundToTunnelService = true;
+                if (bindService(intent, m_tunnelServiceConnection, 0)) {
+                    m_boundToTunnelService = true;
+                }
+            } catch (IllegalStateException | SecurityException e) {
+                // Also log to diagnostics
+                MyLog.g("startAndBindTunnelService failed with error: " + e);
+                // If service fails to start notify all tunnel state observers with 'not running' state
+                onTunnelConnectionState(new TunnelManager.State());
             }
         }
 
