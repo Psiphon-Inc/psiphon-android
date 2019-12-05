@@ -101,7 +101,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         DATA_TRANSFER_STATS,
         NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_EXPORT,
         NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT,
-        AUTHORIZATIONS_REMOVED,
         PING,
     }
 
@@ -111,17 +110,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String INTENT_ACTION_VPN_REVOKED = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_VPN_REVOKED";
 
     // Client -> Service bundle parameter names
-    static final String DATA_NFC_CONNECTION_INFO_EXCHANGE_IMPORT = "dataNfcConnectionInfoExchangeImport";
+    public static final String DATA_NFC_CONNECTION_INFO_EXCHANGE_IMPORT = "dataNfcConnectionInfoExchangeImport";
 
     // Service -> Client bundle parameter names
     static final String DATA_TUNNEL_STATE_IS_RUNNING = "isRunning";
     static final String DATA_TUNNEL_STATE_IS_VPN = "isVpn";
     static final String DATA_TUNNEL_STATE_IS_CONNECTED = "isConnected";
-    static final String DATA_TUNNEL_STATE_NEEDS_HELP_CONNECTING = "needsHelpConnecting";
     static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT = "listeningLocalSocksProxyPort";
     static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT = "listeningLocalHttpProxyPort";
     static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
     static final String DATA_TUNNEL_STATE_SPONSOR_ID = "sponsorId";
+    public static final String DATA_TUNNEL_STATE_NEEDS_HELP_CONNECTING = "needsHelpConnecting";
     public static final String DATA_TUNNEL_STATE_HOME_PAGES = "homePages";
     static final String DATA_TRANSFER_STATS_CONNECTED_TIME = "dataTransferStatsConnectedTime";
     static final String DATA_TRANSFER_STATS_TOTAL_BYTES_SENT = "dataTransferStatsTotalBytesSent";
@@ -133,13 +132,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     public static final String DATA_NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_EXPORT = "dataNfcConnectionInfoExchangeResponseExport";
     public static final String DATA_NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT = "dataNfcConnectionInfoExchangeResponseImport";
 
-    // Extras in  (Client -> Service) messages
-    public static final String KIN_OPT_IN_STATE_EXTRA = "kinOptInStateExtra";
-
-    // a snapshot of all authorizations pulled by getPsiphonConfig
-    private static List<Authorization> m_tunnelConfigAuthorizations;
-
-    public void updateNotifications() {
+    void updateNotifications() {
         postServiceNotification(false, m_tunnelState.isConnected);
     }
 
@@ -177,6 +170,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
     private NotificationCompat.Builder mNotificationBuilder = null;
     private final static String NOTIFICATION_CHANNEL_ID = "psiphon_notification_channel";
     private Service m_parentService;
+
     private boolean mGetHelpConnectingRunnablePosted = false;
     private final Handler mGetHelpConnectingHandler = new Handler();
     private final Runnable mGetHelpConnectingRunnable = new Runnable() {
@@ -1107,16 +1101,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
             json.put("ClientVersion", EmbeddedValues.CLIENT_VERSION);
 
-            m_tunnelConfigAuthorizations = Authorization.geAllPersistedAuthorizations(context);
-
-            if (m_tunnelConfigAuthorizations != null && m_tunnelConfigAuthorizations.size() > 0) {
-                JSONArray jsonArray = new JSONArray();
-                for (Authorization a : m_tunnelConfigAuthorizations) {
-                    jsonArray.put(a.base64EncodedAuthorization());
-                }
-                json.put("Authorizations", jsonArray);
-            }
-
             json.put("PropagationChannelId", EmbeddedValues.PROPAGATION_CHANNEL_ID);
 
             json.put("SponsorId", tunnelConfig.sponsorId);
@@ -1438,41 +1422,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 cancelGetHelpConnecting();
                 sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
                 m_waitingForConnectivity.set(true);
-            }
-        });
-    }
-
-    @Override
-    public void onActiveAuthorizationIDs(List<String> acceptedAuthorizationIds) {
-        m_Handler.post(() -> {
-            // Build a list of accepted authorizations from the authorizations snapshot.
-            List<Authorization> acceptedAuthorizations = new ArrayList<>();
-
-            for (String Id : acceptedAuthorizationIds) {
-                for (Authorization a : m_tunnelConfigAuthorizations) {
-                    if (a.Id().equals(Id)) {
-                        acceptedAuthorizations.add(a);
-                        String s = String.format(Locale.US, "[accessType: %s, expires: %s]", a.accessType(), a.expires().toString());
-                        MyLog.g("TunnelManager::onActiveAuthorizationIDs: accepted active authorization: " + s);
-                    }
-                }
-            }
-            // Build a list of not accepted authorizations from the authorizations snapshot
-            // by removing all elements of the accepted authorizations list.
-            List<Authorization> notAcceptedAuthorizations = m_tunnelConfigAuthorizations;
-            notAcceptedAuthorizations.removeAll(acceptedAuthorizations);
-
-            // Remove all not accepted authorizations from the database
-            Authorization.removeAuthorizations(getContext(), notAcceptedAuthorizations);
-
-            if (notAcceptedAuthorizations.size() > 0) {
-                final AppPreferences mp = new AppPreferences(getContext());
-                mp.put(m_parentService.getString(R.string.persistentAuthorizationsRemovedFlag), true);
-                sendClientMessage(ServiceToClientMessage.AUTHORIZATIONS_REMOVED.ordinal(), null);
-                for (Authorization removedAuth : notAcceptedAuthorizations) {
-                    String s = String.format(Locale.US, "[accessType: %s, expires: %s]", removedAuth.accessType(), removedAuth.expires().toString());
-                    MyLog.g("TunnelManager::onActiveAuthorizationIDs: removed not accepted persisted authorization: " + s);
-                }
             }
         });
     }

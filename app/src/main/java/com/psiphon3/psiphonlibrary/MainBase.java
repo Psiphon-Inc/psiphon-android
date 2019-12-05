@@ -628,10 +628,6 @@ public abstract class MainBase {
                                         break;
                                 }
                             })
-                            .subscribe(),
-
-                    tunnelServiceInteractor.authorizationsRemovedFlowable()
-                            .doOnNext(__ -> onAuthorizationsRemoved())
                             .subscribe()
             );
         }
@@ -1435,11 +1431,6 @@ public abstract class MainBase {
 
         private void stopTunnelService() {
             tunnelServiceInteractor.stopTunnelService();
-        }
-
-        protected void onAuthorizationsRemoved() {
-            final AppPreferences mp = new AppPreferences(getContext());
-            mp.put(this.getString(R.string.persistentAuthorizationsRemovedFlag), false);
         }
 
         /**

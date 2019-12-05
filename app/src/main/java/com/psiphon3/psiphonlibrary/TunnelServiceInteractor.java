@@ -57,7 +57,6 @@ public class TunnelServiceInteractor {
     private Relay<Boolean> dataStatsRelay = PublishRelay.<Boolean>create().toSerialized();
     private Relay<Boolean> knownRegionsRelay = PublishRelay.<Boolean>create().toSerialized();
     private Relay<NfcExchange> nfcExchangeRelay = PublishRelay.<NfcExchange>create().toSerialized();
-    private Relay<Boolean> authorizationsRemovedRelay = PublishRelay.<Boolean>create().toSerialized();
 
     private final Messenger incomingMessenger = new Messenger(new IncomingMessageHandler(this));
     private Disposable restartServiceDisposable = null;
@@ -161,11 +160,6 @@ public class TunnelServiceInteractor {
     public Flowable<NfcExchange> nfcExchangeFlowable() {
         return nfcExchangeRelay
                 .distinctUntilChanged()
-                .toFlowable(BackpressureStrategy.LATEST);
-    }
-
-    public Flowable<Boolean> authorizationsRemovedFlowable() {
-        return authorizationsRemovedRelay
                 .toFlowable(BackpressureStrategy.LATEST);
     }
 
@@ -347,9 +341,6 @@ public class TunnelServiceInteractor {
                     break;
                 case NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT:
                     tunnelServiceInteractor.nfcExchangeRelay.accept(NfcExchange.imported(data.getBoolean(TunnelManager.DATA_NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT, false)));
-                    break;
-                case AUTHORIZATIONS_REMOVED:
-                    tunnelServiceInteractor.authorizationsRemovedRelay.accept(Boolean.TRUE);
                     break;
                 default:
                     super.handleMessage(msg);
