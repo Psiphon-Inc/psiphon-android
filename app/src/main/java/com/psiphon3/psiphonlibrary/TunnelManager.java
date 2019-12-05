@@ -1011,7 +1011,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
 
     @Override
     public String getAppName() {
-        return m_parentService.getString(R.string.app_name_psiphon_pro);
+        return m_parentService.getString(R.string.app_name);
     }
 
     @Override
