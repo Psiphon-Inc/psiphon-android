@@ -100,6 +100,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         NFC_CONNECTION_INFO_EXCHANGE_IMPORT,
         KIN_OPT_IN_STATE,
     }
+
     // Service -> Client
     enum ServiceToClientMessage {
         KNOWN_SERVER_REGIONS,
@@ -275,7 +276,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
 
         // Update Kin manager with Kin opt-in current state but only if the user is not subscribed
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && m_tunnelState.isVPN) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && m_tunnelState.isVPN) {
             m_compositeDisposable.add(purchaseVerifier.subscriptionStateFlowable()
                     .switchMapMaybe(subscriptionState -> {
                         if (subscriptionState.hasValidPurchase()) {
@@ -329,7 +330,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         return Single.just(isConnected);
                     }
                     // If this is a reconnect return immediately
-                    if(m_isReconnect.get()) {
+                    if (m_isReconnect.get()) {
                         return Single.just(isConnected);
                     }
                     // If there are no home pages to show return immediately
@@ -353,7 +354,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                             .map(__ -> isConnected)
                             .firstOrError()
                             // Show "Open Psiphon" notification when subscribed to
-                            .doOnSubscribe(__-> showOpenAppToFinishConnectingNotification())
+                            .doOnSubscribe(__ -> showOpenAppToFinishConnectingNotification())
                             // Cancel "Open Psiphon to keep connecting" when completed or disposed
                             .doFinally(() -> cancelOpenAppToFinishConnectingNotification());
                 })
@@ -368,7 +369,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                     }
                     sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
                     // Don't update notification to CONNECTING, etc., when a stop was commanded.
-                    if(!m_isStopping.get()) {
+                    if (!m_isStopping.get()) {
                         // We expect only distinct connection status from connectionObservable
                         // which means we always add a sound / vibration alert to the notification
                         postServiceNotification(true, isConnected);
@@ -376,7 +377,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                     purchaseVerifier.onTunnelConnected(new Pair<>(isConnected, m_tunnelState.listeningLocalHttpProxyPort));
                 })
                 .doOnNext(isConnected -> {
-                    if(m_tunnelState.isVPN && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                    if (m_tunnelState.isVPN && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                         m_kinManager.onTunnelConnected(isConnected);
                     }
                 })
@@ -430,11 +431,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         // If Android < 10 or there is a live client then send the intent right away,
         // otherwise show a notification.
         if (Build.VERSION.SDK_INT < 29 || sendClientMessage(ServiceToClientMessage.PING.ordinal(), null)) {
-        try {
+            try {
                 vpnRevokedPendingIntent.send(m_parentService, 0, null);
-        } catch (PendingIntent.CanceledException e) {
-            MyLog.g(String.format("vpnRevokedPendingIntent failed: %s", e.getMessage()));
-        }
+            } catch (PendingIntent.CanceledException e) {
+                MyLog.g(String.format("vpnRevokedPendingIntent failed: %s", e.getMessage()));
+            }
         } else {
             if (mNotificationBuilder == null || mNotificationManager == null) {
                 return;
@@ -523,7 +524,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
             return tunnelConfig;
         });
 
-        Single <String> sponsorIdSingle = purchaseVerifier.sponsorIdSingle();
+        Single<String> sponsorIdSingle = purchaseVerifier.sponsorIdSingle();
 
         BiFunction<Config, String, Config> zipper =
                 (config, sponsorId) -> {
@@ -580,6 +581,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
     /**
      * Update the context used to get resources with the passed context
+     *
      * @param context the new context to use for resources
      */
     void updateContext(Context context) {
@@ -633,9 +635,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
             TunnelManager manager = mTunnelManager.get();
             switch (csm[msg.what]) {
                 case REGISTER:
-                    if(manager != null) {
+                    if (manager != null) {
                         Messenger client = msg.replyTo;
-                        if(client == null) {
+                        if (client == null) {
                             MyLog.d("Error registering a client: client's messenger is null.");
                             return;
                         }
@@ -647,7 +649,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                                 manager.getTunnelStateBundle()));
                         messageList.add(manager.composeClientMessage(ServiceToClientMessage.DATA_TRANSFER_STATS.ordinal(),
                                 manager.getDataTransferStatsBundle()));
-                        for(Message message : messageList) {
+                        for (Message message : messageList) {
                             try {
                                 client.send(message);
                             } catch (RemoteException e) {
@@ -709,7 +711,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         Bundle data = msg.getData();
                         Context context = manager.m_parentService;
                         // If running in WDM pass Kin opt in state to KinManager.
-                        if(manager.m_tunnelState.isVPN) {
+                        if (manager.m_tunnelState.isVPN) {
                             manager.m_kinManager.onKinOptInState(data.getBoolean(KIN_OPT_IN_STATE_EXTRA, false));
                         }
                     }
@@ -812,9 +814,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     private boolean sendClientMessage(int what, Bundle data) {
         Message msg = composeClientMessage(what, data);
         for (int i = mClients.size() - 1; i >= 0; i--) {
-        try {
+            try {
                 mClients.get(i).send(msg);
-        } catch (RemoteException e) {
+            } catch (RemoteException e) {
                 // The client is dead.  Remove it from the list;
                 // we are going through the list from back to front
                 // so this is safe to do inside the loop.
@@ -1000,7 +1002,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
             public void run() {
                 m_isReconnect.set(false);
                 try {
-                    if(Utils.hasVpnService()
+                    if (Utils.hasVpnService()
                             && m_parentService instanceof TunnelVpnService
                             && m_tunnelConfig.wholeDevice) {
                         Builder vpnBuilder = ((TunnelVpnService) m_parentService).newBuilder();
@@ -1031,7 +1033,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 return;
             }
             networkCallback = new ConnectivityManager.NetworkCallback() {
-            @Override
+                @Override
                 public void onLost(Network network) {
                     if (m_waitingForConnectivity.get()) {
                         // Already waiting for connectivity, do not restart
@@ -1041,13 +1043,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                     boolean needRestart = networkInfo == null || !networkInfo.isConnected();
                     if (needRestart) {
                         m_Handler.post(() -> {
-                try {
-                    m_tunnel.restartPsiphon();
-                } catch (PsiphonTunnel.Exception e) {
-                    MyLog.e(R.string.start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
-                }
-        });
-    }
+                            try {
+                                m_tunnel.restartPsiphon();
+                            } catch (PsiphonTunnel.Exception e) {
+                                MyLog.e(R.string.start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
+                            }
+                        });
+                    }
                 }
             };
             NetworkRequest networkRequest = new NetworkRequest.Builder()
@@ -1300,11 +1302,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                     // If Android < 10 or there is a live client then send the intent right away,
                     // otherwise show a notification.
                     if (Build.VERSION.SDK_INT < 29 || sendClientMessage(ServiceToClientMessage.PING.ordinal(), null)) {
-                    try {
+                        try {
                             regionNotAvailablePendingIntent.send(m_parentService, 0, null);
-                    } catch (PendingIntent.CanceledException e) {
-                        MyLog.g(String.format("regionNotAvailablePendingIntent failed: %s", e.getMessage()));
-                    }
+                        } catch (PendingIntent.CanceledException e) {
+                            MyLog.g(String.format("regionNotAvailablePendingIntent failed: %s", e.getMessage()));
+                        }
                     } else {
                         if (mNotificationBuilder == null || mNotificationManager == null) {
                             return;
@@ -1524,7 +1526,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
             // Remove all not accepted authorizations from the database
             Authorization.removeAuthorizations(getContext(), notAcceptedAuthorizations);
 
-            if(notAcceptedAuthorizations.size() > 0 ) {
+            if (notAcceptedAuthorizations.size() > 0) {
                 final AppPreferences mp = new AppPreferences(getContext());
                 mp.put(m_parentService.getString(R.string.persistentAuthorizationsRemovedFlag), true);
                 sendClientMessage(ServiceToClientMessage.AUTHORIZATIONS_REMOVED.ordinal(), null);
@@ -1544,7 +1546,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     // PurchaseVerifier.PurchaseAuthorizationListener implementation
     @Override
     public void updateConnection(PurchaseVerifier.UpdateConnectionAction action) {
-        switch(action) {
+        switch (action) {
             case RESTART_AS_NON_SUBSCRIBER:
                 MyLog.g("TunnelManager: purchase verification: will restart as a non subscriber");
                 m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
