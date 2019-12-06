@@ -275,6 +275,11 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
         // preference value and restart the app.
         if (key.equals(getString(R.string.preferenceLanguageSelection))) {
             String languageCode = mLanguageSelector.getValue();
+            try {
+                int pos = mLanguageSelector.findIndexOfValue(languageCode);
+                mLanguageSelector.setSummary(mLanguageSelector.getEntries()[pos]);
+            } catch (Exception ignored) {
+            }
             setLanguageAndRestartApp(languageCode);
         }
     }
@@ -424,7 +429,11 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
 
         // If current locale is on the list set it selected
         if (currentLocaleLanguageIndex >= 0) {
-            mLanguageSelector.setValueIndex(currentLocaleLanguageIndex);
+            try {
+                mLanguageSelector.setValueIndex(currentLocaleLanguageIndex);
+                mLanguageSelector.setSummary(languageNames[currentLocaleLanguageIndex]);
+            } catch(Exception ignored) {
+            }
         }
     }
 
