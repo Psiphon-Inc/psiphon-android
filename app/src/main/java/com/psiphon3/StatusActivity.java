@@ -76,7 +76,6 @@ public class StatusActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main);
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);

@@ -1365,6 +1365,15 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                     }
                 }
                 m_tunnelState.homePages.add(url);
+
+                boolean showAds = false;
+                if (url != null && url.contains("psiphon_show_ads")) {
+                    showAds = true;
+                }
+                final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
+                multiProcessPreferences.put(
+                        getContext().getString(R.string.persistent_show_ads_setting),
+                        showAds);
             }
         });
     }

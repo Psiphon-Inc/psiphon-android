@@ -21,6 +21,8 @@
 package com.psiphon3;
 
 import android.app.Activity;
+import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -53,10 +55,13 @@ import com.mopub.mobileads.MoPubView;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
 
+import net.grandcentrix.tray.AppPreferences;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -137,10 +142,12 @@ public class PsiphonAdManager {
     static final String TAG = "PsiphonAdManager";
 
     // ----------Production values -----------
-    private static final String ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID = "ca-app-pub-1072041961750291/1062483935";
-    private static final String ADMOB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID = "ca-app-pub-1072041961750291/6443217092";
-    private static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "6efb5aa4e0d74a679a6219f9b3aa6221";
-    private static final String MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID = "1f9cb36809f04c8d9feaff5deb9f17ed";
+    private static final String ADMOB_UNTUNNELED_BANNER_PROPERTY_ID = "ca-app-pub-1072041961750291/7238659523";
+    private static final String ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID = "ca-app-pub-1072041961750291/3275363789";
+    private static final String ADMOB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID = "ca-app-pub-1072041961750291/9298519104";
+    private static final String MOPUB_TUNNELED_BANNER_PROPERTY_ID = "6848f6c3bce64522b771ea8ce9b5f1cd";
+    private static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "0ad7bcfc9b17444aa80b1c198e5ebda5";
+    private static final String MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID = "b17a746d77c9436bb805c958f7879342";
 
     private AdView unTunneledAdMobBannerAdView = null;
     private MoPubView tunneledMoPubBannerAdView = null;
@@ -209,6 +216,10 @@ public class PsiphonAdManager {
         // connection status without further delay.
         this.currentAdTypeObservable = tunnelConnectionStateObservable()
                 .flatMap(tunnelState -> {
+                    if(!shouldShowAds()) {
+                        destroyAllAds();
+                        return Observable.just(AdResult.none());
+                    }
                     if (tunnelState.isRunning()) {
                         TunnelState.ConnectionData connectionData = tunnelState.connectionData();
                         if (connectionData.isConnected()) {
@@ -233,6 +244,13 @@ public class PsiphonAdManager {
                 })
                 .replay(1)
                 .autoConnect(0);
+    }
+
+    private boolean shouldShowAds() {
+        AppPreferences appPreferences = new AppPreferences(activity);
+        return appPreferences.getBoolean(activity.getString(R.string.persistent_show_ads_setting), false) &&
+                !EmbeddedValues.hasEverBeenSideLoaded(activity) &&
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN;
     }
 
     Observable<AdResult> getCurrentAdTypeObservable() {
@@ -372,6 +390,11 @@ public class PsiphonAdManager {
 
     private Completable loadAndShowBanner(AdResult adResult) {
         Completable completable;
+
+        boolean isPortraitOrientation =
+                activity.getApplicationContext().getResources().getConfiguration().orientation ==
+                        Configuration.ORIENTATION_PORTRAIT;
+
         switch (adResult.type()) {
             case NONE:
                 completable = Completable.complete();
@@ -379,7 +402,9 @@ public class PsiphonAdManager {
             case TUNNELED:
                 completable = initializeMoPubSdk.andThen(Completable.fromAction(() -> {
                     tunneledMoPubBannerAdView = new MoPubView(activity);
-                    tunneledMoPubBannerAdView.setAdUnitId(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
+                    tunneledMoPubBannerAdView.setAdUnitId(isPortraitOrientation && new Random().nextBoolean() ?
+                            MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID :
+                            MOPUB_TUNNELED_BANNER_PROPERTY_ID);
                     TunnelState.ConnectionData connectionData = adResult.connectionData();
                     if (connectionData != null) {
                         tunneledMoPubBannerAdView.setKeywords("client_region:" + connectionData.clientRegion());
@@ -419,8 +444,13 @@ public class PsiphonAdManager {
             case UNTUNNELED:
                 completable = initializeAdMobSdk.andThen(Completable.fromAction(() -> {
                     unTunneledAdMobBannerAdView = new AdView(activity);
-                    unTunneledAdMobBannerAdView.setAdSize(AdSize.MEDIUM_RECTANGLE);
-                    unTunneledAdMobBannerAdView.setAdUnitId(ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
+                    if(isPortraitOrientation) {
+                        unTunneledAdMobBannerAdView.setAdSize(AdSize.MEDIUM_RECTANGLE);
+                        unTunneledAdMobBannerAdView.setAdUnitId(ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
+                    } else {
+                        unTunneledAdMobBannerAdView.setAdSize(AdSize.SMART_BANNER);
+                        unTunneledAdMobBannerAdView.setAdUnitId(ADMOB_UNTUNNELED_BANNER_PROPERTY_ID);
+                    }
                     unTunneledAdMobBannerAdView.setAdListener(new AdListener() {
                         @Override
                         public void onAdLoaded() {
