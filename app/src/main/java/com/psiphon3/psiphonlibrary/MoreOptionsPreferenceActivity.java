@@ -115,126 +115,6 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
     EditTextPreference mProxyPassword;
     EditTextPreference mProxyDomain;
     ListPreference mLanguageSelector;
-    Preference mCustomProxyHeadersPref;
-    CheckBoxPreference mAddCustomHeadersPreference;
-    EditTextPreference mHeaderName1;
-    EditTextPreference mHeaderValue1;
-    EditTextPreference mHeaderName2;
-    EditTextPreference mHeaderValue2;
-    EditTextPreference mHeaderName3;
-    EditTextPreference mHeaderValue3;
-    EditTextPreference mHeaderName4;
-    EditTextPreference mHeaderValue4;
-    EditTextPreference mHeaderName5;
-    EditTextPreference mHeaderValue5;
-    EditTextPreference mHeaderName6;
-    EditTextPreference mHeaderValue6;
-
-    private class HeaderValueChangeListener implements Preference.OnPreferenceChangeListener {
-        EditTextPreference mHeaderName;
-
-        public HeaderValueChangeListener(EditTextPreference pref) {
-            mHeaderName = pref;
-        }
-
-        @Override
-        public boolean onPreferenceChange(Preference preference, Object newValue) {
-            String headerName = mHeaderName.getText();
-            String value = (String)newValue;
-            if (TextUtils.isEmpty(headerName) && !TextUtils.isEmpty(value)) {
-                //Just a warning, do not prevent user from entering empty header name
-                Toast toast = Toast.makeText(MoreOptionsPreferenceActivity.this,
-                        R.string.custom_proxy_header_ignored_values, Toast.LENGTH_SHORT);
-                toast.show();
-            }
-            return true;
-        }
-    }
-
-    private Preference.OnPreferenceChangeListener headerNameChangeListener =
-            new Preference.OnPreferenceChangeListener() {
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
-
-                    String headerName = (String) newValue;
-                    if (!TextUtils.isEmpty(headerName)) {
-                        // Validate Header
-                        // https://www.w3.org/Protocols/rfc2616/rfc2616-sec2.html#sec2.2
-                    /*
-                     OCTET          = <any 8-bit sequence of data>
-                     CHAR           = <any US-ASCII character (octets 0 - 127)>
-                     UPALPHA        = <any US-ASCII uppercase letter "A".."Z">
-                     LOALPHA        = <any US-ASCII lowercase letter "a".."z">
-                     ALPHA          = UPALPHA | LOALPHA
-                     DIGIT          = <any US-ASCII digit "0".."9">
-                     CTL            = <any US-ASCII control character
-                     (octets 0 - 31) and DEL (127)>
-                     CR             = <US-ASCII CR, carriage return (13)>
-                     LF             = <US-ASCII LF, linefeed (10)>
-                     SP             = <US-ASCII SP, space (32)>
-                     HT             = <US-ASCII HT, horizontal-tab (9)>
-                     <">            = <US-ASCII double-quote mark (34)>
-
-
-                     token          = 1*<any CHAR except CTLs or separators>
-                     separators     = "(" | ")" | "<" | ">" | "@"
-                     | "," | ";" | ":" | "\" | <">
-                     | "/" | "[" | "]" | "?" | "="
-                     | "{" | "}" | SP | HT
-
-                     https://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2
-
-                     message-header = field-name ":" [ field-value ]
-                     field-name     = token
-                     field-value    = *( field-content | LWS )
-                     field-content  = <the OCTETs making up the field-value
-                     and consisting of either *TEXT or combinations
-                     of token, separators, and quoted-string>
-                     */
-
-                        boolean isValid = true;
-                        char[] separators = {'(', ')', '<', '>', '@',
-                                ',', ';', ':', '\\', '"',
-                                '/', '[', ']', '?', '=',
-                                '{', '}', 32, 9};
-                        outerloop:
-                        for (int i = 0; i < headerName.length(); i++) {
-                            char c = headerName.charAt(i);
-                            //  OCTET check
-                            if (c < 0 || c > 127) {
-                                isValid = false;
-                                break outerloop;
-                            }
-                            //  CTL check
-                            if ((c >= 0 && c <= 31) || c == 127) {
-                                isValid = false;
-                                break outerloop;
-                            }
-
-                            // separators check
-                            for (int j = 0; j < separators.length; j++) {
-                                if (c == separators[j]) {
-                                    isValid = false;
-                                    break outerloop;
-                                }
-                            }
-                        }
-                        if (!isValid) {
-                            Toast toast = Toast.makeText(MoreOptionsPreferenceActivity.this,
-                                    R.string.custom_proxy_header_invalid_name, Toast.LENGTH_SHORT);
-                            toast.show();
-                            return false;
-                        }
-                    } else {
-                        //Just a warning, do not prevent user from entering empty header name
-                        Toast toast = Toast.makeText(MoreOptionsPreferenceActivity.this,
-                                R.string.custom_proxy_header_ignored_values, Toast.LENGTH_SHORT);
-                        toast.show();
-
-                    }
-                    return true;
-                }
-            };
 
     @SuppressWarnings("deprecation")
     public void onCreate(Bundle savedInstanceState) {
@@ -273,42 +153,6 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
                 .findPreference(getString(R.string.useProxyPasswordPreference));
         mProxyDomain = (EditTextPreference) preferences
                 .findPreference(getString(R.string.useProxyDomainPreference));
-
-        mCustomProxyHeadersPref =  preferences
-                .findPreference(getString(R.string.customProxyHeadersPreference));
-
-        mAddCustomHeadersPreference = (CheckBoxPreference) preferences
-                .findPreference(getString(R.string.addCustomHeadersPreference));
-
-        mHeaderName1 = (EditTextPreference) preferences
-                .findPreference(getString(R.string.customProxyHeaderName1));
-        mHeaderValue1 = (EditTextPreference) preferences
-                .findPreference(getString(R.string.customProxyHeaderValue1));
-
-        mHeaderName2 = (EditTextPreference) preferences
-                .findPreference(getString(R.string.customProxyHeaderName2));
-        mHeaderValue2 = (EditTextPreference) preferences
-                .findPreference(getString(R.string.customProxyHeaderValue2));
-
-        mHeaderName3 = (EditTextPreference) preferences
-                .findPreference(getString(R.string.customProxyHeaderName3));
-        mHeaderValue3 = (EditTextPreference) preferences
-                .findPreference(getString(R.string.customProxyHeaderValue3));
-
-        mHeaderName4 = (EditTextPreference) preferences
-                .findPreference(getString(R.string.customProxyHeaderName4));
-        mHeaderValue4 = (EditTextPreference) preferences
-                .findPreference(getString(R.string.customProxyHeaderValue4));
-
-        mHeaderName5 = (EditTextPreference) preferences
-                .findPreference(getString(R.string.customProxyHeaderName5));
-        mHeaderValue5 = (EditTextPreference) preferences
-                .findPreference(getString(R.string.customProxyHeaderValue5));
-
-        mHeaderName6 = (EditTextPreference) preferences
-                .findPreference(getString(R.string.customProxyHeaderName6));
-        mHeaderValue6 = (EditTextPreference) preferences
-                .findPreference(getString(R.string.customProxyHeaderValue6));
 
         if (Utils.supportsAlwaysOnVPN()) {
             setupNavigateToVPNSettings(preferences);
@@ -364,20 +208,6 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
         mProxyUsername.setText(preferenceGetter.getString(getString(R.string.useProxyUsernamePreference), ""));
         mProxyPassword.setText(preferenceGetter.getString(getString(R.string.useProxyPasswordPreference), ""));
         mProxyDomain.setText(preferenceGetter.getString(getString(R.string.useProxyDomainPreference), ""));
-        mAddCustomHeadersPreference.setChecked(preferenceGetter.getBoolean(getString(R.string.addCustomHeadersPreference), false));
-        mHeaderName1.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderName1), ""));
-        mHeaderValue1.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderValue1), ""));
-        mHeaderName2.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderName2), ""));
-        mHeaderValue2.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderValue2), ""));
-        mHeaderName3.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderName3), ""));
-        mHeaderValue3.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderValue3), ""));
-        mHeaderName4.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderName4), ""));
-        mHeaderValue4.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderValue4), ""));
-        mHeaderName5.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderName5), ""));
-        mHeaderValue5.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderValue5), ""));
-        mHeaderName6.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderName6), ""));
-        mHeaderValue6.setText(preferenceGetter.getString(getString(R.string.customProxyHeaderValue6), ""));
-
 
         // Set listeners
         mUseSystemProxy.setOnPreferenceClickListener(this);
@@ -413,20 +243,6 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
                 return false;
             }
         });
-
-        mHeaderName1.setOnPreferenceChangeListener(headerNameChangeListener);
-        mHeaderName2.setOnPreferenceChangeListener(headerNameChangeListener);
-        mHeaderName3.setOnPreferenceChangeListener(headerNameChangeListener);
-        mHeaderName4.setOnPreferenceChangeListener(headerNameChangeListener);
-        mHeaderName5.setOnPreferenceChangeListener(headerNameChangeListener);
-        mHeaderName6.setOnPreferenceChangeListener(headerNameChangeListener);
-
-        mHeaderValue1.setOnPreferenceChangeListener(new HeaderValueChangeListener(mHeaderName1));
-        mHeaderValue2.setOnPreferenceChangeListener(new HeaderValueChangeListener(mHeaderName2));
-        mHeaderValue3.setOnPreferenceChangeListener(new HeaderValueChangeListener(mHeaderName3));
-        mHeaderValue4.setOnPreferenceChangeListener(new HeaderValueChangeListener(mHeaderName4));
-        mHeaderValue5.setOnPreferenceChangeListener(new HeaderValueChangeListener(mHeaderName5));
-        mHeaderValue6.setOnPreferenceChangeListener(new HeaderValueChangeListener(mHeaderName6));
 
         initSummary();
         updatePreferencesScreen();
@@ -641,7 +457,6 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
     private void disableProxySettings() {
         mUseSystemProxy.setEnabled(false);
         mUseCustomProxy.setEnabled(false);
-        mCustomProxyHeadersPref.setEnabled(false);
         disableCustomProxySettings();
         disableProxyAuthenticationSettings();
     }
@@ -649,39 +464,8 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
     private void enableProxySettings() {
         mUseSystemProxy.setEnabled(true);
         mUseCustomProxy.setEnabled(true);
-        mCustomProxyHeadersPref.setEnabled(true);
         enableCustomProxySettings();
         enableProxyAuthenticationSettings();
-    }
-
-    private void disableCustomHeaderSettings() {
-        mHeaderName1.setEnabled(false);
-        mHeaderValue1.setEnabled(false);
-        mHeaderName2.setEnabled(false);
-        mHeaderValue2.setEnabled(false);
-        mHeaderName3.setEnabled(false);
-        mHeaderValue3.setEnabled(false);
-        mHeaderName4.setEnabled(false);
-        mHeaderValue4.setEnabled(false);
-        mHeaderName5.setEnabled(false);
-        mHeaderValue5.setEnabled(false);
-        mHeaderName6.setEnabled(false);
-        mHeaderValue6.setEnabled(false);
-    }
-
-    private void enableCustomHeaderSettings() {
-        mHeaderName1.setEnabled(true);
-        mHeaderValue1.setEnabled(true);
-        mHeaderName2.setEnabled(true);
-        mHeaderValue2.setEnabled(true);
-        mHeaderName3.setEnabled(true);
-        mHeaderValue3.setEnabled(true);
-        mHeaderName4.setEnabled(true);
-        mHeaderValue4.setEnabled(true);
-        mHeaderName5.setEnabled(true);
-        mHeaderValue5.setEnabled(true);
-        mHeaderName6.setEnabled(true);
-        mHeaderValue6.setEnabled(true);
     }
 
     protected void updatePreferencesScreen() {
@@ -698,11 +482,6 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
                 } else {
                     disableProxyAuthenticationSettings();
                 }
-            }
-            if (mAddCustomHeadersPreference.isChecked()) {
-                enableCustomHeaderSettings();
-            } else {
-                disableCustomHeaderSettings();
             }
         }
 

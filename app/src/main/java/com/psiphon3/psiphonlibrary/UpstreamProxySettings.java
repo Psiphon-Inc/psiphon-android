@@ -77,10 +77,6 @@ public class UpstreamProxySettings {
         return new AppPreferences(context).getString(context.getString(R.string.useProxyDomainPreference), "");
     }
 
-    public static boolean getAddCustomHeadersPreference(Context context) {
-        return new AppPreferences(context).getBoolean(context.getString(R.string.addCustomHeadersPreference), false);
-    }
-
     public static class ProxySettings {
         public String proxyHost;
         public int proxyPort;
@@ -225,36 +221,5 @@ public class UpstreamProxySettings {
         url.append(proxySettings.proxyPort);
 
         return url.toString();
-    }
-
-    public synchronized static JSONObject getUpstreamProxyCustomHeaders(Context context) {
-        JSONObject headersJson = new JSONObject();
-
-        if(!getAddCustomHeadersPreference(context)) {
-            return headersJson;
-        }
-
-        AppPreferences ap = new AppPreferences(context);
-
-        for (int position = 1; position <= 6; position++) {
-            int nameID = context.getResources().getIdentifier("customProxyHeaderName" + position, "string", context.getPackageName());
-            int valueID = context.getResources().getIdentifier("customProxyHeaderValue" + position, "string", context.getPackageName());
-
-            String namePrefStr = context.getResources().getString(nameID);
-            String valuePrefStr = context.getResources().getString(valueID);
-
-            String name = ap.getString(namePrefStr, "");
-            String value = ap.getString(valuePrefStr, "");
-            try {
-                if (!TextUtils.isEmpty(name)) {
-                    JSONArray arr = new JSONArray();
-                    arr.put(value);
-                    headersJson.put(name, arr);
-                }
-            } catch (JSONException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return headersJson;
     }
 }

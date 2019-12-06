@@ -1119,7 +1119,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
                 if (UpstreamProxySettings.getProxySettings(context) != null) {
                     json.put("UpstreamProxyUrl", UpstreamProxySettings.getUpstreamProxyUrl(context));
                 }
-                json.put("UpstreamProxyCustomHeaders", UpstreamProxySettings.getUpstreamProxyCustomHeaders(context));
             }
 
             json.put("EmitDiagnosticNotices", true);
