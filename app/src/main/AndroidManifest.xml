@@ -109,11 +109,6 @@
                 android:name="android.net.VpnService.SUPPORTS_ALWAYS_ON"
                 android:value="true" />
         </service>
-        <activity
-            android:name="com.psiphon3.PaymentChooserActivity"
-            android:label="@string/app_name">
-        </activity>
-
 
         <provider
             android:name="com.psiphon3.psiphonlibrary.LoggingProvider"
