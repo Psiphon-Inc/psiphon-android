@@ -246,7 +246,7 @@ public class PsiphonAdManager {
                 .autoConnect(0);
     }
 
-    private boolean shouldShowAds() {
+    boolean shouldShowAds() {
         AppPreferences appPreferences = new AppPreferences(activity);
         return appPreferences.getBoolean(activity.getString(R.string.persistent_show_ads_setting), false) &&
                 !EmbeddedValues.hasEverBeenSideLoaded(activity) &&
