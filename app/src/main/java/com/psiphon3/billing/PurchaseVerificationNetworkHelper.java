@@ -134,8 +134,8 @@ public class PurchaseVerificationNetworkHelper {
                                 {
                                     if(i < TRIES_COUNT ) {
                                         // exponential backoff with timer
-                                        double retryInSeconds = Math.pow(4, i);
-                                        MyLog.g(String.format("Will retry authorization request in %d seconds due to error: %s",
+                                        int retryInSeconds = (int) Math.pow(4, i);
+                                        MyLog.g(String.format("PurchaseVerifier: will retry authorization request in %d seconds due to error: %s",
                                                 retryInSeconds, err.getMessage()));
                                        return  Observable.timer((long) retryInSeconds, TimeUnit.SECONDS);
                                     } // else

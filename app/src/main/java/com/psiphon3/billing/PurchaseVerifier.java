@@ -157,10 +157,13 @@ public class PurchaseVerifier {
                         // No subscription, do nothing
                         return Flowable.empty();
                     }
-                    // Otherwise check if we have already tried to fetch an authorization for this token
+                    // Otherwise check if we have already have an authorization for this token
                     String persistedPurchaseToken = appPreferences.getString(PREFERENCE_PURCHASE_TOKEN, "");
-                    if (persistedPurchaseToken.equals(subscriptionState.purchase().getPurchaseToken())) {
-                        Utils.MyLog.g("PurchaseVerifier: purchase seen already, continue.");
+                    String persistedPurchaseAuthorizationId = appPreferences.getString(PREFERENCE_PURCHASE_AUTHORIZATION_ID, "");
+
+                    if (persistedPurchaseToken.equals(subscriptionState.purchase().getPurchaseToken()) &&
+                            !persistedPurchaseAuthorizationId.isEmpty()) {
+                        Utils.MyLog.g("PurchaseVerifier: already have authorization for this purchase, continue.");
                         // We already aware of this purchase, do nothing
                         return Flowable.empty();
                     }
@@ -219,9 +222,10 @@ public class PurchaseVerifier {
                                 appPreferences.put(PREFERENCE_PURCHASE_TOKEN, "");
                                 Utils.MyLog.g("PurchaseVerifier: fetching authorization failed with error: " + e);
                             })
-                            .onErrorResumeNext(Flowable.empty());
+                            .onErrorResumeNext(Flowable.just(UpdateConnectionAction.RESTART_AS_NON_SUBSCRIBER));
 
                 })
+                .distinctUntilChanged()
                 .doOnNext(purchaseAuthorizationListener::updateConnection)
                 .subscribe();
     }
