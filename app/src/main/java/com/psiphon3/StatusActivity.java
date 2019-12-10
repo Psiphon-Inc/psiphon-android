@@ -27,6 +27,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -36,9 +39,11 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TabHost;
 import android.widget.Toast;
 
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -46,9 +51,15 @@ import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -59,8 +70,10 @@ import io.reactivex.disposables.Disposable;
 
 public class StatusActivity
     extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase {
+    public static final String BANNER_FILE_NAME = "bannerImage";
     public static final String ACTION_SHOW_GET_HELP_DIALOG = "com.psiphon3.StatusActivity.SHOW_GET_HELP_CONNECTING_DIALOG";
 
+    private ImageView m_banner;
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_firstRun = true;
     private static boolean m_startupPending = false;
@@ -77,12 +90,13 @@ public class StatusActivity
 
         setContentView(R.layout.main);
 
+        m_banner = (ImageView) findViewById(R.id.banner);
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_tabSpecsList = new ArrayList<>();
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
 
         // ads
-        psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.largeAdSlot));
+        psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.bannerHolderLayout));
         psiphonAdManager.startLoadingAds();
 
         compositeDisposable.add(
@@ -93,6 +107,7 @@ public class StatusActivity
         );
 
         setupActivityLayout();
+        setUpBanner();
 
         // Auto-start on app first run
         if (shouldAutoStart()) {
@@ -112,6 +127,80 @@ public class StatusActivity
                 !tunnelServiceInteractor.isServiceRunning(getApplicationContext()) &&
                 !psiphonAdManager.shouldShowAds() &&
                 !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
+    }
+
+    private void setUpBanner() {
+        // Play Store Build instances should use existing banner from previously installed APK
+        // (if present). To enable this, non-Play Store Build instances write their banner to
+        // a private file.
+        try {
+            Bitmap bitmap = getBannerBitmap();
+            if (!EmbeddedValues.IS_PLAY_STORE_BUILD) {
+                saveBanner(bitmap);
+            }
+
+            // If we successfully got the banner image set it and it's background
+            if (bitmap != null) {
+                m_banner.setImageBitmap(bitmap);
+                m_banner.setBackgroundColor(getMostCommonColor(bitmap));
+            }
+        } catch (IOException e) {
+            // Ignore failure
+        }
+    }
+
+    private void saveBanner(Bitmap bitmap) throws IOException {
+        if (bitmap == null) {
+            return;
+        }
+
+        FileOutputStream out = openFileOutput(BANNER_FILE_NAME, Context.MODE_PRIVATE);
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+        out.close();
+    }
+
+    private Bitmap getBannerBitmap() {
+        if (EmbeddedValues.IS_PLAY_STORE_BUILD) {
+            File bannerImageFile = new File(getFilesDir(), BANNER_FILE_NAME);
+            if (bannerImageFile.exists()) {
+                return BitmapFactory.decodeFile(bannerImageFile.getAbsolutePath());
+            }
+        }
+
+        return BitmapFactory.decodeResource(getResources(), R.drawable.banner);
+    }
+
+    private int getMostCommonColor(Bitmap bitmap) {
+        if (bitmap == null) {
+            return Color.WHITE;
+        }
+
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        int size = width * height;
+        int pixels[] = new int[size];
+
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+
+        HashMap<Integer, Integer> colorMap = new HashMap<>();
+
+        for (int i = 0; i < pixels.length; i++) {
+            int color = pixels[i];
+            if (colorMap.containsKey(color)) {
+                colorMap.put(color, colorMap.get(color) + 1);
+            } else {
+                colorMap.put(color, 1);
+            }
+        }
+
+        ArrayList<Map.Entry<Integer, Integer>> entries = new ArrayList<>(colorMap.entrySet());
+        Collections.sort(entries, new Comparator<Map.Entry<Integer, Integer>>() {
+            @Override
+            public int compare(Map.Entry<Integer, Integer> o1, Map.Entry<Integer, Integer> o2) {
+                return o2.getValue().compareTo(o1.getValue());
+            }
+        });
+        return entries.get(0).getKey();
     }
 
     @Override
