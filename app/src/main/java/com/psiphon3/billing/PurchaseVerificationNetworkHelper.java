@@ -19,7 +19,6 @@
 
 package com.psiphon3.billing;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -105,7 +104,6 @@ public class PurchaseVerificationNetworkHelper {
         this.ctx = ctx;
     }
 
-    @SuppressLint("DefaultLocale")
     public Flowable<String> fetchAuthorizationFlowable() {
         return Observable.fromCallable(
                 () -> {
@@ -135,22 +133,27 @@ public class PurchaseVerificationNetworkHelper {
                                     if(i < TRIES_COUNT ) {
                                         // exponential backoff with timer
                                         int retryInSeconds = (int) Math.pow(4, i);
-                                        MyLog.g(String.format("PurchaseVerifier: will retry authorization request in %d seconds due to error: %s",
-                                                retryInSeconds, err.getMessage()));
+                                        MyLog.g("PurchaseVerifier: will retry authorization request in " +
+                                                retryInSeconds +
+                                                " seconds" +
+                                                " due to error: " + err);
                                        return  Observable.timer((long) retryInSeconds, TimeUnit.SECONDS);
                                     } // else
                                     return Observable.error(err);
                                 })
                                 .flatMap(x -> x))
-                .flatMap(response -> {
+                .map(response -> {
                             try {
-                                return response.isSuccessful() ?
-                                        Observable.just(response.body().string()) :
-                                        Observable.error(new RuntimeException(
-                                                String.format("Remote purchase verification failed, code: %d, body: %s",
-                                                        response.code(), response.body().string())));
+                                if(response.isSuccessful() && response.body() != null) {
+                                    return response.body().string();
+                                } else {
+                                    MyLog.g("PurchaseVerifier: bad response code from verification server: " + response.code());
+                                    return "";
+                                }
                             } finally {
-                                response.body().close();
+                                if(response.body() != null) {
+                                    response.body().close();
+                                }
                             }
                         }
                 )

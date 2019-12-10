@@ -188,6 +188,15 @@ public class PurchaseVerifier {
                     Utils.MyLog.g("PurchaseVerifier: will try and fetch new authorization.");
                     return purchaseVerificationNetworkHelper.fetchAuthorizationFlowable()
                             .map(json -> {
+                                        // Note that response with other than 200 HTTP code from the server is
+                                        // treated the same as a 200 OK response with empty payload and should result
+                                        // in connection restart as a non-subscriber.
+
+                                        if (TextUtils.isEmpty(json)) {
+                                            // If payload is empty then do not try to JSON decode.
+                                            return UpdateConnectionAction.RESTART_AS_NON_SUBSCRIBER;
+                                        }
+
                                         String encodedAuth = new JSONObject(json).getString("signed_authorization");
                                         Authorization authorization = Authorization.fromBase64Encoded(encodedAuth);
                                         if (authorization == null) {
@@ -218,14 +227,15 @@ public class PurchaseVerifier {
                                     }
                             )
                             .doOnError(e -> {
-                                // On fetch error reset persisted purchase token so it can be retried next time
-                                appPreferences.put(PREFERENCE_PURCHASE_TOKEN, "");
                                 Utils.MyLog.g("PurchaseVerifier: fetching authorization failed with error: " + e);
                             })
-                            .onErrorResumeNext(Flowable.just(UpdateConnectionAction.RESTART_AS_NON_SUBSCRIBER));
+                            // If we fail HTTP request after all retries for whatever reason do not
+                            // restart connection as a non-subscriber. The user may have a legit purchase
+                            // and while we can't upgrade the connection we should try and not show home
+                            // pages at least.
+                            .onErrorResumeNext(Flowable.empty());
 
                 })
-                .distinctUntilChanged()
                 .doOnNext(purchaseAuthorizationListener::updateConnection)
                 .subscribe();
     }
@@ -259,8 +269,9 @@ public class PurchaseVerifier {
         // If server hasn't accepted any authorizations or persisted authorization ID hasn't been
         // accepted then reset persisted purchase token and trigger new IAB check
         if (acceptedAuthorizationIds.isEmpty() || !acceptedAuthorizationIds.contains(purchaseAuthorizationID)) {
-            Utils.MyLog.g("PurchaseVerifier: subscription authorization rejected, will try getting a new one.");
+            Utils.MyLog.g("PurchaseVerifier: persisted purchase authorization ID is not active, will query subscription status.");
             appPreferences.put(PREFERENCE_PURCHASE_TOKEN, "");
+            appPreferences.put(PREFERENCE_PURCHASE_AUTHORIZATION_ID, "");
             queryCurrentSubscriptionStatus();
         } else {
             Utils.MyLog.g("PurchaseVerifier: subscription authorization accepted, continue.");
