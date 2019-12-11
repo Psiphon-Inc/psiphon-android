@@ -69,7 +69,7 @@ import io.reactivex.disposables.Disposable;
 
 
 public class StatusActivity
-    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase {
+        extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase {
     public static final String BANNER_FILE_NAME = "bannerImage";
     public static final String ACTION_SHOW_GET_HELP_DIALOG = "com.psiphon3.StatusActivity.SHOW_GET_HELP_CONNECTING_DIALOG";
 
@@ -109,13 +109,19 @@ public class StatusActivity
         setupActivityLayout();
         setUpBanner();
 
-        // Auto-start on app first run
-        if (shouldAutoStart()) {
-            preventAutoStart();
-            doStartUp();
-        }
-
         HandleCurrentIntent();
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("isFirstRun", m_firstRun);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        m_firstRun = savedInstanceState.getBoolean("isFirstRun");
     }
 
     private void preventAutoStart() {
@@ -212,7 +218,11 @@ public class StatusActivity
     @Override
     protected void onResume() {
         super.onResume();
-        if (m_startupPending) {
+        // Auto-start on app first run
+        if (shouldAutoStart()) {
+            preventAutoStart();
+            startUp();
+        } else if (m_startupPending) {
             m_startupPending = false;
             doStartUp();
         }
