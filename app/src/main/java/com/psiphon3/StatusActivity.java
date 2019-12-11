@@ -242,6 +242,18 @@ public class StatusActivity
         HandleCurrentIntent();
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("isFirstRun", m_firstRun);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        m_firstRun = savedInstanceState.getBoolean("isFirstRun");
+    }
+
     private void preventAutoStart() {
         m_firstRun = false;
     }
