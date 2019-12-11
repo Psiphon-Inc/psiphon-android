@@ -96,7 +96,7 @@ public class StatusActivity
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
 
         // ads
-        psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.bannerHolderLayout));
+        psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.bannerLayout));
         psiphonAdManager.startLoadingAds();
 
         compositeDisposable.add(
