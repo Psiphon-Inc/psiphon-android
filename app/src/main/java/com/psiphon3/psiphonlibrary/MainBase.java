@@ -1726,10 +1726,7 @@ public abstract class MainBase {
                 String action = intent.getAction();
                 if (action != null) {
                     if (action.equals(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE)) {
-                        boolean wantVPN = m_multiProcessPreferences
-                                .getBoolean(getString(R.string.tunnelWholeDevicePreference),
-                                        false);
-                        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), wantVPN);
+                        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), TabbedActivityBase.this::startTunnel);
                     }
                 }
             }
