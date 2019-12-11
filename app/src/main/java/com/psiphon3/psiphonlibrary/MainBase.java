@@ -918,8 +918,7 @@ public abstract class MainBase {
 
             // NOTE: reconnects even when Any is selected: we could select a
             // faster server
-            boolean wantVPN = m_multiProcessPreferences.getBoolean(getString(R.string.tunnelWholeDevicePreference), false);
-            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), wantVPN);
+            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
         }
 
         protected void updateEgressRegionPreference(String egressRegionPreference) {
@@ -938,7 +937,7 @@ public abstract class MainBase {
 
             boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
             updateWholeDevicePreference(tunnelWholeDevicePreference);
-            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), tunnelWholeDevicePreference);
+            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
         }
 
         protected void updateWholeDevicePreference(boolean tunnelWholeDevicePreference) {
@@ -960,8 +959,7 @@ public abstract class MainBase {
         public void onDisableTimeoutsToggle(View v) {
             boolean disableTimeoutsChecked = m_disableTimeoutsToggle.isChecked();
             updateDisableTimeoutsPreference(disableTimeoutsChecked);
-            boolean wantVPN = m_multiProcessPreferences.getBoolean(getString(R.string.tunnelWholeDevicePreference), false);
-            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), wantVPN);
+            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
         }
         protected void updateDisableTimeoutsPreference(boolean disableTimeoutsPreference) {
             m_multiProcessPreferences.put(getString(R.string.disableTimeoutsPreference), disableTimeoutsPreference);
@@ -1380,8 +1378,7 @@ public abstract class MainBase {
                 );
 
                 if (bRestartRequired) {
-                    boolean wantVPN = m_multiProcessPreferences.getBoolean(getString(R.string.tunnelWholeDevicePreference), false);
-                    tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), wantVPN);
+                    tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
                 }
 
                 if (data != null && data.getBooleanExtra(MoreOptionsPreferenceActivity.INTENT_EXTRA_LANGUAGE_CHANGED, false)) {
