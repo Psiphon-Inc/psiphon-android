@@ -194,14 +194,6 @@ public class StatusActivity
                             } else {
                                 showPsiCashTabIfHasValidToken();
                             }
-                            // Automatically start if user has a valid purchase or if IAB check failed
-                            // the IAB status check will be triggered again in onResume
-                            if(subscriptionState.hasValidPurchase() || subscriptionState.status() == SubscriptionState.Status.IAB_FAILURE) {
-                                if (shouldAutoStart()) {
-                                    preventAutoStart();
-                                    doStartUp();
-                                }
-                            }
                         })
                         .subscribe()
         );
@@ -278,6 +270,23 @@ public class StatusActivity
         if (m_startupPending) {
             m_startupPending = false;
             doStartUp();
+        } else {
+            compositeDisposable.add(
+                    billingViewModel.subscriptionStateFlowable()
+                            .firstOrError()
+                            .doOnSuccess(subscriptionState -> {
+                                // Automatically start if user has a valid purchase or if IAB check failed
+                                // the IAB status check will be triggered again in onResume
+                                if (subscriptionState.hasValidPurchase() || subscriptionState.status() == SubscriptionState.Status.IAB_FAILURE) {
+                                    if (shouldAutoStart()) {
+                                        preventAutoStart();
+                                        doStartUp();
+                                    }
+                                }
+
+                            })
+                            .subscribe()
+            );
         }
     }
 
