@@ -165,9 +165,6 @@ dependencies {
     implementation "com.squareup.okhttp3:okhttp:$rootProject.ext.okhttpVersion"
     implementation "com.android.billingclient:billing:$playStoreBillingClientVersion"
 
-
-    implementation 'com.github.kinecosystem.kin-sdk-android:kin-sdk-lib:1.0.7'
-
     api "android.arch.lifecycle:extensions:$rootProject.ext.androidLifecycleExtensionsVersion"
 
     compileOnly "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"

@@ -318,12 +318,6 @@ public class TunnelServiceInteractor {
         sendServiceMessage(TunnelManager.ClientToServiceMessage.NFC_CONNECTION_INFO_EXCHANGE_EXPORT.ordinal(), null);
     }
 
-    public void onKinOptInState(boolean optedIn) {
-        Bundle data = new Bundle();
-        data.putBoolean(TunnelManager.KIN_OPT_IN_STATE_EXTRA, optedIn);
-        sendServiceMessage(TunnelManager.ClientToServiceMessage.KIN_OPT_IN_STATE.ordinal(), data);
-    }
-
     private static class IncomingMessageHandler extends Handler {
         private final WeakReference<TunnelServiceInteractor> weakServiceInteractor;
         private final TunnelManager.ServiceToClientMessage[] scm = TunnelManager.ServiceToClientMessage.values();

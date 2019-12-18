@@ -49,7 +49,6 @@ import android.util.Pair;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.billing.PurchaseVerifier;
-import com.psiphon3.kin.KinManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
@@ -76,7 +75,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ca.psiphon.PsiphonTunnel;
-import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -98,7 +96,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         RESTART_SERVICE,
         NFC_CONNECTION_INFO_EXCHANGE_EXPORT,
         NFC_CONNECTION_INFO_EXCHANGE_IMPORT,
-        KIN_OPT_IN_STATE,
     }
 
     // Service -> Client
@@ -140,9 +137,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     static final String DATA_TRANSFER_STATS_FAST_BUCKETS_LAST_START_TIME = "dataTransferStatsFastBucketsLastStartTime";
     public static final String DATA_NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_EXPORT = "dataNfcConnectionInfoExchangeResponseExport";
     public static final String DATA_NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT = "dataNfcConnectionInfoExchangeResponseImport";
-
-    // Extras in  (Client -> Service) messages
-    public static final String KIN_OPT_IN_STATE_EXTRA = "kinOptInStateExtra";
 
     // a snapshot of all authorizations pulled by getPsiphonConfig
     private static List<Authorization> m_tunnelConfigAuthorizations;
@@ -230,7 +224,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     private ConnectivityManager.NetworkCallback networkCallback;
     private AtomicBoolean m_waitingForConnectivity = new AtomicBoolean(false);
 
-    private KinManager m_kinManager = new KinManager();
     private PurchaseVerifier purchaseVerifier;
 
     TunnelManager(Service parentService) {
@@ -270,26 +263,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
         m_compositeDisposable.clear();
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
-
-        // Update Kin manager with Kin opt-in current state but only if the user is not subscribed
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && m_tunnelState.isVPN) {
-            m_compositeDisposable.add(purchaseVerifier.subscriptionStateFlowable()
-                    .switchMapMaybe(subscriptionState -> {
-                        if (subscriptionState.hasValidPurchase()) {
-                            MyLog.g("KinManager: user has a subscription");
-                            // complete kin flow
-                            return Maybe.just(new Object());
-                        }
-                        return m_kinManager.kinFlowMaybe(getContext());
-                    })
-                    .firstOrError()
-                    .ignoreElement()
-                    .doOnError(e -> MyLog.g("KinManager: kin flow error: " + e))
-                    .onErrorComplete()
-                    .doOnComplete(() -> MyLog.g("KinManager: completed kin flow"))
-                    .subscribe()
-            );
-        }
     }
 
     // Implementation of android.app.Service.onStartCommand
@@ -376,11 +349,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         postServiceNotification(true, isConnected);
                     }
                     purchaseVerifier.onTunnelConnected(new Pair<>(isConnected, m_tunnelState.listeningLocalHttpProxyPort));
-                })
-                .doOnNext(isConnected -> {
-                    if (m_tunnelState.isVPN && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                        m_kinManager.onTunnelConnected(isConnected);
-                    }
                 })
                 .subscribe();
     }
@@ -719,17 +687,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 case NFC_CONNECTION_INFO_EXCHANGE_EXPORT:
                     if (manager != null) {
                         manager.handleNfcConnectionInfoExchangeExport();
-                    }
-                    break;
-
-                case KIN_OPT_IN_STATE:
-                    if (manager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                        Bundle data = msg.getData();
-                        Context context = manager.m_parentService;
-                        // If running in WDM pass Kin opt in state to KinManager.
-                        if (manager.m_tunnelState.isVPN) {
-                            manager.m_kinManager.onKinOptInState(data.getBoolean(KIN_OPT_IN_STATE_EXTRA, false));
-                        }
                     }
                     break;
 
