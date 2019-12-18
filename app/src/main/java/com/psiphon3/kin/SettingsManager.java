@@ -14,7 +14,8 @@ class SettingsManager {
      * @return true if the user has not yet agreed or disagreed to Kin
      */
     boolean needsToOptIn(Context context) {
-        return !getSharedPreferences(context).contains(OPTED_IN_KEY);
+        //return !getSharedPreferences(context).contains(OPTED_IN_KEY);
+        return true;
     }
 
     /**
