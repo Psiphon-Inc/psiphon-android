@@ -721,11 +721,12 @@ public class StatusActivity
                                     // If user has limited subscription launch upgrade to unlimited
                                     // flow and replace current subscription sku.
                                     String currentSku = subscriptionState.purchase().getSku();
+                                    String currentPurchaseToken = subscriptionState.purchase().getPurchaseToken();
                                     compositeDisposable.add(
                                             billingViewModel.getUnlimitedSubscriptionSkuDetails()
                                                     .flatMapCompletable(skuDetailsList -> {
                                                         if (skuDetailsList.size() == 1) {
-                                                            return billingViewModel.launchFlow(this, currentSku, skuDetailsList.get(0));
+                                                            return billingViewModel.launchFlow(this, currentSku, currentPurchaseToken, skuDetailsList.get(0));
                                                         }
                                                         // else
                                                         return Completable.error(

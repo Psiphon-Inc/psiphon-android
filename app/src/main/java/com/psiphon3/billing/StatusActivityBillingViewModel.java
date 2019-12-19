@@ -178,11 +178,11 @@ public class StatusActivityBillingViewModel extends AndroidViewModel {
     }
 
     public Completable launchFlow(Activity activity, SkuDetails skuDetails) {
-        return repository.launchFlow(activity, null, skuDetails);
+        return repository.launchFlow(activity, null, null, skuDetails);
     }
 
-    public Completable launchFlow(Activity activity, String oldSku, SkuDetails skuDetails) {
-        return repository.launchFlow(activity, oldSku, skuDetails);
+    public Completable launchFlow(Activity activity, String oldSku, String oldPurchaseToken, SkuDetails skuDetails) {
+        return repository.launchFlow(activity, oldSku, oldPurchaseToken, skuDetails);
     }
 
     public Single<List<SkuDetails>> getUnlimitedSubscriptionSkuDetails() {

@@ -211,13 +211,13 @@ public class BillingRepository {
                 .doOnError(err -> Utils.MyLog.g("BillingRepository::getSkuDetails error: " + err));
     }
 
-    Completable launchFlow(Activity activity, String oldSku, SkuDetails skuDetails) {
+    Completable launchFlow(Activity activity, String oldSku, String oldPurchaseToken, SkuDetails skuDetails) {
         BillingFlowParams.Builder billingParamsBuilder = BillingFlowParams
                 .newBuilder();
 
         billingParamsBuilder.setSkuDetails(skuDetails);
-        if (!TextUtils.isEmpty(oldSku)) {
-            billingParamsBuilder.setOldSku(oldSku);
+        if (!TextUtils.isEmpty(oldSku) && !TextUtils.isEmpty(oldPurchaseToken)) {
+            billingParamsBuilder.setOldSku(oldSku, oldPurchaseToken);
         }
 
         return connectionFlowable
