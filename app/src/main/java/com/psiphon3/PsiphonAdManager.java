@@ -313,7 +313,6 @@ public class PsiphonAdManager {
                                 })
                                 .withPersonalizedAdsOption()
                                 .withNonPersonalizedAdsOption()
-                                .withAdFreeOption()
                                 .build();
                     }
                     adMobConsentForm.load();
