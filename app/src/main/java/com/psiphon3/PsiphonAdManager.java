@@ -228,19 +228,12 @@ public class PsiphonAdManager {
                         destroyAllAds();
                         return Observable.just(AdResult.none());
                     }
-                    if (s.isRunning()) {
-                        TunnelState.ConnectionData connectionData = s.connectionData();
-                        if (connectionData.isConnected()) {
-                            // Tunnel is connected, destroy untunneled banners and send AdResult.TUNNELED
-                            destroyUnTunneledBanners();
-                            return Observable.just(AdResult.tunneled(connectionData));
-                        } else {
-                            // Tunnel is in connecting state, destroy all banners and send AdResult.NONE.
-                            destroyTunneledBanners();
-                            destroyUnTunneledBanners();
-                            return Observable.just(AdResult.none());
-                        }
-                    } else {
+                    if (s.isRunning() && s.connectionData().isConnected()) {
+                        // Tunnel is connected.
+                        // Destroy untunneled banners and send AdResult.TUNNELED
+                        destroyUnTunneledBanners();
+                        return Observable.just(AdResult.tunneled(s.connectionData()));
+                    } else if (s.isStopped()) {
                         // Service is not running, destroy tunneled banners and send AdResult.UNTUNNELED
                         destroyTunneledBanners();
                         // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
@@ -248,6 +241,12 @@ public class PsiphonAdManager {
                         // creation and deletion of ad views.
                         runAdMobGdprCheck();
                         return Observable.just(AdResult.unTunneled());
+                    } else {
+                        // Tunnel is either in unknown or connecting state.
+                        // Destroy all banners and send AdResult.NONE.
+                        destroyTunneledBanners();
+                        destroyUnTunneledBanners();
+                        return Observable.just(AdResult.none());
                     }
                 })
                 .replay(1)
