@@ -215,17 +215,33 @@ public class PsiphonAdManager {
         // Note this observable also destroys ads according to subscription and/or
         // connection status without further delay.
         this.currentAdTypeObservable = tunnelConnectionStateObservable()
-                .flatMap(s -> {
+                .flatMap(tunnelState -> {
                     if(!shouldShowAds()) {
                         destroyAllAds();
                         return Observable.just(AdResult.none());
                     }
+<<<<<<< HEAD
+                    if (tunnelState.isRunning()) {
+                        TunnelState.ConnectionData connectionData = tunnelState.connectionData();
+                        if (connectionData.isConnected()) {
+                            // Tunnel is connected, destroy untunneled banners and send AdResult.TUNNELED
+                            destroyUnTunneledBanners();
+                            return Observable.just(AdResult.tunneled(connectionData));
+                        } else {
+                            // Tunnel is in connecting state, destroy all banners and send AdResult.NONE.
+                            destroyTunneledBanners();
+                            destroyUnTunneledBanners();
+                            return Observable.just(AdResult.none());
+                        }
+                    } else {
+=======
                     if (s.isRunning() && s.connectionData().isConnected()) {
                         // Tunnel is connected.
                         // Destroy untunneled banners and send AdResult.TUNNELED
                         destroyUnTunneledBanners();
                         return Observable.just(AdResult.tunneled(s.connectionData()));
                     } else if (s.isStopped()) {
+>>>>>>> 4c7bfa93... Ads loading bug fix
                         // Service is not running, destroy tunneled banners and send AdResult.UNTUNNELED
                         destroyTunneledBanners();
                         // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
