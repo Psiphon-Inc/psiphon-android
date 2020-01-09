@@ -52,6 +52,7 @@ import com.mopub.common.privacy.PersonalInfoManager;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubView;
+import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.BuildConfig;
@@ -72,7 +73,6 @@ import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
 
 public class PsiphonAdManager {
-    public enum SubscriptionStatus {SUBSCRIBER, NOT_SUBSCRIBER, SUBSCRIPTION_CHECK_FAILED, NOT_APPLICABLE}
 
     @AutoValue
     static abstract class AdResult {
@@ -166,7 +166,7 @@ public class PsiphonAdManager {
     private final Observable<AdResult> currentAdTypeObservable;
     private Disposable loadAdsDisposable;
     private Disposable tunneledInterstitialDisposable;
-    private PublishRelay<SubscriptionStatus> subscriptionStatusPublishRelay = PublishRelay.create();
+    private PublishRelay<SubscriptionState> subscriptionStatePublishRelay = PublishRelay.create();
     private PublishRelay<TunnelState> tunnelConnectionStatePublishRelay = PublishRelay.create();
 
     PsiphonAdManager(Activity activity, ViewGroup bannerLayout, Runnable adMobPayOptionRunnable, boolean hasSubsriptionFeature) {
@@ -218,29 +218,22 @@ public class PsiphonAdManager {
         // Note this observable also destroys ads according to subscription and/or
         // connection status without further delay.
         this.currentAdTypeObservable = Observable.combineLatest(tunnelConnectionStateObservable(),
-                subscriptionStatusObservable(),
-                ((BiFunction<TunnelState, SubscriptionStatus, Pair>) Pair::new))
+                subscriptionStateObservable(),
+                ((BiFunction<TunnelState, SubscriptionState, Pair>) Pair::new))
                 .flatMap(pair -> {
                     TunnelState s = (TunnelState) pair.first;
-                    SubscriptionStatus subscriptionStatus = (SubscriptionStatus) pair.second;
-                    if (subscriptionStatus == SubscriptionStatus.SUBSCRIBER ||
+                    SubscriptionState subscriptionState = (SubscriptionState) pair.second;
+                    if (subscriptionState.hasValidPurchase() ||
                             Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
                         destroyAllAds();
                         return Observable.just(AdResult.none());
                     }
-                    if (s.isRunning()) {
-                        TunnelState.ConnectionData connectionData = s.connectionData();
-                        if (connectionData.isConnected()) {
-                            // Tunnel is connected, destroy untunneled banners and send AdResult.TUNNELED
-                            destroyUnTunneledBanners();
-                            return Observable.just(AdResult.tunneled(connectionData));
-                        } else {
-                            // Tunnel is in connecting state, destroy all banners and send AdResult.NONE.
-                            destroyTunneledBanners();
-                            destroyUnTunneledBanners();
-                            return Observable.just(AdResult.none());
-                        }
-                    } else {
+                    if (s.isRunning() && s.connectionData().isConnected()) {
+                        // Tunnel is connected.
+                        // Destroy untunneled banners and send AdResult.TUNNELED
+                        destroyUnTunneledBanners();
+                        return Observable.just(AdResult.tunneled(s.connectionData()));
+                    } else if (s.isStopped()) {
                         // Service is not running, destroy tunneled banners and send AdResult.UNTUNNELED
                         destroyTunneledBanners();
                         // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
@@ -248,6 +241,12 @@ public class PsiphonAdManager {
                         // creation and deletion of ad views.
                         runAdMobGdprCheck();
                         return Observable.just(AdResult.unTunneled());
+                    } else {
+                        // Tunnel is either in unknown or connecting state.
+                        // Destroy all banners and send AdResult.NONE.
+                        destroyTunneledBanners();
+                        destroyUnTunneledBanners();
+                        return Observable.just(AdResult.none());
                     }
                 })
                 .replay(1)
@@ -335,8 +334,8 @@ public class PsiphonAdManager {
         tunnelConnectionStatePublishRelay.accept(state);
     }
 
-    void onSubscriptionStatus(SubscriptionStatus status) {
-        subscriptionStatusPublishRelay.accept(status);
+    void onSubscriptionState(SubscriptionState subscriptionState) {
+        subscriptionStatePublishRelay.accept(subscriptionState);
     }
 
     void onTabChanged() {
@@ -396,11 +395,11 @@ public class PsiphonAdManager {
         return tunnelConnectionStatePublishRelay.hide().distinctUntilChanged();
     }
 
-    private Observable<SubscriptionStatus> subscriptionStatusObservable() {
+    private Observable<SubscriptionState> subscriptionStateObservable() {
         if (hasSubscriptionFeature) {
-            return subscriptionStatusPublishRelay.hide().distinctUntilChanged();
+            return subscriptionStatePublishRelay.hide().distinctUntilChanged();
         } else {
-            return Observable.just(SubscriptionStatus.NOT_APPLICABLE);
+            return Observable.just(SubscriptionState.notApplicable());
         }
     }
 

@@ -24,7 +24,7 @@ android {
         if (props != null && props.containsKey('VERSION_CODE')) {
             def verName = props['VERSION_CODE']
             def verCode = verName.toInteger()
-            def admobAppId = getBuildProperty('ADMOB_APP_ID').replaceAll('^\"|\"$', "")
+            def admobAppId = getBuildProperty('PRO_ADMOB_APP_ID').replaceAll('^\"|\"$', "")
 
             defaultConfig {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
@@ -100,7 +100,7 @@ android {
     buildTypes.each {
         it.buildConfigField 'String', 'SUBSCRIPTION_SPONSOR_ID', getBuildProperty('SUBSCRIPTION_SPONSOR_ID')
         it.buildConfigField 'String', 'IAB_PUBLIC_KEY', getBuildProperty('IAB_PUBLIC_KEY')
-        it.buildConfigField 'String', 'ADMOB_APP_ID', getBuildProperty('ADMOB_APP_ID')
+        it.buildConfigField 'String', 'ADMOB_APP_ID', getBuildProperty('PRO_ADMOB_APP_ID')
     }
 }
 
@@ -133,7 +133,6 @@ dependencies {
     implementation files('libs/snakeyaml-1.10-android.jar')
     implementation(name: 'ca.psiphon', ext: 'aar')
 
-
     implementation project(':tray')
 
     implementation(name: 'psicashlib-release', ext: 'aar')
@@ -164,8 +163,7 @@ dependencies {
     implementation "com.jakewharton.rxbinding2:rxbinding-support-v4:$rootProject.ext.rxbindingSupportVersion"
     implementation "com.jakewharton.threetenabp:threetenabp:$rootProject.ext.threetenabpVersion"
     implementation "com.squareup.okhttp3:okhttp:$rootProject.ext.okhttpVersion"
-
-    implementation 'com.github.kinecosystem.kin-sdk-android:kin-sdk-lib:1.0.7'
+    implementation "com.android.billingclient:billing:$playStoreBillingClientVersion"
 
     api "android.arch.lifecycle:extensions:$rootProject.ext.androidLifecycleExtensionsVersion"
 
@@ -173,7 +171,6 @@ dependencies {
     annotationProcessor "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
 
     testImplementation "junit:junit:$rootProject.ext.junitVersion"
-    testImplementation "org.mockito:mockito-core:$rootProject.ext.mockitoVersion"
     testImplementation "org.mockito:mockito-core:$rootProject.ext.mockitoVersion"
     androidTestImplementation "org.mockito:mockito-android:$rootProject.ext.mockitoVersion"
     androidTestImplementation "com.android.support.test:runner:$rootProject.ext.testRunnerVersion"

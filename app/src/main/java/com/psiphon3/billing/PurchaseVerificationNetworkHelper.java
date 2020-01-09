@@ -17,25 +17,22 @@
  *
  */
 
-package com.psiphon3;
+package com.psiphon3.billing;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.net.SocketException;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.exceptions.UndeliverableException;
-import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -107,29 +104,7 @@ public class PurchaseVerificationNetworkHelper {
         this.ctx = ctx;
     }
 
-    @SuppressLint("DefaultLocale")
-    public Observable<String> fetchAuthorizationObservable() {
-        // In case the downstream unsubscribes from this observable while
-        // the httpClient request is in flight and it happens to
-        // throw an error the error will not be caught by the subscriber
-        // and an UndeliverableException exception will be thrown
-        // To prevent this we will setup a global error handler
-        // See https://github.com/ReactiveX/RxJava/wiki/What's-different-in-2.0#error-handling
-        RxJavaPlugins.setErrorHandler(e -> {
-            if (e instanceof UndeliverableException) {
-                e = e.getCause();
-            }
-            if ((e instanceof IOException) || (e instanceof SocketException)) {
-                // fine, irrelevant network problem or API that throws on cancellation
-                return;
-            }
-            if (e instanceof InterruptedException) {
-                // fine, some blocking code was interrupted by a dispose call
-                return;
-            }
-            MyLog.g(String.format("RxJava undeliverable exception received: %s", e.getMessage()));
-        });
-
+    public Flowable<String> fetchAuthorizationFlowable() {
         return Observable.fromCallable(
                 () -> {
                     JSONObject json = new JSONObject();
@@ -167,18 +142,22 @@ public class PurchaseVerificationNetworkHelper {
                                     return Observable.error(err);
                                 })
                                 .flatMap(x -> x))
-                .flatMap(response -> {
+                .map(response -> {
                             try {
-                                return response.isSuccessful() ?
-                                        Observable.just(response.body().string()) :
-                                        Observable.error(new RuntimeException(
-                                                String.format("Remote purchase verification failed, code: %d, body: %s",
-                                                        response.code(), response.body().string())));
+                                if(response.isSuccessful() && response.body() != null) {
+                                    return response.body().string();
+                                } else {
+                                    MyLog.g("PurchaseVerifier: bad response code from verification server: " + response.code());
+                                    return "";
+                                }
                             } finally {
-                                response.body().close();
+                                if(response.body() != null) {
+                                    response.body().close();
+                                }
                             }
                         }
                 )
+                .toFlowable(BackpressureStrategy.LATEST)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread());
     }

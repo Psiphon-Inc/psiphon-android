@@ -55,6 +55,7 @@ import com.jakewharton.rxbinding2.view.RxView;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
+import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.PsiCashIntent;
@@ -94,13 +95,10 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
     private Relay<PsiCashIntent> intentsPublishRelay = PublishRelay.<PsiCashIntent>create().toSerialized();
     private Relay<TunnelState> tunnelConnectionStateBehaviorRelay = BehaviorRelay.<TunnelState>create().toSerialized();
-    private Relay<PsiphonAdManager.SubscriptionStatus> subscriptionStatusBehaviorRelay = BehaviorRelay.<PsiphonAdManager.SubscriptionStatus>create().toSerialized();
+    private Relay<SubscriptionState> subscriptionStateBehaviorRelay = BehaviorRelay.<SubscriptionState>create().toSerialized();
     private Relay<LifeCycleEvent> lifecyclePublishRelay = PublishRelay.<LifeCycleEvent>create().toSerialized();
-
     private PublishRelay<Observable<ViewPropertyAnimator>> balanceDeltaAnimationRelay = PublishRelay.create();
-
     private PublishRelay<Observable<ValueAnimator>> balanceLabelAnimationRelay = PublishRelay.create();
-
 
     private TextView balanceLabel;
     private Button speedBoostBtn;
@@ -260,8 +258,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
     private Disposable viewStatesDisposable() {
         // Do not render PsiCash view states if user is subscribed
-        return subscriptionStatusObservable()
-                .flatMap(s -> s == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER ?
+        return subscriptionStateObservable()
+                .flatMap(s -> s.hasValidPurchase() ?
                         Observable.empty() :
                         psiCashViewModel.states())
                 // make sure onError doesn't cut ahead of onNext with the observeOn overload
@@ -320,9 +318,9 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         // from the PsiCash server but only if tunnel is up an running.
         return lifeCycleEventsObservable()
                 .filter(s -> s == LifeCycleEvent.ON_START && shouldGetPsiCashRemote.getAndSet(false))
-                .switchMap(__ -> tunnelConnectionStateObservable()
-                        .take(1)
+                .switchMapSingle(__ -> tunnelConnectionStateObservable()
                         .filter(state -> state.isRunning() && state.connectionData().isConnected())
+                        .firstOrError()
                         .map(PsiCashIntent.GetPsiCashRemote::create))
                 .subscribe(intentsPublishRelay);
     }
@@ -386,12 +384,12 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                     // React to both - a connection state changes until the load video process
                     // terminates with either success or error AND to the subscription status changes.
                     return Observable.combineLatest(tunnelConnectionStateObservable(),
-                            subscriptionStatusObservable(),
-                            ((BiFunction<TunnelState, PsiphonAdManager.SubscriptionStatus, Pair>) Pair::new))
+                            subscriptionStateObservable(),
+                            ((BiFunction<TunnelState, SubscriptionState, Pair>) Pair::new))
                             .switchMap(pair -> {
                                 TunnelState s = (TunnelState) pair.first;
-                                PsiphonAdManager.SubscriptionStatus subscriptionStatus = (PsiphonAdManager.SubscriptionStatus) pair.second;
-                                if (subscriptionStatus == PsiphonAdManager.SubscriptionStatus.SUBSCRIBER) {
+                                SubscriptionState subscriptionState = (SubscriptionState) pair.second;
+                                if (subscriptionState.hasValidPurchase()) {
                                     // set a flag to stop the outer subscription if user is subscribed
                                     // and complete this inner subscription right away.
                                     keepLoadingVideos.set(false);
@@ -407,8 +405,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 .subscribe(intentsPublishRelay);
     }
 
-    private Observable<PsiphonAdManager.SubscriptionStatus> subscriptionStatusObservable() {
-        return subscriptionStatusBehaviorRelay
+    private Observable<SubscriptionState> subscriptionStateObservable() {
+        return subscriptionStateBehaviorRelay
                 .hide()
                 .distinctUntilChanged();
     }
@@ -762,8 +760,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         tunnelConnectionStateBehaviorRelay.accept(status);
     }
 
-    void onSubscriptionStatus(PsiphonAdManager.SubscriptionStatus status) {
-        subscriptionStatusBehaviorRelay.accept(status);
+    void onSubscriptionState(SubscriptionState subscriptionState) {
+        subscriptionStateBehaviorRelay.accept(subscriptionState);
     }
 
     void onOpenHomePage() {
