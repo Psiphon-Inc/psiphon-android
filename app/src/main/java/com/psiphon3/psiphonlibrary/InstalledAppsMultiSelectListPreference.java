@@ -187,8 +187,7 @@ public class InstalledAppsMultiSelectListPreference extends MultiSelectListPrefe
 
             // The returned app list excludes:
             //  - Apps that don't require internet access
-            // TODO: add Psiphon back to the list when we are able to send all Kin traffic via proxy.
-            // That requires a change in Kin SDK.
+            //  - Psiphon app itself
             if (isInternetPermissionGranted(p) && !p.packageName.equals(selfPackageName)) {
                 String appName = p.applicationInfo.loadLabel(pm).toString();
                 String packageId = p.packageName;

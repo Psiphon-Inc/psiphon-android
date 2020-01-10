@@ -29,9 +29,6 @@ import net.grandcentrix.tray.AppPreferences;
 
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
