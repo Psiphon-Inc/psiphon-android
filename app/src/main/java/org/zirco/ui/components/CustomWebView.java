@@ -272,9 +272,9 @@ public class CustomWebView extends WebView {
 	 * Perform an 'onResume' on this WebView through reflexion.
 	 */
 	public void doOnResume() {
-
-		ProxySettings.setLocalProxy(mContext);
-
+	    
+	    ProxySettings.setLocalProxy(mContext);
+	    
 		if (mOnResumeMethod != null) {
 			try {
 				

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Psiphon Inc.
+ * Copyright (c) 2019, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,8 +22,6 @@ package com.psiphon3.psiphonlibrary;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.app.ActivityManager;
-import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
@@ -32,7 +30,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -46,13 +43,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.IBinder;
-import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.text.TextUtils;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.KeyEvent;
@@ -87,6 +81,7 @@ import android.widget.ViewFlipper;
 
 import com.psiphon3.R;
 import com.psiphon3.StatusActivity;
+import com.psiphon3.TunnelState;
 import com.psiphon3.psiphonlibrary.StatusList.StatusListViewManager;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
@@ -106,6 +101,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 
 import static android.nfc.NdefRecord.createMime;
 
@@ -142,8 +140,6 @@ public abstract class MainBase {
     public static abstract class TabbedActivityBase extends Activity implements OnTabChangeListener {
         public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.MainBase.TabbedActivityBase.STATUS_ENTRY_AVAILABLE";
         public static final String INTENT_EXTRA_PREVENT_AUTO_START = "com.psiphon3.MainBase.TabbedActivityBase.PREVENT_AUTO_START";
-        protected static final String EGRESS_REGION_PREFERENCE = "egressRegionPreference";
-        protected static final String TUNNEL_WHOLE_DEVICE_PREFERENCE = "tunnelWholeDevicePreference";
         protected static final String ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION = "askedToAccessCoarseLocationPermission";
         protected static final String CURRENT_TAB = "currentTab";
 
@@ -151,8 +147,13 @@ public abstract class MainBase {
         protected static final int REQUEST_CODE_PREFERENCE = 101;
         protected static final int REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 102;
 
+        public static final String HOME_TAB_TAG = "home_tab_tag";
+        public static final String STATISTICS_TAB_TAG = "statistics_tab_tag";
+        public static final String SETTINGS_TAB_TAG = "settings_tab_tag";
+        public static final String LOGS_TAB_TAG = "logs_tab_tag";
 
-        private boolean m_canWholeDevice = false;
+
+        protected boolean m_loadedSponsorTab = false;
 
         protected Button m_toggleButton;
         private StatusListViewManager m_statusListManager = null;
@@ -161,11 +162,8 @@ public abstract class MainBase {
         private ScrollView m_statusLayout;
         private TextView m_statusTabLogLine;
         private TextView m_statusTabVersionLine;
-        private SponsorHomePage m_sponsorHomePage;
+        protected SponsorHomePage m_sponsorHomePage;
         private LocalBroadcastManager m_localBroadcastManager;
-        private Timer m_updateStatisticsUITimer;
-        private Timer m_updateServiceStateUITimer;
-        private boolean m_restartTunnel = false;
         private TextView m_elapsedConnectionTimeView;
         private TextView m_totalSentView;
         private TextView m_totalReceivedView;
@@ -182,42 +180,18 @@ public abstract class MainBase {
         private Button m_moreOptionsButton;
         private Button m_openBrowserButton;
         private LoggingObserver m_loggingObserver;
-        private boolean m_serviceStateUIPaused = false;
+        private CompositeDisposable compositeDisposable = new CompositeDisposable();
+        protected TunnelServiceInteractor tunnelServiceInteractor;
+        private Disposable handleNfcIntentDisposable;
+
+        protected boolean isAppInForeground;
 
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
         }
 
-        protected boolean getSkipHomePage() {
-            for (String homepage : getHomePages()) {
-                if (homepage.contains("psiphon_skip_homepage")) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        protected boolean showFirstHomePageInApp() {
-            boolean showHomePage = false;
-            List<String> homepages = getHomePages();
-            if (!getSkipHomePage() && homepages.size() > 0) {
-                showHomePage = true;
-                for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
-                    if (homepages.get(0).contains(homeTabUrlExclusion)) {
-                        showHomePage = false;
-                        break;
-                    }
-                }
-            }
-            return showHomePage;
-        }
-
-        // Avoid calling m_statusTabToggleButton.setImageResource() every 250 ms
-        // when it is set to the connected image
         private ImageButton m_statusViewImage;
-        private boolean m_statusIconSetToConnected = false;
 
-        private View mGetHelpConnectingButton;
         private View mHelpConnectButton;
 
         private NfcAdapter mNfcAdapter;
@@ -231,7 +205,7 @@ public abstract class MainBase {
             @Override
             public NdefMessage createNdefMessage(NfcEvent event) {
                 // Request the connection info get updated
-                sendServiceMessage(TunnelManager.ClientToServiceMessage.NFC_CONNECTION_INFO_EXCHANGE_EXPORT.ordinal());
+                tunnelServiceInteractor.nfcExportConnectionInfo();
 
                 // Wait for the service to respond
                 try {
@@ -259,26 +233,9 @@ public abstract class MainBase {
 
         private void setStatusState(int resId) {
             boolean statusShowing = m_sponsorViewFlipper.getCurrentView() == m_statusLayout;
-
-            if (R.drawable.status_icon_connected == resId) {
-                if (!m_statusIconSetToConnected) {
-                    m_statusViewImage.setImageResource(resId);
-                    m_statusIconSetToConnected = true;
-                }
-
-                // Show the sponsor web view, but only if there's a home page to
-                // show and it's isn't excluded from being embedded.
-                if (showFirstHomePageInApp() && statusShowing) {
-                    m_sponsorViewFlipper.showNext();
-                }
-            } else {
-                m_statusViewImage.setImageResource(resId);
-                m_statusIconSetToConnected = false;
-
-                // Show the status view
-                if (!statusShowing) {
-                    m_sponsorViewFlipper.showNext();
-                }
+            m_statusViewImage.setImageResource(resId);
+            if (R.drawable.status_icon_connected != resId && !statusShowing) {
+                m_sponsorViewFlipper.showNext();
             }
         }
 
@@ -287,10 +244,12 @@ public abstract class MainBase {
         // http://danielkvist.net/code/animated-tabhost-with-slide-gesture-in-android
         private static final int ANIMATION_TIME = 240;
         protected TabHost m_tabHost;
+        protected List<TabSpec> m_tabSpecsList;
         private int m_currentTab;
         private View m_previousView;
         private View m_currentView;
         private GestureDetector m_gestureDetector;
+        protected enum TabIndex {HOME, STATISTICS, OPTIONS, LOGS}
 
         /**
          * A gesture listener that listens for a left or right swipe and uses
@@ -324,22 +283,31 @@ public abstract class MainBase {
             @Override
             public boolean onFling(MotionEvent event1, MotionEvent event2, float velocityX, float velocityY) {
                 if (event1 != null && event2 != null) {
-                    int newTab;
+                    // Determine tab swipe direction
+                    int direction;
                     if (Math.abs(event1.getY() - event2.getY()) > SWIPE_MAX_OFF_PATH) {
                         return false;
                     }
                     if (event1.getX() - event2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
                         // Swipe right to left
-                        newTab = m_currentTab + 1;
+                        direction = 1;
                     } else if (event2.getX() - event1.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
                         // Swipe left to right
-                        newTab = m_currentTab - 1;
+                        direction = -1;
                     } else {
                         return false;
                     }
+
+                    // Move in direction until we hit a visible tab, or go out of bounds
+                    int newTab = m_currentTab + direction;
+                    while (newTab >= 0 && newTab < maxTabs && m_tabHost.getTabWidget().getChildTabViewAt(newTab).getVisibility() != View.VISIBLE) {
+                        newTab += direction;
+                    }
+
                     if (newTab < 0 || newTab > (maxTabs - 1)) {
                         return false;
                     }
+
                     m_tabHost.setCurrentTab(newTab);
                 }
                 return super.onFling(event1, event2, velocityX, velocityY);
@@ -430,11 +398,6 @@ public abstract class MainBase {
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
 
-            if (!isServiceRunning()) {
-                // remove logs from previous sessions
-                LoggingProvider.LogDatabaseHelper.truncateLogs(this, true);
-            }
-
             m_multiProcessPreferences = new AppPreferences(this);
             // Migrate 'More Options' SharedPreferences to tray preferences:
             // The name of the DefaultSharedPreferences is this.getPackageName() + "_preferences"
@@ -443,8 +406,8 @@ public abstract class MainBase {
             m_multiProcessPreferences.migrate(
                     // Top level  preferences
                     new SharedPreferencesImport(this, prefName, CURRENT_TAB, CURRENT_TAB),
-                    new SharedPreferencesImport(this, prefName, EGRESS_REGION_PREFERENCE, EGRESS_REGION_PREFERENCE),
-                    new SharedPreferencesImport(this, prefName, TUNNEL_WHOLE_DEVICE_PREFERENCE, TUNNEL_WHOLE_DEVICE_PREFERENCE),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.egressRegionPreference), getString(R.string.egressRegionPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.tunnelWholeDevicePreference), getString(R.string.tunnelWholeDevicePreference)),
                     new SharedPreferencesImport(this, prefName, getString(R.string.downloadWifiOnlyPreference), getString(R.string.downloadWifiOnlyPreference)),
                     new SharedPreferencesImport(this, prefName, getString(R.string.disableTimeoutsPreference), getString(R.string.disableTimeoutsPreference)),
                     // More Options preferences
@@ -464,6 +427,28 @@ public abstract class MainBase {
             );
 
             EmbeddedValues.initialize(this);
+            tunnelServiceInteractor = new TunnelServiceInteractor(getApplicationContext());
+
+            // remove logs from previous sessions
+            if (!tunnelServiceInteractor.isServiceRunning(getApplicationContext())) {
+                LoggingProvider.LogDatabaseHelper.truncateLogs(this, true);
+            }
+
+            // Only handle NFC if the version is sufficient
+            if (ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
+                // Check for available NFC Adapter
+                mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
+                if (mNfcAdapter != null) {
+                    // Register callback
+                    mNfcAdapterCallback = new NfcAdapterCallback();
+
+                    // Always enable receiving an NFC tag, and determine what to do with it when we receive it based on the service state.
+                    // For example, in the Stopped state, we can receive a tag, and instruct the user to start the tunnel service and try again.
+                    PackageManager packageManager = getPackageManager();
+                    ComponentName componentName = new ComponentName(getPackageName(), NfcActivity.class.getName());
+                    packageManager.setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
+                }
+            }
         }
 
         @Override
@@ -474,32 +459,22 @@ public abstract class MainBase {
                 m_sponsorHomePage.stop();
                 m_sponsorHomePage = null;
             }
+            compositeDisposable.dispose();
         }
 
         protected void setupActivityLayout() {
             // Set up tabs
             m_tabHost.setup();
 
-            TabSpec homeTab = m_tabHost.newTabSpec("home");
-            homeTab.setContent(R.id.sponsorViewFlipper);
-            homeTab.setIndicator(getText(R.string.home_tab_name));
+            m_tabSpecsList.clear();
+            m_tabSpecsList.add(TabIndex.HOME.ordinal(), m_tabHost.newTabSpec(HOME_TAB_TAG).setContent(R.id.sponsorViewFlipper).setIndicator(getText(R.string.home_tab_name)));
+            m_tabSpecsList.add(TabIndex.STATISTICS.ordinal(), m_tabHost.newTabSpec(STATISTICS_TAB_TAG).setContent(R.id.statisticsView).setIndicator(getText(R.string.statistics_tab_name)));
+            m_tabSpecsList.add(TabIndex.OPTIONS.ordinal(), m_tabHost.newTabSpec(SETTINGS_TAB_TAG).setContent(R.id.settingsView).setIndicator(getText(R.string.settings_tab_name)));
+            m_tabSpecsList.add(TabIndex.LOGS.ordinal(), m_tabHost.newTabSpec(LOGS_TAB_TAG).setContent(R.id.logsTab).setIndicator(getText(R.string.logs_tab_name)));
 
-            TabSpec statisticsTab = m_tabHost.newTabSpec("statistics");
-            statisticsTab.setContent(R.id.statisticsView);
-            statisticsTab.setIndicator(getText(R.string.statistics_tab_name));
-
-            TabSpec settingsTab = m_tabHost.newTabSpec("settings");
-            settingsTab.setContent(R.id.settingsView);
-            settingsTab.setIndicator(getText(R.string.settings_tab_name));
-
-            TabSpec logsTab = m_tabHost.newTabSpec("logs");
-            logsTab.setContent(R.id.logsTab);
-            logsTab.setIndicator(getText(R.string.logs_tab_name));
-
-            m_tabHost.addTab(homeTab);
-            m_tabHost.addTab(statisticsTab);
-            m_tabHost.addTab(settingsTab);
-            m_tabHost.addTab(logsTab);
+            for (TabSpec tabSpec : m_tabSpecsList) {
+                m_tabHost.addTab(tabSpec);
+            }
 
             m_gestureDetector = new GestureDetector(this, new LateralGestureDetector());
             OnTouchListener onTouchListener = new OnTouchListener() {
@@ -529,11 +504,13 @@ public abstract class MainBase {
             ListView statusListView = (ListView) findViewById(R.id.statusList);
             statusListView.setOnTouchListener(onTouchListener);
 
-            m_tabHost.setOnTabChangedListener(this);
-
             int currentTab = m_multiProcessPreferences.getInt(CURRENT_TAB, 0);
             m_currentTab = currentTab;
             m_tabHost.setCurrentTab(currentTab);
+
+            // Set TabChangedListener after restoring last tab to avoid triggering an interstitial,
+            // we only want interstitial to be triggered by user actions
+            m_tabHost.setOnTabChangedListener(this);
 
             m_sponsorViewFlipper = (ViewFlipper) findViewById(R.id.sponsorViewFlipper);
             m_sponsorViewFlipper.setInAnimation(AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left));
@@ -562,26 +539,23 @@ public abstract class MainBase {
             m_localBroadcastManager = LocalBroadcastManager.getInstance(this);
             m_localBroadcastManager.registerReceiver(new StatusEntryAdded(), new IntentFilter(STATUS_ENTRY_AVAILABLE));
 
-            updateServiceStateUI();
-
             m_regionAdapter = new RegionAdapter(this);
             m_regionSelector.setAdapter(m_regionAdapter);
-            String egressRegionPreference = m_multiProcessPreferences.getString(EGRESS_REGION_PREFERENCE,
-                    PsiphonConstants.REGION_CODE_ANY);
+            String egressRegionPreference = m_multiProcessPreferences
+                    .getString(getString(R.string.egressRegionPreference),
+                            PsiphonConstants.REGION_CODE_ANY);
 
             m_regionSelector.setSelectionByValue(egressRegionPreference);
 
-            setTunnelConfigEgressRegion(egressRegionPreference);
-
             m_regionSelector.setOnItemSelectedListener(regionSpinnerOnItemSelected);
 
-            m_canWholeDevice = Utils.hasVpnService();
+            boolean canWholeDevice = Utils.hasVpnService();
 
-            m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
-            boolean tunnelWholeDevicePreference = m_multiProcessPreferences.getBoolean(TUNNEL_WHOLE_DEVICE_PREFERENCE,
-                    m_canWholeDevice);
+            m_tunnelWholeDeviceToggle.setEnabled(canWholeDevice);
+            boolean tunnelWholeDevicePreference = m_multiProcessPreferences
+                    .getBoolean(getString(R.string.tunnelWholeDevicePreference),
+                            canWholeDevice);
             m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
-            setTunnelConfigWholeDevice(m_canWholeDevice && tunnelWholeDevicePreference);
 
             // Show download-wifi-only preference only in not Play Store build
             if (!EmbeddedValues.IS_PLAY_STORE_BUILD) {
@@ -598,7 +572,6 @@ public abstract class MainBase {
             boolean disableTimeoutsPreference = m_multiProcessPreferences.getBoolean(
                     getString(R.string.disableTimeoutsPreference), false);
             m_disableTimeoutsToggle.setChecked(disableTimeoutsPreference);
-            setTunnelConfigDisableTimeouts(disableTimeoutsPreference);
 
             String msg = getContext().getString(R.string.client_version, EmbeddedValues.CLIENT_VERSION);
             m_statusTabVersionLine.setText(msg);
@@ -612,66 +585,172 @@ public abstract class MainBase {
             LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
 
             // Get the connection help buttons
-            mGetHelpConnectingButton = findViewById(R.id.getHelpConnectingButton);
             mHelpConnectButton = findViewById(R.id.howToHelpButton);
 
-            // Only handle NFC if the version is sufficient
-            if (ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
-                // Check for available NFC Adapter
-                mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
-                if (mNfcAdapter != null) {
-                    // Register callback
-                    mNfcAdapterCallback = new NfcAdapterCallback();
+            compositeDisposable.addAll(
+                    tunnelServiceInteractor.tunnelStateFlowable()
+                            // Update app UI state
+                            .doOnNext(state -> runOnUiThread(() -> updateServiceStateUI(state)))
+                            // update WebView proxy settings
+                            .doOnNext(this::updateWebViewProxySettings)
+                            .map(state -> {
+                                if (state.isRunning()) {
+                                    if (state.connectionData().isConnected()) {
+                                        return ConnectionHelpState.CAN_HELP;
+                                    } else if (state.connectionData().needsHelpConnecting()) {
+                                        return ConnectionHelpState.NEEDS_HELP;
+                                    }
+                                } // else
+                                return ConnectionHelpState.DISABLED;
+                            })
+                            .distinctUntilChanged()
+                            .doOnNext(this::setConnectionHelpState)
+                            .subscribe(),
 
-                    // Always enable receiving an NFC tag, and determine what to do with it when we receive it based on the service state.
-                    // For example, in the Stopped state, we can receive a tag, and instruct the user to start the tunnel service and try again.
-                    PackageManager packageManager = getPackageManager();
-                    ComponentName componentName = new ComponentName(getPackageName(), NfcActivity.class.getName());
-                    packageManager.setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
-                }
-            }
+                    tunnelServiceInteractor.dataStatsFlowable()
+                            .startWith(Boolean.FALSE)
+                            .doOnNext(isConnected -> runOnUiThread(() -> updateStatisticsUICallback(isConnected)))
+                            .subscribe(),
 
-            // Always start disabled
-            setConnectionHelpState(ConnectionHelpState.DISABLED);
+                    tunnelServiceInteractor.knownRegionsFlowable()
+                            .doOnNext(__ -> m_regionAdapter.updateRegionsFromPreferences())
+                            .subscribe(),
+
+                    tunnelServiceInteractor.nfcExchangeFlowable()
+                            .doOnNext(nfcExchange -> {
+                                switch (nfcExchange.type()) {
+                                    case EXPORT:
+                                        handleNfcConnectionInfoExchangeResponseExport(nfcExchange.payload());
+                                        break;
+                                    case IMPORT:
+                                        handleNfcConnectionInfoExchangeResponseImport(nfcExchange.success());
+                                        break;
+                                }
+                            })
+                            .subscribe()
+            );
         }
 
-        /**
-         * Show the sponsor home page, either in the embedded view web view or
-         * in the external browser.
-         *
-         * @param freshConnect If false, the home page will not be opened in an external
-         *                     browser. This is to prevent the page from opening every
-         *                     time the activity is created.
-         */
-        protected void resetSponsorHomePage(boolean freshConnect) {
-            if (getSkipHomePage()) {
+        private void updateWebViewProxySettings(TunnelState state) {
+            if (state.isUnknown()) {
+                // do nothing
                 return;
             }
-
-            String url;
-            List<String> homepages = getHomePages();
-            if (homepages.size() > 0) {
-                url = homepages.get(0);
-            } else {
-                return;
-            }
-
-            if (!showFirstHomePageInApp()) {
-                if (freshConnect) {
-                    displayBrowser(getContext(), url);
+            if (state.isRunning()) {
+                if (state.connectionData().vpnMode()) {
+                    // We're running in WDM
+                    if (WebViewProxySettings.isLocalProxySet()) {
+                        WebViewProxySettings.resetLocalProxy(getContext());
+                    }
+                } else {
+                    // We're running in BOM
+                    int httpPort = state.connectionData().httpPort();
+                    if (httpPort > 0) {
+                        WebViewProxySettings.setLocalProxy(getContext(), state.connectionData().httpPort());
+                    }
                 }
+            } else {
+                // Not running, reset
+                if (WebViewProxySettings.isLocalProxySet()) {
+                    WebViewProxySettings.resetLocalProxy(getContext());
+                }
+            }
+        }
+
+        private enum ConnectionHelpState {
+            DISABLED,
+            NEEDS_HELP,
+            CAN_HELP,
+        }
+
+        @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+        private void setConnectionHelpState(ConnectionHelpState state) {
+            // Make sure we aren't calling this before everything is set up
+            if (mNfcAdapter == null) {
                 return;
             }
 
-            // At this point we're showing the URL in the embedded webview.
-            m_sponsorHomePage = new SponsorHomePage((WebView) findViewById(R.id.sponsorWebView), (ProgressBar) findViewById(R.id.sponsorWebViewProgressBar));
-            m_sponsorHomePage.load(url);
+            // Make sure the activity isn't destroyed (setNdefPushMessageCallback will throw IllegalStateException)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && this.isDestroyed()) {
+                return;
+            }
+
+            switch (state) {
+                case DISABLED:
+                case NEEDS_HELP:
+                    hideHelpConnectUI();
+                    mNfcAdapter.setNdefPushMessageCallback(null, this);
+                    break;
+                case CAN_HELP:
+                    showHelpConnectUI();
+                    mNfcAdapter.setNdefPushMessageCallback(mNfcAdapterCallback, this);
+                    break;
+            }
+        }
+
+        private AlertDialog mConnectionHelpDialog;
+
+        protected void showConnectionHelpDialog(Context context, int id) {
+            LayoutInflater layoutInflater = LayoutInflater.from(context);
+            // TODO: Determine what the root inflation should be.
+            View dialogView = layoutInflater.inflate(id, null);
+            mConnectionHelpDialog = new AlertDialog.Builder(context)
+                    .setView(dialogView)
+                    .setPositiveButton(R.string.label_ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    })
+                    .create();
+            mConnectionHelpDialog.show();
+        }
+
+        private void showHelpConnectUI() {
+            // Ensure that they have NFC
+            if (!ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
+                return;
+            }
+
+            mHelpConnectButton.setVisibility(View.VISIBLE);
+        }
+
+        private void hideHelpConnectUI() {
+            // Ensure that they have NFC
+            if (!ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
+                return;
+            }
+
+            mHelpConnectButton.setVisibility(View.GONE);
+        }
+
+        protected void handleNfcConnectionInfoExchangeResponseExport(String payload) {
+            // Store the data to be sent on an NFC exchange so we don't have to wait when beaming
+            mConnectionInfoPayload = payload;
+
+            // If the latch exists, let it wake up
+            if (mNfcConnectionInfoExportLatch != null) {
+                mNfcConnectionInfoExportLatch.countDown();
+            }
+        }
+
+        protected void handleNfcConnectionInfoExchangeResponseImport(boolean success) {
+            String message = success ? getString(R.string.nfc_connection_info_import_success) : getString(R.string.nfc_connection_info_import_failure);
+            if (success) {
+                // Dismiss the get help dialog if it is showing
+                if (mConnectionHelpDialog != null && mConnectionHelpDialog.isShowing()) {
+                    mConnectionHelpDialog.dismiss();
+                }
+            }
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         }
 
         @Override
         protected void onResume() {
             super.onResume();
 
+            isAppInForeground = true;
+            
             // Load new logs from the logging provider now
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                 m_loggingObserver.dispatchChange(false, LoggingProvider.INSERT_URI);
@@ -682,54 +761,11 @@ public abstract class MainBase {
             // Load new logs from the logging provider when it changes
             getContentResolver().registerContentObserver(LoggingProvider.INSERT_URI, true, m_loggingObserver);
 
-            // From: http://steve.odyfamily.com/?p=12
-            m_updateStatisticsUITimer = new Timer();
-            m_updateStatisticsUITimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            updateStatisticsUICallback();
-                        }
-                    });
-                }
-            }, 0, 1000);
-
-            m_updateServiceStateUITimer = new Timer();
-            m_updateServiceStateUITimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            updateServiceStateUI();
-                            checkRestartTunnel();
-                        }
-                    });
-                }
-            }, 0, 250);
+            tunnelServiceInteractor.resume(getApplicationContext());
 
             // Don't show the keyboard until edit selected
             getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
-            // Set to foreground before binding to the service. Otherwise there would be a short
-            // period of time where we could miss a handshake intent after getting the
-            // tunnel state from registering with the service.
-            m_multiProcessPreferences.put(getString(R.string.status_activity_foreground), true);
-
-            if (isServiceRunning()) {
-                startAndBindTunnelService();
-            } else {
-                // reset the tunnel state
-                m_tunnelState = new TunnelManager.State();
-            }
-
-            // Note that handling the NFC Intent will attempt to send a message to the running Tunnel service
-            // so call this after binding to the service.
-            // Note that there may still be a race condition between the bind, which recreates the outgoing messenger,
-            // and the following sendServiceMessage called by handleNfcIntent but in testing it seems that the service
-            // binding is fast enough.
             if (ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
                 Intent intent = getIntent();
                 // Check to see that the Activity started due to an Android Beam
@@ -747,28 +783,63 @@ public abstract class MainBase {
             }
         }
 
+        private void handleNfcIntent(Intent intent) {
+            if(handleNfcIntentDisposable != null && !handleNfcIntentDisposable.isDisposed()) {
+                // Already in progress, do nothing.
+                return;
+            }
+            handleNfcIntentDisposable = tunnelServiceInteractor.tunnelStateFlowable()
+                    // wait until we learn tunnel state
+                    .filter(state -> !state.isUnknown())
+                    .firstOrError()
+                    .doOnSuccess(state -> {
+                        if(!state.isRunning()) {
+                            Toast.makeText(this, getString(R.string.nfc_connection_info_press_start), Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        if (state.connectionData().isConnected()) {
+                            return;
+                        }
+
+                        String connectionInfoPayload = ConnectionInfoExchangeUtils.getConnectionInfoPayloadFromNfcIntent(intent);
+
+                        // If the payload is empty don't try to import just let the user know it failed
+                        if (TextUtils.isEmpty(connectionInfoPayload)) {
+                            Toast.makeText(this, getString(R.string.nfc_connection_info_import_failure), Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        // Otherwise, send the received message to the TunnelManager to be imported
+                        tunnelServiceInteractor.importConnectionInfo(connectionInfoPayload);
+                    })
+                    .subscribe();
+        }
+
         @Override
         protected void onPause() {
             super.onPause();
 
+            isAppInForeground = false;
+
             getContentResolver().unregisterContentObserver(m_loggingObserver);
-
             cancelInvalidProxySettingsToast();
-
-            m_updateStatisticsUITimer.cancel();
-            m_updateServiceStateUITimer.cancel();
-
-            unbindTunnelService();
-
-            m_multiProcessPreferences.put(getString(R.string.status_activity_foreground), false);
+            tunnelServiceInteractor.pause(getApplicationContext());
         }
 
         protected void doToggle() {
-            if (!isServiceRunning()) {
-                startUp();
-            } else {
-                stopTunnelService();
-            }
+            compositeDisposable.add(
+                    tunnelServiceInteractor.tunnelStateFlowable()
+                            .firstOrError()
+                            .doOnSuccess(state -> {
+                                if (state.isRunning()) {
+                                    stopTunnelService();
+                                } else {
+                                    startUp();
+                                }
+                            })
+                            .subscribe()
+            );
         }
 
         public class StatusEntryAdded extends BroadcastReceiver {
@@ -832,10 +903,10 @@ public abstract class MainBase {
             if (!m_regionSelector.isEnabled()) {
                 return;
             }
-
-            String egressRegionPreference = m_multiProcessPreferences.getString(EGRESS_REGION_PREFERENCE,
-                    PsiphonConstants.REGION_CODE_ANY);
-            if (selectedRegionCode.equals(egressRegionPreference) && selectedRegionCode.equals(getTunnelConfigEgressRegion())) {
+            String egressRegionPreference = m_multiProcessPreferences
+                    .getString(getString(R.string.egressRegionPreference),
+                            PsiphonConstants.REGION_CODE_ANY);
+            if (selectedRegionCode.equals(egressRegionPreference)) {
                 return;
             }
 
@@ -843,16 +914,14 @@ public abstract class MainBase {
 
             // NOTE: reconnects even when Any is selected: we could select a
             // faster server
-            scheduleRunningTunnelServiceRestart();
+            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
         }
 
         protected void updateEgressRegionPreference(String egressRegionPreference) {
             // No isRooted check: the user can specify whatever preference they
             // wish. Also, CheckBox enabling should cover this (but isn't
             // required to).
-            m_multiProcessPreferences.put(EGRESS_REGION_PREFERENCE, egressRegionPreference);
-
-            setTunnelConfigEgressRegion(egressRegionPreference);
+            m_multiProcessPreferences.put(getString(R.string.egressRegionPreference), egressRegionPreference);
         }
 
         public void onTunnelWholeDeviceToggle(View v) {
@@ -864,14 +933,14 @@ public abstract class MainBase {
 
             boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
             updateWholeDevicePreference(tunnelWholeDevicePreference);
-            scheduleRunningTunnelServiceRestart();
+            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
         }
 
         protected void updateWholeDevicePreference(boolean tunnelWholeDevicePreference) {
             // No isRooted check: the user can specify whatever preference they
             // wish. Also, CheckBox enabling should cover this (but isn't
             // required to).
-            m_multiProcessPreferences.put(TUNNEL_WHOLE_DEVICE_PREFERENCE, tunnelWholeDevicePreference);
+            m_multiProcessPreferences.put(getString(R.string.tunnelWholeDevicePreference), tunnelWholeDevicePreference);
 
             // When enabling BOM, we don't use the TunnelVpnService, so we can disable it
             // which prevents the user having Always On turned on.
@@ -881,19 +950,15 @@ public abstract class MainBase {
             packageManager.setComponentEnabledSetting(componentName,
                     tunnelWholeDevicePreference ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                     PackageManager.DONT_KILL_APP);
-
-            setTunnelConfigWholeDevice(tunnelWholeDevicePreference);
         }
 
         public void onDisableTimeoutsToggle(View v) {
             boolean disableTimeoutsChecked = m_disableTimeoutsToggle.isChecked();
             updateDisableTimeoutsPreference(disableTimeoutsChecked);
-            scheduleRunningTunnelServiceRestart();
+            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
         }
         protected void updateDisableTimeoutsPreference(boolean disableTimeoutsPreference) {
             m_multiProcessPreferences.put(getString(R.string.disableTimeoutsPreference), disableTimeoutsPreference);
-
-            setTunnelConfigDisableTimeouts(disableTimeoutsPreference);
         }
 
         public void onDownloadOnWifiOnlyToggle(View v) {
@@ -961,9 +1026,9 @@ public abstract class MainBase {
             }
         }
 
-        private void updateStatisticsUICallback() {
+        private void updateStatisticsUICallback(boolean isConnected) {
             DataTransferStats.DataTransferStatsForUI dataTransferStats = DataTransferStats.getDataTransferStatsForUI();
-            m_elapsedConnectionTimeView.setText(isTunnelConnected() ? getString(R.string.connected_elapsed_time,
+            m_elapsedConnectionTimeView.setText(isConnected ? getString(R.string.connected_elapsed_time,
                     Utils.elapsedTimeToDisplay(dataTransferStats.getElapsedTime())) : getString(R.string.disconnected));
             m_totalSentView.setText(Utils.byteCountToDisplaySize(dataTransferStats.getTotalBytesSent(), false));
             m_totalReceivedView.setText(Utils.byteCountToDisplaySize(dataTransferStats.getTotalBytesReceived(), false));
@@ -984,105 +1049,79 @@ public abstract class MainBase {
             }
         }
 
-        private void updateServiceStateUI() {
-            if (m_serviceStateUIPaused) {
-                return;
-            }
-
-            if (!m_boundToTunnelService) {
+        private void updateServiceStateUI(final TunnelState tunnelState) {
+            if(tunnelState.isUnknown()) {
+                disableToggleServiceUI();
                 setStatusState(R.drawable.status_icon_disconnected);
                 m_openBrowserButton.setEnabled(false);
-                if (!isServiceRunning()) {
-                    m_toggleButton.setText(getText(R.string.start));
-                    enableToggleServiceUI();
-
-                    if (WebViewProxySettings.isLocalProxySet()) {
-                        WebViewProxySettings.resetLocalProxy(this);
-                    }
-                } else {
-                    m_toggleButton.setText(getText(R.string.waiting));
-                    disableToggleServiceUI();
-
-                    if (WebViewProxySettings.isLocalProxySet()) {
-                        WebViewProxySettings.resetLocalProxy(this);
-                    }
-                }
-            } else {
-                if (isTunnelConnected()) {
+                m_toggleButton.setText(getText(R.string.waiting));
+            } else if (tunnelState.isRunning()) {
+                enableToggleServiceUI();
+                m_toggleButton.setText(getText(R.string.stop));
+                if(tunnelState.connectionData().isConnected()) {
                     setStatusState(R.drawable.status_icon_connected);
                     m_openBrowserButton.setEnabled(true);
+
+                    ArrayList<String> homePages = tunnelState.connectionData().homePages();
+                    final String url;
+                    if(homePages != null && homePages.size() > 0) {
+                        url = homePages.get(0);
+                    } else {
+                        url = null;
+                    }
+                    m_openBrowserButton.setOnClickListener(view -> displayBrowser(this, url));
+                    // Show the sponsor web view only if it is not loaded yet, there's a home page to
+                    // show, and it is isn't excluded from being embedded.
+                    if (!m_loadedSponsorTab
+                            && url != null
+                            && shouldLoadInEmbeddedWebView(url)) {
+                        m_sponsorHomePage = new SponsorHomePage((WebView) findViewById(R.id.sponsorWebView),
+                                (ProgressBar) findViewById(R.id.sponsorWebViewProgressBar));
+                        m_sponsorHomePage.load(url, tunnelState.connectionData().httpPort());
+                        m_loadedSponsorTab = true;
+
+                        // Flip to embedded webview if it is not showing
+                        boolean statusShowing = m_sponsorViewFlipper.getCurrentView() == m_statusLayout;
+                        if (statusShowing) {
+                            m_sponsorViewFlipper.showNext();
+                        }
+                    }
                 } else {
                     setStatusState(R.drawable.status_icon_connecting);
                     m_openBrowserButton.setEnabled(false);
                 }
-                m_toggleButton.setText(getText(R.string.stop));
+            } else {
+                // Service not running
                 enableToggleServiceUI();
+                setStatusState(R.drawable.status_icon_disconnected);
+                m_toggleButton.setText(getText(R.string.start));
+                m_openBrowserButton.setEnabled(false);
             }
 
-            updateAdsForServiceState();
+            // Also stop loading embedded webview if the tunnel is not connected
+            if (!tunnelState.isRunning() || !tunnelState.connectionData().isConnected()) {
+                if (m_sponsorHomePage != null && m_loadedSponsorTab) {
+                    m_sponsorHomePage.stop();
+                    m_loadedSponsorTab = false;
+                }
+            }
         }
-
-        protected abstract void updateAdsForServiceState();
 
         protected void enableToggleServiceUI() {
             m_toggleButton.setEnabled(true);
-            m_tunnelWholeDeviceToggle.setEnabled(m_canWholeDevice);
+            m_tunnelWholeDeviceToggle.setEnabled(Utils.hasVpnService());
             m_disableTimeoutsToggle.setEnabled(true);
             m_regionSelector.setEnabled(true);
             m_moreOptionsButton.setEnabled(true);
         }
 
         protected void disableToggleServiceUI() {
+            m_toggleButton.setText(getText(R.string.waiting));
             m_toggleButton.setEnabled(false);
             m_tunnelWholeDeviceToggle.setEnabled(false);
             m_disableTimeoutsToggle.setEnabled(false);
             m_regionSelector.setEnabled(false);
             m_moreOptionsButton.setEnabled(false);
-        }
-
-        protected void pauseServiceStateUI() {
-            m_serviceStateUIPaused = true;
-            disableToggleServiceUI();
-        }
-
-        protected void resumeServiceStateUI() {
-            m_serviceStateUIPaused = false;
-            updateServiceStateUI();
-        }
-
-        private void checkRestartTunnel() {
-            if (m_restartTunnel &&
-                    !m_boundToTunnelService &&
-                    !isServiceRunning()) {
-                m_restartTunnel = false;
-                startTunnel();
-            }
-        }
-
-        private void scheduleRunningTunnelServiceRestart() {
-            String runningService = getRunningService();
-
-            if (runningService == null) {
-                // There is no running service, do nothing.
-                return;
-            }
-
-            // If the running service doesn't need to be changed from WDM to BOM or vice versa we will
-            // just message the service a restart command and have it restart Psiphon tunnel (and VPN
-            // if in WDM mode) internally via TunnelManager.onRestartCommand without stopping the service.
-            // If the WDM preference has changed we will message the service to stop self, wait for it to
-            // stop and then start a brand new service via checkRestartTunnel on a timer.
-            if ((getTunnelConfigWholeDevice() && Utils.hasVpnService() && isVpnService(runningService))
-                    || (!getTunnelConfigWholeDevice() && runningService.equals(TunnelService.class.getName()))) {
-                // A dummy intent just used to pass new tunnel config with the service restart command
-                Intent tunnelConfigIntent = new Intent();
-                configureServiceIntent(tunnelConfigIntent);
-                sendServiceMessage(TunnelManager.ClientToServiceMessage.RESTART_SERVICE.ordinal(), tunnelConfigIntent.getExtras());
-            } else {
-                m_restartTunnel = true;
-                stopTunnelService();
-                // The tunnel will get restarted in m_updateServiceStateTimer
-            }
         }
 
         protected void startTunnel() {
@@ -1169,7 +1208,11 @@ public abstract class MainBase {
 
             boolean waitingForPrompt = false;
 
-            if (getTunnelConfigWholeDevice() && Utils.hasVpnService()) {
+            boolean wantVPN = m_multiProcessPreferences
+                    .getBoolean(getString(R.string.tunnelWholeDevicePreference),
+                            false);
+
+            if (wantVPN && Utils.hasVpnService()) {
                 // VpnService backwards compatibility: for lazy class loading
                 // the VpnService
                 // class reference has to be in another function (doVpnPrepare),
@@ -1331,10 +1374,7 @@ public abstract class MainBase {
                 );
 
                 if (bRestartRequired) {
-                    if (isServiceRunning()) {
-                        startAndBindTunnelService();
-                    }
-                    scheduleRunningTunnelServiceRestart();
+                    tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
                 }
 
                 if (data != null && data.getBooleanExtra(MoreOptionsPreferenceActivity.INTENT_EXTRA_LANGUAGE_CHANGED, false)) {
@@ -1352,461 +1392,15 @@ public abstract class MainBase {
 
         protected void onVpnPromptCancelled() {}
 
-        // Tunnel config, sent to the service.
-        private TunnelManager.Config m_tunnelConfig = new TunnelManager.Config();
-
-        protected void setTunnelConfigEgressRegion(String tunnelConfigEgressRegion) {
-            m_tunnelConfig.egressRegion = tunnelConfigEgressRegion;
-        }
-
-        protected String getTunnelConfigEgressRegion() {
-            return m_tunnelConfig.egressRegion;
-        }
-
-        protected void setTunnelConfigWholeDevice(boolean tunnelConfigWholeDevice) {
-            m_tunnelConfig.wholeDevice = tunnelConfigWholeDevice;
-        }
-
-        protected boolean getTunnelConfigWholeDevice() {
-            return m_tunnelConfig.wholeDevice;
-        }
-
-        protected void setTunnelConfigDisableTimeouts(boolean disableTimeouts) {
-            m_tunnelConfig.disableTimeouts = disableTimeouts;
-        }
-
-        protected boolean getTunnelConfigDisableTimeouts() {
-            return m_tunnelConfig.disableTimeouts;
-        }
-
-        protected void configureServiceIntent(Intent intent) {
-            // Indicate that the user triggered this start request
-            intent.putExtra(TunnelVpnService.USER_STARTED_INTENT_FLAG, true);
-
-            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_WHOLE_DEVICE,
-                    getTunnelConfigWholeDevice());
-
-            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_EGRESS_REGION,
-                    getTunnelConfigEgressRegion());
-
-            intent.putExtra(TunnelManager.DATA_TUNNEL_CONFIG_DISABLE_TIMEOUTS,
-                    getTunnelConfigDisableTimeouts());
-
-            intent.putExtra(TunnelManager.CLIENT_MESSENGER, m_incomingMessenger);
-
-            LocaleManager localeManager = LocaleManager.getInstance(this);
-            intent.putExtra(TunnelManager.EXTRA_LANGUAGE_CODE, localeManager.getLanguage());
-        }
-
         protected void startAndBindTunnelService() {
-
-            // Disable service-toggling controls while service is starting up
-            // (i.e., while isServiceRunning can't be relied upon)
-            disableToggleServiceUI();
-            Intent intent;
-
-            if (getTunnelConfigWholeDevice() && Utils.hasVpnService()) {
-                // VpnService backwards compatibility: startVpnServiceIntent is a wrapper
-                // function so we don't reference the undefined class when this
-                // function is loaded.
-                intent = startVpnServiceIntent();
-            } else {
-                intent = new Intent(this, TunnelService.class);
-            }
-            configureServiceIntent(intent);
-
-            // Use a wrapper to start a service in SDK >= 26
-            // which is defined like following
-            /*
-                public static void startForegroundService(Context context, Intent intent) {
-                    if (Build.VERSION.SDK_INT >= 26) {
-                        context.startForegroundService(intent);
-                    } else {
-                        // Pre-O behavior.
-                        context.startService(intent);
-                    }
-                }
-             */
-            ContextCompat.startForegroundService(this, intent);
-
-            if (bindService(intent, m_tunnelServiceConnection, 0)) {
-                m_boundToTunnelService = true;
-            }
+            boolean wantVPN = m_multiProcessPreferences
+                    .getBoolean(getString(R.string.tunnelWholeDevicePreference),
+                            false);
+            tunnelServiceInteractor.startTunnelService(getApplicationContext(), wantVPN);
         }
-
-        private Intent startVpnServiceIntent() {
-            return new Intent(this, TunnelVpnService.class);
-        }
-
-        // Shared tunnel state, received from service in the HANDSHAKE
-        // intent and in various state-related Messages.
-        private TunnelManager.State m_tunnelState = new TunnelManager.State();
-
-        protected boolean isTunnelConnected() {
-            return m_tunnelState.isConnected;
-        }
-
-        protected ArrayList<String> getHomePages() {
-            ArrayList<String> homePages = new ArrayList<>();
-            homePages.addAll(m_tunnelState.homePages);
-            return homePages;
-        }
-
-        protected int getListeningLocalHttpProxyPort() {
-            return m_tunnelState.listeningLocalHttpProxyPort;
-        }
-
-        protected String getClientRegion() {
-            return m_tunnelState.clientRegion;
-        }
-
-        protected void getTunnelStateFromHandshakeIntent(Intent intent) {
-            if (!intent.getAction().equals(TunnelManager.INTENT_ACTION_HANDSHAKE)) {
-                return;
-            }
-            getTunnelStateFromBundle(intent.getExtras());
-        }
-
-        private void getTunnelStateFromBundle(Bundle data) {
-            if (data == null) {
-                return;
-            }
-
-            m_tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
-            if (m_tunnelState.isConnected) {
-                setStatusState(R.drawable.status_icon_connected);
-            } else {
-                setStatusState(R.drawable.status_icon_connecting);
-            }
-            m_tunnelState.listeningLocalSocksProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT);
-            m_tunnelState.listeningLocalHttpProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT);
-            m_tunnelState.clientRegion = data.getString(TunnelManager.DATA_TUNNEL_STATE_CLIENT_REGION);
-            ArrayList<String> homePages = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_HOME_PAGES);
-            if (homePages != null) {
-                m_tunnelState.homePages = homePages;
-            }
-
-            m_tunnelState.needsHelpConnecting = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_NEEDS_HELP_CONNECTING);
-            if (m_tunnelState.needsHelpConnecting) {
-                setConnectionHelpState(ConnectionHelpState.NEEDS_HELP);
-            } else if (m_tunnelState.isConnected) {
-                setConnectionHelpState(ConnectionHelpState.CAN_HELP);
-            } else {
-                setConnectionHelpState(ConnectionHelpState.DISABLED);
-            }
-
-            onTunnelStateReceived();
-        }
-
-        protected void onTunnelStateReceived() {
-            // do nothing
-        }
-
-        private void getDataTransferStatsFromBundle(Bundle data) {
-            if (data == null) {
-                return;
-            }
-
-            data.setClassLoader(DataTransferStats.DataTransferStatsBase.Bucket.class.getClassLoader());
-            DataTransferStats.getDataTransferStatsForUI().m_connectedTime = data.getLong(TunnelManager.DATA_TRANSFER_STATS_CONNECTED_TIME);
-            DataTransferStats.getDataTransferStatsForUI().m_totalBytesSent = data.getLong(TunnelManager.DATA_TRANSFER_STATS_TOTAL_BYTES_SENT);
-            DataTransferStats.getDataTransferStatsForUI().m_totalBytesReceived = data.getLong(TunnelManager.DATA_TRANSFER_STATS_TOTAL_BYTES_RECEIVED);
-            DataTransferStats.getDataTransferStatsForUI().m_slowBuckets = data.getParcelableArrayList(TunnelManager.DATA_TRANSFER_STATS_SLOW_BUCKETS);
-            DataTransferStats.getDataTransferStatsForUI().m_slowBucketsLastStartTime = data.getLong(TunnelManager.DATA_TRANSFER_STATS_SLOW_BUCKETS_LAST_START_TIME);
-            DataTransferStats.getDataTransferStatsForUI().m_fastBuckets = data.getParcelableArrayList(TunnelManager.DATA_TRANSFER_STATS_FAST_BUCKETS);
-            DataTransferStats.getDataTransferStatsForUI().m_fastBucketsLastStartTime = data.getLong(TunnelManager.DATA_TRANSFER_STATS_FAST_BUCKETS_LAST_START_TIME);
-        }
-
-        private final Messenger m_incomingMessenger = new Messenger(new IncomingMessageHandler());
-        private Messenger m_outgoingMessenger = null;
-        // queue of client messages that
-        // will be sent to Service once client is connected
-        private final List<Message> m_queue = new ArrayList<>();
-
-        private class IncomingMessageHandler extends Handler {
-            private final TunnelManager.ServiceToClientMessage[] scm = TunnelManager.ServiceToClientMessage.values();
-            @Override
-            public void handleMessage(Message msg) {
-                Bundle data = msg.getData();
-                switch (scm[msg.what]) {
-                    case REGISTER_RESPONSE:
-                        getTunnelStateFromBundle(data);
-                        // An activity created while the service is already running will learn
-                        // the sponsor home page at this point, so now load it.
-                        restoreSponsorTab();
-                        updateServiceStateUI();
-                        break;
-
-                    case KNOWN_SERVER_REGIONS:
-                        m_regionAdapter.updateRegionsFromPreferences();
-                        // Make sure we preserve the selection in case the dataset has changed
-                        m_regionSelector.setSelectionByValue(m_tunnelConfig.egressRegion);
-                        break;
-
-                    case TUNNEL_STARTING:
-                        m_tunnelState.isConnected = false;
-                        updateServiceStateUI();
-                        break;
-
-                    case TUNNEL_STOPPING:
-                        m_tunnelState.isConnected = false;
-                        onTunnelDisconnected();
-
-                        // Disable help when stopped
-                        setConnectionHelpState(ConnectionHelpState.DISABLED);
-
-                        // When the tunnel self-stops, we also need to unbind to ensure
-                        // the service is destroyed
-                        unbindTunnelService();
-                        break;
-
-                    case TUNNEL_CONNECTION_STATE:
-                        getTunnelStateFromBundle(data);
-                        if (!m_tunnelState.isConnected) {
-                            onTunnelDisconnected();
-                        }
-                        updateServiceStateUI();
-                        break;
-
-                    case DATA_TRANSFER_STATS:
-                        getDataTransferStatsFromBundle(data);
-                        break;
-
-                    case NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_EXPORT:
-                        handleNfcConnectionInfoExchangeResponseExport(data);
-                        break;
-
-                    case NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT:
-                        handleNfcConnectionInfoExchangeResponseImport(data);
-                        break;
-
-                    default:
-                        super.handleMessage(msg);
-                }
-            }
-        }
-
-        private void handleNfcIntent(Intent intent) {
-            if (!isServiceRunning()) {
-                Toast.makeText(this, getString(R.string.nfc_connection_info_press_start), Toast.LENGTH_LONG).show();
-                return;
-            }
-
-            if (isTunnelConnected()) {
-                // Discard the NFC tag, we don't need to import anything.
-                return;
-            }
-
-            String connectionInfoPayload = ConnectionInfoExchangeUtils.getConnectionInfoPayloadFromNfcIntent(intent);
-
-            // If the payload is empty don't try to import just let the user know it failed
-            if ("".equals(connectionInfoPayload)) {
-                Toast.makeText(this, getString(R.string.nfc_connection_info_import_failure), Toast.LENGTH_LONG).show();
-                return;
-            }
-
-            // Otherwise, send the received message to the TunnelManager to be imported
-            importConnectionInfo(connectionInfoPayload);
-        }
-
-        private void importConnectionInfo(String connectionInfoPayload) {
-            Bundle data = new Bundle();
-            data.putString(TunnelManager.DATA_NFC_CONNECTION_INFO_EXCHANGE_IMPORT, connectionInfoPayload);
-            sendServiceMessage(TunnelManager.ClientToServiceMessage.NFC_CONNECTION_INFO_EXCHANGE_IMPORT.ordinal(), data);
-        }
-
-        protected void handleNfcConnectionInfoExchangeResponseExport(Bundle data) {
-            // Store the data to be sent on an NFC exchange so we don't have to wait when beaming
-            mConnectionInfoPayload = data.getString(TunnelManager.DATA_NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_EXPORT);
-
-            // If the latch exists, let it wake up
-            if (mNfcConnectionInfoExportLatch != null) {
-                mNfcConnectionInfoExportLatch.countDown();
-            }
-        }
-
-        protected void handleNfcConnectionInfoExchangeResponseImport(Bundle data) {
-            boolean success = data.getBoolean(TunnelManager.DATA_NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT, false);
-            String message = success ? getString(R.string.nfc_connection_info_import_success) : getString(R.string.nfc_connection_info_import_failure);
-            if (success) {
-                // Dismiss the get help dialog if it is showing
-                if (mConnectionHelpDialog != null && mConnectionHelpDialog.isShowing()) {
-                    mConnectionHelpDialog.dismiss();
-                }
-            }
-            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-        }
-
-        private enum ConnectionHelpState {
-            UNKNOWN, // This should only be used as the initial state of ConnectionHelp
-            DISABLED,
-            NEEDS_HELP,
-            CAN_HELP,
-        }
-
-        private ConnectionHelpState mConnectionHelpState = ConnectionHelpState.UNKNOWN;
-
-        @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-        private void setConnectionHelpState(ConnectionHelpState state) {
-            // Make sure we aren't calling this before everything is set up
-            if (mNfcAdapter == null || mConnectionHelpState == state) {
-                return;
-            }
-
-            // Make sure the activity isn't destroyed (setNdefPushMessageCallback will throw IllegalStateException)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && this.isDestroyed()) {
-                return;
-            }
-
-            mConnectionHelpState = state;
-
-            switch (state) {
-                case DISABLED:
-                    hideGetHelpConnectingUI();
-                    hideHelpConnectUI();
-                    mNfcAdapter.setNdefPushMessageCallback(null, this);
-                    break;
-                case NEEDS_HELP:
-                    showGetHelpConnectingUI();
-                    hideHelpConnectUI();
-                    mNfcAdapter.setNdefPushMessageCallback(null, this);
-                    break;
-                case CAN_HELP:
-                    hideGetHelpConnectingUI();
-                    showHelpConnectUI();
-                    mNfcAdapter.setNdefPushMessageCallback(mNfcAdapterCallback, this);
-                    break;
-            }
-        }
-
-        private AlertDialog mConnectionHelpDialog;
-
-        protected void showConnectionHelpDialog(Context context, int id) {
-            LayoutInflater layoutInflater = LayoutInflater.from(context);
-            // TODO: Determine what the root inflation should be.
-            View dialogView = layoutInflater.inflate(id, null);
-            mConnectionHelpDialog = new AlertDialog.Builder(context)
-                    .setView(dialogView)
-                    .setPositiveButton(R.string.label_ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    })
-                    .create();
-            mConnectionHelpDialog.show();
-        }
-
-        private void showGetHelpConnectingUI() {
-            // Ensure that they have NFC
-            if (!ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
-                return;
-            }
-
-            mGetHelpConnectingButton.setVisibility(View.VISIBLE);
-        }
-
-        private void hideGetHelpConnectingUI() {
-            // Ensure that they have NFC
-            if (!ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
-                return;
-            }
-
-            mGetHelpConnectingButton.setVisibility(View.GONE);
-        }
-
-        private void showHelpConnectUI() {
-            // Ensure that they have NFC
-            if (!ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
-                return;
-            }
-
-            mHelpConnectButton.setVisibility(View.VISIBLE);
-        }
-
-        private void hideHelpConnectUI() {
-            // Ensure that they have NFC
-            if (!ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
-                return;
-            }
-
-            mHelpConnectButton.setVisibility(View.GONE);
-        }
-
-        private void sendServiceMessage(int what) {
-            sendServiceMessage(what, null);
-        }
-
-        private void sendServiceMessage(int what, Bundle data) {
-            try {
-                Message msg = Message.obtain(null, what);
-                if(data != null) {
-                    msg.setData(data);
-                }
-                if (m_outgoingMessenger == null) {
-                    synchronized (m_queue) {
-                        m_queue.add(msg);
-                    }
-                } else {
-                    m_outgoingMessenger.send(msg);
-                }
-            } catch (RemoteException e) {
-                MyLog.g(String.format("sendServiceMessage failed: %s", e.getMessage()));
-            }
-        }
-
-        private boolean m_boundToTunnelService = false;
-        private final ServiceConnection m_tunnelServiceConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName className, IBinder service) {
-                m_outgoingMessenger = new Messenger(service);
-                /** Send all pending messages to the newly created Service. **/
-                synchronized (m_queue) {
-                    for (Message message : m_queue) {
-                        try {
-                            m_outgoingMessenger.send(message);
-                        } catch (RemoteException e) {
-
-                        }
-                    }
-                    m_queue.clear();
-                }
-                updateServiceStateUI();
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName arg0) {
-                m_outgoingMessenger = null;
-                unbindTunnelService();
-            }
-        };
 
         private void stopTunnelService() {
-            sendServiceMessage(TunnelManager.ClientToServiceMessage.STOP_SERVICE.ordinal());
-            // STOP_SERVICE will cause the Service to stop itself,
-            // which will then cause an unbind to occur. Don't call
-            // unbindTunnelService() here, as its unnecessary and either
-            // the UNREGISTER or unbindService causes
-            // "Exception when unbinding service com.psiphon3/.psiphonlibrary.TunnelVpnService"
-        }
-
-        private void unbindTunnelService() {
-            if (m_boundToTunnelService) {
-                m_boundToTunnelService = false;
-                sendServiceMessage(TunnelManager.ClientToServiceMessage.UNREGISTER.ordinal());
-                try {
-                    unbindService(m_tunnelServiceConnection);
-                }
-                catch (java.lang.IllegalArgumentException e) {
-                    // Ignore
-                    // "java.lang.IllegalArgumentException: Service not registered"
-                }
-            }
-            updateServiceStateUI();
-        }
-
-        protected void onTunnelDisconnected() {
-            // do nothing
+            tunnelServiceInteractor.stopTunnelService();
         }
 
         /**
@@ -1817,27 +1411,7 @@ public abstract class MainBase {
          *      "android: check if a service is running"</a>
          * @return True if the service is already running, false otherwise.
          */
-        protected boolean isServiceRunning() {
-            return getRunningService() != null;
-        }
-
-        private String getRunningService() {
-            ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-            for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-                if (service.uid == android.os.Process.myUid() &&
-                        (TunnelService.class.getName().equals(service.service.getClassName())
-                                || (Utils.hasVpnService() && isVpnService(service.service.getClassName())))) {
-                    return service.service.getClassName();
-                }
-            }
-            return null;
-        }
-
-        private boolean isVpnService(String className) {
-            return TunnelVpnService.class.getName().equals(className);
-        }
-
-        private class SponsorHomePage {
+        protected class SponsorHomePage {
             private class SponsorWebChromeClient extends WebChromeClient {
                 private final ProgressBar mProgressBar;
 
@@ -1885,10 +1459,6 @@ public abstract class MainBase {
                     if (mTimer != null) {
                         mTimer.cancel();
                         mTimer = null;
-                    }
-
-                    if (!isTunnelConnected()) {
-                        return true;
                     }
 
                     if (mWebViewLoaded) {
@@ -1945,10 +1515,14 @@ public abstract class MainBase {
                 mWebChromeClient.stop();
             }
 
-            public void load(String url) {
+            public void load(String url, int httpProxyPort) {
                 // Set WebView proxy only if we are not running in WD mode.
-                if(!getTunnelConfigWholeDevice() || !Utils.hasVpnService()) {
-                    WebViewProxySettings.setLocalProxy(mWebView.getContext(), getListeningLocalHttpProxyPort());
+                boolean wantVPN = m_multiProcessPreferences
+                        .getBoolean(getString(R.string.tunnelWholeDevicePreference),
+                                false);
+
+                if(!wantVPN || !Utils.hasVpnService()) {
+                    WebViewProxySettings.setLocalProxy(mWebView.getContext(), httpProxyPort);
                 } else {
                     // We are running in WDM, reset WebView proxy if it has been previously set.
                     if(WebViewProxySettings.isLocalProxySet()){
@@ -1962,11 +1536,15 @@ public abstract class MainBase {
         }
 
         protected void displayBrowser(Context context, String urlString) {
-
         }
 
-        protected void restoreSponsorTab() {
-
+        protected boolean shouldLoadInEmbeddedWebView(String url) {
+            for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
+                if (url.contains(homeTabUrlExclusion)) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

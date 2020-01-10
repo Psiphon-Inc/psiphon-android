@@ -6,6 +6,7 @@
 -->
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     xmlns:tools="http://schemas.android.com/tools"
@@ -15,7 +16,7 @@
     <RelativeLayout
         android:id="@+id/tablayout"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content">
 
         <HorizontalScrollView
             android:layout_width="fill_parent"
@@ -39,20 +40,20 @@
         <ViewFlipper
             android:id="@+id/sponsorViewFlipper"
             android:layout_width="fill_parent"
-            android:layout_height="fill_parent" >
+            android:layout_height="fill_parent">
 
             <ScrollView
                 android:id="@+id/statusLayout"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:orientation="vertical"
-                android:scrollbarAlwaysDrawVerticalTrack="false" >
+                android:scrollbarAlwaysDrawVerticalTrack="false">
 
                 <LinearLayout
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
-                    android:padding="10dp"
-                    android:orientation="vertical" >
+                    android:orientation="vertical"
+                    android:padding="10dp">
 
                     <ImageButton
                         android:id="@+id/statusViewImage"
@@ -77,22 +78,22 @@
                         android:layout_gravity="center"
                         android:text="" />
 
-                <Button
-                    android:id="@+id/getHelpConnectingButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:onClick="onGetHelpConnectingClick"
-                    android:text="@string/need_help_connecting"
-                    android:visibility="gone"
-                    tools:visibility="visible" />
+                    <Button
+                        android:id="@+id/getHelpConnectingButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:onClick="onGetHelpConnectingClick"
+                        android:text="@string/need_help_connecting"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
                 </LinearLayout>
             </ScrollView>
 
             <RelativeLayout
                 android:id="@+id/sponsorLayout"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" >
+                android:layout_height="match_parent">
 
                 <WebView
                     android:id="@+id/sponsorWebView"
@@ -127,7 +128,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:orientation="horizontal" >
+                    android:orientation="horizontal">
 
                     <TextView
                         android:id="@+id/regionPrompt"
@@ -145,13 +146,14 @@
                         android:layout_gravity="center"
                         android:drawSelectorOnTop="true"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
+
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:orientation="vertical" >
+                    android:orientation="vertical">
 
                     <CheckBox
                         android:id="@+id/tunnelWholeDeviceToggle"
@@ -186,7 +188,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_marginTop="8dp"
-                    android:orientation="horizontal" >
+                    android:orientation="horizontal">
 
                     <Button
                         android:id="@+id/moreOptionsButton"

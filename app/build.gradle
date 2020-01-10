@@ -4,6 +4,8 @@ android {
     compileSdkVersion 28
     useLibrary 'org.apache.http.legacy'
 
+    android.defaultConfig.vectorDrawables.useSupportLibrary = true
+
     repositories{
         flatDir{
             dirs 'libs'
@@ -22,6 +24,8 @@ android {
         if (props != null && props.containsKey('VERSION_CODE')) {
             def verName = props['VERSION_CODE']
             def verCode = verName.toInteger()
+            def admobAppId = getBuildProperty('GP_ADMOB_APP_ID').replaceAll('^\"|\"$', "")
+
             defaultConfig {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
                 applicationId "com.psiphon3"
@@ -31,6 +35,8 @@ android {
                 versionCode verCode
                 versionName verName
                 testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+                multiDexEnabled true
+                manifestPlaceholders = [ admobAppId:admobAppId ]
             }
         } else {
             throw new GradleException('version.properties found but entries are missing')
@@ -46,9 +52,6 @@ android {
     buildTypes {
         debug {
             debuggable true
-            minifyEnabled true
-            useProguard true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             pseudoLocalesEnabled true
         }
         release {
@@ -77,7 +80,7 @@ android {
         props.load(new FileInputStream(propFile))
 
         if (props != null && props.containsKey('STORE_FILE') && props.containsKey('STORE_PASSWORD') &&
-            props.containsKey('KEY_ALIAS') && props.containsKey('KEY_PASSWORD')) {
+                props.containsKey('KEY_ALIAS') && props.containsKey('KEY_PASSWORD')) {
             android.signingConfigs.release.storeFile = file(props['STORE_FILE'])
             android.signingConfigs.release.storePassword = props['STORE_PASSWORD']
             android.signingConfigs.release.keyAlias = props['KEY_ALIAS']
@@ -93,11 +96,33 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    buildTypes.each {
+        it.buildConfigField 'String', 'ADMOB_APP_ID', getBuildProperty('GP_ADMOB_APP_ID')
+    }
+}
+
+def getBuildProperty(String propertyName) {
+    def propsFile = rootProject.file('build.properties')
+    if (propsFile.exists()) {
+        def props = new Properties()
+        props.load(new FileInputStream(propsFile))
+        if(props != null && props.containsKey(propertyName)) {
+            return props[propertyName];
+        } else {
+            return "";
+        }
+    } else {
+        throw new GradleException('File \'build.properties\' is missing! Please copy \'build.properties.stub\' to \'build.properties\' and edit the values.')
+    }
 }
 
 repositories {
     jcenter()
     maven { url "https://s3.amazonaws.com/moat-sdk-builds" }
+    maven {
+        url 'https://jitpack.io'
+    }
 }
 
 dependencies {
@@ -110,6 +135,7 @@ dependencies {
 
     implementation "com.android.support:multidex:$rootProject.ext.multidexVersion"
     implementation "com.android.support:appcompat-v7:$rootProject.ext.androidSupportLibraryVersion"
+    implementation "com.android.support.constraint:constraint-layout:$rootProject.ext.constraintLayoutVersion"
 
     implementation("com.mopub:mopub-sdk-banner:$rootProject.ext.mopubSdkVersion@aar") {
         transitive = true
@@ -120,6 +146,20 @@ dependencies {
 
     implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
     implementation "com.google.android.ads.consent:consent-library:$rootProject.ext.adsConsentLibraryVersion"
+
+    implementation "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxandroidVersion"
+    implementation "io.reactivex.rxjava2:rxjava:$rootProject.ext.rxjavaVersion"
+    implementation "com.jakewharton.rxrelay2:rxrelay:$rootProject.ext.rxrelayVersion"
+    implementation "com.jakewharton.rxbinding2:rxbinding-support-v4:$rootProject.ext.rxbindingSupportVersion"
+    implementation "com.squareup.okhttp3:okhttp:$rootProject.ext.okhttpVersion"
+
+    api "android.arch.lifecycle:extensions:$rootProject.ext.androidLifecycleExtensionsVersion"
+
+    compileOnly "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
+    annotationProcessor "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
+
     testImplementation "junit:junit:$rootProject.ext.junitVersion"
+    testImplementation "org.mockito:mockito-core:$rootProject.ext.mockitoVersion"
+    androidTestImplementation "org.mockito:mockito-android:$rootProject.ext.mockitoVersion"
     androidTestImplementation "com.android.support.test:runner:$rootProject.ext.testRunnerVersion"
 }

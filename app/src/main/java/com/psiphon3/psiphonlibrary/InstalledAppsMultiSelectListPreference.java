@@ -23,7 +23,6 @@ import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
@@ -181,12 +180,15 @@ public class InstalledAppsMultiSelectListPreference extends MultiSelectListPrefe
         List<AppEntry> apps = new ArrayList<>();
         List<PackageInfo> packages = pm.getInstalledPackages(PackageManager.GET_PERMISSIONS);
 
+        String selfPackageName = getContext().getPackageName();
+
         for (int i = 0; i < packages.size(); i++) {
             PackageInfo p = packages.get(i);
 
             // The returned app list excludes:
             //  - Apps that don't require internet access
-            if (isInternetPermissionGranted(p)) {
+            //  - Psiphon app itself
+            if (isInternetPermissionGranted(p) && !p.packageName.equals(selfPackageName)) {
                 String appName = p.applicationInfo.loadLabel(pm).toString();
                 String packageId = p.packageName;
                 Drawable icon = p.applicationInfo.loadIcon(pm);

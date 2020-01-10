@@ -19,10 +19,8 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -35,6 +33,7 @@ import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceCategory;
+import android.preference.PreferenceGroup;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
 import android.support.annotation.NonNull;
@@ -101,6 +100,7 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
             return prefs.getString(key, defaultValue);
         }
     }
+    Bundle mDefaultSummaryBundle;
 
     CheckBoxPreference mNotificationSound;
     CheckBoxPreference mNotificationVibration;
@@ -114,19 +114,20 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
     EditTextPreference mProxyUsername;
     EditTextPreference mProxyPassword;
     EditTextPreference mProxyDomain;
-    Bundle mDefaultSummaryBundle;
     ListPreference mLanguageSelector;
 
     @SuppressWarnings("deprecation")
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        addPreferencesFromResource(R.xml.preferences);
+
+        mDefaultSummaryBundle = new Bundle();
 
         // Store temporary preferences used in this activity in its own file
         PreferenceManager prefMgr = getPreferenceManager();
         prefMgr.setSharedPreferencesName(getString(R.string.moreOptionsPreferencesName));
 
-        addPreferencesFromResource(R.xml.preferences);
-        final PreferenceScreen preferences = getPreferenceScreen();
+        PreferenceScreen preferences = getPreferenceScreen();
 
         mNotificationSound = (CheckBoxPreference) preferences.findPreference(getString(R.string.preferenceNotificationsWithSound));
         mNotificationVibration = (CheckBoxPreference) preferences.findPreference(getString(R.string.preferenceNotificationsWithVibrate));
@@ -208,7 +209,6 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
         mProxyPassword.setText(preferenceGetter.getString(getString(R.string.useProxyPasswordPreference), ""));
         mProxyDomain.setText(preferenceGetter.getString(getString(R.string.useProxyDomainPreference), ""));
 
-
         // Set listeners
         mUseSystemProxy.setOnPreferenceClickListener(this);
         mUseCustomProxy.setOnPreferenceClickListener(this);
@@ -244,9 +244,139 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
             }
         });
 
-        mDefaultSummaryBundle = new Bundle();
-
+        initSummary();
         updatePreferencesScreen();
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Set up a listener whenever a key changes
+        getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Unregister the listener whenever a key changes
+        getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, final String key) {
+        Preference curPref = findPreference(key);
+        updatePrefsSummary(curPref);
+        updatePreferencesScreen();
+
+        // If language preference has changed we need to set new locale based on the current
+        // preference value and restart the app.
+        if (key.equals(getString(R.string.preferenceLanguageSelection))) {
+            String languageCode = mLanguageSelector.getValue();
+            try {
+                int pos = mLanguageSelector.findIndexOfValue(languageCode);
+                mLanguageSelector.setSummary(mLanguageSelector.getEntries()[pos]);
+            } catch (Exception ignored) {
+            }
+            setLanguageAndRestartApp(languageCode);
+        }
+    }
+
+    private void setLanguageAndRestartApp(String languageCode) {
+        // The LocaleManager will correctly set the resource + store the language preference for the future
+        LocaleManager localeManager = LocaleManager.getInstance(MoreOptionsPreferenceActivity.this);
+        if (languageCode.equals("")) {
+            localeManager.resetToSystemLocale(MoreOptionsPreferenceActivity.this);
+        } else {
+            localeManager.setNewLocale(MoreOptionsPreferenceActivity.this, languageCode);
+        }
+        // Kill the browser instance if it exists.
+        // This is required as it's a singleTask activity and isn't recreated when it loses focus.
+        if (MainActivity.INSTANCE != null) {
+            MainActivity.INSTANCE.finish();
+        }
+        // Finish back to the StatusActivity and inform the language has changed
+        Intent data = new Intent();
+        data.putExtra(INTENT_EXTRA_LANGUAGE_CHANGED, true);
+        setResult(RESULT_OK, data);
+        finish();
+    }
+
+    @Override
+    public SharedPreferences getSharedPreferences(String name, int mode) {
+        return super.getSharedPreferences(getString(R.string.moreOptionsPreferencesName), mode);
+    }
+
+    @Override
+    public boolean onPreferenceClick(Preference preference) {
+        if (preference == mUseSystemProxy) {
+            mUseSystemProxy.setChecked(true);
+            mUseCustomProxy.setChecked(false);
+        }
+        if (preference == mUseCustomProxy) {
+            mUseSystemProxy.setChecked(false);
+            mUseCustomProxy.setChecked(true);
+        }
+        return false;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        savedInstanceState.putBoolean("onSaveInstanceState", true);
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
+    protected void updatePrefsSummary(Preference pref) {
+        if (pref instanceof EditTextPreference) {
+            // EditPreference
+            EditTextPreference editTextPref = (EditTextPreference) pref;
+            String summary = editTextPref.getText();
+            if (!TextUtils.isEmpty(summary)) {
+                //hide passwords
+                //http://stackoverflow.com/questions/15044595/preventing-edittextpreference-from-updating-summary-for-inputtype-password
+                int inputType = editTextPref.getEditText().getInputType() & InputType.TYPE_MASK_VARIATION;
+                boolean isPassword = ((inputType  == InputType.TYPE_NUMBER_VARIATION_PASSWORD)
+                        ||(inputType  == InputType.TYPE_TEXT_VARIATION_PASSWORD)
+                        ||(inputType  == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD));
+
+                if (isPassword) {
+                    editTextPref.setSummary(summary.replaceAll(".", "*"));
+                }
+                else {
+                    editTextPref.setSummary(summary);
+                }
+            } else {
+                editTextPref.setSummary((CharSequence) mDefaultSummaryBundle.get(editTextPref.getKey()));
+            }
+        }
+    }
+
+    /*
+     * Init summary fields
+     */
+    @SuppressWarnings("deprecation")
+    protected void initSummary() {
+        for (int i = 0; i < getPreferenceScreen().getPreferenceCount(); i++) {
+            initPrefsSummary(getPreferenceScreen()
+                    .getPreference(i));
+        }
+    }
+
+    /*
+     * Init single Preference
+     */
+    protected void initPrefsSummary(Preference p) {
+        if (p instanceof PreferenceGroup) {
+            PreferenceGroup pCat = (PreferenceGroup) p;
+            for (int i = 0; i < pCat.getPreferenceCount(); i++) {
+                initPrefsSummary(pCat.getPreference(i));
+            }
+        } else if (p instanceof EditTextPreference){
+            mDefaultSummaryBundle.putCharSequence(p.getKey(), p.getSummary());
+            updatePrefsSummary(p);
+        }
     }
 
     private void setupNavigateToVPNSettings(PreferenceScreen preferences) {
@@ -299,7 +429,11 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
 
         // If current locale is on the list set it selected
         if (currentLocaleLanguageIndex >= 0) {
-            mLanguageSelector.setValueIndex(currentLocaleLanguageIndex);
+            try {
+                mLanguageSelector.setValueIndex(currentLocaleLanguageIndex);
+                mLanguageSelector.setSummary(languageNames[currentLocaleLanguageIndex]);
+            } catch(Exception ignored) {
+            }
         }
     }
 
@@ -343,7 +477,7 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
         enableProxyAuthenticationSettings();
     }
 
-    private void updatePreferencesScreen() {
+    protected void updatePreferencesScreen() {
         if (!mUseProxy.isChecked()) {
             disableProxySettings();
         } else {
@@ -359,133 +493,8 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
                 }
             }
         }
+
         updateAdsConsentPreference();
-    }
-
-    protected void updatePrefsSummary(SharedPreferences sharedPreferences, Preference pref) {
-        if (pref instanceof EditTextPreference) {
-            // EditPreference
-            EditTextPreference editTextPref = (EditTextPreference) pref;
-            String summary = editTextPref.getText();
-            if (summary != null && !summary.trim().equals("")) {
-                //hide passwords
-                //http://stackoverflow.com/questions/15044595/preventing-edittextpreference-from-updating-summary-for-inputtype-password
-                int inputType = editTextPref.getEditText().getInputType() & InputType.TYPE_MASK_VARIATION;
-                boolean isPassword = ((inputType  == InputType.TYPE_NUMBER_VARIATION_PASSWORD)
-                        ||(inputType  == InputType.TYPE_TEXT_VARIATION_PASSWORD)
-                        ||(inputType  == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD));
-
-                if (isPassword) {
-                    editTextPref.setSummary(editTextPref.getText().replaceAll(".", "*"));
-                }
-                else {
-                    editTextPref.setSummary(editTextPref.getText());
-                }
-            } else {
-                editTextPref.setSummary((CharSequence) mDefaultSummaryBundle.get(editTextPref.getKey()));
-            }
-        }
-    }
-
-    /*
-     * Init summary fields
-     */
-    protected void initSummary() {
-        for (int i = 0; i < getPreferenceScreen().getPreferenceCount(); i++) {
-            initPrefsSummary(getPreferenceManager()
-                    .getSharedPreferences(), getPreferenceScreen()
-                    .getPreference(i));
-        }
-    }
-
-    /*
-     * Init single Preference
-     */
-    protected void initPrefsSummary(SharedPreferences sharedPreferences, Preference p) {
-        if (p instanceof PreferenceCategory) {
-            PreferenceCategory pCat = (PreferenceCategory) p;
-            for (int i = 0; i < pCat.getPreferenceCount(); i++) {
-                initPrefsSummary(sharedPreferences, pCat.getPreference(i));
-            }
-        } else {
-            mDefaultSummaryBundle.putCharSequence(p.getKey(), p.getSummary());
-            updatePrefsSummary(sharedPreferences, p);
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Set up a listener whenever a key changes
-        getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
-        initSummary();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // Unregister the listener whenever a key changes
-        getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, final String key) {
-        Preference curPref = findPreference(key);
-        updatePrefsSummary(sharedPreferences, curPref);
-        updatePreferencesScreen();
-
-        // If language preference has changed we need to set new locale based on the current
-        // preference value and restart the app.
-        if (key.equals(getString(R.string.preferenceLanguageSelection))) {
-            String languageCode = mLanguageSelector.getValue();
-            setLanguageAndRestartApp(languageCode);
-        }
-    }
-
-    private void setLanguageAndRestartApp(String languageCode) {
-        // The LocaleManager will correctly set the resource + store the language preference for the future
-        LocaleManager localeManager = LocaleManager.getInstance(MoreOptionsPreferenceActivity.this);
-        if (languageCode.equals("")) {
-            localeManager.resetToSystemLocale(MoreOptionsPreferenceActivity.this);
-        } else {
-            localeManager.setNewLocale(MoreOptionsPreferenceActivity.this, languageCode);
-        }
-
-        // Kill the browser instance if it exists.
-        // This is required as it's a singleTask activity and isn't recreated when it loses focus.
-        if (MainActivity.INSTANCE != null) {
-            MainActivity.INSTANCE.finish();
-        }
-
-        // Finish back to the StatusActivity and inform the language has changed
-        Intent data = new Intent();
-        data.putExtra(INTENT_EXTRA_LANGUAGE_CHANGED, true);
-        setResult(RESULT_OK, data);
-        finish();
-    }
-
-    @Override
-    public boolean onPreferenceClick(Preference preference) {
-        if (preference == mUseSystemProxy) {
-            mUseSystemProxy.setChecked(true);
-            mUseCustomProxy.setChecked(false);
-        }
-        if (preference == mUseCustomProxy) {
-            mUseSystemProxy.setChecked(false);
-            mUseCustomProxy.setChecked(true);
-        }
-        return false;
-    }
-
-    @Override
-    public SharedPreferences getSharedPreferences(String name, int mode) {
-        return super.getSharedPreferences(getString(R.string.moreOptionsPreferencesName), mode);
-    }
-
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-        savedInstanceState.putBoolean("onSaveInstanceState", true);
-        super.onSaveInstanceState(savedInstanceState);
     }
 
     private void updateAdsConsentPreference() {

@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     package="com.psiphon3"
+    xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
     <uses-sdk tools:overrideLibrary="ca.psiphon,com.mopub.mobileads.banner,com.mopub.mobileads.base,
     com.mopub.mobileads.interstitial,com.moat.analytics.mobile.mpub" />
-
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"
@@ -25,20 +24,26 @@
     <uses-feature android:name="android.hardware.nfc" android:required="false" />
 
     <application
-        android:name=".PsiphonApplication"
+        android:name="com.psiphon3.PsiphonApplication"
         android:theme="@style/Theme.AppCompat"
         android:hardwareAccelerated="true"
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
         android:supportsRtl="true"
+        android:label="@string/app_name"
         android:usesCleartextTraffic="true"
-        android:label="@string/app_name">
+        tools:ignore="GoogleAppIndexingWarning"
+        tools:replace="android:label">
 
         <!-- Required for newer devices -->
         <uses-library android:name="org.apache.http.legacy" android:required="false"/>
 
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobAppId}"/>
+
         <activity
-            android:name=".StatusActivity"
+            android:name="com.psiphon3.StatusActivity"
             android:label="@string/app_name"
             android:launchMode="singleTask">
             <intent-filter>
@@ -51,10 +56,10 @@
             android:exported="false"
             android:targetActivity="com.psiphon3.StatusActivity" />
 
-        <activity android:name=".psiphonlibrary.NfcActivity" />
+        <activity android:name="com.psiphon3.psiphonlibrary.NfcActivity" />
         <activity-alias
-            android:name=".psiphonlibrary.NfcActivity"
-            android:targetActivity=".StatusActivity"
+            android:name="com.psiphon3.psiphonlibrary.NfcActivity"
+            android:targetActivity="com.psiphon3.StatusActivity"
             android:enabled="false">
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED"/>
@@ -64,7 +69,7 @@
         </activity-alias>
 
         <activity
-            android:name=".FeedbackActivity"
+            android:name="com.psiphon3.FeedbackActivity"
             android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -77,17 +82,20 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".psiphonlibrary.MoreOptionsPreferenceActivity"
+            android:name="com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity"
             android:label="@string/app_name">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.psiphon3.StatusActivity" />
         </activity>
         <service
-            android:name=".psiphonlibrary.TunnelService"
+            android:name="com.psiphon3.psiphonlibrary.TunnelService"
             android:label="@string/app_name"
             android:exported="false"
             android:process=":TunnelService" >
         </service>
         <service
-            android:name=".psiphonlibrary.TunnelVpnService"
+            android:name="com.psiphon3.psiphonlibrary.TunnelVpnService"
             android:label="@string/app_name"
             android:permission="android.permission.BIND_VPN_SERVICE"
             android:exported="false"
@@ -101,21 +109,11 @@
         </service>
 
         <provider
-            android:name=".psiphonlibrary.LoggingProvider"
+            android:name="com.psiphon3.psiphonlibrary.LoggingProvider"
             android:authorities="com.psiphon3.LoggingProvider"
             android:exported="false">
         </provider>
 
-
-        <provider
-            android:name="android.support.v4.content.FileProvider"
-            android:authorities="com.psiphon3.UpgradeFileProvider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/provider_paths"/>
-        </provider>
         <activity
             android:name="org.zirco.ui.activities.MainActivity"
             android:label="@string/browser_task_label"
@@ -153,6 +151,7 @@
         <activity android:name="com.mopub.mobileads.MraidActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
         <activity android:name="com.mopub.common.MoPubBrowser" android:configChanges="keyboardHidden|orientation|screenSize"/>
         <activity android:name="com.mopub.mobileads.MraidVideoPlayerActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
+
         <activity android:name="com.google.android.gms.ads.AdActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
         <activity android:name="com.mopub.common.privacy.ConsentDialogActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
 
