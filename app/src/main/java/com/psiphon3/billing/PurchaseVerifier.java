@@ -39,6 +39,7 @@ public class PurchaseVerifier {
     private PublishRelay<TunnelState> tunnelConnectionStatePublishRelay = PublishRelay.create();
     private BehaviorRelay<SubscriptionState> subscriptionStateBehaviorRelay = BehaviorRelay.create();
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private ArrayList<String> invalidPurchaseTokensList = new ArrayList<>();
 
     public PurchaseVerifier(Context context, PurchaseAuthorizationListener purchaseAuthorizationListener) {
         this.context = context;
@@ -161,11 +162,21 @@ public class PurchaseVerifier {
                             return Flowable.empty();
                         }
                     }
-                    // Otherwise check if we have already have an authorization for this token
+
+                    final Purchase purchase = subscriptionState.purchase();
+
+                    // Check if we previously marked this purchase as 'bad'
+                    if (invalidPurchaseTokensList.size() > 0 &&
+                            invalidPurchaseTokensList.contains(purchase.getPurchaseToken())) {
+                        Utils.MyLog.g("PurchaseVerifier: bad purchase, continue.");
+                        return Flowable.empty();
+                    }
+
+                    // Otherwise check if we already have an authorization for this token
                     String persistedPurchaseToken = appPreferences.getString(PREFERENCE_PURCHASE_TOKEN, "");
                     String persistedPurchaseAuthorizationId = appPreferences.getString(PREFERENCE_PURCHASE_AUTHORIZATION_ID, "");
 
-                    if (persistedPurchaseToken.equals(subscriptionState.purchase().getPurchaseToken()) &&
+                    if (persistedPurchaseToken.equals(purchase.getPurchaseToken()) &&
                             !persistedPurchaseAuthorizationId.isEmpty()) {
                         Utils.MyLog.g("PurchaseVerifier: already have authorization for this purchase, continue.");
                         // We already aware of this purchase, do nothing
@@ -173,7 +184,6 @@ public class PurchaseVerifier {
                     }
                     // We have a fresh purchase. Store the purchase token and reset the persisted authorization Id
                     Utils.MyLog.g("PurchaseVerifier: user has new valid purchase.");
-                    Purchase purchase = subscriptionState.purchase();
                     appPreferences.put(PREFERENCE_PURCHASE_TOKEN, purchase.getPurchaseToken());
                     appPreferences.put(PREFERENCE_PURCHASE_AUTHORIZATION_ID, "");
 
@@ -197,22 +207,26 @@ public class PurchaseVerifier {
                                         // in connection restart as a non-subscriber.
 
                                         if (TextUtils.isEmpty(json)) {
-                                            // If payload is empty then do not try to JSON decode.
+                                            // If payload is empty then do not try to JSON decode,
+                                            // remember the bad token and restart as non-subscriber.
+                                            invalidPurchaseTokensList.add(purchase.getPurchaseToken());
+                                            Utils.MyLog.g("PurchaseVerifier: purchase verification server returned empty payload.");
                                             return UpdateConnectionAction.RESTART_AS_NON_SUBSCRIBER;
                                         }
 
                                         String encodedAuth = new JSONObject(json).getString("signed_authorization");
                                         Authorization authorization = Authorization.fromBase64Encoded(encodedAuth);
                                         if (authorization == null) {
-                                            // Expired or invalid purchase, do nothing.
-                                            // No action will be taken next time we receive the same token
-                                            // because we persisted this token already.
-                                            Utils.MyLog.g("PurchaseVerifier: server returned empty authorization.");
+                                            // Expired or invalid purchase,
+                                            // remember the bad token and restart as non-subscriber.
+                                            invalidPurchaseTokensList.add(purchase.getPurchaseToken());
+                                            Utils.MyLog.g("PurchaseVerifier: purchase verification server returned empty authorization.");
                                             return UpdateConnectionAction.RESTART_AS_NON_SUBSCRIBER;
                                         }
 
                                         // Persist authorization ID and authorization.
                                         appPreferences.put(PREFERENCE_PURCHASE_AUTHORIZATION_ID, authorization.Id());
+
                                         // Prior to storing authorization remove all other authorizations of this type
                                         // from storage. Psiphon server will only accept one authorization per access type.
                                         // If there are multiple active authorizations of 'google-subscription' type it is
@@ -247,14 +261,21 @@ public class PurchaseVerifier {
     public Single<String> sponsorIdSingle() {
         return subscriptionStateFlowable()
                 .firstOrError()
-                .doOnSuccess(subscriptionState ->
-                        Utils.MyLog.g("PurchaseVerifier: will start with "
-                                + (subscriptionState.hasValidPurchase() ? "subscription" : "non-subscription")
-                                + " sponsor ID"))
-                .map(subscriptionState ->
-                        subscriptionState.hasValidPurchase() ?
-                                BuildConfig.SUBSCRIPTION_SPONSOR_ID :
-                                EmbeddedValues.SPONSOR_ID
+                .map(subscriptionState -> {
+                            if (subscriptionState.hasValidPurchase()) {
+                                // Check if we previously marked the purchase as 'bad'
+                                String purchaseToken = subscriptionState.purchase().getPurchaseToken();
+                                if (invalidPurchaseTokensList.size() > 0 &&
+                                        invalidPurchaseTokensList.contains(purchaseToken)) {
+                                    Utils.MyLog.g("PurchaseVerifier: will start with non-subscription sponsor ID due to invalid purchase");
+                                    return EmbeddedValues.SPONSOR_ID;
+                                }
+                                Utils.MyLog.g("PurchaseVerifier: will start with subscription sponsor ID");
+                                return BuildConfig.SUBSCRIPTION_SPONSOR_ID;
+                            }
+                            Utils.MyLog.g("PurchaseVerifier: will start with non-subscription sponsor ID");
+                            return EmbeddedValues.SPONSOR_ID;
+                        }
                 );
     }
 
