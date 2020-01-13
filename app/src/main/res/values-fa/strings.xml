@@ -97,4 +97,16 @@
   <string name="lbl_kin_pay">ممنون از این که به کین پیوستید. آیا مایلید هر موقع که وصل می‌شوید یک کین به سایفون کمک کنید؟</string>
   <!--Kin auto-pay confirmation negative button label. Clicking this button when presented auto-pay prompt will opt out the user of making Kin donations.-->
   <string name="lbl_opt_out">خارج شدن از کین </string>
+  <!--"Please open Psiphon to keep connecting" notification title-->
+  <string name="notification_title_action_required">اقدامی لازم است!</string>
+  <!--Message shown in notification informing the user that Psiphon application needs to be open in order to finish connection sequence. Clicking this notification also opens the app.-->
+  <string name="notification_text_open_psiphon_to_finish_connecting">لطفا برای کامل کردن اتصال، سایفون را باز کنید.</string>
+  <!--"Selected region is not available" notification title-->
+  <string name="notification_title_region_not_available">منطقه انتخاب‌شده در دسترس نمی‌باشد</string>
+  <!--Message shown in notification informing the user that selected region is not currently available-->
+  <string name="notification_text_region_not_available">لطفا سایفون را باز کرده و منطقه دیگری را انتخاب کنید.</string>
+  <!--"VPN stopped" notification title-->
+  <string name="notification_title_vpn_revoked">VPN Psiphon متوقف شده است</string>
+  <!--Message shown in notification informing the user that VPN has been disconnected by another app or revoked by the user-->
+  <string name="notification_text_vpn_revoked">اتصال VPN سایفون توسط شما یا برنامه دیگری قطع شد.</string>
 </resources>

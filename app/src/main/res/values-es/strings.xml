@@ -35,11 +35,11 @@
   <string name="ads_consent_preference_category_title">Personalización de publicidades</string>
   <string name="ads_consent_preference_dialog_preference_message">¿Realmente quiere restablecer su preferencia de personalización de publicidades?</string>
   <string name="ads_consent_preference_title">Restablecer preferencia de personalización de publicidades</string>
-  <string name="ads_consent_preference_dialog_title">Por defecto</string>
+  <string name="ads_consent_preference_dialog_title">Reiniciar</string>
   <string name="ads_consent_preference_summary">Restablezca su preferencia para permitir a las redes publicitarias usar cookies y sus datos personales</string>
   <string name="preference_language_selection_summary">Seleccione el Idioma</string>
   <string name="preference_language_selection_title">Idioma</string>
-  <string name="preference_language_title">Selección del lenguaje</string>
+  <string name="preference_language_title">Selección de idioma</string>
   <string name="preference_language_default_language">Idioma predeterminado</string>
   <!--A toast message which appears upon successful NFC bump & connection info transfer-->
   <string name="nfc_connection_info_import_success">Información de conexión importada exitosamente!</string>
@@ -91,4 +91,11 @@
   <string name="lbl_kin_pay">Gracias por optar en a Kin, ¿Le gustaría seguir donando 1 Kin a Psiphon cuando te conectes?</string>
   <!--Kin auto-pay confirmation negative button label. Clicking this button when presented auto-pay prompt will opt out the user of making Kin donations.-->
   <string name="lbl_opt_out">Optar por no participar</string>
+  <!--"Please open Psiphon to keep connecting" notification title-->
+  <!--Message shown in notification informing the user that Psiphon application needs to be open in order to finish connection sequence. Clicking this notification also opens the app.-->
+  <!--"Selected region is not available" notification title-->
+  <!--Message shown in notification informing the user that selected region is not currently available-->
+  <!--"VPN stopped" notification title-->
+  <string name="notification_title_vpn_revoked">Psiphon VPN se ha detenido</string>
+  <!--Message shown in notification informing the user that VPN has been disconnected by another app or revoked by the user-->
 </resources>
