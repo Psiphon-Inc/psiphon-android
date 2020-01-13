@@ -220,12 +220,12 @@ public class StatusActivity
         super.onResume();
         // Auto-start on app first run
         if (shouldAutoStart()) {
-            preventAutoStart();
             startUp();
         } else if (m_startupPending) {
             m_startupPending = false;
             doStartUp();
         }
+        preventAutoStart();
     }
 
     @Override
