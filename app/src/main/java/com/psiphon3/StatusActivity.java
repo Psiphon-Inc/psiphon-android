@@ -69,6 +69,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.reactivex.Completable;
+import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -97,7 +98,7 @@ public class StatusActivity
     private Disposable startUpInterstitialDisposable;
     private boolean disableInterstitialOnNextTabChange;
     private PublishRelay<Boolean> activeSpeedBoostRelay;
-    private Disposable toggleClickDisposable;
+    private Disposable autoStartDisposable;
 
     private StatusActivityBillingViewModel billingViewModel;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
@@ -226,10 +227,34 @@ public class StatusActivity
                 !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
     }
 
-    @Override
-    protected void onPause()
-    {
-        super.onPause();
+    // Returns an object only if tunnel should be auto-started,
+    // completes with no value otherwise.
+    private Maybe<Object> autoStartMaybe() {
+        boolean shouldAutoStart = shouldAutoStart();
+        preventAutoStart();
+
+        // Complete immediately if shouldn't auto-start
+        if (!shouldAutoStart) {
+            return Maybe.empty();
+        }
+
+        // Return a value immediately if startup is pending
+        if (m_startupPending) {
+            m_startupPending = false;
+            return Maybe.just(new Object());
+        }
+
+        // Return a value if user has a valid purchase or if IAB check failed,
+        // the IAB status check will be triggered again in onResume
+        return billingViewModel.subscriptionStateFlowable()
+                .firstOrError()
+                .flatMapMaybe(subscriptionState -> {
+                    if (subscriptionState.hasValidPurchase()
+                            || subscriptionState.status() == SubscriptionState.Status.IAB_FAILURE) {
+                        return Maybe.just(new Object());
+                    }
+                    return Maybe.empty();
+                });
     }
 
     @Override
@@ -237,26 +262,12 @@ public class StatusActivity
         billingViewModel.queryCurrentSubscriptionStatus();
         billingViewModel.queryAllSkuDetails();
         super.onResume();
-        if (m_startupPending) {
-            m_startupPending = false;
-            doStartUp();
-        } else {
-            compositeDisposable.add(
-                    billingViewModel.subscriptionStateFlowable()
-                            .firstOrError()
-                            .doOnSuccess(subscriptionState -> {
-                                // Automatically start if user has a valid purchase or if IAB check failed
-                                // the IAB status check will be triggered again in onResume
-                                if (subscriptionState.hasValidPurchase() || subscriptionState.status() == SubscriptionState.Status.IAB_FAILURE) {
-                                    if (shouldAutoStart()) {
-                                        preventAutoStart();
-                                        doStartUp();
-                                    }
-                                }
 
-                            })
-                            .subscribe()
-            );
+        if (autoStartDisposable == null || autoStartDisposable.isDisposed()) {
+            autoStartDisposable = autoStartMaybe()
+                    .doOnSuccess(__ -> doStartUp())
+                    .subscribe();
+            compositeDisposable.add(autoStartDisposable);
         }
     }
 

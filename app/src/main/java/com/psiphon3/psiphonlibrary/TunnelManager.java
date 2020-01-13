@@ -44,10 +44,10 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
-import android.util.Pair;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.TunnelState;
 import com.psiphon3.billing.PurchaseVerifier;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.subscription.BuildConfig;
@@ -295,7 +295,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     }
 
     // Sends handshake intent and tunnel state updates to the client Activity,
-    // also updates service notification.
+    // Also updates service notification and forwards tunnel state data to purchaseVerifier.
     private Disposable connectionStatusUpdaterDisposable() {
         return connectionObservable()
                 .switchMapSingle(isConnected -> {
@@ -348,7 +348,25 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         // which means we always add a sound / vibration alert to the notification
                         postServiceNotification(true, isConnected);
                     }
-                    purchaseVerifier.onTunnelConnected(new Pair<>(isConnected, m_tunnelState.listeningLocalHttpProxyPort));
+
+                    TunnelState tunnelState;
+                    if (m_tunnelState.isRunning) {
+                        TunnelState.ConnectionData connectionData = TunnelState.ConnectionData.builder()
+                                .setIsConnected(m_tunnelState.isConnected)
+                                .setClientRegion(m_tunnelState.clientRegion)
+                                .setClientVersion(EmbeddedValues.CLIENT_VERSION)
+                                .setPropagationChannelId(EmbeddedValues.PROPAGATION_CHANNEL_ID)
+                                .setSponsorId(m_tunnelState.sponsorId)
+                                .setHttpPort(m_tunnelState.listeningLocalHttpProxyPort)
+                                .setVpnMode(m_tunnelState.isVPN)
+                                .setHomePages(m_tunnelState.homePages)
+                                .setNeedsHelpConnecting(m_tunnelState.needsHelpConnecting)
+                                .build();
+                        tunnelState = TunnelState.running(connectionData);
+                    } else {
+                        tunnelState = TunnelState.stopped();
+                    }
+                    purchaseVerifier.onTunnelState(tunnelState);
                 })
                 .subscribe();
     }
@@ -553,7 +571,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getContext(), NOTIFICATION_CHANNEL_ID);
         return notificationBuilder
                 .setSmallIcon(iconID)
-                .setContentTitle(getContext().getText(R.string.app_name))
+                .setContentTitle(getContext().getText(R.string.app_name_psiphon_pro))
                 .setContentText(getContext().getText(contentTextID))
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(getContext().getText(contentTextID)))
                 .setTicker(ticker)
