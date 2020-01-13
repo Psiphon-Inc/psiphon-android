@@ -571,7 +571,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getContext(), NOTIFICATION_CHANNEL_ID);
         return notificationBuilder
                 .setSmallIcon(iconID)
-                .setContentTitle(getContext().getText(R.string.app_name))
+                .setContentTitle(getContext().getText(R.string.app_name_psiphon_pro))
                 .setContentText(getContext().getText(contentTextID))
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(getContext().getText(contentTextID)))
                 .setTicker(ticker)
