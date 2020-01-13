@@ -91,4 +91,11 @@
   <string name="lbl_kin_pay">谢谢您选择加入Kin项目。您是否愿意在您链接赛风时捐赠1 Kin给赛风？</string>
   <!--Kin auto-pay confirmation negative button label. Clicking this button when presented auto-pay prompt will opt out the user of making Kin donations.-->
   <string name="lbl_opt_out">退出Kin项目</string>
+  <!--"Please open Psiphon to keep connecting" notification title-->
+  <!--Message shown in notification informing the user that Psiphon application needs to be open in order to finish connection sequence. Clicking this notification also opens the app.-->
+  <!--"Selected region is not available" notification title-->
+  <!--Message shown in notification informing the user that selected region is not currently available-->
+  <!--"VPN stopped" notification title-->
+  <string name="notification_title_vpn_revoked">赛风 VPN 已停止</string>
+  <!--Message shown in notification informing the user that VPN has been disconnected by another app or revoked by the user-->
 </resources>
