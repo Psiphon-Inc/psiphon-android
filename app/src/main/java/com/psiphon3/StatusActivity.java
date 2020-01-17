@@ -223,28 +223,30 @@ public class StatusActivity
 
     private boolean shouldAutoStart() {
         return m_firstRun &&
-                !tunnelServiceInteractor.isServiceRunning(getApplicationContext()) &&
                 !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
     }
 
     // Returns an object only if tunnel should be auto-started,
     // completes with no value otherwise.
-    private Maybe<Object> autoStartMaybe() {
-        boolean shouldAutoStart = shouldAutoStart();
-        preventAutoStart();
-
-        // Complete immediately if shouldn't auto-start
-        if (!shouldAutoStart) {
+    private Maybe<Object> autoStartMaybe(boolean isFirstRun) {
+        // If service is running we shouldn't auto-start, complete immediately
+        if (tunnelServiceInteractor.isServiceRunning(getApplicationContext())) {
             return Maybe.empty();
         }
 
-        // Return a value immediately if startup is pending
+        // If service is not running check if startup is pending, if so return a value immediately
         if (m_startupPending) {
             m_startupPending = false;
             return Maybe.just(new Object());
         }
 
-        // Return a value if user has a valid purchase or if IAB check failed,
+        // If not the first app run then do not auto-start
+        if (!isFirstRun) {
+            return Maybe.empty();
+        }
+
+        // If this is a first app run then check subscription state and
+        // return a value if user has a valid purchase or if IAB check failed,
         // the IAB status check will be triggered again in onResume
         return billingViewModel.subscriptionStateFlowable()
                 .firstOrError()
@@ -259,12 +261,15 @@ public class StatusActivity
 
     @Override
     protected void onResume() {
+        super.onResume();
         billingViewModel.queryCurrentSubscriptionStatus();
         billingViewModel.queryAllSkuDetails();
-        super.onResume();
+
+        boolean isFirstRun = shouldAutoStart();
+        preventAutoStart();
 
         if (autoStartDisposable == null || autoStartDisposable.isDisposed()) {
-            autoStartDisposable = autoStartMaybe()
+            autoStartDisposable = autoStartMaybe(isFirstRun)
                     .doOnSuccess(__ -> doStartUp())
                     .subscribe();
             compositeDisposable.add(autoStartDisposable);
