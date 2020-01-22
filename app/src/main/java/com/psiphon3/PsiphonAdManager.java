@@ -220,6 +220,7 @@ public class PsiphonAdManager {
         this.currentAdTypeObservable = Observable.combineLatest(tunnelConnectionStateObservable(),
                 subscriptionStateObservable(),
                 ((BiFunction<TunnelState, SubscriptionState, Pair>) Pair::new))
+                .observeOn(AndroidSchedulers.mainThread())
                 .flatMap(pair -> {
                     TunnelState s = (TunnelState) pair.first;
                     SubscriptionState subscriptionState = (SubscriptionState) pair.second;
