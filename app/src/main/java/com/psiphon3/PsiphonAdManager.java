@@ -215,6 +215,7 @@ public class PsiphonAdManager {
         // Note this observable also destroys ads according to subscription and/or
         // connection status without further delay.
         this.currentAdTypeObservable = tunnelConnectionStateObservable()
+                .observeOn(AndroidSchedulers.mainThread())
                 .flatMap(s -> {
                     if(!shouldShowAds()) {
                         destroyAllAds();
@@ -253,13 +254,7 @@ public class PsiphonAdManager {
     }
 
     Observable<AdResult> getCurrentAdTypeObservable() {
-        return currentAdTypeObservable
-                // Debounce ad result of type UNTUNNELED with a delay of 500ms
-                // "Debounce - only emit an item from an Observable if a particular timespan has passed without it emitting another item."
-                // This is done in order to try and not load UNTUNNELED ads when service is restarting due to configuration change.
-                // TODO: remove when we merge seamless service restart.
-                .debounce(adResult -> adResult.type() == AdResult.Type.UNTUNNELED ?
-                        Observable.timer(500, TimeUnit.MILLISECONDS) : Observable.empty());
+        return currentAdTypeObservable;
     }
 
     private void runAdMobGdprCheck() {
