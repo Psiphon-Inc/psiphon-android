@@ -456,46 +456,62 @@ public class StatusActivity
             // already in progress, do nothing
             return;
         }
+
         int countdownSeconds = 10;
-        startUpInterstitialDisposable = psiphonAdManager.getCurrentAdTypeObservable()
-                .take(1)
-                .switchMap(adResult -> {
-                    if (adResult.type() == PsiphonAdManager.AdResult.Type.NONE) {
-                        doStartUp();
-                        return Observable.empty();
+
+        // Emits a value of countdown from countdownSeconds to 0 every second and updates
+        // start/stop button with this value.
+        Observable<Long> countdown =
+                Observable.intervalRange(0, countdownSeconds, 0, 1, TimeUnit.SECONDS)
+                        .map(t -> countdownSeconds - t)
+                        .doOnNext(t -> runOnUiThread(() -> m_toggleButton.setText(String.format(Locale.US, "%d", t))));
+
+        // Attempts to load an interstitial within countdownSeconds or emits an error if ad fails
+        // to load or a timeout occurs.
+        Observable<PsiphonAdManager.InterstitialResult> interstitial =
+                psiphonAdManager.getCurrentAdTypeObservable()
+                        .take(1)
+                        .switchMap(adResult -> {
+                            if (adResult.type() != PsiphonAdManager.AdResult.Type.UNTUNNELED) {
+                                return Observable.error(new RuntimeException("Start immediately with ad result: " + adResult));
+                            }
+                            return Observable.just(adResult)
+                                    .compose(psiphonAdManager
+                                            .getInterstitialWithTimeoutForAdType(countdownSeconds, TimeUnit.SECONDS));
+                        });
+
+        // Merge both countdown and interstitial observables. Start tunnel when the stream terminates
+        // with an error or after we load and play an interstitial, whichever occurs first.
+        startUpInterstitialDisposable = Observable.merge(countdown, interstitial)
+                .flatMap(o -> {
+                    // swallow any emissions that are not of type InterstitialResult
+                    if (o instanceof PsiphonAdManager.InterstitialResult) {
+                        PsiphonAdManager.InterstitialResult interstitialResult = (PsiphonAdManager.InterstitialResult) o;
+                        return Observable.just(interstitialResult);
                     }
-                    else if (adResult.type() == PsiphonAdManager.AdResult.Type.TUNNELED) {
-                        MyLog.g("startUp interstitial bad ad type: " + adResult.type());
-                        return Observable.empty();
-                    }
-
-                    Observable<PsiphonAdManager.InterstitialResult> interstitial =
-                            Observable.just(adResult)
-                                    .compose(psiphonAdManager.getInterstitialWithTimeoutForAdType(countdownSeconds, TimeUnit.SECONDS))
-                                    .doOnNext(interstitialResult -> {
-                                        if (interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.READY) {
-                                            m_startupPending = true;
-                                            interstitialResult.show();
-                                        }
-                                    })
-                                    .doOnComplete(() -> {
-                                        if(m_startupPending) {
-                                            m_startupPending = false;
-                                            doStartUp();
-                                        }
-                                    });
-
-                    Observable<Long> countdown =
-                            Observable.intervalRange(0, countdownSeconds, 0, 1, TimeUnit.SECONDS)
-                                    .map(t -> countdownSeconds - t)
-                                    .concatWith(Observable.error(new TimeoutException("Ad countdown timeout.")))
-                                    .doOnNext(t -> runOnUiThread(() ->m_toggleButton.setText(String.format(Locale.US, "%d", t))));
-
-                    return countdown
-                            .takeUntil(interstitial)
-                            .doOnError(__->doStartUp());
+                    return Observable.empty();
                 })
-                .onErrorResumeNext(Observable.empty())
+                // Make sure this subscription times out within countdownSeconds.
+                .ambWith(Observable.timer(countdownSeconds, TimeUnit.SECONDS)
+                        .flatMap(__ -> Observable.error(new TimeoutException("Startup subscription timed out."))))
+                // On error set m_startupPending flag and complete subscription.
+                .onErrorResumeNext(err -> {
+                    m_startupPending = true;
+                    return Observable.empty();
+                })
+                // If we have an interstitial then play it.
+                .doOnNext(interstitialResult -> {
+                    if (interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.READY) {
+                        m_startupPending = true;
+                        interstitialResult.show();
+                    }
+                })
+                .doOnComplete(() -> {
+                    if (m_startupPending) {
+                        m_startupPending = false;
+                        doStartUp();
+                    }
+                })
                 .subscribe();
         compositeDisposable.add(startUpInterstitialDisposable);
     }
