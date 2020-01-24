@@ -66,7 +66,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
@@ -90,7 +89,6 @@ public class StatusActivity
 
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_firstRun = true;
-    private static boolean m_startupPending = false;
 
     private PsiCashFragment psiCashFragment;
 
@@ -232,12 +230,6 @@ public class StatusActivity
         // If service is running we shouldn't auto-start, complete immediately
         if (tunnelServiceInteractor.isServiceRunning(getApplicationContext())) {
             return Maybe.empty();
-        }
-
-        // If service is not running check if startup is pending, if so return a value immediately
-        if (m_startupPending) {
-            m_startupPending = false;
-            return Maybe.just(new Object());
         }
 
         // If not the first app run then do not auto-start
@@ -459,60 +451,52 @@ public class StatusActivity
 
         int countdownSeconds = 10;
 
-        // Emits a value of countdown from countdownSeconds to 0 every second and updates
-        // start/stop button with this value.
-        Observable<Long> countdown =
+        // Updates start/stop button from countdownSeconds to 0 every second and then completes,
+        // does not emit any items downstream, only sends onComplete notification when done.
+        Observable<Object> countdown =
                 Observable.intervalRange(0, countdownSeconds, 0, 1, TimeUnit.SECONDS)
                         .map(t -> countdownSeconds - t)
-                        .doOnNext(t -> runOnUiThread(() -> m_toggleButton.setText(String.format(Locale.US, "%d", t))));
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext(t -> m_toggleButton.setText(String.format(Locale.US, "%d", t)))
+                        .ignoreElements()
+                        .toObservable();
 
         // Attempts to load an interstitial within countdownSeconds or emits an error if ad fails
         // to load or a timeout occurs.
         Observable<PsiphonAdManager.InterstitialResult> interstitial =
                 psiphonAdManager.getCurrentAdTypeObservable()
-                        .take(1)
-                        .switchMap(adResult -> {
+                        .firstOrError()
+                        .flatMapObservable(adResult -> {
                             if (adResult.type() != PsiphonAdManager.AdResult.Type.UNTUNNELED) {
                                 return Observable.error(new RuntimeException("Start immediately with ad result: " + adResult));
                             }
                             return Observable.just(adResult)
                                     .compose(psiphonAdManager
-                                            .getInterstitialWithTimeoutForAdType(countdownSeconds, TimeUnit.SECONDS));
+                                            .getInterstitialWithTimeoutForAdType(countdownSeconds, TimeUnit.SECONDS))
+                                    // If we have an interstitial then try and show it.
+                                    .doOnNext(interstitialResult -> {
+                                        if (interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.READY) {
+                                            interstitialResult.show();
+                                        }
+                                    });
                         });
 
-        // Merge both countdown and interstitial observables. Start tunnel when the stream terminates
-        // with an error or after we load and play an interstitial, whichever occurs first.
-        startUpInterstitialDisposable = Observable.merge(countdown, interstitial)
-                .flatMap(o -> {
-                    // swallow any emissions that are not of type InterstitialResult
-                    if (o instanceof PsiphonAdManager.InterstitialResult) {
-                        PsiphonAdManager.InterstitialResult interstitialResult = (PsiphonAdManager.InterstitialResult) o;
-                        return Observable.just(interstitialResult);
-                    }
-                    return Observable.empty();
-                })
-                // Make sure this subscription times out within countdownSeconds.
-                .ambWith(Observable.timer(countdownSeconds, TimeUnit.SECONDS)
-                        .flatMap(__ -> Observable.error(new TimeoutException("Startup subscription timed out."))))
-                // On error set m_startupPending flag and complete subscription.
+        startUpInterstitialDisposable = countdown
+                // ambWith mirrors the ObservableSource that first either emits an
+                // item or sends a termination notification.
+                .ambWith(interstitial)
+                // On error just complete this subscription which then will start the service.
                 .onErrorResumeNext(err -> {
-                    m_startupPending = true;
                     return Observable.empty();
                 })
-                // If we have an interstitial then play it.
-                .doOnNext(interstitialResult -> {
-                    if (interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.READY) {
-                        m_startupPending = true;
-                        interstitialResult.show();
-                    }
-                })
-                .doOnComplete(() -> {
-                    if (m_startupPending) {
-                        m_startupPending = false;
-                        doStartUp();
-                    }
-                })
+                // This subscription completes due to one of the following reasons:
+                // 1. Countdown completed before interstitial observable emitted anything.
+                // 2. There was an error emission from interstitial observable.
+                // 3. Interstitial observable completed because it was closed.
+                // Now we should attempt to start the service.
+                .doOnComplete(this::doStartUp)
                 .subscribe();
+
         compositeDisposable.add(startUpInterstitialDisposable);
     }
 
