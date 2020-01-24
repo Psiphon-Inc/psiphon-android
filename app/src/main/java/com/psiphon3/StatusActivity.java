@@ -454,7 +454,7 @@ public class StatusActivity
         // Updates start/stop button from countdownSeconds to 0 every second and then completes,
         // does not emit any items downstream, only sends onComplete notification when done.
         Observable<Object> countdown =
-                Observable.intervalRange(0, countdownSeconds, 0, 1, TimeUnit.SECONDS)
+                Observable.intervalRange(0, countdownSeconds + 1, 0, 1, TimeUnit.SECONDS)
                         .map(t -> countdownSeconds - t)
                         .observeOn(AndroidSchedulers.mainThread())
                         .doOnNext(t -> m_toggleButton.setText(String.format(Locale.US, "%d", t)))
