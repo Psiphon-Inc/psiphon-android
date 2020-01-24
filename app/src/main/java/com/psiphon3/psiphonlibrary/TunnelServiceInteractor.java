@@ -115,6 +115,10 @@ public class TunnelServiceInteractor {
         }
     }
 
+    public void onResume() {
+        sendServiceMessage(TunnelManager.ClientToServiceMessage.ON_RESUME.ordinal(), null);
+    }
+
     public void onDestroy(Context context) {
         LocalBroadcastManager.getInstance(context).unregisterReceiver(broadcastReceiver);
     }

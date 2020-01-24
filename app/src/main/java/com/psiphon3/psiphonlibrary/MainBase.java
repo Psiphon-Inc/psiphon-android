@@ -200,8 +200,6 @@ public abstract class MainBase {
         protected TunnelServiceInteractor tunnelServiceInteractor;
         private Disposable handleNfcIntentDisposable;
 
-        protected boolean isAppInForeground;
-
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
         }
@@ -855,8 +853,6 @@ public abstract class MainBase {
         protected void onResume() {
             super.onResume();
 
-            isAppInForeground = true;
-            
             // Load new logs from the logging provider now
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                 m_loggingObserver.dispatchChange(false, LoggingProvider.INSERT_URI);
@@ -924,8 +920,6 @@ public abstract class MainBase {
         @Override
         protected void onPause() {
             super.onPause();
-
-            isAppInForeground = false;
 
             getContentResolver().unregisterContentObserver(m_loggingObserver);
             cancelInvalidProxySettingsToast();
