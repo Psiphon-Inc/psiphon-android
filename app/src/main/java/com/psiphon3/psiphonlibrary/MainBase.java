@@ -200,8 +200,6 @@ public abstract class MainBase {
         protected TunnelServiceInteractor tunnelServiceInteractor;
         private Disposable handleNfcIntentDisposable;
 
-        protected boolean isAppInForeground;
-
         public TabbedActivityBase() {
             Utils.initializeSecureRandom();
         }
@@ -855,8 +853,6 @@ public abstract class MainBase {
         protected void onResume() {
             super.onResume();
 
-            isAppInForeground = true;
-            
             // Load new logs from the logging provider now
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                 m_loggingObserver.dispatchChange(false, LoggingProvider.INSERT_URI);
@@ -885,6 +881,14 @@ public abstract class MainBase {
                             this.getClass()));
                 }
             }
+
+            // Update the state of UI when resuming the activity with latest tunnel state.
+            // This will ensure proper state of the VPN toggle button if user clicked Cancel Request
+            // on the VPN permission prompt, for example.
+            compositeDisposable.add(tunnelServiceInteractor.tunnelStateFlowable()
+                    .firstOrError()
+                    .doOnSuccess(this::updateServiceStateUI)
+                    .subscribe());
         }
 
         private void handleNfcIntent(Intent intent) {
@@ -924,8 +928,6 @@ public abstract class MainBase {
         @Override
         protected void onPause() {
             super.onPause();
-
-            isAppInForeground = false;
 
             getContentResolver().unregisterContentObserver(m_loggingObserver);
             cancelInvalidProxySettingsToast();

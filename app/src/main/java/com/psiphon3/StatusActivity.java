@@ -257,6 +257,10 @@ public class StatusActivity
         billingViewModel.queryCurrentSubscriptionStatus();
         billingViewModel.queryAllSkuDetails();
 
+        // Notify tunnel service if it is running so it may trigger purchase check and
+        // upgrade current connection if there is a new valid subscription purchase.
+        tunnelServiceInteractor.onResume();
+
         boolean isFirstRun = shouldAutoStart();
         preventAutoStart();
 

@@ -96,6 +96,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         RESTART_SERVICE,
         NFC_CONNECTION_INFO_EXCHANGE_EXPORT,
         NFC_CONNECTION_INFO_EXCHANGE_IMPORT,
+        ON_RESUME,
     }
 
     // Service -> Client
@@ -661,7 +662,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         }
                         manager.mClients.add(client);
                         manager.m_newClientPublishRelay.accept(new Object());
-                        manager.purchaseVerifier.queryCurrentSubscriptionStatus();
 
                         // When new client binds also sync locale
                         setLocale(manager);
@@ -707,6 +707,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         manager.handleNfcConnectionInfoExchangeExport();
                     }
                     break;
+
+                case ON_RESUME:
+                    manager.purchaseVerifier.queryCurrentSubscriptionStatus();
 
                 default:
                     super.handleMessage(msg);

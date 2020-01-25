@@ -69,6 +69,7 @@ public class TunnelServiceInteractor {
 
     private Rx2ServiceBindingFactory serviceBindingFactory;
     private boolean isStopped = true;
+    private Disposable serviceMessengerDisposable;
 
     public TunnelServiceInteractor(Context context) {
         // Listen to SERVICE_STARTING_BROADCAST_INTENT broadcast that may be sent by another instance
@@ -112,6 +113,10 @@ public class TunnelServiceInteractor {
             sendServiceMessage(TunnelManager.ClientToServiceMessage.UNREGISTER.ordinal(), null);
             serviceBindingFactory.unbind(context);
         }
+    }
+
+    public void onResume() {
+        sendServiceMessage(TunnelManager.ClientToServiceMessage.ON_RESUME.ordinal(), null);
     }
 
     public void onDestroy(Context context) {
@@ -244,7 +249,7 @@ public class TunnelServiceInteractor {
 
     private void bindTunnelService(Context context, Intent intent) {
         serviceBindingFactory = new Rx2ServiceBindingFactory(context, intent);
-        serviceBindingFactory.getMessengerObservable()
+        serviceMessengerDisposable = serviceBindingFactory.getMessengerObservable()
                 .doOnComplete(() -> tunnelStateRelay.accept(TunnelState.stopped()))
                 .doOnComplete(() -> dataStatsRelay.accept(Boolean.FALSE))
                 .subscribe();
@@ -258,12 +263,12 @@ public class TunnelServiceInteractor {
     }
 
     private void sendServiceMessage(int what, Bundle data) {
-        if (serviceBindingFactory == null) {
+        if (serviceMessengerDisposable == null || serviceMessengerDisposable.isDisposed()) {
             return;
         }
         serviceBindingFactory.getMessengerObservable()
-                .take(1)
-                .doOnNext(messenger -> {
+                .firstOrError()
+                .doOnSuccess(messenger -> {
                     try {
                         Message msg = Message.obtain(null, what);
                         msg.replyTo = incomingMessenger;
