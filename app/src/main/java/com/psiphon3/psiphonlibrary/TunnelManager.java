@@ -709,7 +709,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                     break;
 
                 case ON_RESUME:
-                    manager.purchaseVerifier.queryCurrentSubscriptionStatus();
+                    if (manager != null) {
+                        manager.purchaseVerifier.queryCurrentSubscriptionStatus();
+                    }
+                    break;
 
                 default:
                     super.handleMessage(msg);
