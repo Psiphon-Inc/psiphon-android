@@ -153,6 +153,12 @@ public class PurchaseVerifier {
                     SubscriptionState subscriptionState = pair.first;
                     TunnelState.ConnectionData connectionData = pair.second;
                     final int httpProxyPort = connectionData.httpPort();
+
+                    if (subscriptionState.error() != null) {
+                        Utils.MyLog.g("PurchaseVerifier: continue due to subscription check error: " + subscriptionState.error());
+                        return Flowable.empty();
+                    }
+
                     if (!subscriptionState.hasValidPurchase()) {
                         if (BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(connectionData.sponsorId())) {
                             Utils.MyLog.g("PurchaseVerifier: user has no subscription, will restart as non subscriber.");
