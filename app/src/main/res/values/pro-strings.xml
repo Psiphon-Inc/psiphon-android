@@ -242,11 +242,11 @@
     <string name="psicash_purchase_free_description">Watch video and earn</string>
     <string name="psicash_purchase_free_button_price">Free</string>
     <string name="psicash_store_disclaimer">This is where the psicash account disclaimer would go. Don’t uninstsall the app or you will lose your Psicash.</string>
-    <string name="speed_boost_unavailable">Speed Boost Unavailable</string>
-    <string name="connect_to_psiphon_to_use_speed_boost">Connect to Psiphon to use Speed Boost.</string>
+    <string name="speed_boost_unavailable">Speed Boost is unavailable when you are not connected to Psiphon</string>
     <string name="connect_to_psiphon_button_text">Connect to Psiphon</string>
     <string name="wait_for_psiphon_to_finish_connect_to_use_speed_boost">Please wait for Psiphon to finish connecting to use Speed Boost</string>
-    <string name="psicash_store_not_available_when_subscribed">PsiCash store is not available when you have a subscription</string>
+    <string name="psicash_store_subscription_title">Your Psiphon subscription gives you premium access!</string>
+    <string name="psicash_store_subscription_description">Your Psiphon subscription already gives you always-on Speed Boost, so there is no reason to buy more. Your PsiCash balance will be retained should you ever decide to cancel your subscription</string>
     <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_store">Please wait for Psiphon to finish connecting to use PsiCash store</string>
     <string name="psicash_balance_out_of_date_dialog_title" >PsiCash</string>
     <string name="psicash_out_of_date_dialog_message" >Your PsiCash balance is out of date. Connect to Psiphon to refresh.</string>
