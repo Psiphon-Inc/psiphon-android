@@ -14,17 +14,30 @@
     android:orientation="vertical">
 
     <LinearLayout
-        android:id="@+id/largeAdSlot"
-        android:orientation="vertical"
-        android:layout_width="fill_parent"
+        android:id="@+id/largeAdSlotContainer"
+        android:layout_gravity="center_horizontal"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center" />
+        android:padding="0dp"
+        android:visibility="gone"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/largeAdSlot"
+            android:layout_gravity="center"
+            android:background="@drawable/unnamed"
+            android:minWidth="300dip"
+            android:minHeight="250dip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+    </LinearLayout>
 
     <RelativeLayout
         android:id="@+id/tablayout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/largeAdSlot" >
+        android:layout_below="@+id/largeAdSlotContainer" >
 
         <HorizontalScrollView
             android:layout_width="fill_parent"
@@ -51,82 +64,35 @@
             android:layout_height="fill_parent">
 
             <!-- Using 0dp, which is the equivalent of "MATCH_CONSTRAINT" -->
-            <ViewFlipper
-                android:id="@+id/sponsorViewFlipper"
+            <LinearLayout
                 android:layout_width="fill_parent"
                 android:layout_height="0dp"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toTopOf="@id/rateLimitLinearLayout"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintBottom_toTopOf="@id/rateLimitLinearLayout"
                 app:layout_constraintTop_toTopOf="parent">
 
-                <ScrollView
-                    android:id="@+id/statusLayout"
-                    android:layout_width="fill_parent"
-                    android:layout_height="fill_parent"
-                    android:orientation="vertical"
-                    android:scrollbarAlwaysDrawVerticalTrack="false">
-
-                    <LinearLayout
-                        android:layout_width="fill_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="10dp">
-
-                        <ImageButton
-                            android:id="@+id/statusViewImage"
-                            android:layout_width="wrap_content"
-                            android:layout_height="150dp"
-                            android:layout_gravity="center"
-                            android:background="@android:color/transparent"
-                            android:padding="20dp"
-                            android:scaleType="fitCenter" />
-
-                        <TextView
-                            android:id="@+id/versionline"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:text="" />
-
-                        <TextView
-                            android:id="@+id/lastlogline"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:text="" />
-
-                        <Button
-                            android:id="@+id/getHelpConnectingButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:onClick="onGetHelpConnectingClick"
-                            android:text="@string/need_help_connecting"
-                            android:visibility="gone"
-                            tools:visibility="visible" />
-                    </LinearLayout>
-                </ScrollView>
-
-                <RelativeLayout
-                    android:id="@+id/sponsorLayout"
+                <android.support.design.widget.CoordinatorLayout
+                    android:id="@+id/psicash_coordinator_layout"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent">
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
 
-                    <WebView
-                        android:id="@+id/sponsorWebView"
+                    <ScrollView
+                        android:id="@+id/psicashContainer"
                         android:layout_width="fill_parent"
-                        android:layout_height="fill_parent" />
+                        android:layout_height="fill_parent"
+                        android:orientation="vertical"
+                        android:scrollbarAlwaysDrawVerticalTrack="false">
 
-                    <ProgressBar
-                        android:id="@+id/sponsorWebViewProgressBar"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="fill_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentBottom="true"
-                        android:progressDrawable="@drawable/home_progressbar" />
-                </RelativeLayout>
-            </ViewFlipper>
+                        <FrameLayout
+                            android:id="@+id/psicash_fragment_container"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+                    </ScrollView>
+                </android.support.design.widget.CoordinatorLayout>
+            </LinearLayout>
 
             <include
                 layout="@layout/rate_limit_info"
@@ -273,32 +239,6 @@
                 android:layout_height="wrap_content"
                 layout="@layout/statistics" />
         </ScrollView>
-
-        <android.support.design.widget.CoordinatorLayout
-            android:id="@+id/psicash_coordinator_layout"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-
-            <ScrollView
-                android:id="@+id/psicashTab"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:orientation="vertical"
-                android:padding="10dp"
-                android:scrollbarAlwaysDrawVerticalTrack="false"
-                android:weightSum="1.0">
-
-                <fragment
-                    android:id="@+id/psicash_fragment_container"
-                    android:name="com.psiphon3.PsiCashFragment"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-            </ScrollView>
-        </android.support.design.widget.CoordinatorLayout>
 
         <LinearLayout
             android:id="@+id/logsTab"

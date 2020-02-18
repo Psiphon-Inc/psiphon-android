@@ -4,15 +4,14 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.util.Pair;
 
-import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.Purchase;
-import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
 import com.psiphon3.psiphonlibrary.Authorization;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.BuildConfig;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
@@ -24,6 +23,7 @@ import java.util.List;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
@@ -33,102 +33,22 @@ public class PurchaseVerifier {
 
     private final AppPreferences appPreferences;
     private final Context context;
-    private final PurchaseAuthorizationListener purchaseAuthorizationListener;
-    private BillingRepository repository;
+    private final VerificationResultListener verificationResultListener;
+    private GooglePlayBillingHelper repository;
 
     private PublishRelay<TunnelState> tunnelConnectionStatePublishRelay = PublishRelay.create();
-    private BehaviorRelay<SubscriptionState> subscriptionStateBehaviorRelay = BehaviorRelay.create();
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
     private ArrayList<String> invalidPurchaseTokensList = new ArrayList<>();
 
-    public PurchaseVerifier(Context context, PurchaseAuthorizationListener purchaseAuthorizationListener) {
+    public PurchaseVerifier(@NonNull Context context, @NonNull VerificationResultListener verificationResultListener) {
         this.context = context;
         this.appPreferences = new AppPreferences(context);
-        this.repository = BillingRepository.getInstance(context);
-        this.purchaseAuthorizationListener = purchaseAuthorizationListener;
-    }
+        this.repository = GooglePlayBillingHelper.getInstance(context);
+        this.verificationResultListener = verificationResultListener;
 
-    public void startIab() {
-        compositeDisposable.addAll(
-                purchaseUpdatesDisposable(),
-                purchaseVerificationDisposable()
-        );
-        queryCurrentSubscriptionStatus();
-    }
-
-    private Disposable purchaseUpdatesDisposable() {
-        return repository.observeUpdates()
-                .subscribe(
-                        purchasesUpdate -> {
-                            if (purchasesUpdate.responseCode() == BillingClient.BillingResponseCode.OK) {
-                                processPurchases(purchasesUpdate.purchases());
-                            } else if (purchasesUpdate.responseCode() == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) {
-                                queryCurrentSubscriptionStatus();
-                            } else {
-                                Utils.MyLog.g("PurchaseVerifier::observeUpdates purchase update error response code: " + purchasesUpdate.responseCode());
-                            }
-                        },
-                        err -> {
-                            subscriptionStateBehaviorRelay.accept(SubscriptionState.billingError(err));
-                        }
-                );
-    }
-
-    private void processPurchases(List<Purchase> purchaseList) {
-        if (purchaseList == null || purchaseList.size() == 0) {
-            subscriptionStateBehaviorRelay.accept(SubscriptionState.noSubscription());
-            return;
-        }
-
-        for (Purchase purchase : purchaseList) {
-            // Skip purchase with pending or unspecified state.
-            if (purchase.getPurchaseState() != Purchase.PurchaseState.PURCHASED) {
-                continue;
-            }
-
-            // Skip purchases that don't pass signature verification.
-            if (!Security.verifyPurchase(BillingRepository.IAB_PUBLIC_KEY,
-                    purchase.getOriginalJson(), purchase.getSignature())) {
-                Utils.MyLog.g("PurchaseVerifier::processPurchases: failed on-device verification for purchase: " + purchase);
-                continue;
-            }
-
-            if (BillingRepository.hasUnlimitedSubscription(purchase)) {
-                subscriptionStateBehaviorRelay.accept(SubscriptionState.unlimitedSubscription(purchase));
-                return;
-            } else if (BillingRepository.hasLimitedSubscription(purchase)) {
-                subscriptionStateBehaviorRelay.accept(SubscriptionState.limitedSubscription(purchase));
-                return;
-            } else if (BillingRepository.hasTimePass(purchase)) {
-                subscriptionStateBehaviorRelay.accept(SubscriptionState.timePass(purchase));
-                return;
-            }
-        }
-        subscriptionStateBehaviorRelay.accept(SubscriptionState.noSubscription());
-    }
-
-    public void queryCurrentSubscriptionStatus() {
-        compositeDisposable.add(
-                Single.mergeDelayError(repository.getSubscriptions(), repository.getPurchases())
-                        .toList()
-                        .map(listOfLists -> {
-                            List<Purchase> purchaseList = new ArrayList<>();
-                            for (List<Purchase> list : listOfLists) {
-                                purchaseList.addAll(list);
-                            }
-                            return purchaseList;
-                        })
-                        .subscribe(
-                                this::processPurchases,
-                                err -> subscriptionStateBehaviorRelay.accept(SubscriptionState.billingError(err))
-                        )
-        );
-    }
-
-    public Flowable<SubscriptionState> subscriptionStateFlowable() {
-        return subscriptionStateBehaviorRelay
-                .distinctUntilChanged()
-                .toFlowable(BackpressureStrategy.LATEST);
+        compositeDisposable.add(subscriptionVerificationDisposable());
+        compositeDisposable.add(psiCashPurchaseVerificationDisposable());
+        queryAllPurchases();
     }
 
     private Flowable<TunnelState> tunnelConnectionStateFlowable() {
@@ -137,7 +57,67 @@ public class PurchaseVerifier {
                 .toFlowable(BackpressureStrategy.LATEST);
     }
 
-    private Disposable purchaseVerificationDisposable() {
+    private Disposable psiCashPurchaseVerificationDisposable() {
+        return tunnelConnectionStateFlowable()
+                .switchMap(tunnelState -> {
+                    if (tunnelState.isRunning() && tunnelState.connectionData().isConnected()) {
+                        return repository.purchaseStateFlowable()
+                                .flatMapIterable(PurchaseState::purchaseList)
+                                .map(purchase -> new Pair<>(purchase, tunnelState.connectionData()));
+                    }
+                    // Not connected, do nothing
+                    return Flowable.empty();
+                    // Once connected run IAB check and pass PsiCash purchase and
+                    // current tunnel state connection data downstream.
+                })
+                .switchMap(pair -> {
+                    final Purchase purchase = pair.first;
+                    final TunnelState.ConnectionData connectionData = pair.second;
+
+                    if (purchase == null || !GooglePlayBillingHelper.isPsiCashPurchase(purchase)) {
+                        return Flowable.empty();
+                    }
+
+                    // Check if we previously marked this purchase as 'bad'
+                    if (invalidPurchaseTokensList.size() > 0 &&
+                            invalidPurchaseTokensList.contains(purchase.getPurchaseToken())) {
+                        Utils.MyLog.g("PurchaseVerifier: bad PsiCash purchase, continue.");
+                        return Flowable.empty();
+                    }
+
+                    final AppPreferences mp = new AppPreferences(context);
+                    String psiCashCustomData = mp.getString(context.getString(R.string.persistentPsiCashCustomData), "");
+                    if ( TextUtils.isEmpty(psiCashCustomData)) {
+                        Utils.MyLog.g("PurchaseVerifier: error: can't redeem PsiCash purchase, custom data is empty");
+                        return Flowable.empty();
+                    }
+
+                    PurchaseVerificationNetworkHelper purchaseVerificationNetworkHelper =
+                            new PurchaseVerificationNetworkHelper.Builder(context)
+                                    .withConnectionData(connectionData)
+                                    .withCustomData(psiCashCustomData)
+                                    .build();
+
+                    Utils.MyLog.g("PurchaseVerifier: will try and redeem PsiCash purchase.");
+                    return purchaseVerificationNetworkHelper.verifyFlowable(purchase)
+                            .flatMap(json -> {
+                                // Purchase redeemed, consume and send PSICASH_PURCHASE_REDEEMED
+                                return repository.consumePurchase(purchase)
+                                        .map(__ -> VerificationResult.PSICASH_PURCHASE_REDEEMED)
+                                        .toFlowable();
+                                    }
+                            )
+                            .doOnError(e -> {
+                                Utils.MyLog.g("PurchaseVerifier: verifying PsiCash purchase failed with error: " + e);
+                            })
+                            .onErrorResumeNext(Flowable.empty());
+
+                })
+                .doOnNext(verificationResultListener::onVerificationResult)
+                .subscribe();
+    }
+
+    private Disposable subscriptionVerificationDisposable() {
         return tunnelConnectionStateFlowable()
                 .switchMap(tunnelState -> {
                     if (!(tunnelState.isRunning() && tunnelState.connectionData().isConnected())) {
@@ -146,13 +126,12 @@ public class PurchaseVerifier {
                     }
                     // Once connected run IAB check and pass the subscription state and
                     // current tunnel state connection data downstream.
-                    return subscriptionStateFlowable()
+                    return repository.subscriptionStateFlowable()
                             .map(subscriptionState -> new Pair<>(subscriptionState, tunnelState.connectionData()));
                 })
                 .switchMap(pair -> {
-                    SubscriptionState subscriptionState = pair.first;
-                    TunnelState.ConnectionData connectionData = pair.second;
-                    final int httpProxyPort = connectionData.httpPort();
+                    final SubscriptionState subscriptionState = pair.first;
+                    final TunnelState.ConnectionData connectionData = pair.second;
 
                     if (subscriptionState.error() != null) {
                         Utils.MyLog.g("PurchaseVerifier: continue due to subscription check error: " + subscriptionState.error());
@@ -162,7 +141,7 @@ public class PurchaseVerifier {
                     if (!subscriptionState.hasValidPurchase()) {
                         if (BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(connectionData.sponsorId())) {
                             Utils.MyLog.g("PurchaseVerifier: user has no subscription, will restart as non subscriber.");
-                            return Flowable.just(UpdateConnectionAction.RESTART_AS_NON_SUBSCRIBER);
+                            return Flowable.just(VerificationResult.RESTART_AS_NON_SUBSCRIBER);
                         } else {
                             Utils.MyLog.g("PurchaseVerifier: user has no subscription, continue.");
                             return Flowable.empty();
@@ -174,7 +153,7 @@ public class PurchaseVerifier {
                     // Check if we previously marked this purchase as 'bad'
                     if (invalidPurchaseTokensList.size() > 0 &&
                             invalidPurchaseTokensList.contains(purchase.getPurchaseToken())) {
-                        Utils.MyLog.g("PurchaseVerifier: bad purchase, continue.");
+                        Utils.MyLog.g("PurchaseVerifier: bad subscription purchase, continue.");
                         return Flowable.empty();
                     }
 
@@ -188,25 +167,20 @@ public class PurchaseVerifier {
                         // We already aware of this purchase, do nothing
                         return Flowable.empty();
                     }
+
                     // We have a fresh purchase. Store the purchase token and reset the persisted authorization Id
-                    Utils.MyLog.g("PurchaseVerifier: user has new valid purchase.");
+                    Utils.MyLog.g("PurchaseVerifier: user has new valid subscription purchase.");
                     appPreferences.put(PREFERENCE_PURCHASE_TOKEN, purchase.getPurchaseToken());
                     appPreferences.put(PREFERENCE_PURCHASE_AUTHORIZATION_ID, "");
 
                     // Now try and fetch authorization for this purchase
-                    boolean isSubscription = BillingRepository.hasUnlimitedSubscription(purchase)
-                            || BillingRepository.hasLimitedSubscription(purchase);
-
                     PurchaseVerificationNetworkHelper purchaseVerificationNetworkHelper =
                             new PurchaseVerificationNetworkHelper.Builder(context)
-                                    .withProductId(purchase.getSku())
-                                    .withIsSubscription(isSubscription)
-                                    .withPurchaseToken(purchase.getPurchaseToken())
-                                    .withHttpProxyPort(httpProxyPort)
+                                    .withConnectionData(connectionData)
                                     .build();
 
                     Utils.MyLog.g("PurchaseVerifier: will try and fetch new authorization.");
-                    return purchaseVerificationNetworkHelper.fetchAuthorizationFlowable()
+                    return purchaseVerificationNetworkHelper.verifyFlowable(purchase)
                             .map(json -> {
                                         // Note that response with other than 200 HTTP code from the server is
                                         // treated the same as a 200 OK response with empty payload and should result
@@ -215,9 +189,10 @@ public class PurchaseVerifier {
                                         if (TextUtils.isEmpty(json)) {
                                             // If payload is empty then do not try to JSON decode,
                                             // remember the bad token and restart as non-subscriber.
+                                            // TODO: inspect HTTP response for purchases actually reported as bad
                                             invalidPurchaseTokensList.add(purchase.getPurchaseToken());
-                                            Utils.MyLog.g("PurchaseVerifier: purchase verification server returned empty payload.");
-                                            return UpdateConnectionAction.RESTART_AS_NON_SUBSCRIBER;
+                                            Utils.MyLog.g("PurchaseVerifier: subscription verification: server returned empty payload.");
+                                            return VerificationResult.RESTART_AS_NON_SUBSCRIBER;
                                         }
 
                                         String encodedAuth = new JSONObject(json).getString("signed_authorization");
@@ -226,8 +201,8 @@ public class PurchaseVerifier {
                                             // Expired or invalid purchase,
                                             // remember the bad token and restart as non-subscriber.
                                             invalidPurchaseTokensList.add(purchase.getPurchaseToken());
-                                            Utils.MyLog.g("PurchaseVerifier: purchase verification server returned empty authorization.");
-                                            return UpdateConnectionAction.RESTART_AS_NON_SUBSCRIBER;
+                                            Utils.MyLog.g("PurchaseVerifier: subscription verification: server returned empty authorization.");
+                                            return VerificationResult.RESTART_AS_NON_SUBSCRIBER;
                                         }
 
                                         // Persist authorization ID and authorization.
@@ -246,12 +221,12 @@ public class PurchaseVerifier {
                                         }
                                         Authorization.removeAuthorizations(context, authorizationsToRemove);
                                         Authorization.storeAuthorization(context, authorization);
-                                        Utils.MyLog.g("PurchaseVerifier: server returned new authorization.");
-                                        return UpdateConnectionAction.RESTART_AS_SUBSCRIBER;
+                                        Utils.MyLog.g("PurchaseVerifier: subscription verification: server returned new authorization.");
+                                        return VerificationResult.RESTART_AS_SUBSCRIBER;
                                     }
                             )
                             .doOnError(e -> {
-                                Utils.MyLog.g("PurchaseVerifier: fetching authorization failed with error: " + e);
+                                Utils.MyLog.g("PurchaseVerifier: subscription verification: fetching authorization failed with error: " + e);
                             })
                             // If we fail HTTP request after all retries for whatever reason do not
                             // restart connection as a non-subscriber. The user may have a legit purchase
@@ -260,12 +235,12 @@ public class PurchaseVerifier {
                             .onErrorResumeNext(Flowable.empty());
 
                 })
-                .doOnNext(purchaseAuthorizationListener::updateConnection)
+                .doOnNext(verificationResultListener::onVerificationResult)
                 .subscribe();
     }
 
     public Single<String> sponsorIdSingle() {
-        return subscriptionStateFlowable()
+        return repository.subscriptionStateFlowable()
                 .firstOrError()
                 .map(subscriptionState -> {
                             if (subscriptionState.hasValidPurchase()) {
@@ -303,7 +278,7 @@ public class PurchaseVerifier {
             Utils.MyLog.g("PurchaseVerifier: persisted purchase authorization ID is not active, will query subscription status.");
             appPreferences.put(PREFERENCE_PURCHASE_TOKEN, "");
             appPreferences.put(PREFERENCE_PURCHASE_AUTHORIZATION_ID, "");
-            queryCurrentSubscriptionStatus();
+            repository.queryAllPurchases();
         } else {
             Utils.MyLog.g("PurchaseVerifier: subscription authorization accepted, continue.");
         }
@@ -313,12 +288,18 @@ public class PurchaseVerifier {
         compositeDisposable.dispose();
     }
 
-    public enum UpdateConnectionAction {
-        RESTART_AS_NON_SUBSCRIBER,
-        RESTART_AS_SUBSCRIBER
+    public void queryAllPurchases() {
+        repository.startIab();
+        repository.queryAllPurchases();
     }
 
-    public interface PurchaseAuthorizationListener {
-        void updateConnection(UpdateConnectionAction action);
+    public enum VerificationResult {
+        RESTART_AS_NON_SUBSCRIBER,
+        RESTART_AS_SUBSCRIBER,
+        PSICASH_PURCHASE_REDEEMED,
+    }
+
+    public interface VerificationResultListener {
+        void onVerificationResult(VerificationResult action);
     }
 }

@@ -41,7 +41,6 @@ import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.InterstitialAd;
-import com.google.android.gms.ads.MobileAds;
 import com.google.auto.value.AutoValue;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.mopub.common.MoPub;
@@ -55,7 +54,6 @@ import com.mopub.mobileads.MoPubView;
 import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.subscription.BuildConfig;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -161,7 +159,6 @@ public class PsiphonAdManager {
 
     private final Runnable adMobPayOptionRunnable;
     private final Completable initializeMoPubSdk;
-    private final Completable initializeAdMobSdk;
 
     private final Observable<AdResult> currentAdTypeObservable;
     private Disposable loadAdsDisposable;
@@ -180,6 +177,12 @@ public class PsiphonAdManager {
 
         // MoPub SDK is also tracking GDPR status and will present a GDPR consent collection dialog if needed.
         this.initializeMoPubSdk = Completable.create(emitter -> {
+            if (MoPub.isSdkInitialized()) {
+                if (!emitter.isDisposed()) {
+                    emitter.onComplete();
+                }
+                return;
+            }
             MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
             SdkConfiguration.Builder builder = new SdkConfiguration.Builder(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
             SdkConfiguration sdkConfiguration = builder.build();
@@ -207,16 +210,8 @@ public class PsiphonAdManager {
             };
             MoPub.initializeSdk(activity, sdkConfiguration, sdkInitializationListener);
         })
-                .doOnError(e -> Utils.MyLog.d("initializeMoPubSdk error: " + e))
-                .cache();
+                .doOnError(e -> Utils.MyLog.d("initializeMoPubSdk error: " + e));
 
-        this.initializeAdMobSdk = Completable.create(emitter -> {
-            MobileAds.initialize(this.activity, BuildConfig.ADMOB_APP_ID);
-            if (!emitter.isDisposed()) {
-                emitter.onComplete();
-            }
-        })
-                .cache();
 
         // Note this observable also destroys ads according to subscription and/or
         // connection status without further delay.
@@ -259,64 +254,63 @@ public class PsiphonAdManager {
         this.unTunneledAdMobInterstitial = new InterstitialAd(activity);
         this.unTunneledAdMobInterstitial.setAdUnitId(ADMOB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
 
-        this.unTunneledAdMobInterstitialObservable = initializeAdMobSdk
-                .andThen(Observable.<InterstitialResult>create(emitter -> {
-                    unTunneledAdMobInterstitial.setAdListener(new AdListener() {
+        this.unTunneledAdMobInterstitialObservable = Observable.<InterstitialResult>create(emitter -> {
+            unTunneledAdMobInterstitial.setAdListener(new AdListener() {
 
-                        @Override
-                        public void onAdLoaded() {
-                            if (!emitter.isDisposed()) {
-                                emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.READY));
-                            }
-                        }
-
-                        @Override
-                        public void onAdFailedToLoad(int errorCode) {
-                            if (!emitter.isDisposed()) {
-                                emitter.onError(new RuntimeException("AdMob interstitial failed with error code: " + errorCode));
-                            }
-                        }
-
-                        @Override
-                        public void onAdOpened() {
-                            if (!emitter.isDisposed()) {
-                                emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.SHOWING));
-                            }
-                        }
-
-                        @Override
-                        public void onAdLeftApplication() {
-                        }
-
-                        @Override
-                        public void onAdClosed() {
-                            if (!emitter.isDisposed()) {
-                                emitter.onComplete();
-                            }
-                        }
-                    });
-                    Bundle extras = new Bundle();
-                    if (ConsentInformation.getInstance(activity).getConsentStatus() == ConsentStatus.NON_PERSONALIZED) {
-                        extras.putString("npa", "1");
+                @Override
+                public void onAdLoaded() {
+                    if (!emitter.isDisposed()) {
+                        emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.READY));
                     }
-                    AdRequest adRequest = new AdRequest.Builder()
-                            .addNetworkExtrasBundle(AdMobAdapter.class, extras)
-                            .build();
-                    if (unTunneledAdMobInterstitial.isLoaded()) {
-                        if (!emitter.isDisposed()) {
-                            emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.READY));
-                        }
-                    } else if (unTunneledAdMobInterstitial.isLoading()) {
-                        if (!emitter.isDisposed()) {
-                            emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.LOADING));
-                        }
-                    } else {
-                        if (!emitter.isDisposed()) {
-                            emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.LOADING));
-                            unTunneledAdMobInterstitial.loadAd(adRequest);
-                        }
+                }
+
+                @Override
+                public void onAdFailedToLoad(int errorCode) {
+                    if (!emitter.isDisposed()) {
+                        emitter.onError(new RuntimeException("AdMob interstitial failed with error code: " + errorCode));
                     }
-                }))
+                }
+
+                @Override
+                public void onAdOpened() {
+                    if (!emitter.isDisposed()) {
+                        emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.SHOWING));
+                    }
+                }
+
+                @Override
+                public void onAdLeftApplication() {
+                }
+
+                @Override
+                public void onAdClosed() {
+                    if (!emitter.isDisposed()) {
+                        emitter.onComplete();
+                    }
+                }
+            });
+            Bundle extras = new Bundle();
+            if (ConsentInformation.getInstance(activity).getConsentStatus() == ConsentStatus.NON_PERSONALIZED) {
+                extras.putString("npa", "1");
+            }
+            AdRequest adRequest = new AdRequest.Builder()
+                    .addNetworkExtrasBundle(AdMobAdapter.class, extras)
+                    .build();
+            if (unTunneledAdMobInterstitial.isLoaded()) {
+                if (!emitter.isDisposed()) {
+                    emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.READY));
+                }
+            } else if (unTunneledAdMobInterstitial.isLoading()) {
+                if (!emitter.isDisposed()) {
+                    emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.LOADING));
+                }
+            } else {
+                if (!emitter.isDisposed()) {
+                    emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.LOADING));
+                    unTunneledAdMobInterstitial.loadAd(adRequest);
+                }
+            }
+        })
                 .replay(1)
                 .refCount();
 
@@ -563,7 +557,7 @@ public class PsiphonAdManager {
                 }));
                 break;
             case UNTUNNELED:
-                completable = initializeAdMobSdk.andThen(Completable.fromAction(() -> {
+                completable = Completable.fromAction(() -> {
                     unTunneledAdMobBannerAdView = new AdView(activity);
                     unTunneledAdMobBannerAdView.setAdSize(AdSize.MEDIUM_RECTANGLE);
                     unTunneledAdMobBannerAdView.setAdUnitId(ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
@@ -600,7 +594,7 @@ public class PsiphonAdManager {
                             .addNetworkExtrasBundle(AdMobAdapter.class, extras)
                             .build();
                     unTunneledAdMobBannerAdView.loadAd(adRequest);
-                }));
+                });
                 break;
             default:
                 throw new IllegalArgumentException("loadAndShowBanner: unhandled AdResult.Type: " + adResult.type());

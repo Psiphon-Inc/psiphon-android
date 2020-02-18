@@ -23,10 +23,14 @@ package com.psiphon3.psicash;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.support.annotation.Nullable;
+import android.util.Log;
 
 import com.psiphon3.TunnelState;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
+
+import net.grandcentrix.tray.AppPreferences;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -43,6 +47,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import ca.psiphon.psicashlib.PsiCashLib;
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
@@ -61,7 +67,7 @@ public class PsiCashClient {
     private static PsiCashClient INSTANCE = null;
     private Context appContext;
 
-    private final PsiCashLib psiCashLib;
+    private final PsiCashLibTest psiCashLib;
     private int httpProxyPort;
     private final OkHttpClient okHttpClient;
     private final SharedPreferences sharedPreferences;
@@ -70,7 +76,8 @@ public class PsiCashClient {
         this.appContext = ctx;
         sharedPreferences = ctx.getSharedPreferences(PSICASH_PREFERENCES_KEY, Context.MODE_PRIVATE);
         httpProxyPort = 0;
-        psiCashLib = new PsiCashLib();
+        // TODO: replace with dev after testing
+        psiCashLib = new PsiCashLibTest();
         okHttpClient = new OkHttpClient.Builder()
                 .retryOnConnectionFailure(false)
                 .proxySelector(new ProxySelector() {
@@ -188,7 +195,7 @@ public class PsiCashClient {
         }
     }
 
-    String rewardedVideoCustomData() throws PsiCashException {
+    String getPsiCashCustomData() throws PsiCashException {
         PsiCashLib.GetRewardedActivityDataResult rewardedActivityData = psiCashLib.getRewardedActivityData();
         if (rewardedActivityData.error == null) {
             return rewardedActivityData.data;
@@ -303,143 +310,185 @@ public class PsiCashClient {
 
         builder.reward(getVideoReward());
 
+        final AppPreferences mp = new AppPreferences(appContext);
+        boolean pendingRefresh = mp.getBoolean(appContext.getString(R.string.persistentPsiCashPurchaseRedeemedFlag), false);
+
+        builder.pendingRefresh(pendingRefresh);
+
+        builder.hasValidTokens(hasValidTokens());
+
         return builder.build();
     }
 
     // Emits both PsiCashModel.PsiCash and PsiCashModel.ExpiringPurchase
-    Observable<? extends PsiCashModel> makeExpiringPurchase(TunnelState connectionState, PsiCashLib.PurchasePrice price) {
-        return Observable.just(connectionState)
+    Observable<? extends PsiCashModel> makeExpiringPurchase(Flowable<TunnelState> tunnelStateFlowable,
+                                                            String distinguisher, String transactionClass, long price) {
+        return tunnelStateFlowable
+                .filter(tunnelState -> !tunnelState.isUnknown())
+                .firstOrError()
                 .observeOn(Schedulers.io())
                 .flatMap(state -> Single.fromCallable(() -> {
-                    TunnelState.ConnectionData connectionData = state.connectionData();
+                            TunnelState.ConnectionData connectionData = state.connectionData();
 
-                    if (!state.isRunning()) {
-                        throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not running.",
-                                appContext.getString(R.string.speed_boost_connect_to_purchase_message));
-                    } else {
-                        if (!connectionData.isConnected()) {
-                            throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.",
-                                    appContext.getString(R.string.speed_boost_wait_tunnel_to_connect_to_purchase_message));
-                        }
-                    }
-                    if (price == null) {
-                        throw new PsiCashException.Critical("makeExpiringPurchase: purchase price is null.");
-                    }
-
-                    setPsiCashRequestMetaData(connectionData);
-                    setOkHttpClientHttpProxyPort(connectionData.httpPort());
-
-                    PsiCashLib.NewExpiringPurchaseResult result =
-                            psiCashLib.newExpiringPurchase(price.transactionClass,
-                                    price.distinguisher, price.price);
-
-                    if (result.error != null) {
-                        Utils.MyLog.g("PsiCash: error making expiring purchase: " + result.error.message);
-                        if (result.error.critical) {
-                            throw new PsiCashException.Critical(result.error.message);
-                        } else {
-                            throw new PsiCashException.Recoverable(result.error.message);
-                        }
-                    }
-
-                    // Reset optimistic reward if there's a response from the server
-                    resetVideoReward();
-
-                    if (result.status != PsiCashLib.Status.SUCCESS) {
-                        Utils.MyLog.g("PsiCash: transaction error making expiring purchase: " + result.status);
-                        throw new PsiCashException.Transaction(result.status);
-                    }
-
-                    Utils.MyLog.g("PsiCash: got new purchase of transactionClass " + result.purchase.transactionClass);
-
-                    return PsiCashModel.ExpiringPurchase.create(result.purchase);
-                })
-                        .cast(PsiCashModel.class)
-                        .toObservable()
-                        .concatWith(getPsiCashLocal())
-                        // If INSUFFICIENT_BALANCE retry for up to 30 seconds
-                        // in hope that the server-to-server reward callback will catch up
-                        .retryWhen(errors -> {
-                            AtomicReference<Throwable> capturedThrowable = new AtomicReference<>();
-                            return errors
-                                    .flatMap(throwable -> {
-                                        capturedThrowable.set(throwable);
-                                        if (!(throwable instanceof PsiCashException.Transaction)) {
-                                            return Observable.error(throwable);
-                                        } else {
-                                            PsiCashException.Transaction psiCashException = (PsiCashException.Transaction) throwable;
-                                            if (psiCashException.getStatus() == PsiCashLib.Status.INSUFFICIENT_BALANCE) {
-                                                return Observable.timer(2, TimeUnit.SECONDS);
-                                            }
-                                            return Observable.error(psiCashException);
-                                        }
-                                    })
-                                    // timeout after 30 seconds and bubble up the last captured error if any
-                                    .mergeWith(Observable.timer(30, TimeUnit.SECONDS)
-                                            .flatMap(__ -> {
-                                                final Throwable e = capturedThrowable.get();
-                                                if (e != null) {
-                                                    return Observable.error(e);
-                                                }
-                                                return Observable.empty();
-                                            }));
-                        })
-                        .onErrorResumeNext(err -> {
-                            return getPsiCashLocal().concatWith(Single.error(err));
-                        }));
-    }
-
-    Observable<PsiCashModel.PsiCash> getPsiCashLocal() {
-        return Single.fromCallable(this::psiCashModelFromLib)
-                .toObservable();
-    }
-
-    Observable<PsiCashModel.PsiCash> getPsiCashRemote(TunnelState tunnelState) {
-        int retryCount = 5;
-        return Observable.just(tunnelState)
-                .observeOn(Schedulers.io())
-                .flatMap(state -> {
-                    if (!state.isRunning()) {
-                        throw new IllegalStateException("Attempting to get PsiCash from remote while in STOPPED tunnel state.");
-                    }
-
-                    TunnelState.ConnectionData connectionData = state.connectionData();
-                    if (!connectionData.isConnected()) {
-                        throw new IllegalStateException("Attempting to get PsiCash from remote while in NOT CONNECTED tunnel state.");
-                    }
-
-                    setOkHttpClientHttpProxyPort(connectionData.httpPort());
-                    setPsiCashRequestMetaData(connectionData);
-
-                    return Completable.fromAction(() -> {
-                        PsiCashLib.RefreshStateResult result = psiCashLib.refreshState(getPurchaseClasses());
-                        if (result.error != null) {
-                            if (result.error.critical) {
-                                throw new PsiCashException.Critical(result.error.message, appContext.getString(R.string.psicash_cant_get_balance_critical_message));
+                            if (!state.isRunning()) {
+                                throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not running.",
+                                        appContext.getString(R.string.speed_boost_connect_to_purchase_message));
                             } else {
-                                throw new PsiCashException.Recoverable(result.error.message, appContext.getString(R.string.psicash_cant_get_balance_recoverable_message));
+                                if (!connectionData.isConnected()) {
+                                    throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.",
+                                            appContext.getString(R.string.speed_boost_wait_tunnel_to_connect_to_purchase_message));
+                                }
                             }
+                            if (distinguisher == null) {
+                                throw new PsiCashException.Critical("makeExpiringPurchase: purchase distinguisher is null.");
+                            }
+
+                            if (transactionClass == null) {
+                                throw new PsiCashException.Critical("makeExpiringPurchase: purchase transaction class is null.");
+                            }
+                            setPsiCashRequestMetaData(connectionData);
+                            setOkHttpClientHttpProxyPort(connectionData.httpPort());
+
+                            PsiCashLib.NewExpiringPurchaseResult result =
+                                    psiCashLib.newExpiringPurchase(transactionClass,
+                                            distinguisher, price);
+
+                            if (result.error != null) {
+                                Utils.MyLog.g("PsiCash: error making expiring purchase: " + result.error.message);
+                                if (result.error.critical) {
+                                    throw new PsiCashException.Critical(result.error.message);
+                                } else {
+                                    throw new PsiCashException.Recoverable(result.error.message);
+                                }
+                            }
+
+                            // Reset optimistic reward if there's a response from the server
+                            resetVideoReward();
+
+                            if (result.status != PsiCashLib.Status.SUCCESS) {
+                                Utils.MyLog.g("PsiCash: transaction error making expiring purchase: " + result.status);
+                                throw new PsiCashException.Transaction(result.status);
+                            }
+
+                            Utils.MyLog.g("PsiCash: got new purchase of transactionClass " + result.purchase.transactionClass);
+
+                            return PsiCashModel.ExpiringPurchase.create(result.purchase);
+                        }).cast(PsiCashModel.class)
+                )
+                .concatWith(getPsiCashLocalSingle())
+                .toObservable()
+
+                // If INSUFFICIENT_BALANCE retry for up to 30 seconds
+                // in hope that the server-to-server reward callback will catch up
+                .retryWhen(errors -> {
+                    AtomicReference<Throwable> capturedThrowable = new AtomicReference<>();
+                    return errors
+                            .flatMap(throwable -> {
+                                capturedThrowable.set(throwable);
+                                if (!(throwable instanceof PsiCashException.Transaction)) {
+                                    return Observable.error(throwable);
+                                } else {
+                                    PsiCashException.Transaction psiCashException = (PsiCashException.Transaction) throwable;
+                                    if (psiCashException.getStatus() == PsiCashLib.Status.INSUFFICIENT_BALANCE) {
+                                        return Observable.timer(2, TimeUnit.SECONDS);
+                                    }
+                                    return Observable.error(psiCashException);
+                                }
+                            })
+                            // if captured an error then timeout after 30 seconds and bubble up the error
+                            .mergeWith(Observable.timer(30, TimeUnit.SECONDS)
+                                    .flatMap(__ -> {
+                                        final Throwable e = capturedThrowable.get();
+                                        if (e != null) {
+                                            return Observable.error(e);
+                                        }
+                                        return Observable.empty();
+                                    }));
+                });
+    }
+
+    Single<PsiCashModel.PsiCash> getPsiCashSingle(Flowable<TunnelState> tunnelStateFlowable) {
+        return tunnelStateFlowable
+                .distinctUntilChanged()
+                .observeOn(Schedulers.io())
+                .switchMapMaybe(tunnelState -> {
+                    if (tunnelState.isRunning()) {
+                        TunnelState.ConnectionData connectionData = tunnelState.connectionData();
+                        if (!connectionData.isConnected()) {
+                            // While connecting return local state, once connected this function
+                            // will be called again.
+                            return getPsiCashLocalSingle().toMaybe();
+                        } else {
+                            return refreshStateCompletable(connectionData)
+                                    .andThen(getPsiCashLocalSingle().toMaybe());
                         }
-                        if (result.status != PsiCashLib.Status.SUCCESS) {
-                            throw new PsiCashException.Transaction(result.status);
-                        }
-                        // if success reset optimistic reward
-                        resetVideoReward();
-                    })
-                            .andThen(getPsiCashLocal());
+                    }
+                    if (tunnelState.isStopped()) {
+                        return getPsiCashLocalSingle().toMaybe();
+                    }
+                    return Maybe.empty();
                 })
+                .firstOrError();
+    }
+
+    Single<PsiCashModel.PsiCash> getPsiCashLocalSingle() {
+        return Single.fromCallable(this::psiCashModelFromLib);
+    }
+
+    private Completable refreshStateCompletable(TunnelState.ConnectionData connectionData) {
+        int retryCount = 5;
+        return Completable.create(emitter -> {
+            setOkHttpClientHttpProxyPort(connectionData.httpPort());
+            setPsiCashRequestMetaData(connectionData);
+            PsiCashLib.RefreshStateResult result = psiCashLib.refreshState(getPurchaseClasses());
+            if (result.error != null) {
+                if (result.error.critical) {
+                    if (!emitter.isDisposed()) {
+                        emitter.onError(new PsiCashException.Critical(result.error.message,
+                                appContext.getString(R.string.psicash_cant_get_balance_critical_message)));
+                    }
+                } else {
+                    if (!emitter.isDisposed()) {
+                        emitter.onError(new PsiCashException.Recoverable(result.error.message,
+                                appContext.getString(R.string.psicash_cant_get_balance_recoverable_message)));
+                    }
+                }
+            }
+            if (result.status != PsiCashLib.Status.SUCCESS) {
+                if (!emitter.isDisposed()) {
+                    emitter.onError(new PsiCashException.Transaction(result.status));
+                }
+            }
+            // if success reset optimistic reward
+            resetVideoReward();
+
+            // Also reset persistent PsiCash purchase redeemed flag
+            final AppPreferences mp = new AppPreferences(appContext);
+            mp.put(appContext.getString(R.string.persistentPsiCashPurchaseRedeemedFlag), false);
+
+            // Also persist custom data
+            try {
+                String psiCashCustomData = getPsiCashCustomData();
+                mp.put(appContext.getString(R.string.persistentPsiCashCustomData), psiCashCustomData);
+            } catch (PsiCashException err) {
+                if (!emitter.isDisposed()) {
+                    emitter.onError(err);
+                }
+            }
+
+            if (!emitter.isDisposed()) {
+                emitter.onComplete();
+            }
+        })
                 // retry {retryCount} times every 2 seconds before giving up
                 .retryWhen(errors -> errors
-                        .zipWith(Observable.range(1, retryCount), (err, i) -> {
+                        .zipWith(Flowable.range(1, retryCount), (err, i) -> {
                             if (i < retryCount && !(err instanceof PsiCashException.Critical)) {
-                                return Observable.timer(2, TimeUnit.SECONDS);
+                                return Flowable.timer(2, TimeUnit.SECONDS);
                             } // else
-                            return Observable.error(err);
+                            return Flowable.error(err);
                         })
-                        .flatMap(x -> x))
-                .onErrorResumeNext(err -> {
-                    return getPsiCashLocal().concatWith(Single.error(err));
-                });
+                        .flatMap(x -> x));
     }
 
     public synchronized void putVideoReward(long reward) {
@@ -455,15 +504,16 @@ public class PsiCashClient {
         editor.apply();
     }
 
+
     private long getVideoReward() {
         return sharedPreferences.getLong(PSICASH_PERSISTED_VIDEO_REWARD_KEY, 0);
     }
 
-    Observable<PsiCashModel.PsiCash> removePurchases(List<String> purchasesToRemove) {
-        return Observable.just(purchasesToRemove)
+    Single<PsiCashModel.PsiCash> removePurchases(List<String> purchasesToRemove) {
+        return Single.just(purchasesToRemove)
                 .observeOn(Schedulers.io())
                 .flatMap(p -> Completable.fromAction(() -> psiCashLib.removePurchases(p))
-                        .andThen(getPsiCashLocal()));
+                        .andThen(getPsiCashLocalSingle()));
     }
 
     public List<PsiCashLib.Purchase> getPurchases() throws PsiCashException {
@@ -477,6 +527,14 @@ public class PsiCashClient {
             } else {
                 throw new PsiCashException.Critical(errorMessage);
             }
+        }
+    }
+
+    private class PsiCashLibTest extends PsiCashLib {
+        @Nullable
+        @Override
+        public Error init(String fileStoreRoot, HTTPRequester httpRequester, boolean forceReset) {
+            return super.init(fileStoreRoot, httpRequester, forceReset, true);
         }
     }
 }

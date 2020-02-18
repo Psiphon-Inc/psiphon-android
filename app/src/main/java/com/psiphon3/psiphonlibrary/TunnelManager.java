@@ -86,7 +86,7 @@ import io.reactivex.schedulers.Schedulers;
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
 import static com.psiphon3.StatusActivity.ACTION_SHOW_GET_HELP_DIALOG;
 
-public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, PurchaseVerifier.PurchaseAuthorizationListener {
+public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, PurchaseVerifier.VerificationResultListener {
     // Android IPC messages
     // Client -> Service
     enum ClientToServiceMessage {
@@ -107,6 +107,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_EXPORT,
         NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT,
         AUTHORIZATIONS_REMOVED,
+        PSICASH_PURCHASE_REDEEMED,
         PING,
     }
 
@@ -121,11 +122,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
     // Service -> Client bundle parameter names
     static final String DATA_TUNNEL_STATE_IS_RUNNING = "isRunning";
-    static final String DATA_TUNNEL_STATE_IS_VPN = "isVpn";
+    public static final String DATA_TUNNEL_STATE_IS_VPN = "isVpn";
     static final String DATA_TUNNEL_STATE_IS_CONNECTED = "isConnected";
     static final String DATA_TUNNEL_STATE_NEEDS_HELP_CONNECTING = "needsHelpConnecting";
     static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT = "listeningLocalSocksProxyPort";
-    static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT = "listeningLocalHttpProxyPort";
+    public static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT = "listeningLocalHttpProxyPort";
     static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
     static final String DATA_TUNNEL_STATE_SPONSOR_ID = "sponsorId";
     public static final String DATA_TUNNEL_STATE_HOME_PAGES = "homePages";
@@ -260,9 +261,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         MyLog.setLogger(this);
 
         purchaseVerifier = new PurchaseVerifier(getContext(), this);
-        purchaseVerifier.startIab();
 
-        m_compositeDisposable.clear();
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
     }
 
@@ -715,7 +714,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
                 case ON_RESUME:
                     if (manager != null) {
-                        manager.purchaseVerifier.queryCurrentSubscriptionStatus();
+                        manager.purchaseVerifier.queryAllPurchases();
                     }
                     break;
 
@@ -983,7 +982,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
             stopNetworkStateMonitoring();
             m_isStopping.set(true);
-            m_tunnelConnectedBehaviorRelay.accept(false);
             m_tunnel.stop();
 
             periodicMaintenanceHandler.removeCallbacks(periodicMaintenance);
@@ -1545,9 +1543,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         m_waitingForConnectivity.set(false);
     }
 
-    // PurchaseVerifier.PurchaseAuthorizationListener implementation
+    // PurchaseVerifier.VerificationResultListener implementation
     @Override
-    public void updateConnection(PurchaseVerifier.UpdateConnectionAction action) {
+    public void onVerificationResult(PurchaseVerifier.VerificationResult action) {
         switch (action) {
             case RESTART_AS_NON_SUBSCRIBER:
                 MyLog.g("TunnelManager: purchase verification: will restart as a non subscriber");
@@ -1559,6 +1557,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 m_tunnelConfig.sponsorId = BuildConfig.SUBSCRIPTION_SPONSOR_ID;
                 restartTunnel();
                 break;
+            case PSICASH_PURCHASE_REDEEMED:
+                MyLog.g("TunnelManager: purchase verification: PsiCash purchase redeemed");
+                final AppPreferences mp = new AppPreferences(getContext());
+                mp.put(m_parentService.getString(R.string.persistentPsiCashPurchaseRedeemedFlag), true);
+                sendClientMessage(ServiceToClientMessage.PSICASH_PURCHASE_REDEEMED.ordinal(), null);
+                break;
+
         }
     }
 

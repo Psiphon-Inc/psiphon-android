@@ -35,6 +35,8 @@ public interface PsiCashModel {
             return new AutoValue_PsiCashModel_PsiCash.Builder();
         }
 
+        public abstract boolean hasValidTokens();
+
         public abstract long balance();
 
         public abstract long reward();
@@ -47,8 +49,12 @@ public interface PsiCashModel {
         @Nullable
         public abstract PsiCashLib.Purchase nextExpiringPurchase();
 
+        public abstract boolean pendingRefresh();
+
         @AutoValue.Builder
         abstract static class Builder {
+            abstract  Builder hasValidTokens(boolean b);
+
             abstract Builder balance(long balance);
 
             abstract Builder reward(long reward);
@@ -59,7 +65,10 @@ public interface PsiCashModel {
 
             abstract Builder nextExpiringPurchase(@Nullable PsiCashLib.Purchase purchase);
 
+            abstract Builder pendingRefresh(boolean pendingRefresh);
+
             abstract PsiCash build();
+
         }
     }
 
@@ -71,29 +80,4 @@ public interface PsiCashModel {
             return new AutoValue_PsiCashModel_ExpiringPurchase(purchase);
         }
     }
-
-    @AutoValue
-    abstract class RewardedVideoState implements PsiCashModel {
-        enum VideoState {LOADED, PLAYING}
-
-        abstract VideoState videoState();
-
-        public static RewardedVideoState playing() {
-            return new AutoValue_PsiCashModel_RewardedVideoState(VideoState.PLAYING);
-        }
-
-        public static RewardedVideoState loaded() {
-            return new AutoValue_PsiCashModel_RewardedVideoState(VideoState.LOADED);
-        }
-    }
-
-    @AutoValue
-    abstract class Reward implements PsiCashModel {
-        public abstract long amount();
-
-        public static Reward create(long amount) {
-            return new AutoValue_PsiCashModel_Reward(amount);
-        }
-    }
-
 }

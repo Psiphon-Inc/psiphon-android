@@ -38,8 +38,8 @@ import android.support.v4.content.LocalBroadcastManager;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
-import com.psiphon3.subscription.R;
 import com.psiphon3.TunnelState;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
@@ -57,12 +57,14 @@ import static android.content.Context.ACTIVITY_SERVICE;
 
 public class TunnelServiceInteractor {
     private static final String SERVICE_STARTING_BROADCAST_INTENT = "SERVICE_STARTING_BROADCAST_INTENT";
+    public static final String AUTHORIZATIONS_REMOVED_BROADCAST_INTENT = "AUTHORIZATIONS_REMOVED_BROADCAST_INTENT";
+    public static final String PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT = "PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT";
+
     private final BroadcastReceiver broadcastReceiver;
     private Relay<TunnelState> tunnelStateRelay = BehaviorRelay.<TunnelState>create().toSerialized();
     private Relay<Boolean> dataStatsRelay = PublishRelay.<Boolean>create().toSerialized();
     private Relay<Boolean> knownRegionsRelay = PublishRelay.<Boolean>create().toSerialized();
     private Relay<NfcExchange> nfcExchangeRelay = PublishRelay.<NfcExchange>create().toSerialized();
-    private Relay<Boolean> authorizationsRemovedRelay = PublishRelay.<Boolean>create().toSerialized();
 
     private final Messenger incomingMessenger = new Messenger(new IncomingMessageHandler(this));
     private Disposable restartServiceDisposable = null;
@@ -70,8 +72,10 @@ public class TunnelServiceInteractor {
     private Rx2ServiceBindingFactory serviceBindingFactory;
     private boolean isStopped = true;
     private Disposable serviceMessengerDisposable;
+    private Context context;
 
     public TunnelServiceInteractor(Context context) {
+        this.context = context.getApplicationContext();
         // Listen to SERVICE_STARTING_BROADCAST_INTENT broadcast that may be sent by another instance
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(SERVICE_STARTING_BROADCAST_INTENT);
@@ -196,11 +200,6 @@ public class TunnelServiceInteractor {
     public Flowable<NfcExchange> nfcExchangeFlowable() {
         return nfcExchangeRelay
                 .distinctUntilChanged()
-                .toFlowable(BackpressureStrategy.LATEST);
-    }
-
-    public Flowable<Boolean> authorizationsRemovedFlowable() {
-        return authorizationsRemovedRelay
                 .toFlowable(BackpressureStrategy.LATEST);
     }
 
@@ -384,7 +383,12 @@ public class TunnelServiceInteractor {
                     tunnelServiceInteractor.nfcExchangeRelay.accept(NfcExchange.imported(data.getBoolean(TunnelManager.DATA_NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT, false)));
                     break;
                 case AUTHORIZATIONS_REMOVED:
-                    tunnelServiceInteractor.authorizationsRemovedRelay.accept(Boolean.TRUE);
+                    LocalBroadcastManager.getInstance(tunnelServiceInteractor.context)
+                            .sendBroadcast(new Intent().setAction(AUTHORIZATIONS_REMOVED_BROADCAST_INTENT));
+                    break;
+                case PSICASH_PURCHASE_REDEEMED:
+                    LocalBroadcastManager.getInstance(tunnelServiceInteractor.context)
+                            .sendBroadcast(new Intent().setAction(PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT));
                     break;
                 default:
                     super.handleMessage(msg);

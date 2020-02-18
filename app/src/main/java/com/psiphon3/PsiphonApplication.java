@@ -23,15 +23,17 @@ package com.psiphon3;
 import android.app.Application;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.content.pm.ApplicationInfo;
 import android.support.multidex.MultiDex;
 
+import com.google.android.gms.ads.MobileAds;
 import com.psiphon3.psiphonlibrary.LocaleManager;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.subscription.BuildConfig;
 
 import java.io.IOException;
 
+import io.reactivex.exceptions.OnErrorNotImplementedException;
 import io.reactivex.exceptions.UndeliverableException;
 import io.reactivex.plugins.RxJavaPlugins;
 
@@ -87,6 +89,7 @@ public class PsiphonApplication extends Application {
     public void onCreate() {
         super.onCreate();
         PsiphonConstants.DEBUG = Utils.isDebugMode(this);
+        MobileAds.initialize(getApplicationContext(), BuildConfig.ADMOB_APP_ID);
 
         // If an Rx subscription is disposed while the observable is still running its async task
         // which may throw an error the error will have nowhere to go and will result in an uncaught
@@ -106,6 +109,12 @@ public class PsiphonApplication extends Application {
                 return;
             }
             Utils.MyLog.g("RxJava undeliverable exception received: " + e);
+
+            // Also crash if OnErrorNotImplementedException
+            if (e instanceof OnErrorNotImplementedException) {
+                Thread currentThread = Thread.currentThread();
+                currentThread.getUncaughtExceptionHandler().uncaughtException(currentThread, e);
+            }
         });
     }
 }

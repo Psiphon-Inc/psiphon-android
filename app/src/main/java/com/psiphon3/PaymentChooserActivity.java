@@ -29,7 +29,7 @@ import android.widget.Button;
 
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.SkuDetails;
-import com.psiphon3.billing.BillingRepository;
+import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
@@ -94,15 +94,15 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                 }
 
                 // Get button resource ID
-                if (skuDetails.getSku().equals(BillingRepository.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
+                if (skuDetails.getSku().equals(GooglePlayBillingHelper.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
                     buttonResId = R.id.limitedSubscription;
-                } else if (skuDetails.getSku().equals(BillingRepository.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
+                } else if (skuDetails.getSku().equals(GooglePlayBillingHelper.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
                     buttonResId = R.id.unlimitedSubscription;
                 }
             } else {
                 String timepassSku = skuDetails.getSku();
                 // Get pre-calculated life time in days for time passes
-                Long lifetimeInDays = BillingRepository.IAB_TIMEPASS_SKUS_TO_DAYS.get(timepassSku);
+                Long lifetimeInDays = GooglePlayBillingHelper.IAB_TIMEPASS_SKUS_TO_DAYS.get(timepassSku);
                 if (lifetimeInDays == null || lifetimeInDays == 0L) {
                     Utils.MyLog.g("PaymentChooserActivity error: unknown timepass period for sku: " + skuDetails);
                     continue;

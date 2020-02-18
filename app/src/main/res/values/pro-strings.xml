@@ -232,4 +232,32 @@
 
     <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
     <string name="subscription_options_currently_not_available">Subscription options are currently not available, please try again later.</string>
+
+    <!-- Speed Boost button that opens a dialog with various speed boost options available for purchase.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_button_caption">Speed Boost</string>
+    <string name="lbl_confirm_speedboost_purchase">Would you like to get %s of Speed Boost for %d PsiCash?</string>
+    <string name="psicash_purchase_free_description">Watch video and earn</string>
+    <string name="psicash_purchase_free_button_price">Free</string>
+    <string name="psicash_store_disclaimer">This is where the psicash account disclaimer would go. Don’t uninstsall the app or you will lose your Psicash.</string>
+    <string name="speed_boost_unavailable">Speed Boost Unavailable</string>
+    <string name="connect_to_psiphon_to_use_speed_boost">Connect to Psiphon to use Speed Boost.</string>
+    <string name="connect_to_psiphon_button_text">Connect to Psiphon</string>
+    <string name="wait_for_psiphon_to_finish_connect_to_use_speed_boost">Please wait for Psiphon to finish connecting to use Speed Boost</string>
+    <string name="psicash_store_not_available_when_subscribed">PsiCash store is not available when you have a subscription</string>
+    <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_store">Please wait for Psiphon to finish connecting to use PsiCash store</string>
+    <string name="psicash_balance_out_of_date_dialog_title" >PsiCash</string>
+    <string name="psicash_out_of_date_dialog_message" >Your PsiCash balance is out of date. Connect to Psiphon to refresh.</string>
+    <string name="you_have_an_unfinished_psicash_purchase">You have an unfinished PsiCash purchase</string>
+    <string name="connect_to_psiphon_to_finalize_your_transaction">Connect to Psiphon to finalize your transaction</string>
+    <string name="add_psicash_tab_title">Add PsiCash</string>
+    <string name="speed_boost_tab_title">Speed Boost</string>
+    <string name="psicash_store_not_available">PsiCash store not available</string>
+    <string name="please_wait_while_we_are_finalizing_your_purchase">Please wait while we are finalizing your purchase</string>
+    <plurals name="hours_of_speed_boost">
+        <item quantity="one"> %d hour</item>
+        <item quantity="other"> %d hours</item>
+    </plurals>
 </resources>
