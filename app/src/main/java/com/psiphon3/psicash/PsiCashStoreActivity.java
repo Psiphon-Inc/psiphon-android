@@ -194,7 +194,7 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
                 }
                 new AlertDialog.Builder(activity)
                         .setIcon(R.drawable.psicash_coin)
-                        .setTitle(activity.getString(R.string.psicash_balance_out_of_date_dialog_title))
+                        .setTitle(activity.getString(R.string.psicash_generic_title))
                         .setMessage(activity.getString(R.string.psicash_out_of_date_dialog_message))
                         .setNeutralButton(R.string.label_ok, (dialog, which) -> {
                         })
