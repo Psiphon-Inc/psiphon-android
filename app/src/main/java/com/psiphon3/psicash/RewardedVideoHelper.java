@@ -31,12 +31,8 @@ import io.reactivex.Observable;
 import io.reactivex.Single;
 
 public class RewardedVideoHelper {
-//               These are production values
-//    private static final String MOPUB_VIDEO_AD_UNIT_ID = "7ef66892f0a6417091119b94ce07d6e5";
-//    private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-1072041961750291/5751207671";
-
-    // TODO: replace with prod values
-    private static final String MOPUB_VIDEO_AD_UNIT_ID = "920b6145fb1546cf8b5cf2ac34638bb7";
+    // Production values
+    private static final String MOPUB_VIDEO_AD_UNIT_ID = "7ef66892f0a6417091119b94ce07d6e5";
     private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-1072041961750291/5751207671";
 
     private final Single<RewardedVideoPlayable> adMobVideoSingle;
@@ -91,8 +87,7 @@ public class RewardedVideoHelper {
                 }
             };
             MoPub.initializeSdk(context, sdkConfiguration, sdkInitializationListener);
-        })
-                .cache();
+        });
 
         this.adMobVideoSingle = Single.create(emitter -> {
             RewardedAd rewardedAd = new RewardedAd(context, ADMOB_VIDEO_AD_ID);

@@ -24,7 +24,6 @@ package com.psiphon3.psicash;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import com.psiphon3.TunnelState;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -76,7 +75,7 @@ public class PsiCashClient {
         this.appContext = ctx;
         sharedPreferences = ctx.getSharedPreferences(PSICASH_PREFERENCES_KEY, Context.MODE_PRIVATE);
         httpProxyPort = 0;
-        // TODO: replace with dev after testing
+        // TODO: replace with prod after testing
         psiCashLib = new PsiCashLibTest();
         okHttpClient = new OkHttpClient.Builder()
                 .retryOnConnectionFailure(false)

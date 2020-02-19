@@ -189,7 +189,6 @@ public class PurchaseVerifier {
                                         if (TextUtils.isEmpty(json)) {
                                             // If payload is empty then do not try to JSON decode,
                                             // remember the bad token and restart as non-subscriber.
-                                            // TODO: inspect HTTP response for purchases actually reported as bad
                                             invalidPurchaseTokensList.add(purchase.getPurchaseToken());
                                             Utils.MyLog.g("PurchaseVerifier: subscription verification: server returned empty payload.");
                                             return VerificationResult.RESTART_AS_NON_SUBSCRIBER;

@@ -859,18 +859,6 @@ public abstract class MainBase {
                 if (m_statusListManager != null) {
                     m_statusListManager.notifyStatusAdded();
                 }
-                // TODO: fix this - see if we can still fit the last log line
-/*
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        StatusList.StatusEntry statusEntry = StatusList.getLastStatusEntryForDisplay();
-                        if (statusEntry != null) {
-                            String msg = getContext().getString(statusEntry.stringId(), statusEntry.formatArgs());
-                            m_statusTabLogLine.setText(msg);
-                        }
-                    }
-                });
- */
             }
         }
 
