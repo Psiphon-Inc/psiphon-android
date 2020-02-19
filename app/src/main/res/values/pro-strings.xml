@@ -226,8 +226,9 @@
     <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
     <string name="psicash_purchase_free_button_price">Free</string>
 
-    <!-- PsiCash in-app purchase disclaimer that appears on the bottom of the screen where users can buy different amounts of PsiCash from the Playstore -->
-    <string name="psicash_store_disclaimer">This is where the psicash account disclaimer would go. Don’t uninstsall the app or you will lose your Psicash.</string>
+    <!-- PsiCash in-app purchase disclaimer that appears on the bottom of the screen where users can buy different amounts of PsiCash from the PlayStore.
+    Do not translate or transliterate terms PsiCash or Psiphon Pro-->
+    <string name="psicash_store_disclaimer">IMPORTANT: Your PsiCash will not be preserved if you uninstall Psiphon Pro or clear the app\’s storage.</string>
 
     <!-- A message to the user indicating that they need to be connected to Psiphon in order to use Speed Boost.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
@@ -261,17 +262,17 @@
     Do not translate or transliterate words PsiCash or Psiphon -->
     <string name="psicash_out_of_date_dialog_message">Your PsiCash balance is out of date. Connect to Psiphon to refresh.</string>
 
-    <!-- A title of the screen seen when the user has purchased PsiCash from Playstore while the tunnel was not connected. In this case the purchase
+    <!-- A title of the screen seen when the user has purchased PsiCash from PlayStore while the tunnel was not connected. In this case the purchase
     still needs to be redeemed which can only happen when they are connected to Psiphon.
     Do not translate or transliterate word PsiCash -->
     <string name="you_have_an_unfinished_psicash_purchase">You have an unfinished PsiCash purchase</string>
 
-    <!-- A message to the user seen when the user has purchased PsiCash from Playstore while the tunnel was not connected. In this case the purchase
+    <!-- A message to the user seen when the user has purchased PsiCash from PlayStore while the tunnel was not connected. In this case the purchase
     still needs to be redeemed which can only happen when they are connected to Psiphon.
     Do not translate or transliterate word Psiphon -->
     <string name="connect_to_psiphon_to_finalize_your_transaction">Connect to Psiphon to finalize your transaction</string>
 
-    <!-- PsiCash tab title where users may purchase some PsiCash from Playstore or get it for free by watching an video ad. Do not translate or transliterate word PsiCash -->
+    <!-- PsiCash tab title where users may purchase some PsiCash from PlayStore or get it for free by watching a video ad. Do not translate or transliterate word PsiCash -->
     <string name="add_psicash_tab_title">Add PsiCash</string>
 
     <!-- SpeedBoost tab title where users may redeem their PsiCash for Speed Boost
@@ -283,7 +284,7 @@
     <!-- A message shown when the PsiCash store is not available for whatever reason. Do not translate or transliterate word PsiCash -->
     <string name="psicash_store_not_available">PsiCash store not available</string>
 
-    <!-- A message to the user seen when the user just purchased PsiCash from Playstore while connected to Psiphon and the purchase is in process of being redeemed -->
+    <!-- A message to the user seen when the user just purchased PsiCash from PlayStore while connected to Psiphon and the purchase is in process of being redeemed -->
     <string name="please_wait_while_we_are_finalizing_your_purchase">Please wait while we are finalizing your purchase</string>
 
     <!-- A prompt seen by the user when they try to use one of Speed Boost options, such as in
