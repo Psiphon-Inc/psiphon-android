@@ -256,7 +256,7 @@
     <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_store">Please wait for Psiphon to finish connecting to use PsiCash store</string>
 
     <!-- A generic prompt title. Do not translate -->
-    <string name="psicash_generic_title">PsiCash</string>
+    <string name="psicash_generic_title" translatable="false">PsiCash</string>
 
     <!-- A message to the user indicating that their PsiCash balance is most likely out of date and needs to be refreshed by connecting to Psiphon.
     Do not translate or transliterate words PsiCash or Psiphon -->
