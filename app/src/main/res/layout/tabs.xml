@@ -25,7 +25,7 @@
         <LinearLayout
             android:id="@+id/largeAdSlot"
             android:layout_gravity="center"
-            android:background="@drawable/unnamed"
+            android:background="@drawable/large_banner"
             android:minWidth="300dip"
             android:minHeight="250dip"
             android:layout_width="wrap_content"
