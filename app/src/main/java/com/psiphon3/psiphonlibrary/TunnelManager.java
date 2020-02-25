@@ -342,6 +342,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                     m_tunnelState.isConnected = isConnected;
                     // Any subsequent onConnected after this first one will be a reconnect.
                     if (isConnected) {
+                        // It is safe to call routeThroughTunnel multiple times because the library
+                        // keeps track of these calls internally and allows only one call per tunnel
+                        // run making all the consecutive calls essentially no-op.
                         m_tunnel.routeThroughTunnel();
                         if (m_isReconnect.compareAndSet(false, true)) {
                             if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() > 0) {
