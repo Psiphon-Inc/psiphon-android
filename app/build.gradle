@@ -135,6 +135,7 @@ dependencies {
 
     implementation "com.android.support:multidex:$rootProject.ext.multidexVersion"
     implementation "com.android.support:appcompat-v7:$rootProject.ext.androidSupportLibraryVersion"
+    implementation "com.android.support:recyclerview-v7:$rootProject.ext.androidSupportLibraryVersion"
     implementation "com.android.support.constraint:constraint-layout:$rootProject.ext.constraintLayoutVersion"
 
     implementation("com.mopub:mopub-sdk-banner:$rootProject.ext.mopubSdkVersion@aar") {
