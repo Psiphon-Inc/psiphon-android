@@ -119,6 +119,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
     // Client -> Service bundle parameter names
     static final String DATA_NFC_CONNECTION_INFO_EXCHANGE_IMPORT = "dataNfcConnectionInfoExchangeImport";
+    static final String RESET_RECONNECT_FLAG = "resetReconnectFlag";
 
     // Service -> Client bundle parameter names
     static final String DATA_TUNNEL_STATE_IS_RUNNING = "isRunning";
@@ -340,10 +341,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 .doOnNext(isConnected -> {
                     m_tunnelState.isConnected = isConnected;
                     // Any subsequent onConnected after this first one will be a reconnect.
-                    if (isConnected && m_isReconnect.compareAndSet(false, true)) {
+                    if (isConnected) {
                         m_tunnel.routeThroughTunnel();
-                        if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() > 0) {
-                            sendHandshakeIntent();
+                        if (m_isReconnect.compareAndSet(false, true)) {
+                            if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() > 0) {
+                                sendHandshakeIntent();
+                            }
                         }
                     }
                     sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
@@ -690,11 +693,18 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
                 case RESTART_SERVICE:
                     if (manager != null) {
+                        final boolean resetReconnectFlag;
+                        Bundle data = msg.getData();
+                        if (data != null) {
+                            resetReconnectFlag = data.getBoolean(RESET_RECONNECT_FLAG, true);
+                        } else {
+                            resetReconnectFlag = true;
+                        }
                         manager.m_compositeDisposable.add(
                                 manager.getTunnelConfigSingle()
                                         .doOnSuccess(config -> {
                                             manager.setTunnelConfig(config);
-                                            manager.onRestartCommand();
+                                            manager.onRestartCommand(resetReconnectFlag);
                                         })
                                         .subscribe());
                     }
@@ -996,11 +1006,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         }
     }
 
-    private void onRestartCommand() {
+    private void onRestartCommand(boolean resetReconnectFlag) {
         m_Handler.post(new Runnable() {
             @Override
             public void run() {
-                m_isReconnect.set(false);
+                if (resetReconnectFlag) {
+                    m_isReconnect.set(false);
+                }
                 try {
                     if (Utils.hasVpnService()
                             && m_parentService instanceof TunnelVpnService

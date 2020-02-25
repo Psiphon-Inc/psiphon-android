@@ -160,7 +160,7 @@ public class TunnelServiceInteractor {
         sendServiceMessage(TunnelManager.ClientToServiceMessage.STOP_SERVICE.ordinal(), null);
     }
 
-    public void scheduleRunningTunnelServiceRestart(Context context, Runnable startServiceRunnable) {
+    public void scheduleRunningTunnelServiceRestart(Context context, Runnable startServiceRunnable, boolean resetReconnectFlag) {
         String runningService = getRunningService(context);
         if (runningService == null) {
             // There is no running service, do nothing.
@@ -175,7 +175,7 @@ public class TunnelServiceInteractor {
         boolean wantVPN = appPreferences.getBoolean(context.getString(R.string.tunnelWholeDevicePreference), false);
         if ((wantVPN && isVpnService(runningService))
                 || (!wantVPN && runningService.equals(TunnelService.class.getName()))) {
-            commandTunnelRestart();
+            commandTunnelRestart(resetReconnectFlag);
         } else {
             scheduleCompleteServiceRestart(startServiceRunnable);
         }
@@ -230,8 +230,10 @@ public class TunnelServiceInteractor {
         return Utils.hasVpnService() && TunnelVpnService.class.getName().equals(className);
     }
 
-    private void commandTunnelRestart() {
-        sendServiceMessage(TunnelManager.ClientToServiceMessage.RESTART_SERVICE.ordinal(), null);
+    private void commandTunnelRestart(boolean resetReconnectFlag) {
+        Bundle data = new Bundle();
+        data.putBoolean(TunnelManager.RESET_RECONNECT_FLAG,resetReconnectFlag);
+        sendServiceMessage(TunnelManager.ClientToServiceMessage.RESTART_SERVICE.ordinal(), data);
     }
 
     private void scheduleCompleteServiceRestart(Runnable startServiceRunnable) {

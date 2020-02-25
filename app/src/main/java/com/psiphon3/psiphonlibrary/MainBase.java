@@ -439,7 +439,7 @@ public abstract class MainBase {
                     String action = intent.getAction();
                     if (action != null) {
                         if (action.equals(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE)) {
-                            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), TabbedActivityBase.this::startTunnel);
+                            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), TabbedActivityBase.this::startTunnel, false);
                         }
                     }
                 }
@@ -928,7 +928,7 @@ public abstract class MainBase {
 
             // NOTE: reconnects even when Any is selected: we could select a
             // faster server
-            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
+            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel, true);
         }
 
         protected void updateEgressRegionPreference(String egressRegionPreference) {
@@ -947,7 +947,7 @@ public abstract class MainBase {
 
             boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
             updateWholeDevicePreference(tunnelWholeDevicePreference);
-            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
+            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel, true);
         }
 
         protected void updateWholeDevicePreference(boolean tunnelWholeDevicePreference) {
@@ -969,7 +969,7 @@ public abstract class MainBase {
         public void onDisableTimeoutsToggle(View v) {
             boolean disableTimeoutsChecked = m_disableTimeoutsToggle.isChecked();
             updateDisableTimeoutsPreference(disableTimeoutsChecked);
-            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
+            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel, true);
         }
         protected void updateDisableTimeoutsPreference(boolean disableTimeoutsPreference) {
             m_multiProcessPreferences.put(getString(R.string.disableTimeoutsPreference), disableTimeoutsPreference);
@@ -1415,7 +1415,7 @@ public abstract class MainBase {
                 );
 
                 if (bRestartRequired) {
-                    tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
+                    tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel, true);
                 }
 
                 if (data != null && data.getBooleanExtra(MoreOptionsPreferenceActivity.INTENT_EXTRA_LANGUAGE_CHANGED, false)) {
