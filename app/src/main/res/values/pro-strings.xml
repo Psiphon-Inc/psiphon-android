@@ -228,7 +228,7 @@
 
     <!-- PsiCash in-app purchase disclaimer that appears on the bottom of the screen where users can buy different amounts of PsiCash from the PlayStore.
     Do not translate or transliterate terms PsiCash or Psiphon Pro-->
-    <string name="psicash_store_disclaimer">IMPORTANT: Your PsiCash will not be preserved if you uninstall Psiphon Pro or clear the app\’s storage.</string>
+    <string name="psicash_store_disclaimer">IMPORTANT: Your PsiCash will not be preserved if you uninstall Psiphon Pro or clear the app\'s storage.</string>
 
     <!-- A message to the user indicating that they need to be connected to Psiphon in order to use Speed Boost.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
