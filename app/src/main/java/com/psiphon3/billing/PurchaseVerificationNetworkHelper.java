@@ -51,9 +51,8 @@ import okhttp3.Response;
 public class PurchaseVerificationNetworkHelper {
 
     private static final int TIMEOUT_SECONDS = 30;
-    // TODO: replace with production values after testing
-    private static final String SUBSCRIPTION_VERIFICATION_URL = "https://dev-subscription.psiphon3.com/v2/playstore/subscription";
-    private static final String PSICASH_VERIFICATION_URL = "https://dev-subscription.psiphon3.com/v2/playstore/psicash";
+    private static final String SUBSCRIPTION_VERIFICATION_URL = "https://subscription.psiphon3.com/v2/playstore/subscription";
+    private static final String PSICASH_VERIFICATION_URL = "https://subscription.psiphon3.com/v2/playstore/psicash";
     private static final MediaType JSON = MediaType.parse("application/json");
     private static final String HTTP_USER_AGENT = "Psiphon-Verifier-Android";
     private static final int TRIES_COUNT = 5;

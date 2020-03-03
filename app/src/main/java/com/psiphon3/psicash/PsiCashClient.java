@@ -66,7 +66,7 @@ public class PsiCashClient {
     private static PsiCashClient INSTANCE = null;
     private Context appContext;
 
-    private final PsiCashLibTest psiCashLib;
+    private final PsiCashLib psiCashLib;
     private int httpProxyPort;
     private final OkHttpClient okHttpClient;
     private final SharedPreferences sharedPreferences;
@@ -75,8 +75,7 @@ public class PsiCashClient {
         this.appContext = ctx;
         sharedPreferences = ctx.getSharedPreferences(PSICASH_PREFERENCES_KEY, Context.MODE_PRIVATE);
         httpProxyPort = 0;
-        // TODO: replace with prod after testing
-        psiCashLib = new PsiCashLibTest();
+        psiCashLib = new PsiCashLib();
         okHttpClient = new OkHttpClient.Builder()
                 .retryOnConnectionFailure(false)
                 .proxySelector(new ProxySelector() {
@@ -526,14 +525,6 @@ public class PsiCashClient {
             } else {
                 throw new PsiCashException.Critical(errorMessage);
             }
-        }
-    }
-
-    private class PsiCashLibTest extends PsiCashLib {
-        @Nullable
-        @Override
-        public Error init(String fileStoreRoot, HTTPRequester httpRequester, boolean forceReset) {
-            return super.init(fileStoreRoot, httpRequester, forceReset, true);
         }
     }
 }
