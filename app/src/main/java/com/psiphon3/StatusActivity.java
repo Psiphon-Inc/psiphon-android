@@ -826,7 +826,13 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
                         throw new IllegalArgumentException("SKU is empty.");
                     }
                     SkuDetails skuDetails = new SkuDetails(skuString);
-                    googlePlayBillingHelper.launchFlow(this, skuDetails).subscribe();
+                    googlePlayBillingHelper.launchFlow(this, skuDetails)
+                            .doOnError(err -> {
+                                // Show "Subscription options not available" toast.
+                                showToast(R.string.subscription_options_currently_not_available);
+                            })
+                            .onErrorComplete()
+                            .subscribe();
                 } catch (JSONException | IllegalArgumentException e) {
                     Utils.MyLog.g("StatusActivity::onActivityResult purchase SKU error: " + e);
                     // Show "Subscription options not available" toast.

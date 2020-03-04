@@ -126,7 +126,7 @@ public class GooglePlayBillingHelper {
                         if (responseCode == BillingResponseCode.OK) {
                             emitter.onNext(billingClient);
                         } else {
-                            emitter.onError(new RuntimeException(billingResult.getDebugMessage()));
+                            emitter.onError(new BillingException(responseCode));
                         }
                     }
                 }
@@ -265,16 +265,21 @@ public class GooglePlayBillingHelper {
         }
 
         List<Completable> completables = new ArrayList<>();
-        for (Purchase purchase : purchaseList) {
-            // Skip purchase with pending or unspecified state.
+        // Iterate from back to front, making it safe to remove purchases
+        for (int i = purchaseList.size() - 1; i >= 0; i--) {
+            Purchase purchase = purchaseList.get(i);
+
+            // Remove purchase with pending or unspecified state.
             if (purchase.getPurchaseState() != Purchase.PurchaseState.PURCHASED) {
+                purchaseList.remove(i);
                 continue;
             }
 
-            // Skip purchases that don't pass signature verification.
+            // Remove purchase that doesn't pass signature verification.
             if (!Security.verifyPurchase(IAB_PUBLIC_KEY,
                     purchase.getOriginalJson(), purchase.getSignature())) {
                 Utils.MyLog.g("StatusActivityBillingViewModel::processPurchases: failed verification for purchase: " + purchase);
+                purchaseList.remove(i);
                 continue;
             }
 
@@ -331,7 +336,7 @@ public class GooglePlayBillingHelper {
                         }
                         return Flowable.just(purchaseList);
                     } else {
-                        return Flowable.error(new RuntimeException("Billing response code: " + purchasesResult.getResponseCode()));
+                        return Flowable.error(new BillingException(purchasesResult.getResponseCode()));
                     }
                 })
                 .firstOrError()
@@ -355,7 +360,7 @@ public class GooglePlayBillingHelper {
                                         }
                                         emitter.onNext(skuDetailsList);
                                     } else {
-                                        emitter.onError(new RuntimeException("Billing response code: " + billingResult.getResponseCode()));
+                                        emitter.onError(new BillingException(billingResult.getResponseCode()));
                                     }
                                 }
                             });
@@ -381,7 +386,7 @@ public class GooglePlayBillingHelper {
                     if (billingResult.getResponseCode() == BillingResponseCode.OK) {
                         return Completable.complete();
                     } else {
-                        return Completable.error(new RuntimeException("Billing response code: " + billingResult.getResponseCode()));
+                        return Completable.error(new BillingException(billingResult.getResponseCode()));
                     }
                 })
                 .doOnError(err -> Utils.MyLog.g("GooglePlayBillingHelper::launchFlow error: " + err));
@@ -417,7 +422,7 @@ public class GooglePlayBillingHelper {
                                     if (billingResult.getResponseCode() == BillingResponseCode.OK) {
                                         emitter.onComplete();
                                     } else {
-                                        emitter.onError(new RuntimeException("Billing response code: " + billingResult.getResponseCode()));
+                                        emitter.onError(new BillingException(billingResult.getResponseCode()));
                                     }
                                 }
                             });
@@ -465,7 +470,7 @@ public class GooglePlayBillingHelper {
                                     if (billingResult.getResponseCode() == BillingResponseCode.OK) {
                                         emitter.onNext(purchaseToken);
                                     } else {
-                                        emitter.onError(new RuntimeException("Billing response code: " + billingResult.getResponseCode()));
+                                        emitter.onError(new BillingException(billingResult.getResponseCode()));
                                     }
                                 }
                             });
@@ -475,4 +480,17 @@ public class GooglePlayBillingHelper {
                 .onErrorReturnItem("");
     }
 
+    public static class BillingException extends Exception {
+        private @BillingResponseCode int billingResultResponseCode;
+        public BillingException(@BillingResponseCode int billingResultResponseCode) {
+            this.billingResultResponseCode = billingResultResponseCode;
+        }
+
+        @Override
+        public String toString() {
+            return "GooglePlayBillingHelper.BillingException{" +
+                    "billingResultResponseCode=" + billingResultResponseCode +
+                    '}';
+        }
+    }
 }

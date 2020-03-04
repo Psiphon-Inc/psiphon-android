@@ -152,6 +152,14 @@ public class PsiCashInAppPurchaseFragment extends Fragment {
                                         purchaseDisposable =
                                                 GooglePlayBillingHelper.getInstance(activity.getApplicationContext())
                                                         .launchFlow(activity, skuDetails)
+                                                        .doOnError(err -> {
+                                                            Toast toast = Toast.makeText(getActivity(),
+                                                                    R.string.psicash_purchase_not_available_error_message,
+                                                                    Toast.LENGTH_SHORT);
+                                                            positionToast(toast, psicashPurchaseItemView, getActivity().getWindow());
+                                                            toast.show();
+                                                        })
+                                                        .onErrorComplete()
                                                         .doOnSubscribe(__ -> {
                                                             btn.setEnabled(false);
                                                             progress.setVisibility(View.VISIBLE);
