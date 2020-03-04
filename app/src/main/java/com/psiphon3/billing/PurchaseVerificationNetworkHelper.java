@@ -214,16 +214,15 @@ public class PurchaseVerificationNetworkHelper {
         return clientPlatform.replaceAll("[^\\w\\-\\.]", "_");
     }
 
-    private class RetriableException extends RuntimeException {
+    class RetriableException extends RuntimeException {
         RetriableException(String cause) {
             super(cause);
         }
     }
 
-    private class FatalException extends RuntimeException {
+    class FatalException extends RuntimeException {
         FatalException(String cause) {
             super(cause);
         }
     }
-
 }
