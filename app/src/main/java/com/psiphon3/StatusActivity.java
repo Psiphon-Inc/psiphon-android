@@ -193,29 +193,8 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
 
         // ads
         psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.largeAdSlot),
-                () -> onSubscribeButtonClick(null), true);
+                () -> onSubscribeButtonClick(null), tunnelServiceInteractor.tunnelStateFlowable());
         psiphonAdManager.startLoadingAds();
-
-        // Components IAB state notifications and PsiCash tab view state Rx subscription.
-        compositeDisposable.add(
-                googlePlayBillingHelper.subscriptionStateFlowable()
-                        .distinctUntilChanged()
-                        .doOnNext(subscriptionState -> {
-                            MyLog.g("Billing: subscription status: " + subscriptionState.status());
-                            if (subscriptionState.error() != null) {
-                                MyLog.g("Subscription state billing error: " + subscriptionState.error());
-                            }
-                            psiphonAdManager.onSubscriptionState(subscriptionState);
-                        })
-                        .subscribe()
-        );
-
-        compositeDisposable.add(
-                tunnelServiceInteractor.tunnelStateFlowable()
-                        // Update app UI state
-                        .doOnNext(state -> psiphonAdManager.onTunnelConnectionState(state))
-                        .subscribe()
-        );
 
         setupActivityLayout();
 
@@ -464,6 +443,7 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
         // to load or a timeout occurs.
         Observable<PsiphonAdManager.InterstitialResult> interstitial =
                 psiphonAdManager.getCurrentAdTypeObservable()
+                        .filter(adResult -> adResult.type() != PsiphonAdManager.AdResult.Type.UNKNOWN)
                         .firstOrError()
                         .flatMapObservable(adResult -> {
                             if (adResult.type() != PsiphonAdManager.AdResult.Type.UNTUNNELED) {
