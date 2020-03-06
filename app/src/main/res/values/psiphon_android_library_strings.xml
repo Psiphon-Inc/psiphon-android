@@ -58,7 +58,9 @@
     <string name="waiting_for_network_connectivity">Waiting for network connectivity…</string>
     <string name="checking_for_root_access">Checking for root access…</string>
     <string name="psiphon_service_notification_message_connecting">Connecting…</string>
+    <!-- Do not translate or transliterate "Psiphon" -->
     <string name="psiphon_service_notification_id">Psiphon Service Notification</string>
+    <!-- Do not translate or transliterate "Psiphon" -->
     <string name="psiphon_service_notification_channel_name">Psiphon Status Changes</string>
     <string name="preferred_servers">Preferred servers: %d</string>
     <string name="selecting_server">Selecting server…</string>
@@ -90,10 +92,13 @@
     <string name="UpgradeManager.CanNotRetrievePackageInfo">Unable to retrieve package info for current app</string>
     <string name="UpgradeManager.UpgradeFileWriteFailed">Failed to write upgrade file</string>
     <string name="UpgradeManager.UpgradeDownloadFailed">Upgrade download failed</string>
+    <!-- Do not translate or transliterate "Psiphon" -->
     <string name="UpgradeManager.UpgradeDownloaded">Upgrade downloaded. It is strongly recommended that you allow the upgrade to proceed at this time. After upgrading, you will have to launch Psiphon again.</string>
     <string name="UpgradeManager.CannotExtractUpgradePackageInfo">Upgrade failed. Cannot extract package info from upgrade file.</string>
     <string name="UpgradeManager.UpgradeFileNotFound">Upgrade file not found</string>
+    <!-- Do not translate or transliterate "Psiphon" -->
     <string name="UpgradeManager.UpgradePromptTitle">Psiphon Upgrade</string>
+    <!-- Do not translate or transliterate "Psiphon" -->
     <string name="UpgradeManager.UpgradePromptMessage">An upgrade for Psiphon is ready to be installed.</string>
     <string name="UpgradeManager.UpgradeFileReadFailed">Failed to read upgrade file</string>
     <string name="UpgradeManager.UpgradeFileAuthenticateFailed">Failed to authenticate upgrade file</string>
@@ -148,6 +153,7 @@
     <string name="region_name_sk">Slovakia</string>
     <string name="region_name_rs">Serbia</string>
     <string name="region_name_au">Australia</string>
+    <!-- Do not translate or transliterate "Psiphon" -->
     <string name="about">About Psiphon</string>
     <string name="feedback">Feedback</string>
     <string name="tunnel_whole_device_toggle">Tunnel Whole Device (requires Android 4.0+)</string>
@@ -204,6 +210,7 @@
     <!-- Title for prompt requesting the user to grant the ACCESS_COARSE_LOCATION permission -->
     <string name="MainBase_AccessCoarseLocationPermissionPromptTitle">Permission Request</string>
     <!-- Message for prompt requesting the user to grant the ACCESS_COARSE_LOCATION permission -->
+    <!-- Do not translate or transliterate "Psiphon" -->
     <string name="MainBase_AccessCoarseLocationPermissionPromptMessage">Allow Psiphon to make better decisions about how to work on your network by granting access to your location.\n\nNote that this information is only used locally on your device, and is not transmitted to our servers or any 3rd parties.</string>
     <!-- Positive response button for prompt requesting the user to grant the ACCESS_COARSE_LOCATION permission -->
     <string name="MainBase_AccessCoarseLocationPermissionPositiveButton">Okay</string>
