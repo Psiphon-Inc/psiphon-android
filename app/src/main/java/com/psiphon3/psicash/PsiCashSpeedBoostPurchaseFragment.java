@@ -16,6 +16,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.util.Pair;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.GridLayout;
+import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -31,8 +32,10 @@ import com.psiphon3.subscription.R;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ca.psiphon.psicashlib.PsiCashLib;
@@ -50,6 +53,32 @@ public class PsiCashSpeedBoostPurchaseFragment extends Fragment {
     private Scene sceneBuySpeedBoost;
     private Scene sceneActiveSpeedBoost;
     private final Handler handler = new Handler();
+    private int[] backgrounds = new int[]{
+            R.drawable.speedboost_background_orange,
+            R.drawable.speedboost_background_pink,
+            R.drawable.speedboost_background_purple,
+            R.drawable.speedboost_background_blue,
+            R.drawable.speedboost_background_light_blue,
+            R.drawable.speedboost_background_mint,
+            R.drawable.speedboost_background_orange_2,
+            R.drawable.speedboost_background_yellow,
+            R.drawable.speedboost_background_fluoro_green,
+    };
+
+    static public final Map<String, Integer> PSICASH_SKUS_TO_HOURS;
+    static {
+        Map<String, Integer> m = new HashMap<>();
+        m.put("1hr", 1);
+        m.put("2hr", 2);
+        m.put("3hr", 3);
+        m.put("4hr", 4);
+        m.put("5hr", 5);
+        m.put("6hr", 6);
+        m.put("7hr", 7);
+        m.put("8hr", 8);
+        m.put("9hr", 9);
+        PSICASH_SKUS_TO_HOURS = Collections.unmodifiableMap(m);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -186,6 +215,11 @@ public class PsiCashSpeedBoostPurchaseFragment extends Fragment {
                 (int) (buttonDrawable.getIntrinsicHeight() * 0.7));
 
         for (PsiCashLib.PurchasePrice price : purchasePriceList) {
+            final String durationString = getDurationString(price.distinguisher, activity.getResources());
+            if (durationString == null) {
+                // Skip if we the distinguisher is not in the hardcoded set of PsiCash SKUs
+                continue;
+            }
             LinearLayout speedboostItemLayout = (LinearLayout) activity.getLayoutInflater().inflate(R.layout.speedboost_button_template, null);
             RelativeLayout relativeLayout = speedboostItemLayout.findViewById(R.id.speedboost_relative_layout);
 
@@ -194,7 +228,6 @@ public class PsiCashSpeedBoostPurchaseFragment extends Fragment {
             relativeLayout.setBackgroundResource(drawableResId);
 
             TextView durationLabel = speedboostItemLayout.findViewById(R.id.speedboost_purchase_label);
-            final String durationString = getDurationString(price.distinguisher, activity.getResources());
             durationLabel.setText(durationString);
 
             Button button = speedboostItemLayout.findViewById(R.id.speedboost_purchase_button);
@@ -250,37 +283,17 @@ public class PsiCashSpeedBoostPurchaseFragment extends Fragment {
     }
 
     private String getDurationString(String distinguisher, Resources resources) {
-        /// - Speed Boost distinguishers have the pattern: `[1-9][0-9]*hr`
-        String result = null;
-        if ((distinguisher != null) && (distinguisher.length() > 0)) {
-            result = distinguisher.substring(0, distinguisher.length() - 2);
-        }
-
-        if (result == null) {
+        if (TextUtils.isEmpty(distinguisher)) {
             return null;
         }
-
-        int duration;
-        try {
-            duration = Integer.parseInt(result);
-        } catch (NumberFormatException ignored) {
-            duration = 0;
+        Integer duration = PSICASH_SKUS_TO_HOURS.get(distinguisher);
+        if (duration == null) {
+            return null;
         }
         return resources.getQuantityString(R.plurals.hours_of_speed_boost, duration, duration);
     }
 
     private int getSpeedBoostPurchaseDrawableResId(int priceValue) {
-        int[] backgrounds = {
-                R.drawable.speedboost_background_orange,
-                R.drawable.speedboost_background_pink,
-                R.drawable.speedboost_background_purple,
-                R.drawable.speedboost_background_blue,
-                R.drawable.speedboost_background_light_blue,
-                R.drawable.speedboost_background_mint,
-                R.drawable.speedboost_background_orange_2,
-                R.drawable.speedboost_background_yellow,
-                R.drawable.speedboost_background_fluoro_green,
-        };
         int index = ((priceValue / 100) - 1) % backgrounds.length;
         return backgrounds[index];
     }
