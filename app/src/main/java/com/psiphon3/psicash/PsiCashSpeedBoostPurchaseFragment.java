@@ -1,5 +1,6 @@
 package com.psiphon3.psicash;
 
+import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
@@ -238,7 +239,7 @@ public class PsiCashSpeedBoostPurchaseFragment extends Fragment {
             button.setText(priceTag);
 
             if (balance >= priceInteger) {
-                button.setOnClickListener(v -> {
+                speedboostItemLayout.setOnClickListener(v -> {
                     String confirmationMessage = String.format(
                             activity.getString(R.string.lbl_confirm_speedboost_purchase),
                             durationString,
@@ -269,6 +270,12 @@ public class PsiCashSpeedBoostPurchaseFragment extends Fragment {
             } else {
                 button.setCompoundDrawables(buttonDrawable, null, null, null);
                 button.setEnabled(false);
+                speedboostItemLayout.setOnClickListener(v -> {
+                    ObjectAnimator
+                            .ofFloat(v, "translationX", 0, 25, -25, 25, -25, 15, -15, 6, -6, 0)
+                            .setDuration(500)
+                            .start();
+                });
             }
             DisplayMetrics metrics = new DisplayMetrics();
             getActivity().getWindow().getWindowManager().getDefaultDisplay().getMetrics(metrics);
