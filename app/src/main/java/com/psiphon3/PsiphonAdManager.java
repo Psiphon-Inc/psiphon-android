@@ -215,9 +215,6 @@ public class PsiphonAdManager {
         })
                 .doOnError(e -> Utils.MyLog.d("initializeMoPubSdk error: " + e));
 
-
-        // Note this observable also destroys ads according to subscription and/or
-        // connection status without further delay.
         this.currentAdTypeObservable = Observable.combineLatest(
                 tunnelConnectionStateFlowable.toObservable(),
                 GooglePlayBillingHelper.getInstance(activity.getApplicationContext())
@@ -243,6 +240,8 @@ public class PsiphonAdManager {
                 .replay(1)
                 .autoConnect(0);
 
+        // This disposable destroys ads according to subscription and/or
+        // connection status without further delay.
         compositeDisposable.add(
                 currentAdTypeObservable
                         .doOnNext(adResult -> {
@@ -497,9 +496,10 @@ public class PsiphonAdManager {
                         tabChangeCount = 0;
                     }
                 })
-                .publish(shared -> Observable.mergeDelayError(
+                .publish(shared -> Observable.merge(
                         shared.switchMap(adResult -> loadInterstitialForAdResult(adResult).onErrorResumeNext(Observable.empty())),
                         shared.switchMap(adResult -> loadAndShowBanner(adResult).toObservable())))
+                .doOnError(err ->Utils.MyLog.g("PsiphonAdManager: error loading ads: " + err))
                 .onErrorResumeNext(Observable.empty())
                 .subscribe();
         compositeDisposable.add(loadAdsDisposable);
@@ -517,6 +517,7 @@ public class PsiphonAdManager {
         Completable completable;
         switch (adResult.type()) {
             case NONE:
+            case UNKNOWN:
                 completable = Completable.complete();
                 break;
             case TUNNELED:
@@ -611,6 +612,7 @@ public class PsiphonAdManager {
         AdResult.Type adType = adResult.type();
         switch (adType) {
             case NONE:
+            case UNKNOWN:
                 return Observable.empty();
             case TUNNELED:
                 // Set client region data on the ad
