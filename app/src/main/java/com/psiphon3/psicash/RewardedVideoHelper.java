@@ -5,6 +5,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 
 import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.rewarded.RewardItem;
 import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdCallback;
@@ -18,6 +19,7 @@ import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubRewardedVideoListener;
 import com.mopub.mobileads.MoPubRewardedVideos;
 import com.psiphon3.TunnelState;
+import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
@@ -68,6 +70,9 @@ public class RewardedVideoHelper {
     }
 
     public RewardedVideoHelper(Context context) {
+        // Try and initialize AdMob once, there is no reason to make this a completable
+        MobileAds.initialize(context, BuildConfig.ADMOB_APP_ID);
+
         final AppPreferences mp = new AppPreferences(context);
         String customData = mp.getString(context.getString(R.string.persistentPsiCashCustomData), "");
 

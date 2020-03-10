@@ -41,6 +41,7 @@ import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.ads.MobileAds;
 import com.google.auto.value.AutoValue;
 import com.mopub.common.MoPub;
 import com.mopub.common.SdkConfiguration;
@@ -54,6 +55,7 @@ import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.subscription.BuildConfig;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -177,6 +179,9 @@ public class PsiphonAdManager {
         this.activity = activity;
         this.bannerLayout = bannerLayout;
         this.adMobPayOptionRunnable = adMobPayOptionRunnable;
+
+        // Try and initialize AdMob once, there is no reason to make this a completable
+        MobileAds.initialize(activity.getApplicationContext(), BuildConfig.ADMOB_APP_ID);
 
         // MoPub SDK is also tracking GDPR status and will present a GDPR consent collection dialog if needed.
         this.initializeMoPubSdk = Completable.create(emitter -> {
