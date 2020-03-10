@@ -89,7 +89,7 @@ public class PurchaseVerifier {
 
                     final AppPreferences mp = new AppPreferences(context);
                     String psiCashCustomData = mp.getString(context.getString(R.string.persistentPsiCashCustomData), "");
-                    if ( TextUtils.isEmpty(psiCashCustomData)) {
+                    if (TextUtils.isEmpty(psiCashCustomData)) {
                         Utils.MyLog.g("PurchaseVerifier: error: can't redeem PsiCash purchase, custom data is empty");
                         return Flowable.empty();
                     }
@@ -103,10 +103,10 @@ public class PurchaseVerifier {
                     Utils.MyLog.g("PurchaseVerifier: will try and redeem PsiCash purchase.");
                     return purchaseVerificationNetworkHelper.verifyFlowable(purchase)
                             .flatMap(json -> {
-                                // Purchase redeemed, consume and send PSICASH_PURCHASE_REDEEMED
-                                return repository.consumePurchase(purchase)
-                                        .map(__ -> VerificationResult.PSICASH_PURCHASE_REDEEMED)
-                                        .toFlowable();
+                                        // Purchase redeemed, consume and send PSICASH_PURCHASE_REDEEMED
+                                        return repository.consumePurchase(purchase)
+                                                .map(__ -> VerificationResult.PSICASH_PURCHASE_REDEEMED)
+                                                .toFlowable();
                                     }
                             )
                             .doOnError(e -> {

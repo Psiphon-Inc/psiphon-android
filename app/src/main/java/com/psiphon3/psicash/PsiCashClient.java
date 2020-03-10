@@ -23,7 +23,7 @@ package com.psiphon3.psicash;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.annotation.Nullable;
+import android.text.TextUtils;
 
 import com.psiphon3.TunnelState;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -70,10 +70,15 @@ public class PsiCashClient {
     private int httpProxyPort;
     private final OkHttpClient okHttpClient;
     private final SharedPreferences sharedPreferences;
+    private final AppPreferences multiProcessPreferences;
+    private String customDataCached;
 
     private PsiCashClient(final Context ctx) throws PsiCashException {
         this.appContext = ctx;
         sharedPreferences = ctx.getSharedPreferences(PSICASH_PREFERENCES_KEY, Context.MODE_PRIVATE);
+        multiProcessPreferences = new AppPreferences(ctx);
+        customDataCached = multiProcessPreferences.getString(ctx.getString(R.string.persistentPsiCashCustomData), "");
+
         httpProxyPort = 0;
         psiCashLib = new PsiCashLib();
         okHttpClient = new OkHttpClient.Builder()
@@ -193,20 +198,6 @@ public class PsiCashClient {
         }
     }
 
-    String getPsiCashCustomData() throws PsiCashException {
-        PsiCashLib.GetRewardedActivityDataResult rewardedActivityData = psiCashLib.getRewardedActivityData();
-        if (rewardedActivityData.error == null) {
-            return rewardedActivityData.data;
-        } else {
-            String errorMessage = rewardedActivityData.error.message;
-            if (rewardedActivityData.error.critical) {
-                throw new PsiCashException.Recoverable(errorMessage);
-            } else {
-                throw new PsiCashException.Critical(errorMessage);
-            }
-        }
-    }
-
     public boolean hasValidTokens() throws PsiCashException {
         PsiCashLib.ValidTokenTypesResult validTokenTypesResult = psiCashLib.validTokenTypes();
         if (validTokenTypesResult.error == null) {
@@ -306,10 +297,27 @@ public class PsiCashClient {
                     (p1, p2) -> p1.expiry.compareTo(p2.expiry)));
         }
 
+        if (hasEarnerToken()) {
+            PsiCashLib.GetRewardedActivityDataResult rewardedActivityData = psiCashLib.getRewardedActivityData();
+            if (rewardedActivityData.error == null) {
+                String customData = rewardedActivityData.data;
+                if (TextUtils.isEmpty(customDataCached) || !customDataCached.equals(customData)) {
+                    multiProcessPreferences.put(appContext.getString(R.string.persistentPsiCashCustomData), customData);
+                    customDataCached = customData;
+                }
+            } else {
+                String errorMessage = rewardedActivityData.error.message;
+                if (rewardedActivityData.error.critical) {
+                    throw new PsiCashException.Critical(errorMessage);
+                } else {
+                    throw new PsiCashException.Recoverable(errorMessage);
+                }
+            }
+        }
+
         builder.reward(getVideoReward());
 
-        final AppPreferences mp = new AppPreferences(appContext);
-        boolean pendingRefresh = mp.getBoolean(appContext.getString(R.string.persistentPsiCashPurchaseRedeemedFlag), false);
+        boolean pendingRefresh = multiProcessPreferences.getBoolean(appContext.getString(R.string.persistentPsiCashPurchaseRedeemedFlag), false);
 
         builder.pendingRefresh(pendingRefresh);
 
@@ -460,20 +468,7 @@ public class PsiCashClient {
             // if success reset optimistic reward
             resetVideoReward();
 
-            // Also reset persistent PsiCash purchase redeemed flag
-            final AppPreferences mp = new AppPreferences(appContext);
-            mp.put(appContext.getString(R.string.persistentPsiCashPurchaseRedeemedFlag), false);
-
-            // Also persist custom data
-            try {
-                String psiCashCustomData = getPsiCashCustomData();
-                mp.put(appContext.getString(R.string.persistentPsiCashCustomData), psiCashCustomData);
-            } catch (PsiCashException err) {
-                if (!emitter.isDisposed()) {
-                    emitter.onError(err);
-                }
-            }
-
+            multiProcessPreferences.put(appContext.getString(R.string.persistentPsiCashPurchaseRedeemedFlag), false);
             if (!emitter.isDisposed()) {
                 emitter.onComplete();
             }
