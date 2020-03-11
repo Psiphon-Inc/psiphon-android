@@ -1,6 +1,5 @@
 package com.psiphon3.psicash;
 
-import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
@@ -15,6 +14,7 @@ import android.support.transition.Scene;
 import android.support.transition.TransitionManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.util.Pair;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.GridLayout;
 import android.text.TextUtils;
@@ -239,9 +239,10 @@ public class PsiCashSpeedBoostPurchaseFragment extends Fragment {
             button.setText(priceTag);
 
             if (balance >= priceInteger) {
+                button.setEnabled(true);
                 speedboostItemLayout.setOnClickListener(v -> {
                     String confirmationMessage = String.format(
-                            activity.getString(R.string.lbl_confirm_speedboost_purchase),
+                            activity.getString(R.string.confirm_speedboost_purchase_alert),
                             durationString,
                             priceInteger
                     );
@@ -268,13 +269,20 @@ public class PsiCashSpeedBoostPurchaseFragment extends Fragment {
                             .show();
                 });
             } else {
-                button.setCompoundDrawables(buttonDrawable, null, null, null);
                 button.setEnabled(false);
                 speedboostItemLayout.setOnClickListener(v -> {
-                    ObjectAnimator
-                            .ofFloat(v, "translationX", 0, 25, -25, 25, -25, 15, -15, 6, -6, 0)
-                            .setDuration(500)
-                            .start();
+                    new AlertDialog.Builder(activity)
+                            .setIcon(R.drawable.psicash_coin)
+                            .setTitle(activity.getString(R.string.speed_boost_button_caption))
+                            .setMessage(activity.getString(R.string.speed_boost_insufficient_balance_alert))
+                            .setNegativeButton(R.string.lbl_no, (dialog, which) -> {})
+                            .setPositiveButton(R.string.lbl_yes, (dialog, which) -> {
+                                final ViewPager viewPager = activity.findViewById(R.id.psicash_store_viewpager);
+                                viewPager.setCurrentItem(0);
+                            })
+                            .setCancelable(true)
+                            .create()
+                            .show();
                 });
             }
             DisplayMetrics metrics = new DisplayMetrics();

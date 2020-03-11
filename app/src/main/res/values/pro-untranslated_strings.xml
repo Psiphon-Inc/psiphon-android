@@ -4,5 +4,4 @@
     <string name="psicash_purchase_free_amount">35</string>
     <string name="persistentPsiCashCustomData">persistentPsiCashCustomData</string>
     <string name="persistentPsiCashPurchaseRedeemedFlag">persistentPsiCashPurchaseRedeemedFlag</string>
-    <string name="persistentLastPsiCashTabIndex">persistentLastPsiCashTabIndex</string>
 </resources>

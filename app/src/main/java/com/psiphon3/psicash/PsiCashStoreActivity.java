@@ -143,8 +143,6 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 viewPager.setCurrentItem(tab.getPosition());
-                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit();
-                editor.putInt(getApplicationContext().getString(R.string.persistentLastPsiCashTabIndex), tab.getPosition()).apply();
             }
 
             @Override
@@ -161,9 +159,8 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
         viewPager.setAdapter(pageAdapter);
         viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
 
-        // Go to last visited tab
-        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        int tabIndex = pref.getInt(getApplicationContext().getString(R.string.persistentLastPsiCashTabIndex), 0);
+        // Go to the tab specified in the opening intent extra
+        int tabIndex = getIntent().getIntExtra("tabIndex", 0);
         if (tabIndex < pageAdapter.getCount()) {
             viewPager.setCurrentItem(tabIndex);
         }

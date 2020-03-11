@@ -115,7 +115,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
         progressOverlay = getActivity().findViewById(R.id.progress_overlay);
         speedBoostBtnClicker = getActivity().findViewById(R.id.purchase_speedboost_clicker);
-        speedBoostBtnClicker.setOnClickListener(v -> onPsiCashStoreClick());
+        speedBoostBtnClicker.setOnClickListener(v -> openPsiCashStoreActivity(R.integer.speedBoostTabIndex));
         speedBoostBtnClickerLabel = getActivity().findViewById(R.id.purchase_speedboost_clicker_label);
         balanceLabel = getActivity().findViewById(R.id.psicash_balance_label);
         balanceIcon = getActivity().findViewById(R.id.psicash_balance_icon);
@@ -147,8 +147,9 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(broadcastReceiver, intentFilter);
     }
 
-    public void onPsiCashStoreClick() {
+    public void openPsiCashStoreActivity(int tabIndex) {
         Intent intent = new Intent(getActivity(), PsiCashStoreActivity.class);
+        intent.putExtra("tabIndex", tabIndex);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         getActivity().startActivityForResult(intent, PSICASH_STORE_ACTIVITY);
     }
@@ -375,7 +376,6 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     private void updateUiBalanceIcon(PsiCashViewState state) {
         if (state.pendingRefresh()) {
             balanceIcon.setImageLevel(1);
-            balanceLayout.setClickable(true);
             balanceLayout.setOnClickListener(view -> {
                 final Activity activity = getActivity();
                 if (activity == null || activity.isFinishing()) {
@@ -393,8 +393,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             });
         } else {
             balanceIcon.setImageLevel(0);
-            balanceLayout.setClickable(false);
-            balanceLayout.setOnClickListener(null);
+            balanceLayout.setOnClickListener(v -> openPsiCashStoreActivity(R.integer.psiCashTabIndex));
         }
     }
 
