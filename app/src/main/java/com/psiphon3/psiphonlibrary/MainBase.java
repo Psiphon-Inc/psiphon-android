@@ -505,6 +505,7 @@ public abstract class MainBase {
             };
 
             m_tabHost.setOnTouchListener(onTouchListener);
+            findViewById(R.id.psicashContainer).setOnTouchListener(onTouchListener);
             findViewById(R.id.statisticsView).setOnTouchListener(onTouchListener);
             findViewById(R.id.settingsView).setOnTouchListener(onTouchListener);
             findViewById(R.id.regionSelector).setOnTouchListener(onTouchListener);
