@@ -278,7 +278,7 @@ public class PsiCashSpeedBoostPurchaseFragment extends Fragment {
                             .setNegativeButton(R.string.lbl_no, (dialog, which) -> {})
                             .setPositiveButton(R.string.lbl_yes, (dialog, which) -> {
                                 final ViewPager viewPager = activity.findViewById(R.id.psicash_store_viewpager);
-                                viewPager.setCurrentItem(0);
+                                viewPager.setCurrentItem(getResources().getInteger(R.integer.psiCashTabIndex));
                             })
                             .setCancelable(true)
                             .create()

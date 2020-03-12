@@ -115,7 +115,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
 
         progressOverlay = getActivity().findViewById(R.id.progress_overlay);
         speedBoostBtnClicker = getActivity().findViewById(R.id.purchase_speedboost_clicker);
-        speedBoostBtnClicker.setOnClickListener(v -> openPsiCashStoreActivity(R.integer.speedBoostTabIndex));
+        speedBoostBtnClicker.setOnClickListener(v ->
+                openPsiCashStoreActivity(getResources().getInteger(R.integer.speedBoostTabIndex)));
         speedBoostBtnClickerLabel = getActivity().findViewById(R.id.purchase_speedboost_clicker_label);
         balanceLabel = getActivity().findViewById(R.id.psicash_balance_label);
         balanceIcon = getActivity().findViewById(R.id.psicash_balance_icon);
@@ -393,7 +394,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
             });
         } else {
             balanceIcon.setImageLevel(0);
-            balanceLayout.setOnClickListener(v -> openPsiCashStoreActivity(R.integer.psiCashTabIndex));
+            balanceLayout.setOnClickListener(v ->
+                    openPsiCashStoreActivity(getResources().getInteger(R.integer.psiCashTabIndex)));
         }
     }
 
