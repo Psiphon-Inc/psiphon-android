@@ -710,7 +710,9 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
 
     private void setPsiCashFragment(SubscriptionState subscriptionState) {
         // Do nothing if host activity is finishing or destroyed
-        if (isFinishing() || Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed()) {
+        if (isFinishing() ||
+                // isDestroyed() is API 17+
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
             return;
         }
         FragmentTransaction transaction = getSupportFragmentManager()
