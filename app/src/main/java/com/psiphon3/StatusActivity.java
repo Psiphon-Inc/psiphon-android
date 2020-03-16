@@ -60,7 +60,6 @@ import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.psiphonlibrary.VpnAppsUtils;
 import com.psiphon3.subscription.R;
 
@@ -710,6 +709,10 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
     }
 
     private void setPsiCashFragment(SubscriptionState subscriptionState) {
+        // Do nothing if host activity is finishing or destroyed
+        if (isFinishing() || Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed()) {
+            return;
+        }
         FragmentTransaction transaction = getSupportFragmentManager()
                 .beginTransaction()
                 .setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out)
@@ -720,7 +723,10 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
             psiCashFragment = new PsiCashFragment();
             transaction.replace(R.id.psicash_fragment_container, psiCashFragment);
         }
-        transaction.commit();
+        // Allow transaction to be committed even after FragmentManager has saved its state.
+        // In case the host activity is killed and re-created this function will be called again
+        // with the most up to date subscription state data.
+        transaction.commitAllowingStateLoss();
     }
 
     private final int PAYMENT_CHOOSER_ACTIVITY = 20001;
