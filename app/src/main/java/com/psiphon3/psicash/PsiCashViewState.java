@@ -25,23 +25,25 @@ import android.support.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import com.psiphon3.psicash.mvibase.MviViewState;
 
-import java.util.Date;
+import java.util.List;
 
 import ca.psiphon.psicashlib.PsiCashLib;
 
 @AutoValue
 public abstract class PsiCashViewState implements MviViewState {
+    public static final int PSICASH_IDLE_BALANCE = -1;
+
+    public abstract boolean hasValidTokens();
+
     public abstract int uiBalance();
 
     public abstract boolean psiCashTransactionInFlight();
 
-    public abstract boolean animateOnNextBalanceChange();
+    @Nullable
+    public abstract List<PsiCashLib.PurchasePrice> purchasePrices();
 
     @Nullable
-    public abstract PsiCashLib.PurchasePrice purchasePrice();
-
-    @Nullable
-    public abstract Date nextPurchaseExpiryDate();
+    public abstract PsiCashLib.Purchase purchase();
 
     @Nullable
     public abstract Throwable error();
@@ -54,36 +56,39 @@ public abstract class PsiCashViewState implements MviViewState {
 
     public abstract boolean videoIsFinished();
 
+    public abstract boolean pendingRefresh();
+
     abstract Builder withState();
 
     static PsiCashViewState idle() {
         return new AutoValue_PsiCashViewState.Builder()
-                .uiBalance(0)
-                .purchasePrice(null)
-                .nextPurchaseExpiryDate(null)
+                .hasValidTokens(false)
+                .uiBalance(PSICASH_IDLE_BALANCE)
+                .purchasePrices(null)
+                .purchase(null)
                 .error(null)
                 .psiCashTransactionInFlight(false)
-                .animateOnNextBalanceChange(false)
                 .videoIsLoading(false)
                 .videoIsLoaded(false)
                 .videoIsPlaying(false)
                 .videoIsFinished(false)
+                .pendingRefresh(false)
                 .build();
     }
 
     @AutoValue.Builder
     static abstract class Builder {
+        abstract Builder hasValidTokens(boolean b);
+
         abstract Builder uiBalance(int balance);
 
         abstract Builder error(@Nullable Throwable error);
 
-        abstract Builder purchasePrice(@Nullable PsiCashLib.PurchasePrice price);
+        abstract Builder purchasePrices(@Nullable List<PsiCashLib.PurchasePrice> prices);
 
-        abstract Builder nextPurchaseExpiryDate(@Nullable Date date);
+        abstract Builder purchase( @Nullable PsiCashLib.Purchase purchase);
 
         public abstract Builder psiCashTransactionInFlight(boolean b);
-
-        public abstract Builder animateOnNextBalanceChange(boolean b);
 
         abstract Builder videoIsLoaded(boolean b);
 
@@ -92,6 +97,8 @@ public abstract class PsiCashViewState implements MviViewState {
         abstract Builder videoIsPlaying(boolean b);
 
         abstract Builder videoIsFinished(boolean b);
+
+        abstract Builder pendingRefresh(boolean b);
 
         abstract PsiCashViewState build();
     }

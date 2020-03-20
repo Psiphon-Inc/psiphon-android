@@ -84,7 +84,7 @@ import io.reactivex.schedulers.Schedulers;
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
 import static com.psiphon3.StatusActivity.ACTION_SHOW_GET_HELP_DIALOG;
 
-public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, PurchaseVerifier.PurchaseAuthorizationListener {
+public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, PurchaseVerifier.VerificationResultListener {
     // Android IPC messages
     // Client -> Service
     enum ClientToServiceMessage {
@@ -105,6 +105,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_EXPORT,
         NFC_CONNECTION_INFO_EXCHANGE_RESPONSE_IMPORT,
         AUTHORIZATIONS_REMOVED,
+        PSICASH_PURCHASE_REDEEMED,
         PING,
     }
 
@@ -116,14 +117,15 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
     // Client -> Service bundle parameter names
     static final String DATA_NFC_CONNECTION_INFO_EXCHANGE_IMPORT = "dataNfcConnectionInfoExchangeImport";
+    static final String RESET_RECONNECT_FLAG = "resetReconnectFlag";
 
     // Service -> Client bundle parameter names
     static final String DATA_TUNNEL_STATE_IS_RUNNING = "isRunning";
-    static final String DATA_TUNNEL_STATE_IS_VPN = "isVpn";
+    public static final String DATA_TUNNEL_STATE_IS_VPN = "isVpn";
     static final String DATA_TUNNEL_STATE_IS_CONNECTED = "isConnected";
     static final String DATA_TUNNEL_STATE_NEEDS_HELP_CONNECTING = "needsHelpConnecting";
     static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT = "listeningLocalSocksProxyPort";
-    static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT = "listeningLocalHttpProxyPort";
+    public static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT = "listeningLocalHttpProxyPort";
     static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
     static final String DATA_TUNNEL_STATE_SPONSOR_ID = "sponsorId";
     public static final String DATA_TUNNEL_STATE_HOME_PAGES = "homePages";
@@ -258,9 +260,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         MyLog.setLogger(this);
 
         purchaseVerifier = new PurchaseVerifier(getContext(), this);
-        purchaseVerifier.startIab();
 
-        m_compositeDisposable.clear();
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
     }
 
@@ -339,10 +339,15 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 .doOnNext(isConnected -> {
                     m_tunnelState.isConnected = isConnected;
                     // Any subsequent onConnected after this first one will be a reconnect.
-                    if (isConnected && m_isReconnect.compareAndSet(false, true)) {
+                    if (isConnected) {
+                        // It is safe to call routeThroughTunnel multiple times because the library
+                        // keeps track of these calls internally and allows only one call per tunnel
+                        // run making all the consecutive calls essentially no-op.
                         m_tunnel.routeThroughTunnel();
-                        if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() > 0) {
-                            sendHandshakeIntent();
+                        if (m_isReconnect.compareAndSet(false, true)) {
+                            if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() > 0) {
+                                sendHandshakeIntent();
+                            }
                         }
                     }
                     sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
@@ -689,11 +694,18 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
                 case RESTART_SERVICE:
                     if (manager != null) {
+                        final boolean resetReconnectFlag;
+                        Bundle data = msg.getData();
+                        if (data != null) {
+                            resetReconnectFlag = data.getBoolean(RESET_RECONNECT_FLAG, true);
+                        } else {
+                            resetReconnectFlag = true;
+                        }
                         manager.m_compositeDisposable.add(
                                 manager.getTunnelConfigSingle()
                                         .doOnSuccess(config -> {
                                             manager.setTunnelConfig(config);
-                                            manager.onRestartCommand();
+                                            manager.onRestartCommand(resetReconnectFlag);
                                         })
                                         .subscribe());
                     }
@@ -713,7 +725,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
                 case ON_RESUME:
                     if (manager != null) {
-                        manager.purchaseVerifier.queryCurrentSubscriptionStatus();
+                        manager.purchaseVerifier.queryAllPurchases();
                     }
                     break;
 
@@ -981,7 +993,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
             stopNetworkStateMonitoring();
             m_isStopping.set(true);
-            m_tunnelConnectedBehaviorRelay.accept(false);
             m_tunnel.stop();
 
             periodicMaintenanceHandler.removeCallbacks(periodicMaintenance);
@@ -996,11 +1007,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         }
     }
 
-    private void onRestartCommand() {
+    private void onRestartCommand(boolean resetReconnectFlag) {
         m_Handler.post(new Runnable() {
             @Override
             public void run() {
-                m_isReconnect.set(false);
+                if (resetReconnectFlag) {
+                    m_isReconnect.set(false);
+                }
                 try {
                     if (Utils.hasVpnService()
                             && m_parentService instanceof TunnelVpnService
@@ -1581,9 +1594,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         m_waitingForConnectivity.set(false);
     }
 
-    // PurchaseVerifier.PurchaseAuthorizationListener implementation
+    // PurchaseVerifier.VerificationResultListener implementation
     @Override
-    public void updateConnection(PurchaseVerifier.UpdateConnectionAction action) {
+    public void onVerificationResult(PurchaseVerifier.VerificationResult action) {
         switch (action) {
             case RESTART_AS_NON_SUBSCRIBER:
                 MyLog.g("TunnelManager: purchase verification: will restart as a non subscriber");
@@ -1595,6 +1608,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 m_tunnelConfig.sponsorId = BuildConfig.SUBSCRIPTION_SPONSOR_ID;
                 restartTunnel();
                 break;
+            case PSICASH_PURCHASE_REDEEMED:
+                MyLog.g("TunnelManager: purchase verification: PsiCash purchase redeemed");
+                final AppPreferences mp = new AppPreferences(getContext());
+                mp.put(m_parentService.getString(R.string.persistentPsiCashPurchaseRedeemedFlag), true);
+                sendClientMessage(ServiceToClientMessage.PSICASH_PURCHASE_REDEEMED.ordinal(), null);
+                break;
+
         }
     }
 

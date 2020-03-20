@@ -19,7 +19,6 @@
 
 package com.psiphon3;
 
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.ActivityNotFoundException;
@@ -31,29 +30,36 @@ import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBar.LayoutParams;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.webkit.WebView;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.SkuDetails;
-import com.jakewharton.rxrelay2.PublishRelay;
-import com.psiphon3.billing.BillingRepository;
-import com.psiphon3.billing.StatusActivityBillingViewModel;
+import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
-import com.psiphon3.psicash.PsiCashClient;
-import com.psiphon3.psiphonlibrary.MainBase;
+import com.psiphon3.psicash.PsiCashFragment;
+import com.psiphon3.psicash.PsiCashStoreActivity;
+import com.psiphon3.psicash.PsiCashSubscribedFragment;
+import com.psiphon3.psicash.PsiCashViewModel;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
 import com.psiphon3.psiphonlibrary.VpnAppsUtils;
 import com.psiphon3.subscription.R;
 
@@ -63,7 +69,9 @@ import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -76,11 +84,9 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
-import io.reactivex.schedulers.Schedulers;
 
 
-public class StatusActivity
-    extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase implements PsiCashFragment.ActiveSpeedBoostListener {
+public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase {
     public static final String ACTION_SHOW_GET_HELP_DIALOG = "com.psiphon3.StatusActivity.SHOW_GET_HELP_CONNECTING_DIALOG";
 
     private View mRateLimitedTextSection;
@@ -96,110 +102,102 @@ public class StatusActivity
     private PsiphonAdManager psiphonAdManager;
     private Disposable startUpInterstitialDisposable;
     private boolean disableInterstitialOnNextTabChange;
-    private PublishRelay<Boolean> activeSpeedBoostRelay;
     private Disposable autoStartDisposable;
 
-    private StatusActivityBillingViewModel billingViewModel;
+    private GooglePlayBillingHelper googlePlayBillingHelper;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
+
+    private View embeddedWebView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        billingViewModel = ViewModelProviders.of(this).get(StatusActivityBillingViewModel.class);
-        billingViewModel.startIab();
+        googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(getApplicationContext());
+        googlePlayBillingHelper.startIab();
 
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main);
 
+        // Add version label to the right side of action bar
+        ActionBar actionBar = getSupportActionBar();
+        LayoutParams lp = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+        View customView = LayoutInflater.from(this).inflate(R.layout.toolbar_version_layout, null);
+        TextView versionLabel = customView.findViewById(R.id.toolbar_version_label);
+        versionLabel.setText(String.format(Locale.US, "v. %s", EmbeddedValues.CLIENT_VERSION));
+        actionBar.setCustomView(customView, lp);
+        actionBar.setDisplayShowCustomEnabled(true);
+
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
         m_tabSpecsList = new ArrayList<>();
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
+        m_connectionProgressBar = findViewById(R.id.connectionProgressBar);
 
         mRateLimitedTextSection = findViewById(R.id.rateLimitedTextSection);
         mRateLimitedText = (TextView)findViewById(R.id.rateLimitedText);
         mRateUnlimitedText = (TextView)findViewById(R.id.rateUnlimitedText);
         mRateLimitSubscribeButton = (Button)findViewById(R.id.rateLimitUpgradeButton);
 
-        // PsiCash and rewarded video fragment
-        FragmentManager fm = getSupportFragmentManager();
-        psiCashFragment = (PsiCashFragment) fm.findFragmentById(R.id.psicash_fragment_container);
-        psiCashFragment.setActiveSpeedBoostListener(this);
-
-        // Rate limit observable
-        Observable<RateLimitMode> currentRateLimitModeObservable =
-                billingViewModel.subscriptionStateFlowable()
-                        .toObservable()
-                        .map(subscriptionState -> {
-                            switch (subscriptionState.status()) {
-                                case HAS_UNLIMITED_SUBSCRIPTION:
-                                case HAS_TIME_PASS:
-                                    return RateLimitMode.UNLIMITED_SUBSCRIPTION;
-                                case HAS_LIMITED_SUBSCRIPTION:
-                                    return RateLimitMode.LIMITED_SUBSCRIPTION;
-                                default:
-                                    return RateLimitMode.AD_MODE_LIMITED;
-                            }
-                        });
-
-        activeSpeedBoostRelay = PublishRelay.create();
+        LayoutInflater inflater = (LayoutInflater)getBaseContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        embeddedWebView = inflater.inflate(R.layout.embedded_webview_layout, null);
 
         // Update rate limit badge and 'Subscribe' button UI
-        compositeDisposable.add(Observable.combineLatest(currentRateLimitModeObservable, activeSpeedBoostRelay,
-                ((BiFunction<RateLimitMode, Boolean, Pair>) Pair::new))
+        PsiCashViewModel psiCashViewModel = ViewModelProviders.of(this).get(PsiCashViewModel.class);
+        compositeDisposable.add(Observable.combineLatest(
+                googlePlayBillingHelper.subscriptionStateFlowable()
+                        .distinctUntilChanged()
+                        .toObservable(),
+                psiCashViewModel.states()
+                        .map(psiCashViewState -> {
+                            if (psiCashViewState.purchase() == null) {
+                                return false;
+                            }
+                            Date expiryDate = psiCashViewState.purchase().expiry;
+                            if (expiryDate != null) {
+                                long millisDiff = expiryDate.getTime() - new Date().getTime();
+                                return millisDiff > 0;
+                            }
+                            return false;
+                        }),
+                ((BiFunction<SubscriptionState, Boolean, Pair>) Pair::new))
+                .distinctUntilChanged()
                 .map(pair -> {
-                    RateLimitMode rateLimitMode = (RateLimitMode) pair.first;
+                    SubscriptionState subscriptionState = (SubscriptionState) pair.first;
                     Boolean hasActiveSpeedBoost = (Boolean) pair.second;
-                    if (rateLimitMode == RateLimitMode.AD_MODE_LIMITED) {
-                        if (hasActiveSpeedBoost) {
-                            return RateLimitMode.SPEED_BOOST;
-                        } else {
-                            return RateLimitMode.AD_MODE_LIMITED;
-                        }
+                    switch (subscriptionState.status()) {
+                        case HAS_UNLIMITED_SUBSCRIPTION:
+                        case HAS_TIME_PASS:
+                            return RateLimitMode.UNLIMITED_SUBSCRIPTION;
+                        case HAS_LIMITED_SUBSCRIPTION:
+                            return RateLimitMode.LIMITED_SUBSCRIPTION;
+                        default:
+                            return hasActiveSpeedBoost ?
+                                    RateLimitMode.SPEED_BOOST : RateLimitMode.AD_MODE_LIMITED;
                     }
-                    return rateLimitMode;
                 })
+                .distinctUntilChanged()
+                .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(this::setRateLimitUI)
                 .subscribe()
         );
 
-        // bootstrap the activeSpeedBoost observable
-        activeSpeedBoostRelay.accept(Boolean.FALSE);
+        // Set ad container layout visibility and set the appropriate PsiCash fragment
+        compositeDisposable.add(
+                googlePlayBillingHelper.subscriptionStateFlowable()
+                        .distinctUntilChanged()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext(this::setAdBannerPlaceholderVisibility)
+                        .doOnNext(this::setPsiCashFragment)
+                        .subscribe()
+        );
 
         // ads
         psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.largeAdSlot),
-                () -> onSubscribeButtonClick(null), true);
+                () -> onSubscribeButtonClick(null), tunnelServiceInteractor.tunnelStateFlowable());
         psiphonAdManager.startLoadingAds();
 
-        // Components IAB state notifications and PsiCash tab view state Rx subscription.
-        compositeDisposable.add(
-                billingViewModel.subscriptionStateFlowable()
-                        .doOnNext(subscriptionState -> {
-                            MyLog.g("Billing: subscription status: " + subscriptionState.status());
-                            if (subscriptionState.error() != null) {
-                                MyLog.g("Subscription state billing error: " + subscriptionState.error());
-                            }
-                            psiCashFragment.onSubscriptionState(subscriptionState);
-                            psiphonAdManager.onSubscriptionState(subscriptionState);
-                            if (subscriptionState.hasValidPurchase()) {
-                                hidePsiCashTab();
-                            } else {
-                                showPsiCashTabIfHasValidToken();
-                            }
-                        })
-                        .subscribe()
-        );
-
-        compositeDisposable.add(
-                tunnelServiceInteractor.tunnelStateFlowable()
-                        // Update app UI state
-                        .doOnNext(state -> psiphonAdManager.onTunnelConnectionState(state))
-                        .doOnNext(state -> psiCashFragment.onTunnelConnectionState(state))
-                        .subscribe()
-        );
-
         setupActivityLayout();
-        hidePsiCashTab();
 
         HandleCurrentIntent();
     }
@@ -241,7 +239,7 @@ public class StatusActivity
         // If this is a first app run then check subscription state and
         // return a value if user has a valid purchase or if IAB check failed,
         // the IAB status check will be triggered again in onResume
-        return billingViewModel.subscriptionStateFlowable()
+        return googlePlayBillingHelper.subscriptionStateFlowable()
                 .firstOrError()
                 .flatMapMaybe(subscriptionState -> {
                     if (subscriptionState.hasValidPurchase()
@@ -255,8 +253,8 @@ public class StatusActivity
     @Override
     protected void onResume() {
         super.onResume();
-        billingViewModel.queryCurrentSubscriptionStatus();
-        billingViewModel.queryAllSkuDetails();
+        googlePlayBillingHelper.queryAllPurchases();
+        googlePlayBillingHelper.queryAllSkuDetails();
 
         // Notify tunnel service if it is running so it may trigger purchase check and
         // upgrade current connection if there is a new valid subscription purchase.
@@ -275,46 +273,9 @@ public class StatusActivity
 
     @Override
     public void onDestroy() {
-        billingViewModel.stopIab();
         compositeDisposable.dispose();
-
         psiphonAdManager.onDestroy();
         super.onDestroy();
-    }
-
-    private void hidePsiCashTab() {
-        m_tabHost
-                .getTabWidget()
-                .getChildTabViewAt(MainBase.TabbedActivityBase.TabIndex.PSICASH.ordinal())
-                .setVisibility(View.GONE);
-        // also reset current tab to HOME if PsiCash is currently selected
-        String currentTabTag = m_tabHost.getCurrentTabTag();
-        if (currentTabTag != null && currentTabTag.equals(PSICASH_TAB_TAG)) {
-            disableInterstitialOnNextTabChange = true;
-            m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
-        }
-    }
-
-    @SuppressLint("CheckResult")
-    private void showPsiCashTabIfHasValidToken() {
-        // Hide or show the PsiCash tab depending on presence of valid PsiCash tokens.
-        // Wrap in Rx Single to run the valid tokens check on a non-UI thread and then
-        // update the UI on main thread when we get result.
-        Single.fromCallable(() -> PsiCashClient.getInstance(this).hasValidTokens())
-                .doOnError(err -> MyLog.g("Error showing PsiCash tab:" + err))
-                .onErrorResumeNext(Single.just(Boolean.FALSE))
-                .subscribeOn(Schedulers.computation())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(showTab -> {
-                    if (showTab) {
-                        m_tabHost
-                                .getTabWidget()
-                                .getChildTabViewAt(MainBase.TabbedActivityBase.TabIndex.PSICASH.ordinal())
-                                .setVisibility(View.VISIBLE);
-                    } else {
-                        hidePsiCashTab();
-                    }
-                });
     }
 
     @Override
@@ -350,13 +311,6 @@ public class StatusActivity
         return true;
     }
 
-    @Override
-    protected void onAuthorizationsRemoved() {
-        MyLog.g("PsiCash: received onAuthorizationsRemoved() notification");
-        super.onAuthorizationsRemoved();
-        psiCashFragment.removePurchases(getApplicationContext());
-    }
-
     protected void HandleCurrentIntent() {
         Intent intent = getIntent();
         if (intent == null || intent.getAction() == null) {
@@ -380,12 +334,10 @@ public class StatusActivity
                     String url = homePages.get(0);
                     // At this point we're showing the URL in either the embedded webview or in a browser.
                     // Some URLs are excluded from being embedded as home pages.
-                    if(shouldLoadInEmbeddedWebView(url)) {
-                        // Reset m_loadedSponsorTab and switch to the home tab.
-                        // The embedded web view will get loaded by the updateServiceStateUI.
-                        m_loadedSponsorTab = false;
-                       disableInterstitialOnNextTabChange = true;
-                       m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
+                    if (shouldLoadInEmbeddedWebView(url)) {
+                        boolean isVpn = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_VPN, false);
+                        int httpProxyPort = isVpn ? 0 : data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT, 0);
+                        loadInEmbeddedWebView(url, httpProxyPort);
                     } else {
                         displayBrowser(this, url);
                     }
@@ -426,6 +378,28 @@ public class StatusActivity
             // OK to be null because we don't use it
             onGetHelpConnectingClick(null);
         }
+    }
+
+    private void loadInEmbeddedWebView(String url, int httpProxyPort) {
+        final WebView webView = embeddedWebView.findViewById(R.id.sponsorWebView);
+        final ProgressBar progressBar = embeddedWebView.findViewById(R.id.sponsorWebViewProgressBar);
+
+        m_sponsorHomePage = new SponsorHomePage(webView, progressBar);
+        m_sponsorHomePage.load(url, httpProxyPort);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(embeddedWebView);
+        builder.setPositiveButton(android.R.string.ok, (dialog, which) -> {
+            dialog.dismiss();
+        });
+
+        AlertDialog alertDialog = builder.create();
+        alertDialog.setOnDismissListener(dialogInterface -> {
+            webView.loadUrl("about:blank");
+            ((ViewGroup)embeddedWebView.getParent()).removeView(embeddedWebView);
+        });
+
+        alertDialog.show();
     }
 
     public void onToggleClick(View v) {
@@ -470,6 +444,7 @@ public class StatusActivity
         // to load or a timeout occurs.
         Observable<PsiphonAdManager.InterstitialResult> interstitial =
                 psiphonAdManager.getCurrentAdTypeObservable()
+                        .filter(adResult -> adResult.type() != PsiphonAdManager.AdResult.Type.UNKNOWN)
                         .firstOrError()
                         .flatMapObservable(adResult -> {
                             if (adResult.type() != PsiphonAdManager.AdResult.Type.UNTUNNELED) {
@@ -600,9 +575,6 @@ public class StatusActivity
             urlString = PsiCashModifyUrl(urlString);
         }
 
-        // Notify PsiCash fragment so it will know to refresh state on next app foreground.
-        psiCashFragment.onOpenHomePage();
-
         boolean wantVPN = m_multiProcessPreferences
                 .getBoolean(getString(R.string.tunnelWholeDevicePreference),
                         false);
@@ -706,11 +678,6 @@ public class StatusActivity
         }
     }
 
-    @Override
-    public void onActiveSpeedBoost(Boolean hasActiveSpeedBoost) {
-        activeSpeedBoostRelay.accept(hasActiveSpeedBoost);
-    }
-
     enum RateLimitMode {AD_MODE_LIMITED, LIMITED_SUBSCRIPTION, UNLIMITED_SUBSCRIPTION, SPEED_BOOST}
 
     private void setRateLimitUI(RateLimitMode rateLimitMode) {
@@ -735,13 +702,41 @@ public class StatusActivity
         }
     }
 
+    private void setAdBannerPlaceholderVisibility(SubscriptionState subscriptionState) {
+        findViewById(R.id.largeAdSlotContainer)
+                .setVisibility(subscriptionState.hasValidPurchase() ?
+                        View.GONE : View.VISIBLE);
+    }
+
+    private void setPsiCashFragment(SubscriptionState subscriptionState) {
+        // Do nothing if host activity is finishing or destroyed
+        if (isFinishing() ||
+                // isDestroyed() is API 17+
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+            return;
+        }
+        FragmentTransaction transaction = getSupportFragmentManager()
+                .beginTransaction()
+                .setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out)
+                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+        if (subscriptionState.hasValidPurchase()) {
+            transaction.replace(R.id.psicash_fragment_container, new PsiCashSubscribedFragment());
+        } else {
+            psiCashFragment = new PsiCashFragment();
+            transaction.replace(R.id.psicash_fragment_container, psiCashFragment);
+        }
+        // Allow transaction to be committed even after FragmentManager has saved its state.
+        // In case the host activity is killed and re-created this function will be called again
+        // with the most up to date subscription state data.
+        transaction.commitAllowingStateLoss();
+    }
 
     private final int PAYMENT_CHOOSER_ACTIVITY = 20001;
 
     public void onSubscribeButtonClick(View v) {
         Utils.MyLog.g("StatusActivity::onSubscribeButtonClick");
         compositeDisposable.add(
-                billingViewModel.subscriptionStateFlowable()
+                googlePlayBillingHelper.subscriptionStateFlowable()
                         .firstOrError()
                         .subscribe(subscriptionState -> {
                             switch (subscriptionState.status()) {
@@ -758,10 +753,10 @@ public class StatusActivity
                                     String currentSku = subscriptionState.purchase().getSku();
                                     String currentPurchaseToken = subscriptionState.purchase().getPurchaseToken();
                                     compositeDisposable.add(
-                                            billingViewModel.getUnlimitedSubscriptionSkuDetails()
+                                            getUnlimitedSubscriptionSkuDetails()
                                                     .flatMapCompletable(skuDetailsList -> {
                                                         if (skuDetailsList.size() == 1) {
-                                                            return billingViewModel.launchFlow(this, currentSku, currentPurchaseToken, skuDetailsList.get(0));
+                                                            return googlePlayBillingHelper.launchFlow(this, currentSku, currentPurchaseToken, skuDetailsList.get(0));
                                                         }
                                                         // else
                                                         return Completable.error(
@@ -783,14 +778,14 @@ public class StatusActivity
                                     // If user has no subscription launch PaymentChooserActivity
                                     // to show all available subscriptions options.
                                     compositeDisposable.add(
-                                            billingViewModel.allSkuDetailsSingle()
+                                            googlePlayBillingHelper.allSkuDetailsSingle()
                                                     .toObservable()
                                                     .flatMap(Observable::fromIterable)
                                                     .filter(skuDetails -> {
                                                         String sku = skuDetails.getSku();
-                                                        return BillingRepository.IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(sku) ||
-                                                                sku.equals(BillingRepository.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU) ||
-                                                                sku.equals(BillingRepository.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
+                                                        return GooglePlayBillingHelper.IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(sku) ||
+                                                                sku.equals(GooglePlayBillingHelper.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU) ||
+                                                                sku.equals(GooglePlayBillingHelper.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
                                                     })
                                                     .map(SkuDetails::getOriginalJson)
                                                     .toList()
@@ -823,7 +818,13 @@ public class StatusActivity
                         throw new IllegalArgumentException("SKU is empty.");
                     }
                     SkuDetails skuDetails = new SkuDetails(skuString);
-                    billingViewModel.launchFlow(this, skuDetails).subscribe();
+                    googlePlayBillingHelper.launchFlow(this, skuDetails)
+                            .doOnError(err -> {
+                                // Show "Subscription options not available" toast.
+                                showToast(R.string.subscription_options_currently_not_available);
+                            })
+                            .onErrorComplete()
+                            .subscribe();
                 } catch (JSONException | IllegalArgumentException e) {
                     Utils.MyLog.g("StatusActivity::onActivityResult purchase SKU error: " + e);
                     // Show "Subscription options not available" toast.
@@ -831,6 +832,15 @@ public class StatusActivity
                 }
             } else {
                 Utils.MyLog.g("StatusActivity::onActivityResult: PaymentChooserActivity: canceled");
+            }
+        } else if (requestCode == PsiCashFragment.PSICASH_STORE_ACTIVITY) {
+            if(resultCode == RESULT_OK) {
+                if (data != null && PsiCashStoreActivity.PSICASH_CONNECT_PSIPHON_INTENT.equals(data.getAction())) {
+                    startUp();
+                }
+            }
+            if(psiCashFragment != null) {
+                psiCashFragment.onActivityResult(requestCode, resultCode, data);
             }
         } else {
             super.onActivityResult(requestCode, resultCode, data);
@@ -856,5 +866,12 @@ public class StatusActivity
                 .setMessage(messageId)
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
+    }
+
+    public Single<List<SkuDetails>> getUnlimitedSubscriptionSkuDetails() {
+        List<String> ids = Collections.singletonList(
+                GooglePlayBillingHelper.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU
+        );
+        return googlePlayBillingHelper.getSkuDetails(ids, BillingClient.SkuType.SUBS);
     }
 }

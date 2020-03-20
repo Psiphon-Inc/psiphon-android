@@ -23,7 +23,6 @@ package com.psiphon3;
 import android.app.Application;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.content.pm.ApplicationInfo;
 import android.support.multidex.MultiDex;
 
 import com.psiphon3.psiphonlibrary.LocaleManager;
@@ -32,6 +31,7 @@ import com.psiphon3.psiphonlibrary.Utils;
 
 import java.io.IOException;
 
+import io.reactivex.exceptions.OnErrorNotImplementedException;
 import io.reactivex.exceptions.UndeliverableException;
 import io.reactivex.plugins.RxJavaPlugins;
 
@@ -106,6 +106,12 @@ public class PsiphonApplication extends Application {
                 return;
             }
             Utils.MyLog.g("RxJava undeliverable exception received: " + e);
+
+            // Also crash if OnErrorNotImplementedException
+            if (e instanceof OnErrorNotImplementedException) {
+                Thread currentThread = Thread.currentThread();
+                currentThread.getUncaughtExceptionHandler().uncaughtException(currentThread, e);
+            }
         });
     }
 }

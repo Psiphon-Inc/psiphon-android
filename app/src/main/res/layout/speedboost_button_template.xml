@@ -1,0 +1,51 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:layout_width="185px"
+    android:layout_height="248px"
+    android:padding="5dp">
+
+    <RelativeLayout
+        android:id="@+id/speedboost_relative_layout"
+        android:clickable="false"
+        android:focusable="false"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/speedboost_background_yellow">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+
+            android:gravity="center|bottom"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/speedboost_purchase_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal|center"
+                android:shadowColor="#494949"
+                android:shadowDx="0.0"
+                android:shadowDy="1.0"
+                android:shadowRadius="2.0"
+                android:textAllCaps="true"
+                android:textColor="#ffffff"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/speedboost_purchase_button"
+                android:clickable="false"
+                android:focusable="false"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal|center"
+                android:alpha="1.0"
+                android:layout_marginBottom="10dp" />
+        </LinearLayout>
+
+    </RelativeLayout>
+
+</LinearLayout>
+

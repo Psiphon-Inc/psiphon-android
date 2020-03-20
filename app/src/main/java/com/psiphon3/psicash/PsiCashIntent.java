@@ -24,24 +24,32 @@ import android.support.annotation.Nullable;
 
 import com.google.auto.value.AutoValue;
 import com.psiphon3.psicash.mvibase.MviIntent;
-import com.psiphon3.TunnelState;
 
 import java.util.List;
-
-import ca.psiphon.psicashlib.PsiCashLib;
 
 
 public interface PsiCashIntent extends MviIntent {
     @AutoValue
+    abstract class InitialIntent implements PsiCashIntent {
+        public static InitialIntent create() {
+            return new AutoValue_PsiCashIntent_InitialIntent();
+        }
+    }
+
+    @AutoValue
     abstract class PurchaseSpeedBoost implements PsiCashIntent {
-        public static PurchaseSpeedBoost create(TunnelState state, @Nullable PsiCashLib.PurchasePrice price) {
-            return new AutoValue_PsiCashIntent_PurchaseSpeedBoost(state, price);
+        public static PurchaseSpeedBoost create(@Nullable String distinguisher, @Nullable String transactionClass,
+                                                long expectedPrice) {
+            return new AutoValue_PsiCashIntent_PurchaseSpeedBoost(distinguisher, transactionClass, expectedPrice);
         }
 
-        abstract TunnelState connectionState();
+        @Nullable
+        public abstract String distinguisher();
 
         @Nullable
-        abstract PsiCashLib.PurchasePrice purchasePrice();
+        public abstract String transactionClass();
+
+        public abstract long expectedPrice();
     }
 
     @AutoValue
@@ -52,19 +60,10 @@ public interface PsiCashIntent extends MviIntent {
     }
 
     @AutoValue
-    abstract class GetPsiCashLocal implements PsiCashIntent {
-        public static GetPsiCashLocal create() {
-            return new AutoValue_PsiCashIntent_GetPsiCashLocal();
+    abstract class GetPsiCash implements PsiCashIntent {
+        public static GetPsiCash create() {
+            return new AutoValue_PsiCashIntent_GetPsiCash();
         }
-    }
-
-    @AutoValue
-    abstract class GetPsiCashRemote implements PsiCashIntent {
-        public static GetPsiCashRemote create(TunnelState state) {
-            return new AutoValue_PsiCashIntent_GetPsiCashRemote(state);
-        }
-
-        public abstract TunnelState connectionState();
     }
 
     @AutoValue
@@ -75,14 +74,4 @@ public interface PsiCashIntent extends MviIntent {
 
         public abstract List<String> purchases();
     }
-
-    @AutoValue
-    abstract class LoadVideoAd implements PsiCashIntent {
-        public static LoadVideoAd create(TunnelState status) {
-            return new AutoValue_PsiCashIntent_LoadVideoAd(status);
-        }
-
-        abstract TunnelState connectionState();
-    }
-
 }

@@ -42,30 +42,37 @@ public abstract class SubscriptionState {
     public abstract Purchase purchase();
 
     @Nullable
-    public abstract Throwable error();
+    Throwable error;
+
+    @Nullable
+    public final Throwable error() {
+        return error;
+    }
 
     static SubscriptionState unlimitedSubscription(Purchase purchase) {
-        return new AutoValue_SubscriptionState(Status.HAS_UNLIMITED_SUBSCRIPTION, purchase, null);
+        return new AutoValue_SubscriptionState(Status.HAS_UNLIMITED_SUBSCRIPTION, purchase);
     }
 
     static SubscriptionState limitedSubscription(Purchase purchase) {
-        return new AutoValue_SubscriptionState(Status.HAS_LIMITED_SUBSCRIPTION, purchase, null);
+        return new AutoValue_SubscriptionState(Status.HAS_LIMITED_SUBSCRIPTION, purchase);
     }
 
     static SubscriptionState timePass(Purchase purchase) {
-        return new AutoValue_SubscriptionState(Status.HAS_TIME_PASS, purchase, null);
+        return new AutoValue_SubscriptionState(Status.HAS_TIME_PASS, purchase);
     }
 
     static SubscriptionState noSubscription() {
-        return new AutoValue_SubscriptionState(Status.HAS_NO_SUBSCRIPTION, null, null);
+        return new AutoValue_SubscriptionState(Status.HAS_NO_SUBSCRIPTION, null);
     }
 
     public static SubscriptionState notApplicable() {
-        return new AutoValue_SubscriptionState(Status.NOT_APPLICABLE, null, null);
+        return new AutoValue_SubscriptionState(Status.NOT_APPLICABLE, null);
     }
 
     public static SubscriptionState billingError(Throwable error) {
-        return new AutoValue_SubscriptionState(Status.IAB_FAILURE, null, error);
+        SubscriptionState state = new AutoValue_SubscriptionState(Status.IAB_FAILURE, null);
+        state.error = error;
+        return state;
     }
 
     public boolean hasValidPurchase() {
