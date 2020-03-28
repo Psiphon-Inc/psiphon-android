@@ -43,6 +43,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.widget.Button;
+import android.widget.HorizontalScrollView;
 import android.widget.ProgressBar;
 import android.widget.TabHost;
 import android.widget.TextView;
@@ -130,6 +131,7 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
         actionBar.setDisplayShowCustomEnabled(true);
 
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
+        m_tabsScrollView = (HorizontalScrollView) findViewById(R.id.tabsScrollView);
         m_tabSpecsList = new ArrayList<>();
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
         m_connectionProgressBar = findViewById(R.id.connectionProgressBar);
