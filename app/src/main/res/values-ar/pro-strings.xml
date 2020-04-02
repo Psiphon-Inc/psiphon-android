@@ -17,7 +17,7 @@
          When the user has a subscription or time pass, advertisements are removed from the app
          ("ad-free"), additional features are enabled, and the app no longer periodically disconnects. -->
     <string name="SubscribeButton">إحصل على نسخة خالية من الإعلانات من سايفون برو!</string>
-    
+
     <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
         When clicked a new screen opens where users can specify additional HTTP headers to be added to
         to HTTP proxy requests. Users may specify up to 3 custom headers -->
@@ -41,7 +41,7 @@
     <string name="custom_proxy_header_value">أدخل قيمة العنوان </string>
     <string name="custom_proxy_header_ignored_values">تحذير: العناوين ذات الأسامي الفارغة سيتم تجاهلها</string>
     <string name="custom_proxy_header_invalid_name">خطأ: إسم العنوان يحتوي على أحرف مشبوهة </string>
-    
+
     <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day.
          Insert one or more newline characters as needed to keep the lines approximately as short
@@ -128,10 +128,6 @@
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">زيد السرعة!</string>
 
-    <!-- Button title indicating to the user that they will earn PsiCash if they watch a video advertisement.
-    The word 'PsiCash' should not be translated or transliterated. Keep as short as possible.-->
-    <string name="watch_video_and_earn_psicash_button">شاهد الفيديو لكسب PsiCash</string>
-
     <!-- Alert error message informing user that their Speed Boost purchase request failed because of
     an unknown error. Note: 'PsiCash' should not be translated or transliterated. -->
     <string name="psicash_transaction_invalid_message">رد غير صالح من خادم PsiCash.</string>
@@ -182,21 +178,6 @@
     <!-- Alert message informing user that a PsiCash rewarded video is currently not available. -->
     <string name="psicash_video_not_available_message">الفيديو غير متاح، يُرجى إعادة المحاولة لاحقًا.</string>
 
-    <!-- Text which appears in the Speed Boost meter when the user has earned enough PsiCash to buy 1 hour of Speed Boost.
-    Please keep this text concise as the width of the text box is restricted in size. 'Speed Boost' is a reward
-    that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
-    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed',
-    'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="one_hour_of_speed_boost_available_button">تتوفر ساعة واحدة من \"السرعة الخارقة\"</string>
-
-    <!-- Text which appears in the Speed Boost meter when the user has not yet earned enough PsiCash to
-    Speed Boost. This text will be accompanied with a percentage indicating to the user how close they are
-    to earning enough PsiCash to buy an hour of Speed Boost. Please keep this text concise as the width
-    of the text box is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
-    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="charging_speed_boost_percents_label">جارٍ شحن \"السرعة الخارقة\"</string>
-
     <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
     <string name="unexpected_error_occured_send_feedback_message">حدث خطأ غير متوقّع، يُرجى إرسال تعليق.</string>
 
@@ -232,4 +213,5 @@
 
     <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
     <string name="subscription_options_currently_not_available">خيارات الاشتراك ليست متوفرة حاليًّا، يُرجى إعادة المحاولة لاحقًا.</string>
-</resources>
+
+    </resources>

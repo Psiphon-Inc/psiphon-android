@@ -4,109 +4,109 @@
          by subscribing or by having ads in the app.
          Insert one or more newline characters as needed to keep the lines approximately as short
          as the English. -->
-    <string name="SubscriptionPromptMessage">Psiphon Pro\'nun reklam içermeyen sınırsız kullanımı için hemen abone olun.\n\nYa da reklam destekli Psiphon Pro\'yu 700 dakika boyunca ücretsiz olarak denemek için Başlat\'a basın.\n\nPsiphon\'ı desteklediğiniz için teşekkürler!</string>
+    <string name="SubscriptionPromptMessage">现在订阅可获取无时长限制且免广告的Psiphon Pro使用权。\n\n或者，点击开始尝试700分钟免费但是，有广告的Psiphon Pro。\n\n感谢您对赛风的支持。</string>
 
     <!-- Prompt text telling the user that can continue to use Psiphon by watching
          a video ad. (This is an alternative to subscribing.) -->
-    <string name="RewardedVideoPrompt">YENİ! 100 dakikalık kesintisiz Psiphon Pro kazanmak için bir video izleyin.</string>
+    <string name="RewardedVideoPrompt">新！看视频获取100分钟无广告的Psiphon Pro时长。</string>
 
     <!-- Text indicating to the user how much time they have left in their free trial. -->
-    <string name="FreeTrialRemainingTime">Ücretsiz deneme: %s</string>
+    <string name="FreeTrialRemainingTime">免费试用：%s</string>
 
     <!-- Label for button that leads user to buy subscription or time pass to premium service.
          When the user has a subscription or time pass, advertisements are removed from the app
          ("ad-free"), additional features are enabled, and the app no longer periodically disconnects. -->
-    <string name="SubscribeButton">Reklam içermeyen sınırsız Psiphon Pro\'ya sahip olun!</string>
+    <string name="SubscribeButton">获取无时常限制且无广告的Psiphon Pro！</string>
 
     <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
         When clicked a new screen opens where users can specify additional HTTP headers to be added to
         to HTTP proxy requests. Users may specify up to 3 custom headers -->
-    <string name="custom_proxy_headers_title">Özel HTTP üst bilgileri</string>
+    <string name="custom_proxy_headers_title">自定义HTTP标题</string>
 
     <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
-    <string name="custom_proxy_headers_summary">Proxy talepleri için ek özel HTTP üst bilgileri kurun</string>
+    <string name="custom_proxy_headers_summary">为代理请求设置额外的自定义HTTP标题</string>
 
     <!-- Checkbox that toggles adding custom headers feature-->
-    <string name="custom_proxy_headers_checkbox_title">Özel HTTP üst bilgileri ekleyin</string>
+    <string name="custom_proxy_headers_checkbox_title">新添自定义HTTP标题</string>
 
     <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
-    <string name="custom_proxy_headers_checkbox_description">Tüm giden HTTP proxy taleplerine özel HTTP üst bilgileri ekleyin</string>
-    <string name="custom_proxy_header_group_1">Üst bilgi 1</string>
-    <string name="custom_proxy_header_group_2">Üst bilgi 2</string>
-    <string name="custom_proxy_header_group_3">Üst bilgi 3</string>
-    <string name="custom_proxy_header_group_4">Üst bilgi 4</string>
-    <string name="custom_proxy_header_group_5">Üst bilgi 5</string>
-    <string name="custom_proxy_header_group_6">Üst bilgi 6</string>
-    <string name="custom_proxy_header_name">Üst bilgi adı girin</string>
-    <string name="custom_proxy_header_value">Üst bilgi değeri girin</string>
-    <string name="custom_proxy_header_ignored_values">Uyarı: boş adlı üst bilgiler göz ardı edilecektir!</string>
-    <string name="custom_proxy_header_invalid_name">Hata: üst bilgi adı geçersiz karakterler içeriyor!</string>
+    <string name="custom_proxy_headers_checkbox_description">为所有向外传输的HTTP代理请求新增自定义HTTP标题</string>
+    <string name="custom_proxy_header_group_1">标题1</string>
+    <string name="custom_proxy_header_group_2">标题2</string>
+    <string name="custom_proxy_header_group_3">标题3</string>
+    <string name="custom_proxy_header_group_4">标题4</string>
+    <string name="custom_proxy_header_group_5">标题5</string>
+    <string name="custom_proxy_header_group_6">标题6</string>
+    <string name="custom_proxy_header_name">请输入标题名称</string>
+    <string name="custom_proxy_header_value">请输入标题值</string>
+    <string name="custom_proxy_header_ignored_values">警告：没有名字的标题将被无视！</string>
+    <string name="custom_proxy_header_invalid_name">错误：标题名包含违法字符!</string>
 
     <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day.
          Insert one or more newline characters as needed to keep the lines approximately as short
          as the English. -->
-    <string name="PaymentChooserFragment.UnlimitedSubscription">Maksimum hız - %1$s / ay\n(%2$s / gün)</string>
+    <string name="PaymentChooserFragment.UnlimitedSubscription">最快速度 - %1$s/月\n（%2$s/天）</string>
 
     <!-- Extra Label that appears on the subscription buying button for Psiphon Pro in case if there
          is a trial period available for that subscription. The formated string is the length of the
          trial period in days. Keep as short as possible -->
-    <string name="PaymentChooserFragment.FreeTrialPeriod">%d gün ücretsiz deneme</string>
+    <string name="PaymentChooserFragment.FreeTrialPeriod">免费试用%d天</string>
 
     <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day.
          Insert one or more newline characters as needed to keep the lines approximately as short
          as the English. -->
-    <string name="PaymentChooserFragment.LimitedSubscription">Yüksek Hız - %1$s / ay\n(%2$s / gün)</string>
+    <string name="PaymentChooserFragment.LimitedSubscription">高速 - %1$s/月\n（%2$s/天）</string>
 
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass7Day">7-günlük Giriş - %1$s\n(%2$s / gün)</string>
+    <string name="PaymentChooserFragment.TimePass7Day">7日通行证 - %1$s\n（%2$s/天）</string>
 
     <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass30Day">30-günlük Giriş - %1$s\n(%2$s / gün)</string>
+    <string name="PaymentChooserFragment.TimePass30Day">30日通行证 - %1$s\n（%2$s/day）</string>
 
     <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass90Day">90-günlük Giriş - %1$s\n(%2$s / gün)</string>
+    <string name="PaymentChooserFragment.TimePass90Day">90日通行证 - %1$s\n（%2$s/天）</string>
 
     <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
          The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass360Day">360-günlük Giriş - %1$s\n(%2$s / gün)</string>
+    <string name="PaymentChooserFragment.TimePass360Day">360天通行证 - %1$s\n（%2$s/天）</string>
 
     <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
          exclamatory. Indicates that premium access results in all in-app advertisements being
          removed. -->
-    <string name="PaymentChooserFragment.NoAdsExclaim">Reklam yok!</string>
+    <string name="PaymentChooserFragment.NoAdsExclaim">无广告！</string>
 
     <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
          exclamatory. Indicates that premium access results in additional features being unlocked
          (such as egress region selection). -->
-    <string name="PaymentChooserFragment.FeaturesExclaim">Kilidi açık özellikler!</string>
+    <string name="PaymentChooserFragment.FeaturesExclaim">解锁功能！</string>
 
     <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
          exclamatory. Indicates that premium access results in no interruptions due to free trial
          time expiring (as happens with non-premium access). -->
-    <string name="PaymentChooserFragment.InterruptionsExclaim">Kesinti yok!</string>
+    <string name="PaymentChooserFragment.InterruptionsExclaim">无打扰！</string>
 
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string is a description specifically about buying a subscription.
          The parenthetical remark about credit card requirements should be separated by a newline. -->
-    <string name="PaymentChooserFragment.SubscriptionDescription">Kesintisiz hizmete en iyi fiyatla abone olun.\n(Geçerli bir kredi kartı gerektirir.)</string>
+    <string name="PaymentChooserFragment.SubscriptionDescription">在最好的价格订阅无打扰服务。\n（需要有效的信用卡。）</string>
 
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string announces that subscriptions include a free trial. -->
-    <string name="PaymentChooserFragment.FreeTrialDescription">YENİ! Her aboneliğe 30 günlük ücretsiz deneme.</string>
+    <string name="PaymentChooserFragment.FreeTrialDescription">最新！每个订阅都有30日免费试用。</string>
 
     <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
          amount of time. This string is a description specifically about buying a time pass.
          The parenthetical remark about credit card requirements should be separated by a newline. -->
-    <string name="PaymentChooserFragment.TimePassDescription">Maksimum Hız zaman giriş pasosu satın alın.\n(Kredi kartına gerek yok. Google Play hediye kartı ya da kredi kullanılabilir.)</string>
+    <string name="PaymentChooserFragment.TimePassDescription">购买一个最快速度通行证。\n（不需要信用卡。可以使用Google Play礼品卡或者积分。）</string>
 
     <!-- Title for other text showing what the user's current speed limit is. Users have limited
          speed if they have not paid for premium service. -->
-    <string name="rate_limit_text_title">Psiphon hız limiti:</string>
+    <string name="rate_limit_text_title">赛风速度限制：</string>
 
     <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
          and is in megabits-per-second. Users have limited speed if they have not paid for premium
@@ -116,184 +116,183 @@
     <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
          have access to a full-speed connection. Users have limited speed if they have not paid for
          premium service. -->
-    <string name="rate_limit_text_unlimited">Limitsiz</string>
+    <string name="rate_limit_text_unlimited">无限</string>
 
     <!-- Indicates that the user has an active speed boost.'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon.
     Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
     anything that indicates a fast or unrestricted speed. -->
-    <string name="rate_limit_text_speed_boost">Hız Artışı</string>
+    <string name="rate_limit_text_speed_boost">加速</string>
 
     <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
          the workflow to subscribe for premium access. -->
-    <string name="rate_limit_text_subscribe_button">Şimdi yükseltin!</string>
+    <string name="rate_limit_text_subscribe_button">现在升级</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because of
     an unknown error. Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_invalid_message">PsiCash sunucusundan geçersiz yanıt.</string>
+    <string name="psicash_transaction_invalid_message">从PsiCash服务器接收到无效的回应。</string>
 
     <!-- Internal message not seen by the users, indicates successful Speed Boost purchase. -->
-    <string name="psicash_transaction_success_message">Başarılı.</string>
+    <string name="psicash_transaction_success_message">成功。</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because they have an insufficient balance.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
     Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
     anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_insufficient_balance_message">Hız Artışı için yetersiz bakiye.</string>
+    <string name="psicash_transaction_insufficient_balance_message">余额不足， 不可购买加速。</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because they tried to make the purchase with
     an out of date product price. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
     connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate',
     'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_amount_mismatch_message">Hız Artışı ücretinin tarihi geçmiş. Yerel ürünler güncelleniyor.</string>
+    <string name="psicash_transaction_amount_mismatch_message">加速的价格已经过期。请更新本地产品。</string>
 
     <!-- Alert error message informing user that they have an active Speed Boost purchase.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
     Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed',
     'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_existing_message">Aktif bir Hız Artışı satın alımınız mevcut.</string>
+    <string name="psicash_transaction_existing_message">您有一个正在被使用的加速购买。</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because they attempted to buy a product that is no longer available
     and that they should try updating or reinstalling the app. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
     connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
     anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_type_not_found_message">Hız Artışı ürünü bulunamadı. Uygulamanızın tarihi geçmiş olabilir. Lütfen güncellemeleri kontrol edin.</string>
+    <string name="psicash_transaction_type_not_found_message">加速产品未被找到。您的程序可能已经过程。请检查更新。</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because their app has entered an invalid state and that they
     should try updating or reinstalling the app. Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_invalid_tokens_message">Uygulama geçersiz bir duruma geçti. Lütfen PsiCash kullanmaya devam etmek için uygulamayı yeniden yükleyin.</string>
+    <string name="psicash_transaction_invalid_tokens_message">程序进入了一个无效的状态。如果想继续使用PsiCash请重新安装程序。</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed due to a server error and that they should try again in a few minutes -->
-    <string name="transaction_server_error_message">Sunucu hatası. Lütfen birkaç dakika sonra tekrar deneyin</string>
+    <string name="transaction_server_error_message">服务器错误。请在稍后再试。</string>
 
     <!-- Alert error message informing user that a critical PsiCash related error has occurred and encouraging users to send feedback diagnostics -->
-    <string name="psicash_critical_error_message">Kritik bir hata gerçekleşti. Lütfen geri bildirim gönderin.</string>
+    <string name="psicash_critical_error_message">出现了一个关键错误。请发送反馈。</string>
 
     <!-- Alert error message informing user that a critical PsiCash error has occurred and their PsiCash balance and purchases are reset(lost) -->
-    <string name="psicash_critical_error_reset_message">Kritik bir sorun çıktı. PsiCash bakiyeniz ve diğer durum bilgileri sıfırlandı.</string>
+    <string name="psicash_critical_error_reset_message">出现了一个关键错误。您的PsiCash余额以及其他状态已经被重置。</string>
 
     <!-- Alert error message informing user that a recoverable PsiCash related error has occurred and last action will most likely succeed next time. -->
-    <string name="psicash_recoverable_error_message">Düzeltilebilir bir hata gerçekleşti. Lütfen tekrar deneyin.</string>
+    <string name="psicash_recoverable_error_message">出现了一个可修复的错误。请再次尝试。</string>
 
     <!-- Alert message informing user that a PsiCash rewarded video is currently not available. -->
-    <string name="psicash_video_not_available_message">Video mevcut değil, lütfen daha sonra tekrar deneyin.</string>
+    <string name="psicash_video_not_available_message">视频无法播放，请稍后再试。</string>
 
     <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
-    <string name="unexpected_error_occured_send_feedback_message">Beklenmeyen bir hata gerçekleşti, lütfen geri bildirim gönderin.</string>
+    <string name="unexpected_error_occured_send_feedback_message">出现了一个意外错误，请发送反馈。</string>
 
     <!-- Alert error message informing user that the Psiphon tunnel needs to be running in order to make a Speed Boost purchase.
      'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_connect_to_purchase_message">Lütfen bir Hız Artışı satın alımı yapmak için Psiphon\'u başlatın.</string>
+    <string name="speed_boost_connect_to_purchase_message">请启动赛风从而购买加速。</string>
 
     <!-- Alert error message informing user that the Psiphon tunnel needs to complete its connection sequence in order to make a Speed Boost purchase.
      'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_wait_tunnel_to_connect_to_purchase_message">Lütfen bir Hız Artışı satın alımı yapmak için tünelin bağlanmasını bekleyin.</string>
+    <string name="speed_boost_wait_tunnel_to_connect_to_purchase_message">请等待隧道连接成功后购买加速。</string>
 
     <!-- Alert error message informing user that a critical error has occurred while trying to retrieve PsiCash balance and encouraging the user to
     send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cant_get_balance_critical_message">Sunucudan PsiCash bakiyesi alınamıyor. Lütfen geri bildirim gönderin.</string>
+    <string name="psicash_cant_get_balance_critical_message">不能从服务器找回PsiCash余额。请发送反馈。</string>
 
     <!-- Alert error message informing user that a recoverable error has occurred while trying to retrieve PsiCash balance and last action will most
     likely succeed next time.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cant_get_balance_recoverable_message">Şu anda sunucudan PsiCash bakiyesi alınamıyor. Lütfen daha sonra tekrar deneyin.</string>
+    <string name="psicash_cant_get_balance_recoverable_message">此时不能从服务器找回PsiCash余额。请稍后再试。</string>
 
     <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
     of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
     is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_active_label">Hız Artışı Aktif</string>
+    <string name="speed_boost_active_label">加速已被激活</string>
 
     <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
-    <string name="psicash_snackbar_action_ok">Tamam</string>
+    <string name="psicash_snackbar_action_ok">好的</string>
 
     <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
-    <string name="subscription_options_currently_not_available">Abonelik seçenekleri şu anda mevcut değil, lütfen daha sonra tekrar deneyin.</string>
+    <string name="subscription_options_currently_not_available">订阅选项现在不可用，请稍后再试。</string>
 
     <!-- Speed Boost button that opens a dialog with various speed boost options available for purchase.
     'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_button_caption">Hız Artışı</string>
+    <string name="speed_boost_button_caption">加速</string>
 
     <!-- Text next to the button insicationg to the user that they will earn PsiCash if they watch a video advertisement. -->
-    <string name="psicash_purchase_free_description">Video izleyin ve kazanın</string>
+    <string name="psicash_purchase_free_description">观看视频并获取PsiCash</string>
 
     <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
-    <string name="psicash_purchase_free_button_price">Ücretsiz</string>
+    <string name="psicash_purchase_free_button_price">免费</string>
 
     <!-- PsiCash in-app purchase disclaimer that appears on the bottom of the screen where users can buy different amounts of PsiCash from the PlayStore.
     Do not translate or transliterate terms PsiCash or Psiphon Pro-->
-    <string name="psicash_store_disclaimer">ÖNEMLİ: Psiphon Pro\'yu kaldırırsanız veya uygulamanın deposunu temizlerseniz PsiCash\'iniz saklanmayacaktır.</string>
+    <string name="psicash_store_disclaimer">重要信息：如果您卸载Psiphon Pro或者清理程序的存储，您的PsiCash信息将不会被保存。</string>
 
     <!-- A message to the user indicating that they need to be connected to Psiphon in order to use Speed Boost.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed. Do not translate or transliterate word Psiphon -->
-    <string name="speed_boost_unavailable">Psiphon\'a bağlı değilken Hız Artışı kullanılamaz.</string>
+    <string name="speed_boost_unavailable">当您没有链接到赛风的时候，加速无法使用。</string>
 
     <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message
         Do not translate or transliterate word Psiphon -->
-    <string name="connect_to_psiphon_button_text">Psiphon\'a Bağlan</string>
+    <string name="connect_to_psiphon_button_text">连接到赛风</string>
 
     <!-- A title message to the premium user (a user with a subscription when they are trying to navigate to PsiCash and Speed Boost screen
         Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_title">Psiphon aboneliğiniz size ayrıcalıklı erişim sunuyor!</string>
+    <string name="psicash_store_subscription_title">您的赛风订阅将给您高级访问！</string>
 
     <!-- A description message to the premium user (a user with a subscription) when they are trying to navigate to PsiCash and Speed Boost screen.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.
     Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_description">Psiphon aboneliğiniz halihazırda size sürekli Hız Artışı sağlıyor, bu yüzden daha fazlasını almanıza gerek yok. Aboneliğinizi sonlandırmak isteyebilirsiniz diye PsiCash bakiyeniz saklanacaktır.</string>
+    <string name="psicash_store_subscription_description">您的赛风订阅已经给您永久的加速，所以您不需要额外购买。您的PsiCash余额将被保留以防您决定取消您的订阅。</string>
 
     <!-- A message to the user seen when the users are trying to navigate to PsiCash store screen while Psiphon has not finished connecting to the server
     Do not translate or transliterate words Psiphon -->
-    <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_store">Lütfen PsiCash mağazasını kullanmak için Psiphon\'un bağlanmasını bekleyin.</string>
+    <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_store">请等待赛风完成连接从而使用PsiCash商店</string>
 
     <!-- A message to the user indicating that their PsiCash balance is most likely out of date and needs to be refreshed by connecting to Psiphon.
     Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_out_of_date_dialog_message">PsiCash bakiyenizin tarihi geçmiş. Yenilemek için Psiphon\'a bağlanın.</string>
+    <string name="psicash_out_of_date_dialog_message">您的PsiCash余额已过期。请连接赛风并刷新。</string>
 
     <!-- A title of the screen seen when the user has purchased PsiCash from PlayStore while the tunnel was not connected. In this case the purchase
     still needs to be redeemed which can only happen when they are connected to Psiphon.
     Do not translate or transliterate word PsiCash -->
-    <string name="you_have_an_unfinished_psicash_purchase">Tamamlanmamış PsiCash alımınız var.</string>
+    <string name="you_have_an_unfinished_psicash_purchase">您有未完成的PsiCash购买</string>
 
     <!-- A message to the user seen when the user has purchased PsiCash from PlayStore while the tunnel was not connected. In this case the purchase
     still needs to be redeemed which can only happen when they are connected to Psiphon.
     Do not translate or transliterate word Psiphon -->
-    <string name="connect_to_psiphon_to_finalize_your_transaction">İşleminizi tamamlamak için Psiphon\'a bağlanın</string>
+    <string name="connect_to_psiphon_to_finalize_your_transaction">连接赛风从而最终完成您的交易</string>
 
     <!-- PsiCash tab title where users may purchase some PsiCash from PlayStore or get it for free by watching a video ad. Do not translate or transliterate word PsiCash -->
-    <string name="add_psicash_tab_title">PsiCash ekle</string>
+    <string name="add_psicash_tab_title">加入PsiCash</string>
 
     <!-- SpeedBoost tab title where users may redeem their PsiCash for Speed Boost
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_tab_title">Hız Artışı</string>
+    <string name="speed_boost_tab_title">加速</string>
 
     <!-- A message shown when the PsiCash store is not available for whatever reason. Do not translate or transliterate word PsiCash -->
-    <string name="psicash_store_not_available">PsiCash mağazası kullanılamıyor</string>
+    <string name="psicash_store_not_available">PsiCash商店不可用</string>
 
     <!-- A message to the user seen when the user just purchased PsiCash from PlayStore while connected to Psiphon and the purchase is in process of being redeemed -->
-    <string name="please_wait_while_we_are_finalizing_your_purchase">Alımınızı sonlandırırken lütfen bekleyin</string>
+    <string name="please_wait_while_we_are_finalizing_your_purchase">当我们最终确认您的购买的时候，请您耐心等待</string>
 
     <!-- A prompt seen by the user when they try to use one of Speed Boost options, such as in
     "Would you like to get 5 hours of Speed Boost for 500 PsiCash". Do not translate formatters %s or %d, leave as is
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.-->
-    <string name="lbl_confirm_speedboost_purchase">%d PsiCash karşılığında %s Hız Artışı almak ister misiniz?</string>
+    <string name="lbl_confirm_speedboost_purchase">您是否愿意用%dPsiCash购买%s的加速？ </string>
 
     <!-- A message with numeric formatter such as "1 hour" or "5 hours", translate for all language applicable forms. -->
     <plurals name="hours_of_speed_boost">
-        <item quantity="one">%d saat</item>
-        <item quantity="other"> %d saat</item>
+        <item quantity="other">%d小时</item>
     </plurals>
 </resources>
