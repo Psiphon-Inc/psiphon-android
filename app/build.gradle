@@ -157,6 +157,7 @@ dependencies {
     }
 
     implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
+    implementation "com.mopub.mediation:admob:$rootProject.ext.mopubMediationAdmobVersion"
     implementation "com.google.android.ads.consent:consent-library:$rootProject.ext.adsConsentLibraryVersion"
 
     implementation "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxandroidVersion"
