@@ -822,13 +822,11 @@ public abstract class MainBase {
             // we are not in process of starting the tunnel service.
             // This will ensure proper state of the VPN toggle button if user clicked Cancel Request
             // on the VPN permission prompt, for example.
-            if (startUpInterstitialDisposable == null || startUpInterstitialDisposable.isDisposed()) {
-                compositeDisposable.add(tunnelServiceInteractor.tunnelStateFlowable()
-                        .firstOrError()
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .doOnSuccess(this::updateServiceStateUI)
-                        .subscribe());
-            }
+            compositeDisposable.add(tunnelServiceInteractor.tunnelStateFlowable()
+                    .firstOrError()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnSuccess(this::updateServiceStateUI)
+                    .subscribe());
         }
 
         private void handleNfcIntent(Intent intent) {
@@ -1097,7 +1095,13 @@ public abstract class MainBase {
         }
 
         private void updateServiceStateUI(final TunnelState tunnelState) {
-            if(tunnelState.isUnknown()) {
+            // Do not update the UI if we are in process of starting a tunnel
+            if (startUpInterstitialDisposable != null &&
+                    !startUpInterstitialDisposable.isDisposed()) {
+                return;
+            }
+
+            if (tunnelState.isUnknown()) {
                 disableToggleServiceUI();
                 setStatusState(R.drawable.status_icon_disconnected);
                 m_openBrowserButton.setEnabled(false);
@@ -1105,13 +1109,13 @@ public abstract class MainBase {
             } else if (tunnelState.isRunning()) {
                 enableToggleServiceUI();
                 m_toggleButton.setText(getText(R.string.stop));
-                if(tunnelState.connectionData().isConnected()) {
+                if (tunnelState.connectionData().isConnected()) {
                     setStatusState(R.drawable.status_icon_connected);
                     m_openBrowserButton.setEnabled(true);
 
                     ArrayList<String> homePages = tunnelState.connectionData().homePages();
                     final String url;
-                    if(homePages != null && homePages.size() > 0) {
+                    if (homePages != null && homePages.size() > 0) {
                         url = homePages.get(0);
                     } else {
                         url = null;
