@@ -456,18 +456,17 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
                             return Observable.just(adResult)
                                     .compose(psiphonAdManager
                                             .getInterstitialWithTimeoutForAdType(countdownSeconds, TimeUnit.SECONDS))
-                                    // Only pass PsiphonAdManager.InterstitialResult.State.READY or
-                                    // PsiphonAdManager.InterstitialResult.State.SHOWING downstream
-                                    // to make sure we don't stop the countdown prematurely.
-                                    .filter(interstitialResult ->
-                                            interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.READY ||
-                                                    interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.SHOWING)
                                     // If we have a READY interstitial then try and show it.
                                     .doOnNext(interstitialResult -> {
                                         if (interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.READY) {
                                             interstitialResult.show();
                                         }
-                                    });
+                                    })
+                                    // Emit downstream only when the ad is shown because sometimes
+                                    // calling interstitialResult.show() doesn't result in ad presented.
+                                    // In such a case let the countdown win the race.
+                                    .filter(interstitialResult ->
+                                                    interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.SHOWING);
                         });
 
         startUpInterstitialDisposable = countdown
