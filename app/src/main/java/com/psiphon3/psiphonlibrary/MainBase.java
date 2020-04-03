@@ -103,6 +103,7 @@ import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
@@ -184,6 +185,7 @@ public abstract class MainBase {
         private CompositeDisposable compositeDisposable = new CompositeDisposable();
         protected TunnelServiceInteractor tunnelServiceInteractor;
         private Disposable handleNfcIntentDisposable;
+        protected Disposable startUpInterstitialDisposable;
 
         protected boolean isAppInForeground;
 
@@ -816,13 +818,17 @@ public abstract class MainBase {
                 }
             }
 
-            // Update the state of UI when resuming the activity with latest tunnel state.
+            // Update the state of UI when resuming the activity with latest tunnel state if
+            // we are not in process of starting the tunnel service.
             // This will ensure proper state of the VPN toggle button if user clicked Cancel Request
             // on the VPN permission prompt, for example.
-            compositeDisposable.add(tunnelServiceInteractor.tunnelStateFlowable()
-                    .firstOrError()
-                    .doOnSuccess(this::updateServiceStateUI)
-                    .subscribe());
+            if (startUpInterstitialDisposable == null || startUpInterstitialDisposable.isDisposed()) {
+                compositeDisposable.add(tunnelServiceInteractor.tunnelStateFlowable()
+                        .firstOrError()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnSuccess(this::updateServiceStateUI)
+                        .subscribe());
+            }
         }
 
         private void handleNfcIntent(Intent intent) {

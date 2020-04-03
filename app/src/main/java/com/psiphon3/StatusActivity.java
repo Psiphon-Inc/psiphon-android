@@ -79,7 +79,6 @@ public class StatusActivity
     private boolean m_firstRun = true;
 
     private PsiphonAdManager psiphonAdManager;
-    private Disposable startUpInterstitialDisposable;
     private boolean disableInterstitialOnNextTabChange;
 
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
