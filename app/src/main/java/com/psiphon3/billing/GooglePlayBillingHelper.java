@@ -55,6 +55,7 @@ import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 public class GooglePlayBillingHelper {
     private static final String IAB_PUBLIC_KEY = BuildConfig.IAB_PUBLIC_KEY;
@@ -317,6 +318,7 @@ public class GooglePlayBillingHelper {
 
     private Single<List<Purchase>> getOwnedItems(String type) {
         return connectionFlowable
+                .observeOn(Schedulers.io())
                 .flatMap(client -> {
                     // If subscriptions are not supported return an empty purchase list, do not send error.
                     if (type.equals(BillingClient.SkuType.SUBS)) {
@@ -396,11 +398,7 @@ public class GooglePlayBillingHelper {
         return launchFlow(activity, null, null, skuDetails);
     }
 
-    Completable acknowledgePurchase(Purchase purchase) {
-        return acknowledgePurchase(purchase, null);
-    }
-
-    Completable acknowledgePurchase(Purchase purchase, String developerPayload) {
+    private Completable acknowledgePurchase(Purchase purchase) {
         if (purchase.isAcknowledged()) {
             return Completable.complete();
         }
@@ -408,11 +406,6 @@ public class GooglePlayBillingHelper {
         AcknowledgePurchaseParams.Builder paramsBuilder = AcknowledgePurchaseParams
                 .newBuilder()
                 .setPurchaseToken(purchase.getPurchaseToken());
-
-        if (developerPayload != null) {
-            paramsBuilder.setDeveloperPayload(developerPayload);
-        }
-
         return connectionFlowable
                 .firstOrError()
                 .flatMapCompletable(client ->
