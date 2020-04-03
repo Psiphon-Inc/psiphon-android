@@ -37,6 +37,7 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.TabHost;
 import android.widget.Toast;
@@ -91,6 +92,7 @@ public class StatusActivity
 
         m_banner = (ImageView) findViewById(R.id.banner);
         m_tabHost = (TabHost)findViewById(R.id.tabHost);
+        m_tabsScrollView = (HorizontalScrollView) findViewById(R.id.tabsScrollView);
         m_tabSpecsList = new ArrayList<>();
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
 
