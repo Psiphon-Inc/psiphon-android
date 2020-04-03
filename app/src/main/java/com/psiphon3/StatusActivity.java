@@ -102,7 +102,6 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
     private PsiCashFragment psiCashFragment;
 
     private PsiphonAdManager psiphonAdManager;
-    private Disposable startUpInterstitialDisposable;
     private boolean disableInterstitialOnNextTabChange;
     private Disposable autoStartDisposable;
 
