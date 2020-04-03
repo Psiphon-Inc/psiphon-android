@@ -19,6 +19,7 @@
 
 package com.psiphon3;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.ActivityNotFoundException;
@@ -110,6 +111,7 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
     private View embeddedWebView;
 
 
+    @SuppressLint("SourceLockedOrientationActivity")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
