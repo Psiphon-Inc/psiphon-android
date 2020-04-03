@@ -30,12 +30,16 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 
-public class RewardedVideoHelper {
+class RewardedVideoHelper {
+    // Test videos, supposed to always load
+    /*
+    private static final String MOPUB_VIDEO_AD_UNIT_ID = "920b6145fb1546cf8b5cf2ac34638bb7";
+    private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-3940256099942544/5224354917";
+     */
+
     // Production values
     private static final String MOPUB_VIDEO_AD_UNIT_ID = "7ef66892f0a6417091119b94ce07d6e5";
-//    private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-1072041961750291/5751207671";
-    // TODO: switch back after testing
-    private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-3940256099942544/5224354917";
+    private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-1072041961750291/5751207671";
 
     private final Observable<RewardedVideoPlayable> adMobVideoObservable;
     private final Observable<RewardedVideoPlayable> moPubVideoObservable;
