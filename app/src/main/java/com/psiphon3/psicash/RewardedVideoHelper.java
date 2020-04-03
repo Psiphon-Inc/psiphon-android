@@ -28,21 +28,21 @@ import java.util.Set;
 
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
-import io.reactivex.Maybe;
 import io.reactivex.Observable;
-import io.reactivex.Single;
 
 public class RewardedVideoHelper {
     // Production values
     private static final String MOPUB_VIDEO_AD_UNIT_ID = "7ef66892f0a6417091119b94ce07d6e5";
-    private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-1072041961750291/5751207671";
+//    private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-1072041961750291/5751207671";
+    // TODO: switch back after testing
+    private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-3940256099942544/5224354917";
 
-    private final Single<RewardedVideoPlayable> adMobVideoSingle;
-    private final Single<RewardedVideoPlayable> moPubVideoSingle;
+    private final Observable<RewardedVideoPlayable> adMobVideoObservable;
+    private final Observable<RewardedVideoPlayable> moPubVideoObservable;
     private final Completable initializeMoPubSdk;
 
     interface RewardedVideoPlayable {
-        enum State {LOADING, READY}
+        enum State {LOADING, READY, CLOSED}
 
         State state();
 
@@ -53,19 +53,21 @@ public class RewardedVideoHelper {
     Observable<RewardedVideoPlayable> getVideoObservable(Flowable<TunnelState> tunnelStateFlowable) {
         return tunnelStateFlowable
                 .filter(tunnelState -> !tunnelState.isUnknown())
-                .flatMapMaybe(tunnelState -> {
+                .toObservable()
+                .switchMap(tunnelState -> {
                     if (tunnelState.isStopped()) {
-                        return adMobVideoSingle.toMaybe();
+                        return adMobVideoObservable;
                     }
 
                     if (tunnelState.isRunning() && tunnelState.connectionData().isConnected()) {
                         return initializeMoPubSdk
-                                .andThen(moPubVideoSingle.toMaybe());
+                                .andThen(moPubVideoObservable);
                     }
-                    return Maybe.empty();
+                    return Observable.empty();
                 })
-                .firstOrError()
-                .toObservable()
+                // Complete when ad is closed
+                .takeWhile(rewardedVideoPlayable ->
+                        rewardedVideoPlayable.state() != RewardedVideoPlayable.State.CLOSED)
                 .startWith(Observable.just(() -> RewardedVideoPlayable.State.LOADING));
     }
 
@@ -94,38 +96,43 @@ public class RewardedVideoHelper {
             MoPub.initializeSdk(context, sdkConfiguration, sdkInitializationListener);
         });
 
-        this.adMobVideoSingle = Single.create(emitter -> {
+        this.adMobVideoObservable = Observable.create(emitter -> {
             RewardedAd rewardedAd = new RewardedAd(context, ADMOB_VIDEO_AD_ID);
             ServerSideVerificationOptions.Builder optionsBuilder = new ServerSideVerificationOptions.Builder();
             optionsBuilder.setCustomData(customData);
             rewardedAd.setServerSideVerificationOptions(optionsBuilder.build());
+            RewardedAdCallback adCallback = new RewardedAdCallback() {
+                @Override
+                public void onRewardedAdOpened() {
+                }
+
+                @Override
+                public void onRewardedAdClosed() {
+                    if (!emitter.isDisposed()) {
+                        emitter.onNext(() -> RewardedVideoPlayable.State.CLOSED);
+                    }
+                }
+
+                @Override
+                public void onUserEarnedReward(@NonNull RewardItem reward) {
+                    try {
+                        PsiCashClient.getInstance(context).putVideoReward(reward.getAmount());
+                    } catch (PsiCashException ignored) {
+                    }
+                }
+
+                @Override
+                public void onRewardedAdFailedToShow(int errorCode) {
+                    if (!emitter.isDisposed()) {
+                        emitter.onError(new PsiCashException.Video("RewardedAd failed to show with code: " + errorCode));
+                    }
+                }
+            };
             RewardedAdLoadCallback adLoadCallback = new RewardedAdLoadCallback() {
                 @Override
                 public void onRewardedAdLoaded() {
                     super.onRewardedAdLoaded();
                     if (!emitter.isDisposed()) {
-                        RewardedAdCallback adCallback = new RewardedAdCallback() {
-                            @Override
-                            public void onRewardedAdOpened() {
-                            }
-
-                            @Override
-                            public void onRewardedAdClosed() {
-                            }
-
-                            @Override
-                            public void onUserEarnedReward(@NonNull RewardItem reward) {
-                                try {
-                                    PsiCashClient.getInstance(context).putVideoReward(reward.getAmount());
-                                } catch (PsiCashException ignored) {
-                                }
-                            }
-
-                            @Override
-                            public void onRewardedAdFailedToShow(int errorCode) {
-                            }
-                        };
-
                         RewardedVideoPlayable rewardedVideoPlayable = new RewardedVideoPlayable() {
                             @Override
                             public void play(Activity activity) {
@@ -137,7 +144,7 @@ public class RewardedVideoHelper {
                                 return State.READY;
                             }
                         };
-                        emitter.onSuccess(rewardedVideoPlayable);
+                        emitter.onNext(rewardedVideoPlayable);
                     }
                 }
 
@@ -153,7 +160,7 @@ public class RewardedVideoHelper {
             rewardedAd.loadAd(requestBuilder.build(), adLoadCallback);
         });
 
-        this.moPubVideoSingle = Single.create(emitter -> {
+        this.moPubVideoObservable = Observable.create(emitter -> {
             MoPubRewardedVideoListener rewardedVideoListener = new MoPubRewardedVideoListener() {
                 @Override
                 public void onRewardedVideoLoadSuccess(@NonNull String adUnitId) {
@@ -161,7 +168,7 @@ public class RewardedVideoHelper {
                         // Called when the video for the given adUnitId has loaded.
                         // At this point you should be able to call MoPubRewardedVideos.showRewardedVideo(String) to show the video.
                         if (adUnitId.equals(MOPUB_VIDEO_AD_UNIT_ID) && MoPubRewardedVideos.hasRewardedVideo(MOPUB_VIDEO_AD_UNIT_ID)) {
-                            emitter.onSuccess(new RewardedVideoPlayable() {
+                            emitter.onNext(new RewardedVideoPlayable() {
                                 @Override
                                 public State state() {
                                     return State.READY;
@@ -202,6 +209,9 @@ public class RewardedVideoHelper {
 
                 @Override
                 public void onRewardedVideoClosed(@NonNull String adUnitId) {
+                    if (!emitter.isDisposed()) {
+                        emitter.onNext(() -> RewardedVideoPlayable.State.CLOSED);
+                    }
                 }
 
                 @Override
