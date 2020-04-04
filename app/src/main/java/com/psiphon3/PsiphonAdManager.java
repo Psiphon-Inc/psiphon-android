@@ -155,8 +155,8 @@ public class PsiphonAdManager {
     private AdView unTunneledAdMobBannerAdView = null;
     private MoPubView tunneledMoPubBannerAdView = null;
 
-    private final MoPubInterstitial tunneledMoPubInterstitial;
-    private final MoPubInterstitial unTunneledMoPubInterstitial;
+    private MoPubInterstitial tunneledMoPubInterstitial;
+    private MoPubInterstitial unTunneledMoPubInterstitial;
 
     private ViewGroup bannerLayout;
     private ConsentForm adMobConsentForm;
@@ -276,9 +276,12 @@ public class PsiphonAdManager {
                         .subscribe()
         );
 
-        this.unTunneledMoPubInterstitial = new MoPubInterstitial(activity, MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
         this.unTunneledMoPubInterstitialObservable = initializeMoPubSdk
                 .andThen(Observable.<InterstitialResult>create(emitter -> {
+                    if (unTunneledMoPubInterstitial != null) {
+                        unTunneledMoPubInterstitial.destroy();
+                    }
+                    unTunneledMoPubInterstitial = new MoPubInterstitial(activity, MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
                     unTunneledMoPubInterstitial.setInterstitialAdListener(new MoPubInterstitial.InterstitialAdListener() {
                         @Override
                         public void onInterstitialLoaded(MoPubInterstitial interstitial) {
@@ -310,7 +313,6 @@ public class PsiphonAdManager {
                             if (!emitter.isDisposed()) {
                                 emitter.onComplete();
                             }
-                            interstitial.load();
                         }
                     });
                     if (unTunneledMoPubInterstitial.isReady()) {
@@ -333,9 +335,12 @@ public class PsiphonAdManager {
                 .replay(1)
                 .refCount();
 
-        this.tunneledMoPubInterstitial = new MoPubInterstitial(activity, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
         this.tunneledMoPubInterstitialObservable = initializeMoPubSdk
                 .andThen(Observable.<InterstitialResult>create(emitter -> {
+                    if(tunneledMoPubInterstitial != null) {
+                        tunneledMoPubInterstitial.destroy();
+                    }
+                    tunneledMoPubInterstitial = new MoPubInterstitial(activity, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
                     tunneledMoPubInterstitial.setInterstitialAdListener(new MoPubInterstitial.InterstitialAdListener() {
                         @Override
                         public void onInterstitialLoaded(MoPubInterstitial interstitial) {
@@ -367,7 +372,6 @@ public class PsiphonAdManager {
                             if (!emitter.isDisposed()) {
                                 emitter.onComplete();
                             }
-                            interstitial.load();
                         }
                     });
                     if (tunneledMoPubInterstitial.isReady()) {
