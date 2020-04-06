@@ -378,18 +378,15 @@ public class PsiphonAdManager {
                                     // No ads mode, destroy all ads
                                     destroyAllAds();
                                     break;
-
                                 case UNKNOWN:
                                     // App is backgrounded and tunnel state is unknown, destroy all banners
                                     destroyTunneledBanners();
                                     destroyUnTunneledBanners();
                                     break;
-
                                 case TUNNELED:
                                     // App is tunneled, destroy untunneled banners
                                     destroyUnTunneledBanners();
                                     break;
-
                                 case UNTUNNELED:
                                     // App is not tunneled, destroy untunneled banners
                                     destroyTunneledBanners();
@@ -530,7 +527,7 @@ public class PsiphonAdManager {
         // For this to be usable we want to keep a pre-loaded ad for as long as possible, i.e.
         // dispose of the preloaded ad only if tunnel state changes to untunneled or if tunnel
         // connection data changes which is a good indicator of a re-connect.
-        // To achieve this we will filter out UNKNOWN ad result  which is emitted when the app is
+        // To achieve this we will filter out UNKNOWN ad result which is emitted when the app is
         // backgrounded and as a result the tunnel state can't be learned.
         // Note that it is possible that an automated re-connect may happen without a change
         // of the connection data fields.
@@ -568,7 +565,6 @@ public class PsiphonAdManager {
                     )
                     .subscribe();
             compositeDisposable.add(loadBannersDisposable);
-
         }
     }
 
