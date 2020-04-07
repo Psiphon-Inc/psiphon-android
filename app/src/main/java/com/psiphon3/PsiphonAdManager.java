@@ -123,7 +123,6 @@ public class PsiphonAdManager {
             static InterstitialResult create(MoPubInterstitial interstitial, State state) {
                 return new AutoValue_PsiphonAdManager_InterstitialResult_MoPub(interstitial, state);
             }
-
         }
 
         @AutoValue
@@ -144,36 +143,38 @@ public class PsiphonAdManager {
         }
     }
 
-    static final String TAG = "PsiphonAdManager";
-
     // ----------Production values -----------
     private static final String ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID = "ca-app-pub-1072041961750291/1062483935";
     private static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "6efb5aa4e0d74a679a6219f9b3aa6221";
+    // MoPub test interstitial ID 24534e1901884e398f1253216226017e
     private static final String MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID = "1f9cb36809f04c8d9feaff5deb9f17ed";
     private static final String MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID = "0d4cf70da6504af5878f0b3592808852";
 
-    private AdView unTunneledAdMobBannerAdView = null;
-    private MoPubView tunneledMoPubBannerAdView = null;
-
-    private final MoPubInterstitial tunneledMoPubInterstitial;
-    private final MoPubInterstitial unTunneledMoPubInterstitial;
+    private AdView unTunneledAdMobBannerAdView;
+    private MoPubView tunneledMoPubBannerAdView;
+    private MoPubInterstitial tunneledMoPubInterstitial;
+    private MoPubInterstitial unTunneledMoPubInterstitial;
 
     private ViewGroup bannerLayout;
     private ConsentForm adMobConsentForm;
 
     private Activity activity;
-    private int tabChangeCount = 0;
+    private int tabChangedCount = 0;
 
     private final Runnable adMobPayOptionRunnable;
-    private final Completable initializeMoPubSdk;
 
+    private final Completable initializeMoPubSdk;
     private final Observable<AdResult> currentAdTypeObservable;
-    private Disposable loadAdsDisposable;
-    private Disposable tunneledInterstitialDisposable;
+    private Disposable loadBannersDisposable;
+    private Disposable loadUnTunneledInterstitialDisposable;
+    private Disposable loadTunneledInterstitialDisposable;
+    private Disposable showTunneledInterstitialDisposable;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     private final Observable<InterstitialResult> unTunneledMoPubInterstitialObservable;
     private final Observable<InterstitialResult> tunneledMoPubInterstitialObservable;
+
+    private TunnelState.ConnectionData interstitialConnectionData;
 
     PsiphonAdManager(Activity activity, ViewGroup bannerLayout, Runnable adMobPayOptionRunnable, Flowable<TunnelState> tunnelConnectionStateFlowable) {
         this.activity = activity;
@@ -218,6 +219,7 @@ public class PsiphonAdManager {
             };
             MoPub.initializeSdk(activity, sdkConfiguration, sdkInitializationListener);
         })
+                .subscribeOn(AndroidSchedulers.mainThread())
                 .doOnError(e -> Utils.MyLog.d("initializeMoPubSdk error: " + e));
 
         this.currentAdTypeObservable = Observable.combineLatest(
@@ -226,8 +228,7 @@ public class PsiphonAdManager {
                         .subscriptionStateFlowable()
                         .toObservable(),
                 ((BiFunction<TunnelState, SubscriptionState, Pair>) Pair::new))
-                .observeOn(AndroidSchedulers.mainThread())
-                .flatMap(pair -> {
+                .switchMap(pair -> {
                     TunnelState s = (TunnelState) pair.first;
                     SubscriptionState subscriptionState = (SubscriptionState) pair.second;
                     if (subscriptionState.hasValidPurchase() ||
@@ -242,43 +243,16 @@ public class PsiphonAdManager {
                         return Observable.just(AdResult.unknown());
                     }
                 })
+                .distinctUntilChanged()
                 .replay(1)
                 .autoConnect(0);
 
-        // This disposable destroys ads according to subscription and/or
-        // connection status without further delay.
-        compositeDisposable.add(
-                currentAdTypeObservable
-                        .doOnNext(adResult -> {
-                            switch (adResult.type()) {
-                                case NONE:
-                                    destroyAllAds();
-                                    break;
-
-                                case UNKNOWN:
-                                    destroyTunneledBanners();
-                                    destroyUnTunneledBanners();
-                                    break;
-
-                                case TUNNELED:
-                                    destroyUnTunneledBanners();
-                                    break;
-
-                                case UNTUNNELED:
-                                    destroyTunneledBanners();
-                                    // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
-                                    // and we need to run the check every time. This call doesn't need to be synced with
-                                    // creation and deletion of ad views.
-                                    runAdMobGdprCheck();
-                                    break;
-                            }
-                        })
-                        .subscribe()
-        );
-
-        this.unTunneledMoPubInterstitial = new MoPubInterstitial(activity, MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
         this.unTunneledMoPubInterstitialObservable = initializeMoPubSdk
                 .andThen(Observable.<InterstitialResult>create(emitter -> {
+                    if (unTunneledMoPubInterstitial != null) {
+                        unTunneledMoPubInterstitial.destroy();
+                    }
+                    unTunneledMoPubInterstitial = new MoPubInterstitial(activity, MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
                     unTunneledMoPubInterstitial.setInterstitialAdListener(new MoPubInterstitial.InterstitialAdListener() {
                         @Override
                         public void onInterstitialLoaded(MoPubInterstitial interstitial) {
@@ -310,7 +284,6 @@ public class PsiphonAdManager {
                             if (!emitter.isDisposed()) {
                                 emitter.onComplete();
                             }
-                            interstitial.load();
                         }
                     });
                     if (unTunneledMoPubInterstitial.isReady()) {
@@ -333,9 +306,20 @@ public class PsiphonAdManager {
                 .replay(1)
                 .refCount();
 
-        this.tunneledMoPubInterstitial = new MoPubInterstitial(activity, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
         this.tunneledMoPubInterstitialObservable = initializeMoPubSdk
                 .andThen(Observable.<InterstitialResult>create(emitter -> {
+                    if (tunneledMoPubInterstitial != null) {
+                        tunneledMoPubInterstitial.destroy();
+                    }
+                    tunneledMoPubInterstitial = new MoPubInterstitial(activity, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
+                    // Set current client region keyword on the ad
+                    if (interstitialConnectionData != null) {
+                        tunneledMoPubInterstitial.setKeywords("client_region:" + interstitialConnectionData.clientRegion());
+                        Map<String, Object> localExtras = new HashMap<>();
+                        localExtras.put("client_region", interstitialConnectionData.clientRegion());
+                        tunneledMoPubInterstitial.setLocalExtras(localExtras);
+                    }
+
                     tunneledMoPubInterstitial.setInterstitialAdListener(new MoPubInterstitial.InterstitialAdListener() {
                         @Override
                         public void onInterstitialLoaded(MoPubInterstitial interstitial) {
@@ -367,7 +351,6 @@ public class PsiphonAdManager {
                             if (!emitter.isDisposed()) {
                                 emitter.onComplete();
                             }
-                            interstitial.load();
                         }
                     });
                     if (tunneledMoPubInterstitial.isReady()) {
@@ -383,6 +366,39 @@ public class PsiphonAdManager {
                 }))
                 .replay(1)
                 .refCount();
+
+        // This disposable destroys ads according to subscription and/or
+        // connection status without further delay.
+        compositeDisposable.add(
+                currentAdTypeObservable
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext(adResult -> {
+                            switch (adResult.type()) {
+                                case NONE:
+                                    // No ads mode, destroy all ads
+                                    destroyAllAds();
+                                    break;
+                                case UNKNOWN:
+                                    // App is backgrounded and tunnel state is unknown, destroy all banners
+                                    destroyTunneledBanners();
+                                    destroyUnTunneledBanners();
+                                    break;
+                                case TUNNELED:
+                                    // App is tunneled, destroy untunneled banners
+                                    destroyUnTunneledBanners();
+                                    break;
+                                case UNTUNNELED:
+                                    // App is not tunneled, destroy untunneled banners
+                                    destroyTunneledBanners();
+                                    // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
+                                    // and we need to run the check every time. This call doesn't need to be synced with
+                                    // creation and deletion of ad views.
+                                    runAdMobGdprCheck();
+                                    break;
+                            }
+                        })
+                        .subscribe()
+        );
     }
 
     Observable<AdResult> getCurrentAdTypeObservable() {
@@ -457,57 +473,105 @@ public class PsiphonAdManager {
     }
 
     void onTabChanged() {
-        if (tunneledInterstitialDisposable != null && !tunneledInterstitialDisposable.isDisposed()) {
+        if (showTunneledInterstitialDisposable != null && !showTunneledInterstitialDisposable.isDisposed()) {
             // subscription in progress, do nothing
             return;
         }
         // First tab change triggers the interstitial
-        // NOTE: tabChangeCount gets reset when we ads change to AdsType.TUNNELED
-        if (tabChangeCount % 3 != 0) {
-            tabChangeCount++;
+        // NOTE: tabChangeCount gets reset when we go tunneled
+        if (tabChangedCount % 3 != 0) {
+            tabChangedCount++;
             return;
         }
 
-        tunneledInterstitialDisposable = getCurrentAdTypeObservable()
-                .observeOn(AndroidSchedulers.mainThread())
-                .takeWhile(adResult -> adResult.type() == AdResult.Type.TUNNELED)
-                .take(1)
+        showTunneledInterstitialDisposable = getCurrentAdTypeObservable()
+                .firstOrError()
+                .flatMapObservable(adResult -> {
+                    if (adResult.type() != AdResult.Type.TUNNELED) {
+                        return Observable.empty();
+                    }
+                    return Observable.just(adResult);
+                })
                 .compose(getInterstitialWithTimeoutForAdType(3, TimeUnit.SECONDS))
                 .doOnNext(interstitialResult -> {
-                    interstitialResult.show();
-                    tabChangeCount++;
+                    if (interstitialResult.state() == InterstitialResult.State.READY) {
+                        interstitialResult.show();
+                        tabChangedCount++;
+                    }
                 })
                 .onErrorResumeNext(Observable.empty())
                 .subscribe();
-        compositeDisposable.add(tunneledInterstitialDisposable);
+        compositeDisposable.add(showTunneledInterstitialDisposable);
     }
 
     void startLoadingAds() {
-        if (loadAdsDisposable != null && !loadAdsDisposable.isDisposed()) {
-            return;
+        // Preload exactly one untunneled interstitial if we are currently untunneled or complete
+        if (loadUnTunneledInterstitialDisposable == null || loadUnTunneledInterstitialDisposable.isDisposed()) {
+            loadUnTunneledInterstitialDisposable = getCurrentAdTypeObservable()
+                    // Filter out UNKNOWN
+                    .filter(adResult -> adResult.type() != AdResult.Type.UNKNOWN)
+                    .firstOrError()
+                    .flatMapObservable(adResult -> {
+                        if (adResult.type() != AdResult.Type.UNTUNNELED) {
+                            return Observable.empty();
+                        }
+                        return getInterstitialObservable(adResult)
+                                .doOnError(e -> Utils.MyLog.g("Error loading untunneled interstitial: " + e))
+                                .onErrorResumeNext(Observable.empty());
+                    })
+                    .subscribe();
+            compositeDisposable.add(loadUnTunneledInterstitialDisposable);
         }
-        loadAdsDisposable = getCurrentAdTypeObservable()
-                .observeOn(AndroidSchedulers.mainThread())
-                .distinctUntilChanged()
-                .doOnNext(adResult -> {
-                    if (adResult.type() == AdResult.Type.TUNNELED) {
-                        // reset tabChange every time we go TUNNELED
-                        tabChangeCount = 0;
-                    }
-                })
-                .publish(shared -> Observable.merge(
-                        shared.switchMap(adResult -> loadInterstitialForAdResult(adResult).onErrorResumeNext(Observable.empty())),
-                        shared.switchMap(adResult -> loadAndShowBanner(adResult).toObservable())))
-                .doOnError(err ->Utils.MyLog.g("PsiphonAdManager: error loading ads: " + err))
-                .onErrorResumeNext(Observable.empty())
-                .subscribe();
-        compositeDisposable.add(loadAdsDisposable);
+
+        // Keep pre-loading tunneled interstitial when we go tunneled indefinitely.
+        // For this to be usable we want to keep a pre-loaded ad for as long as possible, i.e.
+        // dispose of the preloaded ad only if tunnel state changes to untunneled or if tunnel
+        // connection data changes which is a good indicator of a re-connect.
+        // To achieve this we will filter out UNKNOWN ad result which is emitted when the app is
+        // backgrounded and as a result the tunnel state can't be learned.
+        // Note that it is possible that an automated re-connect may happen without a change
+        // of the connection data fields.
+        if (loadTunneledInterstitialDisposable == null || loadTunneledInterstitialDisposable.isDisposed()) {
+            loadTunneledInterstitialDisposable = getCurrentAdTypeObservable()
+                    // Filter out UNKNOWN
+                    .filter(adResult -> adResult.type() != AdResult.Type.UNKNOWN)
+                    // We only want to react when the state changes between TUNNELED and UNTUNNELED.
+                    // Note that distinctUntilChanged will still pass the result through if the upstream
+                    // emits two TUNNELED ad results sequence with different connectionData fields
+                    .distinctUntilChanged()
+                    .switchMap(adResult -> {
+                        if (adResult.type() != AdResult.Type.TUNNELED) {
+                            return Observable.empty();
+                        }
+                        // We are tunneled, reset tabChangedCount
+                        tabChangedCount = 0;
+                        return getInterstitialObservable(adResult)
+                                // Load a new one right after a current one is shown and dismissed
+                                .repeat()
+                                .doOnError(e -> Utils.MyLog.g("Error loading tunneled interstitial: " + e))
+                                .onErrorResumeNext(Observable.empty());
+                    })
+                    .subscribe();
+            compositeDisposable.add(loadTunneledInterstitialDisposable);
+        }
+
+        // Finally load and show banners
+        if (loadBannersDisposable == null || loadBannersDisposable.isDisposed()) {
+            loadBannersDisposable = getCurrentAdTypeObservable()
+                    .switchMapCompletable(adResult ->
+                            loadAndShowBanner(adResult)
+                                    .doOnError(e -> Utils.MyLog.g("loadAndShowBanner: error: " + e))
+                                    .onErrorComplete()
+                    )
+                    .subscribe();
+            compositeDisposable.add(loadBannersDisposable);
+        }
     }
 
     ObservableTransformer<AdResult, InterstitialResult> getInterstitialWithTimeoutForAdType(int timeout, TimeUnit timeUnit) {
         return observable -> observable
                 .observeOn(AndroidSchedulers.mainThread())
-                .switchMap(this::loadInterstitialForAdResult)
+                .switchMap(this::getInterstitialObservable)
                 .ambWith(Observable.timer(timeout, timeUnit)
                         .flatMap(l -> Observable.error(new TimeoutException("getInterstitialWithTimeoutForAdType timed out."))));
     }
@@ -603,31 +667,29 @@ public class PsiphonAdManager {
                 throw new IllegalArgumentException("loadAndShowBanner: unhandled AdResult.Type: " + adResult.type());
         }
         return completable
-                .doOnError(e -> Utils.MyLog.g("loadAndShowBanner: error: " + e))
-                .onErrorComplete();
+                .subscribeOn(AndroidSchedulers.mainThread());
     }
 
-    private Observable<InterstitialResult> loadInterstitialForAdResult(final AdResult adResult) {
+    private Observable<InterstitialResult> getInterstitialObservable(final AdResult adResult) {
+        Observable<InterstitialResult> interstitialResultObservable;
         AdResult.Type adType = adResult.type();
         switch (adType) {
             case NONE:
             case UNKNOWN:
-                return Observable.empty();
+                interstitialResultObservable = Observable.empty();
+                break;
             case TUNNELED:
-                // Set client region data on the ad
-                TunnelState.ConnectionData connectionData = adResult.connectionData();
-                if (connectionData != null) {
-                    tunneledMoPubInterstitial.setKeywords("client_region:" + connectionData.clientRegion());
-                    Map<String, Object> localExtras = new HashMap<>();
-                    localExtras.put("client_region", connectionData.clientRegion());
-                    tunneledMoPubInterstitial.setLocalExtras(localExtras);
-                }
-                return tunneledMoPubInterstitialObservable;
+                interstitialConnectionData = adResult.connectionData();
+                interstitialResultObservable = tunneledMoPubInterstitialObservable;
+                break;
             case UNTUNNELED:
-                return unTunneledMoPubInterstitialObservable;
+                interstitialResultObservable = unTunneledMoPubInterstitialObservable;
+                break;
             default:
-                throw new IllegalArgumentException("loadInterstitialForAdResult unhandled AdResult.Type: " + adType);
+                throw new IllegalArgumentException("getInterstitialObservable: unhandled AdResult.Type: " + adType);
         }
+        return interstitialResultObservable
+                .subscribeOn(AndroidSchedulers.mainThread());
     }
 
     private void destroyTunneledBanners() {
@@ -655,8 +717,12 @@ public class PsiphonAdManager {
     private void destroyAllAds() {
         destroyTunneledBanners();
         destroyUnTunneledBanners();
-        tunneledMoPubInterstitial.destroy();
-        unTunneledMoPubInterstitial.destroy();
+        if (tunneledMoPubInterstitial != null) {
+            tunneledMoPubInterstitial.destroy();
+        }
+        if (unTunneledMoPubInterstitial != null) {
+            unTunneledMoPubInterstitial.destroy();
+        }
     }
 
     public void onDestroy() {
@@ -664,7 +730,7 @@ public class PsiphonAdManager {
         compositeDisposable.dispose();
     }
 
-    static ConsentDialogListener moPubConsentDialogListener() {
+    private static ConsentDialogListener moPubConsentDialogListener() {
         return new ConsentDialogListener() {
             @Override
             public void onConsentDialogLoaded() {
