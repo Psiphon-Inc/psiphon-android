@@ -380,6 +380,9 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
         } else if (0 == intent.getAction().compareTo(ACTION_SHOW_GET_HELP_DIALOG)) {
             // OK to be null because we don't use it
             onGetHelpConnectingClick(null);
+        } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_DISALLOWED_TRAFFIC)) {
+            // Switch to home tab where payment options are provided
+            m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
         }
     }
 

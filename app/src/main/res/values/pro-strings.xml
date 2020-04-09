@@ -303,6 +303,12 @@
     indicates a fast or unrestricted speed.-->
     <string name="speed_boost_insufficient_balance_alert">You do not have enough PsiCash to activate this Speed Boost option, would you like to add some?</string>
 
+    <!-- Title of the notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">Upgrade Psiphon Pro</string>
+
+    <!-- Content of the notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_message">Some Internet traffic is not supported by the free version of Psiphon Pro. Purchase a subscription or Speed Boost to unlock the full potential of your Psiphon experience.</string>
+
     <!-- A message with numeric formatter such as "1 hour" or "5 hours", translate for all language applicable forms. -->
     <plurals name="hours_of_speed_boost">
         <item quantity="one"> %d hour</item>
