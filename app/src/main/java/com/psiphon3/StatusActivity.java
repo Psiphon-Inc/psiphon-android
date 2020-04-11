@@ -268,6 +268,7 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
 
         if (autoStartDisposable == null || autoStartDisposable.isDisposed()) {
             autoStartDisposable = autoStartMaybe(isFirstRun)
+                    .observeOn(AndroidSchedulers.mainThread())
                     .doOnSuccess(__ -> doStartUp())
                     .subscribe();
             compositeDisposable.add(autoStartDisposable);
@@ -473,6 +474,7 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
                 // ambWith mirrors the ObservableSource that first either emits an
                 // item or sends a termination notification.
                 .ambWith(interstitial)
+                .observeOn(AndroidSchedulers.mainThread())
                 // On error just complete this subscription which then will start the service.
                 .onErrorResumeNext(err -> {
                     return Observable.empty();
