@@ -30,7 +30,7 @@ ext {
     autoValueVersion = '1.5.2'
     okhttpVersion = '3.12.1'
     playServicesAdsVersion = '17.2.1'
-    mopubSdkVersion = '5.5.0'
+    mopubSdkVersion = '5.8.0'
     mopubMediationAdmobVersion = '17.2.1.0'
     adsConsentLibraryVersion = '1.0.8'
     multidexVersion = '1.0.3'
