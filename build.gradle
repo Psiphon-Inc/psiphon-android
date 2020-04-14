@@ -40,6 +40,7 @@ ext {
     testRunnerVersion = '0.5'
     playStoreBillingClientVersion = '2.2.0'
     threetenabpVersion = '1.2.1'
+    hyprMXMoPubVersion = '5.0.5'
 }
 
 subprojects {
