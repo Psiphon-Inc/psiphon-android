@@ -229,7 +229,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
     private PurchaseVerifier purchaseVerifier;
 
-    private boolean showDisallowedTrafficNotification = true;
+    private boolean disallowedTrafficNotificationAlreadyShown = false;
+    private boolean hasBoostOrSubscription = false;
 
     TunnelManager(Service parentService) {
         m_parentService = parentService;
@@ -1597,17 +1598,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 }
             }
 
-            // Do not show the disallowed traffic notification if the user is subscribed or boosted
-            // NOTE: we are not resetting the showDisallowedTrafficNotification to true on
-            // automated reconnects
-            if(showDisallowedTrafficNotification) {
-                for (Authorization a : acceptedAuthorizations) {
-                    if ("google-subscription".equals(a.accessType()) ||
-                            "google-subscription".equals(a.accessType()) ||
-                            "speed-boost".equals(a.accessType())) {
-                        showDisallowedTrafficNotification = false;
-                        break;
-                    }
+            // Determine if user has a speed boost or subscription auth in the current tunnel run
+            hasBoostOrSubscription = false;
+            for (Authorization a : acceptedAuthorizations) {
+                if ("google-subscription".equals(a.accessType()) ||
+                        "google-subscription".equals(a.accessType()) ||
+                        "speed-boost".equals(a.accessType())) {
+                    hasBoostOrSubscription = true;
+                    break;
                 }
             }
         });
@@ -1621,12 +1619,18 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     @Override
     public void onServerAlert(String reason, String subject) {
         MyLog.g("Server alert", "reason", reason, "subject", subject);
-        if(!showDisallowedTrafficNotification) {
+        // Do not show alerts when user has Speed Boost or a subscription.
+        // Note that this is an extra measure preventing accidental server alerts since
+        // the user with this auth type should not be receiving any from the server
+        if (hasBoostOrSubscription) {
             return;
         }
 
-        // Do not show more than once per tunnel run
-        showDisallowedTrafficNotification = false;
+        // Disable showing alerts more than once per service run
+        if (disallowedTrafficNotificationAlreadyShown) {
+            return;
+        }
+        disallowedTrafficNotificationAlreadyShown = true;
 
         if ("disallowed-traffic".equals(reason)) {
             m_Handler.post(() -> {
