@@ -424,6 +424,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         cancelGetHelpConnecting();
         cancelOpenAppToFinishConnectingNotification();
 
+        // Also cancel disallowed traffic alert notification
+        if (mNotificationManager != null) {
+            mNotificationManager.cancel(R.id.notification_id_disallowed_traffic_alert);
+        }
+
         stopAndWaitForTunnel();
         MyLog.unsetLogger();
         m_compositeDisposable.dispose();
