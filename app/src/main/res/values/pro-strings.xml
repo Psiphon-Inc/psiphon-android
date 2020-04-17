@@ -303,11 +303,23 @@
     indicates a fast or unrestricted speed.-->
     <string name="speed_boost_insufficient_balance_alert">You do not have enough PsiCash to activate this Speed Boost option, would you like to add some?</string>
 
-    <!-- Title of the notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Upgrade Psiphon Pro</string>
 
-    <!-- Content of the notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
-    <string name="disallowed_traffic_alert_notification_message">Some Internet traffic is not supported by the free version of Psiphon Pro. Purchase a subscription or Speed Boost to unlock the full potential of your Psiphon experience.</string>
+    <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_message">Apps not working? Click here to improve your Psiphon experience!</string>
+
+    <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_dialog_message">Some Internet traffic is not supported by the free version of Psiphon Pro. Purchase a subscription or Speed Boost to unlock the full potential of your Psiphon experience.</string>
+
+    <!-- Text on the button which takes user to subscription screen -->
+    <string name="btn_get_subscription">Subscribe</string>
+
+    <!-- Text on the button which takes user to Speed Boost screen.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="btn_get_speed_boost">Speed Boost</string>
 
     <!-- A message with numeric formatter such as "1 hour" or "5 hours", translate for all language applicable forms. -->
     <plurals name="hours_of_speed_boost">
