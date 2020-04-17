@@ -420,19 +420,21 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
             // Only cancel our own service notifications, do not cancel _all_ notifications.
             mNotificationManager.cancel(R.string.psiphon_service_notification_id);
         }
-        // Cancel "get help" and "open app to finish connecting" notifications too.
+        // Cancel "get help", "open app to finish connecting" and "disallowed traffic alert" notifications.
         cancelGetHelpConnecting();
         cancelOpenAppToFinishConnectingNotification();
-
-        // Also cancel disallowed traffic alert notification
-        if (mNotificationManager != null) {
-            mNotificationManager.cancel(R.id.notification_id_disallowed_traffic_alert);
-        }
+        cancelDisallowedTrafficAlertNotification();
 
         stopAndWaitForTunnel();
         MyLog.unsetLogger();
         m_compositeDisposable.dispose();
         purchaseVerifier.onDestroy();
+    }
+
+    private void cancelDisallowedTrafficAlertNotification() {
+        if (mNotificationManager != null) {
+            mNotificationManager.cancel(R.id.notification_id_disallowed_traffic_alert);
+        }
     }
 
     void onRevoke() {
@@ -1610,6 +1612,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         "google-subscription".equals(a.accessType()) ||
                         "speed-boost".equals(a.accessType())) {
                     hasBoostOrSubscription = true;
+                    // Also cancel disallowed traffic alert notification
+                    cancelDisallowedTrafficAlertNotification();
                     break;
                 }
             }
