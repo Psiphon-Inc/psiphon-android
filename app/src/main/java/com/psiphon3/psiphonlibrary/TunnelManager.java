@@ -114,6 +114,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     public static final String INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE = "com.psiphon3.psiphonlibrary.TunnelManager.SELECTED_REGION_NOT_AVAILABLE";
     public static final String INTENT_ACTION_VPN_REVOKED = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_VPN_REVOKED";
     public static final String INTENT_ACTION_STOP_TUNNEL = "com.psiphon3.psiphonlibrary.TunnelManager.ACTION_STOP_TUNNEL";
+    public static final String INTENT_ACTION_DISALLOWED_TRAFFIC = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_DISALLOWED_TRAFFIC";
 
     // Client -> Service bundle parameter names
     static final String DATA_NFC_CONNECTION_INFO_EXCHANGE_IMPORT = "dataNfcConnectionInfoExchangeImport";
@@ -178,6 +179,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
     private NotificationManager mNotificationManager = null;
     private final static String NOTIFICATION_CHANNEL_ID = "psiphon_notification_channel";
+    private final static String NOTIFICATION_SERVER_ALERT_CHANNEL_ID = "psiphon_server_alert_notification_channel";
     private Service m_parentService;
     private boolean mGetHelpConnectingRunnablePosted = false;
     private final Handler mGetHelpConnectingHandler = new Handler();
@@ -227,6 +229,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
     private PurchaseVerifier purchaseVerifier;
 
+    private boolean showDisallowedTrafficNotification = true;
+
     TunnelManager(Service parentService) {
         m_parentService = parentService;
         m_context = parentService;
@@ -247,6 +251,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 NotificationChannel notificationChannel = new NotificationChannel(
                         NOTIFICATION_CHANNEL_ID, getContext().getText(R.string.psiphon_service_notification_channel_name),
                         NotificationManager.IMPORTANCE_LOW);
+                mNotificationManager.createNotificationChannel(notificationChannel);
+
+                notificationChannel = new NotificationChannel(
+                        NOTIFICATION_SERVER_ALERT_CHANNEL_ID, getContext().getText(R.string.psiphon_server_alert_notification_channel_name),
+                        NotificationManager.IMPORTANCE_DEFAULT);
                 mNotificationManager.createNotificationChannel(notificationChannel);
             }
         }
@@ -575,7 +584,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         getContext().getString(R.string.stop),
                         stopTunnelPendingIntent)
                 .build();
-
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getContext(), NOTIFICATION_CHANNEL_ID);
         return notificationBuilder
@@ -1298,6 +1306,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 json.put("NetworkLatencyMultiplierLambda", 0.1);
             }
 
+            json.put("EmitServerAlerts", true);
+
             return json.toString();
         } catch (JSONException e) {
             return null;
@@ -1586,12 +1596,57 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                     MyLog.g("TunnelManager::onActiveAuthorizationIDs: removed not accepted persisted authorization: " + s);
                 }
             }
+
+            // Do not show the disallowed traffic notification if the user is subscribed or boosted
+            // NOTE: we are not resetting the showDisallowedTrafficNotification to true on
+            // automated reconnects
+            if(showDisallowedTrafficNotification) {
+                for (Authorization a : acceptedAuthorizations) {
+                    if ("google-subscription".equals(a.accessType()) ||
+                            "google-subscription".equals(a.accessType()) ||
+                            "speed-boost".equals(a.accessType())) {
+                        showDisallowedTrafficNotification = false;
+                        break;
+                    }
+                }
+            }
         });
     }
 
     @Override
     public void onStoppedWaitingForNetworkConnectivity() {
         m_waitingForConnectivity.set(false);
+    }
+
+    @Override
+    public void onServerAlert(String reason, String subject) {
+        MyLog.g("Server alert", "reason", reason, "subject", subject);
+        if(!showDisallowedTrafficNotification) {
+            return;
+        }
+
+        // Do not show more than once per tunnel run
+        showDisallowedTrafficNotification = false;
+
+        if ("disallowed-traffic".equals(reason)) {
+            m_Handler.post(() -> {
+                final Context context = getContext();
+                String notificationMessage = context.getString(R.string.disallowed_traffic_alert_notification_message);
+                Notification notification = new NotificationCompat.Builder(context, NOTIFICATION_SERVER_ALERT_CHANNEL_ID)
+                        .setSmallIcon(R.drawable.ic_psiphon_alert_notification)
+                        .setContentTitle(context.getString(R.string.disallowed_traffic_alert_notification_title))
+                        .setContentText(notificationMessage)
+                        .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationMessage))
+                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                        .setContentIntent(getPendingIntent(m_parentService, INTENT_ACTION_DISALLOWED_TRAFFIC))
+                        .setAutoCancel(true)
+                        .build();
+
+                if (mNotificationManager != null) {
+                    mNotificationManager.notify(R.id.notification_id_disallowed_traffic_alert, notification);
+                }
+            });
+        }
     }
 
     // PurchaseVerifier.VerificationResultListener implementation
@@ -1614,7 +1669,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 mp.put(m_parentService.getString(R.string.persistentPsiCashPurchaseRedeemedFlag), true);
                 sendClientMessage(ServiceToClientMessage.PSICASH_PURCHASE_REDEEMED.ordinal(), null);
                 break;
-
         }
     }
 

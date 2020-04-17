@@ -60,6 +60,7 @@
     <string name="psiphon_service_notification_message_connecting">Connecting…</string>
     <string name="psiphon_service_notification_id">Psiphon Service Notification</string>
     <string name="psiphon_service_notification_channel_name">Psiphon Status Changes</string>
+    <string name="psiphon_server_alert_notification_channel_name">Psiphon Server Alerts</string>
     <string name="preferred_servers">Preferred servers: %d</string>
     <string name="selecting_server">Selecting server…</string>
     <string name="fetch_remote_server_list">Fetching remote server list…</string>
