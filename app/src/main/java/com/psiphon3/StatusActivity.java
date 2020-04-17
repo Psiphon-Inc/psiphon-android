@@ -382,8 +382,24 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
             // OK to be null because we don't use it
             onGetHelpConnectingClick(null);
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_DISALLOWED_TRAFFIC)) {
-            // Switch to home tab where payment options are provided
-            m_tabHost.setCurrentTabByTag(HOME_TAB_TAG);
+            LayoutInflater inflater = this.getLayoutInflater();
+            View dialogView = inflater.inflate(R.layout.disallowed_traffic_alert_layout, null);
+            new AlertDialog.Builder(this)
+                    .setCancelable(true)
+                    .setIcon(R.drawable.ic_psiphon_alert_notification)
+                    .setTitle(R.string.disallowed_traffic_alert_notification_title)
+                    .setView(dialogView)
+                    .setPositiveButton(R.string.btn_get_subscription, (dialog, which) -> {
+                        onSubscribeButtonClick(null);
+                        dialog.dismiss();
+                    })
+                    .setNegativeButton(R.string.btn_get_speed_boost, (dialog, which) -> {
+                        if (psiCashFragment != null) {
+                            psiCashFragment.openPsiCashStoreActivity(getResources().getInteger(R.integer.speedBoostTabIndex));
+                        }
+                        dialog.dismiss();
+                    })
+                    .show();
         }
     }
 
