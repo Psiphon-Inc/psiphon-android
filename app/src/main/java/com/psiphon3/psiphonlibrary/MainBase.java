@@ -494,6 +494,7 @@ public abstract class MainBase {
                 m_sponsorHomePage = null;
             }
             compositeDisposable.dispose();
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
         }
 
         protected void setupActivityLayout() {
