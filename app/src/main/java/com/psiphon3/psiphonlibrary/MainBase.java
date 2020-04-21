@@ -186,6 +186,7 @@ public abstract class MainBase {
         private CompositeDisposable compositeDisposable = new CompositeDisposable();
         protected TunnelServiceInteractor tunnelServiceInteractor;
         private Disposable handleNfcIntentDisposable;
+        private StatusEntryAdded m_statusEntryAddedBroadcastReceiver;
         private BroadcastReceiver broadcastReceiver;
         protected Disposable startUpInterstitialDisposable;
 
@@ -495,6 +496,8 @@ public abstract class MainBase {
             }
             compositeDisposable.dispose();
             LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+            m_localBroadcastManager.unregisterReceiver(m_statusEntryAddedBroadcastReceiver);
+            m_statusListManager.onDestroy();
         }
 
         protected void setupActivityLayout() {
@@ -564,8 +567,9 @@ public abstract class MainBase {
             // Set up the list view
             m_statusListManager = new StatusListViewManager(statusListView);
 
+            m_statusEntryAddedBroadcastReceiver = new StatusEntryAdded();
             m_localBroadcastManager = LocalBroadcastManager.getInstance(this);
-            m_localBroadcastManager.registerReceiver(new StatusEntryAdded(), new IntentFilter(STATUS_ENTRY_AVAILABLE));
+            m_localBroadcastManager.registerReceiver(m_statusEntryAddedBroadcastReceiver, new IntentFilter(STATUS_ENTRY_AVAILABLE));
 
             m_regionAdapter = new RegionAdapter(this);
             m_regionSelector.setAdapter(m_regionAdapter);
