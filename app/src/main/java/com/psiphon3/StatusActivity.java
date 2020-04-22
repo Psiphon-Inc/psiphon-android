@@ -66,7 +66,6 @@ import java.util.concurrent.TimeUnit;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
 
 
 public class StatusActivity
@@ -96,15 +95,8 @@ public class StatusActivity
         m_toggleButton = (Button)findViewById(R.id.toggleButton);
 
         // ads
-        psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.bannerLayout));
+        psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.bannerLayout), tunnelServiceInteractor.tunnelStateFlowable());
         psiphonAdManager.startLoadingAds();
-
-        compositeDisposable.add(
-                tunnelServiceInteractor.tunnelStateFlowable()
-                        // Update app UI state
-                        .doOnNext(state -> psiphonAdManager.onTunnelConnectionState(state))
-                        .subscribe()
-        );
 
         setupActivityLayout();
         setUpBanner();
@@ -376,6 +368,7 @@ public class StatusActivity
         // to load or a timeout occurs.
         Observable<PsiphonAdManager.InterstitialResult> interstitial =
                 psiphonAdManager.getCurrentAdTypeObservable()
+                        .filter(adResult -> adResult.type() != PsiphonAdManager.AdResult.Type.UNKNOWN)
                         .firstOrError()
                         .flatMapObservable(adResult -> {
                             if (adResult.type() != PsiphonAdManager.AdResult.Type.UNTUNNELED) {
@@ -394,7 +387,7 @@ public class StatusActivity
                                     // calling interstitialResult.show() doesn't result in ad presented.
                                     // In such a case let the countdown win the race.
                                     .filter(interstitialResult ->
-                                                    interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.SHOWING);
+                                            interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.SHOWING);
                         });
 
         startUpInterstitialDisposable = countdown
