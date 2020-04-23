@@ -98,9 +98,6 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
 
     private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_firstRun = true;
-
-    private PsiCashFragment psiCashFragment;
-
     private PsiphonAdManager psiphonAdManager;
     private boolean disableInterstitialOnNextTabChange;
     private Disposable autoStartDisposable;
@@ -384,7 +381,10 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_DISALLOWED_TRAFFIC)) {
             LayoutInflater inflater = this.getLayoutInflater();
             View dialogView = inflater.inflate(R.layout.disallowed_traffic_alert_layout, null);
-            new AlertDialog.Builder(this)
+            final PsiCashFragment psiCashFragment =
+                    (PsiCashFragment) getSupportFragmentManager().findFragmentByTag("PsiCashFragment");
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this)
                     .setCancelable(true)
                     .setIcon(R.drawable.ic_psiphon_alert_notification)
                     .setTitle(R.string.disallowed_traffic_alert_notification_title)
@@ -392,14 +392,14 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
                     .setPositiveButton(R.string.btn_get_subscription, (dialog, which) -> {
                         onSubscribeButtonClick(null);
                         dialog.dismiss();
-                    })
-                    .setNegativeButton(R.string.btn_get_speed_boost, (dialog, which) -> {
-                        if (psiCashFragment != null) {
-                            psiCashFragment.openPsiCashStoreActivity(getResources().getInteger(R.integer.speedBoostTabIndex));
-                        }
-                        dialog.dismiss();
-                    })
-                    .show();
+                    });
+            if (psiCashFragment != null) {
+                builder.setNegativeButton(R.string.btn_get_speed_boost, (dialog, which) -> {
+                    psiCashFragment.openPsiCashStoreActivity(getResources().getInteger(R.integer.speedBoostTabIndex));
+                    dialog.dismiss();
+                });
+            }
+            builder.show();
         }
     }
 
@@ -745,8 +745,7 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
         if (subscriptionState.hasValidPurchase()) {
             transaction.replace(R.id.psicash_fragment_container, new PsiCashSubscribedFragment());
         } else {
-            psiCashFragment = new PsiCashFragment();
-            transaction.replace(R.id.psicash_fragment_container, psiCashFragment);
+            transaction.replace(R.id.psicash_fragment_container, new PsiCashFragment(), "PsiCashFragment");
         }
         // Allow transaction to be committed even after FragmentManager has saved its state.
         // In case the host activity is killed and re-created this function will be called again
@@ -862,7 +861,8 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
                     startUp();
                 }
             }
-            if(psiCashFragment != null) {
+            PsiCashFragment psiCashFragment = (PsiCashFragment) getSupportFragmentManager().findFragmentByTag("PsiCashFragment");
+            if (psiCashFragment != null) {
                 psiCashFragment.onActivityResult(requestCode, resultCode, data);
             }
         } else {

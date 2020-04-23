@@ -36,6 +36,7 @@ import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.SwipeDismissBehavior;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.util.Pair;
@@ -149,10 +150,14 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     }
 
     public void openPsiCashStoreActivity(int tabIndex) {
+        final FragmentActivity activity = getActivity();
+        if (activity == null) {
+            return;
+        }
         Intent intent = new Intent(getActivity(), PsiCashStoreActivity.class);
         intent.putExtra("tabIndex", tabIndex);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        getActivity().startActivityForResult(intent, PSICASH_STORE_ACTIVITY);
+        activity.startActivityForResult(intent, PSICASH_STORE_ACTIVITY);
     }
 
     @Override

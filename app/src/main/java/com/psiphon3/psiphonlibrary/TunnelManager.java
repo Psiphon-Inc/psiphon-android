@@ -1609,7 +1609,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
             hasBoostOrSubscription = false;
             for (Authorization a : acceptedAuthorizations) {
                 if ("google-subscription".equals(a.accessType()) ||
-                        "google-subscription".equals(a.accessType()) ||
+                        "google-subscription-limited".equals(a.accessType()) ||
                         "speed-boost".equals(a.accessType())) {
                     hasBoostOrSubscription = true;
                     // Also cancel disallowed traffic alert notification
@@ -1632,6 +1632,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         // Note that this is an extra measure preventing accidental server alerts since
         // the user with this auth type should not be receiving any from the server
         if (hasBoostOrSubscription) {
+            return;
+        }
+
+        // Also do not show the alert if the current tunnel config sponsor ID
+        // is set to SUBSCRIPTION_SPONSOR_ID. The user may be a legit subscriber
+        // in a process of purchase verification.
+        if (m_tunnelConfig != null &&
+                BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId)) {
             return;
         }
 
