@@ -220,8 +220,11 @@
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
     <string name="speed_boost_button_caption">Speed Boost</string>
 
-    <!-- Text next to the button insicationg to the user that they will earn PsiCash if they watch a video advertisement. -->
+    <!-- Text next to the button indicating to the user that they will earn PsiCash if they watch a video advertisement. -->
     <string name="psicash_purchase_free_description">Watch video and earn</string>
+
+    <!-- Text next to the button indicating to the user that the rewarded video advertisement is only available when they are not connected to Psiphon. -->
+    <string name="psicash_purchase_free_not_available_not_running_description">Videos are only available when you are not connected to Psiphon</string>
 
     <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
     <string name="psicash_purchase_free_button_price">Free</string>
