@@ -212,7 +212,7 @@
     <string name="psicash_snackbar_action_ok">Valider</string>
 
     <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
-    <string name="subscription_options_currently_not_available">Les options d’abonnement ne sont pas proposées pour l’instant, veuillez ressayer ultérieurement.</string>
+    <string name="subscription_options_currently_not_available">Les options d’abonnement ne sont pas proposées en ce moment, veuillez ressayer ultérieurement.</string>
 
     <!-- Speed Boost button that opens a dialog with various speed boost options available for purchase.
     'Speed Boost' is a reward that can be purchased with PsiCash credit.
@@ -220,8 +220,11 @@
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
     <string name="speed_boost_button_caption">Survitesse</string>
 
-    <!-- Text next to the button insicationg to the user that they will earn PsiCash if they watch a video advertisement. -->
+    <!-- Text next to the button indicating to the user that they will earn PsiCash if they watch a video advertisement. -->
     <string name="psicash_purchase_free_description">Regardez une vidéo et gagnez</string>
+
+    <!-- Text next to the button indicating to the user that the rewarded video advertisement is only available when they are not connected to Psiphon. -->
+    <string name="psicash_purchase_free_not_available_not_running_description">Les vidéos sont proposées que si vous n’êtes pas connecté à Psiphon</string>
 
     <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
     <string name="psicash_purchase_free_button_price">Gratuit</string>
@@ -289,7 +292,34 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.-->
-    <string name="lbl_confirm_speedboost_purchase">Souhaitez-vous obtenir %s de Survitesse pour %d PsiCash ?</string>
+    <string name="confirm_speedboost_purchase_alert">Souhaitez-vous obtenir %s de Survitesse pour %d PsiCash ?</string>
+
+    <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
+    <string name="psicash_purchase_not_available_error_message">L’achat de PsiCash n’est pas proposé en ce moment, veuillez ressayer ultérieurement.</string>
+
+    <!-- An alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_insufficient_balance_alert">Vous n’avez pas assez de PsiCash pour activer cette option de Survitesse, souhaitez vous en ajouter ?</string>
+
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">Surclasser Psiphon Pro</string>
+
+    <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_message">Les applis ne fonctionnent-elles pas ? Cliquez ici afin d’améliorer votre expérience Psiphon.</string>
+
+    <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_dialog_message">Une partie du trafic Internet n’est pas prise en charge par la version gratuite de Psiphon Pro. Achetez un abonnement ou de la Survitesse afin de libérer le plein potentiel de votre expérience Psiphon.</string>
+
+    <!-- Text on the button which takes user to subscription screen -->
+    <string name="btn_get_subscription">S’abonner</string>
+
+    <!-- Text on the button which takes user to Speed Boost screen.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="btn_get_speed_boost">Survitesse</string>
 
     <!-- A message with numeric formatter such as "1 hour" or "5 hours", translate for all language applicable forms. -->
     <plurals name="hours_of_speed_boost">

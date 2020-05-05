@@ -220,7 +220,7 @@
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
     <string name="speed_boost_button_caption">加速</string>
 
-    <!-- Text next to the button insicationg to the user that they will earn PsiCash if they watch a video advertisement. -->
+    <!-- Text next to the button indicating to the user that they will earn PsiCash if they watch a video advertisement. -->
     <string name="psicash_purchase_free_description">观看视频并获取PsiCash</string>
 
     <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
@@ -283,13 +283,6 @@
 
     <!-- A message to the user seen when the user just purchased PsiCash from PlayStore while connected to Psiphon and the purchase is in process of being redeemed -->
     <string name="please_wait_while_we_are_finalizing_your_purchase">当我们最终确认您的购买的时候，请您耐心等待</string>
-
-    <!-- A prompt seen by the user when they try to use one of Speed Boost options, such as in
-    "Would you like to get 5 hours of Speed Boost for 500 PsiCash". Do not translate formatters %s or %d, leave as is
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.-->
-    <string name="lbl_confirm_speedboost_purchase">您是否愿意用%dPsiCash购买%s的加速？ </string>
 
     <!-- A message with numeric formatter such as "1 hour" or "5 hours", translate for all language applicable forms. -->
     <plurals name="hours_of_speed_boost">
