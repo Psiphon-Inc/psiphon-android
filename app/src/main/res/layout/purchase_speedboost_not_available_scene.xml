@@ -39,7 +39,7 @@
 
         <Button
             android:id="@+id/connect_psiphon_btn"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/connect_to_psiphon_button_text"
             app:layout_constraintBottom_toBottomOf="parent"

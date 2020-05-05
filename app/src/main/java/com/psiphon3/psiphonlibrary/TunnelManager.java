@@ -179,7 +179,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
     private NotificationManager mNotificationManager = null;
     private final static String NOTIFICATION_CHANNEL_ID = "psiphon_notification_channel";
-    private final static String NOTIFICATION_SERVER_ALERT_CHANNEL_ID = "psiphon_server_alert_notification_channel";
+    private final static String NOTIFICATION_SERVER_ALERT_CHANNEL_ID_OLD = "psiphon_server_alert_notification_channel";
+    private final static String NOTIFICATION_SERVER_ALERT_CHANNEL_ID = "psiphon_server_alert_new_notification_channel";
     private Service m_parentService;
     private boolean mGetHelpConnectingRunnablePosted = false;
     private final Handler mGetHelpConnectingHandler = new Handler();
@@ -249,6 +250,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
             mNotificationManager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                // Remove old server alert notification channel if exist
+                // since we changed server alert notification priority from DEFAULT to HIGH
+                mNotificationManager.deleteNotificationChannel(NOTIFICATION_SERVER_ALERT_CHANNEL_ID_OLD);
+
                 NotificationChannel notificationChannel = new NotificationChannel(
                         NOTIFICATION_CHANNEL_ID, getContext().getText(R.string.psiphon_service_notification_channel_name),
                         NotificationManager.IMPORTANCE_LOW);
@@ -256,7 +261,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
                 notificationChannel = new NotificationChannel(
                         NOTIFICATION_SERVER_ALERT_CHANNEL_ID, getContext().getText(R.string.psiphon_server_alert_notification_channel_name),
-                        NotificationManager.IMPORTANCE_DEFAULT);
+                        NotificationManager.IMPORTANCE_HIGH);
                 mNotificationManager.createNotificationChannel(notificationChannel);
             }
         }
@@ -1658,7 +1663,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         .setContentTitle(context.getString(R.string.disallowed_traffic_alert_notification_title))
                         .setContentText(notificationMessage)
                         .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationMessage))
-                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                        .setPriority(NotificationCompat.PRIORITY_MAX)
                         .setContentIntent(getPendingIntent(m_parentService, INTENT_ACTION_DISALLOWED_TRAFFIC))
                         .setAutoCancel(true)
                         .build();
