@@ -389,6 +389,7 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
                     .setIcon(R.drawable.ic_psiphon_alert_notification)
                     .setTitle(R.string.disallowed_traffic_alert_notification_title)
                     .setView(dialogView)
+                    .setNeutralButton(android.R.string.cancel, null)
                     .setPositiveButton(R.string.btn_get_subscription, (dialog, which) -> {
                         onSubscribeButtonClick(null);
                         dialog.dismiss();
