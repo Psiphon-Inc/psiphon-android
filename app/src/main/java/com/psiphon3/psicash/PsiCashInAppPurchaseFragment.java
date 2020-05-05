@@ -68,81 +68,102 @@ public class PsiCashInAppPurchaseFragment extends Fragment {
         sceneBuyPsiCashFromPlayStore.setEnterAction(() -> {
             LinearLayout containerLayout = sceneBuyPsiCashFromPlayStore.getSceneRoot().findViewById(R.id.psicash_purchase_options_container);
 
-            // Add "Watch ad to earn 35 PsiCash" button
+            // Set up the rewarded video FREE row
             final View rewardedVideoRowView = inflater.inflate(R.layout.psicash_purchase_template, container, false);
-
+            // Show the PsiCash amount per rewarded video
             ((TextView) rewardedVideoRowView.findViewById(R.id.psicash_purchase_sku_item_title)).setText(R.string.psicash_purchase_free_amount);
-            ((TextView) rewardedVideoRowView.findViewById(R.id.psicash_purchase_sku_item_description)).setText(R.string.psicash_purchase_free_description);
 
+            // Show "FREE" label on the button that loads and plays the video
             final Button videoBtn = rewardedVideoRowView.findViewById(R.id.psicash_purchase_sku_item_price);
-            final ProgressBar videoProgress = rewardedVideoRowView.findViewById(R.id.progress_bar_over_sku_button);
+            videoBtn.setEnabled(false);
             videoBtn.setText(R.string.psicash_purchase_free_button_price);
-            videoBtn.setEnabled(true);
+
+            // Make sure the progressbar over the button is not visible
+            final ProgressBar videoProgress = rewardedVideoRowView.findViewById(R.id.progress_bar_over_sku_button);
             videoProgress.setVisibility(View.GONE);
 
             containerLayout.addView(rewardedVideoRowView);
 
-            final AtomicBoolean shouldAutoPlayVideo = new AtomicBoolean(true);
-
-            Completable btnClickCompletable = Completable.create(emitter -> {
-                if (!emitter.isDisposed()) {
-                    videoBtn.setOnClickListener(v -> emitter.onComplete());
-                }
-            }).observeOn(AndroidSchedulers.mainThread());
-
-            if (rewardedVideoDisposable == null || rewardedVideoDisposable.isDisposed()) {
-                // Trigger first ad loading with a button click
-                rewardedVideoDisposable =
-                        btnClickCompletable.andThen(
-                                rewardedVideoHelper
-                                        .getVideoObservable(psiCashViewModel.tunnelStateFlowable())
-                                        // Keep loading ads if getVideoObservable completes normally
-                                        // which is after the ad is closed.
-                                        // In case of ad load error set UI to 'disabled' state and
-                                        // complete this subscription with onErrorResumeNext()
-                                        .repeat()
-                        )
-                        .doOnError(err -> {
-                            videoBtn.setEnabled(false);
-                            videoProgress.setVisibility(View.GONE);
-                            videoBtn.setOnClickListener(null);
-                            Toast toast = Toast.makeText(getActivity(),
-                                    ((PsiCashException.Video) err).getUIMessage(ctx), Toast.LENGTH_SHORT);
-                            positionToast(toast, rewardedVideoRowView, getActivity().getWindow());
-                            toast.show();
-                        })
-                        // Complete in case of error
-                        .onErrorResumeNext(Observable.empty())
-                        .doOnNext(rewardedVideoPlayable -> {
-                            final Activity activity = getActivity();
-                            if (activity != null && !activity.isFinishing()) {
-                                switch (rewardedVideoPlayable.state()) {
-                                    case READY:
-                                        videoProgress.setVisibility(View.GONE);
-                                        if (shouldAutoPlayVideo.compareAndSet(true, false)) {
-                                            rewardedVideoPlayable.play(activity);
-                                        } else {
-                                            videoBtn.setEnabled(true);
-                                            videoBtn.setOnClickListener(v ->
-                                                    rewardedVideoPlayable.play(activity));
-                                        }
-                                        break;
-                                    case LOADING:
-                                        videoProgress.setVisibility(View.VISIBLE);
-                                        videoBtn.setEnabled(false);
-                                        videoBtn.setOnClickListener(null);
-                                        break;
-                                    default:
-                                        videoProgress.setVisibility(View.GONE);
-                                        videoBtn.setEnabled(false);
-                                        videoBtn.setOnClickListener(null);
-                                        break;
+            // Enable the rewarded video button only when tunnel is stopped, otherwise display
+            // "Videos available only when the Psiphon is not running" and disable the button.
+            compositeDisposable.add(psiCashViewModel.tunnelStateFlowable()
+                    .doOnNext(tunnelState -> {
+                        if (tunnelState.isStopped()) {
+                            videoBtn.setEnabled(true);
+                            ((TextView) rewardedVideoRowView
+                                    .findViewById(R.id.psicash_purchase_sku_item_description))
+                                    .setText(R.string.psicash_purchase_free_description);
+                            final AtomicBoolean shouldAutoPlayVideo = new AtomicBoolean(true);
+                            Completable btnClickCompletable = Completable.create(emitter -> {
+                                if (!emitter.isDisposed()) {
+                                    videoBtn.setOnClickListener(v -> emitter.onComplete());
                                 }
+                            }).observeOn(AndroidSchedulers.mainThread());
+                            if (rewardedVideoDisposable == null || rewardedVideoDisposable.isDisposed()) {
+                                // Trigger first ad loading with a button click
+                                rewardedVideoDisposable =
+                                        btnClickCompletable.andThen(
+                                                rewardedVideoHelper
+                                                        .getVideoObservable(psiCashViewModel.tunnelStateFlowable())
+                                                        // Keep loading ads if getVideoObservable completes normally
+                                                        // which is after the ad is closed.
+                                                        // In case of ad load error set UI to 'disabled' state and
+                                                        // complete this subscription with onErrorResumeNext()
+                                                        .repeat()
+                                        )
+                                                .doOnError(err -> {
+                                                    videoBtn.setEnabled(false);
+                                                    videoProgress.setVisibility(View.GONE);
+                                                    videoBtn.setOnClickListener(null);
+                                                    Toast toast = Toast.makeText(getActivity(),
+                                                            ((PsiCashException.Video) err).getUIMessage(ctx), Toast.LENGTH_SHORT);
+                                                    positionToast(toast, rewardedVideoRowView, getActivity().getWindow());
+                                                    toast.show();
+                                                })
+                                                // Complete in case of error
+                                                .onErrorResumeNext(Observable.empty())
+                                                .doOnNext(rewardedVideoPlayable -> {
+                                                    final Activity activity = getActivity();
+                                                    if (activity != null && !activity.isFinishing()) {
+                                                        switch (rewardedVideoPlayable.state()) {
+                                                            case READY:
+                                                                videoProgress.setVisibility(View.GONE);
+                                                                if (shouldAutoPlayVideo.compareAndSet(true, false)) {
+                                                                    rewardedVideoPlayable.play(activity);
+                                                                } else {
+                                                                    videoBtn.setEnabled(true);
+                                                                    videoBtn.setOnClickListener(v ->
+                                                                            rewardedVideoPlayable.play(activity));
+                                                                }
+                                                                break;
+                                                            case LOADING:
+                                                                videoProgress.setVisibility(View.VISIBLE);
+                                                                videoBtn.setEnabled(false);
+                                                                videoBtn.setOnClickListener(null);
+                                                                break;
+                                                            default:
+                                                                videoProgress.setVisibility(View.GONE);
+                                                                videoBtn.setEnabled(false);
+                                                                videoBtn.setOnClickListener(null);
+                                                                break;
+                                                        }
+                                                    }
+                                                })
+                                                .subscribe();
+                                compositeDisposable.add(rewardedVideoDisposable);
                             }
-                        })
-                        .subscribe();
-                compositeDisposable.add(rewardedVideoDisposable);
-            }
+                        } else {
+                            ((TextView) rewardedVideoRowView
+                                    .findViewById(R.id.psicash_purchase_sku_item_description))
+                                    .setText(R.string.psicash_purchase_free_not_available_not_running_description);
+                            videoBtn.setEnabled(false);
+                            videoBtn.setOnClickListener(null);
+                            if (rewardedVideoDisposable != null && !rewardedVideoDisposable.isDisposed()) {
+                                rewardedVideoDisposable.dispose();
+                            }
+                        }
+                    })
+                    .subscribe());
 
             compositeDisposable.add(psiCashViewModel.getPsiCashSkus()
                     .doOnSuccess(skuDetailsList -> {
