@@ -224,7 +224,7 @@
     <string name="psicash_purchase_free_description">Watch video and earn</string>
 
     <!-- Text next to the button indicating to the user that the rewarded video advertisement is only available when they are not connected to Psiphon. -->
-    <string name="psicash_purchase_free_not_available_not_running_description">Videos are only available when you are not connected to Psiphon</string>
+    <string name="psicash_purchase_free_not_available_not_running_description">You must disconnect from Psiphon to watch a video and earn PsiCash</string>
 
     <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
     <string name="psicash_purchase_free_button_price">Free</string>
@@ -237,7 +237,7 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed. Do not translate or transliterate word Psiphon -->
-    <string name="speed_boost_unavailable">Speed Boost is unavailable when you are not connected to Psiphon</string>
+    <string name="speed_boost_unavailable">You must connect to Psiphon to activate a Speed Boost, click the button below and try again</string>
 
     <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message
         Do not translate or transliterate word Psiphon -->
