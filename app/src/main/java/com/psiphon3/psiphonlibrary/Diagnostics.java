@@ -186,7 +186,10 @@ public class Diagnostics
             diagnosticInfo.put("SystemInformation", sysInfo);
             diagnosticInfo.put("DiagnosticHistory", diagnosticHistory);
             diagnosticInfo.put("StatusHistory", statusHistory);
-            diagnosticInfo.put("PsiCash", new JSONObject(PsiCashViewModel.getDiagnosticInfoJson()));
+
+            // Append PsiCash diagnostic info
+            String psiCashJson = PsiCashViewModel.getDiagnosticInfoJson();
+            diagnosticInfo.put("PsiCash", (psiCashJson == null) ? JSONObject.NULL : new JSONObject(psiCashJson));
 
             JSONObject diagnosticObject = new JSONObject();
             diagnosticObject.put("Metadata", metadata);
