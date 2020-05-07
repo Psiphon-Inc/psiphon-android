@@ -19,6 +19,18 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import android.content.Context;
+import android.os.Build;
+import android.util.Log;
+
+import com.psiphon3.psicash.PsiCashViewModel;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.subscription.R;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -27,18 +39,6 @@ import java.security.SecureRandom;
 import java.util.Locale;
 
 import javax.net.ssl.HttpsURLConnection;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import android.content.Context;
-import android.os.Build;
-import android.util.Log;
-
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
-
-import com.psiphon3.subscription.R;
 
 public class Diagnostics
 {
@@ -186,6 +186,10 @@ public class Diagnostics
             diagnosticInfo.put("SystemInformation", sysInfo);
             diagnosticInfo.put("DiagnosticHistory", diagnosticHistory);
             diagnosticInfo.put("StatusHistory", statusHistory);
+
+            // Append PsiCash diagnostic info
+            String psiCashJson = PsiCashViewModel.getDiagnosticInfoJson();
+            diagnosticInfo.put("PsiCash", (psiCashJson == null) ? JSONObject.NULL : new JSONObject(psiCashJson));
 
             JSONObject diagnosticObject = new JSONObject();
             diagnosticObject.put("Metadata", metadata);

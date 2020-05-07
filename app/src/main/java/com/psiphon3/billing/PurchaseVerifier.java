@@ -62,30 +62,35 @@ public class PurchaseVerifier {
     private Disposable psiCashPurchaseVerificationDisposable() {
         return tunnelConnectionStateFlowable()
                 .switchMap(tunnelState -> {
+                    // Once connected run IAB check and pass PsiCash purchase and
+                    // current tunnel state connection data downstream.
                     if (tunnelState.isRunning() && tunnelState.connectionData().isConnected()) {
                         return repository.purchaseStateFlowable()
                                 .flatMapIterable(PurchaseState::purchaseList)
+                                // Only pass through PsiCash purchases that we didn't previously
+                                // marked as invalid
+                                .filter(purchase -> {
+                                    if (purchase == null || !GooglePlayBillingHelper.isPsiCashPurchase(purchase)) {
+                                        return false;
+                                    }
+                                    // Check if we previously marked this purchase as 'bad'
+                                    if (invalidPurchaseTokensSet.size() > 0 &&
+                                            invalidPurchaseTokensSet.contains(purchase.getPurchaseToken())) {
+                                        Utils.MyLog.g("PurchaseVerifier: bad PsiCash purchase, continue.");
+                                        return false;
+                                    }
+                                    return true;
+                                })
+                                .distinctUntilChanged()
                                 .map(purchase -> new Pair<>(purchase, tunnelState.connectionData()));
                     }
                     // Not connected, do nothing
                     return Flowable.empty();
-                    // Once connected run IAB check and pass PsiCash purchase and
-                    // current tunnel state connection data downstream.
                 })
-                .switchMap(pair -> {
+                // Do not use switchMap here, run the verification in full for each distinct purchase
+                .flatMap(pair -> {
                     final Purchase purchase = pair.first;
                     final TunnelState.ConnectionData connectionData = pair.second;
-
-                    if (purchase == null || !GooglePlayBillingHelper.isPsiCashPurchase(purchase)) {
-                        return Flowable.empty();
-                    }
-
-                    // Check if we previously marked this purchase as 'bad'
-                    if (invalidPurchaseTokensSet.size() > 0 &&
-                            invalidPurchaseTokensSet.contains(purchase.getPurchaseToken())) {
-                        Utils.MyLog.g("PurchaseVerifier: bad PsiCash purchase, continue.");
-                        return Flowable.empty();
-                    }
 
                     final AppPreferences mp = new AppPreferences(context);
                     String psiCashCustomData = mp.getString(context.getString(R.string.persistentPsiCashCustomData), "");

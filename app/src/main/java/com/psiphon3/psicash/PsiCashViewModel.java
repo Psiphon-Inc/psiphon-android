@@ -60,8 +60,6 @@ import io.reactivex.schedulers.Schedulers;
 
 // Based on https://github.com/oldergod/android-architecture/tree/todo-mvi-rxjava
 public class PsiCashViewModel extends AndroidViewModel implements MviViewModel, LifecycleObserver {
-    private static final String DISTINGUISHER_1HR = "1hr";
-    private static final String TAG = "PsiCashViewModel";
     private final PublishRelay<PsiCashIntent> intentPublishRelay;
     private final Observable<PsiCashViewState> psiCashViewStateObservable;
     private final CompositeDisposable compositeDisposable;
@@ -109,6 +107,10 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel, 
                 .subscribe(__ -> intentPublishRelay.accept(PsiCashIntent.GetPsiCash.create())));
     }
 
+    public static String getDiagnosticInfoJson() {
+        return diagnosticInfoJson;
+    }
+
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     protected void onLifeCycleStop() {
         isStopped = true;
@@ -146,6 +148,7 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel, 
         return googlePlayBillingHelper.subscriptionStateFlowable();
     }
 
+    private static String diagnosticInfoJson;
     /**
      * The Reducer is where {@link MviViewState}, that the {@link MviView} will use to
      * render itself, are created.
@@ -169,6 +172,7 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel, 
                     boolean hasTokens = false;
                     PsiCashLib.Purchase nextExpiringPurchase = null;
                     if (model != null) {
+                        diagnosticInfoJson = model.diagnosticInfo();
                         long balance = model.balance();
                         long reward = model.reward();
                         pendingRefresh = model.pendingRefresh();
