@@ -230,9 +230,8 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
                 if (!persistedAuthIds.contains(purchase.authorization.id)) {
                     purchasesToRemove.add(purchase.id);
                     Utils.MyLog.g("PsiCash: will remove purchase of transactionClass: " +
-                            purchase.transactionClass + ", expires: " +
-                            purchase.expiry + ", auth expires: " +
-                            purchase.authorization.expires
+                            purchase.transactionClass + ", auth expires: " +
+                            Utils.getISO8601String(purchase.authorization.expires)
                     );
                 }
             }

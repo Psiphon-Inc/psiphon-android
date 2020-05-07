@@ -144,7 +144,7 @@ public abstract class Authorization {
             for (Authorization auth : toRemove) {
                 Utils.MyLog.g("Authorization::removeAuthorizations: removing persisted authorization of accessType: " +
                         auth.accessType() + ", expires: " +
-                        auth.expires());
+                        Utils.getISO8601String(auth.expires()));
             }
             replaceAllPersistedAuthorizations(context, authorizations);
         } else {
