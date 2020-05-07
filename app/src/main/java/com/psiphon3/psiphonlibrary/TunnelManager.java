@@ -1587,26 +1587,32 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 for (Authorization a : m_tunnelConfigAuthorizations) {
                     if (a.Id().equals(Id)) {
                         acceptedAuthorizations.add(a);
-                        String s = String.format(Locale.US, "[accessType: %s, expires: %s]", a.accessType(), a.expires().toString());
-                        MyLog.g("TunnelManager::onActiveAuthorizationIDs: accepted active authorization: " + s);
+                        MyLog.g("TunnelManager::onActiveAuthorizationIDs: accepted authorization of accessType: " +
+                                a.accessType() + ", expires: " +
+                                a.expires());
                     }
                 }
             }
-            // Build a list of not accepted authorizations from the authorizations snapshot
-            // by removing all elements of the accepted authorizations list.
-            List<Authorization> notAcceptedAuthorizations = m_tunnelConfigAuthorizations;
-            notAcceptedAuthorizations.removeAll(acceptedAuthorizations);
+            if (m_tunnelConfigAuthorizations != null && m_tunnelConfigAuthorizations.size() > 0) {
+                // Build a list of not accepted authorizations from the authorizations snapshot
+                // by removing all elements of the accepted authorizations list.
+                //
+                // NOTE that the tunnel core does not re-read config values in case of automatic
+                // reconnects so the m_tunnelConfigAuthorizations snapshot may contain authorizations
+                // already removed from the persistent authorization storage.
+                List<Authorization> notAcceptedAuthorizations = m_tunnelConfigAuthorizations;
+                if (acceptedAuthorizations.size() > 0) {
+                    notAcceptedAuthorizations.removeAll(acceptedAuthorizations);
+                }
 
-            // Remove all not accepted authorizations from the database
-            Authorization.removeAuthorizations(getContext(), notAcceptedAuthorizations);
-
-            if (notAcceptedAuthorizations.size() > 0) {
-                final AppPreferences mp = new AppPreferences(getContext());
-                mp.put(m_parentService.getString(R.string.persistentAuthorizationsRemovedFlag), true);
-                sendClientMessage(ServiceToClientMessage.AUTHORIZATIONS_REMOVED.ordinal(), null);
-                for (Authorization removedAuth : notAcceptedAuthorizations) {
-                    String s = String.format(Locale.US, "[accessType: %s, expires: %s]", removedAuth.accessType(), removedAuth.expires().toString());
-                    MyLog.g("TunnelManager::onActiveAuthorizationIDs: removed not accepted persisted authorization: " + s);
+                // Try to remove all not accepted authorizations from the persistent storage
+                // NOTE: empty list check is performed and logged in Authorization::removeAuthorizations
+                MyLog.g("TunnelManager::onActiveAuthorizationIDs: check not accepted authorizations");
+                boolean hasChanged = Authorization.removeAuthorizations(getContext(), notAcceptedAuthorizations);
+                if (hasChanged) {
+                    final AppPreferences mp = new AppPreferences(getContext());
+                    mp.put(m_parentService.getString(R.string.persistentAuthorizationsRemovedFlag), true);
+                    sendClientMessage(ServiceToClientMessage.AUTHORIZATIONS_REMOVED.ordinal(), null);
                 }
             }
 

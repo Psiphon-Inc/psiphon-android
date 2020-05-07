@@ -655,6 +655,11 @@ public class PsiphonAdManager {
                 break;
             case TUNNELED:
                 completable = initializeMoPubSdk.andThen(Completable.fromAction(() -> {
+                    // Call 'destroy' on old instance before grabbing a new one to perform a
+                    // proper cleanup so we are not leaking receivers, etc.
+                    if (tunneledMoPubBannerAdView != null) {
+                        tunneledMoPubBannerAdView.destroy();
+                    }
                     tunneledMoPubBannerAdView = new MoPubView(activity);
                     tunneledMoPubBannerAdView.setAdUnitId(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
                     TunnelState.ConnectionData connectionData = adResult.connectionData();
