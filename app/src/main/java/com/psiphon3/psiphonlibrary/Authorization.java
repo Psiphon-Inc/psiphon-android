@@ -133,13 +133,24 @@ public abstract class Authorization {
         replaceAllPersistedAuthorizations(context, authorizationList);
     }
 
-    public synchronized static void removeAuthorizations(Context context, List<Authorization> toRemove) {
-        if (toRemove.size() == 0) {
-            return;
+    public synchronized static boolean removeAuthorizations(Context context, List<Authorization> toRemove) {
+        if (toRemove == null || toRemove.size() == 0) {
+            MyLog.g("Authorization::removeAuthorizations: remove list is empty");
+            return false;
         }
         List<Authorization> authorizations = Authorization.geAllPersistedAuthorizations(context);
-        authorizations.removeAll(toRemove);
-        replaceAllPersistedAuthorizations(context, authorizations);
+        boolean hasChanged = authorizations.removeAll(toRemove);
+        if (hasChanged) {
+            for (Authorization auth : toRemove) {
+                Utils.MyLog.g("Authorization::removeAuthorizations: removing persisted authorization of accessType: " +
+                        auth.accessType() + ", expires: " +
+                        auth.expires());
+            }
+            replaceAllPersistedAuthorizations(context, authorizations);
+        } else {
+            MyLog.g("Authorization::removeAuthorizations: persisted authorizations list has not changed");
+        }
+        return hasChanged;
     }
 
     public abstract String base64EncodedAuthorization();

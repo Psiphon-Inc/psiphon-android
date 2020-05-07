@@ -213,23 +213,27 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
         mp.put(getString(R.string.persistentAuthorizationsRemovedFlag), false);
 
         List<String> purchasesToRemove = new ArrayList<>();
-        // remove purchases that are not in the authorizations database.
+        // Remove purchases that are not in the authorizations database.
         try {
-            // get all persisted authorizations as base64 encoded strings
-            List<String> encodedAuthorizations = new ArrayList<>();
+            // Get a list of all persisted authorizations IDs
+            List<String> persistedAuthIds = new ArrayList<>();
             for (Authorization a : Authorization.geAllPersistedAuthorizations(ctx)) {
-                encodedAuthorizations.add(a.base64EncodedAuthorization());
+                persistedAuthIds.add(a.Id());
             }
             List<PsiCashLib.Purchase> purchases = PsiCashClient.getInstance(ctx).getPurchases();
             if (purchases.size() == 0) {
                 return;
             }
-            // build a list of purchases to remove by cross referencing
-            // each purchase authorization against the authorization strings list
+            // Build a list of purchases to remove by cross referencing each purchase authorization ID
+            // against the list of all persisted authorization IDs
             for (PsiCashLib.Purchase purchase : purchases) {
-                if (!encodedAuthorizations.contains(purchase.authorization.encoded)) {
+                if (!persistedAuthIds.contains(purchase.authorization.id)) {
                     purchasesToRemove.add(purchase.id);
-                    Utils.MyLog.g("PsiCash: will remove purchase of transactionClass: " + purchase.transactionClass);
+                    Utils.MyLog.g("PsiCash: will remove purchase of transactionClass: " +
+                            purchase.transactionClass + ", expires: " +
+                            purchase.expiry + ", auth expires: " +
+                            purchase.authorization.expires
+                    );
                 }
             }
             if (purchasesToRemove.size() > 0) {
