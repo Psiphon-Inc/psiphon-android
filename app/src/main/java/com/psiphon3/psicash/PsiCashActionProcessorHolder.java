@@ -87,7 +87,7 @@ class PsiCashActionProcessorHolder {
                                         PsiCashLib.Purchase purchase = ((PsiCashModel.ExpiringPurchase) r).expiringPurchase();
                                         Utils.MyLog.g("PsiCash: storing new authorization of accessType: " +
                                                 purchase.authorization.accessType + ", expires: " +
-                                                purchase.authorization.expires
+                                                Utils.getISO8601String(purchase.authorization.expires)
                                         );
                                         Authorization authorization = Authorization.fromBase64Encoded(purchase.authorization.encoded);
                                         Authorization.storeAuthorization(appContext, authorization);

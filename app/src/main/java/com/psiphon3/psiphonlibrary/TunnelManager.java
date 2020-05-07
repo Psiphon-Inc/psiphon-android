@@ -1589,7 +1589,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         acceptedAuthorizations.add(a);
                         MyLog.g("TunnelManager::onActiveAuthorizationIDs: accepted authorization of accessType: " +
                                 a.accessType() + ", expires: " +
-                                a.expires());
+                                Utils.getISO8601String(a.expires()));
                     }
                 }
             }
@@ -1614,6 +1614,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                     mp.put(m_parentService.getString(R.string.persistentAuthorizationsRemovedFlag), true);
                     sendClientMessage(ServiceToClientMessage.AUTHORIZATIONS_REMOVED.ordinal(), null);
                 }
+            } else {
+                MyLog.g("TunnelManager::onActiveAuthorizationIDs: current config authorizations list is empty");
             }
 
             // Determine if user has a speed boost or subscription auth in the current tunnel run
