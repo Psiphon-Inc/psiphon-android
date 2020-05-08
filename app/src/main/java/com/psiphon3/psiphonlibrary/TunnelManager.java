@@ -66,6 +66,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -1239,7 +1240,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
             json.put("ClientVersion", EmbeddedValues.CLIENT_VERSION);
 
-            m_tunnelConfigAuthorizations = Authorization.geAllPersistedAuthorizations(context);
+            m_tunnelConfigAuthorizations =
+                    Collections.unmodifiableList(Authorization.geAllPersistedAuthorizations(context));
 
             if (m_tunnelConfigAuthorizations != null && m_tunnelConfigAuthorizations.size() > 0) {
                 JSONArray jsonArray = new JSONArray();
@@ -1594,13 +1596,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                 }
             }
             if (m_tunnelConfigAuthorizations != null && m_tunnelConfigAuthorizations.size() > 0) {
-                // Build a list of not accepted authorizations from the authorizations snapshot
-                // by removing all elements of the accepted authorizations list.
+                // Copy immutable config authorizations snapshot and build a list of not accepted
+                // authorizations by removing all elements of the accepted authorizations list.
                 //
                 // NOTE that the tunnel core does not re-read config values in case of automatic
                 // reconnects so the m_tunnelConfigAuthorizations snapshot may contain authorizations
                 // already removed from the persistent authorization storage.
-                List<Authorization> notAcceptedAuthorizations = m_tunnelConfigAuthorizations;
+                List<Authorization> notAcceptedAuthorizations = new ArrayList<>(m_tunnelConfigAuthorizations);
                 if (acceptedAuthorizations.size() > 0) {
                     notAcceptedAuthorizations.removeAll(acceptedAuthorizations);
                 }
