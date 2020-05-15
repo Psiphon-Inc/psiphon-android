@@ -2,6 +2,7 @@ package com.psiphon3.psicash;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 
 import com.google.android.gms.ads.AdRequest;
@@ -14,6 +15,8 @@ import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions;
 import com.psiphon3.TunnelState;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
+import com.vungle.mediation.VungleAdapter;
+import com.vungle.mediation.VungleExtrasBuilder;
 
 import net.grandcentrix.tray.AppPreferences;
 
@@ -30,6 +33,7 @@ class RewardedVideoHelper {
 
     // Production values
     private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-1072041961750291/5751207671";
+    private static final String VUNGLE_VIDEO_AD_PLACEMENT = "PSIPHON_PRO_REWARDED_VIDEO-3570035";
 
     private final Observable<RewardedVideoPlayable> adMobVideoObservable;
     private final RewardListener rewardListener;
@@ -128,7 +132,13 @@ class RewardedVideoHelper {
                     }
                 }
             };
-            AdRequest.Builder requestBuilder = new AdRequest.Builder();
+            // Pass custom data to Vungle via UserId field
+            Bundle vungleExtras = new VungleExtrasBuilder(new String[]{VUNGLE_VIDEO_AD_PLACEMENT})
+                    .setUserId(customData)
+                    .build();
+
+            AdRequest.Builder requestBuilder = new AdRequest.Builder()
+                    .addNetworkExtrasBundle(VungleAdapter.class, vungleExtras);
             rewardedAd.loadAd(requestBuilder.build(), adLoadCallback);
         });
     }
