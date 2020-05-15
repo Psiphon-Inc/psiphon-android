@@ -51,10 +51,16 @@ public class PsiCashInAppPurchaseFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        final Context ctx = getContext();
         psiCashViewModel = ViewModelProviders.of(getActivity()).get(PsiCashViewModel.class);
-        rewardedVideoHelper = new RewardedVideoHelper(getActivity());
-
-        Context ctx = getContext();
+        rewardedVideoHelper = new RewardedVideoHelper(getActivity(), amount -> {
+            // Store the reward amount and refresh PsiCash view state when video is rewarded.
+            try {
+                PsiCashClient.getInstance(ctx).putVideoReward(amount);
+                psiCashViewModel.processIntents(Observable.just(PsiCashIntent.GetPsiCash.create()));
+            } catch (PsiCashException ignored) {
+            }
+        });
 
         View view = inflater.inflate(R.layout.psicash_store_scene_container_fragment, container, false);
 
@@ -87,6 +93,9 @@ public class PsiCashInAppPurchaseFragment extends Fragment {
             // Enable the rewarded video button only when tunnel is stopped, otherwise display
             // "Videos available only when the Psiphon is not running" and disable the button.
             compositeDisposable.add(psiCashViewModel.tunnelStateFlowable()
+                    // Only react to distinct tunnel states that are not UNKNOWN
+                    .filter(tunnelState -> !tunnelState.isUnknown())
+                    .distinctUntilChanged()
                     .doOnNext(tunnelState -> {
                         if (tunnelState.isStopped()) {
                             videoBtn.setEnabled(true);

@@ -11,25 +11,16 @@ import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdCallback;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions;
-import com.mopub.common.MoPub;
-import com.mopub.common.MoPubReward;
-import com.mopub.common.SdkConfiguration;
-import com.mopub.common.SdkInitializationListener;
-import com.mopub.mobileads.MoPubErrorCode;
-import com.mopub.mobileads.MoPubRewardedVideoListener;
-import com.mopub.mobileads.MoPubRewardedVideos;
 import com.psiphon3.TunnelState;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
-import java.util.Set;
-
-import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 
+// Last commit with MoPub rewarded videos 31f71f47d2dd98fdb7711a362eb4464d294d491f
 class RewardedVideoHelper {
     // Test videos, supposed to always load
     /*
@@ -38,12 +29,10 @@ class RewardedVideoHelper {
      */
 
     // Production values
-    private static final String MOPUB_VIDEO_AD_UNIT_ID = "7ef66892f0a6417091119b94ce07d6e5";
     private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-1072041961750291/5751207671";
 
     private final Observable<RewardedVideoPlayable> adMobVideoObservable;
-    private final Observable<RewardedVideoPlayable> moPubVideoObservable;
-    private final Completable initializeMoPubSdk;
+    private final RewardListener rewardListener;
 
     interface RewardedVideoPlayable {
         enum State {LOADING, READY, CLOSED}
@@ -56,16 +45,13 @@ class RewardedVideoHelper {
 
     Observable<RewardedVideoPlayable> getVideoObservable(Flowable<TunnelState> tunnelStateFlowable) {
         return tunnelStateFlowable
+                // Only react to distinct tunnel states that are not UNKNOWN
                 .filter(tunnelState -> !tunnelState.isUnknown())
+                .distinctUntilChanged()
                 .toObservable()
                 .switchMap(tunnelState -> {
                     if (tunnelState.isStopped()) {
                         return adMobVideoObservable;
-                    }
-
-                    if (tunnelState.isRunning() && tunnelState.connectionData().isConnected()) {
-                        return initializeMoPubSdk
-                                .andThen(moPubVideoObservable);
                     }
                     return Observable.empty();
                 })
@@ -75,30 +61,13 @@ class RewardedVideoHelper {
                 .startWith(Observable.just(() -> RewardedVideoPlayable.State.LOADING));
     }
 
-    public RewardedVideoHelper(Context context) {
+    public RewardedVideoHelper(Context context, RewardListener rewardListener) {
+        this.rewardListener = rewardListener;
         // Try and initialize AdMob once, there is no reason to make this a completable
         MobileAds.initialize(context, BuildConfig.ADMOB_APP_ID);
 
         final AppPreferences mp = new AppPreferences(context);
         String customData = mp.getString(context.getString(R.string.persistentPsiCashCustomData), "");
-
-        this.initializeMoPubSdk = Completable.create(emitter -> {
-            if (MoPub.isSdkInitialized()) {
-                if (!emitter.isDisposed()) {
-                    emitter.onComplete();
-                }
-                return;
-            }
-            MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
-            SdkConfiguration.Builder builder = new SdkConfiguration.Builder(MOPUB_VIDEO_AD_UNIT_ID);
-            SdkConfiguration sdkConfiguration = builder.build();
-            SdkInitializationListener sdkInitializationListener = () -> {
-                if (!emitter.isDisposed()) {
-                    emitter.onComplete();
-                }
-            };
-            MoPub.initializeSdk(context, sdkConfiguration, sdkInitializationListener);
-        });
 
         this.adMobVideoObservable = Observable.create(emitter -> {
             RewardedAd rewardedAd = new RewardedAd(context, ADMOB_VIDEO_AD_ID);
@@ -119,9 +88,8 @@ class RewardedVideoHelper {
 
                 @Override
                 public void onUserEarnedReward(@NonNull RewardItem reward) {
-                    try {
-                        PsiCashClient.getInstance(context).putVideoReward(reward.getAmount());
-                    } catch (PsiCashException ignored) {
+                    if (RewardedVideoHelper.this.rewardListener != null) {
+                        RewardedVideoHelper.this.rewardListener.onReward(reward.getAmount());
                     }
                 }
 
@@ -163,71 +131,9 @@ class RewardedVideoHelper {
             AdRequest.Builder requestBuilder = new AdRequest.Builder();
             rewardedAd.loadAd(requestBuilder.build(), adLoadCallback);
         });
+    }
 
-        this.moPubVideoObservable = Observable.create(emitter -> {
-            MoPubRewardedVideoListener rewardedVideoListener = new MoPubRewardedVideoListener() {
-                @Override
-                public void onRewardedVideoLoadSuccess(@NonNull String adUnitId) {
-                    if (!emitter.isDisposed()) {
-                        // Called when the video for the given adUnitId has loaded.
-                        // At this point you should be able to call MoPubRewardedVideos.showRewardedVideo(String) to show the video.
-                        if (adUnitId.equals(MOPUB_VIDEO_AD_UNIT_ID) && MoPubRewardedVideos.hasRewardedVideo(MOPUB_VIDEO_AD_UNIT_ID)) {
-                            emitter.onNext(new RewardedVideoPlayable() {
-                                @Override
-                                public State state() {
-                                    return State.READY;
-                                }
-
-                                @Override
-                                public void play(Activity ignored) {
-                                    MoPubRewardedVideos.showRewardedVideo(MOPUB_VIDEO_AD_UNIT_ID, customData);
-                                }
-                            });
-                        } else {
-                            emitter.onError(new PsiCashException.Video("MoPub video failed."));
-                        }
-                    }
-                }
-
-                @Override
-                public void onRewardedVideoLoadFailure(@NonNull String adUnitId, @NonNull MoPubErrorCode errorCode) {
-                    if (!emitter.isDisposed()) {
-                        emitter.onError(new PsiCashException.Video("MoPub video failed with error: " + errorCode.toString()));
-                    }
-                }
-
-                @Override
-                public void onRewardedVideoStarted(@NonNull String adUnitId) {
-                }
-
-                @Override
-                public void onRewardedVideoPlaybackError(@NonNull String adUnitId, @NonNull MoPubErrorCode errorCode) {
-                    if (!emitter.isDisposed()) {
-                        emitter.onError(new PsiCashException.Video("MoPub video playback failed with error: " + errorCode.toString()));
-                    }
-                }
-
-                @Override
-                public void onRewardedVideoClicked(@NonNull String adUnitId) {
-                }
-
-                @Override
-                public void onRewardedVideoClosed(@NonNull String adUnitId) {
-                    if (!emitter.isDisposed()) {
-                        emitter.onNext(() -> RewardedVideoPlayable.State.CLOSED);
-                    }
-                }
-
-                @Override
-                public void onRewardedVideoCompleted(@NonNull Set<String> adUnitIds, @NonNull MoPubReward reward) {
-                    try {
-                        PsiCashClient.getInstance(context).putVideoReward(reward.getAmount());
-                    } catch (PsiCashException ignored) {
-                    }
-                }
-            };
-            MoPubRewardedVideos.setRewardedVideoListener(rewardedVideoListener);
-            MoPubRewardedVideos.loadRewardedVideo(MOPUB_VIDEO_AD_UNIT_ID);
-        });
+    public interface RewardListener {
+        void onReward(int amount);
     }
 }
