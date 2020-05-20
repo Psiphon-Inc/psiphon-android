@@ -300,7 +300,22 @@ public class GooglePlayBillingHelper {
 
         // Wait for all acknowledgePurchase subscriptions to complete
         compositeDisposable.add(Completable.merge(completables)
-                .subscribe(() -> purchaseStateBehaviorRelay.accept(PurchaseState.create(purchaseList))));
+                // If the initial purchase list contains not acknowledged purchases we need to
+                // update it since the purchases were just acknowledged.
+                // BillingClient.acknowledgePurchase does not yield the modified purchase after
+                // AcknowledgePurchaseResponseListener is called and the only way to do it currently
+                // is to query local purchases again, see https://stackoverflow.com/a/56468423
+                .subscribe(() -> {
+                            for (Purchase purchase : purchaseList) {
+                                if (!purchase.isAcknowledged()) {
+                                    queryAllPurchases();
+                                    return;
+                                }
+                            }
+                            purchaseStateBehaviorRelay.accept(PurchaseState.create(purchaseList));
+                        },
+                        err -> purchaseStateBehaviorRelay.accept(PurchaseState.error(err))
+                ));
     }
 
     Flowable<PurchasesUpdate> observeUpdates() {
@@ -420,8 +435,7 @@ public class GooglePlayBillingHelper {
                                 }
                             });
                         }))
-                .doOnError(err -> Utils.MyLog.g("GooglePlayBillingHelper::acknowledgePurchase error: " + err))
-                .onErrorComplete();
+                .doOnError(err -> Utils.MyLog.g("GooglePlayBillingHelper::acknowledgePurchase error: " + err));
     }
 
     static boolean isUnlimitedSubscription(@NonNull Purchase purchase) {
