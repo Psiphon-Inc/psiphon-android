@@ -268,7 +268,14 @@ public class PsiphonAdManager {
                         @Override
                         public void onInterstitialFailed(MoPubInterstitial interstitial, MoPubErrorCode errorCode) {
                             if (!emitter.isDisposed()) {
-                                emitter.onError(new RuntimeException("MoPub interstitial failed: " + errorCode.toString()));
+                                // Complete normally if the error code is NO_FILL so we don't fail
+                                // over to AdMob untunneled interstitial in this case.
+                                if (errorCode == MoPubErrorCode.NO_FILL) {
+                                    emitter.onComplete();
+                                } else {
+                                    emitter.onError(new RuntimeException("MoPub interstitial failed: "
+                                            + errorCode.toString()));
+                                }
                             }
                         }
 

@@ -41,6 +41,9 @@ ext {
     playStoreBillingClientVersion = '2.2.0'
     threetenabpVersion = '1.2.1'
     hyprMXMoPubVersion = '5.0.5'
+    // Last non-AndroidX version of the adapter
+    vungleSdkVersion = '6.3.24'
+    vungleAdMobMediationVersion = '6.3.24.1'
 }
 
 subprojects {
