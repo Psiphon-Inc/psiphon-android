@@ -78,7 +78,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
@@ -756,77 +755,9 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
 
     public void onSubscribeButtonClick(View v) {
         Utils.MyLog.g("StatusActivity::onSubscribeButtonClick");
-        compositeDisposable.add(
-                googlePlayBillingHelper.subscriptionStateFlowable()
-                        .firstOrError()
-                        .subscribe(subscriptionState -> {
-                            switch (subscriptionState.status()) {
-                                case HAS_UNLIMITED_SUBSCRIPTION:
-                                case HAS_TIME_PASS:
-                                    // User has a subscription, do nothing, the 'Subscribe' button
-                                    // visibility will be updated by rate limit badge UI Rx subscription
-                                    // that we have set up in onCreate().
-                                    return;
-
-                                case HAS_LIMITED_SUBSCRIPTION:
-                                    // If user has limited subscription launch upgrade to unlimited
-                                    // flow and replace current subscription sku.
-                                    String currentSku = subscriptionState.purchase().getSku();
-                                    String currentPurchaseToken = subscriptionState.purchase().getPurchaseToken();
-                                    compositeDisposable.add(
-                                            getUnlimitedSubscriptionSkuDetails()
-                                                    .flatMapCompletable(skuDetailsList -> {
-                                                        if (skuDetailsList.size() == 1) {
-                                                            return googlePlayBillingHelper.launchFlow(this, currentSku, currentPurchaseToken, skuDetailsList.get(0));
-                                                        }
-                                                        // else
-                                                        return Completable.error(
-                                                                new IllegalArgumentException("Bad unlimited subscription sku details list size: "
-                                                                        + skuDetailsList.size())
-                                                        );
-                                                    })
-                                                    .doOnError(err -> {
-                                                        Utils.MyLog.g("Upgrade limited subscription error: " + err);
-                                                        // Show "Subscription options not available" toast.
-                                                        showToast(R.string.subscription_options_currently_not_available);
-                                                    })
-                                                    .onErrorComplete()
-                                                    .subscribe()
-                                    );
-                                    return;
-
-                                default:
-                                    // If user has no subscription launch PaymentChooserActivity
-                                    // to show all available subscriptions options.
-                                    compositeDisposable.add(
-                                            googlePlayBillingHelper.allSkuDetailsSingle()
-                                                    .toObservable()
-                                                    .flatMap(Observable::fromIterable)
-                                                    .filter(skuDetails -> {
-                                                        String sku = skuDetails.getSku();
-                                                        return GooglePlayBillingHelper.IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(sku) ||
-                                                                sku.equals(GooglePlayBillingHelper.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU) ||
-                                                                sku.equals(GooglePlayBillingHelper.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
-                                                    })
-                                                    .map(SkuDetails::getOriginalJson)
-                                                    .toList()
-                                                    .doOnSuccess(jsonSkuDetailsList -> {
-                                                        if(jsonSkuDetailsList.size() > 0) {
-                                                            Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
-                                                            paymentChooserActivityIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                                                            paymentChooserActivityIntent.putStringArrayListExtra(
-                                                                    PaymentChooserActivity.SKU_DETAILS_ARRAY_LIST_EXTRA,
-                                                                    new ArrayList<>(jsonSkuDetailsList));
-                                                            startActivityForResult(paymentChooserActivityIntent, PAYMENT_CHOOSER_ACTIVITY);
-                                                        } else {
-                                                            showToast(R.string.subscription_options_currently_not_available);
-                                                        }
-                                                    })
-                                                    .subscribe()
-                                    );
-                            }
-                        })
-        );
+        Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
+        paymentChooserActivityIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivityForResult(paymentChooserActivityIntent, PAYMENT_CHOOSER_ACTIVITY);
     }
 
     @Override
@@ -834,12 +765,14 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
         if (requestCode == PAYMENT_CHOOSER_ACTIVITY) {
             if (resultCode == RESULT_OK) {
                 String skuString = data.getStringExtra(PaymentChooserActivity.USER_PICKED_SKU_DETAILS_EXTRA);
+                String oldSkuString = data.getStringExtra(PaymentChooserActivity.USER_OLD_SKU_EXTRA);
+                String oldPurchaseToken = data.getStringExtra(PaymentChooserActivity.USER_OLD_PURCHASE_TOKEN_EXTRA);
                 try {
                     if (TextUtils.isEmpty(skuString)) {
                         throw new IllegalArgumentException("SKU is empty.");
                     }
                     SkuDetails skuDetails = new SkuDetails(skuString);
-                    googlePlayBillingHelper.launchFlow(this, skuDetails)
+                    googlePlayBillingHelper.launchFlow(this, oldSkuString, oldPurchaseToken, skuDetails)
                             .doOnError(err -> {
                                 // Show "Subscription options not available" toast.
                                 showToast(R.string.subscription_options_currently_not_available);

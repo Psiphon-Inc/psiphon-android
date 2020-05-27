@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Psiphon Inc.
+ * Copyright (c) 2020, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,156 +22,327 @@ package com.psiphon3;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.Html;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.design.widget.TabLayout;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
+import android.view.ViewGroup;
+import android.widget.TextView;
 
-import com.android.billingclient.api.BillingClient;
+import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.SkuDetails;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
-import org.json.JSONException;
 import org.threeten.bp.Period;
 import org.threeten.bp.format.DateTimeParseException;
 
 import java.text.NumberFormat;
-import java.util.ArrayList;
 import java.util.Currency;
+import java.util.Locale;
+
+import io.reactivex.Observable;
 
 public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivity {
     public static final String USER_PICKED_SKU_DETAILS_EXTRA = "USER_PICKED_SKU_DETAILS_EXTRA";
-    public static final String SKU_DETAILS_ARRAY_LIST_EXTRA = "SKU_DETAILS_ARRAY_LIST_EXTRA";
+    public static final String USER_OLD_SKU_EXTRA = "USER_OLD_SKU_EXTRA";
+    public static final String USER_OLD_PURCHASE_TOKEN_EXTRA = "USER_OLD_PURCHASE_TOKEN_EXTRA";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.payment_chooser);
 
-        ArrayList<String> jsonSkuDetailsList =
-                getIntent().getStringArrayListExtra(SKU_DETAILS_ARRAY_LIST_EXTRA);
+        GooglePlayBillingHelper googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(getApplicationContext());
+        googlePlayBillingHelper.subscriptionStateFlowable()
+                .firstOrError()
+                .doOnSuccess(subscriptionState -> {
+                    findViewById(R.id.progress_overlay).setVisibility(View.GONE);
+                    switch (subscriptionState.status()) {
+                        case IAB_FAILURE:
+                            // Finishing the activity with RESULT_OK and empty SKU will result
+                            // in "Subscriptions options are not available" toast.
+                            // The error will be logged elsewhere
+                            finishActivity(RESULT_OK);
+                            return;
 
-        for (String jsonSkuDetails : jsonSkuDetailsList) {
-            SkuDetails skuDetails;
-            try {
-                skuDetails = new SkuDetails(jsonSkuDetails);
-            } catch (JSONException e) {
-                Utils.MyLog.g("PaymentChooserActivity: error parsing SkuDetails: " + e);
-                continue;
+                        case HAS_UNLIMITED_SUBSCRIPTION:
+                        case HAS_TIME_PASS:
+                            // User has an unlimited subscription, finish the activity silently.
+                            finishActivity(RESULT_CANCELED);
+                            return;
+
+                        case HAS_LIMITED_SUBSCRIPTION:
+                            // Update the "You are using...plan" text
+                            ((TextView) findViewById(R.id.payment_chooser_current_plan)).setText(R.string.PaymentChooserActivity_UsingLimitedPlan);
+                            // If user has a limited subscription then do not display the tabbed layout with both
+                            // subscriptions and time passes. Display just the subscriptions instead by replacing
+                            // the tabs container with an instance of SubscriptionFragment
+                            ((ViewGroup) findViewById(R.id.payment_chooser_tabs_wrapper)).removeAllViews();
+                            SubscriptionFragment subscriptionFragment = new SubscriptionFragment();
+                            // Make sure the SubscriptionFragment knows to show the unlimited option only.
+                            subscriptionFragment.setLimitedSubscriptionPurchase(subscriptionState.purchase());
+                            getSupportFragmentManager()
+                                    .beginTransaction()
+                                    .replace(R.id.payment_chooser_tabs_wrapper, subscriptionFragment)
+                                    .commit();
+                            return;
+
+                        default:
+                            // Update the "You are using...plan" text
+                            ((TextView) findViewById(R.id.payment_chooser_current_plan)).setText(R.string.PaymentChooserActivity_UsingFreePlan);
+                            // Setup the two tab pager with all purchase options
+                            TabLayout tabLayout = findViewById(R.id.payment_chooser_tablayout);
+                            PageAdapter pageAdapter = new PageAdapter(getSupportFragmentManager(), tabLayout.getTabCount());
+                            ViewPager viewPager = findViewById(R.id.payment_chooser_viewpager);
+                            viewPager.setAdapter(pageAdapter);
+                            viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
+                            tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+                                @Override
+                                public void onTabSelected(TabLayout.Tab tab) {
+                                    viewPager.setCurrentItem(tab.getPosition());
+                                }
+
+                                @Override
+                                public void onTabUnselected(TabLayout.Tab tab) {
+                                }
+
+                                @Override
+                                public void onTabReselected(TabLayout.Tab tab) {
+                                }
+                            });
+                    }
+                })
+                .subscribe();
+    }
+
+    static class PageAdapter extends FragmentPagerAdapter {
+        private int numOfTabs;
+
+        PageAdapter(FragmentManager fm, int numOfTabs) {
+            super(fm);
+            this.numOfTabs = numOfTabs;
+        }
+
+        @Override
+        public Fragment getItem(int position) {
+            switch (position) {
+                case 0:
+                    return new SubscriptionFragment();
+                case 1:
+                    return new TimePassFragment();
+                default:
+                    return null;
             }
+        }
 
-            int buttonResId = 0;
-            float pricePerDay = 0f;
-
-            // Calculate life time in days for subscriptions
-            // Note: we are not using Period.parse() because there are only 5 possible predefined periods
-            String subscriptionPeriod = skuDetails.getSubscriptionPeriod();
-            if(TextUtils.isEmpty(subscriptionPeriod)) {
-                // Our  subscriptions are all 1 month, set as default in case the user has a very old
-                // Google Play Services version which doesn't return subscription period value.
-                subscriptionPeriod = "P1M";
-            }
-
-            if (skuDetails.getType().equals(BillingClient.SkuType.SUBS)) {
-                if (subscriptionPeriod.equals("P1W")) {
-                    pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / 7f;
-                } else if (subscriptionPeriod.equals("P1M")) {
-                    pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / (365f / 12);
-                } else if (subscriptionPeriod.equals("P3M")) {
-                    pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / (365f / 4);
-                } else if (subscriptionPeriod.equals("P6M")) {
-                    pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / (365f / 2);
-                } else if (subscriptionPeriod.equals("P1Y")) {
-                    pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / 365f;
-                }
-                if (pricePerDay == 0f) {
-                    Utils.MyLog.g("PaymentChooserActivity error: bad subscription period for sku: " + skuDetails);
-                    continue;
-                }
-
-                // Get button resource ID
-                if (skuDetails.getSku().equals(GooglePlayBillingHelper.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
-                    buttonResId = R.id.limitedSubscription;
-                } else if (skuDetails.getSku().equals(GooglePlayBillingHelper.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
-                    buttonResId = R.id.unlimitedSubscription;
-                }
-            } else {
-                String timepassSku = skuDetails.getSku();
-                // Get pre-calculated life time in days for time passes
-                Long lifetimeInDays = GooglePlayBillingHelper.IAB_TIMEPASS_SKUS_TO_DAYS.get(timepassSku);
-                if (lifetimeInDays == null || lifetimeInDays == 0L) {
-                    Utils.MyLog.g("PaymentChooserActivity error: unknown timepass period for sku: " + skuDetails);
-                    continue;
-                }
-                // Get button resource ID
-                buttonResId = getResources().getIdentifier("timepass" + lifetimeInDays, "id", getPackageName());
-                pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / lifetimeInDays;
-            }
-
-            if (buttonResId == 0) {
-                Utils.MyLog.g("PaymentChooserActivity error: no button resource for sku: " + skuDetails);
-                continue;
-            }
-
-            setUpButton(buttonResId, skuDetails, pricePerDay);
+        @Override
+        public int getCount() {
+            return numOfTabs;
         }
     }
 
-    /**
-     * Sets up the payment chooser buttons. This includes putting the price-per-day value into the label.
-     *
-     * @param buttonId   ID of the button to set up.
-     * @param skuDetails Info about the SKU.
-     * @param pricePerDay Price per day value.
-     */
-    private void setUpButton(int buttonId, SkuDetails skuDetails, float pricePerDay) {
-        Button button = findViewById(buttonId);
+    public static class SubscriptionFragment extends Fragment {
+        private Purchase limitedSubscriptionPurchase;
 
-        // skuDetails.getPrice() returns a differently looking string than the one we get by using priceFormatter
-        // below, so for consistency we'll use priceFormatter on the subscription price amount too.
-        // If the formatting for pricePerDayText or priceText fails, use these as default
-        String pricePerDayText = String.format("%s %.2f", skuDetails.getPriceCurrencyCode(), pricePerDay);
-        String priceText = skuDetails.getPrice();
-
-        try {
-            Currency currency = Currency.getInstance(skuDetails.getPriceCurrencyCode());
-            NumberFormat priceFormatter = NumberFormat.getCurrencyInstance();
-            priceFormatter.setCurrency(currency);
-            pricePerDayText = priceFormatter.format(pricePerDay);
-            priceText = priceFormatter.format(skuDetails.getPriceAmountMicros() / 1000000.0f);
-        } catch (IllegalArgumentException e) {
-            // do nothing
-        }
-        String formatString = button.getText().toString();
-        String buttonTextHtml = String.format(formatString, priceText, pricePerDayText).replace("\n", "<br>");
-        String freeTrialPeriodISO8061 = skuDetails.getFreeTrialPeriod();
-        if(!TextUtils.isEmpty(freeTrialPeriodISO8061) &&
-                // Make sure we are compatible with the minSdk 15 of com.jakewharton.threetenabp
-                Build.VERSION.SDK_INT > Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            try {
-                Period period = Period.parse(freeTrialPeriodISO8061);
-                long freeTrialPeriodInDays = period.getDays();
-                if (freeTrialPeriodInDays > 0L) {
-                    String freeTrialPeriodText = String.format(getString(R.string.PaymentChooserFragment_FreeTrialPeriod), freeTrialPeriodInDays);
-                    buttonTextHtml = String.format("%s<br><sub><small>%s</small></sub>", buttonTextHtml, freeTrialPeriodText);
-                }
-            } catch (DateTimeParseException e) {
-                Utils.MyLog.g("PaymentChooserActivity failed to parse free trial period: " + freeTrialPeriodISO8061);
-            }
+        @Nullable
+        @Override
+        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+            return inflater.inflate(R.layout.payment_subscriptions_tab_fragment, container, false);
         }
 
-        button.setText(Html.fromHtml(buttonTextHtml));
-        button.setVisibility(View.VISIBLE);
-        button.setOnClickListener(v -> {
-            Utils.MyLog.g("PaymentChooserActivity purchase button clicked.");
-            Intent intent = getIntent();
-            intent.putExtra(USER_PICKED_SKU_DETAILS_EXTRA, skuDetails.getOriginalJson());
-            setResult(RESULT_OK, intent);
-            finish();
-        });
+        @Override
+        public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+            super.onActivityCreated(savedInstanceState);
+            final FragmentActivity activity = getActivity();
+            GooglePlayBillingHelper googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(activity.getApplicationContext());
+            googlePlayBillingHelper.allSkuDetailsSingle()
+                    .toObservable()
+                    .flatMap(Observable::fromIterable)
+                    .filter(skuDetails -> {
+                        String sku = skuDetails.getSku();
+                        // If user has limited subscription only pass through unlimited subscription
+                        if (limitedSubscriptionPurchase != null) {
+                            return sku.equals(GooglePlayBillingHelper.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
+                        }
+                        // Otherwise pass all available subscriptions
+                        return sku.equals(GooglePlayBillingHelper.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU) ||
+                                sku.equals(GooglePlayBillingHelper.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
+                    })
+                    .toList()
+                    .doOnSuccess(skuDetailsList -> {
+                        if (skuDetailsList.size() < 1) {
+                            Utils.MyLog.g("PaymentChooserActivity: subscription SKU error: bad sku details list size: " +
+                                    skuDetailsList.size());
+                            // finish the activity and show "Subscription options not available" toast.
+                            activity.finishActivity(RESULT_OK);
+                            return;
+                        } // else
+                        for (SkuDetails skuDetails : skuDetailsList) {
+                            ViewGroup clickable;
+                            TextView titlePriceTv;
+                            TextView freeTrialTv;
+                            TextView priceAfterFreeTrialTv;
+
+                            if (skuDetails.getSku().equals(GooglePlayBillingHelper.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
+                                clickable = activity.findViewById(R.id.unlimitedSubscriptionClickable);
+                                titlePriceTv = activity.findViewById(R.id.unlimitedSubscriptionTitlePrice);
+                                freeTrialTv = activity.findViewById(R.id.unlimitedSubscriptionFreeTrialPeriod);
+                                priceAfterFreeTrialTv = activity.findViewById(R.id.unlimitedSubscriptionPriceAfterFreeTrial);
+                            } else {
+                                clickable = activity.findViewById(R.id.limitedSubscriptionClickable);
+                                titlePriceTv = activity.findViewById(R.id.limitedSubscriptionTitlePrice);
+                                freeTrialTv = activity.findViewById(R.id.limitedSubscriptionFreeTrialPeriod);
+                                priceAfterFreeTrialTv = activity.findViewById(R.id.limitedSubscriptionPriceAfterFreeTrial);
+                            }
+                            // skuDetails.getPrice() returns a differently looking string than the one
+                            // we get by using priceFormatter below, so for consistency we'll use
+                            // priceFormatter on all prices.
+                            // If the formatting for priceText fails, use skuDetails.getPrice() as default
+                            String priceText = skuDetails.getPrice();
+
+                            try {
+                                Currency currency = Currency.getInstance(skuDetails.getPriceCurrencyCode());
+                                NumberFormat priceFormatter = NumberFormat.getCurrencyInstance();
+                                priceFormatter.setCurrency(currency);
+                                priceText = priceFormatter.format(skuDetails.getPriceAmountMicros() / 1000000.0f);
+                            } catch (IllegalArgumentException e) {
+                                // do nothing
+                            }
+                            String formatString = titlePriceTv.getText().toString();
+                            titlePriceTv.setText(String.format(formatString, priceText));
+                            formatString = priceAfterFreeTrialTv.getText().toString();
+                            priceAfterFreeTrialTv.setText(String.format(formatString, priceText));
+
+                            clickable.setVisibility(View.VISIBLE);
+                            clickable.setOnClickListener(v -> {
+                                Utils.MyLog.g("PaymentChooserActivity: subscription purchase button clicked.");
+                                Intent data = new Intent();
+                                data.putExtra(USER_PICKED_SKU_DETAILS_EXTRA, skuDetails.getOriginalJson());
+                                if (limitedSubscriptionPurchase != null) {
+                                    data.putExtra(USER_OLD_SKU_EXTRA, limitedSubscriptionPurchase.getSku());
+                                    data.putExtra(USER_OLD_PURCHASE_TOKEN_EXTRA, limitedSubscriptionPurchase.getPurchaseToken());
+                                }
+                                activity.setResult(RESULT_OK, data);
+                                activity.finish();
+                            });
+
+                            String freeTrialPeriodISO8061 = skuDetails.getFreeTrialPeriod();
+                            if (!TextUtils.isEmpty(freeTrialPeriodISO8061) &&
+                                    // Make sure we are compatible with the minSdk 15 of com.jakewharton.threetenabp
+                                    Build.VERSION.SDK_INT > Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+                                try {
+                                    Period period = Period.parse(freeTrialPeriodISO8061);
+                                    long freeTrialPeriodInDays = period.getDays();
+                                    if (freeTrialPeriodInDays > 0L) {
+                                        formatString = freeTrialTv.getText().toString();
+                                        String freeTrialPeriodText = String.format(formatString, freeTrialPeriodInDays);
+                                        freeTrialTv.setText(freeTrialPeriodText);
+                                        freeTrialTv.setVisibility(View.VISIBLE);
+                                    }
+                                } catch (DateTimeParseException e) {
+                                    Utils.MyLog.g("PaymentChooserActivity: failed to parse free trial period: " + freeTrialPeriodISO8061);
+                                }
+                            }
+                        }
+                    })
+                    .subscribe();
+        }
+
+        public void setLimitedSubscriptionPurchase(Purchase purchase) {
+            limitedSubscriptionPurchase = purchase;
+        }
+    }
+
+    public static class TimePassFragment extends Fragment {
+        @Nullable
+        @Override
+        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+            return inflater.inflate(R.layout.payment_timepasses_tab_fragment, container, false);
+        }
+
+        @Override
+        public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+            super.onActivityCreated(savedInstanceState);
+            final FragmentActivity activity = getActivity();
+            GooglePlayBillingHelper googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(activity.getApplicationContext());
+            googlePlayBillingHelper.allSkuDetailsSingle()
+                    .toObservable()
+                    .flatMap(Observable::fromIterable)
+                    .filter(skuDetails -> {
+                        String sku = skuDetails.getSku();
+                        return GooglePlayBillingHelper.IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(sku);
+                    })
+                    .toList()
+                    .doOnSuccess(skuDetailsList -> {
+                        if (skuDetailsList.size() < 1) {
+                            Utils.MyLog.g("PaymentChooserActivity: time pass SKU error: bad sku details list size: " +
+                                    skuDetailsList.size());
+                            // finish the activity and show "Subscription options not available" toast.
+                            activity.finishActivity(RESULT_OK);
+                            return;
+                        } // else
+                        for (SkuDetails skuDetails : skuDetailsList) {
+                            // Get pre-calculated life time in days for time passes
+                            Long lifetimeInDays = GooglePlayBillingHelper.IAB_TIMEPASS_SKUS_TO_DAYS.get(skuDetails.getSku());
+                            if (lifetimeInDays == null || lifetimeInDays == 0L) {
+                                Utils.MyLog.g("PaymentChooserActivity error: unknown time pass period for sku: " + skuDetails);
+                                continue;
+                            }
+                            // Calculate price per day
+                            float pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / lifetimeInDays;
+
+                            int clickableResId = getResources().getIdentifier("timepassClickable" + lifetimeInDays, "id", activity.getPackageName());
+                            int titlePriceTvResId = getResources().getIdentifier("timepassTitlePrice" + lifetimeInDays, "id", activity.getPackageName());
+                            int pricePerDayTvResId = getResources().getIdentifier("timepassPricePerDay" + lifetimeInDays, "id", activity.getPackageName());
+
+                            ViewGroup clickable = activity.findViewById(clickableResId);
+                            TextView titlePriceTv = activity.findViewById(titlePriceTvResId);
+                            TextView pricePerDayTv = activity.findViewById(pricePerDayTvResId);
+
+                            // skuDetails.getPrice() returns a differently looking string than the one
+                            // we get by using priceFormatter below, so for consistency we'll use
+                            // priceFormatter on all prices.
+                            // If the formatting for pricePerDayText or priceText fails, use these as default
+                            String pricePerDayText = String.format(Locale.getDefault(), "%s%.2f",
+                                    skuDetails.getPriceCurrencyCode(), pricePerDay);
+                            String priceText = skuDetails.getPrice();
+
+                            try {
+                                Currency currency = Currency.getInstance(skuDetails.getPriceCurrencyCode());
+                                NumberFormat priceFormatter = NumberFormat.getCurrencyInstance();
+                                priceFormatter.setCurrency(currency);
+                                pricePerDayText = priceFormatter.format(pricePerDay);
+                                priceText = priceFormatter.format(skuDetails.getPriceAmountMicros() / 1000000.0f);
+                            } catch (IllegalArgumentException e) {
+                                // do nothing
+                            }
+
+                            String formatString = titlePriceTv.getText().toString();
+                            titlePriceTv.setText(String.format(formatString, priceText));
+                            formatString = pricePerDayTv.getText().toString();
+                            pricePerDayTv.setText(String.format(formatString, pricePerDayText));
+
+                            clickable.setVisibility(View.VISIBLE);
+                            clickable.setOnClickListener(v -> {
+                                Utils.MyLog.g("PaymentChooserActivity: time pass purchase button clicked.");
+                                Intent data = new Intent();
+                                data.putExtra(USER_PICKED_SKU_DETAILS_EXTRA, skuDetails.getOriginalJson());
+                                activity.setResult(RESULT_OK, data);
+                                activity.finish();
+                            });
+                        }
+                    })
+                    .subscribe();
+        }
     }
 }
