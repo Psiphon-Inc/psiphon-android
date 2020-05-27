@@ -56,13 +56,14 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
     public static final String USER_PICKED_SKU_DETAILS_EXTRA = "USER_PICKED_SKU_DETAILS_EXTRA";
     public static final String USER_OLD_SKU_EXTRA = "USER_OLD_SKU_EXTRA";
     public static final String USER_OLD_PURCHASE_TOKEN_EXTRA = "USER_OLD_PURCHASE_TOKEN_EXTRA";
+    static private GooglePlayBillingHelper googlePlayBillingHelper;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(getApplicationContext());
         setContentView(R.layout.payment_chooser);
 
-        GooglePlayBillingHelper googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(getApplicationContext());
         googlePlayBillingHelper.subscriptionStateFlowable()
                 .firstOrError()
                 .doOnSuccess(subscriptionState -> {
@@ -125,6 +126,13 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                 .subscribe();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        googlePlayBillingHelper.queryAllPurchases();
+        googlePlayBillingHelper.queryAllSkuDetails();
+    }
+
     static class PageAdapter extends FragmentPagerAdapter {
         private int numOfTabs;
 
@@ -164,7 +172,6 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
         public void onActivityCreated(@Nullable Bundle savedInstanceState) {
             super.onActivityCreated(savedInstanceState);
             final FragmentActivity activity = getActivity();
-            GooglePlayBillingHelper googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(activity.getApplicationContext());
             googlePlayBillingHelper.allSkuDetailsSingle()
                     .toObservable()
                     .flatMap(Observable::fromIterable)
@@ -274,7 +281,6 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
         public void onActivityCreated(@Nullable Bundle savedInstanceState) {
             super.onActivityCreated(savedInstanceState);
             final FragmentActivity activity = getActivity();
-            GooglePlayBillingHelper googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(activity.getApplicationContext());
             googlePlayBillingHelper.allSkuDetailsSingle()
                     .toObservable()
                     .flatMap(Observable::fromIterable)
