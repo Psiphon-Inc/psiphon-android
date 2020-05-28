@@ -1,23 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Descriptive text telling the user how they can use Psiphon Pro: either
-         by subscribing or by having ads in the app.
-         Insert one or more newline characters as needed to keep the lines approximately as short
-         as the English. -->
-    <string name="SubscriptionPromptMessage">Subscribe now for unlimited ad-free use of Psiphon Pro.\n\nOr press Start to try ad-supported Psiphon Pro for free for 700 minutes.\n\nThank you for supporting Psiphon!</string>
-
-    <!-- Prompt text telling the user that can continue to use Psiphon by watching
-         a video ad. (This is an alternative to subscribing.) -->
-    <string name="RewardedVideoPrompt">NEW! Watch a video to earn 100 minutes of uninterrupted Psiphon Pro.</string>
-
-    <!-- Text indicating to the user how much time they have left in their free trial. -->
-    <string name="FreeTrialRemainingTime">Free trial: %s</string>
-
-    <!-- Label for button that leads user to buy subscription or time pass to premium service.
-         When the user has a subscription or time pass, advertisements are removed from the app
-         ("ad-free"), additional features are enabled, and the app no longer periodically disconnects. -->
-    <string name="SubscribeButton">Get unlimited ad-free Psiphon Pro!</string>
-
     <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
         When clicked a new screen opens where users can specify additional HTTP headers to be added to
         to HTTP proxy requests. Users may specify up to 3 custom headers -->
@@ -41,69 +23,6 @@
     <string name="custom_proxy_header_value">Enter header value</string>
     <string name="custom_proxy_header_ignored_values">Warning: headers with empty names will be ignored!</string>
     <string name="custom_proxy_header_invalid_name">Error: header name contains illegal characters!</string>
-
-    <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
-         The first formatted string is the price, and the second is what the price is per day.
-         Insert one or more newline characters as needed to keep the lines approximately as short
-         as the English. -->
-    <string name="PaymentChooserFragment.UnlimitedSubscription">Maximum Speed - %1$s / month\n(%2$s / day)</string>
-
-    <!-- Extra Label that appears on the subscription buying button for Psiphon Pro in case if there
-         is a trial period available for that subscription. The formated string is the length of the
-         trial period in days. Keep as short as possible -->
-    <string name="PaymentChooserFragment.FreeTrialPeriod">Free trial %d days</string>
-
-    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
-         The first formatted string is the price, and the second is what the price is per day.
-         Insert one or more newline characters as needed to keep the lines approximately as short
-         as the English. -->
-    <string name="PaymentChooserFragment.LimitedSubscription">High Speed - %1$s / month\n(%2$s / day)</string>
-
-    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
-         The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass7Day">7-day Pass - %1$s\n(%2$s / day)</string>
-
-    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
-         The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass30Day">30-day Pass - %1$s\n(%2$s / day)</string>
-
-    <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro.
-         The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass90Day">90-day Pass - %1$s\n(%2$s / day)</string>
-
-    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
-         The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass360Day">360-day Pass - %1$s\n(%2$s / day)</string>
-
-    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
-         exclamatory. Indicates that premium access results in all in-app advertisements being
-         removed. -->
-    <string name="PaymentChooserFragment.NoAdsExclaim">No ads!</string>
-
-    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
-         exclamatory. Indicates that premium access results in additional features being unlocked
-         (such as egress region selection). -->
-    <string name="PaymentChooserFragment.FeaturesExclaim">Unlocked features!</string>
-
-    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
-         exclamatory. Indicates that premium access results in no interruptions due to free trial
-         time expiring (as happens with non-premium access). -->
-    <string name="PaymentChooserFragment.InterruptionsExclaim">No interruptions!</string>
-
-    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
-         amount of time. This string is a description specifically about buying a subscription.
-         The parenthetical remark about credit card requirements should be separated by a newline. -->
-    <string name="PaymentChooserFragment.SubscriptionDescription">Subscribe for uninterrupted service at the best price.\n(Requires a valid credit card.)</string>
-
-    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
-         amount of time. This string announces that subscriptions include a free trial. -->
-    <string name="PaymentChooserFragment.FreeTrialDescription">NEW! 30 day free trial with each subscription.</string>
-
-    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
-         amount of time. This string is a description specifically about buying a time pass.
-         The parenthetical remark about credit card requirements should be separated by a newline. -->
-    <string name="PaymentChooserFragment.TimePassDescription">Buy a Maximum Speed time pass.\n(Does not require a credit card. Google Play gift cards or credit may be used.)</string>
-
     <!-- Title for other text showing what the user's current speed limit is. Users have limited
          speed if they have not paid for premium service. -->
     <string name="rate_limit_text_title">Psiphon speed limit:</string>
@@ -329,4 +248,67 @@
         <item quantity="one"> %d hour</item>
         <item quantity="other"> %d hours</item>
     </plurals>
+
+    <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan.  -->
+    <string name="PaymentChooserActivity.UsingLimitedPlan">You are using the basic plan with speed limited to 5Mb/s. Would you like to upgrade to the unlimited plan?</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.UsingFreePlan">You are using the free, ad supported, speed limited, port restricted plan. You can keep using this plan or upgrade to one of our premium plans</string>
+
+    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimepassCommonDescription">Remove ads, unlimited speed with unrestricted ports with each time pass purchase</string>
+
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+    The string format argument is the formatted price as in '7-day pass - CA$3.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice7Text">7-day pass - %s</string>
+
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+    The string format argument is the formatted price as in '30-day pass - CA$8.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice30Text">30-day pass - %s</string>
+
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+    The string format argument is the formatted price as in '360-day pass - CA$99.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice360Text">360-day pass - %s</string>
+
+    <!-- Extra label showing price per day on all time pass buttons. Keep as short as possible. -->
+    <string name="PaymentChooserActivity.TimepassPricePerDayText">%s/day</string>
+
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         The formatted string is the price as in 'Basic - CA$5.99'-->
+    <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">Basic - %s monthly</string>
+
+    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         Appears below 'Basic - CA$5.99' label in smaller font-->
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Remove ads, high speed up to 5Mb/s with unrestricted ports</string>
+
+    <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+         The formatted string is the price as in 'Unlimited - CA$11.99'-->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">Unlimited - %s monthly</string>
+
+    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+         Appears below 'Unlimited - CA$11.99' label in smaller font-->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Remove ads, unlimited speed with unrestricted ports</string>
+
+    <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
+         is a trial period available for that subscription. The formated string is the length of the
+         trial period in days. Keep as short as possible -->
+    <string name="PaymentChooserActivity.FreeTrialPeriod">Free trial - %d days</string>
+
+    <!-- Extra text on all subscriptions buttons showing monthly price per subscription after free trial ends-->
+    <string name="PaymentChooserActivity.PriceAfterFreeTrialText">%s/month after free trial ends</string>
+
+    <!-- Subscription terms text, appears at the bottom of the subscriptions screen -->
+    <string name="PaymentChooserActivity.SubscriptionsTerms">Cancel your subscription any time in the subscriptions section on Google Play. When you cancel your subscription, you will lose access to the premium features offered by the subscription\'s terms at the end of the current billing period. Only one free trial per user. At the end of your free trial period, you will be automatically charged the amount in your subscription\'s terms. To avoid charges, cancel the subscription before the trial period expires.</string>
+
+    <!-- Time pass explanation text -->
+    <string name="PaymentChooserActivity.TimePassExplanation">A time pass is a single use license that is valid for a certain period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription.</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">Subscription</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available time passes.
+    A time pass is a single use license that is valid for a certain period of time from the moment it is purchased
+    and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimePassTab">Time Pass</string>
 </resources>
