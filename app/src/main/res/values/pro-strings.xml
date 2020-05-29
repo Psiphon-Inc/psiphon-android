@@ -249,8 +249,8 @@
         <item quantity="other"> %d hours</item>
     </plurals>
 
-    <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan.  -->
-    <string name="PaymentChooserActivity.UsingLimitedPlan">You are using the basic plan with speed limited to 5Mb/s. Would you like to upgrade to the unlimited plan?</string>
+    <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.UsingLimitedPlan">You are using the basic plan with speed limited to 5&#160;Mb/s. Would you like to upgrade to the unlimited plan?</string>
 
     <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
     <string name="PaymentChooserActivity.UsingFreePlan">You are using the free, ad supported, speed limited, port restricted plan. You can keep using this plan or upgrade to one of our premium plans</string>
@@ -260,34 +260,34 @@
     <string name="PaymentChooserActivity.TimepassCommonDescription">Remove ads, unlimited speed with unrestricted ports with each time pass purchase</string>
 
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
-    The string format argument is the formatted price as in '7-day pass - CA$3.99' -->
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
     <string name="PaymentChooserActivity.TimepassTitlePrice7Text">7-day pass - %s</string>
 
     <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
-    The string format argument is the formatted price as in '30-day pass - CA$8.99' -->
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '30-day pass - CA$8.99' -->
     <string name="PaymentChooserActivity.TimepassTitlePrice30Text">30-day pass - %s</string>
 
     <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
-    The string format argument is the formatted price as in '360-day pass - CA$99.99' -->
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '360-day pass - CA$99.99' -->
     <string name="PaymentChooserActivity.TimepassTitlePrice360Text">360-day pass - %s</string>
 
     <!-- Extra label showing price per day on all time pass buttons. Keep as short as possible. -->
     <string name="PaymentChooserActivity.TimepassPricePerDayText">%s/day</string>
 
     <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
-         The formatted string is the price as in 'Basic - CA$5.99'-->
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
     <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">Basic - %s monthly</string>
 
     <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
-         Appears below 'Basic - CA$5.99' label in smaller font-->
-    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Remove ads, high speed up to 5Mb/s with unrestricted ports</string>
+         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Remove ads, high speed up to 5&#160;Mb/s with unrestricted ports</string>
 
     <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
-         The formatted string is the price as in 'Unlimited - CA$11.99'-->
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
     <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">Unlimited - %s monthly</string>
 
     <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
-         Appears below 'Unlimited - CA$11.99' label in smaller font-->
+         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
     <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Remove ads, unlimited speed with unrestricted ports</string>
 
     <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
