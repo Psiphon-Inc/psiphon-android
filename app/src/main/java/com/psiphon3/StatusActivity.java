@@ -316,6 +316,21 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
         if (intent == null || intent.getAction() == null) {
             return;
         }
+        // Handle special case - external Android App Link intent which opens PsiCashStoreActivity
+        // when the user navigates to https://mobile.psi.cash/android
+        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+            Uri intentUri = intent.getData();
+            if (intentUri != null) {
+                if ("https".equals(intentUri.getScheme()) &&
+                        "mobile.psi.cash".equals(intentUri.getHost()) &&
+                        "/android".equals(intentUri.getPath())) {
+                    PsiCashFragment.openPsiCashStoreActivity(this,
+                            getResources().getInteger(R.integer.psiCashTabIndex));
+                    return;
+                }
+            }
+        }
+
         // StatusActivity is exposed to other apps because it is declared as an entry point activity of the app in the manifest.
         // For the purpose of handling internal intents, such as handshake, etc., from the tunnel service we have declared a not
         // exported activity alias 'com.psiphon3.psiphonlibrary.TunnelIntentsHandler' that should act as a proxy for StatusActivity.
