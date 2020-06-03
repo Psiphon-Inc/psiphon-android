@@ -81,7 +81,16 @@ public class PurchaseVerifier {
                                     }
                                     return true;
                                 })
-                                .distinctUntilChanged()
+                                // We want to avoid trying to redeem the same purchase multiple times
+                                // so we consider purchases distinct only if their purchase tokens and
+                                // order IDs differ and are ignoring all other fields such as isAcknowledged
+                                // which may change anytime for a purchase we have seen already.
+                                //
+                                // See comments in GooglePlayBillingHelper::processPurchases for more
+                                // details on the purchase acknowledgement.
+                                .distinctUntilChanged((a, b) ->
+                                        a.getPurchaseToken().equals(b.getPurchaseToken()) &&
+                                        a.getOrderId().equals(b.getOrderId()))
                                 .map(purchase -> new Pair<>(purchase, tunnelState.connectionData()));
                     }
                     // Not connected, do nothing

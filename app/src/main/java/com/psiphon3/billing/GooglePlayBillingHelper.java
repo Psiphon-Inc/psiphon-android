@@ -55,7 +55,6 @@ import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
 
 public class GooglePlayBillingHelper {
     private static final String IAB_PUBLIC_KEY = BuildConfig.IAB_PUBLIC_KEY;
@@ -300,22 +299,20 @@ public class GooglePlayBillingHelper {
 
         // Wait for all acknowledgePurchase subscriptions to complete
         compositeDisposable.add(Completable.merge(completables)
+                // OLD COMMENT:
                 // If the initial purchase list contains not acknowledged purchases we need to
                 // update it since the purchases were just acknowledged.
                 // BillingClient.acknowledgePurchase does not yield the modified purchase after
                 // AcknowledgePurchaseResponseListener is called and the only way to do it currently
                 // is to query local purchases again, see https://stackoverflow.com/a/56468423
-                .subscribe(() -> {
-                            for (Purchase purchase : purchaseList) {
-                                if (!purchase.isAcknowledged()) {
-                                    queryAllPurchases();
-                                    return;
-                                }
-                            }
-                            purchaseStateBehaviorRelay.accept(PurchaseState.create(purchaseList));
-                        },
-                        err -> purchaseStateBehaviorRelay.accept(PurchaseState.error(err))
-                ));
+
+                // NEW COMMENT:
+                // We are reverting to old behavior where the purchases would get acknowledged without
+                // bubbling up the error because BillingClient.acknowledgePurchase often results in an error
+                // due to the server connection problems. Since we call processPurchases often in the
+                // app we are assuming all purchases will get acknowledged eventually. The state of
+                // purchase.isAcknowledged field should not stop us from redeeming a purchase.
+                .subscribe(() -> purchaseStateBehaviorRelay.accept(PurchaseState.create(purchaseList))));
     }
 
     Flowable<PurchasesUpdate> observeUpdates() {
@@ -333,7 +330,7 @@ public class GooglePlayBillingHelper {
 
     private Single<List<Purchase>> getOwnedItems(String type) {
         return connectionFlowable
-                .observeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
                 .flatMap(client -> {
                     // If subscriptions are not supported return an empty purchase list, do not send error.
                     if (type.equals(BillingClient.SkuType.SUBS)) {
@@ -367,6 +364,7 @@ public class GooglePlayBillingHelper {
                 .setType(type)
                 .build();
         return connectionFlowable
+                .observeOn(AndroidSchedulers.mainThread())
                 .flatMap(client ->
                         Flowable.<List<SkuDetails>>create(emitter -> {
                             client.querySkuDetailsAsync(params, (billingResult, skuDetailsList) -> {
@@ -396,6 +394,7 @@ public class GooglePlayBillingHelper {
         }
 
         return connectionFlowable
+                .observeOn(AndroidSchedulers.mainThread())
                 .flatMap(client ->
                         Flowable.just(client.launchBillingFlow(activity, billingParamsBuilder.build())))
                 .firstOrError()
@@ -422,6 +421,7 @@ public class GooglePlayBillingHelper {
                 .newBuilder()
                 .setPurchaseToken(purchase.getPurchaseToken());
         return connectionFlowable
+                .observeOn(AndroidSchedulers.mainThread())
                 .firstOrError()
                 .flatMapCompletable(client ->
                         Completable.create(emitter -> {
@@ -435,7 +435,8 @@ public class GooglePlayBillingHelper {
                                 }
                             });
                         }))
-                .doOnError(err -> Utils.MyLog.g("GooglePlayBillingHelper::acknowledgePurchase error: " + err));
+                .doOnError(err -> Utils.MyLog.g("GooglePlayBillingHelper::acknowledgePurchase error: " + err))
+                .onErrorComplete();
     }
 
     static boolean isUnlimitedSubscription(@NonNull Purchase purchase) {
