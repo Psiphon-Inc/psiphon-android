@@ -1,23 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Descriptive text telling the user how they can use Psiphon Pro: either
-         by subscribing or by having ads in the app.
-         Insert one or more newline characters as needed to keep the lines approximately as short
-         as the English. -->
-    <string name="SubscriptionPromptMessage">Psiphon Pro\'nun reklam içermeyen sınırsız kullanımı için hemen abone olun.\n\nYa da reklam destekli Psiphon Pro\'yu 700 dakika boyunca ücretsiz olarak denemek için Başlat\'a basın.\n\nPsiphon\'ı desteklediğiniz için teşekkürler!</string>
-
-    <!-- Prompt text telling the user that can continue to use Psiphon by watching
-         a video ad. (This is an alternative to subscribing.) -->
-    <string name="RewardedVideoPrompt">YENİ! 100 dakikalık kesintisiz Psiphon Pro kazanmak için bir video izleyin.</string>
-
-    <!-- Text indicating to the user how much time they have left in their free trial. -->
-    <string name="FreeTrialRemainingTime">Ücretsiz deneme: %s</string>
-
-    <!-- Label for button that leads user to buy subscription or time pass to premium service.
-         When the user has a subscription or time pass, advertisements are removed from the app
-         ("ad-free"), additional features are enabled, and the app no longer periodically disconnects. -->
-    <string name="SubscribeButton">Reklam içermeyen sınırsız Psiphon Pro\'ya sahip olun!</string>
-
     <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
         When clicked a new screen opens where users can specify additional HTTP headers to be added to
         to HTTP proxy requests. Users may specify up to 3 custom headers -->
@@ -41,69 +23,6 @@
     <string name="custom_proxy_header_value">Üst bilgi değerini yazın</string>
     <string name="custom_proxy_header_ignored_values">Uyarı: Adı olmayan üst bilgiler yok sayılır!</string>
     <string name="custom_proxy_header_invalid_name">Hata:Üüst bilgi adında geçersiz karakterler var!</string>
-
-    <!-- Label for button that user will click in order to buy a subscription for Psiphon Pro.
-         The first formatted string is the price, and the second is what the price is per day.
-         Insert one or more newline characters as needed to keep the lines approximately as short
-         as the English. -->
-    <string name="PaymentChooserFragment.UnlimitedSubscription">En yüksek hız - %1$s / ay\n(%2$s / gün)</string>
-
-    <!-- Extra Label that appears on the subscription buying button for Psiphon Pro in case if there
-         is a trial period available for that subscription. The formated string is the length of the
-         trial period in days. Keep as short as possible -->
-    <string name="PaymentChooserFragment.FreeTrialPeriod">%d gün ücretsiz deneme</string>
-
-    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
-         The first formatted string is the price, and the second is what the price is per day.
-         Insert one or more newline characters as needed to keep the lines approximately as short
-         as the English. -->
-    <string name="PaymentChooserFragment.LimitedSubscription">Yüksek Hız - %1$s / ay\n(%2$s / gün)</string>
-
-    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
-         The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass7Day">7 Günlük Giriş - %1$s\n(%2$s / gün)</string>
-
-    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
-         The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass30Day">30 Günlük Giriş - %1$s\n(%2$s / gün)</string>
-
-    <!-- Label for button that user will click to buy a 90-day pass for Psiphon Pro.
-         The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass90Day">90 Günlük Giriş - %1$s\n(%2$s / gün)</string>
-
-    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
-         The first formatted string is the price, and the second is what the price is per day. -->
-    <string name="PaymentChooserFragment.TimePass360Day">360 Günlük Giriş - %1$s\n(%2$s / gün)</string>
-
-    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
-         exclamatory. Indicates that premium access results in all in-app advertisements being
-         removed. -->
-    <string name="PaymentChooserFragment.NoAdsExclaim">Reklam yok!</string>
-
-    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
-         exclamatory. Indicates that premium access results in additional features being unlocked
-         (such as egress region selection). -->
-    <string name="PaymentChooserFragment.FeaturesExclaim">Kilidi açık özellikler!</string>
-
-    <!-- One of the features of paying for premium Psiphon Pro usage. Should be short and
-         exclamatory. Indicates that premium access results in no interruptions due to free trial
-         time expiring (as happens with non-premium access). -->
-    <string name="PaymentChooserFragment.InterruptionsExclaim">Kesinti yok!</string>
-
-    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
-         amount of time. This string is a description specifically about buying a subscription.
-         The parenthetical remark about credit card requirements should be separated by a newline. -->
-    <string name="PaymentChooserFragment.SubscriptionDescription">Kesintisiz hizmete en iyi fiyatla abone olun.\n(Geçerli bir kredi kartı gerekir.)</string>
-
-    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
-         amount of time. This string announces that subscriptions include a free trial. -->
-    <string name="PaymentChooserFragment.FreeTrialDescription">YENİ! Her aboneliğe 30 günlük ücretsiz deneme.</string>
-
-    <!-- Text in the screen where the user chooses to buy a subscription or a pass for a specific
-         amount of time. This string is a description specifically about buying a time pass.
-         The parenthetical remark about credit card requirements should be separated by a newline. -->
-    <string name="PaymentChooserFragment.TimePassDescription">En yüksek hız zamanı girişi satın alın.\n(Kredi kartına gerek yok. Google Play hediye kartı ya da kredi kullanılabilir.)</string>
-
     <!-- Title for other text showing what the user's current speed limit is. Users have limited
          speed if they have not paid for premium service. -->
     <string name="rate_limit_text_title">Psiphon hız sınırı:</string>
@@ -223,6 +142,9 @@
     <!-- Text next to the button indicating to the user that they will earn PsiCash if they watch a video advertisement. -->
     <string name="psicash_purchase_free_description">Video izleyin ve kazanın</string>
 
+    <!-- Text next to the button indicating to the user that the rewarded video advertisement is only available when they are not connected to Psiphon. -->
+    <string name="psicash_purchase_free_not_available_not_running_description">Video izlemek ve PsiCash kazanmak için Psiphon bağlantısını kesmelisiniz.</string>
+
     <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
     <string name="psicash_purchase_free_button_price">Ücretsiz</string>
 
@@ -234,7 +156,7 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed. Do not translate or transliterate word Psiphon -->
-    <string name="speed_boost_unavailable">Psiphon ile bağlantı yokken Hız Artışı kullanılamaz</string>
+    <string name="speed_boost_unavailable">Hız Artışı etkinleştirmek için Psiphon\'a bağlanmalısınız, aşağıdaki düğmeye tıklayın ve tekrar deneyin</string>
 
     <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message
         Do not translate or transliterate word Psiphon -->
@@ -284,9 +206,106 @@
     <!-- A message to the user seen when the user just purchased PsiCash from PlayStore while connected to Psiphon and the purchase is in process of being redeemed -->
     <string name="please_wait_while_we_are_finalizing_your_purchase">Alım işleminiz tamamlanıyor. Lütfen bekleyin</string>
 
+    <!-- A prompt seen by the user when they try to use one of Speed Boost options, such as in
+    "Would you like to get 5 hours of Speed Boost for 500 PsiCash". Do not translate formatters %s or %d, leave as is
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="confirm_speedboost_purchase_alert">%d PsiCash karşılığında %s Hız Artışı almak ister misiniz?</string>
+
+    <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
+    <string name="psicash_purchase_not_available_error_message">PsiCash satın alımı şu an mevcut değil, lütfen daha sonra tekrar deneyin</string>
+
+    <!-- An alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_insufficient_balance_alert">Bu Hız Artışı seçeneğini etkinleştirmek için yeterli PsiCash\'iniz yok, almak ister misiniz? </string>
+
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">Psiphon Pro Yükselt</string>
+
+    <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_message">Uygulamalar çalışmıyor mu? Psiphon deneyiminizi arttırmak için buraya tıklayın!</string>
+
+    <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_dialog_message">Psiphon Pro\'nun ücretsiz sürümüyle, İnternet trafiğinin bazı kısımları desteklenmiyor. Psiphon deneyiminizi tam olarak yaşamak için bir abonelik veya Hız Artışı satın alın.</string>
+
+    <!-- Text on the button which takes user to subscription screen -->
+    <string name="btn_get_subscription">Abone ol</string>
+
+    <!-- Text on the button which takes user to Speed Boost screen.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="btn_get_speed_boost">Hız Artışı</string>
+
     <!-- A message with numeric formatter such as "1 hour" or "5 hours", translate for all language applicable forms. -->
     <plurals name="hours_of_speed_boost">
         <item quantity="one">%d saat</item>
         <item quantity="other">%d saat</item>
     </plurals>
+
+    <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.UsingLimitedPlan">Temel planı 5&#160; Mb/s hız sınırı ile kullanıyorsunuz. Sınırsız plana yükseltmek ister misiniz?</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.UsingFreePlan">Ücretsiz, reklam destekli, hız sınırlı, kapı numarası kısıtlamalı planı kullanıyorsunuz. Bu planı kullanmaya devam edebilir ya da premium planlarımızdan birine yükseltebilirsiniz.</string>
+
+    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimepassCommonDescription">Satın alacağınız her zaman planı ile reklamları, hız ve kapı numarası sınırlamasını kaldırın</string>
+
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice7Text">7 günlük plan - %s</string>
+
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '30-day pass - CA$8.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice30Text">30 günlük plan - %s</string>
+
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '360-day pass - CA$99.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice360Text">360 günlük plan - %s</string>
+
+    <!-- Extra label showing price per day on all time pass buttons. Keep as short as possible. -->
+    <string name="PaymentChooserActivity.TimepassPricePerDayText">%s/gün</string>
+
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">Temel - aylık %s</string>
+
+    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Reklamsız, 5&#160;Mb/s hıza kadar kapı numarası sınırlaması olmadan</string>
+
+    <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">Sınırsız - aylık %s </string>
+
+    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Reklamsız, hız ve kapı numarası sınırlaması olmadan</string>
+
+    <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
+         is a trial period available for that subscription. The formated string is the length of the
+         trial period in days. Keep as short as possible -->
+    <string name="PaymentChooserActivity.FreeTrialPeriod">Ücretsiz deneme - %d gün</string>
+
+    <!-- Extra text on all subscriptions buttons showing monthly price per subscription after free trial ends-->
+    <string name="PaymentChooserActivity.PriceAfterFreeTrialText">Deneme süresi bittikten sonra %s/ay</string>
+
+    <!-- Subscription terms text, appears at the bottom of the subscriptions screen -->
+    <string name="PaymentChooserActivity.SubscriptionsTerms">Aboneliğinizi istediğiniz zaman, Google Play abonelikler bölümünden iptal edebilirsiniz. Aboneliğinizi iptal ettiğinizde, geçerli fatura döneminin sonunda abonelik planınız tarafından sunulan premium özelliklere erişiminizi kaybedersiniz. Her kullanıcının yalnız bir ücretsiz deneme hakkı vardır. Ücretsiz deneme süresinin sonunda, seçilmiş abonelik planının ücreti otomatik olarak alınır. Otomatik ödemeleri engellemek için deneme süresi sona ermeden aboneliği iptal edin.</string>
+
+    <!-- Time pass explanation text -->
+    <string name="PaymentChooserActivity.TimePassExplanation">Zaman planı, abonelikten farklı olarak, satın alındığı andan itibaren belirli bir süre için geçerli olan ve sona erdikten sonra otomatik olarak yenilenmeyen tek kullanımlık bir lisanstır.</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">Abonelik</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available time passes.
+    A time pass is a single use license that is valid for a certain period of time from the moment it is purchased
+    and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimePassTab">Zaman Paketi</string>
 </resources>

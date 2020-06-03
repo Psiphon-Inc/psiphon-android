@@ -1,3 +1,152 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">سرتیتر های HTTP شخصی</string>
+
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">سرتیتر های HTTP سفارشی اضافی را برای درخواست‌های پروکسی تنظیم کنید</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">افزودن سرتیتر های HTTP شخصی</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">سرتیتر های HTTP سفارشی را به همه درخواست‌های پروکسی HTTP خروجی اضافه کنید</string>
+    <string name="custom_proxy_header_group_1">سرتیتر 1</string>
+    <string name="custom_proxy_header_group_2">سرتیتر 2</string>
+    <string name="custom_proxy_header_group_3">سرتیتر 3</string>
+    <string name="custom_proxy_header_group_4">سرتیتر 4</string>
+    <string name="custom_proxy_header_group_5">سرتیتر 5</string>
+    <string name="custom_proxy_header_group_6">سرتیتر 6</string>
+    <string name="custom_proxy_header_name">نام سرتیتر را وارد کنید</string>
+    <string name="custom_proxy_header_value">مقدار سرتیتر را وارد کنید</string>
+    <string name="custom_proxy_header_ignored_values">هشدار: سرتیتر های با نام خالی نادیده گرفته می‌شوند!</string>
+    <string name="custom_proxy_header_invalid_name">خطا: نام سرتیتر حاوی کارکترهای غیر مجاز است!</string>
+    <!-- Title for other text showing what the user's current speed limit is. Users have limited
+         speed if they have not paid for premium service. -->
+    <string name="rate_limit_text_title">محدودیت سرعت Psiphon:</string>
+
+    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
+         and is in megabits-per-second. Users have limited speed if they have not paid for premium
+         service. -->
+    <string name="rate_limit_text_limited">%d مگابایت در ثانیه </string>
+
+    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
+         have access to a full-speed connection. Users have limited speed if they have not paid for
+         premium service. -->
+    <string name="rate_limit_text_unlimited">نامحدود</string>
+
+    <!-- Indicates that the user has an active speed boost.'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
+    anything that indicates a fast or unrestricted speed. -->
+    <string name="rate_limit_text_speed_boost">اسپید بوست</string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">الان ارتقا دهید!</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because of
+    an unknown error. Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_transaction_invalid_message">پاسخ نامعتبر از سرور PsiCash دریافت شد.</string>
+
+    <!-- Internal message not seen by the users, indicates successful Speed Boost purchase. -->
+    <string name="psicash_transaction_success_message">موفقیت</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because they have an insufficient balance.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
+    anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_insufficient_balance_message">موجودی برای خرید «اسپید بوست» کافی نیست.</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because they tried to make the purchase with
+    an out of date product price. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
+    connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate',
+    'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_amount_mismatch_message">قیمت «اسپید بوست» قدیمی شده است. در حال به‌روزرسانی محصولات دیگر.  </string>
+
+    <!-- Alert error message informing user that they have an active Speed Boost purchase.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed',
+    'blast off', or anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_existing_message">شما در حال حاضر یک خرید فعال «اسپید بوست» دارید. </string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because they attempted to buy a product that is no longer available
+    and that they should try updating or reinstalling the app. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
+    connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
+    anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_type_not_found_message">محصول «اسپید بوست» یافت نشد. برنامه شما ممکن است قدیمی باشد. لطفا به‌روزرسانی‌ها را بررسی کنید. </string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because their app has entered an invalid state and that they
+    should try updating or reinstalling the app. Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_transaction_invalid_tokens_message">برنامه وارد وضعیت نامعتبری شده است. لطفا برنامه را دوباره نصب کنید و از PsiCash استفاده کنید. </string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed due to a server error and that they should try again in a few minutes -->
+    <string name="transaction_server_error_message">خطای سرور. لطفا پس از چند دقیقه مجددا تلاش کنید. </string>
+
+    <!-- Alert error message informing user that a critical PsiCash related error has occurred and encouraging users to send feedback diagnostics -->
+    <string name="psicash_critical_error_message">یک خطای مهم رخ داده است. لطفا بازخورد ارسال کنید.</string>
+
+    <!-- Alert error message informing user that a critical PsiCash error has occurred and their PsiCash balance and purchases are reset(lost) -->
+    <string name="psicash_critical_error_reset_message">یک خطای مهم رخ داده است. موجودی PsiCash و حالت دیگر شما دوباره تنظیم شده است.</string>
+
+    <!-- Alert error message informing user that a recoverable PsiCash related error has occurred and last action will most likely succeed next time. -->
+    <string name="psicash_recoverable_error_message">یک خطای قابل بازیابی رخ داده است. لطفا دوباره امتحان کنید.</string>
+
+    <!-- Alert message informing user that a PsiCash rewarded video is currently not available. -->
+    <string name="psicash_video_not_available_message">ویدیو در دسترس نیست، بعدا دوباره امتحان کنید.</string>
+
+    <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
+    <string name="unexpected_error_occured_send_feedback_message">یک خطای غیرمنتظره رخ داده است، لطفا بازخورد ارسال کنید.</string>
+
+    <!-- Alert error message informing user that the Psiphon tunnel needs to be running in order to make a Speed Boost purchase.
+     'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
+    <string name="speed_boost_connect_to_purchase_message">لطفا Psiphon را برای خرید اسپید بوست شروع کنید.</string>
+
+    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
+    <string name="psicash_snackbar_action_ok">باشه</string>
+
+    <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
+    <string name="subscription_options_currently_not_available">گزینه‌های اشتراک الآن در دسترس نیستند، لطفا بعدا امتحان کنید.</string>
+
+    <!-- Speed Boost button that opens a dialog with various speed boost options available for purchase.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_button_caption">اسپید بوست</string>
+
+    <!-- Text next to the button indicating to the user that they will earn PsiCash if they watch a video advertisement. -->
+    <string name="psicash_purchase_free_description">ویدیو ببینید و برنده شوید</string>
+
+    <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
+    <string name="psicash_purchase_free_button_price">رایگان</string>
+
+    <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message
+        Do not translate or transliterate word Psiphon -->
+    <string name="connect_to_psiphon_button_text">اتصال به Psiphon</string>
+
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">ارتقا Psiphon Pro</string>
+
+    <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_dialog_message">بعضی از ترافیک اینترنت توسط نسخه رایگان Psiphon Pro پشتیبانی نمی‌شود. مشترک شوید و یا از «اسپید بوست» برای تجربه‌ی تمام امکانات Psiphon استفاده کنید.</string>
+
+    <!-- Text on the button which takes user to subscription screen -->
+    <string name="btn_get_subscription">اشتراک</string>
+
+    <!-- Text on the button which takes user to Speed Boost screen.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="btn_get_speed_boost">اسپید بوست</string>
+
+    <!-- A message with numeric formatter such as "1 hour" or "5 hours", translate for all language applicable forms. -->
+    <plurals name="hours_of_speed_boost">
+        <item quantity="one"> %d ساعت</item>
+        <item quantity="other"> %d ساعت</item>
+    </plurals>
+
     </resources>
