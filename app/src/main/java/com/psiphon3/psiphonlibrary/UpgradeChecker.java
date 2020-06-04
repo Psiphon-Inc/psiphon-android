@@ -25,6 +25,7 @@ import android.app.PendingIntent;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v4.content.WakefulBroadcastReceiver;
@@ -130,6 +131,22 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
      * @return true if upgrade check is needed.
      */
     public static boolean upgradeCheckNeeded(Context context) {
+        // NOTE: there are new checks in place that will prevent the client from downloading an
+        // upgrade if the client SDK is less than 14 or does not support VPN. This is done because
+        // we are removing 'Browser Only' mode completely on Android in favour of VPN exclusions.
+        //
+        // Since we're bumping future versions minSdk from 9 to 14 there is no point in downloading
+        // an upgrade if it cannot be installed.
+        if (Build.VERSION.SDK_INT < 14) {
+            return false;
+        }
+        // Also do not download an upgrade if the client is missing android.net.VpnService
+        try {
+            Class.forName("android.net.VpnService");
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+
         Context appContext = context.getApplicationContext();
 
         // The main process will call this when it tries to connect, so we will use this opportunity
