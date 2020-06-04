@@ -210,11 +210,12 @@
     <string name="please_wait_while_we_are_finalizing_your_purchase">Please wait while we are finalizing your purchase</string>
 
     <!-- A prompt seen by the user when they try to use one of Speed Boost options, such as in
-    "Would you like to get 5 hours of Speed Boost for 500 PsiCash". Do not translate formatters %s or %d, leave as is
+    "Would you like to get 5 hours of Speed Boost for 500 PsiCash". The first format argument is the string representing a number
+    of hours as in '5 hours', the second format argument is for an integer representing the PsiCash value as in '500'
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.-->
-    <string name="confirm_speedboost_purchase_alert">Would you like to get %s of Speed Boost for %d PsiCash?</string>
+    <string name="confirm_speedboost_purchase_alert">Would you like to get %1$s of Speed Boost for %2$d PsiCash?</string>
 
     <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
     <string name="psicash_purchase_not_available_error_message">PsiCash purchase is currently not available, please try again later</string>
