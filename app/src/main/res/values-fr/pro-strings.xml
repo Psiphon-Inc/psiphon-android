@@ -211,7 +211,7 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.-->
-    <string name="confirm_speedboost_purchase_alert">Souhaitez-vous obtenir %s de Survitesse pour %d PsiCash?</string>
+    <string name="confirm_speedboost_purchase_alert">Souhaitez-vous obtenir %1$s de Survitesse pour %2$d PsiCash?</string>
 
     <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
     <string name="psicash_purchase_not_available_error_message">L’achat de PsiCash n’est pas proposé en ce moment, veuillez ressayer ultérieurement.</string>
