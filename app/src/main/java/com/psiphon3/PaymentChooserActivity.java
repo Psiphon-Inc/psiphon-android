@@ -51,6 +51,7 @@ import java.util.Currency;
 import java.util.Locale;
 
 import io.reactivex.Observable;
+import io.reactivex.disposables.CompositeDisposable;
 
 public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivity {
     public static final String USER_PICKED_SKU_DETAILS_EXTRA = "USER_PICKED_SKU_DETAILS_EXTRA";
@@ -161,11 +162,14 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
 
     public static class SubscriptionFragment extends Fragment {
         private Purchase limitedSubscriptionPurchase;
+        private View fragmentView;
+        private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
         @Nullable
         @Override
         public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-            return inflater.inflate(R.layout.payment_subscriptions_tab_fragment, container, false);
+            fragmentView = inflater.inflate(R.layout.payment_subscriptions_tab_fragment, container, false);
+            return fragmentView;
         }
 
         @Override
@@ -173,7 +177,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
             super.onActivityCreated(savedInstanceState);
             final FragmentActivity activity = getActivity();
             GooglePlayBillingHelper googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(activity.getApplicationContext());
-            googlePlayBillingHelper.allSkuDetailsSingle()
+            compositeDisposable.add(googlePlayBillingHelper.allSkuDetailsSingle()
                     .toObservable()
                     .flatMap(Observable::fromIterable)
                     .filter(skuDetails -> {
@@ -188,29 +192,35 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                     })
                     .toList()
                     .doOnSuccess(skuDetailsList -> {
-                        if (skuDetailsList.size() < 1) {
-                            Utils.MyLog.g("PaymentChooserActivity: subscription SKU error: bad sku details list size: " +
-                                    skuDetailsList.size());
+                        if (skuDetailsList == null || skuDetailsList.size() == 0) {
+                            Utils.MyLog.g("PaymentChooserActivity: subscription SKU error: sku details list is empty.");
                             // finish the activity and show "Subscription options not available" toast.
-                            activity.finishActivity(RESULT_OK);
+                            if (!activity.isFinishing()) {
+                                activity.finishActivity(RESULT_OK);
+                            }
                             return;
                         } // else
                         for (SkuDetails skuDetails : skuDetailsList) {
+                            if (skuDetails == null) {
+                                Utils.MyLog.g("PaymentChooserActivity: subscription SKU error: sku details is null.");
+                                continue;
+                            }
+
                             ViewGroup clickable;
                             TextView titlePriceTv;
                             TextView freeTrialTv;
                             TextView priceAfterFreeTrialTv;
 
                             if (skuDetails.getSku().equals(GooglePlayBillingHelper.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
-                                clickable = activity.findViewById(R.id.unlimitedSubscriptionClickable);
-                                titlePriceTv = activity.findViewById(R.id.unlimitedSubscriptionTitlePrice);
-                                freeTrialTv = activity.findViewById(R.id.unlimitedSubscriptionFreeTrialPeriod);
-                                priceAfterFreeTrialTv = activity.findViewById(R.id.unlimitedSubscriptionPriceAfterFreeTrial);
+                                clickable = fragmentView.findViewById(R.id.unlimitedSubscriptionClickable);
+                                titlePriceTv = fragmentView.findViewById(R.id.unlimitedSubscriptionTitlePrice);
+                                freeTrialTv = fragmentView.findViewById(R.id.unlimitedSubscriptionFreeTrialPeriod);
+                                priceAfterFreeTrialTv = fragmentView.findViewById(R.id.unlimitedSubscriptionPriceAfterFreeTrial);
                             } else {
-                                clickable = activity.findViewById(R.id.limitedSubscriptionClickable);
-                                titlePriceTv = activity.findViewById(R.id.limitedSubscriptionTitlePrice);
-                                freeTrialTv = activity.findViewById(R.id.limitedSubscriptionFreeTrialPeriod);
-                                priceAfterFreeTrialTv = activity.findViewById(R.id.limitedSubscriptionPriceAfterFreeTrial);
+                                clickable = fragmentView.findViewById(R.id.limitedSubscriptionClickable);
+                                titlePriceTv = fragmentView.findViewById(R.id.limitedSubscriptionTitlePrice);
+                                freeTrialTv = fragmentView.findViewById(R.id.limitedSubscriptionFreeTrialPeriod);
+                                priceAfterFreeTrialTv = fragmentView.findViewById(R.id.limitedSubscriptionPriceAfterFreeTrial);
                             }
                             // skuDetails.getPrice() returns a differently looking string than the one
                             // we get by using priceFormatter below, so for consistency we'll use
@@ -233,15 +243,17 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
 
                             clickable.setVisibility(View.VISIBLE);
                             clickable.setOnClickListener(v -> {
-                                Utils.MyLog.g("PaymentChooserActivity: subscription purchase button clicked.");
-                                Intent data = new Intent();
-                                data.putExtra(USER_PICKED_SKU_DETAILS_EXTRA, skuDetails.getOriginalJson());
-                                if (limitedSubscriptionPurchase != null) {
-                                    data.putExtra(USER_OLD_SKU_EXTRA, limitedSubscriptionPurchase.getSku());
-                                    data.putExtra(USER_OLD_PURCHASE_TOKEN_EXTRA, limitedSubscriptionPurchase.getPurchaseToken());
+                                if (!activity.isFinishing()) {
+                                    Utils.MyLog.g("PaymentChooserActivity: subscription purchase button clicked.");
+                                    Intent data = new Intent();
+                                    data.putExtra(USER_PICKED_SKU_DETAILS_EXTRA, skuDetails.getOriginalJson());
+                                    if (limitedSubscriptionPurchase != null) {
+                                        data.putExtra(USER_OLD_SKU_EXTRA, limitedSubscriptionPurchase.getSku());
+                                        data.putExtra(USER_OLD_PURCHASE_TOKEN_EXTRA, limitedSubscriptionPurchase.getPurchaseToken());
+                                    }
+                                    activity.setResult(RESULT_OK, data);
+                                    activity.finish();
                                 }
-                                activity.setResult(RESULT_OK, data);
-                                activity.finish();
                             });
 
                             String freeTrialPeriodISO8061 = skuDetails.getFreeTrialPeriod();
@@ -263,7 +275,13 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                             }
                         }
                     })
-                    .subscribe();
+                    .subscribe());
+        }
+
+        @Override
+        public void onDestroy() {
+            super.onDestroy();
+            compositeDisposable.dispose();
         }
 
         public void setLimitedSubscriptionPurchase(Purchase purchase) {
@@ -272,18 +290,23 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
     }
 
     public static class TimePassFragment extends Fragment {
+        private View fragmentView;
+        private CompositeDisposable compositeDisposable = new CompositeDisposable();
+
         @Nullable
         @Override
         public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-            return inflater.inflate(R.layout.payment_timepasses_tab_fragment, container, false);
+            fragmentView = inflater.inflate(R.layout.payment_timepasses_tab_fragment, container, false);
+            return fragmentView;
         }
 
         @Override
         public void onActivityCreated(@Nullable Bundle savedInstanceState) {
             super.onActivityCreated(savedInstanceState);
             final FragmentActivity activity = getActivity();
+            final String packageName = activity.getPackageName();
             GooglePlayBillingHelper googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(activity.getApplicationContext());
-            googlePlayBillingHelper.allSkuDetailsSingle()
+            compositeDisposable.add(googlePlayBillingHelper.allSkuDetailsSingle()
                     .toObservable()
                     .flatMap(Observable::fromIterable)
                     .filter(skuDetails -> {
@@ -292,14 +315,19 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                     })
                     .toList()
                     .doOnSuccess(skuDetailsList -> {
-                        if (skuDetailsList.size() < 1) {
-                            Utils.MyLog.g("PaymentChooserActivity: time pass SKU error: bad sku details list size: " +
-                                    skuDetailsList.size());
+                        if (skuDetailsList == null || skuDetailsList.size() == 0) {
+                            Utils.MyLog.g("PaymentChooserActivity: time pass SKU error: sku details list is empty.");
                             // finish the activity and show "Subscription options not available" toast.
-                            activity.finishActivity(RESULT_OK);
+                            if (!activity.isFinishing()) {
+                                activity.finishActivity(RESULT_OK);
+                            }
                             return;
                         } // else
                         for (SkuDetails skuDetails : skuDetailsList) {
+                            if (skuDetails == null) {
+                                Utils.MyLog.g("PaymentChooserActivity: time pass SKU error: sku details is null.");
+                                continue;
+                            }
                             // Get pre-calculated life time in days for time passes
                             Long lifetimeInDays = GooglePlayBillingHelper.IAB_TIMEPASS_SKUS_TO_DAYS.get(skuDetails.getSku());
                             if (lifetimeInDays == null || lifetimeInDays == 0L) {
@@ -309,13 +337,13 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                             // Calculate price per day
                             float pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / lifetimeInDays;
 
-                            int clickableResId = getResources().getIdentifier("timepassClickable" + lifetimeInDays, "id", activity.getPackageName());
-                            int titlePriceTvResId = getResources().getIdentifier("timepassTitlePrice" + lifetimeInDays, "id", activity.getPackageName());
-                            int pricePerDayTvResId = getResources().getIdentifier("timepassPricePerDay" + lifetimeInDays, "id", activity.getPackageName());
+                            int clickableResId = getResources().getIdentifier("timepassClickable" + lifetimeInDays, "id", packageName);
+                            int titlePriceTvResId = getResources().getIdentifier("timepassTitlePrice" + lifetimeInDays, "id", packageName);
+                            int pricePerDayTvResId = getResources().getIdentifier("timepassPricePerDay" + lifetimeInDays, "id", packageName);
 
-                            ViewGroup clickable = activity.findViewById(clickableResId);
-                            TextView titlePriceTv = activity.findViewById(titlePriceTvResId);
-                            TextView pricePerDayTv = activity.findViewById(pricePerDayTvResId);
+                            ViewGroup clickable = fragmentView.findViewById(clickableResId);
+                            TextView titlePriceTv = fragmentView.findViewById(titlePriceTvResId);
+                            TextView pricePerDayTv = fragmentView.findViewById(pricePerDayTvResId);
 
                             // skuDetails.getPrice() returns a differently looking string than the one
                             // we get by using priceFormatter below, so for consistency we'll use
@@ -342,15 +370,23 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
 
                             clickable.setVisibility(View.VISIBLE);
                             clickable.setOnClickListener(v -> {
-                                Utils.MyLog.g("PaymentChooserActivity: time pass purchase button clicked.");
-                                Intent data = new Intent();
-                                data.putExtra(USER_PICKED_SKU_DETAILS_EXTRA, skuDetails.getOriginalJson());
-                                activity.setResult(RESULT_OK, data);
-                                activity.finish();
+                                if (!activity.isFinishing()) {
+                                    Utils.MyLog.g("PaymentChooserActivity: time pass purchase button clicked.");
+                                    Intent data = new Intent();
+                                    data.putExtra(USER_PICKED_SKU_DETAILS_EXTRA, skuDetails.getOriginalJson());
+                                    activity.setResult(RESULT_OK, data);
+                                    activity.finish();
+                                }
                             });
                         }
                     })
-                    .subscribe();
+                    .subscribe());
+        }
+
+        @Override
+        public void onDestroy() {
+            super.onDestroy();
+            compositeDisposable.dispose();
         }
     }
 }
