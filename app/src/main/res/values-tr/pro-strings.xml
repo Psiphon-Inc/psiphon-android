@@ -207,7 +207,8 @@
     <string name="please_wait_while_we_are_finalizing_your_purchase">Alım işleminiz tamamlanıyor. Lütfen bekleyin</string>
 
     <!-- A prompt seen by the user when they try to use one of Speed Boost options, such as in
-    "Would you like to get 5 hours of Speed Boost for 500 PsiCash". Do not translate formatters %s or %d, leave as is
+    "Would you like to get 5 hours of Speed Boost for 500 PsiCash". The first format argument is the string representing a number
+    of hours as in '5 hours', the second format argument is for an integer representing the PsiCash value as in '500'
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.-->
@@ -247,7 +248,7 @@
     </plurals>
 
     <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
-    <string name="PaymentChooserActivity.UsingLimitedPlan">Temel planı 5&#160; Mb/s hız sınırı ile kullanıyorsunuz. Sınırsız plana yükseltmek ister misiniz?</string>
+    <string name="PaymentChooserActivity.UsingLimitedPlan">Temel planı 5&#160;Mb/s hız sınırı ile kullanıyorsunuz. Sınırsız plana yükseltmek ister misiniz?</string>
 
     <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
     <string name="PaymentChooserActivity.UsingFreePlan">Ücretsiz, reklam destekli, hız sınırlı, kapı numarası kısıtlamalı planı kullanıyorsunuz. Bu planı kullanmaya devam edebilir ya da premium planlarımızdan birine yükseltebilirsiniz.</string>
