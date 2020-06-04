@@ -278,7 +278,7 @@
 
     <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
          Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
-    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Remova anúncios, alta velocidade de até 5&#160Mb/s com portas irrestritas</string>
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Remova anúncios, alta velocidade de até 5&#160;Mb/s com portas irrestritas</string>
 
     <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
