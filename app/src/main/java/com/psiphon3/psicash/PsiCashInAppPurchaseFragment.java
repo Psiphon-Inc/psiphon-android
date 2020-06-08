@@ -29,6 +29,7 @@ import com.psiphon3.subscription.R;
 
 import java.text.NumberFormat;
 import java.util.Collections;
+import java.util.Currency;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.reactivex.Completable;
@@ -205,7 +206,21 @@ public class PsiCashInAppPurchaseFragment extends Fragment {
 
                             final Button btn = psicashPurchaseItemView.findViewById(R.id.psicash_purchase_sku_item_price);
                             final ProgressBar progress = psicashPurchaseItemView.findViewById(R.id.progress_bar_over_sku_button);
-                            btn.setText(skuDetails.getPrice());
+
+                            // skuDetails.getPrice() returns a differently looking string than the one
+                            // we get by using priceFormatter below, so for consistency we'll use
+                            // priceFormatter everywhere.
+                            // If the formatting for priceText fails, use skuDetails.getPrice() as default
+                            String priceText = skuDetails.getPrice();
+                            try {
+                                Currency currency = Currency.getInstance(skuDetails.getPriceCurrencyCode());
+                                NumberFormat priceFormatter = NumberFormat.getCurrencyInstance();
+                                priceFormatter.setCurrency(currency);
+                                priceText = priceFormatter.format(skuDetails.getPriceAmountMicros() / 1000000.0f);
+                            } catch (IllegalArgumentException e) {
+                                // do nothing
+                            }
+                            btn.setText(priceText);
                             btn.setOnClickListener(v -> {
                                 if (purchaseDisposable == null || purchaseDisposable.isDisposed()) {
                                     final Activity activity = getActivity();
