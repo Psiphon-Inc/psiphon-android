@@ -148,14 +148,12 @@ public class PsiphonAdManager {
     private static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "6efb5aa4e0d74a679a6219f9b3aa6221";
     // MoPub test interstitial ID 24534e1901884e398f1253216226017e
     private static final String MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID = "1f9cb36809f04c8d9feaff5deb9f17ed";
-    private static final String MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID = "0d4cf70da6504af5878f0b3592808852";
     // AdMob test interstitial ID ca-app-pub-3940256099942544/1033173712
-    private static final String ADMOB_UNTUNNELED_FAILOVER_INTERSTITIAL_PROPERTY_ID = "ca-app-pub-1072041961750291/4451273649";
+    private static final String ADMOB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID = "ca-app-pub-1072041961750291/6443217092";
 
     private AdView unTunneledAdMobBannerAdView;
     private MoPubView tunneledMoPubBannerAdView;
     private MoPubInterstitial tunneledMoPubInterstitial;
-    private MoPubInterstitial unTunneledMoPubInterstitial;
     private InterstitialAd unTunneledAdMobInterstitial;
 
     private ViewGroup bannerLayout;
@@ -175,7 +173,6 @@ public class PsiphonAdManager {
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     private final Observable<InterstitialResult> tunneledMoPubInterstitialObservable;
-    private final Observable<InterstitialResult> unTunneledMoPubInterstitialObservable;
     private final Observable<InterstitialResult> unTunneledAdMobInterstitialObservable;
 
     private TunnelState.ConnectionData interstitialConnectionData;
@@ -251,72 +248,6 @@ public class PsiphonAdManager {
                 .replay(1)
                 .autoConnect(0);
 
-        this.unTunneledMoPubInterstitialObservable = initializeMoPubSdk
-                .andThen(Observable.<InterstitialResult>create(emitter -> {
-                    if (unTunneledMoPubInterstitial != null) {
-                        unTunneledMoPubInterstitial.destroy();
-                    }
-                    unTunneledMoPubInterstitial = new MoPubInterstitial(activity, MOPUB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
-                    unTunneledMoPubInterstitial.setInterstitialAdListener(new MoPubInterstitial.InterstitialAdListener() {
-                        @Override
-                        public void onInterstitialLoaded(MoPubInterstitial interstitial) {
-                            if (!emitter.isDisposed()) {
-                                emitter.onNext(InterstitialResult.MoPub.create(interstitial, InterstitialResult.State.READY));
-                            }
-                        }
-
-                        @Override
-                        public void onInterstitialFailed(MoPubInterstitial interstitial, MoPubErrorCode errorCode) {
-                            if (!emitter.isDisposed()) {
-                                // Complete normally if the error code is NO_FILL so we don't fail
-                                // over to AdMob untunneled interstitial in this case.
-                                if (errorCode == MoPubErrorCode.NO_FILL) {
-                                    emitter.onComplete();
-                                } else {
-                                    emitter.onError(new RuntimeException("MoPub interstitial failed: "
-                                            + errorCode.toString()));
-                                }
-                            }
-                        }
-
-                        @Override
-                        public void onInterstitialShown(MoPubInterstitial interstitial) {
-                            if (!emitter.isDisposed()) {
-                                emitter.onNext(InterstitialResult.MoPub.create(interstitial, InterstitialResult.State.SHOWING));
-                            }
-                        }
-
-                        @Override
-                        public void onInterstitialClicked(MoPubInterstitial interstitial) {
-                        }
-
-                        @Override
-                        public void onInterstitialDismissed(MoPubInterstitial interstitial) {
-                            if (!emitter.isDisposed()) {
-                                emitter.onComplete();
-                            }
-                        }
-                    });
-                    if (unTunneledMoPubInterstitial.isReady()) {
-                        if (!emitter.isDisposed()) {
-                            emitter.onNext(InterstitialResult.MoPub.create(unTunneledMoPubInterstitial, InterstitialResult.State.READY));
-                        }
-                    } else {
-                        if (!emitter.isDisposed()) {
-                            emitter.onNext(InterstitialResult.MoPub.create(unTunneledMoPubInterstitial, InterstitialResult.State.LOADING));
-                            // Pass test devices Ids to AdMob with the snippet below
-                            /*
-                            Map<String, Object> localExtras = new HashMap<>();
-                            localExtras.put("testDevices", "0123456789");
-                            unTunneledMoPubInterstitial.setLocalExtras(localExtras);
-                             */
-                            unTunneledMoPubInterstitial.load();
-                        }
-                    }
-                }))
-                .replay(1)
-                .refCount();
-
         this.tunneledMoPubInterstitialObservable = initializeMoPubSdk
                 .andThen(Observable.<InterstitialResult>create(emitter -> {
                     if (tunneledMoPubInterstitial != null) {
@@ -384,7 +315,7 @@ public class PsiphonAdManager {
                         unTunneledAdMobInterstitial.setAdListener(null);
                     }
                     unTunneledAdMobInterstitial = new InterstitialAd(activity);
-                    this.unTunneledAdMobInterstitial.setAdUnitId(ADMOB_UNTUNNELED_FAILOVER_INTERSTITIAL_PROPERTY_ID);
+                    this.unTunneledAdMobInterstitial.setAdUnitId(ADMOB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
                     unTunneledAdMobInterstitial.setAdListener(new AdListener() {
                         @Override
                         public void onAdLoaded() {
@@ -765,9 +696,7 @@ public class PsiphonAdManager {
                 interstitialResultObservable = tunneledMoPubInterstitialObservable;
                 break;
             case UNTUNNELED:
-                interstitialResultObservable = unTunneledMoPubInterstitialObservable
-                        // If untunneled MoPub fails, try untunneled AdMob instead
-                        .onErrorResumeNext(unTunneledAdMobInterstitialObservable);
+                interstitialResultObservable = unTunneledAdMobInterstitialObservable;
                 break;
             default:
                 throw new IllegalArgumentException("getInterstitialObservable: unhandled AdResult.Type: " + adType);
@@ -803,9 +732,6 @@ public class PsiphonAdManager {
         destroyUnTunneledBanners();
         if (tunneledMoPubInterstitial != null) {
             tunneledMoPubInterstitial.destroy();
-        }
-        if (unTunneledMoPubInterstitial != null) {
-            unTunneledMoPubInterstitial.destroy();
         }
         if (unTunneledAdMobInterstitial != null) {
             unTunneledAdMobInterstitial.setAdListener(null);
