@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.MobileAds;
@@ -13,6 +14,7 @@ import com.google.android.gms.ads.rewarded.RewardedAdCallback;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions;
 import com.psiphon3.TunnelState;
+import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 import com.vungle.mediation.VungleAdapter;
@@ -71,9 +73,19 @@ class RewardedVideoHelper {
         MobileAds.initialize(context, BuildConfig.ADMOB_APP_ID);
 
         final AppPreferences mp = new AppPreferences(context);
-        String customData = mp.getString(context.getString(R.string.persistentPsiCashCustomData), "");
+        final String customData = mp.getString(context.getString(R.string.persistentPsiCashCustomData), "");
 
         this.adMobVideoObservable = Observable.create(emitter -> {
+            if (TextUtils.isEmpty(customData)) {
+                // If the custom data is empty we should not attempt to load the ad at all.
+                // Notify the subscriber(s), log and bail.
+                String errorMessage = "RewardedAd error: empty custom data";
+                if (!emitter.isDisposed()) {
+                    emitter.onError(new PsiCashException.Video(errorMessage));
+                }
+                Utils.MyLog.g(errorMessage);
+                return;
+            }
             RewardedAd rewardedAd = new RewardedAd(context, ADMOB_VIDEO_AD_ID);
             ServerSideVerificationOptions.Builder optionsBuilder = new ServerSideVerificationOptions.Builder();
             optionsBuilder.setCustomData(customData);
