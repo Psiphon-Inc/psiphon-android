@@ -6,7 +6,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.2'
+        classpath 'com.android.tools.build:gradle:3.6.3'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -45,19 +45,4 @@ ext {
     vungleSdkVersion = '6.3.24'
     vungleAdMobMediationVersion = '6.3.24.1'
 }
-
-subprojects {
-    project.configurations.all {
-        resolutionStrategy.eachDependency { details ->
-            // resolve all android support library conflicts to the same version
-            // except for multidex modules
-            if (details.requested.group == 'com.android.support' && !details.requested.name.startsWith('multidex')) {
-                details.useVersion rootProject.ext.androidSupportLibraryVersion
-            } else if (details.requested == 'android.arch.lifecycle') {
-                details.useVersion rootProject.ext.androidLifecycleExtensionsVersion
-            }
-        }
-    }
-}
-
 

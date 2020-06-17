@@ -5,7 +5,7 @@
     android:fillViewport="true"
     android:fadeScrollbars="true">
 
-    <android.support.constraint.ConstraintLayout xmlns:app="http://schemas.android.com/apk/res-auto"
+    <androidx.constraintlayout.widget.ConstraintLayout xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -51,5 +51,5 @@
             app:layout_constraintTop_toBottomOf="@+id/textView" />
 
         <include layout="@layout/include_progress_overlay" />
-    </android.support.constraint.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

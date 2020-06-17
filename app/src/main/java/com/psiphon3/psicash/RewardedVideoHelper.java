@@ -3,7 +3,7 @@ package com.psiphon3.psicash;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.text.TextUtils;
 
 import com.google.android.gms.ads.AdRequest;

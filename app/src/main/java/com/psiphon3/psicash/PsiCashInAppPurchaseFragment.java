@@ -1,14 +1,14 @@
 package com.psiphon3.psicash;
 
 import android.app.Activity;
-import android.arch.lifecycle.ViewModelProviders;
+import androidx.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Bundle;
-import android.support.transition.Scene;
-import android.support.transition.TransitionManager;
-import android.support.v4.app.Fragment;
+import androidx.transition.Scene;
+import androidx.transition.TransitionManager;
+import androidx.fragment.app.Fragment;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
