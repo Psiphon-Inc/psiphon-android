@@ -71,7 +71,6 @@ import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -147,18 +146,7 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
                 googlePlayBillingHelper.subscriptionStateFlowable()
                         .distinctUntilChanged()
                         .toObservable(),
-                psiCashViewModel.states()
-                        .map(psiCashViewState -> {
-                            if (psiCashViewState.purchase() == null) {
-                                return false;
-                            }
-                            Date expiryDate = psiCashViewState.purchase().expiry;
-                            if (expiryDate != null) {
-                                long millisDiff = expiryDate.getTime() - new Date().getTime();
-                                return millisDiff > 0;
-                            }
-                            return false;
-                        }),
+                psiCashViewModel.booleanActiveSpeedBoostObservable(),
                 ((BiFunction<SubscriptionState, Boolean, Pair>) Pair::new))
                 .distinctUntilChanged()
                 .map(pair -> {

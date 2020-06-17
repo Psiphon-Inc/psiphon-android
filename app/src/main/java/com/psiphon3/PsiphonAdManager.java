@@ -21,10 +21,12 @@
 package com.psiphon3;
 
 import android.app.Activity;
+import android.arch.lifecycle.ViewModelProviders;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentActivity;
 import android.util.Pair;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -53,6 +55,7 @@ import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubView;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
+import com.psiphon3.psicash.PsiCashViewModel;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.BuildConfig;
@@ -177,7 +180,8 @@ public class PsiphonAdManager {
 
     private TunnelState.ConnectionData interstitialConnectionData;
 
-    PsiphonAdManager(Activity activity, ViewGroup bannerLayout, Runnable adMobPayOptionRunnable, Flowable<TunnelState> tunnelConnectionStateFlowable) {
+    PsiphonAdManager(FragmentActivity activity, ViewGroup bannerLayout, Runnable adMobPayOptionRunnable,
+                     Flowable<TunnelState> tunnelConnectionStateFlowable) {
         this.activity = activity;
         this.bannerLayout = bannerLayout;
         this.adMobPayOptionRunnable = adMobPayOptionRunnable;
@@ -223,27 +227,31 @@ public class PsiphonAdManager {
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .doOnError(e -> Utils.MyLog.d("initializeMoPubSdk error: " + e));
 
-        this.currentAdTypeObservable = Observable.combineLatest(
-                tunnelConnectionStateFlowable.toObservable(),
-                GooglePlayBillingHelper.getInstance(activity.getApplicationContext())
-                        .subscriptionStateFlowable()
-                        .toObservable(),
-                ((BiFunction<TunnelState, SubscriptionState, Pair>) Pair::new))
-                .switchMap(pair -> {
-                    TunnelState s = (TunnelState) pair.first;
-                    SubscriptionState subscriptionState = (SubscriptionState) pair.second;
-                    if (subscriptionState.hasValidPurchase() ||
-                            Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-                        return Observable.just(AdResult.none());
-                    }
-                    if (s.isRunning() && s.connectionData().isConnected()) {
-                        return Observable.just(AdResult.tunneled(s.connectionData()));
-                    } else if (s.isStopped()) {
-                        return Observable.just(AdResult.unTunneled());
-                    } else {
-                        return Observable.just(AdResult.unknown());
-                    }
-                })
+        PsiCashViewModel psiCashViewModel = ViewModelProviders.of(activity).get(PsiCashViewModel.class);
+        this.currentAdTypeObservable = psiCashViewModel.booleanActiveSpeedBoostObservable()
+                .switchMap(hasActiveSpeedBoost -> hasActiveSpeedBoost ?
+                        Observable.just(AdResult.none()) :
+                        Observable.combineLatest(
+                                tunnelConnectionStateFlowable.toObservable(),
+                                GooglePlayBillingHelper.getInstance(activity.getApplicationContext())
+                                        .subscriptionStateFlowable()
+                                        .toObservable(),
+                                ((BiFunction<TunnelState, SubscriptionState, Pair>) Pair::new))
+                                .switchMap(pair -> {
+                                    TunnelState s = (TunnelState) pair.first;
+                                    SubscriptionState subscriptionState = (SubscriptionState) pair.second;
+                                    if (subscriptionState.hasValidPurchase() ||
+                                            Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                                        return Observable.just(AdResult.none());
+                                    }
+                                    if (s.isRunning() && s.connectionData().isConnected()) {
+                                        return Observable.just(AdResult.tunneled(s.connectionData()));
+                                    } else if (s.isStopped()) {
+                                        return Observable.just(AdResult.unTunneled());
+                                    } else {
+                                        return Observable.just(AdResult.unknown());
+                                    }
+                                }))
                 .distinctUntilChanged()
                 .replay(1)
                 .autoConnect(0);

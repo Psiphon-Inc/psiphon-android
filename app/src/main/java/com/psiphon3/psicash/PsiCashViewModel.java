@@ -48,6 +48,7 @@ import com.psiphon3.psicash.mvibase.MviViewState;
 import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
 import com.psiphon3.psiphonlibrary.Utils;
 
+import java.util.Date;
 import java.util.List;
 
 import ca.psiphon.psicashlib.PsiCashLib;
@@ -333,5 +334,19 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel, 
         return googlePlayBillingHelper.purchaseStateFlowable()
                 .map(PurchaseState::purchaseList)
                 .distinctUntilChanged();
+    }
+
+    public Observable<Boolean> booleanActiveSpeedBoostObservable() {
+        return psiCashViewStateObservable.map(psiCashViewState -> {
+            if (psiCashViewState.purchase() == null) {
+                return false;
+            }
+            Date expiryDate = psiCashViewState.purchase().expiry;
+            if (expiryDate != null) {
+                long millisDiff = expiryDate.getTime() - new Date().getTime();
+                return millisDiff > 0;
+            }
+            return false;
+        });
     }
 }
