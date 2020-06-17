@@ -164,7 +164,7 @@
 
     <!-- A title message to the premium user (a user with a subscription when they are trying to navigate to PsiCash and Speed Boost screen
         Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_title">اشتراكك في سايفون يعطيك وصول ممتاز!</string>
+    <string name="psicash_store_subscription_title">اشتراكك في سايفون يعطيك خدمة افضل!</string>
 
     <!-- A description message to the premium user (a user with a subscription) when they are trying to navigate to PsiCash and Speed Boost screen.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
