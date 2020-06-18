@@ -168,7 +168,7 @@ dependencies {
     implementation "com.jakewharton.rxrelay2:rxrelay:$rootProject.ext.rxrelayVersion"
     implementation "com.jakewharton.threetenabp:threetenabp:$rootProject.ext.threetenabpVersion"
     implementation "com.squareup.okhttp3:okhttp:$rootProject.ext.okhttpVersion"
-    implementation "com.android.billingclient:billing:$playStoreBillingClientVersion"
+    implementation "com.android.billingclient:billing:$rootProject.ext.playStoreBillingClientVersion"
 
     api "androidx.lifecycle:lifecycle-extensions:$rootProject.ext.lifecycleExtensionsVersion"
 
