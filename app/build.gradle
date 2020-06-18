@@ -99,6 +99,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    buildToolsVersion = '29.0.3'
 
     buildTypes.each {
         it.buildConfigField 'String', 'SUBSCRIPTION_SPONSOR_ID', getBuildProperty('SUBSCRIPTION_SPONSOR_ID')

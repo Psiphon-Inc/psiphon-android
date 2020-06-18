@@ -423,8 +423,6 @@ public class PsiphonAdManager {
 
     private void runAdMobGdprCheck() {
         String[] publisherIds = {"pub-1072041961750291"};
-        ConsentInformation.getInstance(activity).
-                setDebugGeography(DebugGeography.DEBUG_GEOGRAPHY_EEA);
         ConsentInformation.getInstance(activity).requestConsentInfoUpdate(publisherIds, new ConsentInfoUpdateListener() {
             @Override
             public void onConsentInfoUpdated(ConsentStatus consentStatus) {

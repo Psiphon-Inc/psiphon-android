@@ -16,8 +16,9 @@
 #   public *;
 #}
 
-# Only strip these
--keep class !com.google.android.gms.**,!android.support.** { *; }
+# PsiCash library
+# We need to add this because currently consumer proguard rules are not present in the AAR
+-keep class ca.psiphon.psicashlib.** {*;}
 
 # From https://github.com/googleads/googleads-consent-sdk-android/blob/master/consent-library/proguard-rules.pro
 -keep class com.google.ads.consent.** { <fields>; }
@@ -25,9 +26,6 @@
 -keepattributes Signature
 
 # MoPub Proguard Config
-# NOTE: You should also include the Android Proguard config found with the build tools:
-# $ANDROID_HOME/tools/proguard/proguard-android.txt
-
 # Keep public classes and methods.
 -keepclassmembers class com.mopub.** { public *; }
 -keep public class com.mopub.**
