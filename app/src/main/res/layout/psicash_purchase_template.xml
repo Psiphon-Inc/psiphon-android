@@ -61,7 +61,6 @@
                 android:id="@+id/buttonContainer"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:gravity="center_vertical|end"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@+id/descriptionContainer"
@@ -79,8 +78,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignTop="@+id/psicash_purchase_sku_item_price"
+                    android:layout_alignStart="@+id/psicash_purchase_sku_item_price"
+                    android:layout_alignLeft="@+id/psicash_purchase_sku_item_price"
+                    android:layout_alignEnd="@+id/psicash_purchase_sku_item_price"
+                    android:layout_alignRight="@+id/psicash_purchase_sku_item_price"
                     android:layout_alignBottom="@+id/psicash_purchase_sku_item_price"
-                    android:layout_centerHorizontal="true"
                     android:indeterminate="true"
                     android:visibility="gone" />
             </RelativeLayout>
