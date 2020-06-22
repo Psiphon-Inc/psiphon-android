@@ -50,7 +50,6 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.SkuDetails;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
@@ -72,14 +71,12 @@ import org.json.JSONException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
-import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
@@ -305,17 +302,12 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
             return;
         }
         // Handle special case - external Android App Link intent which opens PsiCashStoreActivity
-        // when the user navigates to https://mobile.psi.cash/android
+        // when the user navigates to https://mobile.psi.cash/android or psiphon://psicash
         if (Intent.ACTION_VIEW.equals(intent.getAction())) {
-            Uri intentUri = intent.getData();
-            if (intentUri != null) {
-                if ("https".equals(intentUri.getScheme()) &&
-                        "mobile.psi.cash".equals(intentUri.getHost()) &&
-                        "/android".equals(intentUri.getPath())) {
-                    PsiCashFragment.openPsiCashStoreActivity(this,
-                            getResources().getInteger(R.integer.psiCashTabIndex));
-                    return;
-                }
+            if (isPsiCashIntentUri(intent.getData())) {
+                PsiCashFragment.openPsiCashStoreActivity(this,
+                        getResources().getInteger(R.integer.psiCashTabIndex));
+                return;
             }
         }
 
@@ -826,10 +818,20 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
                 .show();
     }
 
-    public Single<List<SkuDetails>> getUnlimitedSubscriptionSkuDetails() {
-        List<String> ids = Collections.singletonList(
-                GooglePlayBillingHelper.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU
-        );
-        return googlePlayBillingHelper.getSkuDetails(ids, BillingClient.SkuType.SUBS);
+    private boolean isPsiCashIntentUri(Uri intentUri) {
+        if (intentUri != null) {
+            // Handle https://mobile.psi.cash/android
+            if ("https".equals(intentUri.getScheme()) &&
+                    "mobile.psi.cash".equals(intentUri.getHost()) &&
+                    "/android".equals(intentUri.getPath())) {
+                return true;
+            }
+            // Handle psiphon://psicash
+            if ("psiphon".equals(intentUri.getScheme()) &&
+                    "psicash".equals(intentUri.getHost())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
