@@ -139,7 +139,9 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
         embeddedWebView = inflater.inflate(R.layout.embedded_webview_layout, null);
 
         // Update rate limit badge and 'Subscribe' button UI
-        PsiCashViewModel psiCashViewModel = new ViewModelProvider(this).get(PsiCashViewModel.class);
+        PsiCashViewModel psiCashViewModel = new ViewModelProvider(this,
+                new ViewModelProvider.AndroidViewModelFactory(getApplication()))
+                .get(PsiCashViewModel.class);
         compositeDisposable.add(Observable.combineLatest(
                 googlePlayBillingHelper.subscriptionStateFlowable()
                         .distinctUntilChanged()

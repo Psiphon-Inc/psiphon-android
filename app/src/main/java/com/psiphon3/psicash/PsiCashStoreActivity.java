@@ -82,7 +82,9 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
         balanceIcon = findViewById(R.id.psicash_balance_icon);
         balanceLayout = findViewById(R.id.psicash_balance_layout);
 
-        psiCashViewModel = new ViewModelProvider(this).get(PsiCashViewModel.class);
+        psiCashViewModel = new ViewModelProvider(this,
+                new ViewModelProvider.AndroidViewModelFactory(getApplication()))
+                .get(PsiCashViewModel.class);
         getLifecycle().addObserver(psiCashViewModel);
 
         // Pass the UI's intents to the view model

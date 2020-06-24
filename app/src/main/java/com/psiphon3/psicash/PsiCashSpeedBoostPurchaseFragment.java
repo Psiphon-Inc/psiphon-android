@@ -22,6 +22,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.util.Pair;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.gridlayout.widget.GridLayout;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.transition.Scene;
@@ -85,7 +86,10 @@ public class PsiCashSpeedBoostPurchaseFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        psiCashViewModel = new ViewModelProvider(getActivity()).get(PsiCashViewModel.class);
+        FragmentActivity fragmentActivity = getActivity();
+        psiCashViewModel = new ViewModelProvider(fragmentActivity,
+                new ViewModelProvider.AndroidViewModelFactory(fragmentActivity.getApplication()))
+                .get(PsiCashViewModel.class);
 
         View view = inflater.inflate(R.layout.psicash_store_scene_container_fragment, container, false);
 

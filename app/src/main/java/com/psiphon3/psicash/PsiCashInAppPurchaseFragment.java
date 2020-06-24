@@ -18,6 +18,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.transition.Scene;
 import androidx.transition.TransitionManager;
@@ -54,7 +55,10 @@ public class PsiCashInAppPurchaseFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         final Context ctx = getContext();
-        psiCashViewModel = new ViewModelProvider(getActivity()).get(PsiCashViewModel.class);
+        FragmentActivity fragmentActivity = getActivity();
+        psiCashViewModel = new ViewModelProvider(fragmentActivity,
+                new ViewModelProvider.AndroidViewModelFactory(fragmentActivity.getApplication()))
+                .get(PsiCashViewModel.class);
         rewardedVideoHelper = new RewardedVideoHelper(getActivity(), amount -> {
             // Store the reward amount and refresh PsiCash view state when video is rewarded.
             try {

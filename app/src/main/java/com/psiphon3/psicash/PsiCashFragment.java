@@ -109,7 +109,10 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        psiCashViewModel = new ViewModelProvider(getActivity()).get(PsiCashViewModel.class);
+        FragmentActivity fragmentActivity = getActivity();
+        psiCashViewModel = new ViewModelProvider(fragmentActivity,
+                new ViewModelProvider.AndroidViewModelFactory(fragmentActivity.getApplication()))
+                .get(PsiCashViewModel.class);
         getLifecycle().addObserver(psiCashViewModel);
 
         // Pass the UI's intents to the view model

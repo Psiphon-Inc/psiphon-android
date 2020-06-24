@@ -29,6 +29,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.psiphon3.subscription.R;
@@ -59,7 +60,10 @@ public class PsiCashSubscribedFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        psiCashViewModel = new ViewModelProvider(getActivity()).get(PsiCashViewModel.class);
+        FragmentActivity fragmentActivity = getActivity();
+        psiCashViewModel = new ViewModelProvider(fragmentActivity,
+                new ViewModelProvider.AndroidViewModelFactory(fragmentActivity.getApplication()))
+                .get(PsiCashViewModel.class);
 
         balanceLabel = getActivity().findViewById(R.id.psicash_balance_label);
 

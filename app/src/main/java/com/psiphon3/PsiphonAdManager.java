@@ -262,7 +262,9 @@ public class PsiphonAdManager {
                 .onErrorComplete()
                 .andThen(initializeAdMobSdk);
 
-        PsiCashViewModel psiCashViewModel = new ViewModelProvider(activity).get(PsiCashViewModel.class);
+        PsiCashViewModel psiCashViewModel = new ViewModelProvider(activity,
+                new ViewModelProvider.AndroidViewModelFactory(activity.getApplication()))
+                .get(PsiCashViewModel.class);
         this.currentAdTypeObservable = psiCashViewModel.booleanActiveSpeedBoostObservable()
                 .switchMap(hasActiveSpeedBoost -> hasActiveSpeedBoost ?
                         Observable.just(AdResult.none()) :
