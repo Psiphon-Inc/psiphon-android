@@ -2,8 +2,6 @@ package com.psiphon3.psicash;
 
 import android.app.Activity;
 import android.content.Context;
-import android.os.Build;
-import android.os.Bundle;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
@@ -15,7 +13,6 @@ import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdCallback;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions;
-import com.mopub.common.MoPub;
 import com.psiphon3.TunnelState;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
