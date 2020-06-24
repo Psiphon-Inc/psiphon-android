@@ -161,9 +161,6 @@ dependencies {
     implementation "com.google.android.ads.consent:consent-library:$rootProject.ext.adsConsentLibraryVersion"
     implementation "com.hyprmx.android:HyprMX-MoPub:$rootProject.ext.hyprMXMoPubVersion"
 
-    implementation "com.vungle:publisher-sdk-android:$rootProject.ext.vungleSdkVersion"
-    implementation "com.google.ads.mediation:vungle:$rootProject.ext.vungleAdMobMediationVersion"
-
     implementation "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxandroidVersion"
     implementation "io.reactivex.rxjava2:rxjava:$rootProject.ext.rxjavaVersion"
     implementation "com.jakewharton.rxrelay2:rxrelay:$rootProject.ext.rxrelayVersion"
