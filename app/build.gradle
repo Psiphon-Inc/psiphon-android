@@ -169,7 +169,7 @@ dependencies {
     implementation "com.squareup.okhttp3:okhttp:$rootProject.ext.okhttpVersion"
     implementation "com.android.billingclient:billing:$rootProject.ext.playStoreBillingClientVersion"
 
-    api "androidx.lifecycle:lifecycle-extensions:$rootProject.ext.lifecycleExtensionsVersion"
+    api "androidx.lifecycle:lifecycle-viewmodel:$rootProject.ext.lifecycleViewModelVersion"
 
     compileOnly "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
     annotationProcessor "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
