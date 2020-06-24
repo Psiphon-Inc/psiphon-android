@@ -1,14 +1,10 @@
 package com.psiphon3.psicash;
 
 import android.app.Activity;
-import androidx.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Bundle;
-import androidx.transition.Scene;
-import androidx.transition.TransitionManager;
-import androidx.fragment.app.Fragment;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -20,6 +16,11 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.transition.Scene;
+import androidx.transition.TransitionManager;
 
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.SkuDetails;
@@ -53,7 +54,7 @@ public class PsiCashInAppPurchaseFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         final Context ctx = getContext();
-        psiCashViewModel = ViewModelProviders.of(getActivity()).get(PsiCashViewModel.class);
+        psiCashViewModel = new ViewModelProvider(getActivity()).get(PsiCashViewModel.class);
         rewardedVideoHelper = new RewardedVideoHelper(getActivity(), amount -> {
             // Store the reward amount and refresh PsiCash view state when video is rewarded.
             try {

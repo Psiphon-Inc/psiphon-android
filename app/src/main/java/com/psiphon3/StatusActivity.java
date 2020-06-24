@@ -21,7 +21,6 @@ package com.psiphon3;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import androidx.lifecycle.ViewModelProviders;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
@@ -31,9 +30,6 @@ import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.fragment.app.FragmentTransaction;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.ActionBar.LayoutParams;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.util.TypedValue;
@@ -49,6 +45,11 @@ import android.widget.ProgressBar;
 import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.ActionBar.LayoutParams;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.android.billingclient.api.SkuDetails;
 import com.psiphon3.billing.GooglePlayBillingHelper;
@@ -138,7 +139,7 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
         embeddedWebView = inflater.inflate(R.layout.embedded_webview_layout, null);
 
         // Update rate limit badge and 'Subscribe' button UI
-        PsiCashViewModel psiCashViewModel = ViewModelProviders.of(this).get(PsiCashViewModel.class);
+        PsiCashViewModel psiCashViewModel = new ViewModelProvider(this).get(PsiCashViewModel.class);
         compositeDisposable.add(Observable.combineLatest(
                 googlePlayBillingHelper.subscriptionStateFlowable()
                         .distinctUntilChanged()

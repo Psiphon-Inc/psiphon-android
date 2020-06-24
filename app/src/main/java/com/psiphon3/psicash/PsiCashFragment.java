@@ -24,7 +24,6 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.app.Activity;
-import androidx.lifecycle.ViewModelProviders;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -32,13 +31,6 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
-import com.google.android.material.snackbar.Snackbar;
-import com.google.android.material.behavior.SwipeDismissBehavior;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.appcompat.app.AlertDialog;
 import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -47,6 +39,15 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AlertDialog;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import com.google.android.material.behavior.SwipeDismissBehavior;
+import com.google.android.material.snackbar.Snackbar;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.psicash.mvibase.MviView;
@@ -108,7 +109,7 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        psiCashViewModel = ViewModelProviders.of(getActivity()).get(PsiCashViewModel.class);
+        psiCashViewModel = new ViewModelProvider(getActivity()).get(PsiCashViewModel.class);
         getLifecycle().addObserver(psiCashViewModel);
 
         // Pass the UI's intents to the view model

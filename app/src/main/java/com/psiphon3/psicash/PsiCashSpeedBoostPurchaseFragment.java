@@ -1,7 +1,6 @@
 package com.psiphon3.psicash;
 
 import android.app.Activity;
-import androidx.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -9,14 +8,6 @@ import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
-import androidx.annotation.NonNull;
-import androidx.transition.Scene;
-import androidx.transition.TransitionManager;
-import androidx.fragment.app.Fragment;
-import androidx.core.util.Pair;
-import androidx.viewpager.widget.ViewPager;
-import androidx.appcompat.app.AlertDialog;
-import androidx.gridlayout.widget.GridLayout;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
@@ -26,6 +17,16 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.util.Pair;
+import androidx.fragment.app.Fragment;
+import androidx.gridlayout.widget.GridLayout;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.transition.Scene;
+import androidx.transition.TransitionManager;
+import androidx.viewpager.widget.ViewPager;
 
 import com.psiphon3.TunnelState;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -84,7 +85,7 @@ public class PsiCashSpeedBoostPurchaseFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        psiCashViewModel = ViewModelProviders.of(getActivity()).get(PsiCashViewModel.class);
+        psiCashViewModel = new ViewModelProvider(getActivity()).get(PsiCashViewModel.class);
 
         View view = inflater.inflate(R.layout.psicash_store_scene_container_fragment, container, false);
 

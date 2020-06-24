@@ -31,7 +31,7 @@ import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
-import androidx.lifecycle.ViewModelProviders;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.ads.consent.ConsentForm;
 import com.google.ads.consent.ConsentFormListener;
@@ -262,7 +262,7 @@ public class PsiphonAdManager {
                 .onErrorComplete()
                 .andThen(initializeAdMobSdk);
 
-        PsiCashViewModel psiCashViewModel = ViewModelProviders.of(activity).get(PsiCashViewModel.class);
+        PsiCashViewModel psiCashViewModel = new ViewModelProvider(activity).get(PsiCashViewModel.class);
         this.currentAdTypeObservable = psiCashViewModel.booleanActiveSpeedBoostObservable()
                 .switchMap(hasActiveSpeedBoost -> hasActiveSpeedBoost ?
                         Observable.just(AdResult.none()) :

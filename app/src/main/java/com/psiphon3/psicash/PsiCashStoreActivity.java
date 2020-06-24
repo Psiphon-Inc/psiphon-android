@@ -5,16 +5,8 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import androidx.lifecycle.ViewModelProviders;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
-import androidx.annotation.Nullable;
-import com.google.android.material.tabs.TabLayout;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.viewpager.widget.ViewPager;
-import androidx.appcompat.app.AlertDialog;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.view.View;
@@ -22,6 +14,15 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.viewpager.widget.ViewPager;
+
+import com.google.android.material.tabs.TabLayout;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.psicash.mvibase.MviView;
@@ -81,7 +82,7 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
         balanceIcon = findViewById(R.id.psicash_balance_icon);
         balanceLayout = findViewById(R.id.psicash_balance_layout);
 
-        psiCashViewModel = ViewModelProviders.of(this).get(PsiCashViewModel.class);
+        psiCashViewModel = new ViewModelProvider(this).get(PsiCashViewModel.class);
         getLifecycle().addObserver(psiCashViewModel);
 
         // Pass the UI's intents to the view model
