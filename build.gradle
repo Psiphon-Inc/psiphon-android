@@ -45,7 +45,5 @@ ext {
     playStoreBillingClientVersion = '3.0.0'
     threetenabpVersion = '1.2.1'
     hyprMXMoPubVersion = '5.1.0'
-    vungleSdkVersion = '6.7.0'
-    vungleAdMobMediationVersion = '6.5.3.0'
 }
 

@@ -19,8 +19,6 @@ import com.mopub.common.MoPub;
 import com.psiphon3.TunnelState;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
-import com.vungle.mediation.VungleAdapter;
-import com.vungle.mediation.VungleExtrasBuilder;
 
 import net.grandcentrix.tray.AppPreferences;
 
@@ -37,7 +35,6 @@ class RewardedVideoHelper {
 
     // Production values
     private static final String ADMOB_VIDEO_AD_ID = "ca-app-pub-1072041961750291/5751207671";
-    private static final String VUNGLE_VIDEO_AD_PLACEMENT = "PSIPHON_PRO_REWARDED_VIDEO-3570035";
 
     private final Observable<RewardedVideoPlayable> adMobVideoObservable;
     private final RewardListener rewardListener;
@@ -155,13 +152,7 @@ class RewardedVideoHelper {
                     }
                 }
             };
-            // Pass custom data to Vungle via UserId field
-            Bundle vungleExtras = new VungleExtrasBuilder(new String[]{VUNGLE_VIDEO_AD_PLACEMENT})
-                    .setUserId(customData)
-                    .build();
-
-            AdRequest.Builder requestBuilder = new AdRequest.Builder()
-                    .addNetworkExtrasBundle(VungleAdapter.class, vungleExtras);
+            AdRequest.Builder requestBuilder = new AdRequest.Builder();
             rewardedAd.loadAd(requestBuilder.build(), adLoadCallback);
         });
     }
