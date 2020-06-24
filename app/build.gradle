@@ -152,17 +152,17 @@ dependencies {
     implementation("com.mopub:mopub-sdk-banner:$rootProject.ext.mopubSdkVersion@aar") {
         transitive = true
     }
-    implementation("com.mopub:mopub-sdk-interstitial:$rootProject.ext.mopubSdkVersion@aar") {
+    implementation("com.mopub:mopub-sdk-fullscreen:$rootProject.ext.mopubSdkVersion@aar") {
         transitive = true
     }
 
     implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
-    implementation "com.mopub.mediation:admob:$rootProject.ext.mopubMediationAdmobVersion"
     implementation "com.google.android.ads.consent:consent-library:$rootProject.ext.adsConsentLibraryVersion"
     implementation "com.hyprmx.android:HyprMX-MoPub:$rootProject.ext.hyprMXMoPubVersion"
 
     implementation "com.vungle:publisher-sdk-android:$rootProject.ext.vungleSdkVersion"
     implementation "com.google.ads.mediation:vungle:$rootProject.ext.vungleAdMobMediationVersion"
+    implementation "com.google.ads.mediation:mopub:$rootProject.ext.adMobMopubMeditionVersion"
 
     implementation "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxandroidVersion"
     implementation "io.reactivex.rxjava2:rxjava:$rootProject.ext.rxjavaVersion"

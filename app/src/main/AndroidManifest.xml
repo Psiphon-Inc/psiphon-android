@@ -3,9 +3,33 @@
     package="com.psiphon3.subscription"
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
-    <uses-sdk tools:overrideLibrary="ca.psiphon,com.mopub.mobileads.banner,com.mopub.mobileads.base,
-    com.mopub.mobileads.interstitial,com.mopub.mobileads.rewarded_video,com.moat.analytics.mobile.mpub,
-    com.mopub.mobileads.admob,com.jakewharton.threetenabp" />
+    <uses-sdk tools:overrideLibrary="ca.psiphon,
+com.mopub.mobileads,
+com.mopub.mobileads.banner,
+com.mopub.mobileads.base,
+com.mopub.mobileads.interstitial,
+com.mopub.mobileads.rewarded_video,
+com.moat.analytics.mobile.mpub,
+com.mopub.mobileads.admob,
+com.mopub.mobileads.dfp.adapters,
+com.mopub.mobileads.native_video,
+com.mopub.mobileads.native_static,
+androidx.media2.widget,
+androidx.media2.session,
+androidx.media2.player,
+androidx.media2.common,
+com.google.android.gms.ads.impl,
+com.google.android.gms.gass,
+com.google.android.gms.ads,
+com.google.android.exoplayer2,
+com.google.android.exoplayer2.ui,
+com.google.android.exoplayer2.source.dash,
+com.google.android.exoplayer2.source.hls,
+com.google.android.exoplayer2.source.smoothstreaming,
+com.google.android.exoplayer2.core,
+com.google.android.gms.ads_base,
+com.hyprmx.android.mopubadapter,
+com.jakewharton.threetenabp" />
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"
@@ -187,17 +211,7 @@
         <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonsubscriptionzircobookmarkscontentprovider"/>
         <provider android:name="org.zirco.providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonsubscriptionweavecontentprovider"/>
 
-        <meta-data android:name="com.google.android.gms.version"
-			   android:value="@integer/google_play_services_version" />
-
-        <activity android:name="com.mopub.mobileads.MoPubActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
-        <activity android:name="com.mopub.mobileads.MraidActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
-        <activity android:name="com.mopub.common.MoPubBrowser" android:configChanges="keyboardHidden|orientation|screenSize"/>
-        <activity android:name="com.mopub.mobileads.MraidVideoPlayerActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
-
         <activity android:name="com.google.android.gms.ads.AdActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
-        <activity android:name="com.mopub.common.privacy.ConsentDialogActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
-
     </application>
 
 </manifest>

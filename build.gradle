@@ -27,9 +27,9 @@ ext {
     rxrelayVersion = '2.1.0'
     autoValueVersion = '1.5.2'
     okhttpVersion = '3.12.1'
-    playServicesAdsVersion = '17.2.1'
-    mopubSdkVersion = '5.8.0'
-    mopubMediationAdmobVersion = '17.2.1.0'
+    playServicesAdsVersion = '19.2.0'
+    mopubSdkVersion = '5.13.0'
+    adMobMopubMeditionVersion = '5.13.0.0'
     adsConsentLibraryVersion = '1.0.8'
     multidexVersion = '2.0.1'
     appcompatVersion = '1.1.0'
@@ -42,11 +42,10 @@ ext {
     junitVersion = '1.1.1'
     mockitoVersion = '2.7.22'
     testRunnerVersion = '0.5'
-    playStoreBillingClientVersion = '2.2.0'
+    playStoreBillingClientVersion = '3.0.0'
     threetenabpVersion = '1.2.1'
-    hyprMXMoPubVersion = '5.0.5'
-    // Last non-AndroidX version of the adapter
-    vungleSdkVersion = '6.3.24'
-    vungleAdMobMediationVersion = '6.3.24.1'
+    hyprMXMoPubVersion = '5.1.0'
+    vungleSdkVersion = '6.7.0'
+    vungleAdMobMediationVersion = '6.5.3.0'
 }
 

@@ -2,9 +2,11 @@ package com.psiphon3.psicash;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
 import android.text.TextUtils;
+
+import androidx.annotation.NonNull;
 
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.MobileAds;
@@ -13,9 +15,9 @@ import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdCallback;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions;
+import com.mopub.common.MoPub;
 import com.psiphon3.TunnelState;
 import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 import com.vungle.mediation.VungleAdapter;
 import com.vungle.mediation.VungleExtrasBuilder;
@@ -69,13 +71,22 @@ class RewardedVideoHelper {
 
     public RewardedVideoHelper(Context context, RewardListener rewardListener) {
         this.rewardListener = rewardListener;
-        // Try and initialize AdMob once, there is no reason to make this a completable
-        MobileAds.initialize(context, BuildConfig.ADMOB_APP_ID);
 
         final AppPreferences mp = new AppPreferences(context);
         final String customData = mp.getString(context.getString(R.string.persistentPsiCashCustomData), "");
 
         this.adMobVideoObservable = Observable.create(emitter -> {
+            // Do not try and load the ad if AdMob SDK is not initialized (it should be at this point).
+            // TODO: move RewardedVideoHelper to PsiphonAdManager and use chained completable initializers
+            try {
+                MobileAds.getInitializationStatus();
+            } catch (IllegalStateException ignored) {
+                if (!emitter.isDisposed()) {
+                    emitter.onError(new PsiCashException.Video("RewardedVideoHelper error: AdMob SDK is not initialized"));
+                }
+                return;
+            }
+
             if (TextUtils.isEmpty(customData)) {
                 // If the custom data is empty we should not attempt to load the ad at all.
                 // Notify the subscriber(s), log and bail.
