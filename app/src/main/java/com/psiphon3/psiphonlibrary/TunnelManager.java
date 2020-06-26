@@ -1617,28 +1617,29 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     @Override
     public void onServerAlert(String reason, String subject) {
         MyLog.g("Server alert", "reason", reason, "subject", subject);
-        // Do not show alerts when user has Speed Boost or a subscription.
-        // Note that this is an extra measure preventing accidental server alerts since
-        // the user with this auth type should not be receiving any from the server
-        if (hasBoostOrSubscription) {
-            return;
-        }
-
-        // Also do not show the alert if the current tunnel config sponsor ID
-        // is set to SUBSCRIPTION_SPONSOR_ID. The user may be a legit subscriber
-        // in a process of purchase verification.
-        if (m_tunnelConfig != null &&
-                BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId)) {
-            return;
-        }
-
-        // Disable showing alerts more than once per service run
-        if (disallowedTrafficNotificationAlreadyShown) {
-            return;
-        }
-        disallowedTrafficNotificationAlreadyShown = true;
-
         if ("disallowed-traffic".equals(reason)) {
+            // Do not show alerts when user has Speed Boost or a subscription.
+            // Note that this is an extra measure preventing accidental server alerts since
+            // the user with this auth type should not be receiving any from the server
+            if (hasBoostOrSubscription) {
+                return;
+            }
+
+            // Also do not show the alert if the current tunnel config sponsor ID
+            // is set to SUBSCRIPTION_SPONSOR_ID. The user may be a legit subscriber
+            // in a process of purchase verification.
+            if (m_tunnelConfig != null &&
+                    BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId)) {
+                return;
+            }
+
+            // Disable showing alerts more than once per service run
+            if (disallowedTrafficNotificationAlreadyShown) {
+                return;
+            }
+            disallowedTrafficNotificationAlreadyShown = true;
+
+            // Display disallowed traffic alert notification
             m_Handler.post(() -> {
                 final Context context = getContext();
                 String notificationMessage = context.getString(R.string.disallowed_traffic_alert_notification_message);
