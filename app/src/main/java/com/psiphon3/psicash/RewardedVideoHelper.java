@@ -2,10 +2,12 @@ package com.psiphon3.psicash;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Bundle;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 
+import com.google.ads.mediation.mopub.MoPubMediationAdapter;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.rewarded.RewardItem;
@@ -149,7 +151,11 @@ class RewardedVideoHelper {
                     }
                 }
             };
-            AdRequest.Builder requestBuilder = new AdRequest.Builder();
+            Bundle extras = new MoPubMediationAdapter.BundleBuilder()
+                    .setRewardCustomData(customData)
+                    .build();
+            AdRequest.Builder requestBuilder = new AdRequest.Builder()
+                    .addNetworkExtrasBundle(MoPubMediationAdapter.class, extras);
             rewardedAd.loadAd(requestBuilder.build(), adLoadCallback);
         });
     }

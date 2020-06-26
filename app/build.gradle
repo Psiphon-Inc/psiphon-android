@@ -149,10 +149,8 @@ dependencies {
     implementation "androidx.gridlayout:gridlayout:$rootProject.ext.gridlayoutVersion"
     implementation "androidx.recyclerview:recyclerview:$rootProject.ext.recyclerviewVersion"
 
-    implementation("com.mopub:mopub-sdk-banner:$rootProject.ext.mopubSdkVersion@aar") {
-        transitive = true
-    }
-    implementation("com.mopub:mopub-sdk-fullscreen:$rootProject.ext.mopubSdkVersion@aar") {
+    // Complete SDK is needed by AdMob mediation adapter
+    implementation("com.mopub:mopub-sdk:$rootProject.ext.mopubSdkVersion@aar") {
         transitive = true
     }
 
@@ -160,7 +158,9 @@ dependencies {
     implementation "com.google.android.ads.consent:consent-library:$rootProject.ext.adsConsentLibraryVersion"
     implementation "com.hyprmx.android:HyprMX-MoPub:$rootProject.ext.hyprMXMoPubVersion"
 
-    implementation "com.google.ads.mediation:mopub:$rootProject.ext.adMobMopubMeditionVersion"
+    // AdMob adapter to mediate MoPub ads, modified to pass custom data for rewarded video SSV callbacks.
+    // Source: https://github.com/Psiphon-Inc/googleads-mobile-android-mediation/tree/master/ThirdPartyAdapters/mopub
+    implementation(name: 'mopub-release', ext: 'aar')
 
     implementation "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxandroidVersion"
     implementation "io.reactivex.rxjava2:rxjava:$rootProject.ext.rxjavaVersion"
