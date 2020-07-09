@@ -305,7 +305,7 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
             return;
         }
         // Handle special case - external Android App Link intent which opens PsiCashStoreActivity
-        // when the user navigates to https://mobile.psi.cash/android or psiphon://psicash
+        // when the user navigates to psiphon://psicash
         if (Intent.ACTION_VIEW.equals(intent.getAction())) {
             if (isPsiCashIntentUri(intent.getData())) {
                 PsiCashFragment.openPsiCashStoreActivity(this,
@@ -823,12 +823,6 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
 
     private boolean isPsiCashIntentUri(Uri intentUri) {
         if (intentUri != null) {
-            // Handle https://mobile.psi.cash/android
-            if ("https".equals(intentUri.getScheme()) &&
-                    "mobile.psi.cash".equals(intentUri.getHost()) &&
-                    "/android".equals(intentUri.getPath())) {
-                return true;
-            }
             // Handle psiphon://psicash
             if ("psiphon".equals(intentUri.getScheme()) &&
                     "psicash".equals(intentUri.getHost())) {
