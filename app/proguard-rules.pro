@@ -16,9 +16,8 @@
 #   public *;
 #}
 
-# PsiCash library
-# We need to add this because currently consumer proguard rules are not present in the AAR
--keep class ca.psiphon.psicashlib.** {*;}
+# keep all of the ca.psiphon package
+-keep class ca.psiphon.** {*;}
 
 # From https://github.com/googleads/googleads-consent-sdk-android/blob/master/consent-library/proguard-rules.pro
 -keep class com.google.ads.consent.** { <fields>; }
