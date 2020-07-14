@@ -167,7 +167,7 @@ public abstract class MainBase {
         private Button m_moreOptionsButton;
         private Button m_openBrowserButton;
         private LoggingObserver m_loggingObserver;
-        private CompositeDisposable compositeDisposable = new CompositeDisposable();
+        protected CompositeDisposable compositeDisposable = new CompositeDisposable();
         protected TunnelServiceInteractor tunnelServiceInteractor;
         private Disposable handleNfcIntentDisposable;
         private StatusEntryAdded m_statusEntryAddedBroadcastReceiver;

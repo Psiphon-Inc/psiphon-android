@@ -121,6 +121,20 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         );
     }
 
+    public static boolean canUpgradeToVpnOnlyRelease() {
+        // Can't install the app because we are bumping target SDK from 9 to 14 in the next release
+        if (Build.VERSION.SDK_INT < 14) {
+            return false;
+        }
+        // Can't use the app if the client is missing android.net.VpnService
+        try {
+            Class.forName("android.net.VpnService");
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Checks whether an upgrade check should be performed. False will be returned if there's already
      * an upgrade file downloaded.
@@ -134,16 +148,7 @@ public class UpgradeChecker extends WakefulBroadcastReceiver {
         // NOTE: there are new checks in place that will prevent the client from downloading an
         // upgrade if the client SDK is less than 14 or does not support VPN. This is done because
         // we are removing 'Browser Only' mode completely on Android in favour of VPN exclusions.
-        //
-        // Since we're bumping future versions minSdk from 9 to 14 there is no point in downloading
-        // an upgrade if it cannot be installed.
-        if (Build.VERSION.SDK_INT < 14) {
-            return false;
-        }
-        // Also do not download an upgrade if the client is missing android.net.VpnService
-        try {
-            Class.forName("android.net.VpnService");
-        } catch (ClassNotFoundException e) {
+        if (!canUpgradeToVpnOnlyRelease()) {
             return false;
         }
 
