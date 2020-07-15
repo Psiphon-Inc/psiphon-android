@@ -19,6 +19,7 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -218,6 +219,21 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
                 return false;
             }
         });
+
+        // Setup Zirco deprecation alert click preference
+        if (UpgradeChecker.canUpgradeToVpnOnlyRelease()) {
+            // Hide the Zirco deprecation pref category if the device supports no-BOM version
+            Preference prefCat =
+                    preferences.findPreference(getString(R.string.zircoDeprecationPreferenceCategoryKey));
+            preferences.removePreference(prefCat);
+        } else {
+            Preference showZircoDeprecationAlertPref =
+                    preferences.findPreference(getString(R.string.zircoDeprecationPreferenceKey));
+            showZircoDeprecationAlertPref.setOnPreferenceClickListener(preference -> {
+                showZircoDeprecationAlert(this, null);
+                return false;
+            });
+        }
 
         mDefaultSummaryBundle = new Bundle();
 
@@ -620,5 +636,18 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
     private boolean supportsRoutingConfiguration() {
         // technically supported after v14 but the earliest preference file with it is v21
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
+    }
+
+    public static void showZircoDeprecationAlert(Context context, DialogInterface.OnDismissListener dismissListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setTitle(R.string.app_name)
+                .setMessage(R.string.zircoDeprecationAlertMessage)
+                .setCancelable(false)
+                .setPositiveButton(R.string.label_ok, null);
+        if (dismissListener != null) {
+            builder.setOnDismissListener(dismissListener);
+        }
+        builder.show();
     }
 }

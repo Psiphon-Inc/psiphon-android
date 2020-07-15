@@ -223,7 +223,10 @@
     <string name="tunnel_connecting">Tunnel connecting…</string>
     <string name="tunnel_connected">Tunnel connected</string>
     <string name="waiting">Waiting…</string>
-
-    <!-- Empty string array to initialize things that will be programatically populated later -->
-    <string-array name="empty_array"/>
+    <!-- An alert announcing EOL of built-in browser. This is shown once when user starts the app and their OS is not able to support the next app release -->
+    <string name="zircoDeprecationAlertMessage">Psiphon Browser will no longer be included in future releases of Psiphon. Devices with an Android version less than 4.0 (or any other version that does not support the VPN service) will no longer receive updates to the Psiphon app.</string>
+    <!-- Preference category for built-in browser EOL. Only displayed if the device can't support the next app release -->
+    <string name="zircoDeprecationPreferenceCategoryTitle">OS Support Info</string>
+    <!-- Preference title for built-in browser EOL. Only displayed if the device can't support the next app release -->
+    <string name="zircoDeprecationPreferenceTitle">Psiphon Browser</string>
 </resources>

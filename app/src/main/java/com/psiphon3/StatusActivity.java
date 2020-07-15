@@ -43,8 +43,10 @@ import android.widget.TabHost;
 import android.widget.Toast;
 
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
+import com.psiphon3.psiphonlibrary.UpgradeChecker;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.VpnAppsUtils;
 
@@ -60,6 +62,8 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+
+import io.reactivex.Completable;
 
 public class StatusActivity
         extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase {
@@ -115,11 +119,36 @@ public class StatusActivity
     @Override
     protected void onResume() {
         super.onResume();
-        // Auto-start on app first run
-        if (shouldAutoStart()) {
-            startUp();
-        }
-        preventAutoStart();
+        compositeDisposable.add(Completable.create(emitter -> {
+            // Show the Zirco deprecation alert if the the next no-BOM release can't be installed / used
+            // on the device and the alert has not been already shown.
+            boolean shouldShowZircoDeprecationAlert = !UpgradeChecker.canUpgradeToVpnOnlyRelease() &&
+                    !m_multiProcessPreferences
+                            .getBoolean(getString(R.string.zircoDeprecationAlertShownPreference), false);
+
+            if (shouldShowZircoDeprecationAlert) {
+                DialogInterface.OnDismissListener dismissListener = dialogInterface -> {
+                    if (!emitter.isDisposed()) {
+                        emitter.onComplete();
+                    }
+                    m_multiProcessPreferences.put(getString(R.string.zircoDeprecationAlertShownPreference), true);
+                };
+                MoreOptionsPreferenceActivity.showZircoDeprecationAlert(this, dismissListener);
+            } else {
+                if (!emitter.isDisposed()) {
+                    emitter.onComplete();
+                }
+            }
+        }).andThen(Completable.create(emitter -> {
+            // Auto-start on app first run
+            if (shouldAutoStart()) {
+                startUp();
+            }
+            preventAutoStart();
+            if (!emitter.isDisposed()) {
+                emitter.onComplete();
+            }
+        })).subscribe());
     }
 
     private void setUpBanner() {

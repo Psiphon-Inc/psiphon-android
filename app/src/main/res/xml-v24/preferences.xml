@@ -116,4 +116,11 @@
             android:title="@string/proxy_domain_title" >
         </EditTextPreference>
     </PreferenceCategory>
+    <PreferenceCategory
+        android:key="@string/zircoDeprecationPreferenceCategoryKey"
+        android:title="@string/zircoDeprecationPreferenceCategoryTitle">
+        <Preference
+            android:key="@string/zircoDeprecationPreferenceKey"
+            android:title="@string/zircoDeprecationPreferenceTitle"/>
+    </PreferenceCategory>
 </PreferenceScreen>
