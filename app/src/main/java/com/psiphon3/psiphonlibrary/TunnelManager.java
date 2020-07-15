@@ -854,12 +854,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
         m_startedTunneling.set(false);
         m_tunnelConnectedBehaviorRelay.accept(false);
 
-        // Notify if an upgrade has already been downloaded and is waiting for install
-        // Although we are not going to attempt an upgrade for SDK < 14 the client may
-        // already have an upgrade file on disk downloaded by a previous version of the app.
+        // Notify if an upgrade has already been downloaded and is waiting for install.
+        // Although we are not going to attempt an upgrade for SDK < 14 or if VpnService is not available,
+        // the client may already have an upgrade file on disk downloaded by a previous version of the app.
         // In this case suppress notifying and delete the file if it exists.
         String upgradeFileName = PsiphonTunnel.getDefaultUpgradeDownloadFilePath(getContext());
-        if (Build.VERSION.SDK_INT < 14) {
+        if (!UpgradeChecker.canUpgradeToVpnOnlyRelease()) {
             File upgradeFile = new File(upgradeFileName);
             if (upgradeFile.exists()) {
                 upgradeFile.delete();
