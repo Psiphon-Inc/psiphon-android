@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
     useLibrary 'org.apache.http.legacy'
 
     android.defaultConfig.vectorDrawables.useSupportLibrary = true
@@ -35,7 +35,7 @@ android {
                 applicationId "com.psiphon3.subscription"
                 resValue "string", "tray__authority", "${applicationId}.tray"
                 minSdkVersion 14
-                targetSdkVersion 28
+                targetSdkVersion 29
                 versionCode verCode
                 versionName verName
                 testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -65,7 +65,6 @@ android {
                 abiFilters 'armeabi-v7a', 'arm64-v8a'
             }
             minifyEnabled true
-            useProguard true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
@@ -100,6 +99,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    buildToolsVersion = '29.0.3'
 
     buildTypes.each {
         it.buildConfigField 'String', 'SUBSCRIPTION_SPONSOR_ID', getBuildProperty('SUBSCRIPTION_SPONSOR_ID')
@@ -141,40 +141,41 @@ dependencies {
 
     implementation(name: 'psicashlib-release', ext: 'aar')
 
-    implementation "com.android.support:multidex:$rootProject.ext.multidexVersion"
-    implementation "com.android.support:appcompat-v7:$rootProject.ext.androidSupportLibraryVersion"
-    implementation "com.android.support:cardview-v7:$rootProject.ext.androidSupportLibraryVersion"
-    implementation "com.android.support:design:$rootProject.ext.androidSupportLibraryVersion"
-    implementation "com.android.support.constraint:constraint-layout:$rootProject.ext.constraintLayoutVersion"
-    implementation "com.android.support:gridlayout-v7:$rootProject.ext.androidSupportLibraryVersion"
-    implementation "com.android.support:recyclerview-v7:$rootProject.ext.androidSupportLibraryVersion"
+    implementation "androidx.multidex:multidex:$rootProject.ext.multidexVersion"
+    implementation "androidx.appcompat:appcompat:$rootProject.ext.appcompatVersion"
+    implementation "androidx.cardview:cardview:$rootProject.ext.cardviewVersion"
+    implementation "com.google.android.material:material:$rootProject.ext.materialVersion"
+    implementation "androidx.constraintlayout:constraintlayout:$rootProject.ext.constraintLayoutVersion"
+    implementation "androidx.gridlayout:gridlayout:$rootProject.ext.gridlayoutVersion"
+    implementation "androidx.recyclerview:recyclerview:$rootProject.ext.recyclerviewVersion"
 
-    implementation("com.mopub:mopub-sdk-banner:$rootProject.ext.mopubSdkVersion@aar") {
-        transitive = true
-    }
-    implementation("com.mopub:mopub-sdk-interstitial:$rootProject.ext.mopubSdkVersion@aar") {
+    // Complete SDK is needed by AdMob mediation adapter
+    implementation("com.mopub:mopub-sdk:$rootProject.ext.mopubSdkVersion@aar") {
         transitive = true
     }
 
     implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
-    implementation "com.mopub.mediation:admob:$rootProject.ext.mopubMediationAdmobVersion"
     implementation "com.google.android.ads.consent:consent-library:$rootProject.ext.adsConsentLibraryVersion"
     implementation "com.hyprmx.android:HyprMX-MoPub:$rootProject.ext.hyprMXMoPubVersion"
+
+    // AdMob adapter to mediate MoPub ads, modified to pass custom data for rewarded video SSV callbacks.
+    // Source: https://github.com/Psiphon-Inc/googleads-mobile-android-mediation/tree/master/ThirdPartyAdapters/mopub
+    implementation(name: 'mopub-release', ext: 'aar')
 
     implementation "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxandroidVersion"
     implementation "io.reactivex.rxjava2:rxjava:$rootProject.ext.rxjavaVersion"
     implementation "com.jakewharton.rxrelay2:rxrelay:$rootProject.ext.rxrelayVersion"
     implementation "com.jakewharton.threetenabp:threetenabp:$rootProject.ext.threetenabpVersion"
     implementation "com.squareup.okhttp3:okhttp:$rootProject.ext.okhttpVersion"
-    implementation "com.android.billingclient:billing:$playStoreBillingClientVersion"
+    implementation "com.android.billingclient:billing:$rootProject.ext.playStoreBillingClientVersion"
 
-    api "android.arch.lifecycle:extensions:$rootProject.ext.androidLifecycleExtensionsVersion"
+    api "androidx.lifecycle:lifecycle-viewmodel:$rootProject.ext.lifecycleViewModelVersion"
 
     compileOnly "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
     annotationProcessor "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
 
-    testImplementation "junit:junit:$rootProject.ext.junitVersion"
+    testImplementation "androidx.test.ext:junit:$rootProject.ext.junitVersion"
     testImplementation "org.mockito:mockito-core:$rootProject.ext.mockitoVersion"
     androidTestImplementation "org.mockito:mockito-android:$rootProject.ext.mockitoVersion"
-    androidTestImplementation "com.android.support.test:runner:$rootProject.ext.testRunnerVersion"
+    androidTestImplementation "androidx.test.ext:junit:$rootProject.ext.junitVersion"
 }

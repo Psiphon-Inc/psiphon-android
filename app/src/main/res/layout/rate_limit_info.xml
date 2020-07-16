@@ -5,7 +5,7 @@
     android:id="@+id/rateLimitLinearLayout"
     xmlns:app="http://schemas.android.com/apk/res-auto" >
 
-    <android.support.v7.widget.CardView
+    <androidx.cardview.widget.CardView
         android:id="@+id/rateLimitedTextSection"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -85,6 +85,6 @@
 
         </LinearLayout>
 
-    </android.support.v7.widget.CardView>
+    </androidx.cardview.widget.CardView>
 
 </LinearLayout>

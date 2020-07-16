@@ -21,22 +21,23 @@
 package com.psiphon3;
 
 import android.app.Activity;
-import android.arch.lifecycle.ViewModelProviders;
+import android.app.Dialog;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.FragmentActivity;
 import android.util.Pair;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.FragmentActivity;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.ads.consent.ConsentForm;
 import com.google.ads.consent.ConsentFormListener;
 import com.google.ads.consent.ConsentInfoUpdateListener;
 import com.google.ads.consent.ConsentInformation;
 import com.google.ads.consent.ConsentStatus;
-import com.google.ads.consent.DebugGeography;
 import com.google.ads.mediation.admob.AdMobAdapter;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
@@ -58,8 +59,8 @@ import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.psicash.PsiCashViewModel;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
-import com.psiphon3.subscription.BuildConfig;
 
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
@@ -165,9 +166,13 @@ public class PsiphonAdManager {
     private Activity activity;
     private int tabChangedCount = 0;
 
+    private final Completable initializeAdMobSdk;
     private final Runnable adMobPayOptionRunnable;
 
     private final Completable initializeMoPubSdk;
+
+    private final Completable chainedAdsSdkInitializeCompletable;
+
     private final Observable<AdResult> currentAdTypeObservable;
     private Disposable loadBannersDisposable;
     private Disposable loadUnTunneledInterstitialDisposable;
@@ -186,11 +191,34 @@ public class PsiphonAdManager {
         this.bannerLayout = bannerLayout;
         this.adMobPayOptionRunnable = adMobPayOptionRunnable;
 
-        // Try and initialize AdMob once, there is no reason to make this a completable
-        MobileAds.initialize(activity.getApplicationContext(), BuildConfig.ADMOB_APP_ID);
+        this.initializeAdMobSdk = Completable.create(emitter -> {
+            try {
+                MobileAds.getInitializationStatus();
+                if (!emitter.isDisposed()) {
+                    emitter.onComplete();
+                }
+            } catch (IllegalStateException ignored) {
+                // Not initialized yed
+                MobileAds.initialize(activity, initializationStatus -> {
+                    if (!emitter.isDisposed()) {
+                        emitter.onComplete();
+                    }
+                });
+            }
+        })
+                // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
+                // and we need to run the check every time. This call doesn't need to be synced with
+                // creation and deletion of ad views.
+                .doOnComplete(this::runAdMobGdprCheck);
 
         // MoPub SDK is also tracking GDPR status and will present a GDPR consent collection dialog if needed.
         this.initializeMoPubSdk = Completable.create(emitter -> {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+                if (!emitter.isDisposed()) {
+                    emitter.onError(new RuntimeException("MoPub initialization error: device SDK is less than 19"));
+                }
+                return;
+            }
             if (MoPub.isSdkInitialized()) {
                 if (!emitter.isDisposed()) {
                     emitter.onComplete();
@@ -224,10 +252,19 @@ public class PsiphonAdManager {
             };
             MoPub.initializeSdk(activity, sdkConfiguration, sdkInitializationListener);
         })
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .doOnError(e -> Utils.MyLog.d("initializeMoPubSdk error: " + e));
+                .subscribeOn(AndroidSchedulers.mainThread());
 
-        PsiCashViewModel psiCashViewModel = ViewModelProviders.of(activity).get(PsiCashViewModel.class);
+        // Use this chained initializer for all AdMob ads to initialize MoPub SDK before the AdMob.
+        // This order is important for mediating MoPub ads via AdMob.
+        chainedAdsSdkInitializeCompletable = initializeMoPubSdk
+                // Do not error out if MoPub SDK initialization fails.
+                // For example, it will always fail on OS < KitKat
+                .onErrorComplete()
+                .andThen(initializeAdMobSdk);
+
+        PsiCashViewModel psiCashViewModel = new ViewModelProvider(activity,
+                new ViewModelProvider.AndroidViewModelFactory(activity.getApplication()))
+                .get(PsiCashViewModel.class);
         this.currentAdTypeObservable = psiCashViewModel.booleanActiveSpeedBoostObservable()
                 .switchMap(hasActiveSpeedBoost -> hasActiveSpeedBoost ?
                         Observable.just(AdResult.none()) :
@@ -317,8 +354,8 @@ public class PsiphonAdManager {
                 .replay(1)
                 .refCount();
 
-        this.unTunneledAdMobInterstitialObservable =
-                Observable.<InterstitialResult>create(emitter -> {
+        this.unTunneledAdMobInterstitialObservable = chainedAdsSdkInitializeCompletable
+                .andThen(Observable.<InterstitialResult>create(emitter -> {
                     if (unTunneledAdMobInterstitial != null) {
                         unTunneledAdMobInterstitial.setAdListener(null);
                     }
@@ -379,9 +416,9 @@ public class PsiphonAdManager {
                             unTunneledAdMobInterstitial.loadAd(adRequest);
                         }
                     }
-                })
-                        .replay(1)
-                        .refCount();
+                }))
+                .replay(1)
+                .refCount();
 
         // This disposable destroys ads according to subscription and/or
         // connection status without further delay.
@@ -404,12 +441,8 @@ public class PsiphonAdManager {
                                     destroyUnTunneledBanners();
                                     break;
                                 case UNTUNNELED:
-                                    // App is not tunneled, destroy untunneled banners
+                                    // App is not tunneled, destroy tunneled banners
                                     destroyTunneledBanners();
-                                    // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
-                                    // and we need to run the check every time. This call doesn't need to be synced with
-                                    // creation and deletion of ad views.
-                                    runAdMobGdprCheck();
                                     break;
                             }
                         })
@@ -423,8 +456,6 @@ public class PsiphonAdManager {
 
     private void runAdMobGdprCheck() {
         String[] publisherIds = {"pub-1072041961750291"};
-        ConsentInformation.getInstance(activity).
-                setDebugGeography(DebugGeography.DEBUG_GEOGRAPHY_EEA);
         ConsentInformation.getInstance(activity).requestConsentInfoUpdate(publisherIds, new ConsentInfoUpdateListener() {
             @Override
             public void onConsentInfoUpdated(ConsentStatus consentStatus) {
@@ -532,7 +563,7 @@ public class PsiphonAdManager {
                             return Observable.empty();
                         }
                         return getInterstitialObservable(adResult)
-                                .doOnError(e -> Utils.MyLog.g("Error loading untunneled interstitial: " + e))
+                                .doOnError(e -> Utils.MyLog.d("Error loading untunneled interstitial: " + e))
                                 .onErrorResumeNext(Observable.empty());
                     })
                     .subscribe();
@@ -564,7 +595,7 @@ public class PsiphonAdManager {
                         return getInterstitialObservable(adResult)
                                 // Load a new one right after a current one is shown and dismissed
                                 .repeat()
-                                .doOnError(e -> Utils.MyLog.g("Error loading tunneled interstitial: " + e))
+                                .doOnError(e -> Utils.MyLog.d("Error loading tunneled interstitial: " + e))
                                 .onErrorResumeNext(Observable.empty());
                     })
                     .subscribe();
@@ -576,7 +607,7 @@ public class PsiphonAdManager {
             loadBannersDisposable = getCurrentAdTypeObservable()
                     .switchMapCompletable(adResult ->
                             loadAndShowBanner(adResult)
-                                    .doOnError(e -> Utils.MyLog.g("loadAndShowBanner: error: " + e))
+                                    .doOnError(e -> Utils.MyLog.d("loadAndShowBanner: error: " + e))
                                     .onErrorComplete()
                     )
                     .subscribe();
@@ -645,7 +676,7 @@ public class PsiphonAdManager {
                 }));
                 break;
             case UNTUNNELED:
-                completable = Completable.fromAction(() -> {
+                completable = chainedAdsSdkInitializeCompletable.andThen(Completable.fromAction(() -> {
                     unTunneledAdMobBannerAdView = new AdView(activity);
                     unTunneledAdMobBannerAdView.setAdSize(AdSize.MEDIUM_RECTANGLE);
                     unTunneledAdMobBannerAdView.setAdUnitId(ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
@@ -682,7 +713,7 @@ public class PsiphonAdManager {
                             .addNetworkExtrasBundle(AdMobAdapter.class, extras)
                             .build();
                     unTunneledAdMobBannerAdView.loadAd(adRequest);
-                });
+                }));
                 break;
             default:
                 throw new IllegalArgumentException("loadAndShowBanner: unhandled AdResult.Type: " + adResult.type());
@@ -743,6 +774,20 @@ public class PsiphonAdManager {
         }
         if (unTunneledAdMobInterstitial != null) {
             unTunneledAdMobInterstitial.setAdListener(null);
+        }
+        // A hack to dismiss the private AdMob consent dialog if it is still showing when we are in
+        // the no ads mode when, for example, a new subscription was just purchased.
+        if (adMobConsentForm != null && adMobConsentForm.isShowing()) {
+            try {
+                Field f = adMobConsentForm.getClass().getDeclaredField("dialog");
+                f.setAccessible(true);
+                Dialog dialog = (Dialog) f.get(adMobConsentForm);
+                if (dialog != null && dialog.isShowing()) {
+                    dialog.dismiss();
+                }
+            } catch (NoSuchFieldException ignored) {
+            } catch (IllegalAccessException ignored) {
+            }
         }
     }
 

@@ -6,7 +6,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.2'
+        classpath 'com.android.tools.build:gradle:3.6.3'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -22,39 +22,28 @@ allprojects {
 
 // define all dependencies versions here
 ext {
-    androidSupportLibraryVersion = '28.0.0'
     rxjavaVersion = '2.2.5'
     rxandroidVersion = '2.1.1'
     rxrelayVersion = '2.1.0'
-    androidLifecycleExtensionsVersion = '1.1.1'
     autoValueVersion = '1.5.2'
     okhttpVersion = '3.12.1'
-    playServicesAdsVersion = '17.2.1'
-    mopubSdkVersion = '5.8.0'
-    mopubMediationAdmobVersion = '17.2.1.0'
+    playServicesAdsVersion = '19.2.0'
+    mopubSdkVersion = '5.13.0'
+    adMobMopubMeditionVersion = '5.13.0.0'
     adsConsentLibraryVersion = '1.0.8'
-    multidexVersion = '1.0.3'
+    multidexVersion = '2.0.1'
+    appcompatVersion = '1.1.0'
+    cardviewVersion = '1.0.0'
+    materialVersion = '1.1.0'
     constraintLayoutVersion = '1.1.3'
-    junitVersion = '4.12'
+    gridlayoutVersion = '1.0.0'
+    recyclerviewVersion ='1.1.0'
+    lifecycleViewModelVersion = '2.2.0'
+    junitVersion = '1.1.1'
     mockitoVersion = '2.7.22'
     testRunnerVersion = '0.5'
-    playStoreBillingClientVersion = '2.2.0'
+    playStoreBillingClientVersion = '3.0.0'
     threetenabpVersion = '1.2.1'
-    hyprMXMoPubVersion = '5.0.5'
+    hyprMXMoPubVersion = '5.1.0'
 }
-
-subprojects {
-    project.configurations.all {
-        resolutionStrategy.eachDependency { details ->
-            // resolve all android support library conflicts to the same version
-            // except for multidex modules
-            if (details.requested.group == 'com.android.support' && !details.requested.name.startsWith('multidex')) {
-                details.useVersion rootProject.ext.androidSupportLibraryVersion
-            } else if (details.requested == 'android.arch.lifecycle') {
-                details.useVersion rootProject.ext.androidLifecycleExtensionsVersion
-            }
-        }
-    }
-}
-
 

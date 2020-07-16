@@ -10,7 +10,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
 
-        <android.support.v7.widget.GridLayout
+        <androidx.gridlayout.widget.GridLayout
             android:id="@+id/purchase_speedboost_grid"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
