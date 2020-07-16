@@ -234,6 +234,10 @@
   <string name="MainBase_AccessCoarseLocationPermissionPositiveButton">Valider</string>
   <!--Negative response button for prompt requesting the user to grant the ACCESS_COARSE_LOCATION permission-->
   <string name="MainBase_AccessCoarseLocationPermissionNegativeButton">Non merci</string>
-  <!--Empty string array to initialize things that will be programatically populated later-->
-  <string-array name="empty_array"></string-array>
+  <!--An alert announcing EOL of built-in browser. This is shown once when user starts the app and their OS is not able to support the next app release-->
+  <string name="zircoDeprecationAlertMessage">Les futures versions de Psiphon ne comprendront plus le Navigateur Psiphon. Les appareils dont la version d’Android est inférieure à 4.0 (et toute autre version qui ne prend pas en charge le service RPV) ne recevront plus de mise à jour de l’appli Psiphon.</string>
+  <!--Preference category for built-in browser EOL. Only displayed if the device can't support the next app release-->
+  <string name="zircoDeprecationPreferenceCategoryTitle">Renseignements de prise en charge des SE</string>
+  <!--Preference title for built-in browser EOL. Only displayed if the device can't support the next app release-->
+  <string name="zircoDeprecationPreferenceTitle">Navigateur Psiphon </string>
 </resources>

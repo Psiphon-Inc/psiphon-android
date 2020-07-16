@@ -213,6 +213,8 @@
   <!--Positive response button for prompt requesting the user to grant the ACCESS_COARSE_LOCATION permission-->
   <string name="MainBase_AccessCoarseLocationPermissionPositiveButton">ঠিক আছে</string>
   <!--Negative response button for prompt requesting the user to grant the ACCESS_COARSE_LOCATION permission-->
-  <!--Empty string array to initialize things that will be programatically populated later-->
-  <string-array name="empty_array"></string-array>
+  <!--An alert announcing EOL of built-in browser. This is shown once when user starts the app and their OS is not able to support the next app release-->
+  <!--Preference category for built-in browser EOL. Only displayed if the device can't support the next app release-->
+  <!--Preference title for built-in browser EOL. Only displayed if the device can't support the next app release-->
+  <string name="zircoDeprecationPreferenceTitle">সাইফোন ব্রাউজার</string>
 </resources>

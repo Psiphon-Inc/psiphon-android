@@ -155,11 +155,15 @@
   <string name="preference_notifications_title">Benachrichtigungen</string>
   <string name="preference_vpn_title">VPN</string>
   <!--Description of option to tunnel everything-->
+  <string name="preference_routing_include_all_apps_summary">All Apps tunneln</string>
   <!--Title for selecting apps to be tunneled-->
+  <string name="preference_routing_include_apps_title">Apps einbeziehen</string>
   <!--Description of option to tunnel only selected apps-->
+  <string name="preference_routing_include_apps_summary">Nur ausgewählte Apps tunneln</string>
   <!--Title for selecting apps to be excluded-->
   <string name="preference_routing_exclude_apps_title">Apps ausschließen</string>
   <!--Description of option to tunnel everything but selected apps-->
+  <string name="preference_routing_exclude_apps_summary">Ausgewählte Apps nicht tunneln</string>
   <!--Log line for when an app is tunneled-->
   <!--Log line for when an app is excluded from being tunneled-->
   <string name="individual_app_excluded">App von Tunnel ausgeschlossen: %s</string>
@@ -203,6 +207,8 @@
   <string name="MainBase_AccessCoarseLocationPermissionPositiveButton">OK</string>
   <!--Negative response button for prompt requesting the user to grant the ACCESS_COARSE_LOCATION permission-->
   <string name="MainBase_AccessCoarseLocationPermissionNegativeButton">Nein danke</string>
-  <!--Empty string array to initialize things that will be programatically populated later-->
-  <string-array name="empty_array"></string-array>
+  <!--An alert announcing EOL of built-in browser. This is shown once when user starts the app and their OS is not able to support the next app release-->
+  <!--Preference category for built-in browser EOL. Only displayed if the device can't support the next app release-->
+  <!--Preference title for built-in browser EOL. Only displayed if the device can't support the next app release-->
+  <string name="zircoDeprecationPreferenceTitle">Psiphon Browser</string>
 </resources>

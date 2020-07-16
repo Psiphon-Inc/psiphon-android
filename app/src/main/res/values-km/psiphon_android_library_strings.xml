@@ -60,6 +60,7 @@
   <!--Do not translate or transliterate "Psiphon"-->
   <string name="psiphon_service_notification_id">សេវាជូនដំណឹង Psiphon </string>
   <!--Do not translate or transliterate "Psiphon"-->
+  <string name="psiphon_service_notification_channel_name">ស្ថានភាព Psiphon ផ្លាស់ប្តូរ</string>
   <string name="preferred_servers">ម៉ាស៊ីនមេដែលពេញចិត្ត៖ %d</string>
   <string name="selecting_server">ជ្រើសរើសម៉ាស៊ីនមេ...</string>
   <string name="fetch_remote_server_list">កំពុងរកបញ្ជីម៉ាស៊ីនមេពីចម្ងាយ ...</string>
@@ -149,6 +150,8 @@
   <string name="region_name_se">ស៊ុយអែត</string>
   <string name="region_name_pl">ប៉ូឡូញ</string>
   <string name="region_name_sk">ស្លូវ៉ាគី</string>
+  <string name="region_name_rs">ស៊ែប៊ី</string>
+  <string name="region_name_au">អូស្ត្រាលី</string>
   <!--Do not translate or transliterate "Psiphon"-->
   <string name="about">អំពី Psiphon</string>
   <string name="feedback">មតិយោបល់</string>
@@ -165,19 +168,32 @@
   <string name="preference_notifications_title">ការជូនដំណឹង</string>
   <string name="preference_vpn_title">VPN</string>
   <!--Description of option to tunnel everything-->
+  <string name="preference_routing_include_all_apps_summary">បើកគ្រប់ច្រក</string>
   <!--Title for selecting apps to be tunneled-->
+  <string name="preference_routing_include_apps_title">រួមបញ្ចូលកម្មវិធី</string>
   <!--Description of option to tunnel only selected apps-->
+  <string name="preference_routing_include_apps_summary">បើកច្រកតែកម្មវិធីបានជ្រើសរើស</string>
   <!--Title for selecting apps to be excluded-->
   <string name="preference_routing_exclude_apps_title">លើកលែងកម្មវិធី</string>
   <!--Description of option to tunnel everything but selected apps-->
+  <string name="preference_routing_exclude_apps_summary">កុំបើកច្រកកម្មវិធីបានជ្រើសរើស</string>
   <!--Log line for when an app is tunneled-->
+  <string name="individual_app_included">បើកច្រកកម្មវិធី៖ %s</string>
   <!--Log line for when an app is excluded from being tunneled-->
   <string name="individual_app_excluded">កម្មវិធីដែលបានលើកលែងពីច្រក៖ %s</string>
   <!--Log line for when all apps will be tunneled-->
   <string name="no_apps_excluded">គ្មាន​កម្មវិធីដែលបានលើកលែងពីច្រកនេះទេ</string>
   <!--Title for option to select apps for routing changes-->
+  <string name="preference_routing_select_apps_title">កម្មវិធីជ្រើសរើស</string>
   <!--Description of option to select apps to exclusively tunnel-->
+  <plurals name="preference_routing_select_apps_to_include_summary">
+    <item quantity="other">កម្មវិធី %d និងត្រូវបើកច្រកតាម VPN</item>
+  </plurals>
   <!--Description of option to select apps to not tunnel-->
+  <plurals name="preference_routing_select_apps_to_exclude_summary">
+    <item quantity="other">កម្មវិធី %d នឹងត្រូវលើកលែងចេញពី VPN</item>
+  </plurals>
+  <string name="preference_routing_all_apps_tunnel_summary">គ្រប់កម្មវិធីទាំងអស់នឹងត្រូវបើកច្រកតាម VPN</string>
   <string name="preference_notifications_with_sound_title">សំឡេង</string>
   <string name="preference_notifications_with_sound_summary">ចាក់សំឡេងពេលស្ថានភាពការតភ្ជាប់ផ្លាស់ប្តូរ</string>
   <string name="preference_notifications_with_vibrate_title">ញ័រ</string>
@@ -208,11 +224,16 @@
   <string name="tunnel_connected">ច្រកបានតភ្ជាប់</string>
   <string name="waiting">កំពុងរង់ចាំ...</string>
   <!--Title for prompt requesting the user to grant the ACCESS_COARSE_LOCATION permission-->
+  <string name="MainBase_AccessCoarseLocationPermissionPromptTitle">ស្នើសុំការអនុញ្ញាត</string>
   <!--Message for prompt requesting the user to grant the ACCESS_COARSE_LOCATION permission-->
   <!--Do not translate or transliterate "Psiphon"-->
+  <string name="MainBase_AccessCoarseLocationPermissionPromptMessage">អនុញ្ញាត Psiphon ឲ្យសម្រេចចិត្តប្រសើរជាងមុន អំពីរបៀបធ្វើការលើបណ្តាញរបស់អ្នក ដោយផ្តល់សិទ្ធិចូលប្រើប្រាស់ទីតាំងរបស់អ្នក.\n\nចំណាំ ព័ត៌មាននេះត្រូវ​បានប្រើនៅលើ​ឧបករណ៍របស់​អ្នក​ប៉ុណ្ណោះ ហើយមិនត្រូវបានបញ្ជូនទៅម៉ាស៊ីនមេរបស់យើង​ឬភាគីទីបីទេ។</string>
   <!--Positive response button for prompt requesting the user to grant the ACCESS_COARSE_LOCATION permission-->
   <string name="MainBase_AccessCoarseLocationPermissionPositiveButton">យល់ព្រម</string>
   <!--Negative response button for prompt requesting the user to grant the ACCESS_COARSE_LOCATION permission-->
-  <!--Empty string array to initialize things that will be programatically populated later-->
-  <string-array name="empty_array"></string-array>
+  <string name="MainBase_AccessCoarseLocationPermissionNegativeButton">ទេ អរគុណ</string>
+  <!--An alert announcing EOL of built-in browser. This is shown once when user starts the app and their OS is not able to support the next app release-->
+  <!--Preference category for built-in browser EOL. Only displayed if the device can't support the next app release-->
+  <!--Preference title for built-in browser EOL. Only displayed if the device can't support the next app release-->
+  <string name="zircoDeprecationPreferenceTitle">កម្មវិធីរុករក Psiphon</string>
 </resources>
