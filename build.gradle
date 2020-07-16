@@ -28,8 +28,7 @@ ext {
     autoValueVersion = '1.5.2'
     okhttpVersion = '3.12.1'
     playServicesAdsVersion = '19.2.0'
-    mopubSdkVersion = '5.13.0'
-    adMobMopubMeditionVersion = '5.13.0.0'
+    mopubSdkVersion = '5.13.1'
     adsConsentLibraryVersion = '1.0.8'
     multidexVersion = '2.0.1'
     appcompatVersion = '1.1.0'
@@ -44,6 +43,5 @@ ext {
     testRunnerVersion = '0.5'
     playStoreBillingClientVersion = '3.0.0'
     threetenabpVersion = '1.2.1'
-    hyprMXMoPubVersion = '5.1.0'
 }
 

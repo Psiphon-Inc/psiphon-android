@@ -28,7 +28,6 @@ com.google.android.exoplayer2.source.hls,
 com.google.android.exoplayer2.source.smoothstreaming,
 com.google.android.exoplayer2.core,
 com.google.android.gms.ads_base,
-com.hyprmx.android.mopubadapter,
 com.jakewharton.threetenabp" />
     <supports-screens
                   android:smallScreens="true"
