@@ -15,6 +15,7 @@ import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdCallback;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions;
+import com.mopub.mobileads.dfp.adapters.MoPubAdapter;
 import com.psiphon3.TunnelState;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
@@ -151,8 +152,8 @@ class RewardedVideoHelper {
                     }
                 }
             };
-            Bundle extras = new MoPubMediationAdapter.BundleBuilder()
-                    .setRewardCustomData(customData)
+            Bundle extras = new MoPubAdapter.BundleBuilder()
+                    .setCustomRewardData(customData)
                     .build();
             AdRequest.Builder requestBuilder = new AdRequest.Builder()
                     .addNetworkExtrasBundle(MoPubMediationAdapter.class, extras);
