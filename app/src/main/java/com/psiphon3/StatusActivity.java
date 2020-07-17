@@ -59,7 +59,6 @@ import com.psiphon3.psicash.PsiCashStoreActivity;
 import com.psiphon3.psicash.PsiCashSubscribedFragment;
 import com.psiphon3.psicash.PsiCashViewModel;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
-import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.VpnAppsUtils;
@@ -354,11 +353,10 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
             disableInterstitialOnNextTabChange = true;
             m_tabHost.setCurrentTabByTag(SETTINGS_TAB_TAG);
 
-            // Set egress region preference to 'Best Performance'
-            updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
-
-            // Set region selection to 'Best Performance' too
-            m_regionSelector.setSelectionByValue(PsiphonConstants.REGION_CODE_ANY);
+            // At this point the service should be stopped and the persisted region selection set
+            // to PsiphonConstants.REGION_CODE_ANY by TunnelManager, so we only need to update the
+            // region selection UI
+            setRegionSelectionUiFromPreferences();
 
             // Show "Selected region unavailable" toast
             showToast(R.string.selected_region_currently_not_available);
