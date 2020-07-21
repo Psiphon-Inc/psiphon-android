@@ -209,7 +209,19 @@ public class PsiphonAdManager {
                 // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
                 // and we need to run the check every time. This call doesn't need to be synced with
                 // creation and deletion of ad views.
-                .doOnComplete(this::runAdMobGdprCheck);
+                //
+                // Also, do not perform the check too often either, as per
+                // https://developers.google.com/admob/android/eu-consent#update-status
+                // it is recommended that we determine the status of a user's consent at every app launch.
+                .doOnComplete(this::runAdMobGdprCheck)
+                .subscribeOn(AndroidSchedulers.mainThread())
+                // Make sure initialization runs only once, from .cache() documentation:
+                //
+                // Subscribes to this Completable only once, when the first CompletableObserver
+                // subscribes to the result Completable, caches its terminal event
+                // and relays/replays it to observers.
+                .cache();
+
 
         // MoPub SDK is also tracking GDPR status and will present a GDPR consent collection dialog if needed.
         this.initializeMoPubSdk = Completable.create(emitter -> {
@@ -252,7 +264,13 @@ public class PsiphonAdManager {
             };
             MoPub.initializeSdk(activity, sdkConfiguration, sdkInitializationListener);
         })
-                .subscribeOn(AndroidSchedulers.mainThread());
+                .subscribeOn(AndroidSchedulers.mainThread())
+                // Make sure initialization runs only once, from .cache() documentation:
+                //
+                // Subscribes to this Completable only once, when the first CompletableObserver
+                // subscribes to the result Completable, caches its terminal event
+                // and relays/replays it to observers.
+                .cache();
 
         // Use this chained initializer for all AdMob ads to initialize MoPub SDK before the AdMob.
         // This order is important for mediating MoPub ads via AdMob.
