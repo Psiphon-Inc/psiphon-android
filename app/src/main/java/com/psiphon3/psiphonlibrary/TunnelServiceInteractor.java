@@ -235,7 +235,6 @@ public class TunnelServiceInteractor {
         tunnelState.listeningLocalHttpProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT);
         tunnelState.clientRegion = data.getString(TunnelManager.DATA_TUNNEL_STATE_CLIENT_REGION);
         tunnelState.sponsorId = data.getString(TunnelManager.DATA_TUNNEL_STATE_SPONSOR_ID);
-        tunnelState.needsHelpConnecting = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_NEEDS_HELP_CONNECTING);
         ArrayList<String> homePages = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_HOME_PAGES);
         if (homePages != null && tunnelState.isConnected) {
             tunnelState.homePages = homePages;
@@ -291,7 +290,6 @@ public class TunnelServiceInteractor {
                                 .setSponsorId(state.sponsorId)
                                 .setHttpPort(state.listeningLocalHttpProxyPort)
                                 .setHomePages(state.homePages)
-                                .setNeedsHelpConnecting(state.needsHelpConnecting)
                                 .build();
                         tunnelState = TunnelState.running(connectionData);
                     } else {

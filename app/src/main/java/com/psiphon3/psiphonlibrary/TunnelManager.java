@@ -111,7 +111,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     // Service -> Client bundle parameter names
     static final String DATA_TUNNEL_STATE_IS_RUNNING = "isRunning";
     static final String DATA_TUNNEL_STATE_IS_CONNECTED = "isConnected";
-    static final String DATA_TUNNEL_STATE_NEEDS_HELP_CONNECTING = "needsHelpConnecting";
     static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT = "listeningLocalSocksProxyPort";
     public static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT = "listeningLocalHttpProxyPort";
     static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
@@ -150,7 +149,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     public static class State {
         boolean isRunning = false;
         boolean isConnected = false;
-        boolean needsHelpConnecting = false;
         int listeningLocalSocksProxyPort = 0;
         int listeningLocalHttpProxyPort = 0;
         String clientRegion = "";
@@ -341,7 +339,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                                 .setSponsorId(m_tunnelState.sponsorId)
                                 .setHttpPort(m_tunnelState.listeningLocalHttpProxyPort)
                                 .setHomePages(m_tunnelState.homePages)
-                                .setNeedsHelpConnecting(m_tunnelState.needsHelpConnecting)
                                 .build();
                         tunnelState = TunnelState.running(connectionData);
                     } else {
@@ -758,7 +755,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         Bundle data = new Bundle();
         data.putBoolean(DATA_TUNNEL_STATE_IS_RUNNING, m_tunnelState.isRunning);
         data.putBoolean(DATA_TUNNEL_STATE_IS_CONNECTED, m_tunnelState.isConnected);
-        data.putBoolean(DATA_TUNNEL_STATE_NEEDS_HELP_CONNECTING, m_tunnelState.needsHelpConnecting);
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT, m_tunnelState.listeningLocalSocksProxyPort);
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT, m_tunnelState.listeningLocalHttpProxyPort);
         data.putString(DATA_TUNNEL_STATE_CLIENT_REGION, m_tunnelState.clientRegion);
