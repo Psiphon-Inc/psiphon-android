@@ -20,6 +20,7 @@
 package com.psiphon3.psiphonlibrary;
 
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -27,6 +28,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.preference.CheckBoxPreference;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
@@ -104,6 +106,7 @@ public class MoreOptionsPreferenceActivity extends MainBase.Activity {
 
             setupLanguageSelector(preferences);
             setupAbout(preferences);
+            setupAdsConsentPreference(preferences);
             setupZircoBookmarksExport(preferences);
         }
 
@@ -258,79 +261,28 @@ public class MoreOptionsPreferenceActivity extends MainBase.Activity {
             );
             new Thread(exporter).start();
         }
-    }
 
-    // TODO: fix ads consent preference handling
-    /*
-    private void updateAdsConsentPreference() {
-        // Conditionally add / remove 'revoke ads consent' preference
-        final ConsentInformation consentInformation = ConsentInformation.getInstance(this);
-        PreferenceScreen screen = this.getPreferenceScreen();
-        Preference adConsentPref = screen.findPreference(getString(R.string.adConsentPref));
-
-        if(consentInformation.getConsentStatus() != ConsentStatus.UNKNOWN) {
-            // Consent status is either PERSONALIZED or NON_PERSONALIZED - create and show
-            // 'reset' preference if doesn't exists
-            if (adConsentPref == null) {
-                PreferenceCategory category = new PreferenceCategory(screen.getContext());
-                category.setTitle(R.string.ads_consent_preference_category_title);
-                category.setKey(getString(R.string.adConsentPref));
-                screen.addPreference(category);
-
-                DialogPreference revokeConsentPref = new RevokeConsentPreference(screen.getContext(),
-                        new RevokeConsentPreference.OnDialogDismissListener() {
-                            @Override
-                            public void onDismiss() {
-                                MoreOptionsPreferenceActivity.this.updateAdsConsentPreference();
-                            }
-                        });
-                revokeConsentPref.setTitle(R.string.ads_consent_preference_title);
-                revokeConsentPref.setSummary(R.string.ads_consent_preference_summary);
-                category.addPreference(revokeConsentPref);
-            }
-        } else {
-            // Consent status UNKNOWN - remove 'reset' preference if exists
-            if(adConsentPref != null) {
-                screen.removePreference(adConsentPref);
+        private void setupAdsConsentPreference(PreferenceScreen preferences) {
+            Preference category = preferences.findPreference(getString(R.string.adConsentPreferenceCategory));
+            final ConsentInformation consentInformation = ConsentInformation.getInstance(getContext());
+            if (consentInformation.getConsentStatus() != ConsentStatus.UNKNOWN) {
+                category.setVisible(true);
+                Preference pref = preferences.findPreference(getString(R.string.adConsentPreference));
+                pref.setOnPreferenceClickListener(preference -> {
+                    new AlertDialog.Builder(getContext())
+                            .setTitle(R.string.ads_consent_preference_dialog_title)
+                            .setMessage(getContext().getString(R.string.ads_consent_preference_dialog_preference_message))
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .setPositiveButton(android.R.string.yes, (dialog, whichButton) -> {
+                                final ConsentInformation consentInformation1 = ConsentInformation.getInstance(getContext());
+                                consentInformation1.setConsentStatus(ConsentStatus.UNKNOWN);
+                                category.setVisible(false);
+                            })
+                            .setNegativeButton(android.R.string.no, null)
+                            .show();
+                    return true;
+                });
             }
         }
     }
-
-    static private class RevokeConsentPreference extends DialogPreference {
-        private OnDialogDismissListener dialogDismissListener;
-        RevokeConsentPreference(Context context, OnDialogDismissListener listener) {
-            // Using API level 1 constructor.
-            super(context, null);
-            this.dialogDismissListener = listener;
-        }
-
-        @Override
-        protected void onPrepareDialogBuilder(AlertDialog.Builder builder) {
-            builder.setTitle(R.string.ads_consent_preference_dialog_title)
-                    .setMessage(getContext().getString(R.string.ads_consent_preference_dialog_preference_message))
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int whichButton) {
-                            final ConsentInformation consentInformation = ConsentInformation.getInstance(RevokeConsentPreference.this.getContext());
-                            consentInformation.setConsentStatus(ConsentStatus.UNKNOWN);
-                        }
-                    })
-                    .setNegativeButton(android.R.string.no, null);
-        }
-
-        @Override
-        public void onDismiss(DialogInterface dialog) {
-            super.onDismiss(dialog);
-            if(dialogDismissListener != null) {
-                dialogDismissListener.onDismiss();
-            }
-        }
-
-        public interface OnDialogDismissListener {
-            void onDismiss();
-        }
-    }
-
-     */
 }

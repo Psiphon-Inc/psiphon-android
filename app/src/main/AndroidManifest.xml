@@ -137,20 +137,20 @@ com.jakewharton.threetenabp" />
                 android:value="com.psiphon3.StatusActivity" />
         </activity>
         <activity
-            android:name=".psiphonlibrary.VpnOptionsPreferenceActivity"
-            android:parentActivityName=".StatusActivity"
+            android:name="com.psiphon3.psiphonlibrary.VpnOptionsPreferenceActivity"
+            android:parentActivityName="com.psiphon3.StatusActivity"
             android:label="@string/app_name">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".StatusActivity" />
+                android:value="com.psiphon3.StatusActivity" />
         </activity>
         <activity
-            android:name=".psiphonlibrary.ProxyOptionsPreferenceActivity"
-            android:parentActivityName=".StatusActivity"
+            android:name="com.psiphon3.psiphonlibrary.ProxyOptionsPreferenceActivity"
+            android:parentActivityName="com.psiphon3.StatusActivity"
             android:label="@string/app_name">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".StatusActivity" />
+                android:value="com.psiphon3.StatusActivity" />
         </activity>
         <service
             android:name="com.psiphon3.psiphonlibrary.TunnelVpnService"

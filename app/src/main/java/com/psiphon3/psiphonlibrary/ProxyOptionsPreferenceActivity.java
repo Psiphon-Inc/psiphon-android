@@ -34,6 +34,7 @@ import com.psiphon3.subscription.R;
 
 import java.util.ArrayList;
 
+// TODO: port custom headers handling from old MoreOptionsPreferencesActivity
 public class ProxyOptionsPreferenceActivity extends MainBase.Activity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {

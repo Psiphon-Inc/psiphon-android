@@ -57,7 +57,8 @@
     <string name="customProxyHeaderValue5">customProxyHeaderValue5</string>
     <string name="customProxyHeaderName6" >customProxyHeaderName6</string>
     <string name="customProxyHeaderValue6">customProxyHeaderValue6</string>
-    <string name="adConsentPref">adConsentPref</string>
+    <string name="adConsentPreferenceCategory" translatable="false">adConsentPreferenceCategory</string>
+    <string name="adConsentPreference" translatable="false">adConsentPreference</string>
 
 
     <!-- When Psiphon disconnects it sends a one last ("final") status request. This message is shown if that request fails. -->
