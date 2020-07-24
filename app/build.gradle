@@ -144,6 +144,9 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout:$rootProject.ext.constraintLayoutVersion"
     implementation "androidx.gridlayout:gridlayout:$rootProject.ext.gridlayoutVersion"
     implementation "androidx.recyclerview:recyclerview:$rootProject.ext.recyclerviewVersion"
+    implementation "androidx.localbroadcastmanager:localbroadcastmanager:$rootProject.ext.localBroadCastManagerVersion"
+    implementation "androidx.preference:preference:$rootProject.ext.preferenceVersion"
+    implementation "com.takisoft.preferencex:preferencex:$rootProject.ext.preferenceLibraryFixVersion"
 
     // Complete SDK is needed by AdMob mediation adapter
     implementation("com.mopub:mopub-sdk:$rootProject.ext.mopubSdkVersion@aar") {

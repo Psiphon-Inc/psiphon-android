@@ -152,7 +152,7 @@
     <string name="about">About Psiphon</string>
     <string name="feedback">Feedback</string>
     <string name="tunnel_whole_device_toggle">Tunnel Whole Device (requires Android 4.0+)</string>
-    <string name="disable_timeouts">Disable timeouts for slow networks</string>
+    <string name="disableTimeoutsPreferenceSummary">Disable timeouts for slow networks</string>
     <string name="region_selector">Select region</string>
     <string name="network_proxy_connect_exception">Failed to connect to the network\'s HTTP Proxy: %s</string>
     <string name="network_proxy_connect_information">Connecting via your HTTP Proxy: %s</string>
@@ -191,12 +191,24 @@
         <item quantity="one">%d app will be excluded from VPN</item>
         <item quantity="other">%d apps will be excluded from VPN</item>
     </plurals>
+    <!-- Vpn service notification text shown in the toolbar when tunneling all apps-->
+    <string name="psiphon_service_notification_message_vpn_all_apps">Tunneling all apps</string>
+    <!-- Vpn service notification text shown in the toolbar when tunneling only selected apps-->
+    <plurals name="psiphon_service_notification_message_vpn_include_apps">
+        <item quantity="one">Tunneling %d app</item>
+        <item quantity="other">Tunneling %d apps</item>
+    </plurals>
+    <!-- Vpn service notification text shown in the toolbar when not tunneling selected apps-->
+    <plurals name="psiphon_service_notification_message_vpn_exclude_apps">
+        <item quantity="one">%d app excluded from the tunnel</item>
+        <item quantity="other">%d apps excluded from the tunnel</item>
+    </plurals>
     <string name="preference_routing_all_apps_tunnel_summary">All apps will be tunnelled via VPN</string>
     <string name="preference_notifications_with_sound_title">Sound</string>
     <string name="preference_notifications_with_sound_summary">Play sound when connection status changes</string>
     <string name="preference_notifications_with_vibrate_title">Vibrate</string>
     <string name="preference_notifications_with_vibrate_summary">Vibrate when connection status changes</string>
-    <string name="preference_download_wifi_only_toggle">Download upgrades on Wi-Fi only</string>
+    <string name="downloadWiFiOnlyPreferenceSummary">Download upgrades on Wi-Fi only</string>
     <string name="moreOptions">More Options</string>
     <string name="root_mode_not_supported">Root mode is not supported on this version of Android</string>
     <string name="proxySettingsCategoryTitle">Proxy Settings</string>
@@ -234,6 +246,13 @@
     <string name="MainBase_AccessCoarseLocationPermissionPositiveButton">Okay</string>
     <!-- Negative response button for prompt requesting the user to grant the ACCESS_COARSE_LOCATION permission -->
     <string name="MainBase_AccessCoarseLocationPermissionNegativeButton">No thanks</string>
+    <string name="label_vpn_settings">VPN settings</string>
+    <string name="label_proxy_settings">Proxy settings</string>
+    <string name="preference_summary_no_proxy">No proxy</string>
+    <string name="preference_summary_custom_proxy">Custom proxy</string>
+    <string name="preference_summary_system_proxy">System proxy</string>
+    <string name="disableTimeoutsPreferenceTitle">Disable timeouts</string>
+    <string name="downloadWiFiOnlyPreferenceTitle">Wi-Fi only</string>
 
     <!-- Empty string array to initialize things that will be programatically populated later -->
     <string-array name="empty_array"/>
