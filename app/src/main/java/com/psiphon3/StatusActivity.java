@@ -82,6 +82,8 @@ import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
@@ -257,7 +259,6 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
         // Notify tunnel service if it is running so it may trigger purchase check and
         // upgrade current connection if there is a new valid subscription purchase.
         tunnelServiceInteractor.onResume();
-        //TODO: port no more BOM user alert
 
         boolean isFirstRun = shouldAutoStart();
         preventAutoStart();
@@ -504,7 +505,45 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
         if(startUpInterstitialDisposable != null) {
             startUpInterstitialDisposable.dispose();
         }
-        startTunnel();
+        // Check if user previously ran in browser-only mode
+        boolean wantVPN = m_multiProcessPreferences
+                .getBoolean(getString(R.string.tunnelWholeDevicePreference),
+                        true);
+        if(wantVPN) {
+            startTunnel();
+        } else {
+            // Legacy case: do not auto-start if last preference was BOM
+            // Instead we switch to the options tab and display a modal with the help information
+            m_tabHost.setCurrentTabByTag(SETTINGS_TAB_TAG);
+            LayoutInflater inflater = this.getLayoutInflater();
+            View dialogView = inflater.inflate(R.layout.legacy_bom_alert_view_layout, null);
+            TextView tv = dialogView.findViewById(R.id.legacy_mode_alert_tv);
+            String text = getString(R.string.legacy_bom_alert_message, getString(R.string.app_name));
+            String formattedText = text.replaceAll("\n", "\n\n");
+            SpannableString spannableString = new SpannableString(formattedText);
+
+            Matcher matcher = Pattern.compile("\n\n").matcher(formattedText);
+            while (matcher.find()) {
+                spannableString.setSpan(new AbsoluteSizeSpan(10, true), matcher.start() + 1, matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            tv.setText(spannableString);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                    .setView(dialogView)
+                    // We are displaying important information to the user, so make sure the dialog
+                    // is not dismissed accidentally as it won't be shown again.
+                    .setCancelable(false)
+                    .setPositiveButton(R.string.label_ok, null)
+                    .setOnDismissListener(dialog ->
+                            m_multiProcessPreferences.remove(getString(R.string.tunnelWholeDevicePreference)));
+            // Add 'VPN settings' button if VPN exclusions are supported
+            if (Utils.supportsVpnExclusions()) {
+                builder.setNegativeButton(R.string.label_vpn_settings, (dialog, which) ->
+                        startActivityForResult(new Intent(StatusActivity.this,
+                                VpnOptionsPreferenceActivity.class), REQUEST_CODE_VPN_PREFERENCES)
+                );
+            }
+            builder.show();
+        }
     }
 
     @Override
