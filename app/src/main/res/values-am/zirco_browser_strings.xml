@@ -1,28 +1,28 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="ApplicationName">የሳይፈን - Psiphon ማሰሺያ</string>
+  <string name="ApplicationName">የPsiphon ማሰሺያ</string>
   <string name="ApplicationNameUrl">Psiphon - %s</string>
   <string name="ApplicationDescription">Psiphon ማሰሺያ በZirco ማሰሺያ ላይ የተመሰረተ የAndroid ክፍተ ምንጭ ማሰሺያ ነው።  </string>
   <string name="AboutActivity.Title">ስለ</string>
-  <string name="AboutActivity.VersionText">ስሪት:</string>
+  <string name="AboutActivity.VersionText">ሥሪት፦</string>
   <string name="AboutActivity.LicenseText">ፍቃድ፡-</string>
   <string name="Main.MenuAddBookmark">እልባት አክል</string>
   <string name="Main.MenuShowBookmarks">እልባቶች </string>
   <string name="Main.MenuShowHistory">ታሪክ</string>
   <string name="Main.MenuShowDownloads">የወረዱ </string>
   <string name="Main.MenuPreferences">ምርጫዎች</string>
-  <string name="Main.MenuOpen">ክፈት </string>
+  <string name="Main.MenuOpen">ክፍት </string>
   <string name="Main.MenuOpenNewTab">በአዲስ ትር ክፈት </string>
   <string name="Main.MenuDownload">አውርድ </string>
-  <string name="Main.DownloadStartedMsg">ማውረድ ጀምሯል።</string>
-  <string name="Main.DownloadFinishedMsg">ማውረድ ተጠናቋል። </string>
+  <string name="Main.DownloadStartedMsg">መውረድ ጀምሯል።</string>
+  <string name="Main.DownloadFinishedMsg">መውረድ ተጠናቋል። </string>
   <string name="Main.DownloadErrorMsg">የማውረድ ስህተት፡- %s</string>
   <string name="Main.DownloadPermissionRequestReason">የወረዱ ንጥሎች በውጫዊ ማከማቻ የሚቀመጡ ስለሆነ የመጻፍ ፈቃዶች ያስፈልጋሉ።</string>
   <string name="Main.ToastTabSwitchMessage">ትር %s</string>
   <string name="Main.ToastTabSwitchFullMessage">ትር %1$s：%2$s</string>
-  <string name="Main.VndErrorTitle">URLሉን መክፈት አልተቻለም</string>
-  <string name="Main.VndErrorMessage">ይህንን url ለመክፈት የሚያስችል መተግበሪያ ላይኖሮት ይችላል: %s። </string>
-  <string name="BookmarksListActivity.Title">የሳይፈን ማሰሺያ - እልባቶች </string>
+  <string name="Main.VndErrorTitle">URLን መክፈት አልተቻለም</string>
+  <string name="Main.VndErrorMessage">ይህንን url ለመክፈት የሚያስችል መተግበሪያ ላይኖሮት ይችላል:-%s። </string>
+  <string name="BookmarksListActivity.Title">የPsiphon ማሰሺያ - እልባቶች </string>
   <string name="BookmarksListActivity.MenuSortMode">ለይ በ </string>
   <string name="BookmarksListActivity.MenuAddBookmark">እልባት አክል</string>
   <string name="BookmarksListActivity.Empty">እልባቶች  የሉም </string>
@@ -34,7 +34,7 @@
   <string name="EditBookmarkActivity.Title">እልባት አርትእ</string>
   <string name="EditBookmarkActivity.TitleAdd">እልባት አክል</string>
   <string name="EditBookmarkActivity.TitleLabel">ስም፡-</string>
-  <string name="EditBookmarkActivity.UrlLabel">ቦታ፡-</string>
+  <string name="EditBookmarkActivity.UrlLabel">መገኛ፡-</string>
   <string name="HistoryListActivity.Title">የሳይፈን ማሰሺያ - ታሪክ </string>
   <string name="HistoryListActivity.MenuOpenInTab">በአዲስ ትር ክፈት </string>
   <string name="HistoryListActivity.MenuDelete">ሰርዝ</string>
@@ -162,8 +162,8 @@
   <string name="Main.MenuViewImage">ምስሉን አሳይ</string>
   <string name="Main.MenuCopyImageUrl">የምስሉን url ቅዳ </string>
   <string name="Main.MenuDownloadImage">ምስሉን አውርድ </string>
-  <string name="Main.MenuSendEmail">ኢሜይል ላክ </string>
-  <string name="Main.MenuCopyEmailUrl">የኢሜሉን url ቅዳ </string>
+  <string name="Main.MenuSendEmail">ኤፖስታ ላክ </string>
+  <string name="Main.MenuCopyEmailUrl">የኤፖስታ url ቅዳ </string>
   <string name="Commons.UrlCopyToastMessage">urlሉ ወደ ቅንጥብ ሰሌዳው ተቀድቷል። </string>
   <string name="DownloadNotification.DownloadStart">ማውረድ ጀምሯል። </string>
   <string name="DownloadNotification.DownloadInProgress">ማውረድ በሂደት ላይ።</string>
@@ -208,7 +208,7 @@
   <string name="Main.ShareChooserTitle">አጋራ በ  </string>
   <string name="Main.MenuShareLinkUrl">ትይይዝ አጋራ </string>
   <string name="Main.MenuShareImageUrl">ምስል አጋራ </string>
-  <string name="Main.MenuShareEmailUrl">ኢሜል አጋራ </string>
+  <string name="Main.MenuShareEmailUrl">ኤፖስታ አጋራ </string>
   <string name="PreferencesActivity.HideTitleBarPreferenceTitle">የርእስ አሞሌዎቹን ደብቅ </string>
   <string name="PreferencesActivity.HideTitleBarPreferenceSummary">ከተመረጠ ዊንዶውስ ርእስ አሞሌዎች አይታዩም  (መተግበሪያውን እንደገና ማስጀመር ያስፈልጋል)።</string>
   <string name="PreferencesActivity.UseWideViewPortPreferenceTitle">ሰፊ የማያ መደቦችን ተጠቀም </string>

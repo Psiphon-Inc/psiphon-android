@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="banner_desc">የስፖንሰሩ ሰንደቅን የስፖንሰሩን መነሻ ገጽ ለመጎብኘት ጠቅ ያድርጉ</string>
-  <string name="start_desc"> ከPsiphon ጋር አገኛኝ፤ ለመገናኘት ጠቅ ያድርጉ</string>
+  <string name="banner_desc">የስፖንሰሩ ሰንደቅን፣ የስፖንሰሩን መነሻ ገጽ ለመጎብኘት ጠቅ ያድርጉ</string>
+  <string name="start_desc"> ከPsiphon ጋር አገኛኝ፤ ለማገናኘት ጠቅ ያድርጉ</string>
   <string name="message_image_success_desc">የስኬት መልእክትን የሚያሳይ አዶ</string>
   <string name="message_image_error_desc">የስህተት መልእክትን የሚይሳይ አዶ</string>
   <string name="message_image_debug_desc">የስህተት እርማት መልእክትን የሚይሳይ አዶ</string>
@@ -9,7 +9,7 @@
   <string name="exit">ጨርስና አቁም</string>
   <string name="open_browser">ማሰሻ ክፈት</string>
   <string name="browser_task_label">የPsiphon ማሰሻ </string>
-  <string name="FeedbackActivity.DefaultText"> ውስን-ጉዳይ ተኮር አስተያየትዎች ካለዎት፣  ስለማይሠሩ ድር ጣቢያዎች ተጨማሪ መረጃ  ካለዎት ወይም ይህ ቅጽ ለእርስዎ የማይሰራ ከሆነ እባክዎትን ወደ &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt; ኢሜይል ይላኩ። </string>
+  <string name="FeedbackActivity.DefaultText"> ውስን-ጉዳይ ተኮር አስተያየትዎች ካለዎት፣  ስለማይሠሩ ድር ጣቢያዎች ተጨማሪ መረጃ  ካለዎት ወይም ይህ ቅጽ ለእርስዎ የማይሰራ ከሆነ እባክዎትን ወደ &lt;a href=\"mailto:feedback@psiphon.ca\"&gt;feedback@psiphon.ca&lt;/a&gt; ኤፖስታ ይላኩ። </string>
   <string name="FeedbackActivity.Success">ግብረመልስዎን ስላስገቡ እናመሰግናለን</string>
   <string name="FeedbackActivity.Failure">ለማስገባት አልተቻለም። እባክዎ እንደገና ይሞክሩ። </string>
   <string name="FeedbackActivity.SubmitFeedbackFailed">ግብረመልስ ማስገባት አልተቻለም። </string>
@@ -22,7 +22,7 @@
   <string name="StatusActivity.WholeDeviceTunnelPromptTitle">መሣሪያውን ሙሉ በሙሉ መቦርቦር ይፈልጋሉ?</string>
   <string name="StatusActivity.WholeDeviceTunnelPromptMessage">ለመሣሪያዎ ሙሉ በሙሉ መሣሪያውን የመቦርቦር አማራጭ አለ። \n\nበዚህ አማራጭ ለሁሉም መተግበሪያዎች ማሰሻዎችን ጨምሮ ሁሉም የእርስዎ የኢንተርኔት ትራፊክ በPsiphon አማካኝነት ይተላለፋል።  \n\n በአማራጭነት የPsiphon ቅርቅብ ማሰሻን ብቻ መርጠው መቦርቦር ይችላሉ። ይህ ማለት የሌሎች መተግበሪያዎች ግንኝነት የሚያልፈው በቀጥታ በመደበኛው የኢንተርኔት ግንኙነት አማካኝነት ይሆናል። </string>
   <string name="StatusActivity.WholeDeviceTunnelPositiveButton">መሣሪያውን ሙሉ በሙሉ ቦርቡር</string>
-  <string name="StatusActivity.WholeDeviceTunnelNegativeButton">የ Psiphon ማሰሻን ብቻ ተጠቀም </string>
+  <string name="StatusActivity.WholeDeviceTunnelNegativeButton">የPsiphon ማሰሻን ብቻ ተጠቀም </string>
   <string name="selected_region_currently_not_available">የተመረጠው ክልል ለጊዜው አይገኝም ፣  እባክዎትን ሌላ ክልል ይምረጡ።</string>
   <string name="we_care_about_your_privacy_and_data_security_we_keep_this_app_free_by_showing_ads">ስለ ግላዊነትዎ እና ስለ ውሂብዎ ደህንነት እንጨነቃለን። ማስታወቂያ በማሳየት ይህንን መተግበሪያ በነጻ እናስጠቅማለን።</string>
   <string name="can_we_continue_to_use_your_data_to_tailor_ads_for_you">ለእርስዎ ብጁ የሆኑ ማስታወቂያዎችን ለማቅረብ ውሂብዎን መጠቀም መቀጠል እንችላለን ወይ?</string>
@@ -52,7 +52,7 @@
   <!--Text shown to the user to explain steps to take when unable to connect and there is someone around who has Psiphon and can help them connect-->
   <string name="get_help_connecting_text">ግንኙነት ለመፍጠር እርዳታ ለማግኘት ሌላ ግንኙነት የፈጠረ የPsiphon ተጠቃሚ ያግኙና እነሱ ተገናኝተው ሳሉ እና እርስዎ ለመገናኘት እየሞከሩ ሳለ ስልክዎቻችሁን ጀርባ ለጀርባ በማነካካት የግንኙነት መረጃ ልውውጥ ያስጀምሩ።</string>
   <!--Description of the image which appears along with get help connecting text. Depicts two phones being placed back to back in order to transfer NFC data. The screen of the visible phone shows Psiphon in a connecting state.-->
-  <string name="get_help_connecting_image_description">ስልኮችን ማነካካት ለ NFC (ቅርብ ርቀት ተግባቦት)</string>
+  <string name="get_help_connecting_image_description">ስልኮችን ማነካካት ለNFC (ቅርብ ርቀት ተግባቦት)</string>
   <!--Title shown in a notification to the user if they have been trying, but unable to connect for an extended period of time-->
   <string name="get_help_connecting_notification_title">የግንኙነት ችግር</string>
   <!--Message shown in a notification to the user if they have been trying, but unable to connect for an extended period of time-->
@@ -62,7 +62,7 @@
   <!--Text shown to the user to explain steps to take when able to connect and there is someone around who has Psiphon and requires help connecting-->
   <string name="how_to_help_connect_text">እርስዎ ወደ Psiphon ተገናኝተው ሳሉ እና እሳቸው ለመገናኘት እየሞከሩ ሳሉ ስልክዎቻችሁን ጀርባ ለጀርባ በማነካካት ጓደኛዎትን ወደ Psiphon እንዲገናኙ ማድረግ ይችላሉ።</string>
   <!--Description of the image which appears along with how to help connect text. Depicts two phones being placed back to back in order to transfer NFC data. The screen of the visible phone shows Psiphon in a connected state.-->
-  <string name="how_to_help_connect_image_description">ስልኮችን ማነካካት ለ NFC (ቅርብ ርቀት ተግባቦት)</string>
+  <string name="how_to_help_connect_image_description">ስልኮችን ማነካካት ለNFC (ቅርብ ርቀት ተግባቦት)</string>
   <!--Generic string to say OK or acknowledge-->
   <string name="label_ok">እሺ </string>
   <string name="preference_navigate_to_vpn_setting_title">ሁሌም የነቃ ምናባዊ የግል አውታረ መረብ (ቪፒኤን)</string>

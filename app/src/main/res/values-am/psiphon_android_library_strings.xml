@@ -52,10 +52,10 @@
   <string name="iptables_binary_not_found">ለግልጽ ወኪል የሚያስፈልገው የአይፒቴብል ማስፈጸሚያ ሊገኝ አልቻለም </string>
   <string name="root_access_denied">ሩት አክሰስ ተከልክሏል </string>
   <string name="psiphon_stopped">ቆሟል </string>
-  <string name="psiphon_running_whole_device">በሙሉ መሳሪያ ሁነታ እየሰራ ነው </string>
-  <string name="psiphon_running_browser_only">በመዳሰሻ ብቻ ሁነታ እየሰራ ነው </string>
-  <string name="waiting_for_network_connectivity">የኔትወርክ ግንኙነትን በመጠበቅ ላይ...</string>
-  <string name="checking_for_root_access">ሩት አክስስን በማጣራት ላይ...</string>
+  <string name="psiphon_running_whole_device">በሙሉ መሣሪያ ሁነታ እየሰራ ነው </string>
+  <string name="psiphon_running_browser_only">በማሰሻ ብቻ ሁነታ እየሰራ ነው </string>
+  <string name="waiting_for_network_connectivity">የአውታረመረብ ግንኙነትን በመጠበቅ ላይ...</string>
+  <string name="checking_for_root_access">ሥር መዳረሻን በመፈለግ ላይ...</string>
   <string name="psiphon_service_notification_message_connecting">በመገናኘት ላይ....</string>
   <!--Do not translate or transliterate "Psiphon"-->
   <string name="psiphon_service_notification_id">የሳይፈን አገልግሎት ማስታወቂያ </string>
@@ -73,14 +73,14 @@
   <string name="tun2socks_running">ከVPN ወደ SOCKS በመስራት ላይ ነው </string>
   <string name="tun2socks_stopped">ከVPN ወደ SOCKS ቆሟል</string>
   <string name="vpn_service_no_private_address_available">ለVPN አገልገሎት የሚሆን ምንም የግል አድራሻ የለም</string>
-  <string name="psiphon_running_generic">በመስራት ላይ...</string>
+  <string name="psiphon_running_generic">በመሥራት ላይ...</string>
   <string name="data_transfer_bytes_sent">የተላኩ ባይቶች፡- %1$s (%2$.2f%% የታመቀ)</string>
   <string name="data_transfer_bytes_received">የደረሱ ባይቶች: %1$s (%2$.2f%% የታመቀ)</string>
   <string name="data_transfer_elapsed_time">የግንኙነት ጊዜ፡- %s</string>
   <string name="check_tunnel_failed">የማጣሪያ ማስተላለፊያ አልተቻለም። መሳሪያዎ ሙሉ የመሳሪያ የማስተላለፊያ አማራጩን ላይደግፍ ይችላል። </string>
   <string name="debug_message">%s</string>
   <string name="Diagnostics.AttachmentWriteFailed">የግብረመልስ ምርመራ ሰነድ መፍጠር ወይም መጻፍ አልቻለም </string>
-  <string name="Diagnostics.EncryptedFailed">የግብረመልስ ምርመራ መረጃን ማመስጠር አልቻለም። መረጃው ከግብረመልስ ኢሜሎት ጋር አባሪ አይደረግም። </string>
+  <string name="Diagnostics.EncryptedFailed">የግብረመልስ ምርመራ መረጃን ማመስጠር አልቻለም። መረጃው ከግብረመልስ ኤፖስታዎ ጋር አባሪ አይደረግም። </string>
   <string name="TransparentProxyConfig.iptablesExtractFailed">የአይፒቴብል ሁለትዮሽን ማውጣት አልተቻለም። </string>
   <string name="transparent_proxy_routing_failed">ግልጽ ወኪል መውጫን ማስጀመር አልተቻለም፡-%s</string>
   <string name="transparent_proxy_routing_running">ግልጽ ወኪል መውጫ እየሰራ ነው </string>
@@ -96,7 +96,7 @@
   <string name="UpgradeManager.CannotExtractUpgradePackageInfo">ማላቅ አልተቻለም። ከማላቂያው ሰነድ ውስጥ የጥቅሉን መረጃ ማግኘት አይቻልም።</string>
   <string name="UpgradeManager.UpgradeFileNotFound">የማላቂያ ሰነድ አልተገኘም </string>
   <!--Do not translate or transliterate "Psiphon"-->
-  <string name="UpgradeManager.UpgradePromptTitle">የሳይፈን ማላቂያ </string>
+  <string name="UpgradeManager.UpgradePromptTitle">የሳይፈን ደረጃ ማላቂያ </string>
   <!--Do not translate or transliterate "Psiphon"-->
   <string name="UpgradeManager.UpgradePromptMessage">የሳይፈን ማላቂያ ለመጫን ዝግጁ ነው። </string>
   <string name="UpgradeManager.UpgradeFileReadFailed">የማላቂያ ሰነዱን ማንበብ አልተቻለም </string>
@@ -107,9 +107,9 @@
   <string name="label_received">ደርሷል </string>
   <string name="compression_ratio">%1$.2f%%የታመቀ</string>
   <string name="compression_savings">%s ተቀምጧል </string>
-  <string name="start">ጅምር </string>
+  <string name="start">ጀምር </string>
   <string name="stop">አቁም </string>
-  <string name="home_tab_name">ቅድመ ገጽ </string>
+  <string name="home_tab_name">መነሻ </string>
   <string name="settings_tab_name">አማራጮች </string>
   <string name="statistics_tab_name">ስታትስቲክስ</string>
   <string name="logs_tab_name">መዝገቦች </string>
@@ -125,7 +125,7 @@
   <string name="use_custom_proxy_settings_radio">የሚከረሉትን ቅንብሮች ተጠቀም፡- </string>
   <string name="custom_proxy_settings_host">የአስተናጋጅ አድራሻ </string>
   <string name="custom_proxy_settings_port">ወደብ </string>
-  <string name="region_name_any">ምርጥ አፈጻጸም </string>
+  <string name="region_name_any">ከሁሉም የላቀ አፈጻጸም </string>
   <string name="region_name_us">ዩናይትድ ስቴትስ </string>
   <string name="region_name_gb">ዩናይትድ ኪንግደም </string>
   <string name="region_name_ca">ካናዳ </string>
@@ -135,7 +135,7 @@
   <string name="region_name_sg">ሲንጋፖር </string>
   <string name="region_name_nl">ኔዘርላንድ </string>
   <string name="region_name_in">ሕንድ </string>
-  <string name="region_name_es">ስፔን </string>
+  <string name="region_name_es">ስፔይን </string>
   <string name="region_name_at">ኦስትሪያ </string>
   <string name="region_name_be">ቤልጂየም </string>
   <string name="region_name_bg">ቡልጋሪያ </string>
@@ -153,7 +153,7 @@
   <string name="region_name_rs">ሰርቢያ</string>
   <string name="region_name_au">አውስትራሊያ</string>
   <!--Do not translate or transliterate "Psiphon"-->
-  <string name="about">ስለ Psiphon (ሳይፈን) </string>
+  <string name="about">ስለ Psiphon</string>
   <string name="feedback">ግብረመልስ</string>
   <string name="tunnel_whole_device_toggle">መሳሪያውን ሙሉ በሙሉ ማስተለለፍ (Android 4.0+ ይፈልጋል )</string>
   <string name="disable_timeouts">ለዝግተኛ ኔትወርኮች የጊዜ እረፍቶችን አቦዝን </string>
@@ -215,15 +215,15 @@
   <string name="proxy_domain_summary">ለወኪል ማረጋገጫን ጎራ </string>
   <string name="http_proxy_port_in_use">የተጠየቀው የአካባቢ HTTP (ኤችቲቲፒ) ወኪል ወደብ %d በሌላ መተግበሪያ ጥቅም ላይ እየዋለ ነው። መቀጠል አይቻልም። </string>
   <!--When the split tunnel option is enabled, the current region is used to determine which requests should and shouldn't be tunneled. This log message tells the user which region (in '%s') is being used for this decision.-->
-  <string name="split_tunnel_region">የማስተላለፊያ ክልልን ለሁለት ክፈል፡-%s</string>
+  <string name="split_tunnel_region">የማስተላለፊ ዋሻ ክልልን  ክፈል፡-%s</string>
   <!--When the split tunnel option is enabled, this log message is shown when a domain is not tunneled (because it's detected as being in the same region as the user). The '%s' is the domain name.-->
-  <string name="untunneled_address">ያልተላለፈ፡-%s</string>
+  <string name="untunneled_address">ያልተቦረቦረ፡-%s</string>
   <!--The log message is shown to the user if an upstream proxy error occurs. The '%s' is the detail of the error.-->
-  <string name="upstream_proxy_error">የላይ የወኪል ስህተት፡-%s</string>
-  <string name="diagnostic">የምርመራ፡-%s</string>
-  <string name="start_tunnel_failed">ማስተላለፊውን ማስጀመር አልተቻለም፡-%s</string>
-  <string name="tunnel_connecting">ማስተላለፊያ በመገናኘት ላይ....</string>
-  <string name="tunnel_connected">ማስተላለፊያው ተገናኝቷል</string>
+  <string name="upstream_proxy_error">የላይ ወኪል ስህተት፡-%s</string>
+  <string name="diagnostic">ምርመራ፡-%s</string>
+  <string name="start_tunnel_failed">ማስተላለፊይ ዋሻን ማስጀመር አልተቻለም፡-%s</string>
+  <string name="tunnel_connecting">ማስተላለፊያ ዋሻ በመገናኘት ላይ...</string>
+  <string name="tunnel_connected">ማስተላለፊያ ዋሻው ተገናኝቷል</string>
   <string name="waiting">በመጠበቅ ላይ...</string>
   <!--Title for prompt requesting the user to grant the ACCESS_COARSE_LOCATION permission-->
   <string name="MainBase_AccessCoarseLocationPermissionPromptTitle">ፈቃድ ጥየቃ</string>
@@ -235,6 +235,7 @@
   <!--Negative response button for prompt requesting the user to grant the ACCESS_COARSE_LOCATION permission-->
   <string name="MainBase_AccessCoarseLocationPermissionNegativeButton">አይ፣ አልፈልግም</string>
   <!--An alert announcing EOL of built-in browser. This is shown once when user starts the app and their OS is not able to support the next app release-->
+  <string name="zircoDeprecationAlertMessage">Psiphon አሳሽ መጻኢ Psiphon ሥሪቶች ላይ አይካተትም። Android (አንድሮይድ) 4.0 ሥሪት በታች የያዙ መሣሪያዎች (ወይም ምናባዊ የግል አውታረ መረብ (ቪፒኤን) አገልግሎትን የምይደግፉ ሌላ ሥሪቶች) ከዚህ በኋላ ለPsiphon ማዘመኛ አያገኙም።</string>
   <!--Preference category for built-in browser EOL. Only displayed if the device can't support the next app release-->
   <string name="zircoDeprecationPreferenceCategoryTitle">የሥርዓተ ክወና ድጋፍ መረጃ</string>
   <!--Preference title for built-in browser EOL. Only displayed if the device can't support the next app release-->
