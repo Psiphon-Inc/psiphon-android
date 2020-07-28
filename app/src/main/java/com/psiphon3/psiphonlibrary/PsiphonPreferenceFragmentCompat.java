@@ -57,6 +57,12 @@ public abstract class PsiphonPreferenceFragmentCompat extends PreferenceFragment
         return preferenceGetter;
     }
 
+    public PreferenceGetter getSharedPreferenceGetter() {
+        PreferenceManager prefMgr = getPreferenceManager();
+        prefMgr.setSharedPreferencesName(getString(R.string.moreOptionsPreferencesName));
+        return new SharedPreferencesWrapper(prefMgr.getSharedPreferences());
+    }
+
     protected interface PreferenceGetter {
         boolean getBoolean(@NonNull final String key, final boolean defaultValue);
 

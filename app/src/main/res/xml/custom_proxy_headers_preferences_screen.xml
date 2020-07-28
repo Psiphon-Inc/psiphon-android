@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <CheckBoxPreference
+        android:defaultValue="false"
+        android:enabled="true"
+        android:key="@string/addCustomHeadersPreference"
+        android:selectable="true"
+        android:shouldDisableView="true"
+        android:summary="@string/custom_proxy_headers_checkbox_description"
+        android:title="@string/custom_proxy_headers_checkbox_title" />
+    <PreferenceCategory android:title="@string/custom_proxy_header_group_1">
+        <EditTextPreference
+            android:key="@string/customProxyHeaderName1"
+            android:singleLine="true"
+            android:summary="@string/custom_proxy_header_name" />
+        <EditTextPreference
+            android:key="@string/customProxyHeaderValue1"
+            android:summary="@string/custom_proxy_header_value" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/custom_proxy_header_group_2">
+        <EditTextPreference
+            android:key="@string/customProxyHeaderName2"
+            android:singleLine="true"
+            android:summary="@string/custom_proxy_header_name" />
+        <EditTextPreference
+            android:key="@string/customProxyHeaderValue2"
+            android:summary="@string/custom_proxy_header_value" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/custom_proxy_header_group_3">
+        <EditTextPreference
+            android:key="@string/customProxyHeaderName3"
+            android:singleLine="true"
+            android:summary="@string/custom_proxy_header_name" />
+        <EditTextPreference
+            android:key="@string/customProxyHeaderValue3"
+            android:summary="@string/custom_proxy_header_value" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/custom_proxy_header_group_4">
+        <EditTextPreference
+            android:key="@string/customProxyHeaderName4"
+            android:singleLine="true"
+            android:summary="@string/custom_proxy_header_name" />
+        <EditTextPreference
+            android:key="@string/customProxyHeaderValue4"
+            android:summary="@string/custom_proxy_header_value" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/custom_proxy_header_group_5">
+        <EditTextPreference
+            android:key="@string/customProxyHeaderName5"
+            android:singleLine="true"
+            android:summary="@string/custom_proxy_header_name" />
+        <EditTextPreference
+            android:key="@string/customProxyHeaderValue5"
+            android:summary="@string/custom_proxy_header_value" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/custom_proxy_header_group_6">
+        <EditTextPreference
+            android:key="@string/customProxyHeaderName6"
+            android:singleLine="true"
+            android:summary="@string/custom_proxy_header_name" />
+        <EditTextPreference
+            android:key="@string/customProxyHeaderValue6"
+            android:summary="@string/custom_proxy_header_value" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -1060,7 +1060,20 @@ public abstract class MainBase {
                     new SharedPreferencesImport(this, prefName, getString(R.string.useProxyAuthenticationPreference), getString(R.string.useProxyAuthenticationPreference)),
                     new SharedPreferencesImport(this, prefName, getString(R.string.useProxyUsernamePreference), getString(R.string.useProxyUsernamePreference)),
                     new SharedPreferencesImport(this, prefName, getString(R.string.useProxyPasswordPreference), getString(R.string.useProxyPasswordPreference)),
-                    new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference))
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.addCustomHeadersPreference), getString(R.string.addCustomHeadersPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName1), getString(R.string.customProxyHeaderName1)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue1), getString(R.string.customProxyHeaderValue1)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName2), getString(R.string.customProxyHeaderName2)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue2), getString(R.string.customProxyHeaderValue2)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName3), getString(R.string.customProxyHeaderName3)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue3), getString(R.string.customProxyHeaderValue3)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName4), getString(R.string.customProxyHeaderName4)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue4), getString(R.string.customProxyHeaderValue4)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName5), getString(R.string.customProxyHeaderName5)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue5), getString(R.string.customProxyHeaderValue5)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderName6), getString(R.string.customProxyHeaderName6)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.customProxyHeaderValue6), getString(R.string.customProxyHeaderValue6))
             );
         }
 

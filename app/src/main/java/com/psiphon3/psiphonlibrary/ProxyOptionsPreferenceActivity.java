@@ -19,22 +19,23 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.widget.Toast;
+
 import androidx.annotation.Nullable;
 import androidx.preference.CheckBoxPreference;
 import androidx.preference.EditTextPreference;
 import androidx.preference.Preference;
+import androidx.preference.PreferenceManager;
 import androidx.preference.PreferenceScreen;
-
-import android.text.TextUtils;
-import android.widget.Toast;
 
 import com.psiphon3.subscription.R;
 
 import java.util.ArrayList;
 
-// TODO: port custom headers handling from old MoreOptionsPreferencesActivity
 public class ProxyOptionsPreferenceActivity extends MainBase.Activity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -46,9 +47,18 @@ public class ProxyOptionsPreferenceActivity extends MainBase.Activity {
         }
     }
 
+    @Override
+    public boolean onSupportNavigateUp() {
+        if (getSupportFragmentManager().popBackStackImmediate()) {
+            return true;
+        }
+        return super.onSupportNavigateUp();
+    }
+
     public static class ProxyOptionsPreferenceFragment extends PsiphonPreferenceFragmentCompat
-            implements  SharedPreferences.OnSharedPreferenceChangeListener {
+            implements SharedPreferences.OnSharedPreferenceChangeListener {
         CheckBoxPreference useProxy;
+        Preference customProxyHeadersPreference;
         RadioButtonPreference useSystemProxy;
         RadioButtonPreference useCustomProxy;
         CheckBoxPreference useProxyAuthentication;
@@ -72,6 +82,9 @@ public class ProxyOptionsPreferenceActivity extends MainBase.Activity {
             useCustomProxy = (RadioButtonPreference) preferences
                     .findPreference(getString(R.string.useCustomProxySettingsPreference));
 
+            customProxyHeadersPreference = preferences
+                    .findPreference(getString(R.string.customProxyHeadersPreference));
+
             proxyHost = (EditTextPreference) preferences
                     .findPreference(getString(R.string.useCustomProxySettingsHostPreference));
             proxyPort = (EditTextPreference) preferences
@@ -94,8 +107,8 @@ public class ProxyOptionsPreferenceActivity extends MainBase.Activity {
             editTextPreferences.add(proxyDomain);
 
             // Collect default summaries of EditTextPreferences
-            for(Preference pref : editTextPreferences) {
-                if(pref != null) {
+            for (Preference pref : editTextPreferences) {
+                if (pref != null) {
                     defaultSummaryBundle.putCharSequence(pref.getKey(), pref.getSummary());
                 }
             }
@@ -138,7 +151,7 @@ public class ProxyOptionsPreferenceActivity extends MainBase.Activity {
             proxyPort.setOnPreferenceChangeListener((preference, newValue) -> {
                 int proxyPort;
                 try {
-                    proxyPort = Integer.valueOf((String) newValue);
+                    proxyPort = Integer.parseInt((String) newValue);
                 } catch (NumberFormatException e) {
                     proxyPort = 0;
                 }
@@ -150,9 +163,36 @@ public class ProxyOptionsPreferenceActivity extends MainBase.Activity {
                 return false;
             });
 
+            Context context = getContext();
+            PreferenceManager prefMgr = getPreferenceManager();
+            prefMgr.setSharedPreferencesName(getString(R.string.moreOptionsPreferencesName));
+            SharedPreferences.Editor editor = prefMgr.getSharedPreferences().edit();
+
+            // Copy 'add custom headers' preference from app preferences into shared preferences
+            // to be used by the nested custom proxy headers screen
+            String addCustomHeadersPrefStr = getString(R.string.addCustomHeadersPreference);
+            boolean addCustomHeaders = preferenceGetter
+                    .getBoolean(addCustomHeadersPrefStr, false);
+            editor.putBoolean(addCustomHeadersPrefStr, addCustomHeaders);
+
+            // Also copy custom headers from app preferences into shared preferences
+            // to be used by the nested custom proxy headers screen
+            for (int position = 1; position <= 6; position++) {
+                int nameID = context.getResources().getIdentifier("customProxyHeaderName" + position, "string", context.getPackageName());
+                int valueID = context.getResources().getIdentifier("customProxyHeaderValue" + position, "string", context.getPackageName());
+
+                String namePrefStr = context.getResources().getString(nameID);
+                String valuePrefStr = context.getResources().getString(valueID);
+
+                String name = preferenceGetter.getString(namePrefStr, "");
+                String value = preferenceGetter.getString(valuePrefStr, "");
+
+                editor.putString(namePrefStr, name).apply();
+                editor.putString(valuePrefStr, value).apply();
+            }
+
             updateProxyPreferencesUI();
         }
-
 
         @Override
         public void onResume() {
@@ -202,12 +242,14 @@ public class ProxyOptionsPreferenceActivity extends MainBase.Activity {
         private void disableProxySettings() {
             useSystemProxy.setEnabled(false);
             useCustomProxy.setEnabled(false);
+            customProxyHeadersPreference.setEnabled(false);
             disableCustomProxySettings();
         }
 
         private void enableProxySettings() {
             useSystemProxy.setEnabled(true);
             useCustomProxy.setEnabled(true);
+            customProxyHeadersPreference.setEnabled(true);
             enableCustomProxySettings();
         }
 
@@ -242,6 +284,197 @@ public class ProxyOptionsPreferenceActivity extends MainBase.Activity {
                         editTextPref.setSummary((CharSequence) defaultSummaryBundle.get(editTextPref.getKey()));
                     }
                 }
+            }
+        }
+    }
+
+    public static class CustomHeadersPreferenceFragment extends PsiphonPreferenceFragmentCompat
+            implements SharedPreferences.OnSharedPreferenceChangeListener {
+        CheckBoxPreference addCustomHeadersPreference;
+        private ArrayList<EditTextPreference> editTextPreferences = new ArrayList<>();
+        private Bundle defaultSummaryBundle = new Bundle();
+
+        @Override
+        public void onCreatePreferencesFix(Bundle savedInstanceState, String rootKey) {
+            super.onCreatePreferencesFix(savedInstanceState, rootKey);
+            setPreferencesFromResource(R.xml.custom_proxy_headers_preferences_screen, rootKey);
+            final PreferenceScreen preferences = getPreferenceScreen();
+            final PreferenceGetter preferenceGetter = getSharedPreferenceGetter();
+
+            addCustomHeadersPreference = preferences
+                    .findPreference(getString(R.string.addCustomHeadersPreference));
+            addCustomHeadersPreference.setChecked(preferenceGetter
+                    .getBoolean(getString(R.string.addCustomHeadersPreference), false));
+
+
+            final Context context = getContext();
+            for (int position = 1; position <= 6; position++) {
+                int nameID = context.getResources().getIdentifier("customProxyHeaderName" + position, "string", context.getPackageName());
+                int valueID = context.getResources().getIdentifier("customProxyHeaderValue" + position, "string", context.getPackageName());
+
+                String namePrefStr = context.getResources().getString(nameID);
+                String valuePrefStr = context.getResources().getString(valueID);
+
+                String name = preferenceGetter.getString(namePrefStr, "");
+                String value = preferenceGetter.getString(valuePrefStr, "");
+
+                EditTextPreference namePreference = findPreference(namePrefStr);
+                editTextPreferences.add(namePreference);
+                EditTextPreference valuePreference = findPreference(valuePrefStr);
+                editTextPreferences.add(valuePreference);
+
+                namePreference.setText(name);
+                valuePreference.setText(value);
+                namePreference.setOnPreferenceChangeListener((preference, newValue) -> {
+                    String headerName = (String) newValue;
+                    if (!TextUtils.isEmpty(headerName)) {
+                        // Validate Header
+                        // https://www.w3.org/Protocols/rfc2616/rfc2616-sec2.html#sec2.2
+                    /*
+                     OCTET          = <any 8-bit sequence of data>
+                     CHAR           = <any US-ASCII character (octets 0 - 127)>
+                     UPALPHA        = <any US-ASCII uppercase letter "A".."Z">
+                     LOALPHA        = <any US-ASCII lowercase letter "a".."z">
+                     ALPHA          = UPALPHA | LOALPHA
+                     DIGIT          = <any US-ASCII digit "0".."9">
+                     CTL            = <any US-ASCII control character
+                     (octets 0 - 31) and DEL (127)>
+                     CR             = <US-ASCII CR, carriage return (13)>
+                     LF             = <US-ASCII LF, linefeed (10)>
+                     SP             = <US-ASCII SP, space (32)>
+                     HT             = <US-ASCII HT, horizontal-tab (9)>
+                     <">            = <US-ASCII double-quote mark (34)>
+                     token          = 1*<any CHAR except CTLs or separators>
+                     separators     = "(" | ")" | "<" | ">" | "@"
+                     | "," | ";" | ":" | "\" | <">
+                     | "/" | "[" | "]" | "?" | "="
+                     | "{" | "}" | SP | HT
+                     https://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2
+                     message-header = field-name ":" [ field-value ]
+                     field-name     = token
+                     field-value    = *( field-content | LWS )
+                     field-content  = <the OCTETs making up the field-value
+                     and consisting of either *TEXT or combinations
+                     of token, separators, and quoted-string>
+                     */
+
+                        boolean isValid = true;
+                        char[] separators = {'(', ')', '<', '>', '@',
+                                ',', ';', ':', '\\', '"',
+                                '/', '[', ']', '?', '=',
+                                '{', '}', 32, 9};
+                        outerloop:
+                        for (int i = 0; i < headerName.length(); i++) {
+                            char c = headerName.charAt(i);
+                            //  OCTET check
+                            if (c > 127) {
+                                isValid = false;
+                                break;
+                            }
+                            //  CTL check
+                            if (c <= 31 || c == 127) {
+                                isValid = false;
+                                break;
+                            }
+
+                            // separators check
+                            for (char separator : separators) {
+                                if (c == separator) {
+                                    isValid = false;
+                                    break outerloop;
+                                }
+                            }
+                        }
+                        if (!isValid) {
+                            Toast toast = Toast.makeText(context,
+                                    R.string.custom_proxy_header_invalid_name, Toast.LENGTH_SHORT);
+                            toast.show();
+                            return false;
+                        }
+                    } else {
+                        // Just a warning, do not prevent user from entering empty header name
+                        Toast toast = Toast.makeText(context,
+                                R.string.custom_proxy_header_ignored_values, Toast.LENGTH_SHORT);
+                        toast.show();
+
+                    }
+                    return true;
+                });
+                valuePreference.setOnPreferenceChangeListener((preference, newValue) -> {
+                    String headerName = namePreference.getText();
+                    String headerValue = (String) newValue;
+                    if (TextUtils.isEmpty(headerName) && !TextUtils.isEmpty(headerValue)) {
+                        // Just a warning, do not prevent user from entering empty header name
+                        Toast toast = Toast.makeText(context,
+                                R.string.custom_proxy_header_ignored_values, Toast.LENGTH_SHORT);
+                        toast.show();
+                    }
+                    return true;
+                });
+            }
+
+            if (addCustomHeadersPreference.isChecked()) {
+                enableCustomHeaderSettings();
+            } else {
+                disableCustomHeaderSettings();
+            }
+
+            // Collect default summaries of EditTextPreferences
+            for (Preference pref : editTextPreferences) {
+                if (pref != null) {
+                    defaultSummaryBundle.putCharSequence(pref.getKey(), pref.getSummary());
+                }
+            }
+            updateCustomProxyHeadersPreferencesUI();
+        }
+
+        @Override
+        public void onResume() {
+            super.onResume();
+            // Set up a listener whenever a key changes
+            getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+        }
+
+        @Override
+        public void onPause() {
+            super.onPause();
+            // Unregister the listener whenever a key changes
+            getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+        }
+
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            updateCustomProxyHeadersPreferencesUI();
+        }
+
+        private void updateCustomProxyHeadersPreferencesUI() {
+            if (addCustomHeadersPreference.isChecked()) {
+                enableCustomHeaderSettings();
+            } else {
+                disableCustomHeaderSettings();
+            }
+            // Update summaries
+            for (EditTextPreference editTextPref : editTextPreferences) {
+                if (editTextPref != null) {
+                    String summary = editTextPref.getText();
+                    if (summary != null && !summary.trim().equals("")) {
+                        editTextPref.setSummary(editTextPref.getText());
+                    } else {
+                        editTextPref.setSummary((CharSequence) defaultSummaryBundle.get(editTextPref.getKey()));
+                    }
+                }
+            }
+        }
+
+        private void enableCustomHeaderSettings() {
+            for (EditTextPreference preference : editTextPreferences) {
+                preference.setEnabled(true);
+            }
+        }
+
+        private void disableCustomHeaderSettings() {
+            for (EditTextPreference preference : editTextPreferences) {
+                preference.setEnabled(false);
             }
         }
     }
