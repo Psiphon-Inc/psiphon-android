@@ -20,20 +20,20 @@
 package com.psiphon3.psiphonlibrary;
 
 import android.app.ProgressDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.widget.Toast;
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.preference.CheckBoxPreference;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceScreen;
-import android.widget.Toast;
 
 import com.google.ads.consent.ConsentInformation;
 import com.google.ads.consent.ConsentStatus;
@@ -66,8 +66,8 @@ public class MoreOptionsPreferenceActivity extends MainBase.Activity {
         private Cursor zircoExportCursor;
         ListPreference mLanguageSelector;
 
-        public void onCreatePreferencesFix(Bundle savedInstanceState, String rootKey) {
-            super.onCreatePreferencesFix(savedInstanceState, rootKey);
+        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+            super.onCreatePreferences(savedInstanceState, rootKey);
             addPreferencesFromResource(R.xml.more_options_preferences);
             final PreferenceScreen preferences = getPreferenceScreen();
             final PreferenceGetter preferenceGetter = getPreferenceGetter();

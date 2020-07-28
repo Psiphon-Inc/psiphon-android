@@ -22,6 +22,7 @@ package com.psiphon3.psiphonlibrary;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.widget.Toast;
 
@@ -71,8 +72,8 @@ public class ProxyOptionsPreferenceActivity extends MainBase.Activity {
         private Bundle defaultSummaryBundle = new Bundle();
 
         @Override
-        public void onCreatePreferencesFix(Bundle savedInstanceState, String rootKey) {
-            super.onCreatePreferencesFix(savedInstanceState, rootKey);
+        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+            super.onCreatePreferences(savedInstanceState, rootKey);
             addPreferencesFromResource(R.xml.proxy_options_preferences);
             final PreferenceScreen preferences = getPreferenceScreen();
 
@@ -89,6 +90,8 @@ public class ProxyOptionsPreferenceActivity extends MainBase.Activity {
                     .findPreference(getString(R.string.useCustomProxySettingsHostPreference));
             proxyPort = (EditTextPreference) preferences
                     .findPreference(getString(R.string.useCustomProxySettingsPortPreference));
+            proxyPort.setOnBindEditTextListener(editText ->
+                    editText.setInputType(InputType.TYPE_CLASS_NUMBER));
 
             useProxyAuthentication = (CheckBoxPreference) preferences
                     .findPreference(getString(R.string.useProxyAuthenticationPreference));
@@ -96,6 +99,8 @@ public class ProxyOptionsPreferenceActivity extends MainBase.Activity {
                     .findPreference(getString(R.string.useProxyUsernamePreference));
             proxyPassword = (EditTextPreference) preferences
                     .findPreference(getString(R.string.useProxyPasswordPreference));
+            proxyPassword.setOnBindEditTextListener(editText ->
+                    editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD));
             proxyDomain = (EditTextPreference) preferences
                     .findPreference(getString(R.string.useProxyDomainPreference));
 
@@ -295,8 +300,8 @@ public class ProxyOptionsPreferenceActivity extends MainBase.Activity {
         private Bundle defaultSummaryBundle = new Bundle();
 
         @Override
-        public void onCreatePreferencesFix(Bundle savedInstanceState, String rootKey) {
-            super.onCreatePreferencesFix(savedInstanceState, rootKey);
+        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+            super.onCreatePreferences(savedInstanceState, rootKey);
             setPreferencesFromResource(R.xml.custom_proxy_headers_preferences_screen, rootKey);
             final PreferenceScreen preferences = getPreferenceScreen();
             final PreferenceGetter preferenceGetter = getSharedPreferenceGetter();

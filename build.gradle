@@ -44,7 +44,6 @@ ext {
     playStoreBillingClientVersion = '3.0.0'
     threetenabpVersion = '1.2.1'
     preferenceVersion = '1.1.1'
-    preferenceLibraryFixVersion = '1.1.0'
     localBroadCastManagerVersion = '1.0.0'
 }
 

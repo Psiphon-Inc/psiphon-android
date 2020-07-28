@@ -28,9 +28,6 @@ import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.fragment.app.FragmentActivity;
-import androidx.appcompat.app.AlertDialog;
-import androidx.preference.Preference;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
@@ -50,8 +47,11 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.ActionBar.LayoutParams;
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.preference.Preference;
 
 import com.android.billingclient.api.SkuDetails;
 import com.psiphon3.billing.GooglePlayBillingHelper;
@@ -72,12 +72,9 @@ import com.psiphon3.psiphonlibrary.VpnAppsUtils;
 import com.psiphon3.psiphonlibrary.VpnOptionsPreferenceActivity;
 import com.psiphon3.subscription.R;
 
-import net.grandcentrix.tray.core.ItemNotFoundException;
-
 import org.json.JSONException;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -756,8 +753,8 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
         boolean arePreferencesCreated = false;
 
         @Override
-        public void onCreatePreferencesFix(Bundle bundle, String s) {
-            super.onCreatePreferencesFix(bundle, s);
+        public void onCreatePreferences(Bundle bundle, String s) {
+            super.onCreatePreferences(bundle, s);
             addPreferencesFromResource(R.xml.settings_preferences_screen);
 
             regionListPreference = (RegionListPreference) findPreference(getContext().getString(R.string.regionPreferenceKey));
