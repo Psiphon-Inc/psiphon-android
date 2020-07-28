@@ -294,7 +294,7 @@ public class PsiCashSpeedBoostPurchaseFragment extends Fragment {
             getActivity().getWindow().getWindowManager().getDefaultDisplay().getMetrics(metrics);
 
             float ratio = 248.0f / 185.0f;
-            ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(0, 0);
+            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
             params.width = metrics.widthPixels / columnCount;
             params.height = (int) (params.width * ratio);
             speedboostItemLayout.setLayoutParams(params);
