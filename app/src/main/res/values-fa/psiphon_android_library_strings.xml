@@ -236,7 +236,9 @@
   <!--Negative response button for prompt requesting the user to grant the ACCESS_COARSE_LOCATION permission-->
   <string name="MainBase_AccessCoarseLocationPermissionNegativeButton">نه، ممنون</string>
   <!--An alert announcing EOL of built-in browser. This is shown once when user starts the app and their OS is not able to support the next app release-->
+  <string name="zircoDeprecationAlertMessage">مرورگر Psiphon در نسخه های بعدی Psiphon شامل نمی شود. Psiphon در دستگاههای اندروید با نسخه کمتر از 4.0 (یا نسخه دیگری که از سرویس VPN پشتیبانی نمی کند) دیگر به روزرسانی نمی شود.</string>
   <!--Preference category for built-in browser EOL. Only displayed if the device can't support the next app release-->
+  <string name="zircoDeprecationPreferenceCategoryTitle">اطلاعات پشتیبانی از سیستم عامل</string>
   <!--Preference title for built-in browser EOL. Only displayed if the device can't support the next app release-->
   <string name="zircoDeprecationPreferenceTitle">مرورگر Psiphon</string>
 </resources>
