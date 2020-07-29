@@ -19,34 +19,42 @@
 
 package com.psiphon3;
 
-import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
+import androidx.fragment.app.FragmentActivity;
+import androidx.appcompat.app.AlertDialog;
+import androidx.preference.Preference;
+import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.TextUtils;
-import android.util.TypedValue;
+import android.text.style.AbsoluteSizeSpan;
 import android.view.Gravity;
-import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.TabHost;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
-import com.psiphon3.psiphonlibrary.PsiphonConstants;
+import com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity;
+import com.psiphon3.psiphonlibrary.ProxyOptionsPreferenceActivity;
+import com.psiphon3.psiphonlibrary.PsiphonPreferenceFragmentCompat;
+import com.psiphon3.psiphonlibrary.RegionListPreference;
 import com.psiphon3.psiphonlibrary.TunnelManager;
+import com.psiphon3.psiphonlibrary.UpstreamProxySettings;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.VpnAppsUtils;
+import com.psiphon3.psiphonlibrary.VpnOptionsPreferenceActivity;
 
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
@@ -62,6 +70,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -71,10 +81,8 @@ import io.reactivex.disposables.CompositeDisposable;
 public class StatusActivity
         extends com.psiphon3.psiphonlibrary.MainBase.TabbedActivityBase {
     public static final String BANNER_FILE_NAME = "bannerImage";
-    public static final String ACTION_SHOW_GET_HELP_DIALOG = "com.psiphon3.StatusActivity.SHOW_GET_HELP_CONNECTING_DIALOG";
 
     private ImageView m_banner;
-    private boolean m_tunnelWholeDevicePromptShown = false;
     private boolean m_firstRun = true;
 
     private PsiphonAdManager psiphonAdManager;
@@ -99,6 +107,17 @@ public class StatusActivity
         psiphonAdManager.startLoadingAds();
 
         setupActivityLayout();
+        if (savedInstanceState == null) {
+            m_optionsTabFragment = new OptionsTabFragment();
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.container_settings, m_optionsTabFragment, "OptionsTabFragment")
+                    .commit();
+        } else {
+            m_optionsTabFragment = (OptionsTabFragment) getSupportFragmentManager().findFragmentByTag("OptionsTabFragment");
+        }
+
+        // EmbeddedValues.initialize(this); is called in MainBase.OnCreate
+
         setUpBanner();
 
         HandleCurrentIntent();
@@ -302,11 +321,13 @@ public class StatusActivity
             disableInterstitialOnNextTabChange = true;
             m_tabHost.setCurrentTabByTag(SETTINGS_TAB_TAG);
 
-            // Set egress region preference to 'Best Performance'
-            updateEgressRegionPreference(PsiphonConstants.REGION_CODE_ANY);
-
-            // Set region selection to 'Best Performance' too
-            m_regionSelector.setSelectionByValue(PsiphonConstants.REGION_CODE_ANY);
+            // At this point the service should be stopped and the persisted region selection set
+            // to PsiphonConstants.REGION_CODE_ANY by TunnelManager, so we only need to update the
+            // region selection UI.
+            // Update region preference in the options tab.
+            if (m_optionsTabFragment != null) {
+                m_optionsTabFragment.updateRegionSelectorFromPreferences();
+            }
 
             // Show "Selected region unavailable" toast
             showToast(R.string.selected_region_currently_not_available);
@@ -320,9 +341,6 @@ public class StatusActivity
                     this.getClass()));
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_VPN_REVOKED)) {
             showVpnAlertDialog(R.string.StatusActivity_VpnRevokedTitle, R.string.StatusActivity_VpnRevokedMessage);
-        } else if (0 == intent.getAction().compareTo(ACTION_SHOW_GET_HELP_DIALOG)) {
-            // OK to be null because we don't use it
-            onGetHelpConnectingClick(null);
         }
     }
 
@@ -330,21 +348,7 @@ public class StatusActivity
         doToggle();
     }
 
-    public void onGetHelpConnectingClick(View v) {
-        showConnectionHelpDialog(this, R.layout.dialog_get_help_connecting);
-    }
-
-    public void onHowToHelpClick(View view) {
-        showConnectionHelpDialog(this, R.layout.dialog_how_to_help_connect);
-    }
-
-    @Override
-    public void onFeedbackClick(View v)
-    {
-        Intent feedbackIntent = new Intent(this, FeedbackActivity.class);
-        startActivity(feedbackIntent);
-    }
-
+    // TODO: port legacy BOM alert
     @Override
     protected void startUp() {
         if (startUpInterstitialDisposable != null && !startUpInterstitialDisposable.isDisposed()) {
@@ -414,181 +418,107 @@ public class StatusActivity
         if(startUpInterstitialDisposable != null) {
             startUpInterstitialDisposable.dispose();
         }
-        // If the user hasn't set a whole-device-tunnel preference, show a prompt
-        // (and delay starting the tunnel service until the prompt is completed)
-        boolean hasPreference;
-        try {
-            m_multiProcessPreferences.getBoolean(getString(R.string.tunnelWholeDevicePreference));
-            hasPreference = true;
-        } catch (ItemNotFoundException e) {
-            hasPreference = false;
-        }
-        if (Utils.hasVpnService() && !hasPreference) {
-            if (!m_tunnelWholeDevicePromptShown && !this.isFinishing()) {
-                final Context context = this;
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        AlertDialog dialog = new AlertDialog.Builder(context)
-                                .setCancelable(false)
-                                .setOnKeyListener(
-                                        new DialogInterface.OnKeyListener() {
-                                            @Override
-                                            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
-                                                // Don't dismiss when hardware search button is clicked (Android 2.3 and earlier)
-                                                return keyCode == KeyEvent.KEYCODE_SEARCH;
-                                            }
-                                        })
-                                .setTitle(R.string.StatusActivity_WholeDeviceTunnelPromptTitle)
-                                .setMessage(R.string.StatusActivity_WholeDeviceTunnelPromptMessage)
-                                .setPositiveButton(R.string.StatusActivity_WholeDeviceTunnelPositiveButton,
-                                        new DialogInterface.OnClickListener() {
-                                            @Override
-                                            public void onClick(DialogInterface dialog, int whichButton) {
-                                                // Persist the "on" setting
-                                                updateWholeDevicePreference(true);
-                                                startTunnel();
-                                            }
-                                        })
-                                .setNegativeButton(R.string.StatusActivity_WholeDeviceTunnelNegativeButton,
-                                        new DialogInterface.OnClickListener() {
-                                            @Override
-                                            public void onClick(DialogInterface dialog, int whichButton) {
-                                                // Turn off and persist the "off" setting
-                                                m_tunnelWholeDeviceToggle.setChecked(false);
-                                                updateWholeDevicePreference(false);
-                                                startTunnel();
-                                            }
-                                        })
-                                .setOnCancelListener(
-                                        new DialogInterface.OnCancelListener() {
-                                            @Override
-                                            public void onCancel(DialogInterface dialog) {
-                                                // Don't change or persist preference (this prompt may reappear)
-                                                startTunnel();
-                                            }
-                                        })
-                                .show();
-                        // Our text no longer fits in the AlertDialog buttons on Lollipop, so force the
-                        // font size (on older versions, the text seemed to be scaled down to fit).
-                        // TODO: custom layout
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            dialog.getButton(DialogInterface.BUTTON_POSITIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
-                            dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
-                        }
-                    }
-                });
-
-                m_tunnelWholeDevicePromptShown = true;
-            } else {
-                // ...there's a prompt already showing (e.g., user hit Home with the
-                // prompt up, then resumed Psiphon)
-            }
-            // ...wait and let onClick handlers will start tunnel
-        } else {
-            // No prompt, just start the tunnel (if not already running)
+        // Check if user previously ran in browser-only mode
+        boolean wantVPN = m_multiProcessPreferences
+                .getBoolean(getString(R.string.tunnelWholeDevicePreference),
+                        true);
+        if(wantVPN) {
             startTunnel();
+        } else {
+            // Legacy case: do not auto-start if last preference was BOM
+            // Instead we switch to the options tab and display a modal with the help information
+            m_tabHost.setCurrentTabByTag(SETTINGS_TAB_TAG);
+            LayoutInflater inflater = this.getLayoutInflater();
+            View dialogView = inflater.inflate(R.layout.legacy_bom_alert_view_layout, null);
+            TextView tv = dialogView.findViewById(R.id.legacy_mode_alert_tv);
+            String text = getString(R.string.legacy_bom_alert_message, getString(R.string.app_name));
+            String formattedText = text.replaceAll("\n", "\n\n");
+            SpannableString spannableString = new SpannableString(formattedText);
+
+            Matcher matcher = Pattern.compile("\n\n").matcher(formattedText);
+            while (matcher.find()) {
+                spannableString.setSpan(new AbsoluteSizeSpan(10, true), matcher.start() + 1, matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            tv.setText(spannableString);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                    .setView(dialogView)
+                    // We are displaying important information to the user, so make sure the dialog
+                    // is not dismissed accidentally as it won't be shown again.
+                    .setCancelable(false)
+                    .setPositiveButton(R.string.label_ok, null)
+                    .setOnDismissListener(dialog ->
+                            m_multiProcessPreferences.remove(getString(R.string.tunnelWholeDevicePreference)));
+            // Add 'VPN settings' button if VPN exclusions are supported
+            if (Utils.supportsVpnExclusions()) {
+                builder.setNegativeButton(R.string.label_vpn_settings, (dialog, which) ->
+                        startActivityForResult(new Intent(StatusActivity.this,
+                                VpnOptionsPreferenceActivity.class), REQUEST_CODE_VPN_PREFERENCES)
+                );
+            }
+            builder.show();
         }
     }
 
     @Override
     public void displayBrowser(Context context, String urlString) {
-        boolean wantVPN = m_multiProcessPreferences
-                .getBoolean(getString(R.string.tunnelWholeDevicePreference),
-                        false);
+        // TODO: support multiple home pages in whole device mode. This is
+        // disabled due to the case where users haven't set a default browser
+        // and will get the prompt once per home page.
 
-        if (wantVPN && Utils.hasVpnService()) {
-            // TODO: support multiple home pages in whole device mode. This is
-            // disabled due to the case where users haven't set a default browser
-            // and will get the prompt once per home page.
+        // If URL is not empty we will try to load in an external browser, otherwise we will
+        // try our best to open an external browser instance without specifying URL to load
+        // or will load "about:blank" URL if that fails.
 
-            // If URL is not empty we will try to load in an external browser, otherwise we will
-            // try our best to open an external browser instance without specifying URL to load
-            // or will load "about:blank" URL if that fails.
-
-            // Prepare browser starting intent.
-            Intent browserIntent;
-            if (TextUtils.isEmpty(urlString)) {
-                // If URL is empty, just start the app.
-                browserIntent = new Intent(Intent.ACTION_MAIN);
-            } else {
-                // If URL is not empty, start the app with URL load intent.
-                browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(urlString));
-            }
-            browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-            // LinkedHashSet maintains FIFO order and does not allow duplicates.
-            Set<String> browserIdsSet = new LinkedHashSet<>();
-
-            // Put Brave first in the ordered set.
-            browserIdsSet.add("com.brave.browser");
-
-            // Add all resolved browsers to the set preserving the order.
-            browserIdsSet.addAll(VpnAppsUtils.getInstalledWebBrowserPackageIds(getPackageManager()));
-
-            // Put Chrome at the end if it is not already in the set.
-            browserIdsSet.add("com.android.chrome");
-
-            // If we have a candidate then set the app package ID for the browser intent and try to
-            // start the app with the intent right away.
-            for (String id : browserIdsSet) {
-                if (VpnAppsUtils.isTunneledAppId(context, id)) {
-                    browserIntent.setPackage(id);
-                    try {
-                        context.startActivity(browserIntent);
-                        // Return immediately if success.
-                        return;
-                    } catch (ActivityNotFoundException | SecurityException ignored) {
-                        // Continue looping if error.
-                    }
-                }
-            }
-
-            // Last effort - let the system handle it.
-            // Note that the browser picked by the system will be most likely not tunneled.
-            try {
-                // We don't have explicit package ID for the browser intent, so the URL cannot be empty.
-                // In this case try loading a special URL 'about:blank'.
-                if (TextUtils.isEmpty(urlString)) {
-                    browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("about:blank"));
-                    browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                }
-                context.startActivity(browserIntent);
-            } catch (ActivityNotFoundException | SecurityException ignored) {
-                // Fail silently.
-            }
+        // Prepare browser starting intent.
+        Intent browserIntent;
+        if (TextUtils.isEmpty(urlString)) {
+            // If URL is empty, just start the app.
+            browserIntent = new Intent(Intent.ACTION_MAIN);
         } else {
-            // BOM, try to open Zirco
-            Uri uri = null;
-            if (!TextUtils.isEmpty(urlString)) {
-                uri = Uri.parse(urlString);
-            }
+            // If URL is not empty, start the app with URL load intent.
+            browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(urlString));
+        }
+        browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-            Intent intent = new Intent(
-                    "ACTION_VIEW",
-                    uri,
-                    context,
-                    org.zirco.ui.activities.MainActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        // LinkedHashSet maintains FIFO order and does not allow duplicates.
+        Set<String> browserIdsSet = new LinkedHashSet<>();
 
-            // This intent displays the Zirco browser.
-            // We use "extras" to communicate Psiphon settings to Zirco.
-            // When Zirco is first created, it will use the homePages
-            // extras to open tabs for each home page, respectively. When the intent
-            // triggers an existing Zirco instance (and it's a singleton) this extra
-            // is ignored and the browser is displayed as-is.
-            // When a uri is specified, it will open as a new tab. This is
-            // independent of the home pages.
-            // Note: Zirco now directly accesses PsiphonData to get the current
-            // local HTTP proxy port for WebView tunneling.
+        // Put Brave first in the ordered set.
+        browserIdsSet.add("com.brave.browser");
 
-            if (urlString != null) {
-                intent.putExtra("homePages", new ArrayList<>(Collections.singletonList(urlString)));
+        // Add all resolved browsers to the set preserving the order.
+        browserIdsSet.addAll(VpnAppsUtils.getInstalledWebBrowserPackageIds(getPackageManager()));
+
+        // Put Chrome at the end if it is not already in the set.
+        browserIdsSet.add("com.android.chrome");
+
+        // If we have a candidate then set the app package ID for the browser intent and try to
+        // start the app with the intent right away.
+        for (String id : browserIdsSet) {
+            if (VpnAppsUtils.isTunneledAppId(context, id)) {
+                browserIntent.setPackage(id);
+                try {
+                    context.startActivity(browserIntent);
+                    // Return immediately if success.
+                    return;
+                } catch (ActivityNotFoundException | SecurityException ignored) {
+                    // Continue looping if error.
+                }
             }
-            try {
-                context.startActivity(intent);
-            } catch (ActivityNotFoundException | SecurityException ignored) {
+        }
+
+        // Last effort - let the system handle it.
+        // Note that the browser picked by the system will be most likely not tunneled.
+        try {
+            // We don't have explicit package ID for the browser intent, so the URL cannot be empty.
+            // In this case try loading a special URL 'about:blank'.
+            if (TextUtils.isEmpty(urlString)) {
+                browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("about:blank"));
+                browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             }
+            context.startActivity(browserIntent);
+        } catch (ActivityNotFoundException | SecurityException ignored) {
+            // Fail silently.
         }
     }
 
@@ -611,5 +541,110 @@ public class StatusActivity
                 .setMessage(messageId)
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
+    }
+
+    public static class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
+        private RegionListPreference regionListPreference;
+        private Preference vpnOptionsPreference;
+        private Preference proxyOptionsPreference;
+        boolean arePreferencesCreated = false;
+
+        @Override
+        public void onCreatePreferences(Bundle bundle, String s) {
+            super.onCreatePreferences(bundle, s);
+            addPreferencesFromResource(R.xml.settings_preferences_screen);
+
+            regionListPreference = (RegionListPreference) findPreference(getContext().getString(R.string.regionPreferenceKey));
+            regionListPreference.setOnRegionSelectedListener(regionCode -> {
+                StatusActivity activity = (StatusActivity) getActivity();
+                if (activity != null && !activity.isFinishing()) {
+                    activity.onRegionSelected(regionCode);
+                    regionListPreference.setCurrentRegionFromPreferences();
+                }
+            });
+
+            Preference feedbackPreference = findPreference(getContext().getString(R.string.feedbackPreferenceKey));
+            feedbackPreference.setIntent(new Intent(getActivity(), FeedbackActivity.class));
+
+            Preference moreOptionsPreference = findPreference(getContext().getString(R.string.moreOptionsPreferenceKey));
+            moreOptionsPreference.setOnPreferenceClickListener(__ -> {
+                final FragmentActivity activity = getActivity();
+                if (activity != null && !activity.isFinishing()) {
+                    getActivity().startActivityForResult(new Intent(getActivity(),
+                            MoreOptionsPreferenceActivity.class), REQUEST_CODE_MORE_PREFERENCES);
+                }
+                return true;
+            });
+
+            vpnOptionsPreference = findPreference(getContext().getString(R.string.vpnOptionsPreferenceKey));
+            if (Utils.supportsVpnExclusions()) {
+                vpnOptionsPreference.setOnPreferenceClickListener(__ -> {
+                    final FragmentActivity activity = getActivity();
+                    if (activity != null && !activity.isFinishing()) {
+                        getActivity().startActivityForResult(new Intent(getActivity(),
+                                VpnOptionsPreferenceActivity.class), REQUEST_CODE_VPN_PREFERENCES);
+                    }
+                    return true;
+                });
+            } else {
+                vpnOptionsPreference.setEnabled(false);
+                vpnOptionsPreference.setSummary(R.string.vpn_exclusions_preference_not_available_summary);
+            }
+
+            proxyOptionsPreference = findPreference(getContext().getString(R.string.proxyOptionsPreferenceKey));
+            proxyOptionsPreference.setOnPreferenceClickListener(__ -> {
+                final FragmentActivity activity = getActivity();
+                if (activity != null && !activity.isFinishing()) {
+                    getActivity().startActivityForResult(new Intent(getActivity(),
+                            ProxyOptionsPreferenceActivity.class), REQUEST_CODE_PROXY_PREFERENCES);
+                }
+                return true;
+            });
+            arePreferencesCreated = true;
+            setSummaryFromPreferences();
+        }
+
+        public void setSummaryFromPreferences() {
+            if (!arePreferencesCreated) {
+                return;
+            }
+
+            int count;
+            String summary;
+            // Update VPN setting summary if applicable
+            if (Utils.supportsVpnExclusions()) {
+                switch (VpnAppsUtils.getVpnAppsExclusionMode(getContext())) {
+                    case ALL_APPS:
+                        vpnOptionsPreference.setSummary(R.string.preference_routing_all_apps_tunnel_summary);
+                        break;
+                    case EXCLUDE_APPS:
+                        count = VpnAppsUtils.getCurrentAppsExcludedFromVpn(getContext()).size();
+                        summary = getResources().getQuantityString(R.plurals.preference_routing_select_apps_to_exclude_summary, count, count);
+                        vpnOptionsPreference.setSummary(summary);
+                        break;
+                    case INCLUDE_APPS:
+                        count = VpnAppsUtils.getCurrentAppsIncludedInVpn(getContext()).size();
+                        summary = getResources().getQuantityString(R.plurals.preference_routing_select_apps_to_include_summary, count, count);
+                        vpnOptionsPreference.setSummary(summary);
+                        break;
+                }
+            }
+            // Update Proxy setting summary
+            if (UpstreamProxySettings.getUseHTTPProxy(getContext())) {
+                if (UpstreamProxySettings.getUseCustomProxySettings(getContext())) {
+                    proxyOptionsPreference.setSummary(R.string.preference_summary_custom_proxy);
+                } else {
+                    proxyOptionsPreference.setSummary(R.string.preference_summary_system_proxy);
+                }
+            } else {
+                proxyOptionsPreference.setSummary(R.string.preference_summary_no_proxy);
+            }
+        }
+
+        public void updateRegionSelectorFromPreferences() {
+            if (arePreferencesCreated) {
+                regionListPreference.setCurrentRegionFromPreferences();
+            }
+        }
     }
 }

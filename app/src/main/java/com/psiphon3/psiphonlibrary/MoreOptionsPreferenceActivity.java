@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Psiphon Inc.
+ * Copyright (c) 2020, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,687 +19,270 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import android.app.AlertDialog;
-import android.content.Context;
-import android.content.DialogInterface;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
-import android.os.Build;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
-import android.preference.CheckBoxPreference;
-import android.preference.DialogPreference;
-import android.preference.EditTextPreference;
-import android.preference.ListPreference;
-import android.preference.Preference;
-import android.preference.Preference.OnPreferenceClickListener;
-import android.preference.PreferenceCategory;
-import android.preference.PreferenceGroup;
-import android.preference.PreferenceManager;
-import android.preference.PreferenceScreen;
-import androidx.annotation.NonNull;
-import android.text.InputType;
-import android.text.TextUtils;
-import android.widget.Button;
 import android.widget.Toast;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.preference.CheckBoxPreference;
+import androidx.preference.ListPreference;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceScreen;
 
 import com.google.ads.consent.ConsentInformation;
 import com.google.ads.consent.ConsentStatus;
 import com.psiphon3.R;
 
-import net.grandcentrix.tray.AppPreferences;
+import org.zirco.providers.ZircoBookmarksContentProvider;
+import org.zirco.ui.runnables.XmlHistoryBookmarksExporter;
+import org.zirco.utils.ApplicationUtils;
 
-import org.zirco.ui.activities.MainActivity;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 
-import java.util.Set;
-
-public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceClickListener {
-
-    // This is taken from https://developer.android.com/reference/android/provider/Settings#ACTION_VPN_SETTINGS
-    // As we target to low of an SDK we cannot reference this constant directly
-    private static final String ACTION_VPN_SETTINGS = "android.settings.VPN_SETTINGS";
-
+public class MoreOptionsPreferenceActivity extends MainBase.Activity {
     public static final String INTENT_EXTRA_LANGUAGE_CHANGED = "com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity.LANGUAGE_CHANGED";
+    private static final int ZIRCO_WRITE_EXTERNAL_PERMISSION_REQUEST_CODE = 12312;
 
-    private interface PreferenceGetter {
-        boolean getBoolean(@NonNull final String key, final boolean defaultValue);
-        String getString(@NonNull final String key, final String defaultValue);
-    }
-
-    private class AppPreferencesWrapper implements PreferenceGetter {
-        AppPreferences prefs;
-
-        public AppPreferencesWrapper(AppPreferences prefs) {
-            this.prefs = prefs;
-        }
-
-        @Override
-        public boolean getBoolean(@NonNull String key, boolean defaultValue) {
-            return prefs.getBoolean(key, defaultValue);
-        }
-        @Override
-        public String getString(@NonNull String key, String defaultValue) {
-            return prefs.getString(key, defaultValue);
-        }
-    }
-
-    private class SharedPreferencesWrapper implements PreferenceGetter {
-        SharedPreferences prefs;
-
-        public SharedPreferencesWrapper(SharedPreferences prefs) {
-            this.prefs = prefs;
-        }
-
-        @Override
-        public boolean getBoolean(@NonNull String key, boolean defaultValue) {
-            return prefs.getBoolean(key, defaultValue);
-        }
-        @Override
-        public String getString(@NonNull String key, String defaultValue) {
-            return prefs.getString(key, defaultValue);
-        }
-    }
-    Bundle mDefaultSummaryBundle;
-
-    CheckBoxPreference mNotificationSound;
-    CheckBoxPreference mNotificationVibration;
-    RadioButtonPreference mTunnelAllApps;
-    RadioButtonPreference mTunnelSelectedApps;
-    RadioButtonPreference mTunnelNotSelectedApps;
-    Preference mSelectApps;
-    CheckBoxPreference mUseProxy;
-    RadioButtonPreference mUseSystemProxy;
-    RadioButtonPreference mUseCustomProxy;
-    CheckBoxPreference mUseProxyAuthentication;
-    EditTextPreference mProxyHost;
-    EditTextPreference mProxyPort;
-    EditTextPreference mProxyUsername;
-    EditTextPreference mProxyPassword;
-    EditTextPreference mProxyDomain;
-    ListPreference mLanguageSelector;
-
-    @SuppressWarnings("deprecation")
-    public void onCreate(Bundle savedInstanceState) {
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        addPreferencesFromResource(R.xml.preferences);
-
-        mDefaultSummaryBundle = new Bundle();
-
-        // Store temporary preferences used in this activity in its own file
-        PreferenceManager prefMgr = getPreferenceManager();
-        prefMgr.setSharedPreferencesName(getString(R.string.moreOptionsPreferencesName));
-
-        PreferenceScreen preferences = getPreferenceScreen();
-
-        mNotificationSound = (CheckBoxPreference) preferences.findPreference(getString(R.string.preferenceNotificationsWithSound));
-        mNotificationVibration = (CheckBoxPreference) preferences.findPreference(getString(R.string.preferenceNotificationsWithVibrate));
-
-        mUseProxy = (CheckBoxPreference) preferences.findPreference(getString(R.string.useProxySettingsPreference));
-        mUseSystemProxy = (RadioButtonPreference) preferences
-                .findPreference(getString(R.string.useSystemProxySettingsPreference));
-        mUseCustomProxy = (RadioButtonPreference) preferences
-                .findPreference(getString(R.string.useCustomProxySettingsPreference));
-
-        mProxyHost = (EditTextPreference) preferences
-                .findPreference(getString(R.string.useCustomProxySettingsHostPreference));
-        mProxyPort = (EditTextPreference) preferences
-                .findPreference(getString(R.string.useCustomProxySettingsPortPreference));
-
-        mUseProxyAuthentication = (CheckBoxPreference) preferences
-                .findPreference(getString(R.string.useProxyAuthenticationPreference));
-        mProxyUsername = (EditTextPreference) preferences
-                .findPreference(getString(R.string.useProxyUsernamePreference));
-        mProxyPassword = (EditTextPreference) preferences
-                .findPreference(getString(R.string.useProxyPasswordPreference));
-        mProxyDomain = (EditTextPreference) preferences
-                .findPreference(getString(R.string.useProxyDomainPreference));
-
-        PreferenceGetter preferenceGetter;
-
-        // Initialize with current shared preferences if restoring from configuration change,
-        // otherwise initialize with tray preferences values.
-        if (savedInstanceState != null && savedInstanceState.getBoolean("onSaveInstanceState", false)) {
-            preferenceGetter = new SharedPreferencesWrapper(PreferenceManager.getDefaultSharedPreferences(this));
-        } else {
-            preferenceGetter = new AppPreferencesWrapper(new AppPreferences(this));
+        if (savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction()
+                    .add(android.R.id.content, new MoreOptionsPreferenceFragment())
+                    .commit();
         }
+    }
 
-        if (Utils.supportsAlwaysOnVPN()) {
-            setupNavigateToVPNSettings(preferences);
-        }
+    public static class MoreOptionsPreferenceFragment extends PsiphonPreferenceFragmentCompat
+            implements SharedPreferences.OnSharedPreferenceChangeListener {
+        private Cursor zircoExportCursor;
+        ListPreference mLanguageSelector;
 
-        if (supportsRoutingConfiguration()) {
-            setupTunnelConfiguration(preferences, preferenceGetter);
-        }
+        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+            super.onCreatePreferences(savedInstanceState, rootKey);
+            addPreferencesFromResource(R.xml.more_options_preferences);
+            final PreferenceScreen preferences = getPreferenceScreen();
+            final PreferenceGetter preferenceGetter = getPreferenceGetter();
 
-        setupLanguageSelector(preferences);
-
-        if (mNotificationSound != null) {
-            mNotificationSound.setChecked(preferenceGetter.getBoolean(getString(R.string.preferenceNotificationsWithSound), false));
-        }
-
-        if (mNotificationVibration != null) {
-            mNotificationVibration.setChecked(preferenceGetter.getBoolean(getString(R.string.preferenceNotificationsWithVibrate), false));
-        }
-
-        mUseProxy.setChecked(preferenceGetter.getBoolean(getString(R.string.useProxySettingsPreference), false));
-        // set use system proxy preference by default
-        mUseSystemProxy.setChecked(preferenceGetter.getBoolean(getString(R.string.useSystemProxySettingsPreference), true));
-        mUseCustomProxy.setChecked(preferenceGetter.getBoolean(getString(R.string.useCustomProxySettingsPreference), false));
-        mProxyHost.setText(preferenceGetter.getString(getString(R.string.useCustomProxySettingsHostPreference), ""));
-        mProxyPort.setText(preferenceGetter.getString(getString(R.string.useCustomProxySettingsPortPreference), ""));
-        mUseProxyAuthentication.setChecked(preferenceGetter.getBoolean(getString(R.string.useProxyAuthenticationPreference), false));
-        mProxyUsername.setText(preferenceGetter.getString(getString(R.string.useProxyUsernamePreference), ""));
-        mProxyPassword.setText(preferenceGetter.getString(getString(R.string.useProxyPasswordPreference), ""));
-        mProxyDomain.setText(preferenceGetter.getString(getString(R.string.useProxyDomainPreference), ""));
-
-        // Set listeners
-        mUseSystemProxy.setOnPreferenceClickListener(this);
-        mUseCustomProxy.setOnPreferenceClickListener(this);
-
-        mProxyHost.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-            @Override
-            public boolean onPreferenceChange(Preference preference, Object newValue) {
-                String proxyHost = (String)newValue;
-                if (TextUtils.isEmpty(proxyHost)) {
-                    Toast toast = Toast.makeText(MoreOptionsPreferenceActivity.this, R.string.network_proxy_connect_invalid_values, Toast.LENGTH_SHORT);
-                    toast.show();
-                    return false;
-                }
-                return true;
+            // Notifications
+            if (Utils.supportsNotificationSound()) {
+                CheckBoxPreference notificationSoundCheckBox =
+                        (CheckBoxPreference) preferences.findPreference(getString(R.string.preferenceNotificationsWithSound));
+                CheckBoxPreference notificationVibrationCheckBox =
+                        (CheckBoxPreference) preferences.findPreference(getString(R.string.preferenceNotificationsWithVibrate));
+                notificationSoundCheckBox.setChecked(preferenceGetter.getBoolean(getString(R.string.preferenceNotificationsWithSound), false));
+                notificationVibrationCheckBox.setChecked(preferenceGetter.getBoolean(getString(R.string.preferenceNotificationsWithVibrate), false));
+            } else {
+                // Remove "Notifications" category
+                preferences.removePreference(findPreference(getString(R.string.preferencesNotifications)));
             }
-        });
 
-        mProxyPort.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-            @Override
-            public boolean onPreferenceChange(Preference preference, Object newValue) {
-                int proxyPort;
-                try {
-                    proxyPort = Integer.valueOf((String) newValue);
-                } catch(NumberFormatException e) {
-                    proxyPort = 0;
-                }
-                if (proxyPort >= 1 && proxyPort <= 65535) {
+            // Advanced
+            boolean hasUpgradeChecker = false;
+            try {
+                Class.forName("com.psiphon3.psiphonlibrary.UpgradeChecker");
+                hasUpgradeChecker = true;
+            } catch (ClassNotFoundException e) {
+                //my class isn't there!
+            }
+            CheckBoxPreference upgradeWiFiOnlyCheckBox =
+                    (CheckBoxPreference) preferences.findPreference(getString(R.string.downloadWifiOnlyPreference));
+            if (!EmbeddedValues.IS_PLAY_STORE_BUILD && hasUpgradeChecker) {
+                upgradeWiFiOnlyCheckBox.setChecked(preferenceGetter.getBoolean(getString(R.string.downloadWifiOnlyPreference), false));
+            } else {
+                preferences.removePreferenceRecursively(getString(R.string.downloadWifiOnlyPreference));
+            }
+            CheckBoxPreference disableTimeoutsCheckBox =
+                    (CheckBoxPreference) preferences.findPreference(getString(R.string.disableTimeoutsPreference));
+            disableTimeoutsCheckBox.setChecked(preferenceGetter.getBoolean(getString(R.string.disableTimeoutsPreference), false));
+
+            setupLanguageSelector(preferences);
+            setupAbout(preferences);
+            setupAdsConsentPreference(preferences);
+            setupZircoBookmarksExport(preferences);
+        }
+
+        @Override
+        public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+            if (requestCode == ZIRCO_WRITE_EXTERNAL_PERMISSION_REQUEST_CODE &&
+                    grantResults.length > 0
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                exportZircoHistoryBookmarks();
+            } else {
+                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            }
+        }
+
+        private void setupZircoBookmarksExport(PreferenceScreen preferenceScreen) {
+            zircoExportCursor = ZircoBookmarksContentProvider.getAllRecords(getContext().getContentResolver());
+            Preference category = findPreference(getString(R.string.exportZircoPreferenceCategory));
+            // Do not show preference if there is no data to export
+            if (zircoExportCursor == null || zircoExportCursor.getCount() == 0) {
+                preferenceScreen.removePreference(category);
+                return;
+            }
+
+            category.setVisible(true);
+            Preference pref = findPreference(getString(R.string.exportZircoPreference));
+
+            pref.setOnPreferenceClickListener(preference -> {
+                if (!ApplicationUtils.ensureWriteStoragePermissionGranted(getActivity(),
+                        getString(R.string.PreferencesActivity_ExportHistoryBookmarksPermissionRequestReason),
+                        ZIRCO_WRITE_EXTERNAL_PERMISSION_REQUEST_CODE
+                )) {
+                    Toast.makeText(getActivity(), R.string.Commons_NeedWritePermissions, Toast.LENGTH_LONG).show();
                     return true;
                 }
-                Toast toast = Toast.makeText(MoreOptionsPreferenceActivity.this, R.string.network_proxy_connect_invalid_values, Toast.LENGTH_SHORT);
-                toast.show();
-                return false;
-            }
-        });
-
-        initSummary();
-        updatePreferencesScreen();
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Set up a listener whenever a key changes
-        getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // Unregister the listener whenever a key changes
-        getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, final String key) {
-        Preference curPref = findPreference(key);
-        updatePrefsSummary(curPref);
-        updatePreferencesScreen();
-
-        // If language preference has changed we need to set new locale based on the current
-        // preference value and restart the app.
-        if (key.equals(getString(R.string.preferenceLanguageSelection))) {
-            String languageCode = mLanguageSelector.getValue();
-            try {
-                int pos = mLanguageSelector.findIndexOfValue(languageCode);
-                mLanguageSelector.setSummary(mLanguageSelector.getEntries()[pos]);
-            } catch (Exception ignored) {
-            }
-            setLanguageAndRestartApp(languageCode);
+                exportZircoHistoryBookmarks();
+                return true;
+            });
         }
-    }
 
-    private void setLanguageAndRestartApp(String languageCode) {
-        // The LocaleManager will correctly set the resource + store the language preference for the future
-        LocaleManager localeManager = LocaleManager.getInstance(MoreOptionsPreferenceActivity.this);
-        if (languageCode.equals("")) {
-            localeManager.resetToSystemLocale(MoreOptionsPreferenceActivity.this);
-        } else {
-            localeManager.setNewLocale(MoreOptionsPreferenceActivity.this, languageCode);
+        @Override
+        public void onResume() {
+            super.onResume();
+            // Set up a listener whenever a key changes
+            getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
         }
-        // Kill the browser instance if it exists.
-        // This is required as it's a singleTask activity and isn't recreated when it loses focus.
-        if (MainActivity.INSTANCE != null) {
-            MainActivity.INSTANCE.finish();
+
+        @Override
+        public void onPause() {
+            super.onPause();
+            // Unregister the listener whenever a key changes
+            getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
         }
-        // Finish back to the StatusActivity and inform the language has changed
-        Intent data = new Intent();
-        data.putExtra(INTENT_EXTRA_LANGUAGE_CHANGED, true);
-        setResult(RESULT_OK, data);
-        finish();
-    }
 
-    @Override
-    public SharedPreferences getSharedPreferences(String name, int mode) {
-        return super.getSharedPreferences(getString(R.string.moreOptionsPreferencesName), mode);
-    }
-
-    @Override
-    public boolean onPreferenceClick(Preference preference) {
-        if (preference == mUseSystemProxy) {
-            mUseSystemProxy.setChecked(true);
-            mUseCustomProxy.setChecked(false);
-        }
-        if (preference == mUseCustomProxy) {
-            mUseSystemProxy.setChecked(false);
-            mUseCustomProxy.setChecked(true);
-        }
-        return false;
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-        savedInstanceState.putBoolean("onSaveInstanceState", true);
-        super.onSaveInstanceState(savedInstanceState);
-    }
-
-    protected void updatePrefsSummary(Preference pref) {
-        if (pref instanceof EditTextPreference) {
-            // EditPreference
-            EditTextPreference editTextPref = (EditTextPreference) pref;
-            String summary = editTextPref.getText();
-            if (!TextUtils.isEmpty(summary)) {
-                //hide passwords
-                //http://stackoverflow.com/questions/15044595/preventing-edittextpreference-from-updating-summary-for-inputtype-password
-                int inputType = editTextPref.getEditText().getInputType() & InputType.TYPE_MASK_VARIATION;
-                boolean isPassword = ((inputType  == InputType.TYPE_NUMBER_VARIATION_PASSWORD)
-                        ||(inputType  == InputType.TYPE_TEXT_VARIATION_PASSWORD)
-                        ||(inputType  == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD));
-
-                if (isPassword) {
-                    editTextPref.setSummary(summary.replaceAll(".", "*"));
+        @SuppressWarnings("deprecation")
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, final String key) {
+            // If language preference has changed we need to set new locale based on the current
+            // preference value and restart the app.
+            if (key.equals(getString(R.string.preferenceLanguageSelection))) {
+                String languageCode = mLanguageSelector.getValue();
+                try {
+                    int pos = mLanguageSelector.findIndexOfValue(languageCode);
+                    mLanguageSelector.setSummary(mLanguageSelector.getEntries()[pos]);
+                } catch (Exception ignored) {
                 }
-                else {
-                    editTextPref.setSummary(summary);
-                }
+                setLanguageAndRestartApp(languageCode);
+            }
+        }
+
+        private void setLanguageAndRestartApp(String languageCode) {
+            // The LocaleManager will correctly set the resource + store the language preference for the future
+            LocaleManager localeManager = LocaleManager.getInstance(getActivity());
+            if (languageCode.equals("")) {
+                localeManager.resetToSystemLocale(getActivity());
             } else {
-                editTextPref.setSummary((CharSequence) mDefaultSummaryBundle.get(editTextPref.getKey()));
+                localeManager.setNewLocale(getActivity(), languageCode);
             }
-        }
-    }
 
-    /*
-     * Init summary fields
-     */
-    @SuppressWarnings("deprecation")
-    protected void initSummary() {
-        for (int i = 0; i < getPreferenceScreen().getPreferenceCount(); i++) {
-            initPrefsSummary(getPreferenceScreen()
-                    .getPreference(i));
+            // Finish back to the StatusActivity and inform the language has changed
+            Intent data = new Intent();
+            data.putExtra(INTENT_EXTRA_LANGUAGE_CHANGED, true);
+            getActivity().setResult(RESULT_OK, data);
+            getActivity().finish();
         }
-    }
 
-    /*
-     * Init single Preference
-     */
-    protected void initPrefsSummary(Preference p) {
-        if (p instanceof PreferenceGroup) {
-            PreferenceGroup pCat = (PreferenceGroup) p;
-            for (int i = 0; i < pCat.getPreferenceCount(); i++) {
-                initPrefsSummary(pCat.getPreference(i));
+        private void setupLanguageSelector(PreferenceScreen preferences) {
+            // Get the preference view and create the locale manager with the app's context.
+            // Cannot use this activity as the context as we also need StatusActivity to pick up on it.
+            mLanguageSelector = (ListPreference) preferences.findPreference(getString(R.string.preferenceLanguageSelection));
+
+            // Collect the string array of <language name>,<language code>
+            String[] locales = getResources().getStringArray(R.array.languages);
+            CharSequence[] languageNames = new CharSequence[locales.length + 1];
+            CharSequence[] languageCodes = new CharSequence[locales.length + 1];
+
+            // Setup the "Default" locale
+            languageNames[0] = getString(R.string.preference_language_default_language);
+            languageCodes[0] = "";
+
+            LocaleManager localeManager = LocaleManager.getInstance(getActivity());
+            String currentLocaleLanguageCode = localeManager.getLanguage();
+            int currentLocaleLanguageIndex = -1;
+
+            if (localeManager.isSystemLocale(currentLocaleLanguageCode)) {
+                currentLocaleLanguageIndex = 0;
             }
-        } else if (p instanceof EditTextPreference){
-            mDefaultSummaryBundle.putCharSequence(p.getKey(), p.getSummary());
-            updatePrefsSummary(p);
-        }
-    }
 
-    private void setupNavigateToVPNSettings(PreferenceScreen preferences) {
-        Preference preference = preferences.findPreference(getString(R.string.preferenceNavigateToVPNSetting));
-        preference.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-            @Override
-            public boolean onPreferenceClick(Preference preference) {
-                startActivity(new Intent(ACTION_VPN_SETTINGS));
-                return true;
+            for (int i = 1; i <= locales.length; ++i) {
+                // Split the string on the comma
+                String[] localeArr = locales[i - 1].split(",");
+                languageNames[i] = localeArr[0];
+                languageCodes[i] = localeArr[1];
+
+                if (localeArr[1] != null && localeArr[1].equals(currentLocaleLanguageCode)) {
+                    currentLocaleLanguageIndex = i;
+                }
             }
-        });
-    }
 
-    private void setupLanguageSelector(PreferenceScreen preferences) {
-        // Get the preference view and create the locale manager with the app's context.
-        // Cannot use this activity as the context as we also need StatusActivity to pick up on it.
-        mLanguageSelector = (ListPreference) preferences.findPreference(getString(R.string.preferenceLanguageSelection));
+            // Entries are displayed to the user, codes are the value used in the backend
+            mLanguageSelector.setEntries(languageNames);
+            mLanguageSelector.setEntryValues(languageCodes);
 
-        // Collect the string array of <language name>,<language code>
-        String[] locales = getResources().getStringArray(R.array.languages);
-        CharSequence[] languageNames = new CharSequence[locales.length + 1];
-        CharSequence[] languageCodes = new CharSequence[locales.length + 1];
-
-        // Setup the "Default" locale
-        languageNames[0] = getString(R.string.preference_language_default_language);
-        languageCodes[0] = "";
-
-        LocaleManager localeManager = LocaleManager.getInstance(this);
-        String currentLocaleLanguageCode = localeManager.getLanguage();
-        int currentLocaleLanguageIndex = -1;
-
-        if (localeManager.isSystemLocale(currentLocaleLanguageCode)) {
-            currentLocaleLanguageIndex = 0;
-        }
-
-        for (int i = 1; i <= locales.length; ++i) {
-            // Split the string on the comma
-            String[] localeArr = locales[i - 1].split(",");
-            languageNames[i] = localeArr[0];
-            languageCodes[i] = localeArr[1];
-
-            if (localeArr[1] != null && localeArr[1].equals(currentLocaleLanguageCode)) {
-                currentLocaleLanguageIndex = i;
-            }
-        }
-
-        // Entries are displayed to the user, codes are the value used in the backend
-        mLanguageSelector.setEntries(languageNames);
-        mLanguageSelector.setEntryValues(languageCodes);
-
-        // If current locale is on the list set it selected
-        if (currentLocaleLanguageIndex >= 0) {
-            try {
-                mLanguageSelector.setValueIndex(currentLocaleLanguageIndex);
-                mLanguageSelector.setSummary(languageNames[currentLocaleLanguageIndex]);
-            } catch(Exception ignored) {
-            }
-        }
-    }
-
-    private void disableCustomProxySettings() {
-        mProxyHost.setEnabled(false);
-        mProxyPort.setEnabled(false);
-        mUseProxyAuthentication.setEnabled(false);
-        disableProxyAuthenticationSettings();
-    }
-
-    private void enableCustomProxySettings() {
-        mProxyHost.setEnabled(true);
-        mProxyPort.setEnabled(true);
-        mUseProxyAuthentication.setEnabled(true);
-        enableProxyAuthenticationSettings();
-    }
-
-    private void disableProxyAuthenticationSettings() {
-        mProxyUsername.setEnabled(false);
-        mProxyPassword.setEnabled(false);
-        mProxyDomain.setEnabled(false);
-    }
-
-    private void enableProxyAuthenticationSettings() {
-        mProxyUsername.setEnabled(true);
-        mProxyPassword.setEnabled(true);
-        mProxyDomain.setEnabled(true);
-    }
-
-    private void disableProxySettings() {
-        mUseSystemProxy.setEnabled(false);
-        mUseCustomProxy.setEnabled(false);
-        disableCustomProxySettings();
-        disableProxyAuthenticationSettings();
-    }
-
-    private void enableProxySettings() {
-        mUseSystemProxy.setEnabled(true);
-        mUseCustomProxy.setEnabled(true);
-        enableCustomProxySettings();
-        enableProxyAuthenticationSettings();
-    }
-
-    protected void updatePreferencesScreen() {
-        if (!mUseProxy.isChecked()) {
-            disableProxySettings();
-        } else {
-            enableProxySettings();
-            if (mUseSystemProxy.isChecked()) {
-                disableCustomProxySettings();
-            } else {
-                enableCustomProxySettings();
-                if (mUseProxyAuthentication.isChecked()) {
-                    enableProxyAuthenticationSettings();
-                } else {
-                    disableProxyAuthenticationSettings();
+            // If current locale is on the list set it selected
+            if (currentLocaleLanguageIndex >= 0) {
+                try {
+                    mLanguageSelector.setValueIndex(currentLocaleLanguageIndex);
+                    mLanguageSelector.setSummary(languageNames[currentLocaleLanguageIndex]);
+                } catch (Exception ignored) {
                 }
             }
         }
 
-        updateAdsConsentPreference();
-    }
-
-    private void setupTunnelConfiguration(PreferenceScreen preferences, PreferenceGetter preferenceGetter) {
-        mTunnelAllApps = (RadioButtonPreference) preferences.findPreference(getString(R.string.preferenceIncludeAllAppsInVpn));
-        mTunnelSelectedApps = (RadioButtonPreference) preferences.findPreference(getString(R.string.preferenceIncludeAppsInVpn));
-        mTunnelNotSelectedApps = (RadioButtonPreference) preferences.findPreference(getString(R.string.preferenceExcludeAppsFromVpn));
-        mSelectApps = preferences.findPreference(getString(R.string.preferenceSelectApps));
-
-        // Migrate old VPN exclusions preferences if any
-        VpnAppsUtils.migrate(getApplicationContext());
-
-        // Also create a snapshot of current VPN exclusion sets. We need this because tunnel restart
-        // logic when we return back to main activity from this screen will compare the preferences
-        // set in this screen with currently stored preferences in order to make decision if the
-        // preferences change needs to trigger a tunnel restart.
-        String currentIncludeAppsString = preferenceGetter.getString(getString(R.string.preferenceIncludeAppsInVpnString), "");
-        preferences.getEditor().putString(getString(R.string.preferenceIncludeAppsInVpnString), currentIncludeAppsString).apply();
-        String currentExcludeAppsString = preferenceGetter.getString(getString(R.string.preferenceExcludeAppsFromVpnString), "");
-        preferences.getEditor().putString(getString(R.string.preferenceExcludeAppsFromVpnString), currentExcludeAppsString).apply();
-
-        if (preferenceGetter.getBoolean(getString(R.string.preferenceIncludeAllAppsInVpn), false)) {
-            tunnelAllApps();
-        } else if (preferenceGetter.getBoolean(getString(R.string.preferenceIncludeAppsInVpn), false)) {
-            tunnelSelectedApps();
-        } else {
-            tunnelNotSelectedApps();
+        private void setupAbout(PreferenceScreen preferences) {
+            Preference pref = preferences.findPreference(getString(R.string.preferenceAbout));
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(EmbeddedValues.INFO_LINK_URL));
+            pref.setIntent(browserIntent);
         }
 
-        mTunnelAllApps.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-            @Override
-            public boolean onPreferenceClick(Preference preference) {
-                tunnelAllApps();
-                return true;
-            }
-        });
+        private void exportZircoHistoryBookmarks() {
+            Calendar c = Calendar.getInstance();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US);
 
-        mTunnelSelectedApps.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-            @Override
-            public boolean onPreferenceClick(Preference preference) {
-                tunnelSelectedApps();
-                return true;
-            }
-        });
+            final String fileName = sdf.format(c.getTime()) + ".xml";
+            final ProgressDialog progressDialog = ProgressDialog.show(getActivity(),
+                    this.getResources().getString(R.string.Commons_PleaseWait),
+                    this.getResources().getString(R.string.Commons_ExportingHistoryBookmarks));
 
-        mTunnelNotSelectedApps.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-            @Override
-            public boolean onPreferenceClick(Preference preference) {
-                tunnelNotSelectedApps();
-                return true;
-            }
-        });
+            final XmlHistoryBookmarksExporter exporter = new XmlHistoryBookmarksExporter(getActivity(),
+                    fileName,
+                    zircoExportCursor,
+                    progressDialog
+            );
+            new Thread(exporter).start();
+        }
 
-        mSelectApps.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-            @Override
-            public boolean onPreferenceClick(Preference preference) {
-                final InstalledAppsMultiSelectListPreference installedAppsMultiSelectListPreference =
-                        new InstalledAppsMultiSelectListPreference(MoreOptionsPreferenceActivity.this,
-                                getLayoutInflater(), mTunnelSelectedApps.isChecked());
-
-                final androidx.appcompat.app.AlertDialog alertDialog = installedAppsMultiSelectListPreference
-                        .setOnDismissListener(new DialogInterface.OnDismissListener() {
-                            @Override
-                            public void onDismiss(DialogInterface dialog) {
-                                if (mTunnelAllApps.isChecked()) {
-                                    tunnelAllApps();
-                                } else if (mTunnelSelectedApps.isChecked()) {
-                                    tunnelSelectedApps();
-                                } else {
-                                    tunnelNotSelectedApps();
-                                }
-                            }
-                        })
-                        .create();
-
-                alertDialog.setOnShowListener(dialog -> {
-                    Button button = ((androidx.appcompat.app.AlertDialog) dialog).getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE);
-                    button.setOnClickListener(v -> {
-                        if (!installedAppsMultiSelectListPreference.isLoaded()) {
-                            alertDialog.dismiss();
-                            return;
-                        }
-                        Set<String> selectedApps = installedAppsMultiSelectListPreference.getSelectedApps();
-                        int installedAppsCount = installedAppsMultiSelectListPreference.getInstalledAppsCount();
-                        if (installedAppsMultiSelectListPreference.isWhitelist()) {
-                            if (selectedApps.size() > 0) {
-                                VpnAppsUtils.setPendingAppsToIncludeInVpn(getApplicationContext(), selectedApps);
-                            } else {
-                                new androidx.appcompat.app.AlertDialog.Builder(MoreOptionsPreferenceActivity.this)
-                                        .setIcon(android.R.drawable.ic_dialog_alert)
-                                        .setTitle(R.string.bad_vpn_exclusion_setting_alert_title)
-                                        .setMessage(R.string.bad_vpn_exclusion_whitelist_alert_message)
-                                        .setPositiveButton(R.string.label_ok, null)
-                                        .setCancelable(true)
-                                        .show();
-                                return;
-                            }
-                        } else {
-                            if (installedAppsCount > selectedApps.size()) {
-                                VpnAppsUtils.setPendingAppsToExcludeFromVpn(getApplicationContext(), selectedApps);
-                            } else {
-                                new androidx.appcompat.app.AlertDialog.Builder(MoreOptionsPreferenceActivity.this)
-                                        .setIcon(android.R.drawable.ic_dialog_alert)
-                                        .setTitle(R.string.bad_vpn_exclusion_setting_alert_title)
-                                        .setMessage(R.string.bad_vpn_exclusion_blacklist_alert_message)
-                                        .setPositiveButton(R.string.label_ok, null)
-                                        .setCancelable(true)
-                                        .show();
-                                return;
-                            }
-                        }
-                        alertDialog.dismiss();
-                    });
+        private void setupAdsConsentPreference(PreferenceScreen preferences) {
+            Preference category = preferences.findPreference(getString(R.string.adConsentPreferenceCategory));
+            final ConsentInformation consentInformation = ConsentInformation.getInstance(getContext());
+            if (consentInformation.getConsentStatus() != ConsentStatus.UNKNOWN) {
+                category.setVisible(true);
+                Preference pref = preferences.findPreference(getString(R.string.adConsentPreference));
+                pref.setOnPreferenceClickListener(preference -> {
+                    new AlertDialog.Builder(getContext())
+                            .setTitle(R.string.ads_consent_preference_dialog_title)
+                            .setMessage(getContext().getString(R.string.ads_consent_preference_dialog_preference_message))
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .setPositiveButton(android.R.string.yes, (dialog, whichButton) -> {
+                                final ConsentInformation consentInformation1 = ConsentInformation.getInstance(getContext());
+                                consentInformation1.setConsentStatus(ConsentStatus.UNKNOWN);
+                                category.setVisible(false);
+                            })
+                            .setNegativeButton(android.R.string.no, null)
+                            .show();
+                    return true;
                 });
-
-                alertDialog.show();
-
-                return true;
             }
-        });
-    }
-
-    private void tunnelAllApps() {
-        mTunnelAllApps.setChecked(true);
-        mTunnelSelectedApps.setChecked(false);
-        mTunnelNotSelectedApps.setChecked(false);
-        mSelectApps.setEnabled(false);
-        mSelectApps.setSummary(R.string.preference_routing_all_apps_tunnel_summary);
-    }
-
-    private void tunnelSelectedApps() {
-        mTunnelAllApps.setChecked(false);
-        mTunnelSelectedApps.setChecked(true);
-        mTunnelNotSelectedApps.setChecked(false);
-        mSelectApps.setEnabled(true);
-        int count = VpnAppsUtils.getPendingAppsIncludedInVpn(getApplicationContext()).size();
-        String summary = getResources().getQuantityString(R.plurals.preference_routing_select_apps_to_include_summary, count, count);
-        mSelectApps.setSummary(summary);
-    }
-
-    private void tunnelNotSelectedApps() {
-        mTunnelAllApps.setChecked(false);
-        mTunnelSelectedApps.setChecked(false);
-        mTunnelNotSelectedApps.setChecked(true);
-        mSelectApps.setEnabled(true);
-        int count = VpnAppsUtils.getPendingAppsExcludedFromVpn(getApplicationContext()).size();
-        String summary = getResources().getQuantityString(R.plurals.preference_routing_select_apps_to_exclude_summary, count, count);
-        mSelectApps.setSummary(summary);
-    }
-
-    private boolean supportsRoutingConfiguration() {
-        // technically supported after v14 but the earliest preference file with it is v21
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
-    }
-
-    private void updateAdsConsentPreference() {
-        // Conditionally add / remove 'revoke ads consent' preference
-        final ConsentInformation consentInformation = ConsentInformation.getInstance(this);
-        PreferenceScreen screen = this.getPreferenceScreen();
-        Preference adConsentPref = screen.findPreference(getString(R.string.adConsentPref));
-
-        if(consentInformation.getConsentStatus() != ConsentStatus.UNKNOWN) {
-            // Consent status is either PERSONALIZED or NON_PERSONALIZED - create and show
-            // 'reset' preference if doesn't exists
-            if (adConsentPref == null) {
-                PreferenceCategory category = new PreferenceCategory(screen.getContext());
-                category.setTitle(R.string.ads_consent_preference_category_title);
-                category.setKey(getString(R.string.adConsentPref));
-                screen.addPreference(category);
-
-                DialogPreference revokeConsentPref = new RevokeConsentPreference(screen.getContext(),
-                        new RevokeConsentPreference.OnDialogDismissListener() {
-                            @Override
-                            public void onDismiss() {
-                                MoreOptionsPreferenceActivity.this.updateAdsConsentPreference();
-                            }
-                        });
-                revokeConsentPref.setTitle(R.string.ads_consent_preference_title);
-                revokeConsentPref.setSummary(R.string.ads_consent_preference_summary);
-                category.addPreference(revokeConsentPref);
-            }
-        } else {
-            // Consent status UNKNOWN - remove 'reset' preference if exists
-            if(adConsentPref != null) {
-                screen.removePreference(adConsentPref);
-            }
-        }
-    }
-
-    static private class RevokeConsentPreference extends DialogPreference {
-        private OnDialogDismissListener dialogDismissListener;
-        RevokeConsentPreference(Context context, OnDialogDismissListener listener) {
-            // Using API level 1 constructor.
-            super(context, null);
-            this.dialogDismissListener = listener;
-        }
-
-        @Override
-        protected void onPrepareDialogBuilder(AlertDialog.Builder builder) {
-            builder.setTitle(R.string.ads_consent_preference_dialog_title)
-                    .setMessage(getContext().getString(R.string.ads_consent_preference_dialog_preference_message))
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int whichButton) {
-                            final ConsentInformation consentInformation = ConsentInformation.getInstance(RevokeConsentPreference.this.getContext());
-                            consentInformation.setConsentStatus(ConsentStatus.UNKNOWN);
-                        }
-                    })
-                    .setNegativeButton(android.R.string.no, null);
-        }
-
-        @Override
-        public void onDismiss(DialogInterface dialog) {
-            super.onDismiss(dialog);
-            if(dialogDismissListener != null) {
-                dialogDismissListener.onDismiss();
-            }
-        }
-
-        public interface OnDialogDismissListener {
-            void onDismiss();
         }
     }
 }

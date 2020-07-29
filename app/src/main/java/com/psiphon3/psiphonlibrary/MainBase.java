@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Psiphon Inc.
+ * Copyright (c) 2020, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,10 +22,8 @@ package com.psiphon3.psiphonlibrary;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -33,24 +31,14 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.net.Uri;
 import android.net.VpnService;
-import android.nfc.NdefMessage;
-import android.nfc.NdefRecord;
-import android.nfc.NfcAdapter;
-import android.nfc.NfcEvent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import android.text.TextUtils;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
@@ -59,14 +47,11 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.animation.TranslateAnimation;
-import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -79,6 +64,11 @@ import android.widget.TabHost.TabSpec;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.psiphon3.R;
 import com.psiphon3.StatusActivity;
@@ -100,14 +90,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
-
-import static android.nfc.NdefRecord.createMime;
 
 public abstract class MainBase {
     public static abstract class Activity extends LocalizedActivities.AppCompatActivity implements MyLog.ILogger {
@@ -146,8 +132,10 @@ public abstract class MainBase {
         protected static final String CURRENT_TAB = "currentTab";
 
         protected static final int REQUEST_CODE_PREPARE_VPN = 100;
-        protected static final int REQUEST_CODE_PREFERENCE = 101;
-        protected static final int REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 102;
+        protected static final int REQUEST_CODE_VPN_PREFERENCES = 102;
+        protected static final int REQUEST_CODE_PROXY_PREFERENCES = 103;
+        protected static final int REQUEST_CODE_MORE_PREFERENCES = 104;
+        protected static final int REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 105;
 
         public static final String HOME_TAB_TAG = "home_tab_tag";
         public static final String STATISTICS_TAB_TAG = "statistics_tab_tag";
@@ -173,19 +161,14 @@ public abstract class MainBase {
         private DataTransferGraph m_slowReceivedGraph;
         private DataTransferGraph m_fastSentGraph;
         private DataTransferGraph m_fastReceivedGraph;
-        private RegionAdapter m_regionAdapter;
-        protected SpinnerHelper m_regionSelector;
-        protected CheckBox m_tunnelWholeDeviceToggle;
-        protected CheckBox m_downloadOnWifiOnlyToggle;
-        protected CheckBox m_disableTimeoutsToggle;
         private Toast m_invalidProxySettingsToast;
-        private Button m_moreOptionsButton;
         private Button m_openBrowserButton;
         private LoggingObserver m_loggingObserver;
         private CompositeDisposable compositeDisposable = new CompositeDisposable();
         protected TunnelServiceInteractor tunnelServiceInteractor;
-        private Disposable handleNfcIntentDisposable;
         private StatusEntryAdded m_statusEntryAddedBroadcastReceiver;
+        protected StatusActivity.OptionsTabFragment m_optionsTabFragment;
+
         protected Disposable startUpInterstitialDisposable;
 
         protected boolean isAppInForeground;
@@ -196,44 +179,6 @@ public abstract class MainBase {
 
         private ImageButton m_statusViewImage;
 
-        private View mHelpConnectButton;
-
-        private NfcAdapter mNfcAdapter;
-        private NfcAdapterCallback mNfcAdapterCallback;
-        private String mConnectionInfoPayload = "";
-
-        private CountDownLatch mNfcConnectionInfoExportLatch;
-
-        @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-        private class NfcAdapterCallback implements NfcAdapter.CreateNdefMessageCallback {
-            @Override
-            public NdefMessage createNdefMessage(NfcEvent event) {
-                // Request the connection info get updated
-                tunnelServiceInteractor.nfcExportConnectionInfo();
-
-                // Wait for the service to respond
-                try {
-                    mNfcConnectionInfoExportLatch = new CountDownLatch(1);
-                    if (!mNfcConnectionInfoExportLatch.await(2, TimeUnit.SECONDS)) {
-                        // We didn't get a response within two seconds so
-                        // set the payload to something invalid so nothing happens to the receiver
-                        mConnectionInfoPayload = "";
-                    }
-                } catch (InterruptedException e) {
-                    // Set the payload to something invalid so nothing happens to the receiver
-                    mConnectionInfoPayload = "";
-                }
-
-                // Decode the payload then clear it so we don't try to import an old payload
-                byte[] payload = ConnectionInfoExchangeUtils.decodeConnectionInfo(mConnectionInfoPayload);
-                mConnectionInfoPayload = "";
-
-                return new NdefMessage(
-                        new NdefRecord[] { createMime(
-                                ConnectionInfoExchangeUtils.NFC_MIME_TYPE, payload)
-                        });
-            }
-        }
 
         private void setStatusState(int resId) {
             boolean statusShowing = m_sponsorViewFlipper.getCurrentView() == m_statusLayout;
@@ -426,7 +371,6 @@ public abstract class MainBase {
                     // Top level  preferences
                     new SharedPreferencesImport(this, prefName, CURRENT_TAB, CURRENT_TAB),
                     new SharedPreferencesImport(this, prefName, getString(R.string.egressRegionPreference), getString(R.string.egressRegionPreference)),
-                    new SharedPreferencesImport(this, prefName, getString(R.string.tunnelWholeDevicePreference), getString(R.string.tunnelWholeDevicePreference)),
                     new SharedPreferencesImport(this, prefName, getString(R.string.downloadWifiOnlyPreference), getString(R.string.downloadWifiOnlyPreference)),
                     new SharedPreferencesImport(this, prefName, getString(R.string.disableTimeoutsPreference), getString(R.string.disableTimeoutsPreference)),
                     // More Options preferences
@@ -455,22 +399,6 @@ public abstract class MainBase {
             // remove logs from previous sessions
             if (!tunnelServiceInteractor.isServiceRunning(getApplicationContext())) {
                 LoggingProvider.LogDatabaseHelper.truncateLogs(this, true);
-            }
-
-            // Only handle NFC if the version is sufficient
-            if (ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
-                // Check for available NFC Adapter
-                mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
-                if (mNfcAdapter != null) {
-                    // Register callback
-                    mNfcAdapterCallback = new NfcAdapterCallback();
-
-                    // Always enable receiving an NFC tag, and determine what to do with it when we receive it based on the service state.
-                    // For example, in the Stopped state, we can receive a tag, and instruct the user to start the tunnel service and try again.
-                    PackageManager packageManager = getPackageManager();
-                    ComponentName componentName = new ComponentName(getPackageName(), NfcActivity.class.getName());
-                    packageManager.setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
-                }
             }
         }
 
@@ -522,10 +450,6 @@ public abstract class MainBase {
             findViewById(R.id.sponsorWebView).setOnTouchListener(onTouchListener);
             findViewById(R.id.statisticsView).setOnTouchListener(onTouchListener);
             findViewById(R.id.settingsView).setOnTouchListener(onTouchListener);
-            findViewById(R.id.regionSelector).setOnTouchListener(onTouchListener);
-            findViewById(R.id.tunnelWholeDeviceToggle).setOnTouchListener(onTouchListener);
-            findViewById(R.id.feedbackButton).setOnTouchListener(onTouchListener);
-            findViewById(R.id.aboutButton).setOnTouchListener(onTouchListener);
             ListView statusListView = (ListView) findViewById(R.id.statusList);
             statusListView.setOnTouchListener(onTouchListener);
 
@@ -550,12 +474,9 @@ public abstract class MainBase {
             m_elapsedConnectionTimeView = (TextView) findViewById(R.id.elapsedConnectionTime);
             m_totalSentView = (TextView) findViewById(R.id.totalSent);
             m_totalReceivedView = (TextView) findViewById(R.id.totalReceived);
-            m_regionSelector = new SpinnerHelper(findViewById(R.id.regionSelector));
-            m_tunnelWholeDeviceToggle = (CheckBox) findViewById(R.id.tunnelWholeDeviceToggle);
-            m_disableTimeoutsToggle = (CheckBox) findViewById(R.id.disableTimeoutsToggle);
-            m_downloadOnWifiOnlyToggle = (CheckBox) findViewById(R.id.downloadOnWifiOnlyToggle);
-            m_moreOptionsButton = (Button) findViewById(R.id.moreOptionsButton);
             m_openBrowserButton = (Button) findViewById(R.id.openBrowserButton);
+
+
 
             m_slowSentGraph = new DataTransferGraph(this, R.id.slowSentGraph);
             m_slowReceivedGraph = new DataTransferGraph(this, R.id.slowReceivedGraph);
@@ -569,40 +490,6 @@ public abstract class MainBase {
             m_localBroadcastManager = LocalBroadcastManager.getInstance(this);
             m_localBroadcastManager.registerReceiver(m_statusEntryAddedBroadcastReceiver, new IntentFilter(STATUS_ENTRY_AVAILABLE));
 
-            m_regionAdapter = new RegionAdapter(this);
-            m_regionSelector.setAdapter(m_regionAdapter);
-            String egressRegionPreference = m_multiProcessPreferences
-                    .getString(getString(R.string.egressRegionPreference),
-                            PsiphonConstants.REGION_CODE_ANY);
-
-            m_regionSelector.setSelectionByValue(egressRegionPreference);
-
-            m_regionSelector.setOnItemSelectedListener(regionSpinnerOnItemSelected);
-
-            boolean canWholeDevice = Utils.hasVpnService();
-
-            m_tunnelWholeDeviceToggle.setEnabled(canWholeDevice);
-            boolean tunnelWholeDevicePreference = m_multiProcessPreferences
-                    .getBoolean(getString(R.string.tunnelWholeDevicePreference),
-                            canWholeDevice);
-            m_tunnelWholeDeviceToggle.setChecked(tunnelWholeDevicePreference);
-
-            // Show download-wifi-only preference only in not Play Store build
-            if (!EmbeddedValues.IS_PLAY_STORE_BUILD) {
-                boolean downLoadWifiOnlyPreference = m_multiProcessPreferences.getBoolean(
-                        getString(R.string.downloadWifiOnlyPreference),
-                        PsiphonConstants.DOWNLOAD_WIFI_ONLY_PREFERENCE_DEFAULT);
-                m_downloadOnWifiOnlyToggle.setChecked(downLoadWifiOnlyPreference);
-            }
-            else {
-                m_downloadOnWifiOnlyToggle.setEnabled(false);
-                m_downloadOnWifiOnlyToggle.setVisibility(View.GONE);
-            }
-
-            boolean disableTimeoutsPreference = m_multiProcessPreferences.getBoolean(
-                    getString(R.string.disableTimeoutsPreference), false);
-            m_disableTimeoutsToggle.setChecked(disableTimeoutsPreference);
-
             String msg = getContext().getString(R.string.client_version, EmbeddedValues.CLIENT_VERSION);
             m_statusTabVersionLine.setText(msg);
 
@@ -614,165 +501,17 @@ public abstract class MainBase {
             // Force the UI to display logs already loaded into the StatusList message history
             LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(STATUS_ENTRY_AVAILABLE));
 
-            // Get the connection help buttons
-            mHelpConnectButton = findViewById(R.id.howToHelpButton);
-
             compositeDisposable.addAll(
                     tunnelServiceInteractor.tunnelStateFlowable()
                             // Update app UI state
                             .doOnNext(state -> runOnUiThread(() -> updateServiceStateUI(state)))
-                            // update WebView proxy settings
-                            .doOnNext(this::updateWebViewProxySettings)
-                            .map(state -> {
-                                if (state.isRunning()) {
-                                    if (state.connectionData().isConnected()) {
-                                        return ConnectionHelpState.CAN_HELP;
-                                    } else if (state.connectionData().needsHelpConnecting()) {
-                                        return ConnectionHelpState.NEEDS_HELP;
-                                    }
-                                } // else
-                                return ConnectionHelpState.DISABLED;
-                            })
-                            .distinctUntilChanged()
-                            .doOnNext(this::setConnectionHelpState)
                             .subscribe(),
 
                     tunnelServiceInteractor.dataStatsFlowable()
                             .startWith(Boolean.FALSE)
                             .doOnNext(isConnected -> runOnUiThread(() -> updateStatisticsUICallback(isConnected)))
-                            .subscribe(),
-
-                    tunnelServiceInteractor.knownRegionsFlowable()
-                            .doOnNext(__ -> m_regionAdapter.updateRegionsFromPreferences())
-                            .subscribe(),
-
-                    tunnelServiceInteractor.nfcExchangeFlowable()
-                            .doOnNext(nfcExchange -> {
-                                switch (nfcExchange.type()) {
-                                    case EXPORT:
-                                        handleNfcConnectionInfoExchangeResponseExport(nfcExchange.payload());
-                                        break;
-                                    case IMPORT:
-                                        handleNfcConnectionInfoExchangeResponseImport(nfcExchange.success());
-                                        break;
-                                }
-                            })
                             .subscribe()
             );
-        }
-
-        private void updateWebViewProxySettings(TunnelState state) {
-            if (state.isUnknown()) {
-                // do nothing
-                return;
-            }
-            if (state.isRunning()) {
-                if (state.connectionData().vpnMode()) {
-                    // We're running in WDM
-                    if (WebViewProxySettings.isLocalProxySet()) {
-                        WebViewProxySettings.resetLocalProxy(getContext());
-                    }
-                } else {
-                    // We're running in BOM
-                    int httpPort = state.connectionData().httpPort();
-                    if (httpPort > 0) {
-                        WebViewProxySettings.setLocalProxy(getContext(), state.connectionData().httpPort());
-                    }
-                }
-            } else {
-                // Not running, reset
-                if (WebViewProxySettings.isLocalProxySet()) {
-                    WebViewProxySettings.resetLocalProxy(getContext());
-                }
-            }
-        }
-
-        private enum ConnectionHelpState {
-            DISABLED,
-            NEEDS_HELP,
-            CAN_HELP,
-        }
-
-        @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-        private void setConnectionHelpState(ConnectionHelpState state) {
-            // Make sure we aren't calling this before everything is set up
-            if (mNfcAdapter == null) {
-                return;
-            }
-
-            // Make sure the activity isn't destroyed (setNdefPushMessageCallback will throw IllegalStateException)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && this.isDestroyed()) {
-                return;
-            }
-
-            switch (state) {
-                case DISABLED:
-                case NEEDS_HELP:
-                    hideHelpConnectUI();
-                    mNfcAdapter.setNdefPushMessageCallback(null, this);
-                    break;
-                case CAN_HELP:
-                    showHelpConnectUI();
-                    mNfcAdapter.setNdefPushMessageCallback(mNfcAdapterCallback, this);
-                    break;
-            }
-        }
-
-        private AlertDialog mConnectionHelpDialog;
-
-        protected void showConnectionHelpDialog(Context context, int id) {
-            LayoutInflater layoutInflater = LayoutInflater.from(context);
-            // TODO: Determine what the root inflation should be.
-            View dialogView = layoutInflater.inflate(id, null);
-            mConnectionHelpDialog = new AlertDialog.Builder(context)
-                    .setView(dialogView)
-                    .setPositiveButton(R.string.label_ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    })
-                    .create();
-            mConnectionHelpDialog.show();
-        }
-
-        private void showHelpConnectUI() {
-            // Ensure that they have NFC
-            if (!ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
-                return;
-            }
-
-            mHelpConnectButton.setVisibility(View.VISIBLE);
-        }
-
-        private void hideHelpConnectUI() {
-            // Ensure that they have NFC
-            if (!ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
-                return;
-            }
-
-            mHelpConnectButton.setVisibility(View.GONE);
-        }
-
-        protected void handleNfcConnectionInfoExchangeResponseExport(String payload) {
-            // Store the data to be sent on an NFC exchange so we don't have to wait when beaming
-            mConnectionInfoPayload = payload;
-
-            // If the latch exists, let it wake up
-            if (mNfcConnectionInfoExportLatch != null) {
-                mNfcConnectionInfoExportLatch.countDown();
-            }
-        }
-
-        protected void handleNfcConnectionInfoExchangeResponseImport(boolean success) {
-            String message = success ? getString(R.string.nfc_connection_info_import_success) : getString(R.string.nfc_connection_info_import_failure);
-            if (success) {
-                // Dismiss the get help dialog if it is showing
-                if (mConnectionHelpDialog != null && mConnectionHelpDialog.isShowing()) {
-                    mConnectionHelpDialog.dismiss();
-                }
-            }
-            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         }
 
         @Override
@@ -806,22 +545,6 @@ public abstract class MainBase {
             // Don't show the keyboard until edit selected
             getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
-            if (ConnectionInfoExchangeUtils.isNfcSupported(getApplicationContext())) {
-                Intent intent = getIntent();
-                // Check to see that the Activity started due to an Android Beam
-                if (ConnectionInfoExchangeUtils.isNfcDiscoveredIntent(intent)) {
-                    handleNfcIntent(intent);
-
-                    // We only want to respond to the NFC Intent once,
-                    // so we need to clear it (by setting it to a non-special intent).
-                    setIntent(new Intent(
-                            "ACTION_VIEW",
-                            null,
-                            this,
-                            this.getClass()));
-                }
-            }
-
             // Update the state of UI when resuming the activity with latest tunnel state if
             // we are not in process of starting the tunnel service.
             // This will ensure proper state of the VPN toggle button if user clicked Cancel Request
@@ -831,39 +554,6 @@ public abstract class MainBase {
                     .observeOn(AndroidSchedulers.mainThread())
                     .doOnSuccess(this::updateServiceStateUI)
                     .subscribe());
-        }
-
-        private void handleNfcIntent(Intent intent) {
-            if(handleNfcIntentDisposable != null && !handleNfcIntentDisposable.isDisposed()) {
-                // Already in progress, do nothing.
-                return;
-            }
-            handleNfcIntentDisposable = tunnelServiceInteractor.tunnelStateFlowable()
-                    // wait until we learn tunnel state
-                    .filter(state -> !state.isUnknown())
-                    .firstOrError()
-                    .doOnSuccess(state -> {
-                        if(!state.isRunning()) {
-                            Toast.makeText(this, getString(R.string.nfc_connection_info_press_start), Toast.LENGTH_LONG).show();
-                            return;
-                        }
-
-                        if (state.connectionData().isConnected()) {
-                            return;
-                        }
-
-                        String connectionInfoPayload = ConnectionInfoExchangeUtils.getConnectionInfoPayloadFromNfcIntent(intent);
-
-                        // If the payload is empty don't try to import just let the user know it failed
-                        if (TextUtils.isEmpty(connectionInfoPayload)) {
-                            Toast.makeText(this, getString(R.string.nfc_connection_info_import_failure), Toast.LENGTH_LONG).show();
-                            return;
-                        }
-
-                        // Otherwise, send the received message to the TunnelManager to be imported
-                        tunnelServiceInteractor.importConnectionInfo(connectionInfoPayload);
-                    })
-                    .subscribe();
         }
 
         @Override
@@ -912,46 +602,7 @@ public abstract class MainBase {
 
         protected abstract void startUp();
 
-        protected void doAbout() {
-            if (URLUtil.isValidUrl(EmbeddedValues.INFO_LINK_URL)) {
-                // TODO: if connected, open in Psiphon browser?
-                // Events.displayBrowser(this,
-                // Uri.parse(PsiphonConstants.INFO_LINK_URL));
-
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(EmbeddedValues.INFO_LINK_URL));
-                startActivity(browserIntent);
-            }
-        }
-
-        public void onMoreOptionsClick(View v) {
-            startActivityForResult(new Intent(this, MoreOptionsPreferenceActivity.class), REQUEST_CODE_PREFERENCE);
-        }
-
-        public abstract void onFeedbackClick(View v);
-
-        public void onAboutClick(View v) {
-            doAbout();
-        }
-
-        private final AdapterView.OnItemSelectedListener regionSpinnerOnItemSelected = new AdapterView.OnItemSelectedListener() {
-
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String regionCode = parent.getItemAtPosition(position).toString();
-                onRegionSelected(regionCode);
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView parent) {
-            }
-        };
-
-        public void onRegionSelected(String selectedRegionCode) {
-            // Just in case an OnItemSelected message is in transit before
-            // setEnabled is processed...(?)
-            if (!m_regionSelector.isEnabled()) {
-                return;
-            }
+        protected void onRegionSelected(String selectedRegionCode) {
             String egressRegionPreference = m_multiProcessPreferences
                     .getString(getString(R.string.egressRegionPreference),
                             PsiphonConstants.REGION_CODE_ANY);
@@ -959,70 +610,36 @@ public abstract class MainBase {
                 return;
             }
 
-            updateEgressRegionPreference(selectedRegionCode);
+            // Store the selection in preferences
+            m_multiProcessPreferences.put(getString(R.string.egressRegionPreference), selectedRegionCode);
 
             // NOTE: reconnects even when Any is selected: we could select a
             // faster server
             tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
         }
 
-        protected void updateEgressRegionPreference(String egressRegionPreference) {
-            // No isRooted check: the user can specify whatever preference they
-            // wish. Also, CheckBox enabling should cover this (but isn't
-            // required to).
-            m_multiProcessPreferences.put(getString(R.string.egressRegionPreference), egressRegionPreference);
-        }
-
-        public void onTunnelWholeDeviceToggle(View v) {
-            // Just in case an OnClick message is in transit before setEnabled
-            // is processed...(?)
-            if (!m_tunnelWholeDeviceToggle.isEnabled()) {
-                return;
-            }
-
-            boolean tunnelWholeDevicePreference = m_tunnelWholeDeviceToggle.isChecked();
-            updateWholeDevicePreference(tunnelWholeDevicePreference);
-            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
-        }
-
-        protected void updateWholeDevicePreference(boolean tunnelWholeDevicePreference) {
-            // No isRooted check: the user can specify whatever preference they
-            // wish. Also, CheckBox enabling should cover this (but isn't
-            // required to).
-            m_multiProcessPreferences.put(getString(R.string.tunnelWholeDevicePreference), tunnelWholeDevicePreference);
-
-            // When enabling BOM, we don't use the TunnelVpnService, so we can disable it
-            // which prevents the user having Always On turned on.
-
-            PackageManager packageManager = getPackageManager();
-            ComponentName componentName = new ComponentName(getPackageName(), TunnelVpnService.class.getName());
-            packageManager.setComponentEnabledSetting(componentName,
-                    tunnelWholeDevicePreference ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                    PackageManager.DONT_KILL_APP);
-        }
-
-        public void onDisableTimeoutsToggle(View v) {
-            boolean disableTimeoutsChecked = m_disableTimeoutsToggle.isChecked();
-            updateDisableTimeoutsPreference(disableTimeoutsChecked);
-            tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
-        }
-        protected void updateDisableTimeoutsPreference(boolean disableTimeoutsPreference) {
-            m_multiProcessPreferences.put(getString(R.string.disableTimeoutsPreference), disableTimeoutsPreference);
-        }
-
-        public void onDownloadOnWifiOnlyToggle(View v) {
-            boolean downloadWifiOnly = m_downloadOnWifiOnlyToggle.isChecked();
-
-            // There is no need to restart the service if the value of downloadWifiOnly
-            // has changed because upgrade downloads happen in a different, temp tunnel
-
-            m_multiProcessPreferences.put(getString(R.string.downloadWifiOnlyPreference), downloadWifiOnly);
-        }
-
         // Basic check of proxy settings values
         private boolean customProxySettingsValuesValid() {
+            boolean useHTTPProxyPreference = UpstreamProxySettings.getUseHTTPProxy(this);
+            boolean useCustomProxySettingsPreference = UpstreamProxySettings.getUseCustomProxySettings(this);
+
+            if (!useHTTPProxyPreference ||
+                    !useCustomProxySettingsPreference) {
+                return true;
+            }
             UpstreamProxySettings.ProxySettings proxySettings = UpstreamProxySettings.getProxySettings(this);
-            return proxySettings != null && proxySettings.proxyHost.length() > 0 && proxySettings.proxyPort >= 1 && proxySettings.proxyPort <= 65535;
+            boolean isValid = proxySettings != null &&
+                    proxySettings.proxyHost.length() > 0 &&
+                    proxySettings.proxyPort >= 1 &&
+                    proxySettings.proxyPort <= 65535;
+            if (!isValid) {
+                runOnUiThread(() -> {
+                    cancelInvalidProxySettingsToast();
+                    m_invalidProxySettingsToast = Toast.makeText(this, R.string.network_proxy_connect_invalid_values, Toast.LENGTH_SHORT);
+                    m_invalidProxySettingsToast.show();
+                });
+            }
+            return isValid;
         }
 
         private class DataTransferGraph {
@@ -1164,19 +781,11 @@ public abstract class MainBase {
 
         protected void enableToggleServiceUI() {
             m_toggleButton.setEnabled(true);
-            m_tunnelWholeDeviceToggle.setEnabled(Utils.hasVpnService());
-            m_disableTimeoutsToggle.setEnabled(true);
-            m_regionSelector.setEnabled(true);
-            m_moreOptionsButton.setEnabled(true);
         }
 
         protected void disableToggleServiceUI() {
             m_toggleButton.setText(getText(R.string.waiting));
             m_toggleButton.setEnabled(false);
-            m_tunnelWholeDeviceToggle.setEnabled(false);
-            m_disableTimeoutsToggle.setEnabled(false);
-            m_regionSelector.setEnabled(false);
-            m_moreOptionsButton.setEnabled(false);
         }
 
         protected void startTunnel() {
@@ -1249,32 +858,11 @@ public abstract class MainBase {
         }
 
         private void proceedStartTunnel() {
-            // Don't start if custom proxy settings is selected and values are
-            // invalid
-            boolean useHTTPProxyPreference = UpstreamProxySettings.getUseHTTPProxy(this);
-            boolean useCustomProxySettingsPreference = UpstreamProxySettings.getUseCustomProxySettings(this);
-
-            if (useHTTPProxyPreference && useCustomProxySettingsPreference && !customProxySettingsValuesValid()) {
-                cancelInvalidProxySettingsToast();
-                m_invalidProxySettingsToast = Toast.makeText(this, R.string.network_proxy_connect_invalid_values, Toast.LENGTH_SHORT);
-                m_invalidProxySettingsToast.show();
+            // Don't start if custom proxy settings is selected and values are invalid
+            if (!customProxySettingsValuesValid()) {
                 return;
             }
-
-            boolean waitingForPrompt = false;
-
-            boolean wantVPN = m_multiProcessPreferences
-                    .getBoolean(getString(R.string.tunnelWholeDevicePreference),
-                            false);
-
-            if (wantVPN && Utils.hasVpnService()) {
-                // VpnService backwards compatibility: for lazy class loading
-                // the VpnService
-                // class reference has to be in another function (doVpnPrepare),
-                // not just
-                // in a conditional branch.
-                waitingForPrompt = doVpnPrepare();
-            }
+            boolean waitingForPrompt = doVpnPrepare();
             if (!waitingForPrompt) {
                 startAndBindTunnelService();
             }
@@ -1289,13 +877,6 @@ public abstract class MainBase {
                 return vpnPrepare();
             } catch (Exception e) {
                 MyLog.e(R.string.tunnel_whole_device_exception, MyLog.Sensitivity.NOT_SENSITIVE);
-
-                // Turn off the option and abort.
-
-                m_tunnelWholeDeviceToggle.setChecked(false);
-                m_tunnelWholeDeviceToggle.setEnabled(false);
-                updateWholeDevicePreference(false);
-
                 // true = waiting for prompt, although we can't start the
                 // activity so onActivityResult won't be called
                 return true;
@@ -1327,7 +908,7 @@ public abstract class MainBase {
             return false;
         }
 
-        private boolean isSettingsRestartRequired() {
+        private boolean vpnSettingsRestartRequired() {
             SharedPreferences prefs = getSharedPreferences(getString(R.string.moreOptionsPreferencesName), MODE_PRIVATE);
 
             // check if selected routing preference has changed
@@ -1366,6 +947,11 @@ public abstract class MainBase {
                     return true;
                 }
             }
+            return false;
+        }
+
+        private boolean proxySettingsRestartRequired() {
+            SharedPreferences prefs = getSharedPreferences(getString(R.string.moreOptionsPreferencesName), MODE_PRIVATE);
 
             // check if "use proxy" has changed
             boolean useHTTPProxyPreference = prefs.getBoolean(getString(R.string.useProxySettingsPreference),
@@ -1399,7 +985,7 @@ public abstract class MainBase {
             if (!prefs.getString(getString(R.string.useCustomProxySettingsHostPreference), "")
                     .equals(UpstreamProxySettings.getCustomProxyHost(this))
                     || !prefs.getString(getString(R.string.useCustomProxySettingsPortPreference), "")
-                            .equals(UpstreamProxySettings.getCustomProxyPort(this))) {
+                    .equals(UpstreamProxySettings.getCustomProxyPort(this))) {
                 return true;
             }
 
@@ -1426,66 +1012,127 @@ public abstract class MainBase {
                     .equals(UpstreamProxySettings.getProxyDomain(this));
         }
 
+        private boolean moreSettingsRestartRequired() {
+            SharedPreferences prefs = getSharedPreferences(getString(R.string.moreOptionsPreferencesName), MODE_PRIVATE);
+
+            // check if disable timeouts setting has changed
+            boolean disableTimeoutsNewPreference =
+                    prefs.getBoolean(getString(R.string.disableTimeoutsPreference), false);
+            boolean disableTimeoutsCurrentPreference =
+                    m_multiProcessPreferences.getBoolean(getString(R.string.disableTimeoutsPreference), false);
+            return disableTimeoutsCurrentPreference != disableTimeoutsNewPreference;
+        }
+
+        private void updateVpnSettingsFromPreferences() {
+            // Import 'VPN Settings' values to tray preferences
+            String prefName = getString(R.string.moreOptionsPreferencesName);
+            m_multiProcessPreferences.migrate(
+                    new SharedPreferencesImport(this, prefName, getString(R.string.preferenceIncludeAllAppsInVpn), getString(R.string.preferenceIncludeAllAppsInVpn)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.preferenceIncludeAppsInVpn), getString(R.string.preferenceIncludeAppsInVpn)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.preferenceIncludeAppsInVpnString), getString(R.string.preferenceIncludeAppsInVpnString)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.preferenceExcludeAppsFromVpn), getString(R.string.preferenceExcludeAppsFromVpn)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.preferenceExcludeAppsFromVpnString), getString(R.string.preferenceExcludeAppsFromVpnString))
+            );
+        }
+
+        private void updateProxySettingsFromPreferences() {
+            // Import 'Proxy settings' values to tray preferences
+            String prefName = getString(R.string.moreOptionsPreferencesName);
+            m_multiProcessPreferences.migrate(
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useProxySettingsPreference), getString(R.string.useProxySettingsPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useSystemProxySettingsPreference), getString(R.string.useSystemProxySettingsPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useCustomProxySettingsPreference), getString(R.string.useCustomProxySettingsPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useCustomProxySettingsHostPreference), getString(R.string.useCustomProxySettingsHostPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useCustomProxySettingsPortPreference), getString(R.string.useCustomProxySettingsPortPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useProxyAuthenticationPreference), getString(R.string.useProxyAuthenticationPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useProxyUsernamePreference), getString(R.string.useProxyUsernamePreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useProxyPasswordPreference), getString(R.string.useProxyPasswordPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference))
+            );
+        }
+
+        private void updateMoreSettingsFromPreferences() {
+            // Import 'More Options' values to tray preferences
+            String prefName = getString(R.string.moreOptionsPreferencesName);
+            m_multiProcessPreferences.migrate(
+                    new SharedPreferencesImport(this, prefName, getString(R.string.preferenceNotificationsWithSound), getString(R.string.preferenceNotificationsWithSound)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.preferenceNotificationsWithVibrate), getString(R.string.preferenceNotificationsWithVibrate)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.downloadWifiOnlyPreference), getString(R.string.downloadWifiOnlyPreference)),
+                    new SharedPreferencesImport(this, prefName, getString(R.string.disableTimeoutsPreference), getString(R.string.disableTimeoutsPreference))
+            );
+        }
+
         @Override
         protected void onActivityResult(int request, int result, Intent data) {
-            if (request == REQUEST_CODE_PREPARE_VPN) {
-                if(result == RESULT_OK) {
-                    startAndBindTunnelService();
-                } else if(result == RESULT_CANCELED) {
-                    onVpnPromptCancelled();
-                }
-            } else if (request == REQUEST_CODE_PREFERENCE) {
+            boolean shouldRestart = false;
+            switch (request) {
+                case REQUEST_CODE_PREPARE_VPN:
+                    if (result == RESULT_OK) {
+                        startAndBindTunnelService();
+                    } else if (result == RESULT_CANCELED) {
+                        onVpnPromptCancelled();
+                    }
+                    // We're done here
+                    return;
 
-                // Verify if restart is required before saving new settings
-                boolean bRestartRequired = isSettingsRestartRequired();
+                case REQUEST_CODE_VPN_PREFERENCES:
+                    shouldRestart = vpnSettingsRestartRequired();
+                    updateVpnSettingsFromPreferences();
+                    break;
 
-                // Import 'More Options' values to tray preferences
-                String prefName = getString(R.string.moreOptionsPreferencesName);
-                m_multiProcessPreferences.migrate(
-                        new SharedPreferencesImport(this, prefName, getString(R.string.preferenceNotificationsWithSound), getString(R.string.preferenceNotificationsWithSound)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.preferenceNotificationsWithVibrate), getString(R.string.preferenceNotificationsWithVibrate)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.preferenceIncludeAllAppsInVpn), getString(R.string.preferenceIncludeAllAppsInVpn)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.preferenceIncludeAppsInVpn), getString(R.string.preferenceIncludeAppsInVpn)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.preferenceIncludeAppsInVpnString), getString(R.string.preferenceIncludeAppsInVpnString)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.preferenceExcludeAppsFromVpn), getString(R.string.preferenceExcludeAppsFromVpn)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.preferenceExcludeAppsFromVpnString), getString(R.string.preferenceExcludeAppsFromVpnString)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.downloadWifiOnlyPreference), getString(R.string.downloadWifiOnlyPreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.disableTimeoutsPreference), getString(R.string.disableTimeoutsPreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxySettingsPreference), getString(R.string.useProxySettingsPreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.useSystemProxySettingsPreference), getString(R.string.useSystemProxySettingsPreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.useCustomProxySettingsPreference), getString(R.string.useCustomProxySettingsPreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.useCustomProxySettingsHostPreference), getString(R.string.useCustomProxySettingsHostPreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.useCustomProxySettingsPortPreference), getString(R.string.useCustomProxySettingsPortPreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyAuthenticationPreference), getString(R.string.useProxyAuthenticationPreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyUsernamePreference), getString(R.string.useProxyUsernamePreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyPasswordPreference), getString(R.string.useProxyPasswordPreference)),
-                        new SharedPreferencesImport(this, prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference))
-                );
+                case REQUEST_CODE_PROXY_PREFERENCES:
+                    shouldRestart = proxySettingsRestartRequired();
+                    updateProxySettingsFromPreferences();
+                    break;
 
-                if (bRestartRequired) {
+                case REQUEST_CODE_MORE_PREFERENCES:
+                    shouldRestart = moreSettingsRestartRequired();
+                    updateMoreSettingsFromPreferences();
+                    break;
+
+                default:
+                    super.onActivityResult(request, result, data);
+            }
+            // Update preferences in the options tab
+            if (m_optionsTabFragment != null) {
+                m_optionsTabFragment.setSummaryFromPreferences();
+            }
+
+            if (shouldRestart) {
+                // stop if running and custom proxy settings is selected and values are invalid
+                if (!customProxySettingsValuesValid()) {
+                    tunnelServiceInteractor.tunnelStateFlowable()
+                            .filter(tunnelState -> !tunnelState.isUnknown())
+                            .firstOrError()
+                            .doOnSuccess(state -> {
+                                if (state.isRunning()) {
+                                    stopTunnelService();
+                                }
+                            })
+                            .subscribe();
+                } else {
                     tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), this::startTunnel);
                 }
-
-                if (data != null && data.getBooleanExtra(MoreOptionsPreferenceActivity.INTENT_EXTRA_LANGUAGE_CHANGED, false)) {
-                    // This is a bit of a weird hack to cause a restart, but it works
-                    // Previous attempts to use the alarm manager or others caused a variable amount of wait (up to about a second)
-                    // before the activity would relaunch. This *seems* to provide the best functionality across phones.
+            }
+            if (data != null && data.getBooleanExtra(MoreOptionsPreferenceActivity.INTENT_EXTRA_LANGUAGE_CHANGED, false)) {
+                // This is a bit of a weird hack to cause a restart, but it works
+                // Previous attempts to use the alarm manager or others caused a variable amount of wait (up to about a second)
+                // before the activity would relaunch. This *seems* to provide the best functionality across phones.
+                // Add a 1 second delay to give activity chance to restart the service if needed
+                new Handler().postDelayed(() -> {
                     finish();
                     Intent intent = new Intent(this, StatusActivity.class);
                     intent.putExtra(INTENT_EXTRA_PREVENT_AUTO_START, true);
                     startActivity(intent);
                     System.exit(1);
-                }
+                }, shouldRestart ? 1000 : 0);
             }
         }
 
         protected void onVpnPromptCancelled() {}
 
         protected void startAndBindTunnelService() {
-            boolean wantVPN = m_multiProcessPreferences
-                    .getBoolean(getString(R.string.tunnelWholeDevicePreference),
-                            false);
-            tunnelServiceInteractor.startTunnelService(getApplicationContext(), wantVPN);
+            tunnelServiceInteractor.startTunnelService(getApplicationContext());
         }
 
         private void stopTunnelService() {
@@ -1605,20 +1252,6 @@ public abstract class MainBase {
             }
 
             public void load(String url, int httpProxyPort) {
-                // Set WebView proxy only if we are not running in WD mode.
-                boolean wantVPN = m_multiProcessPreferences
-                        .getBoolean(getString(R.string.tunnelWholeDevicePreference),
-                                false);
-
-                if(!wantVPN || !Utils.hasVpnService()) {
-                    WebViewProxySettings.setLocalProxy(mWebView.getContext(), httpProxyPort);
-                } else {
-                    // We are running in WDM, reset WebView proxy if it has been previously set.
-                    if(WebViewProxySettings.isLocalProxySet()){
-                        WebViewProxySettings.resetLocalProxy(mWebView.getContext());
-                    }
-                }
-
                 mProgressBar.setVisibility(View.VISIBLE);
                 mWebView.loadUrl(url);
             }

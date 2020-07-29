@@ -12,8 +12,6 @@
                   android:xlargeScreens="true" />
 
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.NFC" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
@@ -31,9 +29,7 @@
         android:icon="@drawable/ic_launcher"
         android:supportsRtl="true"
         android:label="@string/app_name"
-        android:usesCleartextTraffic="true"
-        tools:ignore="GoogleAppIndexingWarning"
-        tools:replace="android:label">
+        tools:ignore="GoogleAppIndexingWarning">
 
         <!-- Required for newer devices -->
         <uses-library android:name="org.apache.http.legacy" android:required="false"/>
@@ -55,19 +51,6 @@
             android:name="com.psiphon3.psiphonlibrary.TunnelIntentsHandler"
             android:exported="false"
             android:targetActivity="com.psiphon3.StatusActivity" />
-
-        <activity android:name="com.psiphon3.psiphonlibrary.NfcActivity" />
-        <activity-alias
-            android:name="com.psiphon3.psiphonlibrary.NfcActivity"
-            android:targetActivity="com.psiphon3.StatusActivity"
-            android:enabled="false">
-            <intent-filter>
-                <action android:name="android.nfc.action.NDEF_DISCOVERED"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="psiphon://nfc" />
-            </intent-filter>
-        </activity-alias>
-
         <activity
             android:name=".FeedbackActivity"
             android:parentActivityName=".StatusActivity"
@@ -93,12 +76,22 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.psiphon3.StatusActivity" />
         </activity>
-        <service
-            android:name="com.psiphon3.psiphonlibrary.TunnelService"
-            android:label="@string/app_name"
-            android:exported="false"
-            android:process=":TunnelService" >
-        </service>
+        <activity
+            android:name=".psiphonlibrary.VpnOptionsPreferenceActivity"
+            android:parentActivityName=".StatusActivity"
+            android:label="@string/app_name">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".StatusActivity" />
+        </activity>
+        <activity
+            android:name=".psiphonlibrary.ProxyOptionsPreferenceActivity"
+            android:parentActivityName=".StatusActivity"
+            android:label="@string/app_name">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".StatusActivity" />
+        </activity>
         <service
             android:name="com.psiphon3.psiphonlibrary.TunnelVpnService"
             android:label="@string/app_name"
@@ -118,48 +111,8 @@
             android:authorities="com.psiphon3.LoggingProvider"
             android:exported="false">
         </provider>
-
-        <activity
-            android:name="org.zirco.ui.activities.MainActivity"
-            android:label="@string/browser_task_label"
-            android:launchMode="singleTask"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            android:taskAffinity=":PsiphonBrowserTask"
-            android:theme="@style/ZircoTheme"
-            android:exported="false">
-        </activity>
-        <activity android:name="org.zirco.ui.activities.AboutActivity" />
-        <activity android:name="org.zirco.ui.activities.EditBookmarkActivity"/>
-        <activity android:name="org.zirco.ui.activities.BookmarksListActivity"/>
-        <activity android:name="org.zirco.ui.activities.HistoryListActivity"/>
-        <activity android:name="org.zirco.ui.activities.DownloadsListActivity"/>
-        <activity android:name="org.zirco.ui.activities.AdBlockerWhiteListActivity"/>
-        <activity android:name="org.zirco.ui.activities.BookmarksHistoryActivity"/>
-        <activity android:name="org.zirco.ui.activities.ChangelogActivity"/>
-        <activity android:name="org.zirco.ui.activities.preferences.PreferencesActivity"/>
-        <activity android:name="org.zirco.ui.activities.preferences.HomepagePreferenceActivity"/>
-        <activity android:name="org.zirco.ui.activities.preferences.SearchUrlPreferenceActivity"/>
-        <activity android:name="org.zirco.ui.activities.preferences.UserAgentPreferenceActivity"/>
-        <activity android:name="org.zirco.ui.activities.MobileViewListActivity"/>
-        <activity android:name="org.zirco.ui.activities.DesktopViewListActivity"/>
-        <activity android:name="org.zirco.ui.activities.WeaveBookmarksListActivity"/>
-        <activity android:name="org.zirco.ui.activities.preferences.WeavePreferencesActivity"/>
-        <activity android:name="org.zirco.ui.activities.preferences.WeaveServerPreferenceActivity"/>
-
         <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonzircobookmarkscontentprovider"/>
-        <provider android:name="org.zirco.providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonweavecontentprovider"/>
-
-        <meta-data android:name="com.google.android.gms.version"
-			   android:value="@integer/google_play_services_version" />
-
-        <activity android:name="com.mopub.mobileads.MoPubActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
-        <activity android:name="com.mopub.mobileads.MraidActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
-        <activity android:name="com.mopub.common.MoPubBrowser" android:configChanges="keyboardHidden|orientation|screenSize"/>
-        <activity android:name="com.mopub.mobileads.MraidVideoPlayerActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
-
         <activity android:name="com.google.android.gms.ads.AdActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
-        <activity android:name="com.mopub.common.privacy.ConsentDialogActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
-
     </application>
 
 </manifest>
