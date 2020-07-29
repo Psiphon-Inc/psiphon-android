@@ -37,7 +37,7 @@ import android.preference.PreferenceCategory;
 import android.preference.PreferenceGroup;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.widget.Button;
@@ -538,7 +538,7 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
                         new InstalledAppsMultiSelectListPreference(MoreOptionsPreferenceActivity.this,
                                 getLayoutInflater(), mTunnelSelectedApps.isChecked());
 
-                final android.support.v7.app.AlertDialog alertDialog = installedAppsMultiSelectListPreference
+                final androidx.appcompat.app.AlertDialog alertDialog = installedAppsMultiSelectListPreference
                         .setOnDismissListener(new DialogInterface.OnDismissListener() {
                             @Override
                             public void onDismiss(DialogInterface dialog) {
@@ -554,7 +554,7 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
                         .create();
 
                 alertDialog.setOnShowListener(dialog -> {
-                    Button button = ((android.support.v7.app.AlertDialog) dialog).getButton(android.support.v7.app.AlertDialog.BUTTON_POSITIVE);
+                    Button button = ((androidx.appcompat.app.AlertDialog) dialog).getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE);
                     button.setOnClickListener(v -> {
                         if (!installedAppsMultiSelectListPreference.isLoaded()) {
                             alertDialog.dismiss();
@@ -566,7 +566,7 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
                             if (selectedApps.size() > 0) {
                                 VpnAppsUtils.setPendingAppsToIncludeInVpn(getApplicationContext(), selectedApps);
                             } else {
-                                new android.support.v7.app.AlertDialog.Builder(MoreOptionsPreferenceActivity.this)
+                                new androidx.appcompat.app.AlertDialog.Builder(MoreOptionsPreferenceActivity.this)
                                         .setIcon(android.R.drawable.ic_dialog_alert)
                                         .setTitle(R.string.bad_vpn_exclusion_setting_alert_title)
                                         .setMessage(R.string.bad_vpn_exclusion_whitelist_alert_message)
@@ -579,7 +579,7 @@ public class MoreOptionsPreferenceActivity extends AppCompatPreferenceActivity i
                             if (installedAppsCount > selectedApps.size()) {
                                 VpnAppsUtils.setPendingAppsToExcludeFromVpn(getApplicationContext(), selectedApps);
                             } else {
-                                new android.support.v7.app.AlertDialog.Builder(MoreOptionsPreferenceActivity.this)
+                                new androidx.appcompat.app.AlertDialog.Builder(MoreOptionsPreferenceActivity.this)
                                         .setIcon(android.R.drawable.ic_dialog_alert)
                                         .setTitle(R.string.bad_vpn_exclusion_setting_alert_title)
                                         .setMessage(R.string.bad_vpn_exclusion_blacklist_alert_message)
