@@ -26,6 +26,7 @@ import android.text.InputType;
 import android.text.TextUtils;
 import android.widget.Toast;
 
+import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 import androidx.preference.CheckBoxPreference;
 import androidx.preference.EditTextPreference;
@@ -293,6 +294,9 @@ public class ProxyOptionsPreferenceActivity extends MainBase.Activity {
         }
     }
 
+    // CustomHeadersPreferenceFragment is only referenced from the proxy_options_preferences resource,
+    // so we are using @Keep annotation to make sure the class is not removed by the R8 in minified builds.
+    @Keep
     public static class CustomHeadersPreferenceFragment extends PsiphonPreferenceFragmentCompat
             implements SharedPreferences.OnSharedPreferenceChangeListener {
         CheckBoxPreference addCustomHeadersPreference;
