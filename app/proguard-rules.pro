@@ -19,6 +19,9 @@
 # keep all of the ca.psiphon package
 -keep class ca.psiphon.** {*;}
 
+# keep custom headers preference fragment referenced only in a preference xml resource
+-keep class com.psiphon3.psiphonlibrary.ProxyOptionsPreferenceActivity$CustomHeadersPreferenceFragment { *; }
+
 # From https://github.com/googleads/googleads-consent-sdk-android/blob/master/consent-library/proguard-rules.pro
 -keep class com.google.ads.consent.** { <fields>; }
 -keepattributes *Annotation*
