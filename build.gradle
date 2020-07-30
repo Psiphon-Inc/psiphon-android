@@ -37,5 +37,5 @@ ext {
     playServicesAdsVersion = '17.2.0'
     mopubSdkVersion = '5.5.0'
     mopubMediationAdmobVersion = '15.0.0.8'
-    adsConsentLibraryVersion = '1.0.7'
+    adsConsentLibraryVersion = '1.0.8'
 }
