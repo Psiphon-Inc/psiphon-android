@@ -38,7 +38,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.psiphon3.R;
+import com.psiphon3.subscription.R;
 
 import org.json.JSONObject;
 
