@@ -52,6 +52,16 @@
             android:title="@string/about" />
     </PreferenceCategory>
     <PreferenceCategory
+        android:key="@string/adConsentPreferenceCategory"
+        app:isPreferenceVisible="false"
+        android:title="@string/ads_consent_preference_category_title">
+        <Preference
+            android:key="@string/adConsentPreference"
+            android:icon="@drawable/googleads_preference_ic"
+            android:summary="@string/ads_consent_preference_summary"
+            android:title="@string/ads_consent_preference_title" />
+    </PreferenceCategory>
+    <PreferenceCategory
         android:key="@string/exportZircoPreferenceCategory"
         app:isPreferenceVisible="false"
         android:title="@string/legacy_zirco_export_pref_category_title">
