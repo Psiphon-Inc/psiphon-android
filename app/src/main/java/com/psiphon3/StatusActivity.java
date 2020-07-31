@@ -348,7 +348,6 @@ public class StatusActivity
         doToggle();
     }
 
-    // TODO: port legacy BOM alert
     @Override
     protected void startUp() {
         if (startUpInterstitialDisposable != null && !startUpInterstitialDisposable.isDisposed()) {
