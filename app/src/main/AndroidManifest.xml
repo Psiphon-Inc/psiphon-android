@@ -45,6 +45,7 @@ com.jakewharton.threetenabp" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
+        android:requestLegacyExternalStorage="true"
         android:name="com.psiphon3.PsiphonApplication"
         android:theme="@style/Theme.AppCompat"
         android:hardwareAccelerated="true"
