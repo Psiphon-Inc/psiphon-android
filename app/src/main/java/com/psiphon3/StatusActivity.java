@@ -257,7 +257,7 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
         // upgrade current connection if there is a new valid subscription purchase.
         tunnelServiceInteractor.onResume();
 
-        boolean isFirstRun = shouldAutoStart();
+        boolean shouldAutoStart = shouldAutoStart();
         preventAutoStart();
         // Check if user previously ran in browser-only mode
         boolean wantVPN = m_multiProcessPreferences
@@ -265,7 +265,7 @@ public class StatusActivity extends com.psiphon3.psiphonlibrary.MainBase.TabbedA
                         true);
         if(wantVPN) {
             if (autoStartDisposable == null || autoStartDisposable.isDisposed()) {
-                autoStartDisposable = autoStartMaybe(isFirstRun)
+                autoStartDisposable = autoStartMaybe(shouldAutoStart)
                         .observeOn(AndroidSchedulers.mainThread())
                         .doOnSuccess(__ -> doStartUp())
                         .subscribe();
