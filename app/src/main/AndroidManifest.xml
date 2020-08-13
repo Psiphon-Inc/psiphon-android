@@ -66,7 +66,7 @@ com.jakewharton.threetenabp" />
             android:value="${admobAppId}"/>
 
         <activity
-            android:name="com.psiphon3.StatusActivity"
+            android:name="com.psiphon3.MainActivity"
             android:label="@string/app_name_psiphon_pro"
             android:launchMode="singleTask">
             <intent-filter>
@@ -86,14 +86,14 @@ com.jakewharton.threetenabp" />
         <activity-alias
             android:name="com.psiphon3.psiphonlibrary.TunnelIntentsHandler"
             android:exported="false"
-            android:targetActivity="com.psiphon3.StatusActivity" />
+            android:targetActivity="com.psiphon3.MainActivity" />
         <activity
             android:name="com.psiphon3.FeedbackActivity"
-            android:parentActivityName="com.psiphon3.StatusActivity"
+            android:parentActivityName="com.psiphon3.MainActivity"
             android:label="@string/app_name_psiphon_pro">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.psiphon3.StatusActivity" />
+                android:value="com.psiphon3.MainActivity" />
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -106,35 +106,35 @@ com.jakewharton.threetenabp" />
         </activity>
         <activity
             android:name="com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity"
-            android:parentActivityName="com.psiphon3.StatusActivity"
+            android:parentActivityName="com.psiphon3.MainActivity"
             android:label="@string/app_name_psiphon_pro">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.psiphon3.StatusActivity" />
+                android:value="com.psiphon3.MainActivity" />
         </activity>
         <activity
             android:name="com.psiphon3.psicash.PsiCashStoreActivity"
-            android:parentActivityName="com.psiphon3.StatusActivity"
+            android:parentActivityName="com.psiphon3.MainActivity"
             android:label="@string/app_name_psiphon_pro">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.psiphon3.StatusActivity" />
+                android:value="com.psiphon3.MainActivity" />
         </activity>
         <activity
             android:name="com.psiphon3.psiphonlibrary.VpnOptionsPreferenceActivity"
-            android:parentActivityName="com.psiphon3.StatusActivity"
+            android:parentActivityName="com.psiphon3.MainActivity"
             android:label="@string/app_name">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.psiphon3.StatusActivity" />
+                android:value="com.psiphon3.MainActivity" />
         </activity>
         <activity
             android:name="com.psiphon3.psiphonlibrary.ProxyOptionsPreferenceActivity"
-            android:parentActivityName="com.psiphon3.StatusActivity"
+            android:parentActivityName="com.psiphon3.MainActivity"
             android:label="@string/app_name">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.psiphon3.StatusActivity" />
+                android:value="com.psiphon3.MainActivity" />
         </activity>
         <service
             android:name="com.psiphon3.psiphonlibrary.TunnelVpnService"

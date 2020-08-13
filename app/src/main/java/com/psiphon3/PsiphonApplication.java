@@ -25,6 +25,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
+
 import androidx.multidex.MultiDex;
 
 import com.psiphon3.psiphonlibrary.LocaleManager;
