@@ -229,11 +229,52 @@ public class StatusActivity
     @Override
     protected void onResume() {
         super.onResume();
-        // Auto-start on app first run
-        if (shouldAutoStart()) {
-            startUp();
-        }
+
+        boolean shouldAutoStart = shouldAutoStart();
         preventAutoStart();
+
+        // Check if user previously ran in browser-only mode
+        boolean wantVPN = m_multiProcessPreferences
+                .getBoolean(getString(R.string.tunnelWholeDevicePreference),
+                        true);
+        if(wantVPN) {
+            // Auto-start on app first run
+            if (shouldAutoStart) {
+                startUp();
+            }
+        } else {
+            // Legacy case: do not auto-start if last preference was BOM
+            // Instead we switch to the options tab and display a modal with the help information
+            m_tabHost.post(() -> m_tabHost.setCurrentTabByTag(SETTINGS_TAB_TAG));
+            LayoutInflater inflater = this.getLayoutInflater();
+            View dialogView = inflater.inflate(R.layout.legacy_bom_alert_view_layout, null);
+            TextView tv = dialogView.findViewById(R.id.legacy_mode_alert_tv);
+            String text = getString(R.string.legacy_bom_alert_message, getString(R.string.app_name));
+            String formattedText = text.replaceAll("\n", "\n\n");
+            SpannableString spannableString = new SpannableString(formattedText);
+
+            Matcher matcher = Pattern.compile("\n\n").matcher(formattedText);
+            while (matcher.find()) {
+                spannableString.setSpan(new AbsoluteSizeSpan(10, true), matcher.start() + 1, matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            tv.setText(spannableString);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                    .setView(dialogView)
+                    // We are displaying important information to the user, so make sure the dialog
+                    // is not dismissed accidentally as it won't be shown again.
+                    .setCancelable(false)
+                    .setPositiveButton(R.string.label_ok, null)
+                    .setOnDismissListener(dialog ->
+                            m_multiProcessPreferences.remove(getString(R.string.tunnelWholeDevicePreference)));
+            // Add 'VPN settings' button if VPN exclusions are supported
+            if (Utils.supportsVpnExclusions()) {
+                builder.setNegativeButton(R.string.label_vpn_settings, (dialog, which) ->
+                        startActivityForResult(new Intent(StatusActivity.this,
+                                VpnOptionsPreferenceActivity.class), REQUEST_CODE_VPN_PREFERENCES)
+                );
+            }
+            builder.show();
+        }
     }
 
     @Override
@@ -417,45 +458,7 @@ public class StatusActivity
         if(startUpInterstitialDisposable != null) {
             startUpInterstitialDisposable.dispose();
         }
-        // Check if user previously ran in browser-only mode
-        boolean wantVPN = m_multiProcessPreferences
-                .getBoolean(getString(R.string.tunnelWholeDevicePreference),
-                        true);
-        if(wantVPN) {
-            startTunnel();
-        } else {
-            // Legacy case: do not auto-start if last preference was BOM
-            // Instead we switch to the options tab and display a modal with the help information
-            m_tabHost.setCurrentTabByTag(SETTINGS_TAB_TAG);
-            LayoutInflater inflater = this.getLayoutInflater();
-            View dialogView = inflater.inflate(R.layout.legacy_bom_alert_view_layout, null);
-            TextView tv = dialogView.findViewById(R.id.legacy_mode_alert_tv);
-            String text = getString(R.string.legacy_bom_alert_message, getString(R.string.app_name));
-            String formattedText = text.replaceAll("\n", "\n\n");
-            SpannableString spannableString = new SpannableString(formattedText);
-
-            Matcher matcher = Pattern.compile("\n\n").matcher(formattedText);
-            while (matcher.find()) {
-                spannableString.setSpan(new AbsoluteSizeSpan(10, true), matcher.start() + 1, matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
-            tv.setText(spannableString);
-            AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                    .setView(dialogView)
-                    // We are displaying important information to the user, so make sure the dialog
-                    // is not dismissed accidentally as it won't be shown again.
-                    .setCancelable(false)
-                    .setPositiveButton(R.string.label_ok, null)
-                    .setOnDismissListener(dialog ->
-                            m_multiProcessPreferences.remove(getString(R.string.tunnelWholeDevicePreference)));
-            // Add 'VPN settings' button if VPN exclusions are supported
-            if (Utils.supportsVpnExclusions()) {
-                builder.setNegativeButton(R.string.label_vpn_settings, (dialog, which) ->
-                        startActivityForResult(new Intent(StatusActivity.this,
-                                VpnOptionsPreferenceActivity.class), REQUEST_CODE_VPN_PREFERENCES)
-                );
-            }
-            builder.show();
-        }
+        startTunnel();
     }
 
     @Override
