@@ -60,13 +60,17 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 
 public class MainActivity extends LocalizedActivities.AppCompatActivity {
     public MainActivity() {
@@ -91,6 +95,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private ViewPager viewPager;
     private PsiphonTabLayout tabLayout;
     private ImageView banner;
+    // Ads
+    private PsiphonAdManager psiphonAdManager;
+    private boolean disableInterstitialOnNextTabChange;
+    protected Disposable startUpInterstitialDisposable;
 
 
     @Override
@@ -127,10 +135,15 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                             if (state.isRunning()) {
                                 viewModel.stopTunnelService();
                             } else {
-                                startTunnel();
+                                startUp();
                             }
                         })
                         .subscribe()));
+
+        // ads
+        psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.bannerLayout),
+                viewModel.tunnelStateFlowable());
+        psiphonAdManager.startLoadingAds();
 
         tabLayout = findViewById(R.id.main_activity_tablayout);
         tabLayout.addTab(tabLayout.newTab().setTag("home").setText(R.string.home_tab_name));
@@ -151,6 +164,12 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 int tabPosition = tab.getPosition();
                 viewPager.setCurrentItem(tab.getPosition());
                 multiProcessPreferences.put(CURRENT_TAB, tabPosition);
+
+                // ads - trigger interstitial after a few tab changes
+                if(!disableInterstitialOnNextTabChange) {
+                    psiphonAdManager.onTabChanged();
+                }
+                disableInterstitialOnNextTabChange = false;
             }
 
             @Override
@@ -167,6 +186,16 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 viewPager.setCurrentItem(multiProcessPreferences.getInt(CURRENT_TAB, 0), false));
 
         HandleCurrentIntent(getIntent());
+    }
+
+    @Override
+    public void onDestroy() {
+        compositeDisposable.dispose();
+        if(startUpInterstitialDisposable != null) {
+            startUpInterstitialDisposable.dispose();
+        }
+        psiphonAdManager.onDestroy();
+        super.onDestroy();
     }
 
     @Override
@@ -224,7 +253,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         if (wantVPN) {
             // Auto-start on app first run
             if (shouldAutoStart) {
-                startTunnel();
+                startUp();
             }
         } else {
             // Legacy case: do not auto-start if last preference was BOM
@@ -407,6 +436,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                     if (!shouldLoadInEmbeddedWebView(url)) {
                         displayBrowser(this, url);
                     } else {
+                        disableInterstitialOnNextTabChange = true;
                         tabLayout.selectTabByTag("home");
                     }
                 }
@@ -417,6 +447,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             // region selection UI.
 
             // Switch to settings tab
+            disableInterstitialOnNextTabChange = true;
             tabLayout.selectTabByTag("settings");
             // Signal Rx subscription in the options tab to update available regions list
             viewModel.signalAvailableRegionsUpdate();
@@ -541,6 +572,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
     private boolean shouldAutoStart() {
         return viewModel.isFirstRun() &&
+                !psiphonAdManager.shouldShowAds() &&
                 !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
     }
 
@@ -625,6 +657,75 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             }
         });
         return entries.get(0).getKey();
+    }
+
+    private void startUp() {
+        if (startUpInterstitialDisposable != null && !startUpInterstitialDisposable.isDisposed()) {
+            // already in progress, do nothing
+            return;
+        }
+
+        int countdownSeconds = 10;
+
+        // Updates start/stop button from countdownSeconds to 0 every second and then completes,
+        // does not emit any items downstream, only sends onComplete notification when done.
+        Observable<Object> countdown =
+                Observable.intervalRange(0, countdownSeconds + 1, 0, 1, TimeUnit.SECONDS)
+                        .map(t -> countdownSeconds - t)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext(t -> toggleButton.setText(String.format(Locale.US, "%d", t)))
+                        .ignoreElements()
+                        .toObservable();
+
+        // Attempts to load an interstitial within countdownSeconds or emits an error if ad fails
+        // to load or a timeout occurs.
+        Observable<PsiphonAdManager.InterstitialResult> interstitial =
+                psiphonAdManager.getCurrentAdTypeObservable()
+                        .filter(adResult -> adResult.type() != PsiphonAdManager.AdResult.Type.UNKNOWN)
+                        .firstOrError()
+                        .flatMapObservable(adResult -> {
+                            if (adResult.type() != PsiphonAdManager.AdResult.Type.UNTUNNELED) {
+                                return Observable.error(new RuntimeException("Start immediately with ad result: " + adResult));
+                            }
+                            return Observable.just(adResult)
+                                    .compose(psiphonAdManager
+                                            .getInterstitialWithTimeoutForAdType(countdownSeconds, TimeUnit.SECONDS))
+                                    // If we have a READY interstitial then try and show it.
+                                    .doOnNext(interstitialResult -> {
+                                        if (interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.READY) {
+                                            interstitialResult.show();
+                                        }
+                                    })
+                                    // Emit downstream only when the ad is shown because sometimes
+                                    // calling interstitialResult.show() doesn't result in ad presented.
+                                    // In such a case let the countdown win the race.
+                                    .filter(interstitialResult ->
+                                            interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.SHOWING);
+                        });
+
+        startUpInterstitialDisposable = countdown
+                // ambWith mirrors the ObservableSource that first either emits an
+                // item or sends a termination notification.
+                .ambWith(interstitial)
+                // On error just complete this subscription which then will start the service.
+                .onErrorResumeNext(err -> {
+                    return Observable.empty();
+                })
+                // This subscription completes due to one of the following reasons:
+                // 1. Countdown completed before interstitial observable emitted anything.
+                // 2. There was an error emission from interstitial observable.
+                // 3. Interstitial observable completed because it was closed.
+                // Now we should attempt to start the service.
+                .doOnComplete(this::doStartUp)
+                .subscribe();
+    }
+
+    private void doStartUp() {
+        // cancel any ongoing startUp subscription
+        if(startUpInterstitialDisposable != null) {
+            startUpInterstitialDisposable.dispose();
+        }
+        startTunnel();
     }
 
     static class PageAdapter extends FragmentPagerAdapter {
