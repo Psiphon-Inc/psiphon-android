@@ -28,6 +28,7 @@
         android:icon="@drawable/ic_launcher"
         android:supportsRtl="true"
         android:label="@string/app_name"
+        android:usesCleartextTraffic="true"
         tools:ignore="GoogleAppIndexingWarning">
 
         <!-- Required for newer devices -->
@@ -38,7 +39,7 @@
             android:value="${admobAppId}"/>
 
         <activity
-            android:name="com.psiphon3.StatusActivity"
+            android:name=".MainActivity"
             android:label="@string/app_name"
             android:launchMode="singleTask">
             <intent-filter>
@@ -49,14 +50,14 @@
         <activity-alias
             android:name="com.psiphon3.psiphonlibrary.TunnelIntentsHandler"
             android:exported="false"
-            android:targetActivity="com.psiphon3.StatusActivity" />
+            android:targetActivity="com.psiphon3.MainActivity" />
         <activity
             android:name=".FeedbackActivity"
-            android:parentActivityName=".StatusActivity"
+            android:parentActivityName=".MainActivity"
             android:label="@string/app_name">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".StatusActivity" />
+                android:value=".MainActivity" />
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -69,27 +70,27 @@
         </activity>
         <activity
             android:name=".psiphonlibrary.MoreOptionsPreferenceActivity"
-            android:parentActivityName=".StatusActivity"
+            android:parentActivityName=".MainActivity"
             android:label="@string/app_name">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.psiphon3.StatusActivity" />
+                android:value=".MainActivity" />
         </activity>
         <activity
             android:name=".psiphonlibrary.VpnOptionsPreferenceActivity"
-            android:parentActivityName=".StatusActivity"
+            android:parentActivityName=".MainActivity"
             android:label="@string/app_name">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".StatusActivity" />
+                android:value=".MainActivity" />
         </activity>
         <activity
             android:name=".psiphonlibrary.ProxyOptionsPreferenceActivity"
-            android:parentActivityName=".StatusActivity"
+            android:parentActivityName=".MainActivity"
             android:label="@string/app_name">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".StatusActivity" />
+                android:value=".MainActivity" />
         </activity>
         <service
             android:name="com.psiphon3.psiphonlibrary.TunnelVpnService"
