@@ -1,11 +1,13 @@
 package com.psiphon3;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -27,11 +29,13 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -41,7 +45,14 @@ import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager.widget.ViewPager;
 
+import com.android.billingclient.api.SkuDetails;
 import com.google.android.material.tabs.TabLayout;
+import com.psiphon3.billing.GooglePlayBillingHelper;
+import com.psiphon3.billing.SubscriptionState;
+import com.psiphon3.psicash.PsiCashClient;
+import com.psiphon3.psicash.PsiCashException;
+import com.psiphon3.psicash.PsiCashFragment;
+import com.psiphon3.psicash.PsiCashStoreActivity;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.LoggingObserver;
@@ -49,8 +60,12 @@ import com.psiphon3.psiphonlibrary.LoggingProvider;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.VpnAppsUtils;
+import com.psiphon3.psiphonlibrary.VpnOptionsPreferenceActivity;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
+
+import org.json.JSONException;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -60,13 +75,18 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.reactivex.Maybe;
+import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 
 public class MainActivity extends LocalizedActivities.AppCompatActivity {
     public MainActivity() {
@@ -76,7 +96,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     public static final String INTENT_EXTRA_PREVENT_AUTO_START = "com.psiphon3.MainActivity.PREVENT_AUTO_START";
     private static final String ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION = "askedToAccessCoarseLocationPermission";
     private static final String CURRENT_TAB = "currentTab";
-    private static final String BANNER_FILE_NAME = "bannerImage";
+    private final int PAYMENT_CHOOSER_ACTIVITY = 20001;
 
     private static final int REQUEST_CODE_PREPARE_VPN = 100;
     private static final int REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 101;
@@ -84,25 +104,46 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private LoggingObserver loggingObserver;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
     private Button toggleButton;
+    protected ProgressBar connectionProgressBar;
     private Button openBrowserButton;
     private MainActivityViewModel viewModel;
     private Toast invalidProxySettingsToast;
     private AppPreferences multiProcessPreferences;
     private ViewPager viewPager;
     private PsiphonTabLayout tabLayout;
-    private ImageView banner;
+    private Disposable autoStartDisposable;
+    private GooglePlayBillingHelper googlePlayBillingHelper;
+    // Ads
+    private PsiphonAdManager psiphonAdManager;
+    private boolean disableInterstitialOnNextTabChange;
+    protected Disposable startUpInterstitialDisposable;
 
 
+    @SuppressLint("SourceLockedOrientationActivity")
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
+
+        setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
+        // Add version label to the right side of action bar
+        ActionBar actionBar = getSupportActionBar();
+        ActionBar.LayoutParams lp = new ActionBar.LayoutParams(ActionBar.LayoutParams.WRAP_CONTENT, ActionBar.LayoutParams.WRAP_CONTENT, Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+        View customView = LayoutInflater.from(this).inflate(R.layout.toolbar_version_layout, null);
+        TextView versionLabel = customView.findViewById(R.id.toolbar_version_label);
+        versionLabel.setText(String.format(Locale.US, "v. %s", EmbeddedValues.CLIENT_VERSION));
+        actionBar.setCustomView(customView, lp);
+        actionBar.setDisplayShowCustomEnabled(true);
 
         EmbeddedValues.initialize(getApplicationContext());
         multiProcessPreferences = new AppPreferences(this);
 
         // TODO: verify if we actually need this?
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+
+        googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(getApplicationContext());
+        googlePlayBillingHelper.startIab();
 
         viewModel = new ViewModelProvider(this,
                 new ViewModelProvider.AndroidViewModelFactory(getApplication()))
@@ -115,10 +156,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         loggingObserver = new LoggingObserver(getApplicationContext(),
                 new Handler(loggingObserverThread.getLooper()));
 
-        banner = findViewById(R.id.banner);
-        setUpBanner();
-
         toggleButton = findViewById(R.id.toggleButton);
+        connectionProgressBar = findViewById(R.id.connectionProgressBar);
         openBrowserButton = findViewById(R.id.openBrowserButton);
         toggleButton.setOnClickListener(v ->
                 compositeDisposable.add(viewModel.tunnelStateFlowable()
@@ -127,10 +166,15 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                             if (state.isRunning()) {
                                 viewModel.stopTunnelService();
                             } else {
-                                startTunnel();
+                                startUp();
                             }
                         })
                         .subscribe()));
+
+        // ads
+        psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.largeAdSlot),
+                () -> onSubscribeButtonClick(null), viewModel.tunnelStateFlowable());
+        psiphonAdManager.startLoadingAds();
 
         tabLayout = findViewById(R.id.main_activity_tablayout);
         tabLayout.addTab(tabLayout.newTab().setTag("home").setText(R.string.home_tab_name));
@@ -151,6 +195,12 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 int tabPosition = tab.getPosition();
                 viewPager.setCurrentItem(tab.getPosition());
                 multiProcessPreferences.put(CURRENT_TAB, tabPosition);
+
+                // ads - trigger interstitial after a few tab changes
+                if (!disableInterstitialOnNextTabChange) {
+                    psiphonAdManager.onTabChanged();
+                }
+                disableInterstitialOnNextTabChange = false;
             }
 
             @Override
@@ -170,6 +220,19 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     @Override
+    public void onDestroy() {
+        compositeDisposable.dispose();
+        if (startUpInterstitialDisposable != null) {
+            startUpInterstitialDisposable.dispose();
+        }
+        if (autoStartDisposable != null) {
+            autoStartDisposable.dispose();
+        }
+        psiphonAdManager.onDestroy();
+        super.onDestroy();
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
         getContentResolver().unregisterContentObserver(loggingObserver);
@@ -180,6 +243,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        googlePlayBillingHelper.queryAllPurchases();
+        googlePlayBillingHelper.queryAllSkuDetails();
+
+        // Notify tunnel service if it is running so it may trigger purchase check and
+        // upgrade current connection if there is a new valid subscription purchase.
+        viewModel.notifyTunnelServiceResume();
+
         // Load new logs from the logging provider now
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             loggingObserver.dispatchChange(false, LoggingProvider.INSERT_URI);
@@ -209,10 +279,20 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .subscribe());
 
         // Observe link clicks in the embedded web view to open in the external browser
+        // NOTE: do not PsiCash modify links clicked from the embedded view
         compositeDisposable.add(viewModel.externalBrowserUrlFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(url -> displayBrowser(this, url))
+                .doOnNext(url -> displayBrowser(this, url, false))
                 .subscribe());
+
+        // Observe subscription state and set ad container layout visibility
+        compositeDisposable.add(
+                googlePlayBillingHelper.subscriptionStateFlowable()
+                        .distinctUntilChanged()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext(this::setAdBannerPlaceholderVisibility)
+                        .subscribe()
+        );
 
         boolean shouldAutoStart = shouldAutoStart();
         preventAutoStart();
@@ -222,9 +302,11 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .getBoolean(getString(R.string.tunnelWholeDevicePreference),
                         true);
         if (wantVPN) {
-            // Auto-start on app first run
-            if (shouldAutoStart) {
-                startTunnel();
+            if (autoStartDisposable == null || autoStartDisposable.isDisposed()) {
+                autoStartDisposable = autoStartMaybe(shouldAutoStart)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnSuccess(__ -> doStartUp())
+                        .subscribe();
             }
         } else {
             // Legacy case: do not auto-start if last preference was BOM
@@ -268,6 +350,41 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 showVpnAlertDialog(R.string.StatusActivity_VpnPromptCancelledTitle,
                         R.string.StatusActivity_VpnPromptCancelledMessage);
             }
+        } else if (requestCode == PAYMENT_CHOOSER_ACTIVITY) {
+            if (resultCode == RESULT_OK) {
+                String skuString = data.getStringExtra(PaymentChooserActivity.USER_PICKED_SKU_DETAILS_EXTRA);
+                String oldSkuString = data.getStringExtra(PaymentChooserActivity.USER_OLD_SKU_EXTRA);
+                String oldPurchaseToken = data.getStringExtra(PaymentChooserActivity.USER_OLD_PURCHASE_TOKEN_EXTRA);
+                try {
+                    if (TextUtils.isEmpty(skuString)) {
+                        throw new IllegalArgumentException("SKU is empty.");
+                    }
+                    SkuDetails skuDetails = new SkuDetails(skuString);
+                    googlePlayBillingHelper.launchFlow(this, oldSkuString, oldPurchaseToken, skuDetails)
+                            .doOnError(err -> {
+                                // Show "Subscription options not available" toast.
+                                showToast(R.string.subscription_options_currently_not_available);
+                            })
+                            .onErrorComplete()
+                            .subscribe();
+                } catch (JSONException | IllegalArgumentException e) {
+                    Utils.MyLog.g("MainActivity::onActivityResult purchase SKU error: " + e);
+                    // Show "Subscription options not available" toast.
+                    showToast(R.string.subscription_options_currently_not_available);
+                }
+            } else {
+                Utils.MyLog.g("MainActivity::onActivityResult: PaymentChooserActivity: canceled");
+            }
+        } else if (requestCode == PsiCashFragment.PSICASH_STORE_ACTIVITY) {
+            if(resultCode == RESULT_OK) {
+                if (data != null && PsiCashStoreActivity.PSICASH_CONNECT_PSIPHON_INTENT.equals(data.getAction())) {
+                    startUp();
+                }
+            }
+            PsiCashFragment psiCashFragment = (PsiCashFragment) getSupportFragmentManager().findFragmentByTag("PsiCashFragment");
+            if (psiCashFragment != null) {
+                psiCashFragment.onActivityResult(requestCode, resultCode, data);
+            }
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -288,16 +405,24 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         HandleCurrentIntent(intent);
     }
 
+    public void onSubscribeButtonClick(View v) {
+        Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
+        paymentChooserActivityIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivityForResult(paymentChooserActivityIntent, PAYMENT_CHOOSER_ACTIVITY);
+    }
+
     private void updateServiceStateUI(final TunnelState tunnelState) {
         if (tunnelState.isUnknown()) {
             openBrowserButton.setEnabled(false);
             toggleButton.setEnabled(false);
             toggleButton.setText(getText(R.string.waiting));
+            connectionProgressBar.setVisibility(View.INVISIBLE);
         } else if (tunnelState.isRunning()) {
             toggleButton.setEnabled(true);
             toggleButton.setText(getText(R.string.stop));
             if (tunnelState.connectionData().isConnected()) {
                 openBrowserButton.setEnabled(true);
+                connectionProgressBar.setVisibility(View.INVISIBLE);
 
                 ArrayList<String> homePages = tunnelState.connectionData().homePages();
                 final String url;
@@ -309,16 +434,28 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 openBrowserButton.setOnClickListener(view -> displayBrowser(this, url));
             } else {
                 openBrowserButton.setEnabled(false);
+                connectionProgressBar.setVisibility(View.VISIBLE);
             }
         } else {
             // Service not running
             toggleButton.setText(getText(R.string.start));
             toggleButton.setEnabled(true);
             openBrowserButton.setEnabled(false);
+            connectionProgressBar.setVisibility(View.INVISIBLE);
         }
     }
 
     private void displayBrowser(Context context, String urlString) {
+        // PsiCash modify URLs by default
+        displayBrowser(context, urlString, true);
+    }
+
+    private void displayBrowser(Context context, String urlString, boolean shouldPsiCashModifyUrls) {
+        if (shouldPsiCashModifyUrls) {
+            // Add PsiCash parameters
+            urlString = PsiCashModifyUrl(urlString);
+        }
+
         // TODO: support multiple home pages in whole device mode. This is
         // disabled due to the case where users haven't set a default browser
         // and will get the prompt once per home page.
@@ -384,6 +521,16 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         if (intent == null || intent.getAction() == null) {
             return;
         }
+        // Handle special case - external Android App Link intent which opens PsiCashStoreActivity
+        // when the user navigates to psiphon://psicash
+        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+            if (isPsiCashIntentUri(intent.getData())) {
+                PsiCashFragment.openPsiCashStoreActivity(this,
+                        getResources().getInteger(R.integer.psiCashTabIndex));
+                return;
+            }
+        }
+
         // MainActivity is exposed to other apps because it is declared as an entry point activity of the app in the manifest.
         // For the purpose of handling internal intents, such as handshake, etc., from the tunnel service we have declared a not
         // exported activity alias 'com.psiphon3.psiphonlibrary.TunnelIntentsHandler' that should act as a proxy for MainActivity.
@@ -407,6 +554,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                     if (!shouldLoadInEmbeddedWebView(url)) {
                         displayBrowser(this, url);
                     } else {
+                        disableInterstitialOnNextTabChange = true;
                         tabLayout.selectTabByTag("home");
                     }
                 }
@@ -417,6 +565,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             // region selection UI.
 
             // Switch to settings tab
+            disableInterstitialOnNextTabChange = true;
             tabLayout.selectTabByTag("settings");
             // Signal Rx subscription in the options tab to update available regions list
             viewModel.signalAvailableRegionsUpdate();
@@ -544,6 +693,28 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
     }
 
+    // Returns an object only if tunnel should be auto-started,
+    // completes with no value otherwise.
+    private Maybe<Object> autoStartMaybe(boolean isFirstRun) {
+        // If not the first app run then do not auto-start
+        if (!isFirstRun) {
+            return Maybe.empty();
+        }
+
+        // If this is a first app run then check subscription state and
+        // return a value if user has a valid purchase or if IAB check failed,
+        // the IAB status check will be triggered again in onResume
+        return googlePlayBillingHelper.subscriptionStateFlowable()
+                .firstOrError()
+                .flatMapMaybe(subscriptionState -> {
+                    if (subscriptionState.hasValidPurchase()
+                            || subscriptionState.status() == SubscriptionState.Status.IAB_FAILURE) {
+                        return Maybe.just(new Object());
+                    }
+                    return Maybe.empty();
+                });
+    }
+
     public static boolean shouldLoadInEmbeddedWebView(String url) {
         for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
             if (url.contains(homeTabUrlExclusion)) {
@@ -553,78 +724,110 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         return true;
     }
 
-    private void setUpBanner() {
-        // Play Store Build instances should use existing banner from previously installed APK
-        // (if present). To enable this, non-Play Store Build instances write their banner to
-        // a private file.
-        try {
-            Bitmap bitmap = getBannerBitmap();
-            if (!EmbeddedValues.IS_PLAY_STORE_BUILD) {
-                saveBanner(bitmap);
-            }
-
-            // If we successfully got the banner image set it and it's background
-            if (bitmap != null) {
-                banner.setImageBitmap(bitmap);
-                banner.setBackgroundColor(getMostCommonColor(bitmap));
-            }
-        } catch (IOException e) {
-            // Ignore failure
-        }
-    }
-
-    private void saveBanner(Bitmap bitmap) throws IOException {
-        if (bitmap == null) {
+    private void startUp() {
+        if (startUpInterstitialDisposable != null && !startUpInterstitialDisposable.isDisposed()) {
+            // already in progress, do nothing
             return;
         }
 
-        FileOutputStream out = openFileOutput(BANNER_FILE_NAME, Context.MODE_PRIVATE);
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-        out.close();
+        int countdownSeconds = 10;
+
+        // Updates start/stop button from countdownSeconds to 0 every second and then completes,
+        // does not emit any items downstream, only sends onComplete notification when done.
+        Observable<Object> countdown =
+                Observable.intervalRange(0, countdownSeconds + 1, 0, 1, TimeUnit.SECONDS)
+                        .map(t -> countdownSeconds - t)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext(t -> toggleButton.setText(String.format(Locale.US, "%d", t)))
+                        .ignoreElements()
+                        .toObservable();
+
+        // Attempts to load an interstitial within countdownSeconds or emits an error if ad fails
+        // to load or a timeout occurs.
+        Observable<PsiphonAdManager.InterstitialResult> interstitial =
+                psiphonAdManager.getCurrentAdTypeObservable()
+                        .filter(adResult -> adResult.type() != PsiphonAdManager.AdResult.Type.UNKNOWN)
+                        .firstOrError()
+                        .flatMapObservable(adResult -> {
+                            if (adResult.type() != PsiphonAdManager.AdResult.Type.UNTUNNELED) {
+                                return Observable.error(new RuntimeException("Start immediately with ad result: " + adResult));
+                            }
+                            return Observable.just(adResult)
+                                    .compose(psiphonAdManager
+                                            .getInterstitialWithTimeoutForAdType(countdownSeconds, TimeUnit.SECONDS))
+                                    // If we have a READY interstitial then try and show it.
+                                    .doOnNext(interstitialResult -> {
+                                        if (interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.READY) {
+                                            interstitialResult.show();
+                                        }
+                                    })
+                                    // Emit downstream only when the ad is shown because sometimes
+                                    // calling interstitialResult.show() doesn't result in ad presented.
+                                    // In such a case let the countdown win the race.
+                                    .filter(interstitialResult ->
+                                            interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.SHOWING);
+                        });
+
+        startUpInterstitialDisposable = countdown
+                // ambWith mirrors the ObservableSource that first either emits an
+                // item or sends a termination notification.
+                .ambWith(interstitial)
+                .observeOn(AndroidSchedulers.mainThread())
+                // On error just complete this subscription which then will start the service.
+                .onErrorResumeNext(err -> {
+                    return Observable.empty();
+                })
+                // This subscription completes due to one of the following reasons:
+                // 1. Countdown completed before interstitial observable emitted anything.
+                // 2. There was an error emission from interstitial observable.
+                // 3. Interstitial observable completed because it was closed.
+                // Now we should attempt to start the service.
+                .doOnComplete(this::doStartUp)
+                .subscribe();
     }
 
-    private Bitmap getBannerBitmap() {
-        if (EmbeddedValues.IS_PLAY_STORE_BUILD) {
-            File bannerImageFile = new File(getFilesDir(), BANNER_FILE_NAME);
-            if (bannerImageFile.exists()) {
-                return BitmapFactory.decodeFile(bannerImageFile.getAbsolutePath());
-            }
+    private void doStartUp() {
+        // cancel any ongoing startUp subscription
+        if (startUpInterstitialDisposable != null) {
+            startUpInterstitialDisposable.dispose();
         }
-
-        return BitmapFactory.decodeResource(getResources(), R.drawable.banner);
+        startTunnel();
     }
 
-    private int getMostCommonColor(Bitmap bitmap) {
-        if (bitmap == null) {
-            return Color.WHITE;
-        }
+    private void setAdBannerPlaceholderVisibility(SubscriptionState subscriptionState) {
+        findViewById(R.id.largeAdSlotContainer)
+                .setVisibility(subscriptionState.hasValidPurchase() ?
+                        View.GONE : View.VISIBLE);
+    }
 
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-        int size = width * height;
-        int pixels[] = new int[size];
+    private void showToast(int stringResId) {
+        Toast toast = Toast.makeText(this, stringResId, Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        toast.show();
+    }
 
-        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
-
-        HashMap<Integer, Integer> colorMap = new HashMap<>();
-
-        for (int i = 0; i < pixels.length; i++) {
-            int color = pixels[i];
-            if (colorMap.containsKey(color)) {
-                colorMap.put(color, colorMap.get(color) + 1);
-            } else {
-                colorMap.put(color, 1);
+    private boolean isPsiCashIntentUri(Uri intentUri) {
+        if (intentUri != null) {
+            // Handle psiphon://psicash
+            if ("psiphon".equals(intentUri.getScheme()) &&
+                    "psicash".equals(intentUri.getHost())) {
+                return true;
             }
         }
+        return false;
+    }
 
-        ArrayList<Map.Entry<Integer, Integer>> entries = new ArrayList<>(colorMap.entrySet());
-        Collections.sort(entries, new Comparator<Map.Entry<Integer, Integer>>() {
-            @Override
-            public int compare(Map.Entry<Integer, Integer> o1, Map.Entry<Integer, Integer> o2) {
-                return o2.getValue().compareTo(o1.getValue());
-            }
-        });
-        return entries.get(0).getKey();
+    private String PsiCashModifyUrl(String originalUrlString) {
+        if (TextUtils.isEmpty(originalUrlString)) {
+            return originalUrlString;
+        }
+
+        try {
+            return PsiCashClient.getInstance(getApplicationContext()).modifiedHomePageURL(originalUrlString);
+        } catch (PsiCashException e) {
+            Utils.MyLog.g("PsiCash: error modifying home page: " + e);
+        }
+        return originalUrlString;
     }
 
     static class PageAdapter extends FragmentPagerAdapter {

@@ -18,83 +18,85 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  -->
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/main_layout_container"
     android:orientation="vertical">
 
-    <TabHost
-        android:id="@+id/tabHost"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent">
+    <LinearLayout
+        android:id="@+id/largeAdSlotContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="0dp"
+        android:visibility="gone">
 
         <LinearLayout
+            android:id="@+id/largeAdSlot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/large_banner"
+            android:minWidth="300dip"
+            android:minHeight="250dip"
+            android:orientation="vertical" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1.0"
+        android:orientation="vertical">
+
+        <com.psiphon3.PsiphonTabLayout
+            android:id="@+id/main_activity_tablayout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:layout_height="wrap_content" />
 
-            <LinearLayout
+        <androidx.viewpager.widget.ViewPager
+            android:id="@+id/tabs_view_pager"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:id="@+id/buttonPanel"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2.0">
+
+            <Button
+                android:id="@+id/toggleButton"
                 android:layout_width="fill_parent"
-                android:layout_height="0dp"
+                android:layout_height="fill_parent"
                 android:layout_weight="1.0"
-                android:orientation="vertical">
+                android:onClick="onToggleClick"
+                android:text="@string/start"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
 
-                <include
-                    layout="@layout/tabs"
-                    android:layout_width="fill_parent"
-                    android:layout_height="match_parent" />
-
-            </LinearLayout>
-
-            <LinearLayout
+            <Button
+                android:id="@+id/openBrowserButton"
                 android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:weightSum="2.0">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <LinearLayout
-                        android:id="@+id/buttonPanel"
-                        android:layout_width="fill_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:weightSum="2.0">
-
-                        <Button
-                            android:id="@+id/toggleButton"
-                            android:layout_width="fill_parent"
-                            android:layout_height="fill_parent"
-                            android:layout_weight="1.0"
-                            android:onClick="onToggleClick"
-                            android:text="@string/start"
-                            android:textAppearance="?android:attr/textAppearanceSmall" />
-
-                        <Button
-                            android:id="@+id/openBrowserButton"
-                            android:layout_width="fill_parent"
-                            android:layout_height="fill_parent"
-                            android:layout_weight="1.0"
-                            android:text="@string/open_browser"
-                            android:textAppearance="?android:attr/textAppearanceSmall" />
-                    </LinearLayout>
-
-                    <ProgressBar
-                        android:id="@+id/connectionProgressBar"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="8dp"
-                        android:layout_alignTop="@+id/buttonPanel"
-                        android:indeterminate="true" />
-
-                </RelativeLayout>
-
-            </LinearLayout>
-
+                android:layout_height="fill_parent"
+                android:layout_weight="1.0"
+                android:text="@string/open_browser"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
         </LinearLayout>
 
-    </TabHost>
+        <ProgressBar
+            android:id="@+id/connectionProgressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:layout_alignTop="@+id/buttonPanel"
+            android:indeterminate="true" />
+
+    </RelativeLayout>
 </LinearLayout>

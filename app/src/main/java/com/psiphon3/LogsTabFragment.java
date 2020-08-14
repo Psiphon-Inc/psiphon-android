@@ -17,6 +17,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.psiphon3.psiphonlibrary.StatusList;
+import com.psiphon3.subscription.R;
 
 public class LogsTabFragment extends Fragment {
     public static final String STATUS_ENTRY_AVAILABLE = "com.psiphon3.LogsTabFragment.STATUS_ENTRY_AVAILABLE";

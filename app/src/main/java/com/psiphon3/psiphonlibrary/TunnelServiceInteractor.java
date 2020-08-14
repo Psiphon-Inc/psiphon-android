@@ -150,7 +150,7 @@ public class TunnelServiceInteractor {
         sendServiceMessage(TunnelManager.ClientToServiceMessage.STOP_SERVICE.ordinal(), null);
     }
 
-    public void scheduleRunningTunnelServiceRestart(Context context) {
+    public void scheduleRunningTunnelServiceRestart(Context context, boolean resetReconnectFlag) {
         String runningService = getRunningService(context);
         if (runningService == null) {
             // There is no running service, do nothing.

@@ -1,69 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
-    <ViewFlipper
-        android:id="@+id/sponsorViewFlipper"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/homeTab"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+
+    <!-- Using 0dp, which is the equivalent of "MATCH_CONSTRAINT" -->
+    <LinearLayout
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent" >
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@id/rateLimitLinearLayout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <ScrollView
-            android:id="@+id/statusLayout"
-            android:layout_width="fill_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:scrollbarAlwaysDrawVerticalTrack="false">
-
-            <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:padding="10dp">
-
-                <ImageButton
-                    android:id="@+id/statusViewImage"
-                    android:layout_width="wrap_content"
-                    android:layout_height="150dp"
-                    android:layout_gravity="center"
-                    android:background="@android:color/transparent"
-                    android:padding="20dp"
-                    android:scaleType="fitCenter" />
-
-                <TextView
-                    android:id="@+id/versionline"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="" />
-
-                <TextView
-                    android:id="@+id/lastlogline"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="" />
-            </LinearLayout>
-        </ScrollView>
-
-        <RelativeLayout
-            android:id="@+id/sponsorLayout"
+        <androidx.coordinatorlayout.widget.CoordinatorLayout
+            android:id="@+id/psicash_coordinator_layout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" >
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-            <WebView
-                android:id="@+id/sponsorWebView"
+            <ScrollView
+                android:id="@+id/psicashContainer"
                 android:layout_width="fill_parent"
-                android:layout_height="fill_parent" />
+                android:layout_height="fill_parent"
+                android:orientation="vertical"
+                android:scrollbarAlwaysDrawVerticalTrack="false">
 
-            <ProgressBar
-                android:id="@+id/sponsorWebViewProgressBar"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_alignParentBottom="true"
-                android:progressDrawable="@drawable/home_progressbar" />
-        </RelativeLayout>
-    </ViewFlipper>
-</LinearLayout>
+                <FrameLayout
+                    android:id="@+id/psicash_fragment_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </ScrollView>
+        </androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </LinearLayout>
+
+    <include
+        layout="@layout/rate_limit_info"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

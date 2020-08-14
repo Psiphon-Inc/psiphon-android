@@ -74,7 +74,11 @@ public class MainActivityViewModel extends AndroidViewModel implements Lifecycle
     }
 
     public void restartTunnelService() {
-        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(context);
+        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(context, false);
+    }
+
+    public void restartTunnelService(boolean resetReconnectFlag) {
+        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(context, resetReconnectFlag);
     }
 
     // Basic check of proxy settings values
@@ -139,5 +143,9 @@ public class MainActivityViewModel extends AndroidViewModel implements Lifecycle
 
     public void setFirstRun(boolean firstRun) {
         isFirstRun = firstRun;
+    }
+
+    public void notifyTunnelServiceResume() {
+        tunnelServiceInteractor.onResume();
     }
 }

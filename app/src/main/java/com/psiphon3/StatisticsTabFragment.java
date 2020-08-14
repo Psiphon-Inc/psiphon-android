@@ -15,6 +15,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.psiphon3.psiphonlibrary.DataTransferStats;
 import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.subscription.R;
 
 import org.achartengine.ChartFactory;
 import org.achartengine.GraphicalView;

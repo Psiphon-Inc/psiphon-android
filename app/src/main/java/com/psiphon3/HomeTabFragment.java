@@ -1,45 +1,61 @@
 package com.psiphon3;
 
 import android.annotation.TargetApi;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AnimationUtils;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.ImageButton;
-import android.widget.LinearLayout;
+import android.widget.Button;
 import android.widget.ProgressBar;
-import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.ViewFlipper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.billing.GooglePlayBillingHelper;
+import com.psiphon3.billing.SubscriptionState;
+import com.psiphon3.psicash.PsiCashFragment;
+import com.psiphon3.psicash.PsiCashSubscribedFragment;
+import com.psiphon3.psicash.PsiCashViewModel;
+import com.psiphon3.psicash.util.BroadcastIntent;
+import com.psiphon3.subscription.R;
 
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import io.reactivex.Flowable;
+import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.functions.BiFunction;
 
 public class HomeTabFragment extends Fragment {
     private MainActivityViewModel viewModel;
-    private ViewFlipper sponsorViewFlipper;
-    private ScrollView statusLayout;
-    private ImageButton statusViewImage;
     private View mainView;
     private SponsorHomePage sponsorHomePage;
     private boolean isWebViewLoaded = false;
+    private View rateLimitedTextSection;
+    private TextView rateLimitedText;
+    private TextView rateUnlimitedText;
+    private Button rateLimitUpgradeButton;
+    private CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private BroadcastReceiver broadcastReceiver;
+
 
     @Nullable
     @Override
@@ -52,38 +68,26 @@ public class HomeTabFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         mainView = view;
 
-        ((TextView) view.findViewById(R.id.versionline))
-                .setText(requireContext().getString(R.string.client_version, EmbeddedValues.CLIENT_VERSION));
-
-        sponsorViewFlipper = view.findViewById(R.id.sponsorViewFlipper);
-        sponsorViewFlipper.setInAnimation(AnimationUtils.loadAnimation(requireContext(), android.R.anim.slide_in_left));
-        sponsorViewFlipper.setOutAnimation(AnimationUtils.loadAnimation(requireContext(), android.R.anim.slide_out_right));
-
-        statusLayout = view.findViewById(R.id.statusLayout);
-        statusViewImage = view.findViewById(R.id.statusViewImage);
+        rateLimitedTextSection = view.findViewById(R.id.rateLimitedTextSection);
+        rateLimitedText = view.findViewById(R.id.rateLimitedText);
+        rateUnlimitedText = view.findViewById(R.id.rateUnlimitedText);
+        rateLimitUpgradeButton = view.findViewById(R.id.rateLimitUpgradeButton);
 
         viewModel = new ViewModelProvider(requireActivity(),
                 new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
                 .get(MainActivityViewModel.class);
 
-        // This Rx subscription observes tunnel state changes and updates the status UI,
-        // it also loads sponsor home pages in the embedded web view if needed.
-        viewModel.tunnelStateFlowable()
+        // Observe tunnel state for CONNECTED status and load sponsor home pages in the embedded web view if needed
+        compositeDisposable.add(viewModel.tunnelStateFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
-                // Update the connection status UI
-                .doOnNext(this::updateStatusUI)
                 // Check for URLs to be opened in the embedded web view.
                 .filter(tunnelState -> !tunnelState.isUnknown())
                 .doOnNext(tunnelState -> {
-                    if (!tunnelState.isRunning() || tunnelState.connectionData().isConnected()) {
+                    if (!tunnelState.isRunning() || !tunnelState.connectionData().isConnected()) {
                         // The tunnel is either not running or connecting,
                         // stop loading the sponsor page and flip to status view.
                         if (sponsorHomePage != null) {
                             sponsorHomePage.stop();
-                        }
-                        boolean isShowingWebView = sponsorViewFlipper.getCurrentView() != statusLayout;
-                        if (isShowingWebView) {
-                            sponsorViewFlipper.showNext();
                         }
                         // Also reset isWebViewLoaded
                         isWebViewLoaded = false;
@@ -108,48 +112,152 @@ public class HomeTabFragment extends Fragment {
                     return Flowable.just(url);
                 })
                 .doOnNext(this::loadEmbeddedWebView)
-                .subscribe();
+                .subscribe());
 
-        // Observe last log entry to display.
-        final TextView lastLogEntryTv = view.findViewById(R.id.lastlogline);
-        viewModel.lastLogEntryFlowable()
+        PsiCashViewModel psiCashViewModel = new ViewModelProvider(this,
+                new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
+                .get(PsiCashViewModel.class);
+
+        GooglePlayBillingHelper googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(requireContext());
+
+        // Observe subscription and speed boost states and update rate limit badge and 'Subscribe' button UI
+        compositeDisposable.add(Observable.combineLatest(
+                googlePlayBillingHelper.subscriptionStateFlowable()
+                        .distinctUntilChanged()
+                        .toObservable(),
+                psiCashViewModel.booleanActiveSpeedBoostObservable(),
+                ((BiFunction<SubscriptionState, Boolean, Pair>) Pair::new))
+                .distinctUntilChanged()
+                .map(pair -> {
+                    SubscriptionState subscriptionState = (SubscriptionState) pair.first;
+                    Boolean hasActiveSpeedBoost = (Boolean) pair.second;
+                    switch (subscriptionState.status()) {
+                        case HAS_UNLIMITED_SUBSCRIPTION:
+                        case HAS_TIME_PASS:
+                            return RateLimitMode.UNLIMITED_SUBSCRIPTION;
+                        case HAS_LIMITED_SUBSCRIPTION:
+                            return RateLimitMode.LIMITED_SUBSCRIPTION;
+                        default:
+                            return hasActiveSpeedBoost ?
+                                    RateLimitMode.SPEED_BOOST : RateLimitMode.AD_MODE_LIMITED;
+                    }
+                })
+                .distinctUntilChanged()
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(lastLogEntryTv::setText)
-                .subscribe();
+                .doOnNext(this::setRateLimitUI)
+                .subscribe());
+
+        // Observe subscription state and set ad container layout visibility,
+        // also set the appropriate PsiCash fragment
+        compositeDisposable.add(
+                googlePlayBillingHelper.subscriptionStateFlowable()
+                        .distinctUntilChanged()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext(this::setPsiCashFragment)
+                        .subscribe());
+
+        // Listen to GOT_NEW_EXPIRING_PURCHASE intent from PsiCash module
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, android.content.Intent intent) {
+                String action = intent.getAction();
+                if (action != null) {
+                    if (action.equals(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE)) {
+                        viewModel.restartTunnelService(false);
+                    }
+                }
+            }
+        };
+        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(broadcastReceiver, intentFilter);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        compositeDisposable.dispose();
+        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(broadcastReceiver);
         if (sponsorHomePage != null) {
             sponsorHomePage.stop();
         }
     }
 
-    private void updateStatusUI(TunnelState tunnelState) {
-        if (tunnelState.isRunning()) {
-            if (tunnelState.connectionData().isConnected()) {
-                statusViewImage.setImageResource(R.drawable.status_icon_connected);
-            } else {
-                statusViewImage.setImageResource(R.drawable.status_icon_connecting);
+    enum RateLimitMode {AD_MODE_LIMITED, LIMITED_SUBSCRIPTION, UNLIMITED_SUBSCRIPTION, SPEED_BOOST}
+
+    private void setRateLimitUI(RateLimitMode rateLimitMode) {
+        // Update UI elements showing the current speed.
+        if (rateLimitMode == RateLimitMode.UNLIMITED_SUBSCRIPTION) {
+            rateLimitedText.setVisibility(View.GONE);
+            rateUnlimitedText.setVisibility(View.VISIBLE);
+            rateLimitUpgradeButton.setVisibility(View.GONE);
+            rateLimitedTextSection.setVisibility(View.VISIBLE);
+        } else{
+            if(rateLimitMode == RateLimitMode.AD_MODE_LIMITED) {
+                rateLimitedText.setText(getString(R.string.rate_limit_text_limited, 2));
+            } else if (rateLimitMode == RateLimitMode.LIMITED_SUBSCRIPTION) {
+                rateLimitedText.setText(getString(R.string.rate_limit_text_limited, 5));
+            } else if (rateLimitMode == RateLimitMode.SPEED_BOOST) {
+                rateLimitedText.setText(getString(R.string.rate_limit_text_speed_boost));
             }
-        } else {
-            // the tunnel state is either unknown or not running
-            statusViewImage.setImageResource(R.drawable.status_icon_disconnected);
+            rateLimitedText.setVisibility(View.VISIBLE);
+            rateUnlimitedText.setVisibility(View.GONE);
+            rateLimitUpgradeButton.setVisibility(View.VISIBLE);
+            rateLimitedTextSection.setVisibility(View.VISIBLE);
         }
+    }
+
+    private void setPsiCashFragment(SubscriptionState subscriptionState) {
+        // Do nothing if host activity is finishing or destroyed
+        if (requireActivity().isFinishing() ||
+                // isDestroyed() is API 17+
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && requireActivity().isDestroyed())) {
+            return;
+        }
+        // Do nothing if not added to activity, otherwise getParentFragmentManager will
+        // throw IllegalStateException
+        if (!isAdded()) {
+            return;
+        }
+        FragmentTransaction transaction = getParentFragmentManager()
+                .beginTransaction()
+                .setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out)
+                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+        if (subscriptionState.hasValidPurchase()) {
+            transaction.replace(R.id.psicash_fragment_container, new PsiCashSubscribedFragment());
+        } else {
+            transaction.replace(R.id.psicash_fragment_container, new PsiCashFragment(), "PsiCashFragment");
+        }
+        // Allow transaction to be committed even after FragmentManager has saved its state.
+        // In case the host activity is killed and re-created this function will be called again
+        // with the most up to date subscription state data.
+        transaction.commitAllowingStateLoss();
     }
 
     private void loadEmbeddedWebView(String url) {
         isWebViewLoaded = true;
-        sponsorHomePage = new SponsorHomePage(mainView.findViewById(R.id.sponsorWebView),
-                mainView.findViewById(R.id.sponsorWebViewProgressBar));
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        View webViewContainer = inflater.inflate(R.layout.embedded_webview_layout, null);
+        final WebView webView = webViewContainer.findViewById(R.id.sponsorWebView);
+        final ProgressBar progressBar = webViewContainer.findViewById(R.id.sponsorWebViewProgressBar);
+
+        sponsorHomePage = new SponsorHomePage(webView, progressBar);
         sponsorHomePage.load(url);
 
-        // Flip to the web view if it is not showing
-        boolean isShowingWebView = sponsorViewFlipper.getCurrentView() != statusLayout;
-        if (!isShowingWebView) {
-            sponsorViewFlipper.showNext();
-        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        builder.setView(webViewContainer);
+        builder.setPositiveButton(android.R.string.ok, (dialog, which) -> {
+            dialog.dismiss();
+        });
+
+        AlertDialog alertDialog = builder.create();
+        alertDialog.setOnDismissListener(dialogInterface -> {
+            webView.loadUrl("about:blank");
+            ((ViewGroup)webViewContainer.getParent()).removeView(webViewContainer);
+        });
+
+        alertDialog.show();
     }
 
     protected class SponsorHomePage {

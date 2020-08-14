@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
+import android.text.TextUtils;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -22,9 +23,14 @@ import com.psiphon3.psiphonlibrary.UpstreamProxySettings;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.VpnAppsUtils;
 import com.psiphon3.psiphonlibrary.VpnOptionsPreferenceActivity;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.SharedPreferencesImport;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 
@@ -290,6 +296,45 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
             return false;
         }
 
+        //check if "add custom headers" checkbox changed
+        boolean addCustomHeadersPreference = prefs.getBoolean(
+                getString(R.string.addCustomHeadersPreference), false);
+        if (addCustomHeadersPreference != UpstreamProxySettings.getAddCustomHeadersPreference(requireContext())) {
+            return true;
+        }
+
+        // "add custom headers" is selected, check if
+        // upstream headers string has changed
+        if (addCustomHeadersPreference) {
+            JSONObject newHeaders = new JSONObject();
+
+            for (int position = 1; position <= 6; position++) {
+                int nameID = getResources().getIdentifier("customProxyHeaderName" + position, "string", requireContext().getPackageName());
+                int valueID = getResources().getIdentifier("customProxyHeaderValue" + position, "string", requireContext().getPackageName());
+
+                String namePrefStr = getResources().getString(nameID);
+                String valuePrefStr = getResources().getString(valueID);
+
+                String name = prefs.getString(namePrefStr, "");
+                String value = prefs.getString(valuePrefStr, "");
+                try {
+                    if (!TextUtils.isEmpty(name)) {
+                        JSONArray arr = new JSONArray();
+                        arr.put(value);
+                        newHeaders.put(name, arr);
+                    }
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            JSONObject oldHeaders = UpstreamProxySettings.getUpstreamProxyCustomHeaders(requireContext());
+
+            if (0 != oldHeaders.toString().compareTo(newHeaders.toString())) {
+                return true;
+            }
+        }
+
         // check if "use custom proxy settings"
         // radio has changed
         boolean useCustomProxySettingsPreference = prefs.getBoolean(
@@ -372,7 +417,20 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
                 new SharedPreferencesImport(requireContext(), prefName, getString(R.string.useProxyAuthenticationPreference), getString(R.string.useProxyAuthenticationPreference)),
                 new SharedPreferencesImport(requireContext(), prefName, getString(R.string.useProxyUsernamePreference), getString(R.string.useProxyUsernamePreference)),
                 new SharedPreferencesImport(requireContext(), prefName, getString(R.string.useProxyPasswordPreference), getString(R.string.useProxyPasswordPreference)),
-                new SharedPreferencesImport(requireContext(), prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference))
+                new SharedPreferencesImport(requireContext(), prefName, getString(R.string.useProxyDomainPreference), getString(R.string.useProxyDomainPreference)),
+                new SharedPreferencesImport(requireContext(), prefName, getString(R.string.addCustomHeadersPreference), getString(R.string.addCustomHeadersPreference)),
+                new SharedPreferencesImport(requireContext(), prefName, getString(R.string.customProxyHeaderName1), getString(R.string.customProxyHeaderName1)),
+                new SharedPreferencesImport(requireContext(), prefName, getString(R.string.customProxyHeaderValue1), getString(R.string.customProxyHeaderValue1)),
+                new SharedPreferencesImport(requireContext(), prefName, getString(R.string.customProxyHeaderName2), getString(R.string.customProxyHeaderName2)),
+                new SharedPreferencesImport(requireContext(), prefName, getString(R.string.customProxyHeaderValue2), getString(R.string.customProxyHeaderValue2)),
+                new SharedPreferencesImport(requireContext(), prefName, getString(R.string.customProxyHeaderName3), getString(R.string.customProxyHeaderName3)),
+                new SharedPreferencesImport(requireContext(), prefName, getString(R.string.customProxyHeaderValue3), getString(R.string.customProxyHeaderValue3)),
+                new SharedPreferencesImport(requireContext(), prefName, getString(R.string.customProxyHeaderName4), getString(R.string.customProxyHeaderName4)),
+                new SharedPreferencesImport(requireContext(), prefName, getString(R.string.customProxyHeaderValue4), getString(R.string.customProxyHeaderValue4)),
+                new SharedPreferencesImport(requireContext(), prefName, getString(R.string.customProxyHeaderName5), getString(R.string.customProxyHeaderName5)),
+                new SharedPreferencesImport(requireContext(), prefName, getString(R.string.customProxyHeaderValue5), getString(R.string.customProxyHeaderValue5)),
+                new SharedPreferencesImport(requireContext(), prefName, getString(R.string.customProxyHeaderName6), getString(R.string.customProxyHeaderName6)),
+                new SharedPreferencesImport(requireContext(), prefName, getString(R.string.customProxyHeaderValue6), getString(R.string.customProxyHeaderValue6))
         );
     }
 
