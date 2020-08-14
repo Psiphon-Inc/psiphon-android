@@ -74,7 +74,7 @@ public class MainActivityViewModel extends AndroidViewModel implements Lifecycle
     }
 
     public void restartTunnelService() {
-        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(context, false);
+        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(context, true);
     }
 
     public void restartTunnelService(boolean resetReconnectFlag) {
