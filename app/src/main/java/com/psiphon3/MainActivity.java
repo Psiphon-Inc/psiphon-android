@@ -9,9 +9,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.net.Uri;
 import android.net.VpnService;
 import android.os.Build;
@@ -28,7 +25,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -60,23 +56,15 @@ import com.psiphon3.psiphonlibrary.LoggingProvider;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.VpnAppsUtils;
-import com.psiphon3.psiphonlibrary.VpnOptionsPreferenceActivity;
 import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
 import org.json.JSONException;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -551,6 +539,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                     // If the URL should not be open in the embedded web view then try and open it
                     // in an external browser. The home tab fragment will make a decision to open
                     // the URL in an embedded web view independently, if needed.
+                    HomeTabFragment.setSeenHandshake(true);
                     if (!shouldLoadInEmbeddedWebView(url)) {
                         displayBrowser(this, url);
                     } else {

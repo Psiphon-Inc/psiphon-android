@@ -3,6 +3,7 @@ package com.psiphon3;
 import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
@@ -45,6 +46,7 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.BiFunction;
 
 public class HomeTabFragment extends Fragment {
+    private static boolean seenHandshake = false;
     private MainActivityViewModel viewModel;
     private View mainView;
     private SponsorHomePage sponsorHomePage;
@@ -84,8 +86,7 @@ public class HomeTabFragment extends Fragment {
                 .filter(tunnelState -> !tunnelState.isUnknown())
                 .doOnNext(tunnelState -> {
                     if (!tunnelState.isRunning() || !tunnelState.connectionData().isConnected()) {
-                        // The tunnel is either not running or connecting,
-                        // stop loading the sponsor page and flip to status view.
+                        // The tunnel is either not running or connecting, stop loading the sponsor page
                         if (sponsorHomePage != null) {
                             sponsorHomePage.stop();
                         }
@@ -103,11 +104,18 @@ public class HomeTabFragment extends Fragment {
                     }
                     String url = homePages.get(0);
 
-                    if (isWebViewLoaded || !MainActivity.shouldLoadInEmbeddedWebView(url)) {
-                        // The embedded view has loaded the URL already or the URL should not
-                        // be loaded in the embedded view
+                    // Unlike non-Pro clients we want to load the home page ONLY when the handshake completes
+                    // because the embedded web view is shown not as a part of the tab but in a popup.
+                    // Showing the popup every time when the main activity is created by clicking running tunnel
+                    // service notification would be a bad UX.
+                    if (!seenHandshake ||
+                            isWebViewLoaded ||
+                            !MainActivity.shouldLoadInEmbeddedWebView(url)) {
+                        // There either was no handshake or the embedded view has loaded the URL
+                        // already or the URL should not be loaded in the embedded view
                         return Flowable.empty();
                     }
+                    setSeenHandshake(false);
                     // Pass the URL downstream to be loaded in the embedded web view
                     return Flowable.just(url);
                 })
@@ -161,7 +169,7 @@ public class HomeTabFragment extends Fragment {
         intentFilter.addAction(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
         broadcastReceiver = new BroadcastReceiver() {
             @Override
-            public void onReceive(Context context, android.content.Intent intent) {
+            public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
                 if (action != null) {
                     if (action.equals(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE)) {
@@ -258,6 +266,10 @@ public class HomeTabFragment extends Fragment {
         });
 
         alertDialog.show();
+    }
+
+    public static void setSeenHandshake(boolean b) {
+        HomeTabFragment.seenHandshake = b;
     }
 
     protected class SponsorHomePage {
