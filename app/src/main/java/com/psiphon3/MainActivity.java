@@ -437,7 +437,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         displayBrowser(this, url);
                     } else {
                         disableInterstitialOnNextTabChange = true;
-                        tabLayout.selectTabByTag("home");
+                        selectTabByTag("home");
                     }
                 }
             }
