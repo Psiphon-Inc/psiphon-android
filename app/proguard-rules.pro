@@ -16,8 +16,8 @@
 #   public *;
 #}
 
-# Only strip these
--keep class !com.google.android.gms.**,!android.support.** { *; }
+# keep all of the ca.psiphon package
+-keep class ca.psiphon.** {*;}
 
 # From https://github.com/googleads/googleads-consent-sdk-android/blob/master/consent-library/proguard-rules.pro
 -keep class com.google.ads.consent.** { <fields>; }
