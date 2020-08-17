@@ -299,7 +299,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         } else {
             // Legacy case: do not auto-start if last preference was BOM
             // Instead switch to the options tab and display a dialog with the help information
-            tabLayout.selectTabByTag("settings");
+            selectTabByTag("settings");
             LayoutInflater inflater = this.getLayoutInflater();
             View dialogView = inflater.inflate(R.layout.legacy_bom_alert_view_layout, null);
             TextView tv = dialogView.findViewById(R.id.legacy_mode_alert_tv);
@@ -544,7 +544,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         displayBrowser(this, url);
                     } else {
                         disableInterstitialOnNextTabChange = true;
-                        tabLayout.selectTabByTag("home");
+                        selectTabByTag("home");
                     }
                 }
             }
@@ -555,7 +555,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
             // Switch to settings tab
             disableInterstitialOnNextTabChange = true;
-            tabLayout.selectTabByTag("settings");
+            selectTabByTag("settings");
             // Signal Rx subscription in the options tab to update available regions list
             viewModel.signalAvailableRegionsUpdate();
 
@@ -818,6 +818,21 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         }
         return originalUrlString;
     }
+
+    public void selectTabByTag(@NonNull Object tag) {
+        viewPager.post(() -> {
+            for (int i = 0; i < tabLayout.getTabCount(); i++) {
+                TabLayout.Tab tab = tabLayout.getTabAt(i);
+                if (tab != null) {
+                    Object tabTag = tabLayout.getTabAt(i).getTag();
+                    if (tag.equals(tabTag)) {
+                        viewPager.setCurrentItem(i, true);
+                    }
+                }
+            }
+        });
+    }
+
 
     static class PageAdapter extends FragmentPagerAdapter {
         private int numOfTabs;
