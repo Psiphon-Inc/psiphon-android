@@ -123,7 +123,7 @@ com.jakewharton.threetenabp" />
         <activity
             android:name="com.psiphon3.psiphonlibrary.VpnOptionsPreferenceActivity"
             android:parentActivityName="com.psiphon3.MainActivity"
-            android:label="@string/app_name">
+            android:label="@string/app_name_psiphon_pro">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.psiphon3.MainActivity" />
@@ -131,7 +131,7 @@ com.jakewharton.threetenabp" />
         <activity
             android:name="com.psiphon3.psiphonlibrary.ProxyOptionsPreferenceActivity"
             android:parentActivityName="com.psiphon3.MainActivity"
-            android:label="@string/app_name">
+            android:label="@string/app_name_psiphon_pro">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.psiphon3.MainActivity" />
