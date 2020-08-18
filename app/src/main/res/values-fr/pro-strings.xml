@@ -83,7 +83,7 @@
     <string name="psicash_transaction_invalid_tokens_message">L’appli est entrée dans un état invalide. Veuillez réinstaller l’appli pour continuer à utiliser l’argent PsiCash.</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed due to a server error and that they should try again in a few minutes -->
-    <string name="transaction_server_error_message">Erreur du serveur. Veuillez ressayer dans quelques minutes</string>
+    <string name="transaction_server_error_message">Erreur du serveur. Veuillez réessayer dans quelques minutes</string>
 
     <!-- Alert error message informing user that a critical PsiCash related error has occurred and encouraging users to send feedback diagnostics -->
     <string name="psicash_critical_error_message">Une erreur irrécupérable est survenue. Veuillez envoyer une rétroaction.</string>
@@ -92,10 +92,10 @@
     <string name="psicash_critical_error_reset_message">Une erreur irrécupérable est survenue. Vos solde d’argent PsiCash et autre état ont été réinitialisés.</string>
 
     <!-- Alert error message informing user that a recoverable PsiCash related error has occurred and last action will most likely succeed next time. -->
-    <string name="psicash_recoverable_error_message">Une erreur récupérable est survenue. Veuillez ressayer.</string>
+    <string name="psicash_recoverable_error_message">Une erreur récupérable est survenue. Veuillez réessayer.</string>
 
     <!-- Alert message informing user that a PsiCash rewarded video is currently not available. -->
-    <string name="psicash_video_not_available_message">La vidéo n’est pas accessible, veuillez ressayer ultérieurement.</string>
+    <string name="psicash_video_not_available_message">La vidéo n’est pas accessible, veuillez réessayer plus tard.</string>
 
     <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
     <string name="unexpected_error_occured_send_feedback_message">Une erreur inattendue est survenue. Veuillez envoyer une rétroaction.</string>
@@ -118,7 +118,7 @@
 
     <!-- Alert error message informing user that a recoverable error has occurred while trying to retrieve PsiCash balance and last action will most
     likely succeed next time.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cant_get_balance_recoverable_message">Il est impossible d’obtenir le solde d’argent PsiCash du serveur pour l’instant. Veuillez ressayer ultérieurement.</string>
+    <string name="psicash_cant_get_balance_recoverable_message">Il est impossible d’obtenir le solde d’argent PsiCash du serveur pour l’instant. Veuillez réessayer plus tard.</string>
 
     <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
     of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
@@ -131,7 +131,7 @@
     <string name="psicash_snackbar_action_ok">Valider</string>
 
     <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
-    <string name="subscription_options_currently_not_available">Les options d’abonnement ne sont pas proposées en ce moment, veuillez ressayer ultérieurement.</string>
+    <string name="subscription_options_currently_not_available">Les options d’abonnement ne sont pas proposées en ce moment, veuillez réessayer plus tard.</string>
 
     <!-- Speed Boost button that opens a dialog with various speed boost options available for purchase.
     'Speed Boost' is a reward that can be purchased with PsiCash credit.
@@ -156,7 +156,7 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed. Do not translate or transliterate word Psiphon -->
-    <string name="speed_boost_unavailable">Vous devez vous connecter à Psiphon pour activer une Survitesse. Cliquez sur le bouton ci-dessous et ressayez</string>
+    <string name="speed_boost_unavailable">Vous devez vous connecter à Psiphon pour activer une Survitesse. Cliquez sur le bouton ci-dessous et réessayez</string>
 
     <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message
         Do not translate or transliterate word Psiphon -->
@@ -215,7 +215,7 @@
     <string name="confirm_speedboost_purchase_alert">Souhaitez-vous obtenir %1$s de Survitesse pour %2$d PsiCash?</string>
 
     <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
-    <string name="psicash_purchase_not_available_error_message">L’achat de PsiCash n’est pas proposé en ce moment, veuillez ressayer ultérieurement.</string>
+    <string name="psicash_purchase_not_available_error_message">L’achat de PsiCash n’est pas proposé en ce moment, veuillez réessayer plus tard.</string>
 
     <!-- An alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
