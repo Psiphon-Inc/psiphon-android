@@ -36,8 +36,6 @@ com.jakewharton.threetenabp" />
                   android:xlargeScreens="true" />
 
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.NFC" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
@@ -46,9 +44,8 @@ com.jakewharton.threetenabp" />
     <uses-permission android:name="com.android.vending.BILLING"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
-    <uses-feature android:name="android.hardware.nfc" android:required="false" />
-
     <application
+        android:requestLegacyExternalStorage="true"
         android:name="com.psiphon3.PsiphonApplication"
         android:theme="@style/Theme.AppCompat"
         android:hardwareAccelerated="true"
@@ -69,7 +66,7 @@ com.jakewharton.threetenabp" />
             android:value="${admobAppId}"/>
 
         <activity
-            android:name="com.psiphon3.StatusActivity"
+            android:name="com.psiphon3.MainActivity"
             android:label="@string/app_name_psiphon_pro"
             android:launchMode="singleTask">
             <intent-filter>
@@ -89,27 +86,14 @@ com.jakewharton.threetenabp" />
         <activity-alias
             android:name="com.psiphon3.psiphonlibrary.TunnelIntentsHandler"
             android:exported="false"
-            android:targetActivity="com.psiphon3.StatusActivity" />
-
-        <activity android:name="com.psiphon3.psiphonlibrary.NfcActivity" />
-        <activity-alias
-            android:name="com.psiphon3.psiphonlibrary.NfcActivity"
-            android:targetActivity="com.psiphon3.StatusActivity"
-            android:enabled="false">
-            <intent-filter>
-                <action android:name="android.nfc.action.NDEF_DISCOVERED"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="psiphon://nfc" />
-            </intent-filter>
-        </activity-alias>
-
+            android:targetActivity="com.psiphon3.MainActivity" />
         <activity
             android:name="com.psiphon3.FeedbackActivity"
-            android:parentActivityName="com.psiphon3.StatusActivity"
+            android:parentActivityName="com.psiphon3.MainActivity"
             android:label="@string/app_name_psiphon_pro">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.psiphon3.StatusActivity" />
+                android:value="com.psiphon3.MainActivity" />
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -122,32 +106,42 @@ com.jakewharton.threetenabp" />
         </activity>
         <activity
             android:name="com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity"
-            android:parentActivityName="com.psiphon3.StatusActivity"
+            android:parentActivityName="com.psiphon3.MainActivity"
             android:label="@string/app_name_psiphon_pro">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.psiphon3.StatusActivity" />
+                android:value="com.psiphon3.MainActivity" />
         </activity>
         <activity
             android:name="com.psiphon3.psicash.PsiCashStoreActivity"
-            android:parentActivityName="com.psiphon3.StatusActivity"
+            android:parentActivityName="com.psiphon3.MainActivity"
             android:label="@string/app_name_psiphon_pro">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.psiphon3.StatusActivity" />
+                android:value="com.psiphon3.MainActivity" />
         </activity>
-        <service
-            android:name="com.psiphon3.psiphonlibrary.TunnelService"
-            android:label="@string/app_name_psiphon_pro"
-            android:exported="false"
-            android:process=":TunnelService" >
-        </service>
+        <activity
+            android:name="com.psiphon3.psiphonlibrary.VpnOptionsPreferenceActivity"
+            android:parentActivityName="com.psiphon3.MainActivity"
+            android:label="@string/app_name">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.psiphon3.MainActivity" />
+        </activity>
+        <activity
+            android:name="com.psiphon3.psiphonlibrary.ProxyOptionsPreferenceActivity"
+            android:parentActivityName="com.psiphon3.MainActivity"
+            android:label="@string/app_name">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.psiphon3.MainActivity" />
+        </activity>
         <service
             android:name="com.psiphon3.psiphonlibrary.TunnelVpnService"
             android:label="@string/app_name_psiphon_pro"
             android:permission="android.permission.BIND_VPN_SERVICE"
             android:exported="false"
-            android:process=":TunnelService" >
+            android:process=":TunnelVpnService" >
             <intent-filter>
                 <action android:name="android.net.VpnService" />
             </intent-filter>
@@ -170,35 +164,7 @@ com.jakewharton.threetenabp" />
             android:exported="false">
         </provider>
 
-        <activity
-            android:name="org.zirco.ui.activities.MainActivity"
-            android:label="@string/browser_task_label"
-            android:launchMode="singleTask"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            android:taskAffinity=":PsiphonBrowserTask"
-            android:theme="@style/ZircoTheme"
-            android:exported="false">
-        </activity>
-        <activity android:name="org.zirco.ui.activities.AboutActivity" />
-        <activity android:name="org.zirco.ui.activities.EditBookmarkActivity"/>
-        <activity android:name="org.zirco.ui.activities.BookmarksListActivity"/>
-        <activity android:name="org.zirco.ui.activities.HistoryListActivity"/>
-        <activity android:name="org.zirco.ui.activities.DownloadsListActivity"/>
-        <activity android:name="org.zirco.ui.activities.AdBlockerWhiteListActivity"/>
-        <activity android:name="org.zirco.ui.activities.BookmarksHistoryActivity"/>
-        <activity android:name="org.zirco.ui.activities.ChangelogActivity"/>
-        <activity android:name="org.zirco.ui.activities.preferences.PreferencesActivity"/>
-        <activity android:name="org.zirco.ui.activities.preferences.HomepagePreferenceActivity"/>
-        <activity android:name="org.zirco.ui.activities.preferences.SearchUrlPreferenceActivity"/>
-        <activity android:name="org.zirco.ui.activities.preferences.UserAgentPreferenceActivity"/>
-        <activity android:name="org.zirco.ui.activities.MobileViewListActivity"/>
-        <activity android:name="org.zirco.ui.activities.DesktopViewListActivity"/>
-        <activity android:name="org.zirco.ui.activities.WeaveBookmarksListActivity"/>
-        <activity android:name="org.zirco.ui.activities.preferences.WeavePreferencesActivity"/>
-        <activity android:name="org.zirco.ui.activities.preferences.WeaveServerPreferenceActivity"/>
-
         <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonsubscriptionzircobookmarkscontentprovider"/>
-        <provider android:name="org.zirco.providers.WeaveContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonsubscriptionweavecontentprovider"/>
 
         <activity android:name="com.google.android.gms.ads.AdActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
     </application>

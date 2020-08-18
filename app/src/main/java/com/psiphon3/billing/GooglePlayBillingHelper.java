@@ -278,7 +278,7 @@ public class GooglePlayBillingHelper {
             // Remove purchase that doesn't pass signature verification.
             if (!Security.verifyPurchase(IAB_PUBLIC_KEY,
                     purchase.getOriginalJson(), purchase.getSignature())) {
-                Utils.MyLog.g("StatusActivityBillingViewModel::processPurchases: failed verification for purchase: " + purchase);
+                Utils.MyLog.g("GooglePlayBillingHelper::processPurchases: failed verification for purchase: " + purchase);
                 purchaseList.remove(i);
                 continue;
             }
