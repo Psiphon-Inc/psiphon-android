@@ -303,7 +303,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             LayoutInflater inflater = this.getLayoutInflater();
             View dialogView = inflater.inflate(R.layout.legacy_bom_alert_view_layout, null);
             TextView tv = dialogView.findViewById(R.id.legacy_mode_alert_tv);
-            String text = getString(R.string.legacy_bom_alert_message, getString(R.string.app_name));
+            String text = getString(R.string.legacy_bom_alert_message, getString(R.string.app_name_psiphon_pro));
             String formattedText = text.replaceAll("\n", "\n\n");
             SpannableString spannableString = new SpannableString(formattedText);
 
