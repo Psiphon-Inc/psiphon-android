@@ -82,8 +82,6 @@ import io.reactivex.schedulers.Schedulers;
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
 
 public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, PurchaseVerifier.VerificationResultListener {
-    private static String currentLanguageCode = "";
-
     // Android IPC messages
     // Client -> Service
     enum ClientToServiceMessage {
@@ -91,6 +89,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
         UNREGISTER,
         STOP_SERVICE,
         RESTART_SERVICE,
+        CHANGED_LOCALE,
         ON_RESUME,
     }
 
@@ -264,8 +263,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                                 m_tunnelThread.start();
                             })
                             .subscribe());
-            // Also set locale
-            setLocale(this);
         }
         return Service.START_REDELIVER_INTENT;
     }
@@ -655,9 +652,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                         }
                         manager.mClients.add(client);
                         manager.m_newClientPublishRelay.accept(new Object());
-
-                        // When new client binds also sync locale
-                        setLocale(manager);
                     }
                     break;
 
@@ -696,6 +690,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
                     }
                     break;
 
+                case CHANGED_LOCALE:
+                    if (manager != null) {
+                        setLocale(manager);
+                    }
+                    break;
+
                 case ON_RESUME:
                     if (manager != null) {
                         manager.purchaseVerifier.queryAllPurchases();
@@ -711,15 +711,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
     private static void setLocale(TunnelManager manager) {
         LocaleManager localeManager = LocaleManager.getInstance(manager.m_parentService);
         String languageCode = localeManager.getLanguage();
-        if (!languageCode.equals(currentLanguageCode)) {
-            if (localeManager.isSystemLocale(languageCode)) {
-                manager.m_context = localeManager.resetToSystemLocale(manager.m_parentService);
-            } else {
-                manager.m_context = localeManager.setNewLocale(manager.m_parentService, languageCode);
-            }
-            manager.updateNotifications();
+        if (localeManager.isSystemLocale(languageCode)) {
+            manager.m_context = localeManager.resetToSystemLocale(manager.m_parentService);
+        } else {
+            manager.m_context = localeManager.setNewLocale(manager.m_parentService, languageCode);
         }
-        currentLanguageCode = languageCode;
+        manager.updateNotifications();
     }
 
     private Message composeClientMessage(int what, Bundle data) {
@@ -822,6 +819,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger, 
 
     private void runTunnel() {
         Utils.initializeSecureRandom();
+        // Also set locale
+        setLocale(this);
 
         m_isReconnect.set(false);
         m_isStopping.set(false);
