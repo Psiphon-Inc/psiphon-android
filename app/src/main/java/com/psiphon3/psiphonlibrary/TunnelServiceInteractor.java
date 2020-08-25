@@ -160,6 +160,10 @@ public class TunnelServiceInteractor {
         commandTunnelRestart(resetReconnectFlag);
     }
 
+    public void sendLocaleChangedMessage() {
+        sendServiceMessage(TunnelManager.ClientToServiceMessage.CHANGED_LOCALE.ordinal(), null);
+    }
+
     public Flowable<TunnelState> tunnelStateFlowable() {
         return tunnelStateRelay
                 .distinctUntilChanged()
