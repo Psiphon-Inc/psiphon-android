@@ -632,6 +632,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, MyLog.ILogger {
             manager.m_context = localeManager.setNewLocale(manager.m_parentService, languageCode);
         }
         manager.updateNotifications();
+        UpgradeManager.UpgradeInstaller.updateNotification(manager.getContext());
     }
 
     private Message composeClientMessage(int what, Bundle data) {
