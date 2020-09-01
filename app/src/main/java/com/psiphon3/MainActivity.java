@@ -520,6 +520,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private void proceedStartTunnel() {
         // Don't start if custom proxy settings is selected and values are invalid
         if (!viewModel.validateCustomProxySettings()) {
+            // Update the main UI with the latest tunnel state once explicitly as the app will not
+            // go through the pause / resume cycle at this point and the toggle button may still be
+            // showing the last number of the startup countdown. This is only relevant to GP and Pro.
+            compositeDisposable.add(viewModel.tunnelStateFlowable()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .firstOrError()
+                    .doOnSuccess(this::updateServiceStateUI)
+                    .subscribe());
             return;
         }
         boolean waitingForPrompt = doVpnPrepare();
