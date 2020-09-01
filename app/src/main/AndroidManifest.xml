@@ -28,7 +28,25 @@ com.google.android.exoplayer2.source.hls,
 com.google.android.exoplayer2.source.smoothstreaming,
 com.google.android.exoplayer2.core,
 com.google.android.gms.ads_base,
-com.jakewharton.threetenabp" />
+com.jakewharton.threetenabp,
+com.millennialmedia.adapter,
+com.verizon.ads,
+com.verizon.ads.edition,
+com.verizon.ads.inlineplacement,
+com.verizon.ads.inlinewebadapter,
+com.verizon.ads.interstitialplacement,
+com.verizon.ads.interstitialvastadapter,
+com.verizon.ads.interstitialwebadapter,
+com.verizon.ads.nativeplacement,
+com.verizon.ads.nativeverizonnativeadapter,
+com.verizon.ads.omsdk,
+com.verizon.ads.support,
+com.verizon.ads.uriexperience,
+com.verizon.ads.vastcontroller,
+com.verizon.ads.verizonnativecontroller,
+com.verizon.ads.videoplayer,
+com.verizon.ads.webcontroller,
+com.verizon.ads.webview" />
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"

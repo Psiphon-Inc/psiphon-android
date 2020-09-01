@@ -159,6 +159,8 @@ dependencies {
     // Source: https://github.com/Psiphon-Inc/googleads-mobile-android-mediation/tree/master/ThirdPartyAdapters/mopub
     implementation(name: 'mopub-release', ext: 'aar')
 
+    implementation "com.google.ads.mediation:verizonmedia:$rootProject.ext.verizonmediaAdapterVersion"
+
     implementation "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxandroidVersion"
     implementation "io.reactivex.rxjava2:rxjava:$rootProject.ext.rxjavaVersion"
     implementation "com.jakewharton.rxrelay2:rxrelay:$rootProject.ext.rxrelayVersion"
