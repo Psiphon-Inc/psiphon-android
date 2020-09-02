@@ -27,6 +27,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -88,6 +89,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private LoggingObserver loggingObserver;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
     private Button toggleButton;
+    private ProgressBar connectionProgressBar;
     private Button openBrowserButton;
     private MainActivityViewModel viewModel;
     private Toast invalidProxySettingsToast;
@@ -127,6 +129,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         setUpBanner();
 
         toggleButton = findViewById(R.id.toggleButton);
+        connectionProgressBar = findViewById(R.id.connectionProgressBar);
         openBrowserButton = findViewById(R.id.openBrowserButton);
         toggleButton.setOnClickListener(v ->
                 compositeDisposable.add(viewModel.tunnelStateFlowable()
@@ -322,11 +325,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             openBrowserButton.setEnabled(false);
             toggleButton.setEnabled(false);
             toggleButton.setText(getText(R.string.waiting));
+            connectionProgressBar.setVisibility(View.INVISIBLE);
         } else if (tunnelState.isRunning()) {
             toggleButton.setEnabled(true);
             toggleButton.setText(getText(R.string.stop));
             if (tunnelState.connectionData().isConnected()) {
                 openBrowserButton.setEnabled(true);
+                connectionProgressBar.setVisibility(View.INVISIBLE);
 
                 ArrayList<String> homePages = tunnelState.connectionData().homePages();
                 final String url;
@@ -338,12 +343,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 openBrowserButton.setOnClickListener(view -> displayBrowser(this, url));
             } else {
                 openBrowserButton.setEnabled(false);
+                connectionProgressBar.setVisibility(View.VISIBLE);
             }
         } else {
             // Service not running
             toggleButton.setText(getText(R.string.start));
             toggleButton.setEnabled(true);
             openBrowserButton.setEnabled(false);
+            connectionProgressBar.setVisibility(View.INVISIBLE);
         }
     }
 
