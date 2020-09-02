@@ -77,7 +77,6 @@
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:layout_weight="1.0"
-                android:onClick="onToggleClick"
                 android:text="@string/start"
                 android:textAppearance="?android:attr/textAppearanceSmall" />
 

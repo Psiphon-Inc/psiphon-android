@@ -92,7 +92,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private LoggingObserver loggingObserver;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
     private Button toggleButton;
-    protected ProgressBar connectionProgressBar;
+    private ProgressBar connectionProgressBar;
     private Button openBrowserButton;
     private MainActivityViewModel viewModel;
     private Toast invalidProxySettingsToast;
