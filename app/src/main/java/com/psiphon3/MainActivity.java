@@ -565,6 +565,27 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             toast.show();
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_VPN_REVOKED)) {
             showVpnAlertDialog(R.string.StatusActivity_VpnRevokedTitle, R.string.StatusActivity_VpnRevokedMessage);
+        } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_DISALLOWED_TRAFFIC)) {
+            if (!isFinishing()) {
+                LayoutInflater inflater = this.getLayoutInflater();
+                View dialogView = inflater.inflate(R.layout.disallowed_traffic_alert_layout, null);
+                AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                        .setCancelable(true)
+                        .setIcon(R.drawable.ic_psiphon_alert_notification)
+                        .setTitle(R.string.disallowed_traffic_alert_notification_title)
+                        .setView(dialogView)
+                        .setNeutralButton(android.R.string.cancel, null)
+                        .setPositiveButton(R.string.btn_get_subscription, (dialog, which) -> {
+                            onSubscribeButtonClick(null);
+                            dialog.dismiss();
+                        });
+                builder.setNegativeButton(R.string.btn_get_speed_boost, (dialog, which) -> {
+                    PsiCashFragment.openPsiCashStoreActivity(this,
+                            getResources().getInteger(R.integer.speedBoostTabIndex));
+                    dialog.dismiss();
+                });
+                builder.show();
+            }
         }
     }
 
