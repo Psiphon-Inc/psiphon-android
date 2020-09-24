@@ -127,9 +127,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         EmbeddedValues.initialize(getApplicationContext());
         multiProcessPreferences = new AppPreferences(this);
 
-        // TODO: verify if we actually need this?
-        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
-
         googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(getApplicationContext());
         googlePlayBillingHelper.startIab();
 
