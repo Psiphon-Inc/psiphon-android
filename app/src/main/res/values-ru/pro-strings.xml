@@ -3,16 +3,16 @@
     <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
         When clicked a new screen opens where users can specify additional HTTP headers to be added to
         to HTTP proxy requests. Users may specify up to 3 custom headers -->
-    <string name="custom_proxy_headers_title">Пользовательские заголовки HTTP</string>
+    <string name="custom_proxy_headers_title">Пользовательские HTTP-заголовки</string>
 
     <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
-    <string name="custom_proxy_headers_summary">Настройка дополнительных пользовательских заголовков HTTP для запросов proxy</string>
+    <string name="custom_proxy_headers_summary">Настройка дополнительных пользовательских HTTP-заголовков для запросов proxy</string>
 
     <!-- Checkbox that toggles adding custom headers feature-->
-    <string name="custom_proxy_headers_checkbox_title">Добавить пользовательские заголовки HTTP</string>
+    <string name="custom_proxy_headers_checkbox_title">Добавить пользовательские HTTP-заголовки </string>
 
     <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
-    <string name="custom_proxy_headers_checkbox_description">Добавить пользовательские заголовки HTTP для всех исходящих запросов HTTP proxy</string>
+    <string name="custom_proxy_headers_checkbox_description">Добавить пользовательские HTTP-заголовки для всех исходящих запросов HTTP-прокси</string>
     <string name="custom_proxy_header_group_1">Заголовок 1</string>
     <string name="custom_proxy_header_group_2">Заголовок 2</string>
     <string name="custom_proxy_header_group_3">Заголовок 3</string>
@@ -25,7 +25,7 @@
     <string name="custom_proxy_header_invalid_name">Ошибка: недопустимые символы в имени заголовка!</string>
     <!-- Title for other text showing what the user's current speed limit is. Users have limited
          speed if they have not paid for premium service. -->
-    <string name="rate_limit_text_title">Ограничение скорости Psiphon</string>
+    <string name="rate_limit_text_title">Ограничение скорости Psiphon:</string>
 
     <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
          and is in megabits-per-second. Users have limited speed if they have not paid for premium
@@ -45,7 +45,7 @@
 
     <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
          the workflow to subscribe for premium access. -->
-    <string name="rate_limit_text_subscribe_button">Сделайте апгрейд сейчас!</string>
+    <string name="rate_limit_text_subscribe_button">Обновите сейчас!</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because of
     an unknown error. Note: 'PsiCash' should not be translated or transliterated. -->
@@ -58,41 +58,41 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
     Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
     anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_insufficient_balance_message">Недостаточно средств для покупки услуги \"Турбоскорость\".</string>
+    <string name="psicash_transaction_insufficient_balance_message">Недостаточно средств для покупки Турбоскорости.</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because they tried to make the purchase with
     an out of date product price. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
     connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate',
     'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_amount_mismatch_message">Цена услуги «Турбоскорость» устарела. Идет обновление.</string>
+    <string name="psicash_transaction_amount_mismatch_message">Стоимость Турбоскорости изменилась. Идет обновление.</string>
 
     <!-- Alert error message informing user that they have an active Speed Boost purchase.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
     Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed',
     'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_existing_message">Вы уже приобрели услугу «Турбоскорость».</string>
+    <string name="psicash_transaction_existing_message">Вы уже приобрели Турбоскорость.</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because they attempted to buy a product that is no longer available
     and that they should try updating or reinstalling the app. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
     connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
     anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_type_not_found_message">Услуга «Турбоскорость» не найдена. Возможно, версия приложения устарела. Проверьте обновления.</string>
+    <string name="psicash_transaction_type_not_found_message">Турбоскорость не обнаружена. Возможно, ваше приложение устарело. Пожалуйста, проверьте обновления.</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because their app has entered an invalid state and that they
     should try updating or reinstalling the app. Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_invalid_tokens_message">Приложение перешло в недопустимый режим. Переустановите его, чтобы и дальше использовать PsiCash.</string>
+    <string name="psicash_transaction_invalid_tokens_message">Приложение перешло в недопустимый режим. Пожалуйста, переустановите его, чтобы использовать PsiCash.</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed due to a server error and that they should try again in a few minutes -->
-    <string name="transaction_server_error_message">Ошибка сервера. Повторите попытку через несколько минут.</string>
+    <string name="transaction_server_error_message">Ошибка сервера. Пожалуйста, повторите попытку через несколько минут.</string>
 
     <!-- Alert error message informing user that a critical PsiCash related error has occurred and encouraging users to send feedback diagnostics -->
-    <string name="psicash_critical_error_message">Произошла критическая ошибка. Пожалуйста, отправьте отзыв.</string>
+    <string name="psicash_critical_error_message">Критическая ошибка. Пожалуйста, отправьте отзыв.</string>
 
     <!-- Alert error message informing user that a critical PsiCash error has occurred and their PsiCash balance and purchases are reset(lost) -->
     <string name="psicash_critical_error_reset_message">Критическая ошибка. Ваш баланс PsiCash и другие параметры были сброшены.</string>
 
     <!-- Alert error message informing user that a recoverable PsiCash related error has occurred and last action will most likely succeed next time. -->
-    <string name="psicash_recoverable_error_message">Произошла некритическая ошибка. Повторите попытку.</string>
+    <string name="psicash_recoverable_error_message">Некритическая ошибка. Пожалуйста, повторите попытку.</string>
 
     <!-- Alert message informing user that a PsiCash rewarded video is currently not available. -->
     <string name="psicash_video_not_available_message">Видео недоступно. Повторите попытку позже.</string>
@@ -104,13 +104,13 @@
      'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_connect_to_purchase_message">Чтобы приобрести Турбоскорость, запустите Psiphon.</string>
+    <string name="speed_boost_connect_to_purchase_message">Чтобы приобрести Турбоскорость, пожалуйста, запустите Psiphon.</string>
 
     <!-- Alert error message informing user that the Psiphon tunnel needs to complete its connection sequence in order to make a Speed Boost purchase.
      'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_wait_tunnel_to_connect_to_purchase_message">Чтобы приобрести Турбоскорость, дождитесь подключения туннеля.</string>
+    <string name="speed_boost_wait_tunnel_to_connect_to_purchase_message">Чтобы приобрести Турбоскорость, пожалуйста, дождитесь подключения туннеля.</string>
 
     <!-- Alert error message informing user that a critical error has occurred while trying to retrieve PsiCash balance and encouraging the user to
     send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
@@ -171,7 +171,7 @@
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.
     Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_description">Ваша текущая подписка Psiphon уже дает вам постоянную Турбоскорость. Нет нужды покупать больше. Ваш баланс PsiCash будет сохранен на случай, если вы захотите отменить подписку</string>
+    <string name="psicash_store_subscription_description">Ваша текущая подписка Psiphon уже дает вам постоянную Турбоскорость. Нет нужды покупать снова. Ваш баланс PsiCash будет сохранен на случай, если вы захотите отменить подписку</string>
 
     <!-- A message to the user seen when the users are trying to navigate to PsiCash store screen while Psiphon has not finished connecting to the server
     Do not translate or transliterate words Psiphon -->
