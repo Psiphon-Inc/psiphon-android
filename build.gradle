@@ -34,6 +34,7 @@ ext {
     preferenceVersion = '1.1.1'
     localBroadCastManagerVersion = '1.0.0'
     junitVersion = '1.1.1'
+    workManagerVersion = '2.4.0'
     mockitoVersion = '2.7.22'
     playServicesAdsVersion = '17.2.0'
     mopubSdkVersion = '5.5.0'
