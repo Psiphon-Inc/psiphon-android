@@ -110,5 +110,4 @@ public abstract class TunnelState {
     public boolean isStopped() {
         return status() == Status.STOPPED;
     }
-
 }

@@ -83,10 +83,11 @@ public class HomeTabFragment extends Fragment {
         compositeDisposable.add(viewModel.tunnelStateFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
                 // Check for URLs to be opened in the embedded web view.
-                .filter(tunnelState -> !tunnelState.isUnknown())
                 .doOnNext(tunnelState -> {
-                    if (!tunnelState.isRunning() || !tunnelState.connectionData().isConnected()) {
-                        // The tunnel is either not running or connecting, stop loading the sponsor page
+                    // If the tunnel is either stopped or running but not connected
+                    // then stop loading the sponsor page and flip to status view.
+                    if (tunnelState.isStopped() ||
+                            (tunnelState.isRunning() && !tunnelState.connectionData().isConnected())) {
                         if (sponsorHomePage != null) {
                             sponsorHomePage.stop();
                         }
