@@ -10,8 +10,8 @@ import androidx.work.WorkerParameters;
 import ca.psiphon.PsiphonTunnel;
 import ca.psiphon.PsiphonTunnel.PsiphonTunnelFeedback;
 
-import com.psiphon3.R;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.subscription.R;
 
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
