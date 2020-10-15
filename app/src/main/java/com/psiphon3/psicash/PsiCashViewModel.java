@@ -75,7 +75,7 @@ public class PsiCashViewModel extends AndroidViewModel implements MviViewModel, 
     public PsiCashViewModel(@NonNull Application application) {
         super(application);
 
-        tunnelServiceInteractor = new TunnelServiceInteractor(application.getApplicationContext());
+        tunnelServiceInteractor = new TunnelServiceInteractor(application.getApplicationContext(), true);
         googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(application.getApplicationContext());
         intentPublishRelay = PublishRelay.create();
         psiCashActionProcessorHolder = new PsiCashActionProcessorHolder(application);
