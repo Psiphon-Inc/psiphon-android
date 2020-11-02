@@ -124,6 +124,9 @@ repositories {
     maven {
         url 'https://jitpack.io'
     }
+    maven {
+        url 'https://maven.ogury.co'
+    }
 }
 
 dependencies {
@@ -159,6 +162,9 @@ dependencies {
     implementation(name: 'mopub-release', ext: 'aar')
 
     implementation "com.google.ads.mediation:verizonmedia:$rootProject.ext.verizonmediaAdapterVersion"
+
+    implementation "co.ogury:ogury-sdk:$rootProject.ext.oguryAdapterVersion"
+    implementation "co.ogury:ogury-mediation-admob:$rootProject.ext.oguryAdapterVersion"
 
     implementation "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxandroidVersion"
     implementation "io.reactivex.rxjava2:rxjava:$rootProject.ext.rxjavaVersion"
