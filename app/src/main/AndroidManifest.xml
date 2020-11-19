@@ -3,8 +3,35 @@
     package="com.psiphon3"
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
-    <uses-sdk tools:overrideLibrary="ca.psiphon,com.mopub.mobileads.banner,com.mopub.mobileads.base,
-    com.mopub.mobileads.interstitial,com.moat.analytics.mobile.mpub" />
+    <uses-sdk tools:overrideLibrary="ca.psiphon,
+androidx.media2.common,
+androidx.media2.player,
+androidx.media2.session,
+androidx.media2.widget,
+com.applovin.sdk,
+com.freestar.android.ads,
+com.freestar.android.ads.admob,
+com.freestar.android.ads.amazon,
+com.freestar.android.ads.applovin,
+com.freestar.android.ads.facebook,
+com.freestar.android.ads.google,
+com.freestar.android.ads.mopub,
+com.freestar.android.ads.unityads,
+com.freestar.android.ads.vungle,
+com.google.android.exoplayer2,
+com.google.android.exoplayer2.core,
+com.google.android.exoplayer2.source.dash,
+com.google.android.exoplayer2.source.hls,
+com.google.android.exoplayer2.source.smoothstreaming,
+com.google.android.exoplayer2.ui,
+com.moat.analytics.mobile.mpub,
+com.mopub.mobileads,
+com.mopub.mobileads.banner,
+com.mopub.mobileads.base,
+com.mopub.mobileads.interstitial,
+com.mopub.mobileads.native_static,
+com.mopub.mobileads.native_video,
+com.mopub.mobileads.rewarded_video" />
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"
@@ -25,18 +52,26 @@
         android:theme="@style/Theme.AppCompat"
         android:hardwareAccelerated="true"
         android:allowBackup="false"
+        android:fullBackupContent="false"
         android:icon="@drawable/ic_launcher"
         android:supportsRtl="true"
         android:label="@string/app_name"
         android:usesCleartextTraffic="true"
-        tools:ignore="GoogleAppIndexingWarning">
+        tools:ignore="GoogleAppIndexingWarning"
+        tools:replace="android:fullBackupContent">
 
         <!-- Required for newer devices -->
         <uses-library android:name="org.apache.http.legacy" android:required="false"/>
 
+        <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version"/>
+
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="${admobAppId}"/>
+
+        <meta-data
+            android:name="applovin.sdk.key"
+            android:value="hO52kFtMvEo_AoeRzED0_XXfS1B1VQp9GW50yudJO-eUUTOmRBLl3c-2GyTevLNspll_fN5PLTbAHOakoTuHuP" />
 
         <activity
             android:name=".MainActivity"

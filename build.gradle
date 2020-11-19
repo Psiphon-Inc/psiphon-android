@@ -36,8 +36,7 @@ ext {
     junitVersion = '1.1.1'
     workManagerVersion = '2.4.0'
     mockitoVersion = '2.7.22'
-    playServicesAdsVersion = '17.2.0'
-    mopubSdkVersion = '5.5.0'
-    mopubMediationAdmobVersion = '15.0.0.8'
+    playServicesAdsVersion = '17.2.1'
+    mopubSdkVersion = '5.12.0'
     adsConsentLibraryVersion = '1.0.8'
 }

@@ -123,6 +123,7 @@ repositories {
     maven {
         url 'https://jitpack.io'
     }
+    maven { url "https://dl.bintray.com/vdopiacorp/fsdk" }
 }
 
 dependencies {
@@ -148,8 +149,39 @@ dependencies {
         transitive = true
     }
 
+    //begin Freestar
+    implementation 'com.freestar.android.ads:freestar:3.2.9'
+    implementation 'com.freestar.android.ads.admob:freestar-admob-adapter:17.2.0.4'
+    implementation 'com.freestar.android.ads.applovin:freestar-applovin-adapter:9.13.1.2'
+    implementation 'com.freestar.android.ads.amazon:freestar-amazon-adapter:6.0.0.0'
+    implementation 'com.freestar.android.ads.google:freestar-google-adapter:17.2.0.5'
+    implementation 'com.freestar.android.ads.unityads:freestar-unity-adapter:3.5.0'
+    implementation 'com.freestar.android.ads.vungle:freestar-vungle-adapter:6.7.0'  //Fullscreen ads only
+    implementation 'com.freestar.android.ads.facebook:freestar-facebook-adapter:5.8.0.4'
+    implementation 'com.freestar.android.ads.mopub:freestar-mopub-adapter:5.8.0.3'
+
+    implementation 'com.applovin:applovin-sdk:9.13.1'
     implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
-    implementation "com.google.android.ads.consent:consent-library:$rootProject.ext.adsConsentLibraryVersion"
+    implementation("com.google.android.ads.consent:consent-library:$rootProject.ext.adsConsentLibraryVersion") {
+        exclude group: 'com.android.support'
+        exclude group: 'com.google.code.gson', module: 'gson'
+    }
+    implementation('com.facebook.android:audience-network-sdk:5.9.0') {
+        exclude group: 'com.google.android.exoplayer'
+        exclude group: 'com.google.android.gms'
+        exclude group: 'com.android.support'
+    }
+    implementation('com.github.vungle:vungle-android-sdk:6.7.0') {
+        exclude group: 'com.android.support'
+    }
+    implementation("com.mopub:mopub-sdk:$rootProject.ext.mopubSdkVersion@aar") {
+        transitive = true
+        exclude group: 'com.android.support'
+    }
+
+    //Note: if you are using Pre-roll, un-comment the following line:
+    //implementation 'com.google.ads.interactivemedia.v3:interactivemedia:3.11.2'
+    //end, FreeStar
 
     implementation "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxandroidVersion"
     implementation "io.reactivex.rxjava2:rxjava:$rootProject.ext.rxjavaVersion"
