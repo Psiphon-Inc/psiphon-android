@@ -157,6 +157,7 @@ public class PsiphonAdManager {
     private final Activity activity;
     private int tabChangedCount = 0;
 
+    private boolean FreeStarAdsInitCalled = false;
     private final Completable initializeFreestarSdk;
     private final Completable initializeMoPubSdk;
     private final Observable<AdResult> currentAdTypeObservable;
@@ -176,14 +177,22 @@ public class PsiphonAdManager {
         this.bannerLayout = bannerLayout;
 
         this.initializeFreestarSdk = Completable.create(emitter -> {
-            if (FreeStarAds.isInitialized()) {
-                if (!emitter.isDisposed()) {
+            if (!FreeStarAdsInitCalled) {
+                FreeStarAdsInitCalled = true;
+                FreeStarAds.init(activity.getApplicationContext(), "dLnefq");
+            }
+            if (!emitter.isDisposed()) {
+                if (!FreeStarAds.isInitialized()) {
+                    emitter.onError(new Throwable());
+                } else {
                     emitter.onComplete();
                 }
-                return;
             }
-            FreeStarAds.init(activity.getApplicationContext(), "dLnefq");
         })
+                // Keep polling FreeStarAds.isInitialized every 250 ms
+                .retryWhen(errors -> errors.delay(250, TimeUnit.MILLISECONDS))
+                // Timeout after 5 seconds of polling if still not initialized
+                .timeout(5, TimeUnit.SECONDS)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .doOnError(e -> Utils.MyLog.d("initializeFreestarSdk error: " + e));
 
