@@ -193,6 +193,9 @@ public class PsiphonAdManager {
                 .retryWhen(errors -> errors.delay(250, TimeUnit.MILLISECONDS))
                 // Timeout after 5 seconds of polling if still not initialized
                 .timeout(5, TimeUnit.SECONDS)
+                // Short delay as we have observed failures to load ads if requested too soon after
+                // initialization
+                .delay(250, TimeUnit.MILLISECONDS)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .doOnError(e -> Utils.MyLog.d("initializeFreestarSdk error: " + e));
 
