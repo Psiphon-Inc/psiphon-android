@@ -1,12 +1,9 @@
 package com.psiphon3;
 
-import android.Manifest;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -21,7 +18,6 @@ import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.AbsoluteSizeSpan;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -33,8 +29,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
@@ -100,6 +94,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private PsiphonAdManager psiphonAdManager;
     private boolean disableInterstitialOnNextTabChange;
     protected Disposable startUpInterstitialDisposable;
+    private boolean isForeground = false;
+    private boolean interstitialStartUpPending = false;
 
 
     @Override
@@ -205,6 +201,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        isForeground = false;
         getContentResolver().unregisterContentObserver(loggingObserver);
         cancelInvalidProxySettingsToast();
         compositeDisposable.clear();
@@ -213,6 +210,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        isForeground = true;
         // Load new logs from the logging provider now
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             loggingObserver.dispatchChange(false, LoggingProvider.INSERT_URI);
@@ -246,6 +244,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(url -> displayBrowser(this, url))
                 .subscribe());
+
+        // Ads - check if the tunnel should be started after interstitial was dismissed.
+        boolean shouldStartTunnel = interstitialStartUpPending;
+        interstitialStartUpPending = false;
+        if (shouldStartTunnel) {
+            startTunnel();
+            return;
+        }
 
         boolean shouldAutoStart = shouldAutoStart();
         preventAutoStart();
@@ -685,7 +691,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         if(startUpInterstitialDisposable != null) {
             startUpInterstitialDisposable.dispose();
         }
-        startTunnel();
+        // In order to avoid tunnel state UI inconsistencies we want to defer starting the tunnel
+        // until the app is resumed.
+        if (isForeground) {
+            startTunnel();
+        } else {
+            interstitialStartUpPending = true;
+        }
     }
 
     public void selectTabByTag(@NonNull Object tag) {
