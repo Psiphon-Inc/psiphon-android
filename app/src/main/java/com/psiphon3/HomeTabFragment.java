@@ -123,7 +123,7 @@ public class HomeTabFragment extends Fragment {
                 .doOnNext(this::loadEmbeddedWebView)
                 .subscribe());
 
-        PsiCashViewModel psiCashViewModel = new ViewModelProvider(this,
+        PsiCashViewModel psiCashViewModel = new ViewModelProvider(requireActivity(),
                 new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
                 .get(PsiCashViewModel.class);
 
