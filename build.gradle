@@ -31,7 +31,6 @@ ext {
     mopubSdkVersion = '5.14.0'
     adsConsentLibraryVersion = '1.0.8'
     verizonmediaAdapterVersion = '1.7.0.0'
-    oguryAdapterVersion = '5.+'
     multidexVersion = '2.0.1'
     appcompatVersion = '1.2.0'
     cardviewVersion = '1.0.0'
