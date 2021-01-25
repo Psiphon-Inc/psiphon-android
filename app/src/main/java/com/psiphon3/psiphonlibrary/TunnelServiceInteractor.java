@@ -240,13 +240,14 @@ public class TunnelServiceInteractor {
             return tunnelState;
         }
         tunnelState.isRunning = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_RUNNING);
-        tunnelState.isConnected = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_CONNECTED);
+        tunnelState.networkConnectionState =
+                (TunnelState.ConnectionData.NetworkConnectionState) data.getSerializable(TunnelManager.DATA_TUNNEL_STATE_NETWORK_CONNECTED);
         tunnelState.listeningLocalSocksProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT);
         tunnelState.listeningLocalHttpProxyPort = data.getInt(TunnelManager.DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT);
         tunnelState.clientRegion = data.getString(TunnelManager.DATA_TUNNEL_STATE_CLIENT_REGION);
         tunnelState.sponsorId = data.getString(TunnelManager.DATA_TUNNEL_STATE_SPONSOR_ID);
         ArrayList<String> homePages = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_HOME_PAGES);
-        if (homePages != null && tunnelState.isConnected) {
+        if (homePages != null && tunnelState.isConnected()) {
             tunnelState.homePages = homePages;
         }
         return tunnelState;
@@ -294,7 +295,7 @@ public class TunnelServiceInteractor {
                     TunnelState tunnelState;
                     if (state.isRunning) {
                         TunnelState.ConnectionData connectionData = TunnelState.ConnectionData.builder()
-                                .setIsConnected(state.isConnected)
+                                .setNetworkConnectionState(state.networkConnectionState)
                                 .setClientRegion(state.clientRegion)
                                 .setClientVersion(EmbeddedValues.CLIENT_VERSION)
                                 .setPropagationChannelId(EmbeddedValues.PROPAGATION_CHANNEL_ID)
@@ -310,7 +311,7 @@ public class TunnelServiceInteractor {
                     break;
                 case DATA_TRANSFER_STATS:
                     getDataTransferStatsFromBundle(data);
-                    tunnelServiceInteractor.dataStatsRelay.accept(state.isConnected);
+                    tunnelServiceInteractor.dataStatsRelay.accept(state.isConnected());
                     break;
                 case AUTHORIZATIONS_REMOVED:
                     LocalBroadcastManager.getInstance(tunnelServiceInteractor.context)
