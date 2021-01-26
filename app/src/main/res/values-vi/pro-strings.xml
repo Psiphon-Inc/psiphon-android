@@ -1,3 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">Chỉnh sửa biểu ngữ HTTP</string>
+
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">Thiết lập thêm biểu ngữ HTTP cho yêu cầu Proxy</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">Thiêu biểu ngữ HTTP tùy chỉnh</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">Thêm biểu ngữ HTTP tùy chỉnh cho toàn bộ yêu cầu HTTP Proxy gửi đi</string>
+    <string name="custom_proxy_header_group_1">Biểu ngữ 1</string>
+    <string name="custom_proxy_header_group_2">Biểu ngữ 2</string>
+    <string name="custom_proxy_header_group_3">Biểu ngữ 3</string>
+    <string name="custom_proxy_header_group_4">Biểu ngữ 4</string>
+    <string name="custom_proxy_header_group_5">Biểu ngữ 5</string>
+    <string name="custom_proxy_header_group_6">Biểu ngữ 6</string>
+    <string name="custom_proxy_header_name">Nhập tên biểu ngữ</string>
+    <string name="custom_proxy_header_value">Nhập giá trị biểu ngữ</string>
+    <string name="custom_proxy_header_ignored_values">Chú ý: Biểu ngữ không tên sẽ bị bỏ qua!</string>
+    <string name="custom_proxy_header_invalid_name">Lỗi: Tên biêu ngữ có ký tự bất hợp pháp!</string>
+    <!-- Title for other text showing what the user's current speed limit is. Users have limited
+         speed if they have not paid for premium service. -->
+    <string name="rate_limit_text_title">Giới hạn tốc độ Psiphon:</string>
+
+    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
+         and is in megabits-per-second. Users have limited speed if they have not paid for premium
+         service. -->
+    <string name="rate_limit_text_limited">%d Mb/s</string>
+
+    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
+         have access to a full-speed connection. Users have limited speed if they have not paid for
+         premium service. -->
+    <string name="rate_limit_text_unlimited">Không giới hạn</string>
+
+    <!-- Indicates that the user has an active speed boost.'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
+    anything that indicates a fast or unrestricted speed. -->
+    <string name="rate_limit_text_speed_boost">Nâng cấp Tốc Độ</string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">Nâng cấp ngay!</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because of
+    an unknown error. Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_transaction_invalid_message">Phản hồi không hợp lệ từ máy chủ PsiCash.</string>
+
+    <!-- Internal message not seen by the users, indicates successful Speed Boost purchase. -->
+    <string name="psicash_transaction_success_message">Thành công.</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because they have an insufficient balance.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
+    anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_insufficient_balance_message">Không đủ tài khoản để nâng cấp Tốc Độ.</string>
+
+    <!-- Alert error message informing user that they have an active Speed Boost purchase.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed',
+    'blast off', or anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_existing_message">Nâng cấp Tốc Độ đang được kích hoạt.</string>
+
     </resources>
