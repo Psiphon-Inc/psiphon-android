@@ -150,15 +150,15 @@ dependencies {
     }
 
     //begin Freestar
-    implementation 'com.freestar.android.ads:freestar:3.2.9'
-    implementation 'com.freestar.android.ads.admob:freestar-admob-adapter:17.2.0.4'
+    implementation 'com.freestar.android.ads:freestar:3.3.0'
+    implementation 'com.freestar.android.ads.admob:freestar-admob-adapter:19.5.0.0'
     implementation 'com.freestar.android.ads.applovin:freestar-applovin-adapter:9.13.1.2'
     implementation 'com.freestar.android.ads.amazon:freestar-amazon-adapter:6.0.0.0'
-    implementation 'com.freestar.android.ads.google:freestar-google-adapter:17.2.0.5'
+    implementation 'com.freestar.android.ads.google:freestar-google-adapter:19.6.0.0'
     implementation 'com.freestar.android.ads.unityads:freestar-unity-adapter:3.5.0'
     implementation 'com.freestar.android.ads.vungle:freestar-vungle-adapter:6.7.0'  //Fullscreen ads only
-    implementation 'com.freestar.android.ads.facebook:freestar-facebook-adapter:5.8.0.4'
-    implementation 'com.freestar.android.ads.mopub:freestar-mopub-adapter:5.8.0.3'
+    implementation 'com.freestar.android.ads.facebook:freestar-facebook-adapter:6.1.0.0'
+    implementation 'com.freestar.android.ads.mopub:freestar-mopub-adapter:5.12.0.0'
 
     implementation 'com.applovin:applovin-sdk:9.13.1'
     implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
@@ -166,7 +166,7 @@ dependencies {
         exclude group: 'com.android.support'
         exclude group: 'com.google.code.gson', module: 'gson'
     }
-    implementation('com.facebook.android:audience-network-sdk:5.9.0') {
+    implementation('com.facebook.android:audience-network-sdk:6.1.0') {
         exclude group: 'com.google.android.exoplayer'
         exclude group: 'com.google.android.gms'
         exclude group: 'com.android.support'
