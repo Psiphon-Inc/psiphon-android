@@ -1,14 +1,11 @@
 package com.psiphon3;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.net.VpnService;
 import android.os.Build;
@@ -20,7 +17,6 @@ import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.AbsoluteSizeSpan;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -32,8 +28,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
@@ -104,7 +98,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private PsiphonAdManager psiphonAdManager;
     private boolean disableInterstitialOnNextTabChange;
     protected Disposable startUpInterstitialDisposable;
-
+    private boolean isForeground = false;
+    private boolean interstitialStartUpPending = false;
 
     @SuppressLint("SourceLockedOrientationActivity")
     @Override
@@ -162,7 +157,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
         // ads
         psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.largeAdSlot),
-                () -> onSubscribeButtonClick(null), viewModel.tunnelStateFlowable());
+                viewModel.tunnelStateFlowable());
         psiphonAdManager.startLoadingAds();
 
         tabLayout = findViewById(R.id.main_activity_tablayout);
@@ -224,6 +219,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        isForeground = false;
         getContentResolver().unregisterContentObserver(loggingObserver);
         cancelInvalidProxySettingsToast();
         compositeDisposable.clear();
@@ -232,6 +228,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        isForeground = true;
         googlePlayBillingHelper.queryAllPurchases();
         googlePlayBillingHelper.queryAllSkuDetails();
 
@@ -282,6 +279,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         .doOnNext(this::setAdBannerPlaceholderVisibility)
                         .subscribe()
         );
+
+        // Ads - check if the tunnel should be started after interstitial was dismissed.
+        boolean shouldStartTunnel = interstitialStartUpPending;
+        interstitialStartUpPending = false;
+        if (shouldStartTunnel) {
+            startTunnel();
+            return;
+        }
 
         boolean shouldAutoStart = shouldAutoStart();
         preventAutoStart();
@@ -754,7 +759,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         if (startUpInterstitialDisposable != null) {
             startUpInterstitialDisposable.dispose();
         }
-        startTunnel();
+        // In order to avoid tunnel state UI inconsistencies we want to defer starting the tunnel
+        // until the app is resumed.
+        if (isForeground) {
+            startTunnel();
+        } else {
+            interstitialStartUpPending = true;
+        }
     }
 
     private void setAdBannerPlaceholderVisibility(SubscriptionState subscriptionState) {
