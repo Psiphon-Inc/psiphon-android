@@ -150,7 +150,7 @@ dependencies {
     }
 
     //begin Freestar
-    implementation 'com.freestar.android.ads:freestar:3.3.0'
+    implementation 'com.freestar.android.ads:freestar:3.3.1'
     implementation 'com.freestar.android.ads.admob:freestar-admob-adapter:19.5.0.0'
     implementation 'com.freestar.android.ads.applovin:freestar-applovin-adapter:9.13.1.2'
     implementation 'com.freestar.android.ads.amazon:freestar-amazon-adapter:6.0.0.0'
@@ -166,7 +166,7 @@ dependencies {
         exclude group: 'com.android.support'
         exclude group: 'com.google.code.gson', module: 'gson'
     }
-    implementation('com.facebook.android:audience-network-sdk:6.1.0') {
+    implementation('com.facebook.android:audience-network-sdk:6.2.1') {
         exclude group: 'com.google.android.exoplayer'
         exclude group: 'com.google.android.gms'
         exclude group: 'com.android.support'
