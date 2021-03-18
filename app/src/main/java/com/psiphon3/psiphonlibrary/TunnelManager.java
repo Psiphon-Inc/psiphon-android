@@ -82,8 +82,6 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
 
-import static android.os.Build.VERSION_CODES.LOLLIPOP;
-
 public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifier.VerificationResultListener {
     // Android IPC messages
     // Client -> Service
@@ -1004,8 +1002,18 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     public Builder newVpnServiceBuilder() {
         Builder vpnBuilder = ((TunnelVpnService) m_parentService).newBuilder();
         // only can control tunneling post lollipop
-        if (Build.VERSION.SDK_INT < LOLLIPOP) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             return vpnBuilder;
+        }
+
+//        Added on API 29:
+//        Marks the VPN network as metered. A VPN network is classified as metered when the user is
+//        sensitive to heavy data usage due to monetary costs and/or data limitations. In such cases,
+//        you should set this to true so that apps on the system can avoid doing large data transfers.
+//        Otherwise, set this to false. Doing so would cause VPN network to inherit its meteredness
+//        from its underlying networks.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            vpnBuilder.setMetered(false);
         }
 
         Context context = getContext();
