@@ -1,3 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">自定 HTTP  表頭</string>
+
+    <string name="custom_proxy_header_group_1">Header 1</string>
+    <string name="custom_proxy_header_group_2">Header 2</string>
+    <string name="custom_proxy_header_group_3">Header 3</string>
+    <string name="custom_proxy_header_group_4">Header 4</string>
+    <string name="custom_proxy_header_group_5">Header 5</string>
+    <string name="custom_proxy_header_group_6">Header 6</string>
+    <string name="custom_proxy_header_name">請輪入表頭名稱</string>
+    <string name="custom_proxy_header_value">請輸入表頭值</string>
+    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
+         have access to a full-speed connection. Users have limited speed if they have not paid for
+         premium service. -->
+    <string name="rate_limit_text_unlimited">無限制</string>
+
+    <!-- Indicates that the user has an active speed boost.'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
+    anything that indicates a fast or unrestricted speed. -->
+    <string name="rate_limit_text_speed_boost">加速版 Speed Boost</string>
+
+    <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
+    of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
+    is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed. -->
+    <string name="speed_boost_active_label">加速版啟用中</string>
+
+    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
+    <string name="psicash_snackbar_action_ok">確定</string>
+
+    <!-- Speed Boost button that opens a dialog with various speed boost options available for purchase.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_button_caption">加速版 Speed Boost</string>
+
+    <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
+    <string name="psicash_purchase_free_button_price">免費</string>
+
+    <!-- SpeedBoost tab title where users may redeem their PsiCash for Speed Boost
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed. -->
+    <string name="speed_boost_tab_title">加速版 Speed Boost</string>
+
+    <!-- Text on the button which takes user to subscription screen -->
+    <string name="btn_get_subscription">訂閱</string>
+
+    <!-- Text on the button which takes user to Speed Boost screen.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="btn_get_speed_boost">加速版 Speed Boost</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">訂閱</string>
+
     </resources>

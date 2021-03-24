@@ -106,6 +106,13 @@
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
     <string name="speed_boost_connect_to_purchase_message">لطفا Psiphon را برای خرید اسپید بوست شروع کنید.</string>
 
+    <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
+    of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
+    is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed. -->
+    <string name="speed_boost_active_label">«اسپید بوست» فعال است</string>
+
     <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
     <string name="psicash_snackbar_action_ok">باشه</string>
 
@@ -128,6 +135,15 @@
         Do not translate or transliterate word Psiphon -->
     <string name="connect_to_psiphon_button_text">اتصال به Psiphon</string>
 
+    <!-- PsiCash tab title where users may purchase some PsiCash from PlayStore or get it for free by watching a video ad. Do not translate or transliterate word PsiCash -->
+    <string name="add_psicash_tab_title">اضافه کردن PsiCash</string>
+
+    <!-- SpeedBoost tab title where users may redeem their PsiCash for Speed Boost
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed. -->
+    <string name="speed_boost_tab_title">اسپید بوست</string>
+
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">ارتقا Psiphon Pro</string>
 
@@ -148,5 +164,8 @@
         <item quantity="one"> %d ساعت</item>
         <item quantity="other"> %d ساعت</item>
     </plurals>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">اشتراک</string>
 
     </resources>
