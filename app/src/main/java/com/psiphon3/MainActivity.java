@@ -199,7 +199,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         viewPager.post(() ->
                 viewPager.setCurrentItem(multiProcessPreferences.getInt(CURRENT_TAB, 0), false));
 
-        HandleCurrentIntent(getIntent());
+        // Schedule handling current intent when the main view is fully inflated
+        getWindow().getDecorView().post(() -> HandleCurrentIntent(getIntent()));
     }
 
     @Override
@@ -494,15 +495,16 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         if (intent == null || intent.getAction() == null) {
             return;
         }
-        // Handle special case - external Android App Link intent which opens PsiCashStoreActivity
-        // when the user navigates to a URL that starts with psiphon://psicash
+        // Handle external deep links first
         // Examples:
         // psiphon://psicash
         // psiphon://psicash/
         // psiphon://psicash/buy
         // psiphon://psicash/speedboost
         // psiphon://psicash/speedboost/extras
-        if (handlePsiCashDeepLinkIntent(intent)) {
+        // psiphon://settings
+        // psiphon://settings/vpn
+        if (handleDeepLinkIntent(intent)) {
             return;
         }
 
@@ -765,32 +767,69 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         toast.show();
     }
 
-    private boolean handlePsiCashDeepLinkIntent(@NonNull Intent intent) {
-        Uri intentUri = intent.getData();
+    private boolean handleDeepLinkIntent(@NonNull Intent intent) {
+        final String FWD_SLASH = "/";
 
-        // Check if a deep link intent
+        final String PSIPHON_SCHEME = "psiphon";
+
+        final String PSICASH_HOST = "psicash";
+        final String PSICASH_PATH_BUY = "/buy";
+        final String PSICASH_PATH_SPEEDBOOST = "/speedboost";
+
+        final String SETTINGS_HOST = "settings";
+        final String SETTINGS_PATH_VPN = "/vpn";
+        final String SETTINGS_PATH_PROXY = "/proxy";
+        final String SETTINGS_PATH_MORE_OPTIONS = "/more-options";
+
+        Uri intentUri = intent.getData();
+        // Check if this is a deep link intent we can handle
         if (!Intent.ACTION_VIEW.equals(intent.getAction()) ||
                 intentUri == null ||
-                !"psiphon".equals(intentUri.getScheme()) ||
-                !"psicash".equals(intentUri.getHost())) {
+                !PSIPHON_SCHEME.equals(intentUri.getScheme())) {
+            // Intent not handled
             return false;
         }
 
-        // Default tab is 'Add PsiCash'
-        int tabIndex = getResources().getInteger(R.integer.psiCashTabIndex);
-
-        // If uri path is "/buy" or "/buy/.*" then navigate to Add PsiCash tab,
-        // otherwise if path is "/speedboost" or "/speedboost/.*" then navigate to SpeedBoost tab
         String path = intentUri.getPath();
-        if (path != null) {
-            if (path.equals("/buy") || path.startsWith("/buy/")) {
-                tabIndex = getResources().getInteger(R.integer.psiCashTabIndex);
-            } else if (path.equals("/speedboost") || path.startsWith("/speedboost/")) {
-                tabIndex = getResources().getInteger(R.integer.speedBoostTabIndex);
-            }
+
+        switch (intentUri.getHost()) {
+            case PSICASH_HOST:
+                // Default tab is 'Add PsiCash'
+                int tabIndex = getResources().getInteger(R.integer.psiCashTabIndex);
+
+                if (path != null) {
+                    if (path.equals(PSICASH_PATH_BUY) || path.startsWith(PSICASH_PATH_BUY + FWD_SLASH)) {
+                        // If the uri path is "/buy" or "/buy/.*" then navigate to Add PsiCash tab,
+                        tabIndex = getResources().getInteger(R.integer.psiCashTabIndex);
+                    } else if (path.equals(PSICASH_PATH_SPEEDBOOST) || path.startsWith(PSICASH_PATH_SPEEDBOOST + FWD_SLASH)) {
+                        // TThe path is "/speedboost" or "/speedboost/.*" - navigate to SpeedBoost tab
+                        tabIndex = getResources().getInteger(R.integer.speedBoostTabIndex);
+                    }
+                }
+
+                PsiCashFragment.openPsiCashStoreActivity(this, tabIndex);
+                // Intent handled
+                return true;
+
+            case SETTINGS_HOST:
+                selectTabByTag("settings");
+                if (path != null) {
+                    // If uri path is "/vpn" or "/vpn/.*" then navigate to VPN settings screen,
+                    // else if path is "/proxy" or "/proxy/.*" then navigate to Proxy settings screen
+                    // else if path is "/more-options" or "/more-options/.*" then navigate to More Options screen
+                    if (path.equals(SETTINGS_PATH_VPN) || path.startsWith(SETTINGS_PATH_VPN + FWD_SLASH)) {
+                        viewModel.signalOpenVpnSettings();
+                    } else if (path.equals(SETTINGS_PATH_PROXY) || path.startsWith(SETTINGS_PATH_PROXY + FWD_SLASH)) {
+                        viewModel.signalOpenProxySettings();
+                    } else if (path.equals(SETTINGS_PATH_MORE_OPTIONS) || path.startsWith(SETTINGS_PATH_MORE_OPTIONS)) {
+                        viewModel.signalOpenMoreOptions();
+                    }
+                }
+                // Intent handled
+                return true;
         }
-        PsiCashFragment.openPsiCashStoreActivity(this, tabIndex);
-        return true;
+        // Intent not handled
+        return false;
     }
 
     private String PsiCashModifyUrl(String originalUrlString) {

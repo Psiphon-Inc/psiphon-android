@@ -103,6 +103,10 @@ com.verizon.ads.webview" />
                 <data
                     android:scheme="psiphon"
                     android:host="psicash" />
+                <!-- Accepts URIs in the form of "psiphon://settings” -->
+                <data
+                    android:scheme="psiphon"
+                    android:host="settings" />
             </intent-filter>
         </activity>
         <activity-alias
