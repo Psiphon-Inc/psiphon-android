@@ -802,7 +802,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         // If the uri path is "/buy" or "/buy/.*" then navigate to Add PsiCash tab,
                         tabIndex = getResources().getInteger(R.integer.psiCashTabIndex);
                     } else if (path.equals(PSICASH_PATH_SPEEDBOOST) || path.startsWith(PSICASH_PATH_SPEEDBOOST + FWD_SLASH)) {
-                        // TThe path is "/speedboost" or "/speedboost/.*" - navigate to SpeedBoost tab
+                        // The path is "/speedboost" or "/speedboost/.*" - navigate to SpeedBoost tab
                         tabIndex = getResources().getInteger(R.integer.speedBoostTabIndex);
                     }
                 }
@@ -814,9 +814,9 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             case SETTINGS_HOST:
                 selectTabByTag("settings");
                 if (path != null) {
-                    // If uri path is "/vpn" or "/vpn/.*" then navigate to VPN settings screen,
-                    // else if path is "/proxy" or "/proxy/.*" then navigate to Proxy settings screen
-                    // else if path is "/more-options" or "/more-options/.*" then navigate to More Options screen
+                    // If uri path is "/vpn" or "/vpn/.*" then signal to navigate to VPN settings screen.
+                    // If the path is "/proxy" or "/proxy/.*" then signal to navigate to Proxy settings screen.
+                    // If the path is "/more-options" or "/more-options/.*" then signal to navigate to More Options screen.
                     if (path.equals(SETTINGS_PATH_VPN) || path.startsWith(SETTINGS_PATH_VPN + FWD_SLASH)) {
                         viewModel.signalOpenVpnSettings();
                     } else if (path.equals(SETTINGS_PATH_PROXY) || path.startsWith(SETTINGS_PATH_PROXY + FWD_SLASH)) {
