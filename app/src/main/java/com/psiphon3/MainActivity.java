@@ -1,14 +1,11 @@
 package com.psiphon3;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.net.VpnService;
 import android.os.Build;
@@ -20,7 +17,6 @@ import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.AbsoluteSizeSpan;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -32,8 +28,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
@@ -501,13 +495,15 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             return;
         }
         // Handle special case - external Android App Link intent which opens PsiCashStoreActivity
-        // when the user navigates to psiphon://psicash
-        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
-            if (isPsiCashIntentUri(intent.getData())) {
-                PsiCashFragment.openPsiCashStoreActivity(this,
-                        getResources().getInteger(R.integer.psiCashTabIndex));
-                return;
-            }
+        // when the user navigates to a URL that starts with psiphon://psicash
+        // Examples:
+        // psiphon://psicash
+        // psiphon://psicash/
+        // psiphon://psicash/buy
+        // psiphon://psicash/speedboost
+        // psiphon://psicash/speedboost/extras
+        if (handlePsiCashDeepLinkIntent(intent)) {
+            return;
         }
 
         // MainActivity is exposed to other apps because it is declared as an entry point activity of the app in the manifest.
@@ -769,15 +765,32 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         toast.show();
     }
 
-    private boolean isPsiCashIntentUri(Uri intentUri) {
-        if (intentUri != null) {
-            // Handle psiphon://psicash
-            if ("psiphon".equals(intentUri.getScheme()) &&
-                    "psicash".equals(intentUri.getHost())) {
-                return true;
+    private boolean handlePsiCashDeepLinkIntent(@NonNull Intent intent) {
+        Uri intentUri = intent.getData();
+
+        // Check if a deep link intent
+        if (!Intent.ACTION_VIEW.equals(intent.getAction()) ||
+                intentUri == null ||
+                !"psiphon".equals(intentUri.getScheme()) ||
+                !"psicash".equals(intentUri.getHost())) {
+            return false;
+        }
+
+        // Default tab is 'Add PsiCash'
+        int tabIndex = getResources().getInteger(R.integer.psiCashTabIndex);
+
+        // If uri path is "/buy" or "/buy/.*" then navigate to Add PsiCash tab,
+        // otherwise if path is "/speedboost" or "/speedboost/.*" then navigate to SpeedBoost tab
+        String path = intentUri.getPath();
+        if (path != null) {
+            if (path.equals("/buy") || path.startsWith("/buy/")) {
+                tabIndex = getResources().getInteger(R.integer.psiCashTabIndex);
+            } else if (path.equals("/speedboost") || path.startsWith("/speedboost/")) {
+                tabIndex = getResources().getInteger(R.integer.speedBoostTabIndex);
             }
         }
-        return false;
+        PsiCashFragment.openPsiCashStoreActivity(this, tabIndex);
+        return true;
     }
 
     private String PsiCashModifyUrl(String originalUrlString) {
