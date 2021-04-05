@@ -66,4 +66,31 @@
     'blast off', or anything that indicates a fast or unrestricted speed. -->
     <string name="psicash_transaction_existing_message">Nâng cấp Tốc Độ đang được kích hoạt.</string>
 
+    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
+    <string name="psicash_snackbar_action_ok">Ok</string>
+
+    <!-- Speed Boost button that opens a dialog with various speed boost options available for purchase.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_button_caption">Nâng cấp Tốc Độ</string>
+
+    <!-- SpeedBoost tab title where users may redeem their PsiCash for Speed Boost
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed. -->
+    <string name="speed_boost_tab_title">Nâng cấp Tốc Độ</string>
+
+    <!-- Text on the button which takes user to subscription screen -->
+    <string name="btn_get_subscription">Ghi danh</string>
+
+    <!-- Text on the button which takes user to Speed Boost screen.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="btn_get_speed_boost">Nâng cấp Tốc Độ</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">Việc đăng ký</string>
+
     </resources>

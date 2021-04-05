@@ -130,4 +130,38 @@
     <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
     <string name="subscription_options_currently_not_available">Abonnementsopties zijn momenteel niet beschikbaar. Probeer het later opnieuw.</string>
 
+    <!-- Speed Boost button that opens a dialog with various speed boost options available for purchase.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_button_caption">Speed Boost</string>
+
+    <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
+    <string name="psicash_purchase_free_button_price">Gratis</string>
+
+    <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message
+        Do not translate or transliterate word Psiphon -->
+    <string name="connect_to_psiphon_button_text">Verbind met Psiphon</string>
+
+    <!-- PsiCash tab title where users may purchase some PsiCash from PlayStore or get it for free by watching a video ad. Do not translate or transliterate word PsiCash -->
+    <string name="add_psicash_tab_title">Voeg PsiCash toe</string>
+
+    <!-- SpeedBoost tab title where users may redeem their PsiCash for Speed Boost
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed. -->
+    <string name="speed_boost_tab_title">Speed Boost</string>
+
+    <!-- Text on the button which takes user to subscription screen -->
+    <string name="btn_get_subscription">Abonneren</string>
+
+    <!-- Text on the button which takes user to Speed Boost screen.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="btn_get_speed_boost">Speed Boost</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">Abonnement</string>
+
     </resources>

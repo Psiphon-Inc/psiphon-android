@@ -1,3 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="custom_proxy_header_group_1">Überschrift 1</string>
+    <string name="custom_proxy_header_group_2">Überschrift 2</string>
+    <string name="custom_proxy_header_group_3">Überschrift 3</string>
+    <string name="custom_proxy_header_group_4">Überschrift 4</string>
+    <string name="custom_proxy_header_group_5">Überschrift 5</string>
+    <string name="custom_proxy_header_group_6">Überschrift 6</string>
+    <string name="custom_proxy_header_name">Kopfdatennamen eingeben</string>
+    <string name="custom_proxy_header_value">Kopfdatenwert eingeben</string>
+    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
+         have access to a full-speed connection. Users have limited speed if they have not paid for
+         premium service. -->
+    <string name="rate_limit_text_unlimited">Unbegrenzt</string>
+
+    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
+    <string name="psicash_snackbar_action_ok">OK</string>
+
+    <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
+    <string name="psicash_purchase_free_button_price">Frei</string>
+
+    <!-- Text on the button which takes user to subscription screen -->
+    <string name="btn_get_subscription">Abonnieren</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">Abonnement</string>
+
     </resources>
