@@ -121,11 +121,27 @@ def getBuildProperty(String propertyName) {
 
 repositories {
     jcenter()
+    maven { url 'https://jitpack.io' }
+    maven { url "https://dl.bintray.com/vdopiacorp/fsdk" }
     maven { url "https://s3.amazonaws.com/moat-sdk-builds" }
     maven {
-        url 'https://jitpack.io'
+        url  "https://timehop.bintray.com/nimbus-android"
+
+        metadataSources {
+            mavenPom()
+            artifact()
+            ignoreGradleMetadataRedirection()
+        }
     }
-    maven { url "https://dl.bintray.com/vdopiacorp/fsdk" }
+    maven {
+        url  "https://timehop.bintray.com/nimbus-openrtb"
+
+        metadataSources {
+            mavenPom()
+            artifact()
+            ignoreGradleMetadataRedirection()
+        }
+    }
 }
 
 dependencies {
@@ -149,17 +165,20 @@ dependencies {
     implementation "androidx.preference:preference:$rootProject.ext.preferenceVersion"
 
     //begin Freestar
-    implementation 'com.freestar.android.ads:freestar:3.3.1'
+    implementation 'com.freestar.android.ads:freestar:3.3.2'
     implementation 'com.freestar.android.ads.admob:freestar-admob-adapter:19.5.0.0'
     implementation 'com.freestar.android.ads.applovin:freestar-applovin-adapter:9.13.1.2'
     implementation 'com.freestar.android.ads.amazon:freestar-amazon-adapter:6.0.0.0'
     implementation 'com.freestar.android.ads.google:freestar-google-adapter:19.6.0.0'
+    implementation 'com.freestar.android.ads.criteo:freestar-criteo-adapter:4.2.1.0'
     implementation 'com.freestar.android.ads.unityads:freestar-unity-adapter:3.5.0'
     implementation 'com.freestar.android.ads.vungle:freestar-vungle-adapter:6.7.0'  //Fullscreen ads only
     implementation 'com.freestar.android.ads.facebook:freestar-facebook-adapter:6.1.0.0'
     implementation 'com.freestar.android.ads.mopub:freestar-mopub-adapter:5.12.0.0'
+    implementation 'com.freestar.android.ads.nimbus:freestar-nimbus-adapter:1.9.1.0'
 
     implementation 'com.applovin:applovin-sdk:9.13.1'
+    implementation 'com.criteo.publisher:criteo-publisher-sdk:4.2.1'
     implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
     implementation("com.google.android.ads.consent:consent-library:$rootProject.ext.adsConsentLibraryVersion") {
         exclude group: 'com.android.support'
@@ -177,6 +196,9 @@ dependencies {
         transitive = true
         exclude group: 'com.android.support'
     }
+    //nimbus
+    implementation "com.adsbynimbus.android:nimbus:1.9.1" // Full Nimbus SDK with NimbusAdManager
+    implementation "com.adsbynimbus.android:extension-okhttp:1.9.1" // Use OkHttp with NimbusAdManager
 
     //Note: if you are using Pre-roll, un-comment the following line:
     //implementation 'com.google.ads.interactivemedia.v3:interactivemedia:3.11.2'

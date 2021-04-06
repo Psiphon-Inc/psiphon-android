@@ -174,7 +174,7 @@ public class PsiphonAdManager {
         this.initializeFreestarSdk = Completable.create(emitter -> {
             if (!FreeStarAdsInitCalled) {
                 FreeStarAdsInitCalled = true;
-                FreeStarAds.init(activity.getApplicationContext(), "dLnefq");
+                FreeStarAds.init(activity.getApplicationContext(), "0P9gcV");
             }
             if (!emitter.isDisposed()) {
                 if (!FreeStarAds.isInitialized()) {
