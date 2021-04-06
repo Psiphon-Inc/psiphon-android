@@ -506,17 +506,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         if (intent == null || intent.getAction() == null) {
             return;
         }
-
-        // Handle special case - external Android App Link intent which opens PsiCashStoreActivity
-        // when the user navigates to psiphon://psicash
-        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
-            if (isPsiCashIntentUri(intent.getData())) {
-                PsiCashFragment.openPsiCashStoreActivity(this,
-                        getResources().getInteger(R.integer.psiCashTabIndex));
-                return;
-            }
-        }
-
         // Handle external deep links first
         // Examples:
         // psiphon://settings
