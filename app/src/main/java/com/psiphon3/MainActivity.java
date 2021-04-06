@@ -516,6 +516,11 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         // Examples:
         // psiphon://settings
         // psiphon://settings/vpn
+        // psiphon://psicash
+        // psiphon://psicash/
+        // psiphon://psicash/buy
+        // psiphon://psicash/speedboost
+        // psiphon://psicash/speedboost/extras
         if (handleDeepLinkIntent(intent)) {
             return;
         }
