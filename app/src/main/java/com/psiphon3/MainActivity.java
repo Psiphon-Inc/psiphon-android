@@ -521,6 +521,11 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         // Examples:
         // psiphon://settings
         // psiphon://settings/vpn
+        // psiphon://psicash
+        // psiphon://psicash/
+        // psiphon://psicash/buy
+        // psiphon://psicash/speedboost
+        // psiphon://psicash/speedboost/extras
         if (handleDeepLinkIntent(intent)) {
             return;
         }
@@ -600,6 +605,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
         final String PSIPHON_SCHEME = "psiphon";
 
+        final String PSICASH_HOST = "psicash";
+        final String PSICASH_PATH_BUY = "/buy";
+        final String PSICASH_PATH_SPEEDBOOST = "/speedboost";
+
         final String SETTINGS_HOST = "settings";
         final String SETTINGS_PATH_VPN = "/vpn";
         final String SETTINGS_PATH_PROXY = "/proxy";
@@ -617,6 +626,24 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         String path = intentUri.getPath();
 
         switch (intentUri.getHost()) {
+            case PSICASH_HOST:
+                // Default tab is 'Add PsiCash'
+                int tabIndex = getResources().getInteger(R.integer.psiCashTabIndex);
+
+                if (path != null) {
+                    if (path.equals(PSICASH_PATH_BUY) || path.startsWith(PSICASH_PATH_BUY + FWD_SLASH)) {
+                        // If the uri path is "/buy" or "/buy/.*" then navigate to Add PsiCash tab,
+                        tabIndex = getResources().getInteger(R.integer.psiCashTabIndex);
+                    } else if (path.equals(PSICASH_PATH_SPEEDBOOST) || path.startsWith(PSICASH_PATH_SPEEDBOOST + FWD_SLASH)) {
+                        // The path is "/speedboost" or "/speedboost/.*" - navigate to SpeedBoost tab
+                        tabIndex = getResources().getInteger(R.integer.speedBoostTabIndex);
+                    }
+                }
+
+                PsiCashFragment.openPsiCashStoreActivity(this, tabIndex);
+                // intent handled
+                return true;
+
             case SETTINGS_HOST:
                 selectTabByTag("settings");
                 if (path != null) {

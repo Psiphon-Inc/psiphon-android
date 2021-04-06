@@ -106,19 +106,14 @@ com.mopub.mobileads.rewarded_video" />
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- Accepts URIs in the form of "psiphon://psicash” -->
-                <data
-                    android:scheme="psiphon"
-                    android:host="psicash" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
                 <!-- Accepts URIs in the form of "psiphon://settings” -->
                 <data
                     android:scheme="psiphon"
                     android:host="settings" />
+                <!-- Accepts URIs in the form of "psiphon://psicash” -->
+                <data
+                    android:scheme="psiphon"
+                    android:host="psicash" />
             </intent-filter>
         </activity>
         <activity-alias
