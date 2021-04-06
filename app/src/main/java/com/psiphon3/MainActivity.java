@@ -205,7 +205,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         viewPager.post(() ->
                 viewPager.setCurrentItem(multiProcessPreferences.getInt(CURRENT_TAB, 0), false));
 
-        HandleCurrentIntent(getIntent());
+        // Schedule handling current intent when the main view is fully inflated
+        getWindow().getDecorView().post(() -> HandleCurrentIntent(getIntent()));
     }
 
     @Override
@@ -500,6 +501,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         if (intent == null || intent.getAction() == null) {
             return;
         }
+
         // Handle special case - external Android App Link intent which opens PsiCashStoreActivity
         // when the user navigates to psiphon://psicash
         if (Intent.ACTION_VIEW.equals(intent.getAction())) {
@@ -508,6 +510,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         getResources().getInteger(R.integer.psiCashTabIndex));
                 return;
             }
+        }
+
+        // Handle external deep links first
+        // Examples:
+        // psiphon://settings
+        // psiphon://settings/vpn
+        if (handleDeepLinkIntent(intent)) {
+            return;
         }
 
         // MainActivity is exposed to other apps because it is declared as an entry point activity of the app in the manifest.
@@ -578,6 +588,49 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 builder.show();
             }
         }
+    }
+
+    private boolean handleDeepLinkIntent(@NonNull Intent intent) {
+        final String FWD_SLASH = "/";
+
+        final String PSIPHON_SCHEME = "psiphon";
+
+        final String SETTINGS_HOST = "settings";
+        final String SETTINGS_PATH_VPN = "/vpn";
+        final String SETTINGS_PATH_PROXY = "/proxy";
+        final String SETTINGS_PATH_MORE_OPTIONS = "/more-options";
+
+        Uri intentUri = intent.getData();
+        // Check if this is a deep link intent we can handle
+        if (!Intent.ACTION_VIEW.equals(intent.getAction()) ||
+                intentUri == null ||
+                !PSIPHON_SCHEME.equals(intentUri.getScheme())) {
+            // Intent not handled
+            return false;
+        }
+
+        String path = intentUri.getPath();
+
+        switch (intentUri.getHost()) {
+            case SETTINGS_HOST:
+                selectTabByTag("settings");
+                if (path != null) {
+                    // If uri path is "/vpn" or "/vpn/.*" then signal to navigate to VPN settings screen.
+                    // If the path is "/proxy" or "/proxy/.*" then signal to navigate to Proxy settings screen.
+                    // If the path is "/more-options" or "/more-options/.*" then signal to navigate to More Options screen.
+                    if (path.equals(SETTINGS_PATH_VPN) || path.startsWith(SETTINGS_PATH_VPN + FWD_SLASH)) {
+                        viewModel.signalOpenVpnSettings();
+                    } else if (path.equals(SETTINGS_PATH_PROXY) || path.startsWith(SETTINGS_PATH_PROXY + FWD_SLASH)) {
+                        viewModel.signalOpenProxySettings();
+                    } else if (path.equals(SETTINGS_PATH_MORE_OPTIONS) || path.startsWith(SETTINGS_PATH_MORE_OPTIONS)) {
+                        viewModel.signalOpenMoreOptions();
+                    }
+                }
+                // intent handled
+                return true;
+        }
+        // intent not handled
+        return false;
     }
 
     private void showVpnAlertDialog(int titleId, int messageId) {
