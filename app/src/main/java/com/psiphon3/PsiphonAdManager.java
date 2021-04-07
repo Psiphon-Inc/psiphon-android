@@ -56,7 +56,7 @@ import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubView;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
-import com.psiphon3.psicash.PsiCashViewModel;
+import com.psiphon3.psicash.details.PsiCashDetailsViewModel;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
 
@@ -280,10 +280,11 @@ public class PsiphonAdManager {
                 .onErrorComplete()
                 .andThen(initializeAdMobSdk);
 
-        PsiCashViewModel psiCashViewModel = new ViewModelProvider(activity,
+        PsiCashDetailsViewModel psiCashDetailsViewModel = new ViewModelProvider(activity,
                 new ViewModelProvider.AndroidViewModelFactory(activity.getApplication()))
-                .get(PsiCashViewModel.class);
-        this.currentAdTypeObservable = psiCashViewModel.booleanActiveSpeedBoostObservable()
+                .get(PsiCashDetailsViewModel.class);
+
+        this.currentAdTypeObservable = psiCashDetailsViewModel.hasActiveSpeedBoostObservable()
                 .switchMap(hasActiveSpeedBoost -> hasActiveSpeedBoost ?
                         Observable.just(AdResult.none()) :
                         Observable.combineLatest(

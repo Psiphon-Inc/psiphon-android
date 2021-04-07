@@ -4,6 +4,6 @@
         android:drawable="@drawable/psicash_coin"
         android:maxLevel="0" />
     <item
-        android:drawable="@drawable/psicash_balance_out_of_date"
+        android:drawable="@drawable/psicash_warning_icon"
         android:maxLevel="1" />
 </level-list>

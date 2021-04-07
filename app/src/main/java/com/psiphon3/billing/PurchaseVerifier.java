@@ -222,21 +222,10 @@ public class PurchaseVerifier {
 
                                         // Persist authorization ID and authorization.
                                         appPreferences.put(PREFERENCE_PURCHASE_AUTHORIZATION_ID, authorization.Id());
-
-                                        // Prior to storing authorization remove all other authorizations of this type
-                                        // from storage. Psiphon server will only accept one authorization per access type.
-                                        // If there are multiple active authorizations of 'google-subscription' type it is
-                                        // not guaranteed the server will select the one associated with current purchase which
-                                        // may result in client connect-as-subscriber -> server-reject infinite re-connect loop.
-                                        List<Authorization> authorizationsToRemove = new ArrayList<>();
-                                        for (Authorization a : Authorization.geAllPersistedAuthorizations(context)) {
-                                            if (a.accessType().equals(authorization.accessType())) {
-                                                authorizationsToRemove.add(a);
-                                            }
-                                        }
-                                        Authorization.removeAuthorizations(context, authorizationsToRemove);
                                         Authorization.storeAuthorization(context, authorization);
+
                                         Utils.MyLog.g("PurchaseVerifier: subscription verification: server returned new authorization.");
+
                                         return VerificationResult.RESTART_AS_SUBSCRIBER;
                                     }
                             )

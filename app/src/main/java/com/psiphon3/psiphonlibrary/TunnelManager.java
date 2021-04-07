@@ -65,7 +65,6 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -243,7 +242,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     // Implementation of android.app.Service.onStartCommand
     int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && INTENT_ACTION_STOP_TUNNEL.equals(intent.getAction())) {
-            if(m_tunnelThreadStopSignal == null || m_tunnelThreadStopSignal.getCount() == 0) {
+            if (m_tunnelThreadStopSignal == null || m_tunnelThreadStopSignal.getCount() == 0) {
                 m_parentService.stopForeground(true);
                 m_parentService.stopSelf();
             } else {
@@ -513,7 +512,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
         if (isConnected) {
             iconID = R.drawable.notification_icon_connected;
-            switch(vpnAppsExclusionSetting) {
+            switch (vpnAppsExclusionSetting) {
                 case INCLUDE_APPS:
                     contentText = getContext().getResources()
                             .getQuantityString(R.plurals.psiphon_service_notification_message_vpn_include_apps,
@@ -554,9 +553,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         stopTunnelIntent.setAction(INTENT_ACTION_STOP_TUNNEL);
         PendingIntent stopTunnelPendingIntent = PendingIntent.getService(getContext(), 0, stopTunnelIntent, 0);
         NotificationCompat.Action notificationAction = new NotificationCompat.Action.Builder(
-                        R.drawable.ic_btn_stop,
-                        getContext().getString(R.string.stop),
-                        stopTunnelPendingIntent)
+                R.drawable.ic_btn_stop,
+                getContext().getString(R.string.stop),
+                stopTunnelPendingIntent)
                 .build();
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getContext(), NOTIFICATION_CHANNEL_ID);
@@ -611,11 +610,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     }
 
     private static class MessengerWrapper {
-        @NonNull Messenger messenger;
+        @NonNull
+        Messenger messenger;
         boolean isActivity;
+
         MessengerWrapper(@NonNull Messenger messenger, Bundle data) {
             this.messenger = messenger;
-            if (data!= null) {
+            if (data != null) {
                 isActivity = data.getBoolean(IS_CLIENT_AN_ACTIVITY, false);
             }
         }
@@ -695,6 +696,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         } else {
                             resetReconnectFlag = true;
                         }
+                        // TODO: notify client that the tunnel is going to restart
+                        //  rather than reporting tunnel is not connected?
+                        manager.m_tunnelConnectedBehaviorRelay.accept(false);
                         manager.m_compositeDisposable.add(
                                 manager.getTunnelConfigSingle()
                                         .doOnSuccess(config -> {
@@ -744,7 +748,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
     private void sendClientMessage(int what, Bundle data) {
         Message msg = composeClientMessage(what, data);
-        for (Iterator i = mClients.entrySet().iterator(); i.hasNext();) {
+        for (Iterator i = mClients.entrySet().iterator(); i.hasNext(); ) {
             Map.Entry pair = (Map.Entry) i.next();
             MessengerWrapper messenger = (MessengerWrapper) pair.getValue();
             try {
@@ -1103,12 +1107,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
      * tunnel, the UpgradeChecker temp tunnel and the FeedbackWorker upload operation).
      *
      * @param context
-     * @param tunnelConfig         Config values to be set in the tunnel core config.
-     * @param useUpstreamProxy     If an upstream proxy has been configured, include it in the returned
-     *                             config. Used to omit the proxy from the returned config when network
-     *                             operations will already be tunneled over a connection which uses the
-     *                             configured upstream proxy.
-     * @param tempTunnelName       null if not a temporary tunnel. If set, must be a valid to use in file path.
+     * @param tunnelConfig     Config values to be set in the tunnel core config.
+     * @param useUpstreamProxy If an upstream proxy has been configured, include it in the returned
+     *                         config. Used to omit the proxy from the returned config when network
+     *                         operations will already be tunneled over a connection which uses the
+     *                         configured upstream proxy.
+     * @param tempTunnelName   null if not a temporary tunnel. If set, must be a valid to use in file path.
      * @return JSON string of config. null on error.
      */
     public static String buildTunnelCoreConfig(
@@ -1477,8 +1481,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             @Override
             public void run() {
                 MyLog.v(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);
-
-                sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
                 m_waitingForConnectivity.set(true);
             }
         });
@@ -1529,9 +1531,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             // Determine if user has a speed boost or subscription auth in the current tunnel run
             hasBoostOrSubscription = false;
             for (Authorization a : acceptedAuthorizations) {
-                if ("google-subscription".equals(a.accessType()) ||
-                        "google-subscription-limited".equals(a.accessType()) ||
-                        "speed-boost".equals(a.accessType())) {
+                if (Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION.equals(a.accessType()) ||
+                        Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED.equals(a.accessType()) ||
+                        Authorization.ACCESS_TYPE_SPEED_BOOST.equals(a.accessType())) {
                     hasBoostOrSubscription = true;
                     // Also cancel disallowed traffic alert notification
                     cancelDisallowedTrafficAlertNotification();

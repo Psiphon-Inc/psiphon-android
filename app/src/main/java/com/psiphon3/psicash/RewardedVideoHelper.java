@@ -26,7 +26,7 @@ import io.reactivex.Flowable;
 import io.reactivex.Observable;
 
 // Last commit with MoPub rewarded videos 31f71f47d2dd98fdb7711a362eb4464d294d491f
-class RewardedVideoHelper {
+public class RewardedVideoHelper {
     // Test videos, supposed to always load
     /*
     private static final String MOPUB_VIDEO_AD_UNIT_ID = "920b6145fb1546cf8b5cf2ac34638bb7";
@@ -39,7 +39,7 @@ class RewardedVideoHelper {
     private final Observable<RewardedVideoPlayable> adMobVideoObservable;
     private final RewardListener rewardListener;
 
-    interface RewardedVideoPlayable {
+    public interface RewardedVideoPlayable {
         enum State {LOADING, READY, CLOSED}
 
         State state();
@@ -48,7 +48,7 @@ class RewardedVideoHelper {
         }
     }
 
-    Observable<RewardedVideoPlayable> getVideoObservable(Flowable<TunnelState> tunnelStateFlowable) {
+    public Observable<RewardedVideoPlayable> getVideoObservable(Flowable<TunnelState> tunnelStateFlowable) {
         return tunnelStateFlowable
                 // Only react to distinct tunnel states that are not UNKNOWN
                 .filter(tunnelState -> !tunnelState.isUnknown())

@@ -14,6 +14,7 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.Preference;
 
+import com.psiphon3.psicash.account.PsiCashAccountActivity;
 import com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity;
 import com.psiphon3.psiphonlibrary.ProxyOptionsPreferenceActivity;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
@@ -231,6 +232,10 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
             case REQUEST_CODE_MORE_PREFERENCES:
                 shouldRestart = moreSettingsRestartRequired();
                 updateMoreSettingsFromPreferences();
+                // Special case: Psiphon connect request from PsiCash account settings
+                if (data != null && MainActivity.PSICASH_CONNECT_PSIPHON_INTENT_ACTION.equals(data.getAction())) {
+                    ((MainActivity) requireActivity()).startUpIfNotRunning();
+                }
                 break;
 
             default:

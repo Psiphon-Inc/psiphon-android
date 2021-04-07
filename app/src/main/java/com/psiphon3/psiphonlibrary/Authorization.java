@@ -27,17 +27,17 @@ import androidx.annotation.Nullable;
 import android.text.TextUtils;
 
 import com.google.auto.value.AutoValue;
+import com.psiphon3.StringListPreferences;
 
-import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import static com.psiphon3.psiphonlibrary.Utils.MyLog;
@@ -45,6 +45,10 @@ import static com.psiphon3.psiphonlibrary.Utils.parseRFC3339Date;
 
 @AutoValue
 public abstract class Authorization {
+    // TODO: PsiCash: production value for ACCESS_TYPE_SPEED_BOOST
+    public static final String ACCESS_TYPE_SPEED_BOOST = "speed-boost-test";
+    public static final String ACCESS_TYPE_GOOGLE_SUBSCRIPTION = "google-subscription";
+    public static final String ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED = "google-subscription-limited";
     private static final String PREFERENCE_AUTHORIZATIONS_LIST = "preferenceAuthorizations";
 
     @Nullable
@@ -121,16 +125,30 @@ public abstract class Authorization {
         preferences.put(PREFERENCE_AUTHORIZATIONS_LIST, base64EncodedAuthorizations);
     }
 
-    public synchronized static void storeAuthorization(Context context, Authorization authorization) {
+    public synchronized static boolean storeAuthorization(Context context, Authorization authorization) {
         if (authorization == null) {
-            return;
+            return false;
         }
         List<Authorization> authorizationList = Authorization.geAllPersistedAuthorizations(context);
         if (authorizationList.contains(authorization)) {
-            return;
+            return false;
         }
+
+        // Prior to storing authorization remove all other authorizations of the same type from
+        // storage. Psiphon server will only accept one authorization per access type. For example,
+        // if there are multiple active authorizations of 'google-subscription' type it is not
+        // guaranteed the server will select the one associated with the current purchase which may
+        // result in client connect-as-subscriber -> server-reject infinite re-connect loop.
+        for (Iterator<Authorization> iterator = authorizationList.iterator(); iterator.hasNext(); ) {
+            Authorization a = iterator.next();
+            if (a.accessType().equals(authorization.accessType())) {
+                iterator.remove();
+            }
+        }
+
         authorizationList.add(authorization);
         replaceAllPersistedAuthorizations(context, authorizationList);
+        return true;
     }
 
     public synchronized static boolean removeAuthorizations(Context context, List<Authorization> toRemove) {
@@ -153,6 +171,25 @@ public abstract class Authorization {
         return hasChanged;
     }
 
+    public synchronized static boolean purgeAuthorizationsOfAccessType(Context context, String accessType) {
+        if (TextUtils.isEmpty(accessType)) {
+            return false;
+        }
+        boolean hasChanged = false;
+        List<Authorization> authorizationList = Authorization.geAllPersistedAuthorizations(context);
+        for (Iterator<Authorization> iterator = authorizationList.iterator(); iterator.hasNext(); ) {
+            Authorization a = iterator.next();
+            if (a.accessType().equals(accessType)) {
+                hasChanged = true;
+                iterator.remove();
+            }
+        }
+        if (hasChanged) {
+            replaceAllPersistedAuthorizations(context, authorizationList);
+        }
+        return hasChanged;
+    }
+
     public abstract String base64EncodedAuthorization();
 
     public abstract String Id();
@@ -161,34 +198,4 @@ public abstract class Authorization {
 
     abstract Date expires();
 
-    private static class StringListPreferences extends AppPreferences {
-        StringListPreferences(Context context) {
-            super(context);
-        }
-
-        public void put(@NonNull String key, List<String> value) {
-            JSONArray jsonArray = new JSONArray(value);
-            super.put(key, jsonArray.toString());
-        }
-
-        @NonNull
-        List<String> getStringList(@NonNull String key) throws ItemNotFoundException {
-            List<String> result = new ArrayList<>();
-            try {
-                String jsonString = super.getString(key);
-                if (TextUtils.isEmpty(jsonString)) {
-                    return result;
-                }
-                JSONArray jsonArray = new JSONArray(jsonString);
-
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    result.add(jsonArray.getString(i));
-                }
-                return result;
-            } catch (JSONException e) {
-                MyLog.g(String.format("%s : JSON exception parsing '%s': %s", getClass().getSimpleName(), key, e.toString()));
-                return result;
-            }
-        }
-    }
 }

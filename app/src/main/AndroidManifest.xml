@@ -139,7 +139,15 @@ com.verizon.ads.webview" />
                 android:value="com.psiphon3.MainActivity" />
         </activity>
         <activity
-            android:name="com.psiphon3.psicash.PsiCashStoreActivity"
+            android:name="com.psiphon3.psicash.store.PsiCashStoreActivity"
+            android:parentActivityName="com.psiphon3.MainActivity"
+            android:label="@string/app_name_psiphon_pro">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.psiphon3.MainActivity" />
+        </activity>
+        <activity
+            android:name="com.psiphon3.psicash.account.PsiCashAccountActivity"
             android:parentActivityName="com.psiphon3.MainActivity"
             android:label="@string/app_name_psiphon_pro">
             <meta-data

@@ -1,9 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- * Copyright (c) 2014, Psiphon Inc.
- * All rights reserved.
--->
+  ~ Copyright (c) 2021, Psiphon Inc.
+  ~ All rights reserved.
+  ~
+  ~ This program is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License, or
+  ~ (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU General Public License
+  ~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <PreferenceCategory
@@ -70,5 +83,26 @@
             android:key="@string/exportZircoPreference"
             android:summary="@string/exportZircoPreferenceSummary"
             android:title="@string/exportZircoPreferenceTitle" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:key="@string/psicashAccountPreferenceCategory"
+        android:title="@string/psicash_account_generic_title"
+        app:isPreferenceVisible="false">
+        <Preference
+            android:icon="@drawable/baseline_logout_white_24"
+            android:key="@string/psicashAccountLogoutPreferenceKey"
+            android:title="@string/psicash_account_logout_pref_title" />
+        <Preference
+            android:enabled="false"
+            android:icon="@drawable/baseline_login_white_24"
+            android:key="@string/psicashAccountLoginPreferenceKey"
+            android:shouldDisableView="true"
+            android:title="@string/psicash_account_login_pref_title" />
+        <Preference
+            android:enabled="false"
+            android:icon="@drawable/baseline_manage_accounts_white_24"
+            android:key="@string/psicashAccountManagePreferenceKey"
+            android:shouldDisableView="true"
+            android:title="@string/psicash_account_manage_pref_title" />
     </PreferenceCategory>
 </PreferenceScreen>

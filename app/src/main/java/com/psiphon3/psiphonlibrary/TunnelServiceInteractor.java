@@ -41,7 +41,6 @@ import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.TunnelState;
-import com.psiphon3.subscription.R;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;

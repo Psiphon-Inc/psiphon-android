@@ -4,4 +4,8 @@
     <string name="psicash_purchase_free_amount" translatable="false">35</string>
     <string name="persistentPsiCashCustomData" translatable="false">persistentPsiCashCustomData</string>
     <string name="persistentPsiCashPurchaseRedeemedFlag" translatable="false">persistentPsiCashPurchaseRedeemedFlag</string>
+    <string name="psicashAccountLogoutPreferenceKey" translatable="false">psicashAccountLogoutPreferenceKey</string>
+    <string name="psicashAccountLoginPreferenceKey" translatable="false">psicashAccountLoginPreferenceKey</string>
+    <string name="psicashAccountManagePreferenceKey" translatable="false">psicashAccountManagePreferenceKey</string>
+    <string name="psicashAccountPreferenceCategory" translatable="false">psicashAccountPreferenceCategory</string>
 </resources>

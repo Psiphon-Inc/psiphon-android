@@ -74,6 +74,12 @@ public abstract class PsiCashException extends Exception {
                 case INVALID_TOKENS:
                     uiMessage = ctx.getString(R.string.psicash_transaction_invalid_tokens_message);
                     break;
+                case INVALID_CREDENTIALS:
+                    uiMessage = ctx.getString(R.string.psicash_transaction_invalid_credentials_message);
+                    break;
+                case BAD_REQUEST:
+                    uiMessage = ctx.getString(R.string.psicash_transaction_bad_request_message);
+                    break;
                 case SERVER_ERROR:
                     uiMessage = ctx.getString(R.string.transaction_server_error_message);
                     break;

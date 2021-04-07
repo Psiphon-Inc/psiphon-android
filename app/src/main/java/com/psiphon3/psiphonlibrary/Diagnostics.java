@@ -23,26 +23,19 @@ import android.content.Context;
 import android.os.Build;
 import android.util.Log;
 
-import com.psiphon3.psicash.PsiCashViewModel;
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
-import com.psiphon3.subscription.R;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
-import java.security.SecureRandom;
-import java.util.Date;
-import java.util.Locale;
+import com.psiphon3.psicash.PsiCashClient;
+import com.psiphon3.psiphonlibrary.Utils.MyLog;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.content.Context;
-import android.os.Build;
-import android.util.Log;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import java.security.SecureRandom;
+import java.util.Date;
+import java.util.Locale;
 
 public class Diagnostics {
 
@@ -208,7 +201,7 @@ public class Diagnostics {
             diagnosticInfo.put("StatusHistory", statusHistory);
 
             // Append PsiCash diagnostic info
-            String psiCashJson = PsiCashViewModel.getDiagnosticInfoJson();
+            String psiCashJson = PsiCashClient.getInstance(context).getDiagnosticInfoJson();
             diagnosticInfo.put("PsiCash", (psiCashJson == null) ? JSONObject.NULL : new JSONObject(psiCashJson));
 
             JSONObject diagnosticObject = new JSONObject();

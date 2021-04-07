@@ -82,6 +82,10 @@
     should try updating or reinstalling the app. Note: 'PsiCash' should not be translated or transliterated. -->
     <string name="psicash_transaction_invalid_tokens_message">The app has entered an invalid state. Please reinstall the app to continue using PsiCash.</string>
 
+    <!-- Alert error message informing user that the request failed due to a 'bad request' error.
+    Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_transaction_bad_request_message">The PsiCash server indicated that the request was invalid. Please try again later.</string>
+
     <!-- Alert error message informing user that their Speed Boost purchase request failed due to a server error and that they should try again in a few minutes -->
     <string name="transaction_server_error_message">Server error. Please try again in a few minutes</string>
 
@@ -149,8 +153,8 @@
     <string name="psicash_purchase_free_button_price">Free</string>
 
     <!-- PsiCash in-app purchase disclaimer that appears on the bottom of the screen where users can buy different amounts of PsiCash from the PlayStore.
-    Do not translate or transliterate terms PsiCash or Psiphon Pro-->
-    <string name="psicash_store_disclaimer">IMPORTANT: Your PsiCash will not be preserved if you uninstall Psiphon Pro or clear the app\'s storage.</string>
+    Do not translate or transliterate terms PsiCash or Psiphon Pro, preserve the HTML <b/> tag in <b>Creating a PsiCash account<b/> if possible -->
+    <string name="psicash_store_disclaimer">IMPORTANT: <b>Creating a PsiCash account</b> will help preserve your PsiCash if you uninstall Psiphon Pro, clear the app\'s storage, or use Psiphon on another device.</string>
 
     <!-- A message to the user indicating that they need to be connected to Psiphon in order to use Speed Boost.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
@@ -158,7 +162,8 @@
     indicates a fast or unrestricted speed. Do not translate or transliterate word Psiphon -->
     <string name="speed_boost_unavailable">You must connect to Psiphon to activate a Speed Boost, click the button below and try again</string>
 
-    <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message
+    <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message,
+        Also appears on the PsiCash account 'log out' confirmation dialog when the user tries to log out of their PsiCash account while the Psiphon tunnel is not running.
         Do not translate or transliterate word Psiphon -->
     <string name="connect_to_psiphon_button_text">Connect to Psiphon</string>
 
@@ -171,7 +176,7 @@
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.
     Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_description">Your Psiphon subscription already gives you always-on Speed Boost, so there is no reason to buy more. Your PsiCash balance will be retained should you ever decide to cancel your subscription</string>
+    <string name="psicash_store_subscription_description">Your Psiphon subscription already gives you always-on Speed Boost, so there is no reason to buy more. Your PsiCash balance will be retained should you ever decide to cancel your subscription. \n\nYou can still access your PsiCash account settings by navigating to Options &gt; More Options &gt; PsiCash Account</string>
 
     <!-- A message to the user seen when the users are trying to navigate to PsiCash store screen while Psiphon has not finished connecting to the server
     Do not translate or transliterate words Psiphon -->
@@ -312,4 +317,151 @@
     A time pass is a single use license that is valid for a certain period of time from the moment it is purchased
     and does not automatically renew after its expiry, unlike a subscription -->
     <string name="PaymentChooserActivity.TimePassTab">Time Pass</string>
+
+    <!-- PsiCash account login error message shown when the user is trying to log in with bad credentials -->
+    <string name="psicash_transaction_invalid_credentials_message">The username or password entered was incorrect</string>
+
+    <!-- PsiCash account login error message shown when the user is trying to log in when Psiphon is not running -->
+    <string name="psicash_connect_to_login_message">Can not log in when Psiphon is not running</string>
+
+    <!-- PsiCash account login error message shown when the user is trying to log in while Psiphon is running but hasn't finished connecting yet -->
+    <string name="psicash_wait_to_connect_to_login_message">Can not log in while Psiphon is still connecting</string>
+
+    <!-- PsiCash account login error message shown when the user tries to login with a blank username -->
+    <string name="psicash_login_empty_username_message">Username can not be blank</string>
+
+    <!-- PsiCash account login error message shown when the user tries to login with an blank password -->
+    <string name="psicash_login_empty_password_message">Password can not be blank</string>
+
+    <!-- An error message informing the user that PsiCash update could not be retrieved from the server because the tunnel is not running.
+            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
+    <string name="psicash_connect_to_refresh_message">PsiCash update cannot be retrieved because Psiphon is not running</string>
+
+    <!-- An error message informing the user that PsiCash update could not be retrieved from the server because the tunnel has not finished connecting yet.
+            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
+    <string name="psicash_wait_to_connect_to_refresh_message">PsiCash update cannot be retrieved because Psiphon has not finished connecting</string>
+
+    <!-- A title for the PsiCash store screen as it appears in the navigation.
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_store_title">PsiCash Store</string>
+
+    <!-- An alert message to the user shown when a PsiCash login succeeds. There is a fixed number of times that a user can merge a pre-account balance into a PsiCash account. This message indicates that the user has hit that limit and the merge that occurred is the last one allowed.
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_last_tracker_merge_notification">You are logged into your PsiCash account. The preexisting balance from this device has been transferred into your account, but this is the last time a balance merge will occur.</string>
+
+    <!-- Title of the PsiCash account log out alert confirmation dialog -->
+    <string name="psicash_logout_alert_title">Log out</string>
+
+    <!-- Main body of the PsiCash account log out alert confirmation dialog.
+            Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_logout_alert_connected_message">Would you like to log out of your PsiCash account now?</string>
+
+    <!-- Alternative main body of the PsiCash account log out alert confirmation dialog for when Psiphon is not running.
+            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
+    <string name="psicash_logout_alert_disconnected_message">Being connected to the Psiphon network enables a more secure PsiCash logout. Would you like to continue anyway?</string>
+
+    <!-- Alternative main body of the PsiCash account log out alert confirmation dialog for when Psiphon is running but has not finished connecting yet.
+            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
+    <string name="psicash_logout_alert_connecting_message">Being connected to the Psiphon network enables a more secure PsiCash logout. Would you like to wait for Psiphon to finish connecting or continue anyway?</string>
+
+    <!-- Button on the PsiCash account log out alert confirmation dialog for when Psiphon is running but has not finished connecting yet. Dismisses the log out dialog without any further action when clicked. -->
+    <string name="psicash_wait_lbl">Wait</string>
+
+    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
+    <string name="psicash_cancel_lbl">Cancel</string>
+
+    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Proceeds to log out the user of their PsiCash account when clicked. -->
+    <string name="psicash_continue_log_out_lbl">Continue to log out</string>
+
+    <!-- A message shown when the PsiCash account sign in option is not available for whatever reason. Do not translate or transliterate word PsiCash -->
+    <string name="psicash_account_not_available">PsiCash account sign in is not available</string>
+
+    <!-- A message to the user shown when the users are trying to navigate to PsiCash account sign in screen while Psiphon has not finished connecting to the server
+            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
+    <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_account">Please wait for Psiphon to finish connecting to access PsiCash account sign in</string>
+
+    <!-- A message to the user indicating that they need to be connected to Psiphon in order to access PsiCash account sign in screen.
+            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
+    <string name="psicash_account_not_available_psiphon_not_running">You must connect to Psiphon to access PsiCash account sign in, click the button below and try again</string>
+
+    <!-- Title of the confirmation dialog shown when the user dismisses PsiCash Create Account screen -->
+    <string name="psicash_account_create_acount_dismiss_alert_title">Create account</string>
+
+    <!-- Main body text of the confirmation dialog shown when the user dismisses 'PsiCash Create Account' screen -->
+    <string name="psicash_account_create_acount_dismiss_alert_message">Would you like to close this window?</string>
+
+    <!-- Title of the confirmation dialog shown when the user dismisses 'PsiCash Forgot Username or Password' screen -->
+    <string name="psicash_account_forgot_acount_dismiss_alert_title">Forgot credentials</string>
+
+    <!-- Main body text of the confirmation dialog shown when the user dismisses 'PsiCash Forgot Username or Password' screen -->
+    <string name="psicash_account_forgot_acount_dismiss_alert_message">Would you like to close this window?</string>
+
+    <!-- Title of the confirmation dialog shown when the user dismisses 'PsiCash Manage Account'screen -->
+    <string name="psicash_account_manage_acount_dismiss_alert_title">Manage account</string>
+
+    <!-- Main body text of the confirmation dialog shown when the user dismisses 'PsiCash Manage Account' screen -->
+    <string name="psicash_account_manage_acount_dismiss_alert_message">Would you like to close this window?</string>
+
+    <!-- A hint below the Log In and Manage Account preferences in the app's setting screen indicating that a working Psiphon tunnel connection is required in order to access the setting.
+            Note: 'Psiphon' should not be translated or transliterated. -->
+    <string name="psicash_account_preference_connection_required_hint">Psiphon connection required</string>
+
+    <!-- Main text of the dialog shown to the user when they have a PsiCash account, but they are logged out while trying to access the PsiCash store screen.
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_login_required_message">Please log into your PsiCash account to access PsiCash store</string>
+
+    <!-- Label of the button on the dialog shown to the user when they have a PsiCash account, but they are logged out while trying to access the PsiCash store screen.
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_continue_to_sign_in_lbl">Continue to PsiCash sign in</string>
+
+    <!-- Main text of the dialog shown to the user when the PsiCash has entered invalid state due to an internal error while trying to access the PsiCash store screen, and encouraging the user to send feedback.
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_invalid_state_fragment_text">PsiCash unexpected error, please send feedback</string>
+
+    <!-- PsiCash account generic title
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_generic_title">PsiCash Account</string>
+
+    <!-- PsiCash account 'log out' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_logout_pref_title">Log out</string>
+
+    <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_login_pref_title">Log in</string>
+
+    <!-- PsiCash account 'manage account' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_manage_pref_title">Manage account</string>
+
+    <!-- Input field caption for username on the PsiCash account sign screen -->
+    <string name="psicash_account_login_username_hint">Username</string>
+
+    <!-- Input field caption for password on the PsiCash account sign screen -->
+    <string name="psicash_account_login_password_hint">Password</string>
+
+    <!-- Clickable text on the PsiCash account sign in screen, opens 'Forgot credentials' dialog when clicked -->
+    <string name="psicash_account_login_forgot_lbl">Forgot username or password?</string>
+
+    <!-- Label text for 'Log In' button on the PsiCash account sign in screen -->
+    <string name="psicash_account_log_in_btn_lbl">Log in</string>
+
+    <!-- Separator text between the 'Log In' and 'Create Account' buttons on the PsiCash account sign in screen. -->
+    <string name="psicash_account_separator_text">or</string>
+
+    <!-- Label text for 'Create Account' button on the PsiCash account sign in screen. The button opens 'Create account' dialog when clicked -->
+    <string name="psicash_account_create_account_btn_lbl">Create account</string>
+
+    <!-- Clickable text on the PsiCash store screen encouraging users to create PsiCash account. The text is only visible when it is detected the user doesn't have a PsiCash account. Clicking the text opens 'Sign In / Create account' dialog.
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="create_your_psicash_account_now_clicker_lbl">Create your PsiCash account now!</string>
+
+    <!-- Body of a alert dialog that appears when the user tries to buy PsiCash with real money but doens't have an account.
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_create_account_prompt_message">We strongly encourage you to make a PsiCash account. Having an account allows you to share your balance between devices and protect your purchases.</string>
+
+    <!-- Text next to a checkbox on the account creation encouragement dialog, disables showing the prompt for 7 days when checked -->
+    <string name="psicash_create_account_prompt_do_not_remind">Do not remind me for 7 days</string>
+
+    <!-- Button in the account creation encouragement dialog, proceeds with PsiCash purchase without account when clicked -->
+    <string name="psicash_continue_without_account_lbl">Continue without account</string>
+
+
 </resources>
