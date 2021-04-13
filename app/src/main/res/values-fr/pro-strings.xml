@@ -80,7 +80,7 @@
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because their app has entered an invalid state and that they
     should try updating or reinstalling the app. Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_invalid_tokens_message">L’appli est entrée dans un état invalide. Veuillez réinstaller l’appli pour continuer à utiliser l’argent PsiCash.</string>
+    <string name="psicash_transaction_invalid_tokens_message">L’appli est entrée dans un état invalide. Veuillez réinstaller l’appli pour continuer à utiliser le PsiCash.</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed due to a server error and that they should try again in a few minutes -->
     <string name="transaction_server_error_message">Erreur du serveur. Veuillez réessayer dans quelques minutes</string>
@@ -89,7 +89,7 @@
     <string name="psicash_critical_error_message">Une erreur irrécupérable est survenue. Veuillez envoyer une rétroaction.</string>
 
     <!-- Alert error message informing user that a critical PsiCash error has occurred and their PsiCash balance and purchases are reset(lost) -->
-    <string name="psicash_critical_error_reset_message">Une erreur irrécupérable est survenue. Vos solde d’argent PsiCash et autre état ont été réinitialisés.</string>
+    <string name="psicash_critical_error_reset_message">Une erreur irrécupérable est survenue. Vos solde PsiCash et autre état ont été réinitialisés.</string>
 
     <!-- Alert error message informing user that a recoverable PsiCash related error has occurred and last action will most likely succeed next time. -->
     <string name="psicash_recoverable_error_message">Une erreur récupérable est survenue. Veuillez réessayer.</string>
@@ -114,11 +114,11 @@
 
     <!-- Alert error message informing user that a critical error has occurred while trying to retrieve PsiCash balance and encouraging the user to
     send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cant_get_balance_critical_message">Il est impossible d’obtenir le solde d’argent PsiCash du serveur. Veuillez envoyer une rétroaction.</string>
+    <string name="psicash_cant_get_balance_critical_message">Il est impossible d’obtenir le solde PsiCash du serveur. Veuillez envoyer une rétroaction.</string>
 
     <!-- Alert error message informing user that a recoverable error has occurred while trying to retrieve PsiCash balance and last action will most
     likely succeed next time.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cant_get_balance_recoverable_message">Il est impossible d’obtenir le solde d’argent PsiCash du serveur pour l’instant. Veuillez réessayer plus tard.</string>
+    <string name="psicash_cant_get_balance_recoverable_message">Il est impossible d’obtenir le solde PsiCash du serveur pour l’instant. Veuillez réessayer plus tard.</string>
 
     <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
     of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
@@ -150,7 +150,7 @@
 
     <!-- PsiCash in-app purchase disclaimer that appears on the bottom of the screen where users can buy different amounts of PsiCash from the PlayStore.
     Do not translate or transliterate terms PsiCash or Psiphon Pro-->
-    <string name="psicash_store_disclaimer">IMPORTANT : Votre argent PsiCash ne sera pas conservé si vous désinstallez Psiphon ou effacez la mémoire de l’appli.</string>
+    <string name="psicash_store_disclaimer">IMPORTANT : Votre PsiCash ne sera pas conservé si vous désinstallez Psiphon ou effacez la mémoire de l’appli.</string>
 
     <!-- A message to the user indicating that they need to be connected to Psiphon in order to use Speed Boost.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
@@ -171,7 +171,7 @@
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.
     Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_description">Votre abonnement Psiphon vous donne déjà une Survitesse en tout temps. Il n’y a donc pas à en acheter davantage. Votre solde d’argent PsiCash sera conservé si vous décidiez d’annuler votre abonnement</string>
+    <string name="psicash_store_subscription_description">Votre abonnement Psiphon vous donne déjà une Survitesse en tout temps. Il n’y a donc pas à en acheter davantage. Votre solde PsiCash sera conservé si vous décidiez d’annuler votre abonnement</string>
 
     <!-- A message to the user seen when the users are trying to navigate to PsiCash store screen while Psiphon has not finished connecting to the server
     Do not translate or transliterate words Psiphon -->
@@ -192,7 +192,7 @@
     <string name="connect_to_psiphon_to_finalize_your_transaction">Connectez-vous à Psiphon pour finaliser votre transaction</string>
 
     <!-- PsiCash tab title where users may purchase some PsiCash from PlayStore or get it for free by watching a video ad. Do not translate or transliterate word PsiCash -->
-    <string name="add_psicash_tab_title">Ajouter de l’argent PsiCash</string>
+    <string name="add_psicash_tab_title">Ajouter du PsiCash</string>
 
     <!-- SpeedBoost tab title where users may redeem their PsiCash for Speed Boost
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
