@@ -33,6 +33,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -46,6 +47,7 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
     private Preference proxyOptionsPreference;
     private AppPreferences multiProcessPreferences;
     private MainActivityViewModel viewModel;
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     @Override
     public void onCreatePreferences(Bundle bundle, String s) {
@@ -120,14 +122,14 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
 
 
         // Observe available regions set changes.
-        viewModel.updateAvailableRegionsFlowable()
+        compositeDisposable.add(viewModel.updateAvailableRegionsFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(__ -> regionListPreference.setCurrentRegionFromPreferences())
-                .subscribe();
+                .subscribe());
 
         // Observe 'Open VPN settings' signal from legacy BOM dialog clicks or from
         // deep link intent handler
-        viewModel.openVpnSettingsFlowable()
+        compositeDisposable.add(viewModel.openVpnSettingsFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(__ -> {
                     final FragmentActivity activity = getActivity();
@@ -136,10 +138,10 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
                                 VpnOptionsPreferenceActivity.class), REQUEST_CODE_VPN_PREFERENCES);
                     }
                 })
-                .subscribe();
+                .subscribe());
 
         // Observe 'Open Proxy settings' signal from deep link intent handler
-        viewModel.openProxySettingsFlowable()
+        compositeDisposable.add(viewModel.openProxySettingsFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(__ -> {
                     final FragmentActivity activity = getActivity();
@@ -148,10 +150,10 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
                                 ProxyOptionsPreferenceActivity.class), REQUEST_CODE_PROXY_PREFERENCES);
                     }
                 })
-                .subscribe();
+                .subscribe());
 
         // Observe 'More Options' signal from deep link intent handler
-        viewModel.openMoreOptionsFlowable()
+        compositeDisposable.add(viewModel.openMoreOptionsFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(__ -> {
                     final FragmentActivity activity = getActivity();
@@ -160,7 +162,7 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
                                 MoreOptionsPreferenceActivity.class), REQUEST_CODE_MORE_PREFERENCES);
                     }
                 })
-                .subscribe();
+                .subscribe());
     }
 
     private void onRegionSelected(String selectedRegionCode) {
@@ -236,7 +238,7 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
         }
 
         if (shouldRestart) {
-            viewModel.tunnelStateFlowable()
+            compositeDisposable.add(viewModel.tunnelStateFlowable()
                     .filter(tunnelState -> !tunnelState.isUnknown())
                     .firstOrError()
                     .doOnSuccess(state -> {
@@ -248,7 +250,7 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
                             }
                         }
                     })
-                    .subscribe();
+                    .subscribe());
         }
 
         if (data != null && data.getBooleanExtra(MoreOptionsPreferenceActivity.INTENT_EXTRA_LANGUAGE_CHANGED, false)) {
@@ -266,6 +268,12 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
                 System.exit(1);
             }, shouldRestart ? 1000 : 0);
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        compositeDisposable.dispose();
     }
 
     private boolean vpnSettingsRestartRequired() {
