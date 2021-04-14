@@ -83,7 +83,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private static final int REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 101;
 
     private LoggingObserver loggingObserver;
-    private CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private CompositeDisposable uiUpdatesCompositeDisposable;
     private Button toggleButton;
     private ProgressBar connectionProgressBar;
     private Button openBrowserButton;
@@ -207,12 +208,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     public void onDestroy() {
         compositeDisposable.dispose();
-        if (startUpInterstitialDisposable != null) {
-            startUpInterstitialDisposable.dispose();
-        }
-        if (autoStartDisposable != null) {
-            autoStartDisposable.dispose();
-        }
         psiphonAdManager.onDestroy();
         super.onDestroy();
     }
@@ -223,7 +218,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         isForeground = false;
         getContentResolver().unregisterContentObserver(loggingObserver);
         cancelInvalidProxySettingsToast();
-        compositeDisposable.clear();
+        uiUpdatesCompositeDisposable.dispose();
     }
 
     @Override
@@ -246,14 +241,15 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         // Load new logs from the logging provider when it changes
         getContentResolver().registerContentObserver(LoggingProvider.INSERT_URI, true, loggingObserver);
 
+        uiUpdatesCompositeDisposable = new CompositeDisposable();
         // Observe tunnel state changes to update UI
-        compositeDisposable.add(viewModel.tunnelStateFlowable()
+        uiUpdatesCompositeDisposable.add(viewModel.tunnelStateFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(this::updateServiceStateUI)
                 .subscribe());
 
         // Observe custom proxy validation results to show a toast for invalid ones
-        compositeDisposable.add(viewModel.customProxyValidationResultFlowable()
+        uiUpdatesCompositeDisposable.add(viewModel.customProxyValidationResultFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(isValidResult -> {
                     if (!isValidResult) {
@@ -267,19 +263,17 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
         // Observe link clicks in the embedded web view to open in the external browser
         // NOTE: do not PsiCash modify links clicked from the embedded view
-        compositeDisposable.add(viewModel.externalBrowserUrlFlowable()
+        uiUpdatesCompositeDisposable.add(viewModel.externalBrowserUrlFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(url -> displayBrowser(this, url, false))
                 .subscribe());
 
         // Observe subscription state and set ad container layout visibility
-        compositeDisposable.add(
-                googlePlayBillingHelper.subscriptionStateFlowable()
-                        .distinctUntilChanged()
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .doOnNext(this::setAdBannerPlaceholderVisibility)
-                        .subscribe()
-        );
+        uiUpdatesCompositeDisposable.add(googlePlayBillingHelper.subscriptionStateFlowable()
+                .distinctUntilChanged()
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext(this::setAdBannerPlaceholderVisibility)
+                .subscribe());
 
         // Ads - check if the tunnel should be started after interstitial was dismissed.
         boolean shouldStartTunnel = interstitialStartUpPending;
@@ -302,6 +296,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         .observeOn(AndroidSchedulers.mainThread())
                         .doOnSuccess(__ -> doStartUp())
                         .subscribe();
+                compositeDisposable.add(autoStartDisposable);
             }
         } else {
             // Legacy case: do not auto-start if last preference was BOM
@@ -355,13 +350,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         throw new IllegalArgumentException("SKU is empty.");
                     }
                     SkuDetails skuDetails = new SkuDetails(skuString);
-                    googlePlayBillingHelper.launchFlow(this, oldSkuString, oldPurchaseToken, skuDetails)
+                    compositeDisposable.add(googlePlayBillingHelper.launchFlow(this, oldSkuString, oldPurchaseToken, skuDetails)
                             .doOnError(err -> {
                                 // Show "Subscription options not available" toast.
                                 showToast(R.string.subscription_options_currently_not_available);
                             })
                             .onErrorComplete()
-                            .subscribe();
+                            .subscribe());
                 } catch (JSONException | IllegalArgumentException e) {
                     Utils.MyLog.g("MainActivity::onActivityResult purchase SKU error: " + e);
                     // Show "Subscription options not available" toast.
@@ -821,6 +816,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 // Now we should attempt to start the service.
                 .doOnComplete(this::doStartUp)
                 .subscribe();
+        compositeDisposable.add(startUpInterstitialDisposable);
     }
 
     private void doStartUp() {
