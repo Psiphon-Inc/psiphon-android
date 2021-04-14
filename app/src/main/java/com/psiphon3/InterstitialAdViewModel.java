@@ -118,6 +118,8 @@ public class InterstitialAdViewModel extends AndroidViewModel implements Lifecyc
         if (preLoadInterstitialDisposable == null ||
                 preLoadInterstitialDisposable.isDisposed()) {
             preLoadInterstitialDisposable = getInterstitialResultObservable()
+                    .ignoreElements()
+                    .onErrorComplete()
                     .subscribe();
             compositeDisposable.add(preLoadInterstitialDisposable);
         }

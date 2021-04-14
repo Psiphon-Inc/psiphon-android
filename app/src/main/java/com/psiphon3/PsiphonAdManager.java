@@ -174,6 +174,12 @@ public class PsiphonAdManager {
 
         this.currentAdTypeObservable =
                 tunnelConnectionStateFlowable.toObservable()
+                        // debounce the tunnel state result in case the activity gets resumed and
+                        // then immediately paused due to orientation change while the start up
+                        // interstitial is showing.
+                        .debounce(tunnelState -> tunnelState.isStopped() ?
+                                Observable.timer(100, TimeUnit.MILLISECONDS) :
+                                Observable.empty())
                         .switchMap(tunnelState -> {
                             if (!shouldShowAds(appContext)) {
                                 return Observable.just(AdResult.none());
@@ -185,9 +191,7 @@ public class PsiphonAdManager {
                             }
                             return Observable.empty();
                         })
-                        .distinctUntilChanged()
-                        .replay(1)
-                        .autoConnect(0);
+                        .distinctUntilChanged();
 
         this.tunneledMoPubInterstitialObservable = SdkInitializer.getMoPub(appContext)
                 .andThen(Observable.<InterstitialResult>create(emitter -> {
