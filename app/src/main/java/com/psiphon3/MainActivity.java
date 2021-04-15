@@ -54,17 +54,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
 
 public class MainActivity extends LocalizedActivities.AppCompatActivity {
     public MainActivity() {
@@ -94,9 +90,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     // Ads
     private PsiphonAdManager psiphonAdManager;
     private boolean disableInterstitialOnNextTabChange;
-    protected Disposable startUpInterstitialDisposable;
-    private boolean isForeground = false;
-    private boolean interstitialStartUpPending = false;
+    private InterstitialAdViewModel interstitialAdViewModel;
 
 
     @Override
@@ -142,9 +136,36 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         .subscribe()));
 
         // ads
-        psiphonAdManager = new PsiphonAdManager(this, findViewById(R.id.bannerLayout),
+        psiphonAdManager = new PsiphonAdManager(getApplicationContext(),
+                this,
+                findViewById(R.id.bannerLayout),
                 viewModel.tunnelStateFlowable());
         psiphonAdManager.startLoadingAds();
+
+        interstitialAdViewModel = new ViewModelProvider(this,
+                new ViewModelProvider.AndroidViewModelFactory(getApplication()))
+                .get(InterstitialAdViewModel.class);
+        getLifecycle().addObserver(interstitialAdViewModel);
+
+        interstitialAdViewModel.setCountDownTextView(toggleButton);
+
+        compositeDisposable.add(interstitialAdViewModel.startSignalFlowable()
+                .doOnNext(consumableEvent -> consumableEvent.consume(__ -> doStartUp()))
+                .subscribe());
+
+        // Preload an interstitial if the tunnel is not running and the activity is not being
+        // recreated due to an orientation change.
+        if (savedInstanceState == null) {
+            compositeDisposable.add(viewModel.tunnelStateFlowable()
+                    .filter(tunnelState -> !tunnelState.isUnknown())
+                    .firstOrError()
+                    .doOnSuccess(state -> {
+                        if (state.isStopped()) {
+                            interstitialAdViewModel.preloadInterstitial();
+                        }
+                    })
+                    .subscribe());
+        }
 
         tabLayout = findViewById(R.id.main_activity_tablayout);
         tabLayout.addTab(tabLayout.newTab().setTag("home").setText(R.string.home_tab_name));
@@ -193,9 +214,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     public void onDestroy() {
         compositeDisposable.dispose();
-        if(startUpInterstitialDisposable != null) {
-            startUpInterstitialDisposable.dispose();
-        }
         psiphonAdManager.onDestroy();
         super.onDestroy();
     }
@@ -203,7 +221,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        isForeground = false;
         getContentResolver().unregisterContentObserver(loggingObserver);
         cancelInvalidProxySettingsToast();
         uiUpdatesCompositeDisposable.dispose();
@@ -212,7 +229,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        isForeground = true;
         // Load new logs from the logging provider now
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             loggingObserver.dispatchChange(false, LoggingProvider.INSERT_URI);
@@ -247,14 +263,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(url -> displayBrowser(this, url))
                 .subscribe());
-
-        // Ads - check if the tunnel should be started after interstitial was dismissed.
-        boolean shouldStartTunnel = interstitialStartUpPending;
-        interstitialStartUpPending = false;
-        if (shouldStartTunnel) {
-            startTunnel();
-            return;
-        }
 
         boolean shouldAutoStart = shouldAutoStart();
         preventAutoStart();
@@ -347,8 +355,11 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             }
         } else {
             // Service not running
-            toggleButton.setText(getText(R.string.start));
-            toggleButton.setEnabled(true);
+            if (!interstitialAdViewModel.inProgress()) {
+                // Update only if the interstitial startup is not in progress
+                toggleButton.setText(getText(R.string.start));
+                toggleButton.setEnabled(true);
+            }
             openBrowserButton.setEnabled(false);
             connectionProgressBar.setVisibility(View.INVISIBLE);
         }
@@ -592,7 +603,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
     private boolean shouldAutoStart() {
         return viewModel.isFirstRun() &&
-                !psiphonAdManager.shouldShowAds() &&
+                !PsiphonAdManager.shouldShowAds(getApplicationContext()) &&
                 !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
     }
 
@@ -680,78 +691,25 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     private void startUp() {
-        if (startUpInterstitialDisposable != null && !startUpInterstitialDisposable.isDisposed()) {
+        if (interstitialAdViewModel.inProgress()) {
             // already in progress, do nothing
             return;
         }
-
-        int countdownSeconds = 10;
-
-        // Updates start/stop button from countdownSeconds to 0 every second and then completes,
-        // does not emit any items downstream, only sends onComplete notification when done.
-        Observable<Object> countdown =
-                Observable.intervalRange(0, countdownSeconds + 1, 0, 1, TimeUnit.SECONDS)
-                        .map(t -> countdownSeconds - t)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .doOnNext(t -> toggleButton.setText(String.format(Locale.US, "%d", t)))
-                        .ignoreElements()
-                        .toObservable();
-
-        // Attempts to load an interstitial within countdownSeconds or emits an error if ad fails
-        // to load or a timeout occurs.
-        Observable<PsiphonAdManager.InterstitialResult> interstitial =
-                psiphonAdManager.getCurrentAdTypeObservable()
-                        .filter(adResult -> adResult.type() != PsiphonAdManager.AdResult.Type.UNKNOWN)
-                        .firstOrError()
-                        .flatMapObservable(adResult -> {
-                            if (adResult.type() != PsiphonAdManager.AdResult.Type.UNTUNNELED) {
-                                return Observable.error(new RuntimeException("Start immediately with ad result: " + adResult));
-                            }
-                            return Observable.just(adResult)
-                                    .compose(psiphonAdManager
-                                            .getInterstitialWithTimeoutForAdType(countdownSeconds, TimeUnit.SECONDS))
-                                    // If we have a READY interstitial then try and show it.
-                                    .doOnNext(interstitialResult -> {
-                                        if (interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.READY) {
-                                            interstitialResult.show();
-                                        }
-                                    })
-                                    // Emit downstream only when the ad is shown because sometimes
-                                    // calling interstitialResult.show() doesn't result in ad presented.
-                                    // In such a case let the countdown win the race.
-                                    .filter(interstitialResult ->
-                                            interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.SHOWING);
-                        });
-
-        startUpInterstitialDisposable = countdown
-                // ambWith mirrors the ObservableSource that first either emits an
-                // item or sends a termination notification.
-                .ambWith(interstitial)
-                // On error just complete this subscription which then will start the service.
-                .onErrorResumeNext(err -> {
-                    return Observable.empty();
-                })
-                // This subscription completes due to one of the following reasons:
-                // 1. Countdown completed before interstitial observable emitted anything.
-                // 2. There was an error emission from interstitial observable.
-                // 3. Interstitial observable completed because it was closed.
-                // Now we should attempt to start the service.
-                .doOnComplete(this::doStartUp)
-                .subscribe();
+        interstitialAdViewModel.setCountdownSeconds(10);
+        interstitialAdViewModel.startUp();
     }
 
     private void doStartUp() {
-        // cancel any ongoing startUp subscription
-        if(startUpInterstitialDisposable != null) {
-            startUpInterstitialDisposable.dispose();
-        }
-        // In order to avoid tunnel state UI inconsistencies we want to defer starting the tunnel
-        // until the app is resumed.
-        if (isForeground) {
-            startTunnel();
-        } else {
-            interstitialStartUpPending = true;
-        }
+        // Check if the tunnel is not running already
+        compositeDisposable.add(viewModel.tunnelStateFlowable()
+                .filter(tunnelState -> !tunnelState.isUnknown())
+                .firstOrError()
+                .doOnSuccess(state -> {
+                    if (state.isStopped()) {
+                        startTunnel();
+                    }
+                })
+                .subscribe());
     }
 
     public void selectTabByTag(@NonNull Object tag) {
