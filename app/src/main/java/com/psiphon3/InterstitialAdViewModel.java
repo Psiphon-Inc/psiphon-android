@@ -139,7 +139,9 @@ public class InterstitialAdViewModel extends AndroidViewModel implements Lifecyc
     protected void onCleared() {
         super.onCleared();
         compositeDisposable.dispose();
-        interstitialAd.destroyView();
+        if (interstitialAd != null) {
+            interstitialAd.destroyView();
+        }
         interstitialAd = null;
     }
 
