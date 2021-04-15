@@ -10,13 +10,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!--TODO: PsiCash: sign in main image -->
         <ImageView
             android:id="@+id/psicash_sign_in_icon"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="16dp"
-            android:src="@drawable/psicash_placeholder"
+            android:layout_height="190dp"
+            android:scaleType="fitXY"
+            android:adjustViewBounds="true"
+            android:src="@drawable/psicash_sign_in"
             app:layout_constraintBottom_toTopOf="@+id/psicash_login_layout"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"

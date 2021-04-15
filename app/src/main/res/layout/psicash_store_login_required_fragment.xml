@@ -11,17 +11,18 @@
         android:layout_height="wrap_content"
         android:padding="10dp">
 
-        <!--TODO: PsiCash: login required image-->
         <ImageView
             android:id="@+id/imageView"
+            android:src="@drawable/psicash_login_required"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="190dp"
+            android:scaleType="fitXY"
+            android:adjustViewBounds="true"
             app:layout_constraintBottom_toTopOf="@+id/tv"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/psicash_placeholder" />
+            app:layout_constraintTop_toTopOf="parent"/>
 
         <TextView
             android:id="@+id/tv"

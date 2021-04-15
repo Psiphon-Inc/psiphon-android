@@ -21,7 +21,7 @@
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/speed_boost_unavailable_img" />
+            app:srcCompat="@drawable/psicash_connection_required" />
 
         <TextView
             android:id="@+id/tv"

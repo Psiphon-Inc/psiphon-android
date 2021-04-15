@@ -11,7 +11,6 @@
         android:layout_height="wrap_content"
         android:padding="10dp">
 
-        <!--TODO: PsiCash: account not available when tunnel is not connected image-->
         <ImageView
             android:id="@+id/imageView"
             android:layout_width="wrap_content"
@@ -21,7 +20,7 @@
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/psicash_placeholder" />
+            app:srcCompat="@drawable/psicash_connection_required" />
 
         <TextView
             android:id="@+id/tv"
