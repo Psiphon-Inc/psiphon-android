@@ -174,7 +174,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
                     return Observable.just(hasActiveSpeedBoost ||
                             subscriptionState.hasValidPurchase());
-                });
+                })
+                .distinctUntilChanged();
 
         psiphonAdManager = new PsiphonAdManager(getApplicationContext(),
                 this,
@@ -201,8 +202,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         // 2. We are not in "no-ads" mode
         // 3. The tunnel is not running
         if (savedInstanceState == null) {
-            compositeDisposable.add(hasBoostOrSubscriptionObservable.switchMapCompletable(noAds ->
-                    noAds ? Completable.complete() :
+            compositeDisposable.add(hasBoostOrSubscriptionObservable
+                    .firstOrError()
+                    .flatMapCompletable(noAds -> noAds ?
+                            Completable.complete() :
                             viewModel.tunnelStateFlowable()
                                     .filter(tunnelState -> !tunnelState.isUnknown())
                                     .firstOrError()
