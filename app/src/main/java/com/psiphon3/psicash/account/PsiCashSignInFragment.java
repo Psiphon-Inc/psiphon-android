@@ -39,6 +39,7 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import com.google.android.material.textfield.TextInputEditText;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.TunnelState;
@@ -65,8 +66,8 @@ public class PsiCashSignInFragment extends Fragment
     private BroadcastReceiver broadcastReceiver;
     private boolean isStopped;
     private View progressOverlay;
-    private TextView loginUsernameTv;
-    private TextView loginPasswordTv;
+    private TextInputEditText loginUsernameTv;
+    private TextInputEditText loginPasswordTv;
     private String createAccountUrl;
     private String forgotAccountUrl;
 
