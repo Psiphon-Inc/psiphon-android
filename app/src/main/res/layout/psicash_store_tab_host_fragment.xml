@@ -41,10 +41,10 @@
         android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="4dp"
-        app:cardElevation="2dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="8dp"
         android:layout_margin="8dp"
-        app:cardPreventCornerOverlap="false"
+        app:cardPreventCornerOverlap="true"
         app:contentPadding="0dp">
         <LinearLayout
             android:id="@+id/sign_up_clicker"
@@ -58,6 +58,7 @@
 
             <TextView
                 android:gravity="center"
+                android:textColor="@color/design_default_color_on_primary"
                 android:id="@+id/psicash_purchase_sku_item_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
