@@ -98,7 +98,7 @@ public class UiHelpers {
         }
         Intent intent = new Intent(activity, PsiCashStoreActivity.class);
         intent.putExtra("tabIndex", tabIndex);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         activity.startActivityForResult(intent, PsiCashStoreActivity.ACTIVITY_REQUEST_CODE);
     }
 
@@ -108,7 +108,7 @@ public class UiHelpers {
             return;
         }
         Intent intent = new Intent(activity, PsiCashAccountActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         if (callerActivity != null) {
             intent.putExtra(PsiCashAccountActivity.CallerActivity.class.getName(), callerActivity);
         }

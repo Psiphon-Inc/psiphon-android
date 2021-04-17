@@ -153,7 +153,7 @@
     <string name="psicash_purchase_free_button_price">Free</string>
 
     <!-- PsiCash in-app purchase disclaimer that appears on the bottom of the screen where users can buy different amounts of PsiCash from the PlayStore.
-    Do not translate or transliterate terms PsiCash or Psiphon Pro, preserve the HTML <b/> tag in <b>Creating a PsiCash account<b/> if possible -->
+    Do not translate or transliterate terms PsiCash or Psiphon Pro, preserve the HTML <b/> tag in <b>Creating a PsiCash account</b> if possible -->
     <string name="psicash_store_disclaimer">IMPORTANT: <b>Creating a PsiCash account</b> will help preserve your PsiCash if you uninstall Psiphon Pro, clear the app\'s storage, or use Psiphon on another device.</string>
 
     <!-- A message to the user indicating that they need to be connected to Psiphon in order to use Speed Boost.
@@ -449,9 +449,9 @@
     <!-- Label text for 'Create Account' button on the PsiCash account sign in screen. The button opens 'Create account' dialog when clicked -->
     <string name="psicash_account_create_account_btn_lbl">Create account</string>
 
-    <!-- Clickable text on the PsiCash store screen encouraging users to create PsiCash account. The text is only visible when it is detected the user doesn't have a PsiCash account. Clicking the text opens 'Sign In / Create account' dialog.
+    <!-- Clickable text on the PsiCash store screen encouraging users to create a PsiCash account. The text is only visible when it is detected the user doesn't have a PsiCash account. Clicking the text opens 'Sign In / Create account' dialog.
         Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="create_your_psicash_account_now_clicker_lbl">Create your PsiCash account now!</string>
+    <string name="create_your_psicash_account_or_sign_in_clicker_lbl">Create your PsiCash account or sign in now!</string>
 
     <!-- Body of a alert dialog that appears when the user tries to buy PsiCash with real money but doens't have an account.
         Note: 'PsiCash' should not be translated or transliterated. -->

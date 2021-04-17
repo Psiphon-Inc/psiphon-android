@@ -61,7 +61,7 @@
                 android:id="@+id/psicash_purchase_sku_item_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/create_your_psicash_account_now_clicker_lbl"
+                android:text="@string/create_your_psicash_account_or_sign_in_clicker_lbl"
                 android:textStyle="bold" />
         </LinearLayout>
 
