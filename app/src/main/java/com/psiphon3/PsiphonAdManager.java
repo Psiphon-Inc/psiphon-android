@@ -667,7 +667,8 @@ public class PsiphonAdManager {
                     tunneledMoPubBannerAdView.setBannerAdListener(new MoPubView.BannerAdListener() {
                         @Override
                         public void onBannerLoaded(MoPubView banner) {
-                            if (tunneledMoPubBannerAdView.getParent() == null) {
+                            if (tunneledMoPubBannerAdView != null &&
+                                    tunneledMoPubBannerAdView.getParent() == null) {
                                 bannerLayout.removeAllViewsInLayout();
                                 bannerLayout.addView(tunneledMoPubBannerAdView);
                             }
@@ -701,7 +702,8 @@ public class PsiphonAdManager {
                     unTunneledAdMobBannerAdView.setAdListener(new AdListener() {
                         @Override
                         public void onAdLoaded() {
-                            if (unTunneledAdMobBannerAdView.getParent() == null) {
+                            if (unTunneledAdMobBannerAdView != null &&
+                                    unTunneledAdMobBannerAdView.getParent() == null) {
                                 bannerLayout.removeAllViewsInLayout();
                                 bannerLayout.addView(unTunneledAdMobBannerAdView);
                             }
