@@ -393,7 +393,8 @@ public class PsiphonAdManager {
                     tunneledMoPubBannerAdView.setBannerAdListener(new MoPubView.BannerAdListener() {
                         @Override
                         public void onBannerLoaded(MoPubView banner) {
-                            if (tunneledMoPubBannerAdView.getParent() == null) {
+                            if (tunneledMoPubBannerAdView != null &&
+                                    tunneledMoPubBannerAdView.getParent() == null) {
                                 ViewGroup viewGroup = bannerViewGroupWeakReference.get();
                                 if (viewGroup != null) {
                                     viewGroup.removeAllViewsInLayout();
@@ -429,7 +430,8 @@ public class PsiphonAdManager {
                     unTunneledFreestarBannerAdView.setBannerAdListener(new BannerAdListener() {
                         @Override
                         public void onBannerAdLoaded(View bannerAd, String placement) {
-                            if (unTunneledFreestarBannerAdView.getParent() == null) {
+                            if (unTunneledFreestarBannerAdView != null &&
+                                    unTunneledFreestarBannerAdView.getParent() == null) {
                                 ViewGroup viewGroup = bannerViewGroupWeakReference.get();
                                 if (viewGroup != null) {
                                     viewGroup.removeAllViewsInLayout();
