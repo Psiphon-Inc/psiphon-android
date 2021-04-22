@@ -147,6 +147,7 @@ public class PsiCashFragment extends Fragment
         // Balance label increase animations, executed sequentially
         compositeDisposable.add(balanceAnimationRelay
                 .distinctUntilChanged()
+                .observeOn(AndroidSchedulers.mainThread())
                 .concatMap(pair ->
                         UiHelpers.balanceLabelAnimationObservable(pair.first, pair.second, balanceLabel)
                 )

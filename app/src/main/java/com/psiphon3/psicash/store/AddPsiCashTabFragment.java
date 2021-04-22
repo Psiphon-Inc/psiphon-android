@@ -221,6 +221,7 @@ public class AddPsiCashTabFragment extends Fragment {
                     .filter(state -> !state.psiCashTransactionInFlight())
                     .filter(state -> state.psiCashModel() != null)
                     .map(PsiCashStoreViewState::isAccount)
+                    .observeOn(AndroidSchedulers.mainThread())
                     .doOnNext(isAccount -> {
                         this.isAccount.set(isAccount);
                         noAccountDisclaimerView.setVisibility(isAccount ? View.GONE : View.VISIBLE);
