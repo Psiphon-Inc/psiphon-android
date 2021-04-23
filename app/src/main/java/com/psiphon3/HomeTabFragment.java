@@ -74,6 +74,9 @@ public class HomeTabFragment extends Fragment {
         rateLimitedText = view.findViewById(R.id.rateLimitedText);
         rateUnlimitedText = view.findViewById(R.id.rateUnlimitedText);
         rateLimitUpgradeButton = view.findViewById(R.id.rateLimitUpgradeButton);
+        rateLimitUpgradeButton.setOnClickListener(v ->
+                MainActivity.openPaymentChooserActivity(requireActivity(),
+                        getResources().getInteger(R.integer.subscriptionTabIndex)));
 
         viewModel = new ViewModelProvider(requireActivity(),
                 new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
