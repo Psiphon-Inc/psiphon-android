@@ -10,16 +10,5 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical" />
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/close_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="4dp"
-        android:src="@android:drawable/ic_menu_close_clear_cancel"
-        app:backgroundTint="#FF888888"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <include layout="@layout/include_progress_overlay" />
 </androidx.constraintlayout.widget.ConstraintLayout>

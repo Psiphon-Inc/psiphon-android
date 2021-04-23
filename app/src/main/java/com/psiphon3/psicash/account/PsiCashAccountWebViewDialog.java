@@ -26,6 +26,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
@@ -47,10 +48,7 @@ public class PsiCashAccountWebViewDialog {
     private Disposable tunnelStateDisposable;
 
     @SuppressLint("SetJavaScriptEnabled")
-    public PsiCashAccountWebViewDialog(Context context,
-                                       String dismissAlertTitle,
-                                       String dismissAlertMessage,
-                                       Flowable<TunnelState> tunnelStateFlowable) {
+    public PsiCashAccountWebViewDialog(Context context, Flowable<TunnelState> tunnelStateFlowable) {
         LayoutInflater inflater = LayoutInflater.from(context);
         View contentView = inflater.inflate(R.layout.psicash_acount_webview_layout, null);
 
@@ -83,6 +81,7 @@ public class PsiCashAccountWebViewDialog {
         webView.getSettings().setUseWideViewPort(true);
         webView.getSettings().setUserAgentString(customUserAgent);
 
+        // hook up progress visibility
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
@@ -91,28 +90,19 @@ public class PsiCashAccountWebViewDialog {
             }
         });
 
+        // hook up window.close()
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onCloseWindow(WebView window) {
+                super.onCloseWindow(window);
+                alertDialog.dismiss();
+            }
+        });
+
         webView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT));
 
         ((LinearLayout) contentView.findViewById(R.id.webview_container_layout)).addView(webView);
-
-        FloatingActionButton floatingActionButton = contentView.findViewById(R.id.close_btn);
-
-        floatingActionButton.setOnClickListener(view -> {
-            try {
-                new AlertDialog.Builder(context)
-                        .setIcon(R.drawable.psicash_coin)
-                        .setTitle(dismissAlertTitle)
-                        .setCancelable(true)
-                        .setMessage(dismissAlertMessage)
-                        .setNegativeButton(R.string.lbl_no, (dialog, which) -> {
-                        })
-                        .setPositiveButton(R.string.lbl_yes, (dialog, which) ->
-                                alertDialog.dismiss())
-                        .show();
-            } catch (RuntimeException ignored) {
-            }
-        });
 
         alertDialog.addContentView(contentView,
                 new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,

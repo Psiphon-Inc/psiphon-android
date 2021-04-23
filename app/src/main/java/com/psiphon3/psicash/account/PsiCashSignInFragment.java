@@ -132,20 +132,16 @@ public class PsiCashSignInFragment extends Fragment
         // Hook up create account button
         createAccountBtn.setOnClickListener(v -> {
             if (createAccountUrl != null) {
-                new PsiCashAccountWebViewDialog(requireContext(),
-                        requireContext().getString(R.string.psicash_account_create_acount_dismiss_alert_title),
-                        requireContext().getString(R.string.psicash_account_create_acount_dismiss_alert_message),
-                        tunnelStateFlowable).load(createAccountUrl);
+                new PsiCashAccountWebViewDialog(requireContext(), tunnelStateFlowable)
+                        .load(createAccountUrl);
             }
         });
 
         // Hook up create account button
         forgotAccountTv.setOnClickListener(v -> {
             if (forgotAccountUrl != null) {
-                new PsiCashAccountWebViewDialog(requireContext(),
-                        requireContext().getString(R.string.psicash_account_forgot_acount_dismiss_alert_title),
-                        requireContext().getString(R.string.psicash_account_forgot_acount_dismiss_alert_message),
-                        tunnelStateFlowable).load(forgotAccountUrl);
+                new PsiCashAccountWebViewDialog(requireContext(), tunnelStateFlowable)
+                        .load(forgotAccountUrl);
             }
         });
 
