@@ -165,9 +165,10 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
         viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
 
         // Go to the tab specified in the opening intent extra
-        int tabIndex = getIntent().getIntExtra("tabIndex", 0);
+        int tabIndex = getIntent().getIntExtra("tabIndex", getResources().getInteger(R.integer.psiCashTabIndex));
         if (tabIndex < pageAdapter.getCount()) {
-            viewPager.setCurrentItem(tabIndex);
+            // Switch to the tab when view pager is ready
+            viewPager.post(() -> viewPager.setCurrentItem(tabIndex));
         }
     }
 
