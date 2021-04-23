@@ -114,6 +114,10 @@ com.mopub.mobileads.rewarded_video" />
                 <data
                     android:scheme="psiphon"
                     android:host="psicash" />
+                <!-- Accepts URIs in the form of "psiphon://subscribe” -->
+                <data
+                    android:scheme="psiphon"
+                    android:host="subscribe" />
             </intent-filter>
         </activity>
         <activity-alias

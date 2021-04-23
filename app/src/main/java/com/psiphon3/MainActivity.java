@@ -30,6 +30,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.lifecycle.ViewModelProvider;
@@ -77,12 +78,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     public static final String INTENT_EXTRA_PREVENT_AUTO_START = "com.psiphon3.MainActivity.PREVENT_AUTO_START";
-    private static final String ASKED_TO_ACCESS_COARSE_LOCATION_PERMISSION = "askedToAccessCoarseLocationPermission";
     private static final String CURRENT_TAB = "currentTab";
-    private final int PAYMENT_CHOOSER_ACTIVITY = 20001;
+    private static final int PAYMENT_CHOOSER_ACTIVITY = 20001;
 
     private static final int REQUEST_CODE_PREPARE_VPN = 100;
-    private static final int REQUEST_CODE_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 101;
 
     private LoggingObserver loggingObserver;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
@@ -432,10 +431,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         HandleCurrentIntent(intent);
     }
 
-    public void onSubscribeButtonClick(View v) {
-        Intent paymentChooserActivityIntent = new Intent(this, PaymentChooserActivity.class);
-        paymentChooserActivityIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        startActivityForResult(paymentChooserActivityIntent, PAYMENT_CHOOSER_ACTIVITY);
+    public static void openPaymentChooserActivity(FragmentActivity activity, int tabIndex) {
+        try {
+            Intent intent = new Intent(activity, PaymentChooserActivity.class);
+            intent.putExtra("tabIndex", tabIndex);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            activity.startActivityForResult(intent, PAYMENT_CHOOSER_ACTIVITY);
+        } catch(RuntimeException ignored) {
+        }
     }
 
     private void updateServiceStateUI(final TunnelState tunnelState) {
@@ -560,6 +563,9 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         // psiphon://psicash/buy
         // psiphon://psicash/speedboost
         // psiphon://psicash/speedboost/extras
+        // psiphon://subscribe
+        // psiphon://subscribe/timepass
+        // psiphon://subscribe/subscription
         if (handleDeepLinkIntent(intent)) {
             return;
         }
@@ -621,7 +627,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         .setView(dialogView)
                         .setNeutralButton(android.R.string.cancel, null)
                         .setPositiveButton(R.string.btn_get_subscription, (dialog, which) -> {
-                            onSubscribeButtonClick(null);
+                            MainActivity.openPaymentChooserActivity(MainActivity.this,
+                                    getResources().getInteger(R.integer.subscriptionTabIndex));
                             dialog.dismiss();
                         });
                 builder.setNegativeButton(R.string.btn_get_speed_boost, (dialog, which) -> {
@@ -647,6 +654,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         final String SETTINGS_PATH_VPN = "/vpn";
         final String SETTINGS_PATH_PROXY = "/proxy";
         final String SETTINGS_PATH_MORE_OPTIONS = "/more-options";
+
+        final String SUBSCRIBE_HOST = "subscribe";
+        final String SUBSCRIPTION_PATH_SUBSCRIPTION = "/subscription";
+        final String SUBSCRIPTION_PATH_TIMEPASS = "/timepass";
 
         Uri intentUri = intent.getData();
         // Check if this is a deep link intent we can handle
@@ -675,6 +686,24 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 }
 
                 PsiCashFragment.openPsiCashStoreActivity(this, tabIndex);
+                // intent handled
+                return true;
+
+            case SUBSCRIBE_HOST:
+                // Default tab is 'Subscription'
+                tabIndex = getResources().getInteger(R.integer.subscriptionTabIndex);
+
+                if (path != null) {
+                    if (path.equals(SUBSCRIPTION_PATH_SUBSCRIPTION) || path.startsWith(SUBSCRIPTION_PATH_SUBSCRIPTION + FWD_SLASH)) {
+                        // If the uri path is "/subscription" or "/subscription/.*" then navigate to the Subscription tab,
+                        tabIndex = getResources().getInteger(R.integer.subscriptionTabIndex);
+                    } else if (path.equals(SUBSCRIPTION_PATH_TIMEPASS) || path.startsWith(SUBSCRIPTION_PATH_TIMEPASS + FWD_SLASH)) {
+                        // The path is "/timepass" or "/timepass/.*" - navigate to the Time Pass tab
+                        tabIndex = getResources().getInteger(R.integer.timePassTabIndex);
+                    }
+                }
+
+                MainActivity.openPaymentChooserActivity(this, tabIndex);
                 // intent handled
                 return true;
 

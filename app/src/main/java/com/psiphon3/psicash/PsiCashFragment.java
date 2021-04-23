@@ -155,13 +155,13 @@ public class PsiCashFragment extends Fragment implements MviView<PsiCashIntent, 
     }
 
     public static void openPsiCashStoreActivity(final FragmentActivity activity, int tabIndex) {
-        if (activity == null) {
-            return;
+        try {
+            Intent intent = new Intent(activity, PsiCashStoreActivity.class);
+            intent.putExtra("tabIndex", tabIndex);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            activity.startActivityForResult(intent, PSICASH_STORE_ACTIVITY);
+        } catch (RuntimeException ignored) {
         }
-        Intent intent = new Intent(activity, PsiCashStoreActivity.class);
-        intent.putExtra("tabIndex", tabIndex);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        activity.startActivityForResult(intent, PSICASH_STORE_ACTIVITY);
     }
 
     @Override
