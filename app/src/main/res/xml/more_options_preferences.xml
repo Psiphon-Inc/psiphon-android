@@ -61,14 +61,4 @@
             android:summary="@string/ads_consent_preference_summary"
             android:title="@string/ads_consent_preference_title" />
     </PreferenceCategory>
-    <PreferenceCategory
-        android:key="@string/exportZircoPreferenceCategory"
-        app:isPreferenceVisible="false"
-        android:title="@string/legacy_zirco_export_pref_category_title">
-        <Preference
-            android:icon="@drawable/baseline_save_alt_white_24"
-            android:key="@string/exportZircoPreference"
-            android:summary="@string/exportZircoPreferenceSummary"
-            android:title="@string/exportZircoPreferenceTitle" />
-    </PreferenceCategory>
 </PreferenceScreen>
