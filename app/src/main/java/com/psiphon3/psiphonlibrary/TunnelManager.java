@@ -648,8 +648,6 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             manager.m_context = localeManager.setNewLocale(manager.m_parentService, languageCode);
         }
         manager.updateNotifications();
-        // Also update upgrade notifications
-        UpgradeManager.UpgradeInstaller.updateNotification(manager.getContext());
     }
 
     private Message composeClientMessage(int what, Bundle data) {
@@ -772,9 +770,6 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         m_isStopping.set(false);
         m_startedTunneling.set(false);
         m_tunnelConnectedBehaviorRelay.accept(false);
-
-        // Notify if an upgrade has already been downloaded and is waiting for install
-        UpgradeManager.UpgradeInstaller.notifyUpgrade(getContext(), PsiphonTunnel.getDefaultUpgradeDownloadFilePath(getContext()));
 
         MyLog.v(R.string.current_network_type, MyLog.Sensitivity.NOT_SENSITIVE, Utils.getNetworkTypeName(m_parentService));
 
@@ -1043,16 +1038,6 @@ public class TunnelManager implements PsiphonTunnel.HostService {
         try {
 
             json.put("ClientVersion", EmbeddedValues.CLIENT_VERSION);
-
-            if (UpgradeChecker.upgradeCheckNeeded(context)) {
-
-                json.put("UpgradeDownloadURLs", new JSONArray(EmbeddedValues.UPGRADE_URLS_JSON));
-
-                json.put("UpgradeDownloadClientVersionHeader", "x-amz-meta-psiphon-client-version");
-            }
-
-            json.put("MigrateUpgradeDownloadFilename",
-                    new UpgradeManager.OldDownloadedUpgradeFile(context).getFullPath());
 
             json.put("PropagationChannelId", EmbeddedValues.PROPAGATION_CHANNEL_ID);
 
@@ -1351,16 +1336,6 @@ public class TunnelManager implements PsiphonTunnel.HostService {
             @Override
             public void run() {
                 m_tunnelState.clientRegion = region;
-            }
-        });
-    }
-
-    @Override
-    public void onClientUpgradeDownloaded(String filename) {
-        m_Handler.post(new Runnable() {
-            @Override
-            public void run() {
-                UpgradeManager.UpgradeInstaller.notifyUpgrade(getContext(), filename);
             }
         });
     }

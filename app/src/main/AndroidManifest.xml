@@ -18,10 +18,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" tools:node="remove"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" tools:node="remove"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
     <application
         android:name=".PsiphonApplication"
@@ -120,33 +117,6 @@
             android:exported="false">
         </provider>
 
-        <!-- UpgradeChecker receives intents (direct, alarm, boot) that trigger upgrade checking. -->
-        <receiver
-            android:name=".psiphonlibrary.UpgradeChecker"
-            android:process=":UpgradeChecker"
-            android:enabled="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
-        <!-- The service that UpgradeChecker uses to do work -->
-        <service
-            android:name=".psiphonlibrary.UpgradeChecker$UpgradeCheckerService"
-            android:label="@string/upgrade_checker_service_name"
-            android:exported="false"
-            android:permission="android.permission.BIND_JOB_SERVICE"
-            android:process=":UpgradeChecker" >
-        </service>
-
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="com.psiphon3.UpgradeFileProvider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/provider_paths"/>
-        </provider>
     </application>
 
 </manifest>
