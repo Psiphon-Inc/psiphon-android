@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Psiphon Inc.
+ * Copyright (c) 2021, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,8 +24,6 @@ import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Pair;
@@ -56,14 +54,6 @@ import com.psiphon3.psicash.settings.PsiCashSettingsViewState;
 import com.psiphon3.psicash.util.UiHelpers;
 import com.psiphon3.subscription.R;
 
-import org.zirco.providers.ZircoBookmarksContentProvider;
-import org.zirco.ui.runnables.XmlHistoryBookmarksExporter;
-import org.zirco.utils.ApplicationUtils;
-
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Locale;
-
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -73,7 +63,6 @@ import io.reactivex.functions.BiFunction;
 
 public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompatActivity {
     public static final String INTENT_EXTRA_LANGUAGE_CHANGED = "com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity.LANGUAGE_CHANGED";
-    private static final int ZIRCO_WRITE_EXTERNAL_PERMISSION_REQUEST_CODE = 12312;
 
     private TunnelServiceInteractor tunnelServiceInteractor;
     public Flowable<TunnelState> tunnelStateFlowable() {
@@ -120,7 +109,6 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
     public static class MoreOptionsPreferenceFragment extends PsiphonPreferenceFragmentCompat
             implements SharedPreferences.OnSharedPreferenceChangeListener {
         private static final String PSICASH_MANAGEMENT_URL = "PSICASH_MANAGEMENT_URL";
-        private Cursor zircoExportCursor;
         ListPreference mLanguageSelector;
 
         // PsiCash
@@ -175,44 +163,7 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
             setupLanguageSelector(preferences);
             setupAbout(preferences);
             setupAdsConsentPreference(preferences);
-            setupZircoBookmarksExport(preferences);
             setupPsiCashAccount(preferences);
-        }
-
-        @Override
-        public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-            if (requestCode == ZIRCO_WRITE_EXTERNAL_PERMISSION_REQUEST_CODE &&
-                    grantResults.length > 0
-                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                exportZircoHistoryBookmarks();
-            } else {
-                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-            }
-        }
-
-        private void setupZircoBookmarksExport(PreferenceScreen preferenceScreen) {
-            zircoExportCursor = ZircoBookmarksContentProvider.getAllRecords(getContext().getContentResolver());
-            Preference category = findPreference(getString(R.string.exportZircoPreferenceCategory));
-            // Do not show preference if there is no data to export
-            if (zircoExportCursor == null || zircoExportCursor.getCount() == 0) {
-                preferenceScreen.removePreference(category);
-                return;
-            }
-
-            category.setVisible(true);
-            Preference pref = findPreference(getString(R.string.exportZircoPreference));
-
-            pref.setOnPreferenceClickListener(preference -> {
-                if (!ApplicationUtils.ensureWriteStoragePermissionGranted(this,
-                        getString(R.string.PreferencesActivity_ExportHistoryBookmarksPermissionRequestReason),
-                        ZIRCO_WRITE_EXTERNAL_PERMISSION_REQUEST_CODE
-                )) {
-                    Toast.makeText(getActivity(), R.string.Commons_NeedWritePermissions, Toast.LENGTH_LONG).show();
-                    return true;
-                }
-                exportZircoHistoryBookmarks();
-                return true;
-            });
         }
 
         @Override
@@ -339,23 +290,6 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
                 }
                 return true;
             });
-        }
-
-        private void exportZircoHistoryBookmarks() {
-            Calendar c = Calendar.getInstance();
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US);
-
-            final String fileName = sdf.format(c.getTime()) + ".html";
-            final ProgressDialog progressDialog = ProgressDialog.show(getActivity(),
-                    this.getResources().getString(R.string.Commons_PleaseWait),
-                    this.getResources().getString(R.string.Commons_ExportingHistoryBookmarks));
-
-            final XmlHistoryBookmarksExporter exporter = new XmlHistoryBookmarksExporter(getActivity(),
-                    fileName,
-                    zircoExportCursor,
-                    progressDialog
-            );
-            new Thread(exporter).start();
         }
 
         private void setupAdsConsentPreference(PreferenceScreen preferences) {

@@ -22,22 +22,23 @@ package com.psiphon3;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.google.android.material.tabs.TabLayout;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.viewpager.widget.ViewPager;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.viewpager.widget.ViewPager;
+
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.SkuDetails;
+import com.google.android.material.tabs.TabLayout;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -122,6 +123,12 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                                 public void onTabReselected(TabLayout.Tab tab) {
                                 }
                             });
+                            // Go to the tab specified in the opening intent extra
+                            int tabIndex = getIntent().getIntExtra("tabIndex", getResources().getInteger(R.integer.subscriptionTabIndex));
+                            if (tabIndex < pageAdapter.getCount()) {
+                                // Switch to the tab when view pager is ready
+                                viewPager.post(() -> viewPager.setCurrentItem(tabIndex));
+                            }
                     }
                 })
                 .subscribe();
