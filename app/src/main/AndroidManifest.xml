@@ -57,7 +57,6 @@ com.mopub.mobileads.rewarded_video" />
                   android:xlargeScreens="true" />
 
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <!-- instruct manifest merger to remove any location permissions from the final manifest -->
@@ -68,7 +67,6 @@ com.mopub.mobileads.rewarded_video" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
-        android:requestLegacyExternalStorage="true"
         android:name="com.psiphon3.PsiphonApplication"
         android:theme="@style/Theme.AppCompat"
         android:hardwareAccelerated="true"
@@ -200,8 +198,6 @@ com.mopub.mobileads.rewarded_video" />
             android:authorities="com.psiphon3.subscription.LoggingProvider"
             android:exported="false">
         </provider>
-
-        <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonsubscriptionzircobookmarkscontentprovider"/>
 
         <activity android:name="com.google.android.gms.ads.AdActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
     </application>
