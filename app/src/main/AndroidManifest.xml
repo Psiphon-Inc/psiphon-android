@@ -12,7 +12,6 @@
                   android:xlargeScreens="true" />
 
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <!-- instruct manifest merger to remove any location permissions from the final manifest -->
@@ -22,7 +21,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
-        android:requestLegacyExternalStorage="true"
         android:name="com.psiphon3.PsiphonApplication"
         android:theme="@style/Theme.AppCompat"
         android:hardwareAccelerated="true"
@@ -47,6 +45,15 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Accepts URIs in the form of "psiphon://settings” -->
+                <data
+                    android:scheme="psiphon"
+                    android:host="settings" />
             </intent-filter>
         </activity>
         <activity-alias
@@ -113,7 +120,6 @@
             android:authorities="com.psiphon3.LoggingProvider"
             android:exported="false">
         </provider>
-        <provider android:name="org.zirco.providers.ZircoBookmarksContentProvider" android:exported="false" android:authorities="org.zirco.providers.psiphonzircobookmarkscontentprovider"/>
 
         <activity android:name="com.mopub.mobileads.MoPubActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>
         <activity android:name="com.mopub.mobileads.MraidActivity" android:configChanges="keyboardHidden|orientation|screenSize"/>

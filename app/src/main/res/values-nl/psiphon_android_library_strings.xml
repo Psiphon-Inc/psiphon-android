@@ -73,6 +73,17 @@
   <string name="region_name_sk">Slovakije</string>
   <string name="region_name_rs">Servië</string>
   <string name="region_name_au">Australië</string>
+  <string name="region_name_ae">Verenigde Arabische Emiraten</string>
+  <string name="region_name_ar">Argentinië</string>
+  <string name="region_name_br">Brazilië</string>
+  <string name="region_name_cl">Chili</string>
+  <string name="region_name_fi">Finland</string>
+  <string name="region_name_is">Ijsland</string>
+  <string name="region_name_ie">Ierland</string>
+  <string name="region_name_ke">Kenya</string>
+  <string name="region_name_mx">Mexico</string>
+  <string name="region_name_tw">Taiwan</string>
+  <string name="region_name_za">Zuidafrika</string>
   <string name="about">Over Psiphon</string>
   <string name="feedback">Feedback</string>
   <string name="disableTimeoutsPreferenceSummary">Uitschakelen time-outs voor trage netwerken</string>
@@ -146,6 +157,7 @@
   <!--The log message is shown to the user if an upstream proxy error occurs. The '%s' is the detail of the error.-->
   <string name="upstream_proxy_error">Upstream proxy fout: %s</string>
   <string name="start_tunnel_failed">Start tunnel mislukt: %s</string>
+  <string name="vpn_exclusions_conflict">Er zijn 1 of meerdere tegenstrijdige apps in je huidige VPN uitgesloten. Ga naar je VPN settings en seleteer \'Tunnel alle apps\' om te verbinden.</string>
   <string name="tunnel_connecting">Tunnel verbinden...</string>
   <string name="tunnel_connected">Tunnel verbonden</string>
   <string name="waiting">Wachten...</string>
