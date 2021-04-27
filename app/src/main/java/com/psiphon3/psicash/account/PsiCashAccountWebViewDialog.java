@@ -19,19 +19,24 @@
 package com.psiphon3.psicash.account;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
+import android.net.http.SslError;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
-
-import androidx.appcompat.app.AlertDialog;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.psiphon3.TunnelState;
@@ -41,8 +46,6 @@ import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
 
 public class PsiCashAccountWebViewDialog {
-    private static final String customUserAgent = "customUserAgent";
-
     private final WebView webView;
     private final Dialog alertDialog;
     private Disposable tunnelStateDisposable;
@@ -53,6 +56,8 @@ public class PsiCashAccountWebViewDialog {
         View contentView = inflater.inflate(R.layout.psicash_acount_webview_layout, null);
 
         View progressOverlay = contentView.findViewById(R.id.progress_overlay);
+        FloatingActionButton floatingActionButton = contentView.findViewById(R.id.close_btn);
+
 
         alertDialog = new Dialog(context, R.style.Theme_AppCompat_Dialog) {
             // Hook up minimal web view navigation
@@ -79,14 +84,33 @@ public class PsiCashAccountWebViewDialog {
         webView.getSettings().setDomStorageEnabled(true);
         webView.getSettings().setLoadWithOverviewMode(true);
         webView.getSettings().setUseWideViewPort(true);
-        webView.getSettings().setUserAgentString(customUserAgent);
+        webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
 
-        // hook up progress visibility
         webView.setWebViewClient(new WebViewClient() {
             @Override
+            // hook up progress and 'close' button visibility
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 progressOverlay.setVisibility(View.GONE);
+                floatingActionButton.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                super.onReceivedError(view, request, error);
+                showErrorClosePrompt(view.getContext());
+            }
+
+            @Override
+            public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
+                super.onReceivedHttpError(view, request, errorResponse);
+                showErrorClosePrompt(view.getContext());
+            }
+
+            @Override
+            public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                super.onReceivedSslError(view, handler, error);
+                showErrorClosePrompt(view.getContext());
             }
         });
 
@@ -127,6 +151,33 @@ public class PsiCashAccountWebViewDialog {
                 tunnelStateDisposable.dispose();
             }
         });
+
+
+        floatingActionButton.setOnClickListener(view -> {
+            try {
+                new AlertDialog.Builder(context)
+                        .setIcon(R.drawable.psicash_coin)
+                        .setTitle(R.string.psicash_webview_close_title)
+                        .setCancelable(true)
+                        .setMessage(R.string.psicash_webview_close_message)
+                        .setNegativeButton(R.string.lbl_no, (dialog, which) -> {
+                        })
+                        .setPositiveButton(R.string.lbl_yes, (dialog, which) ->
+                                alertDialog.dismiss())
+                        .show();
+            } catch (RuntimeException ignored) {
+            }
+        });
+
+    }
+
+    private void showErrorClosePrompt(Context context) {
+        new AlertDialog.Builder(context)
+                .setIcon(R.drawable.psicash_coin)
+                .setTitle(R.string.psicahs_webview_error_alert_title)
+                .setMessage(R.string.psicash_webview_error_alert_message)
+                .setPositiveButton(R.string.Commons_Ok, (dialog, which) -> alertDialog.dismiss())
+                .show();
     }
 
     public void load(String url) {

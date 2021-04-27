@@ -55,4 +55,5 @@
     <string name="vpn_exclusions_preference_not_available_summary">Requires Android 5.0 or greater</string>
     <string name="vpn_always_on_preference_not_available_summary">Requires Android 7.0 or greater</string>
     <string name="vpn_exclusions_tip_summary" >Select only one browser for classic browser-only mode</string>
+    <string name="psicash_webview_error_alert_message">An error has occurred. Please try again later.</string>
 </resources>

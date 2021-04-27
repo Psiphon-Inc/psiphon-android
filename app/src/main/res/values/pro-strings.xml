@@ -444,6 +444,9 @@
 
     <!-- Button in the account creation encouragement dialog, proceeds with PsiCash purchase without account when clicked -->
     <string name="psicash_continue_without_account_lbl">Continue without account</string>
+    <string name="psicash_webview_close_title">Close</string>
+    <string name="psicash_webview_close_message">Would you like to close this window now?</string>
+    <string name="psicahs_webview_error_alert_title">Error</string>
 
 
 </resources>
