@@ -57,6 +57,9 @@ public abstract class PsiCashModel {
     @Nullable
     public abstract String accountManagementUrl();
 
+    @Nullable
+    public abstract String accountUsername();
+
     @AutoValue.Builder
     public abstract static class Builder {
         public abstract Builder hasTokens(boolean b);
@@ -78,6 +81,8 @@ public abstract class PsiCashModel {
         abstract Builder accountForgotUrl(@Nullable String accountForgotUrl);
 
         abstract Builder accountManagementUrl(@Nullable String accountManagementUrl);
+
+        abstract Builder accountUsername(@Nullable String accountUsername);
 
         public abstract PsiCashModel build();
 

@@ -208,6 +208,20 @@ public class PsiCashClient {
         }
     }
 
+    private String accountUsername() throws PsiCashException {
+        PsiCashLib.AccountUsername accountUsernameResult = psiCashLibWrapper.getAccountUsername();
+        if (accountUsernameResult.error == null) {
+            return accountUsernameResult.username;
+        } else {
+            String errorMessage = accountUsernameResult.error.message;
+            if (accountUsernameResult.error.critical) {
+                throw new PsiCashException.Critical(errorMessage);
+            } else {
+                throw new PsiCashException.Recoverable(errorMessage);
+            }
+        }
+    }
+
     private boolean hasTokens() throws PsiCashException {
         PsiCashLib.HasTokensResult hasTokensResult = psiCashLibWrapper.hasTokens();
         if (hasTokensResult.error == null) {
@@ -284,6 +298,8 @@ public class PsiCashClient {
         }
 
         builder.reward(getVideoReward());
+
+        builder.accountUsername(accountUsername());
 
         boolean hasTokens = hasTokens();
         builder.hasTokens(hasTokens);
