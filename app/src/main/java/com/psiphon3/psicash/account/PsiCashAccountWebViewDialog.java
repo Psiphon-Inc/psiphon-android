@@ -161,9 +161,9 @@ public class PsiCashAccountWebViewDialog {
             try {
                 alertDialogs.add(new AlertDialog.Builder(context)
                         .setIcon(R.drawable.psicash_coin)
-                        .setTitle(R.string.psicash_webview_close_title)
+                        .setTitle(R.string.psicash_webview_close_alert_title)
                         .setCancelable(true)
-                        .setMessage(R.string.psicash_webview_close_message)
+                        .setMessage(R.string.psicash_webview_close_alert_message)
                         .setNegativeButton(R.string.lbl_no, (dialog, which) -> {
                         })
                         .setPositiveButton(R.string.lbl_yes, (dialog, which) -> close())
@@ -177,9 +177,9 @@ public class PsiCashAccountWebViewDialog {
     private void showErrorClosePrompt(Context context) {
         alertDialogs.add(new AlertDialog.Builder(context)
                 .setIcon(R.drawable.psicash_coin)
-                .setTitle(R.string.psicahs_webview_error_alert_title)
+                .setTitle(R.string.psicash_webview_error_alert_title)
                 .setMessage(R.string.psicash_webview_error_alert_message)
-                .setPositiveButton(R.string.Commons_Ok, (dialog, which) -> {
+                .setPositiveButton(R.string.label_ok, (dialog, which) -> {
                 })
                 .setOnDismissListener(dialog -> close())
                 .show());
