@@ -4,6 +4,20 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <TextView
+        android:visibility="gone"
+        app:drawableStartCompat="@drawable/baseline_person_white_24"
+        android:drawablePadding="4dp"
+        android:id="@+id/psicash_account_username_textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:gravity="bottom"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
+
     <LinearLayout
         android:id="@+id/psicash_balance_layout"
         android:layout_width="wrap_content"
@@ -14,7 +28,7 @@
         android:padding="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/psicash_account_username_textview">
 
         <ImageView
             android:id="@+id/psicash_balance_icon"

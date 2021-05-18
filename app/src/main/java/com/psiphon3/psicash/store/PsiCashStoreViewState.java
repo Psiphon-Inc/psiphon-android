@@ -59,6 +59,11 @@ public abstract class PsiCashStoreViewState implements MviViewState {
     }
 
     @Nullable
+    public String accountUsername() {
+        return psiCashModel() == null ? null : psiCashModel().accountUsername();
+    }
+
+    @Nullable
     public List<PsiCashLib.PurchasePrice> purchasePrices() {
         return psiCashModel() == null ? null : psiCashModel().purchasePrices();
     }

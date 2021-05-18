@@ -73,6 +73,7 @@ public class StoreTabHostFragment extends Fragment
     private ImageView balanceIcon;
     private ViewGroup balanceLayout;
     private ViewGroup noAccountSignUpView;
+    private TextView accountUsernameTextView;
 
     public StoreTabHostFragment() {
         super(R.layout.psicash_store_tab_host_fragment);
@@ -106,6 +107,7 @@ public class StoreTabHostFragment extends Fragment
         balanceIcon = view.findViewById(R.id.psicash_balance_icon);
         balanceLayout = view.findViewById(R.id.psicash_balance_layout);
         noAccountSignUpView = view.findViewById(R.id.psicash_sign_up_card_layout);
+        accountUsernameTextView = view.findViewById(R.id.psicash_account_username_textview);
 
         // Pass the UI's intents to the view model
         psiCashStoreViewModel.processIntents(intents());
@@ -221,9 +223,12 @@ public class StoreTabHostFragment extends Fragment
                 // hide create account button
                 noAccountSignUpView.findViewById(R.id.sign_up_clicker).setOnClickListener(null);
                 noAccountSignUpView.setVisibility(View.GONE);
+                // show username text label
+                accountUsernameTextView.setText(state.accountUsername());
+                accountUsernameTextView.setVisibility(View.VISIBLE);
             } else {
                 // doesn't have an account
-                // show
+                // show create account button
                 noAccountSignUpView.findViewById(R.id.sign_up_clicker).setOnClickListener(v -> {
                     try {
                         UiHelpers.openPsiCashAccountActivity(requireActivity(),
@@ -232,6 +237,8 @@ public class StoreTabHostFragment extends Fragment
                     }
                 });
                 noAccountSignUpView.setVisibility(View.VISIBLE);
+                // hide username text label
+                accountUsernameTextView.setVisibility(View.GONE);
             }
         }
     }
