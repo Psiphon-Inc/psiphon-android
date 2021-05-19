@@ -21,22 +21,22 @@ package com.psiphon3.psicash.account;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Context;
-import android.net.http.SslError;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -75,6 +75,7 @@ public class PsiCashAccountWebViewDialog {
             }
         };
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
         dialog.setCancelable(false);
 
         webView = new WebView(context) {
@@ -92,29 +93,25 @@ public class PsiCashAccountWebViewDialog {
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
-            // hook up progress and 'close' button visibility
+            // hook up progress visibility
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 progressOverlay.setVisibility(View.GONE);
-                floatingActionButton.setVisibility(View.GONE);
             }
 
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                if (failingUrl != null && failingUrl.equals(view.getUrl())) {
+                    showErrorClosePrompt(view.getContext());
+                }
+            }
+
+            @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                super.onReceivedError(view, request, error);
-                showErrorClosePrompt(view.getContext());
-            }
-
-            @Override
-            public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
-                super.onReceivedHttpError(view, request, errorResponse);
-                showErrorClosePrompt(view.getContext());
-            }
-
-            @Override
-            public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                super.onReceivedSslError(view, handler, error);
-                showErrorClosePrompt(view.getContext());
+                if (request.isForMainFrame()) {
+                    showErrorClosePrompt(view.getContext());
+                }
             }
         });
 
