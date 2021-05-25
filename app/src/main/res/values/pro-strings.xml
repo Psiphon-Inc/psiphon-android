@@ -322,16 +322,16 @@
     <string name="psicash_transaction_invalid_credentials_message">The username or password entered was incorrect</string>
 
     <!-- PsiCash account login error message shown when the user is trying to log in when Psiphon is not running -->
-    <string name="psicash_connect_to_login_message">Can not log in when Psiphon is not running</string>
+    <string name="psicash_connect_to_login_message">Cannot log in when Psiphon is not running</string>
 
     <!-- PsiCash account login error message shown when the user is trying to log in while Psiphon is running but hasn't finished connecting yet -->
-    <string name="psicash_wait_to_connect_to_login_message">Can not log in while Psiphon is still connecting</string>
+    <string name="psicash_wait_to_connect_to_login_message">Cannot log in while Psiphon is still connecting</string>
 
     <!-- PsiCash account login error message shown when the user tries to login with a blank username -->
-    <string name="psicash_login_empty_username_message">Username can not be blank</string>
+    <string name="psicash_login_empty_username_message">Username cannot be blank</string>
 
     <!-- PsiCash account login error message shown when the user tries to login with an blank password -->
-    <string name="psicash_login_empty_password_message">Password can not be blank</string>
+    <string name="psicash_login_empty_password_message">Password cannot be blank</string>
 
     <!-- An error message informing the user that PsiCash update could not be retrieved from the server because the tunnel is not running.
             Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
