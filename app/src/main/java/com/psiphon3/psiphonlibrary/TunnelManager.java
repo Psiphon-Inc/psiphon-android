@@ -1475,7 +1475,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     }
 
     @Override
-    public void onServerAlert(String reason, String subject) {
+    public void onServerAlert(String reason, String subject, List<String> actionURLs) {
         MyLog.g("Server alert", "reason", reason, "subject", subject);
         if ("disallowed-traffic".equals(reason)) {
             // Do not show alerts when user has Speed Boost or a subscription.
