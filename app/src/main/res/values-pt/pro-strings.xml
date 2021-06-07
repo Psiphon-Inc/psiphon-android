@@ -1,12 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">Cabeçalhos HTTP personalizados</string>
+
+    <string name="custom_proxy_header_group_1">Cabeçalho 1</string>
+    <string name="custom_proxy_header_group_2">Cabeçalho 2</string>
+    <string name="custom_proxy_header_group_3">Cabeçalho 3</string>
+    <string name="custom_proxy_header_group_4">Cabeçalho 4</string>
+    <string name="custom_proxy_header_group_5">Cabeçalho 5</string>
+    <string name="custom_proxy_header_group_6">Cabeçalho 6</string>
+    <string name="custom_proxy_header_name">Inserir nome do cabeçalho</string>
+    <!-- Title for other text showing what the user's current speed limit is. Users have limited
+         speed if they have not paid for premium service. -->
+    <string name="rate_limit_text_title">Limite de velocidade do Psiphon:</string>
+
+    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
+         and is in megabits-per-second. Users have limited speed if they have not paid for premium
+         service. -->
+    <string name="rate_limit_text_limited">%d Mb/s</string>
+
+    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
+         have access to a full-speed connection. Users have limited speed if they have not paid for
+         premium service. -->
+    <string name="rate_limit_text_unlimited">Ilimitado</string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">Atualize agora!</string>
+
     <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
     <string name="psicash_snackbar_action_ok">Ok</string>
 
     <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
     <string name="psicash_purchase_free_button_price">Gratuito</string>
 
+    <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message,
+        Also appears on the PsiCash account 'log out' confirmation dialog when the user tries to log out of their PsiCash account while the Psiphon tunnel is not running.
+        Do not translate or transliterate word Psiphon -->
+    <string name="connect_to_psiphon_button_text">Ligar a Psiphon</string>
+
+    <!-- A message to the user seen when the user has purchased PsiCash from PlayStore while the tunnel was not connected. In this case the purchase
+    still needs to be redeemed which can only happen when they are connected to Psiphon.
+    Do not translate or transliterate word Psiphon -->
+    <string name="connect_to_psiphon_to_finalize_your_transaction">Ligar a Psiphon para finalizar a sua transação</string>
+
+    <!-- PsiCash tab title where users may purchase some PsiCash from PlayStore or get it for free by watching a video ad. Do not translate or transliterate word PsiCash -->
+    <string name="add_psicash_tab_title">Adicionar PsiCash</string>
+
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">Atualizar Psiphon Pro</string>
+
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">Subscrever</string>
+
+    <!-- A message with numeric formatter such as "1 hour" or "5 hours", translate for all language applicable forms. -->
+    <plurals name="hours_of_speed_boost">
+        <item quantity="one"> %d hora</item>
+        <item quantity="other"> %d horas</item>
+    </plurals>
+
+    <!-- Title of the PsiCash account log out alert confirmation dialog -->
+    <string name="psicash_logout_alert_title">Terminar sessão</string>
+
+    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
+    <string name="psicash_cancel_lbl">Cancelar</string>
+
+    <!-- PsiCash account 'log out' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_logout_pref_title">Terminar sessão</string>
+
+    <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_login_pref_title">Entrar</string>
+
+    <!-- Input field caption for username on the PsiCash account sign screen -->
+    <string name="psicash_account_login_username_hint">Nome de utilizador</string>
+
+    <!-- Input field caption for password on the PsiCash account sign screen -->
+    <string name="psicash_account_login_password_hint">Palavra-passe</string>
+
+    <!-- Label text for 'Log In' button on the PsiCash account sign in screen -->
+    <string name="psicash_account_log_in_btn_lbl">Entrar</string>
+
+    <!-- Separator text between the 'Log In' and 'Create Account' buttons on the PsiCash account sign in screen. -->
+    <string name="psicash_account_separator_text">ou</string>
+
+    <!--Generic 'close' alert prompt title-->
+    <string name="psicash_webview_close_alert_title">Fechar</string>
+
+    <!--Generic 'error' alert prompt title-->
+    <string name="psicash_webview_error_alert_title">Erro</string>
 
     </resources>
