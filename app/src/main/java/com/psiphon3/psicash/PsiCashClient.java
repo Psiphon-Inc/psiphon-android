@@ -31,6 +31,7 @@ import com.psiphon3.TunnelState;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.Authorization;
 import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
@@ -727,8 +728,7 @@ public class PsiCashClient {
     public static class PsiCashLibWrapper extends PsiCashLib {
         @Override
         public Error init(String fileStoreRoot, HTTPRequester httpRequester, boolean forceReset) {
-            // TODO: PsiCash: init with test == false for production
-            return init(fileStoreRoot, httpRequester, forceReset, true);
+            return init(fileStoreRoot, httpRequester, forceReset, BuildConfig.PSICASH_DEV_ENVIRONMENT);
         }
     }
 }

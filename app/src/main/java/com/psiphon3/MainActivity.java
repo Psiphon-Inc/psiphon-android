@@ -67,6 +67,7 @@ import com.psiphon3.psiphonlibrary.LoggingProvider;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.VpnAppsUtils;
+import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
@@ -411,6 +412,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     private void displayBrowser(Context context, String urlString) {
+        // Override landing page URL if there is a static landing page URL in the build config
+        if (BuildConfig.STATIC_LANDING_PAGE_URL != null) {
+            urlString  = BuildConfig.STATIC_LANDING_PAGE_URL;
+        }
         // PsiCash modify URLs by default
         displayBrowser(context, urlString, true);
     }

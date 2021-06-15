@@ -37,6 +37,14 @@ android {
                 testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
                 multiDexEnabled true
                 manifestPlaceholders = [ admobAppId:admobAppId ]
+                // Build type specific defaults below
+                //
+                // Specify non-null URL to override landing page from handshake
+                buildConfigField "String", "STATIC_LANDING_PAGE_URL", "null"
+                // Server for in-app purchase verification, default is production
+                buildConfigField "String", "PURCHASE_VERIFICATION_SERVER_NAME", '"subscription.psiphon3.com"'
+                // Specify PsiCash environment, default is production
+                buildConfigField "Boolean", "PSICASH_DEV_ENVIRONMENT", "false"
             }
         } else {
             throw new GradleException('version.properties found but entries are missing')
@@ -63,6 +71,13 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
+
+            // TEMP override landing page for internal testing release
+            buildConfigField "String", "STATIC_LANDING_PAGE_URL", '"https://landing.dev.psi.cash/dev-index.html"'
+            // TEMP override IAB verification server name for internal testing release
+            buildConfigField "String", "PURCHASE_VERIFICATION_SERVER_NAME", '"dev-subscription.psiphon3.com"'
+            // TEMP override PsiCash environment for internal testing release
+            buildConfigField "Boolean", "PSICASH_DEV_ENVIRONMENT", "true"
         }
     }
 
